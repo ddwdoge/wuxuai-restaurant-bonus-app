@@ -219,6 +219,27 @@ Wenn Punkte fehlen:
 > Noch gesperrt  
 > Dir fehlen noch XX Punkte.
 
+Darunter zeigt das Kundenportal den geschätzten fehlenden Eurobetrag:
+
+> ≈ Noch ca. XX,XX € bis zur Einlösung.
+
+Dieser Betrag basiert auf derselben Restaurant-Logik wie die
+Punkteeinlösung:
+
+```text
+Fehlender Eurobetrag = fehlende Punkte × amount_per_point
+```
+
+Die benötigten Punkte der Punkteeinlösung wurden zuvor aus Produktpreis,
+gespeicherter Einlösequote und Punkte-pro-Euro-Regel berechnet.
+
+Die Einlösequote kommt aus dem Onboarding:
+
+- Sparsam: 3 %
+- Normal: 5 %
+- Großzügig: 8 %
+- Premium: 10 %
+
 ### 6A.3 Abgrenzung
 
 Punkteeinlösungen können mehrfach eingelöst werden, sobald wieder genügend Punkte vorhanden sind.

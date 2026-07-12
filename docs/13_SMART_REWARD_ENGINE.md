@@ -268,50 +268,69 @@ Dessert
 
 Die Engine berechnet daraus automatisch die Einlösungspunkte.
 
-### 8.2 Umsatz-Multiplikator
+### 8.2 Einlösequote aus dem Onboarding
 
 🟢 **FIX**
 
-Die Engine nutzt eine Wirtschaftlichkeitsregel auf Basis eines Umsatz-Multiplikators.
+Die Engine nutzt die im Onboarding-Schritt **Punkteeinlösung** gewählte
+Einlösequote.
 
-Standardregel:
-
-```text
-Ein Gast soll ungefähr mindestens 10× Produktwert als Umsatz bringen,
-bevor die Punkteeinlösung verwendet wird.
-```
-
-Beispiel:
+V1-Quoten:
 
 ```text
-Produktwert: 5 €
-Zielumsatz: 50 €
+Sparsam = 3 %
+Normal = 5 %
+Großzügig = 8 %
+Premium = 10 %
 ```
 
-### 8.3 Warum Multiplikator statt Prozent?
+### 8.3 Warum Prozent statt 10×-Multiplikator?
 
-Ein Restaurantbesitzer versteht:
+Restaurantbesitzer verstehen sofort, wie viel Gegenwert sie im Verhältnis zur
+Konsumation zurückgeben.
+
+Beispiel Normal:
 
 ```text
-Bevor ich ein 5-€-Produkt verschenke,
-soll der Gast ungefähr 50 € Umsatz gebracht haben.
+Produktwert: 5,40 €
+Einlösequote: 5 %
+Geschätzte Konsumation bis zur Einlösung: 5,40 € / 0,05 = 108,00 €
 ```
 
-Das ist verständlicher als abstrakte Prozentwerte.
+Die alte feste 10×-Regel wird für neue oder bearbeitete Punkteeinlösungen nicht
+mehr verwendet.
 
 ### 8.4 Punkteberechnung
 
-Die Engine kennt aus dem Bonus Designer:
+Die Engine kennt:
 
-- Punkte pro Euro
-- Rechnungsstufen
-- Bonuslogik
-- Smart Boost Regeln
+- Produktpreis
+- gespeicherte Einlösequote des Restaurants
+- Punkte-pro-Euro-Regel über `amount_per_point`
 
-Sie berechnet daraus:
+Sie berechnet:
 
 ```text
-Zielumsatz → benötigte Punkte
+Geschätzte Konsumation = Produktpreis / Einlösequote
+Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+```
+
+Wenn das Restaurant später mehr Punkte pro Euro vergibt, wird die benötigte
+Punktzahl entsprechend höher, während der Euro-Gegenwert gleich bleibt.
+
+### 8.5 Anzeige
+
+Restaurant Portal zeigt:
+
+- Einlösequote
+- geschätzte Konsumation bis zur Einlösung
+- benötigte Punkte
+
+Customer Portal zeigt bei zu wenigen Punkten:
+
+```text
+Dir fehlen noch XX Punkte.
+≈ Noch ca. XX,XX € bis zur Einlösung.
 ```
 
 Beispiel:
@@ -1034,35 +1053,36 @@ expliziter Demo-Modus aktiv ist.
 
 ---
 
-## 28. Großzügigkeitsfaktoren im Onboarding
+## 28. Rückgabequoten im Onboarding
 
 Für den Onboarding-Bonus-Designer im Schritt **Punkteeinlösung** gelten feste
-V1-Faktoren:
+V1-Rückgabequoten:
 
-| Einstellung | Faktor |
-|-------------|--------|
-| Sparsam | 0,8 |
-| Normal | 1,0 |
-| Großzügig | 1,1 |
-| Premium | 1,2 |
+| Einstellung | Rückgabe |
+|-------------|----------|
+| Sparsam | 3 % |
+| Normal | 5 % |
+| Großzügig | 8 % |
+| Premium | 10 % |
 
 Berechnung:
 
 ```text
-Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
+Konsumation = Durchschnittsbon × Besuche
+Einlösewert = Konsumation × Rückgabequote
 ```
 
 Beispiel:
 
 ```text
 18 € × 5 Besuche = 90 €
-Sparsam: 90 € × 0,8 = 72 €
-Normal: 90 € × 1,0 = 90 €
-Großzügig: 90 € × 1,1 = 99 €
-Premium: 90 € × 1,2 = 108 €
+Sparsam: 3 % von 90 € = 2,70 €
+Normal: 5 % von 90 € = 4,50 €
+Großzügig: 8 % von 90 € = 7,20 €
+Premium: 10 % von 90 € = 9,00 €
 ```
 
-Diese Faktoren betreffen den Onboarding-Bonus-Designer. Bestehende
+Diese Rückgabequoten betreffen den Onboarding-Bonus-Designer. Bestehende
 Tages-PIN-, Bonus-Boost- und RPC-Regeln werden dadurch nicht geaendert.
 
 ---
@@ -1134,7 +1154,7 @@ Smart Reward Engine gilt als LOCK, wenn:
 - Tages-PIN gegen Brute Force geschützt ist
 - maximal 2 erfolgreiche Punktebuchungen pro lokalem Tag erlaubt sind
 - keine Demo- oder Platzhalterdaten in echten Restaurantseiten erscheinen
-- Großzügigkeitsfaktoren einheitlich angewendet werden
+- Rückgabequoten im Onboarding einheitlich angewendet werden
 - Punktebuchung nur mit gültiger Tages-PIN erfolgt
 - Punkteeinlösung ohne PIN, aber mit finaler Kundenbestätigung erfolgt
 - alle Texte Deutsch sind

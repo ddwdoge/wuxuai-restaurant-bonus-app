@@ -97,6 +97,7 @@ export type LoyaltySettings = {
   branch_id?: string;
   loyalty_mode: LoyaltyMode;
   amount_per_point: number;
+  redemption_return_rate?: number;
   stamps_required: number;
   bonus_amount_tiers?: unknown;
   bonus_boost_multiplier?: number;

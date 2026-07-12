@@ -1618,27 +1618,48 @@ widersprechen der WUXUAI-Philosophie.
 
 ---
 
-## 75. Onboarding Bonus-Designer Großzügigkeitsfaktoren
+## 75. Onboarding Bonus-Designer Rückgabequoten
 
 Status: **LOCK**
 
 Onboarding Schritt 4 heißt **Punkteeinlösung**, nicht mehr „Belohnen“.
 
-Im Onboarding-Schritt **Punkteeinlösung** gelten feste V1-Faktoren:
+Im Onboarding-Schritt **Punkteeinlösung** gelten feste V1-Rückgabequoten:
 
-- Sparsam: 0,8
-- Normal: 1,0
-- Großzügig: 1,1
-- Premium: 1,2
+- Sparsam: 3 %
+- Normal: 5 %
+- Großzügig: 8 %
+- Premium: 10 %
 
 Berechnung:
 
 ```text
-Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
+Konsumation = Durchschnittsbon × Besuche
+Einlösewert = Konsumation × Rückgabequote
 ```
 
-Diese Faktoren dienen der Onboarding-Empfehlung. Keine neue Preislogik, keine
-neue Tages-PIN-Logik und keine neue Bonus-Boost-Logik wird daraus abgeleitet.
+Diese Rückgabequoten dienen der Onboarding-Empfehlung. Keine neue
+Tages-PIN-Logik, keine neue Reward-Einlösung und keine neue Bonus-Boost-Logik
+wird daraus abgeleitet.
+
+Die gewählte Quote wird pro Restaurant gespeichert und ist die zentrale
+Berechnungsgrundlage für normale Punkteeinlösungen.
+
+Formel:
+
+```text
+Geschätzte Konsumation = Produktpreis / Einlösequote
+Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+```
+
+Beispiel Normal:
+
+```text
+5,40 € / 0,05 = 108,00 €
+```
+
+Neue oder bearbeitete Punkteeinlösungen verwenden diese Quote. Die alte feste
+10×-Produktwert-Regel gilt dafür nicht mehr.
 
 ---
 

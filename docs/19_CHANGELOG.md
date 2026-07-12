@@ -639,6 +639,10 @@ Standard:
 ca. 10× Produktwert als Zielumsatz vor Einlösung
 ```
 
+Hinweis 2026-07-12:
+Diese frühere Regel wurde für neue oder bearbeitete Punkteeinlösungen durch
+die gespeicherte Einlösequote aus Phase 45 ersetzt.
+
 ### 15.3 Status
 
 - 🟢 Wirtschaftlich
@@ -1420,10 +1424,10 @@ FINAL LOCK
 
 Ziel:
 
-Der Onboarding-Schritt **Punkteeinlösung** verwendet die finalen V1-Faktoren
-für die Großzügigkeitsstufen.
+Frühere Entscheidung: Der Onboarding-Schritt **Punkteeinlösung** verwendete
+V1-Faktoren für die Großzügigkeitsstufen.
 
-Änderung:
+Frühere Werte:
 
 - Sparsam: 0,8
 - Normal: 1,0
@@ -1432,15 +1436,21 @@ für die Großzügigkeitsstufen.
 - Die Empfehlung berechnet sich aus:
   Durchschnittsbon × gewünschte Besuche bis erste Freude × Faktor.
 
-Warum:
+Neue CTO-Entscheidung:
+
+Diese Faktoren wurden durch Rückgabequoten ersetzt.
+
+Siehe Phase 44.
+
+Grund:
 
 Restaurantbesitzer sollen im Onboarding eine einfache und verlässliche
-Empfehlung sehen. Die Faktoren sind fest und werden nicht als neue
-Preis-/Payment- oder Bonus-Boost-Logik interpretiert.
+Empfehlung sehen. Prozente sind für Restaurantbesitzer verständlicher als
+abstrakte Faktoren.
 
 Status:
 
-LOCK
+ERSETZT DURCH PHASE 44
 
 ---
 
@@ -1469,7 +1479,105 @@ LOCK
 
 ---
 
-## 44. LOCK Kriterien
+## 44. Phase – Onboarding Punkteeinlösung mit Rückgabequoten
+
+Ziel:
+
+Der Onboarding-Schritt **Punkteeinlösung** nutzt klare Rückgabequoten statt
+abstrakter Faktoren.
+
+Neue CTO-Entscheidung:
+
+- Sparsam: 3 % Rückgabe
+- Normal: 5 % Rückgabe
+- Großzügig: 8 % Rückgabe
+- Premium: 10 % Rückgabe
+
+Berechnung:
+
+```text
+Konsumation = Durchschnittsbon × Besuche
+Einlösewert = Konsumation × Rückgabequote
+```
+
+Beispiel:
+
+```text
+18 € × 5 Besuche = 90 €
+Sparsam: 3 % von 90 € = 2,70 €
+Normal: 5 % von 90 € = 4,50 €
+Großzügig: 8 % von 90 € = 7,20 €
+Premium: 10 % von 90 € = 9,00 €
+```
+
+Warum:
+
+Restaurantbesitzer verstehen Rückgabe-Prozente schneller als Faktoren. Der
+Onboarding-Bonus-Designer bleibt in Restaurant-Sprache und zeigt erwartete
+Konsumation sowie empfohlenen Einlösewert.
+
+Nicht geändert:
+
+- Tages-PIN
+- Punkte sammeln
+- Reward-Einlösung
+- Willkommensgeschenke
+- Bonus Boost
+- QR Center
+
+Status:
+
+LOCK
+
+---
+
+## 45. Phase – Punkteeinlösung nutzt gespeicherte Einlösequote
+
+Ziel:
+
+Die im Onboarding gewählte Prozentlogik soll später wirklich für
+Punkteeinlösungen verwendet werden.
+
+Änderung:
+
+- `loyalty_settings.redemption_return_rate` speichert die Restaurant-Quote.
+- Onboarding speichert die gewählte Quote pro Restaurant.
+- Punkteeinlösungsseite nutzt die gespeicherte Quote.
+- Neue oder bearbeitete Produkte berechnen:
+
+```text
+Geschätzte Konsumation = Produktpreis / Einlösequote
+Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+```
+
+Beispiel:
+
+```text
+5,40 € / 0,05 = 108,00 €
+```
+
+Customer Portal:
+
+- zeigt weiterhin fehlende Punkte
+- zeigt den fehlenden Eurobetrag aus `fehlende Punkte × amount_per_point`
+- nutzt dadurch dieselbe gespeicherte Punkteeinlösung
+
+Nicht geändert:
+
+- Tages-PIN
+- Punkte sammeln
+- Bonus Boost
+- Willkommensgeschenke
+- QR Center
+- Staff Portal
+
+Status:
+
+LOCK
+
+---
+
+## 46. LOCK Kriterien
 
 Dieser Changelog gilt als LOCK, wenn:
 
@@ -1482,7 +1590,7 @@ Dieser Changelog gilt als LOCK, wenn:
 
 ---
 
-## 45. Codex-Regeln
+## 47. Codex-Regeln
 
 Wenn Codex diesen Changelog liest:
 

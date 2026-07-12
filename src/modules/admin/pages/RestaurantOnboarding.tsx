@@ -39,6 +39,9 @@ type BonusCalculation = {
   amountPerPoint: number;
   firstRewardPoints: number;
   rewardValueEuro: number;
+  expectedConsumptionEuro: number;
+  returnRate: number;
+  returnRatePercent: string;
   amountTierPoints: {
     visit: number;
     menu: number;
@@ -140,11 +143,18 @@ const defaultOpeningHours: Record<Weekday, OpeningDay> = {
   sun: { enabled: false, open: "12:00", close: "21:00" },
 };
 
-const generosityMultiplier: Record<Generosity, number> = {
-  Sparsam: 0.8,
-  Normal: 1,
-  Großzügig: 1.1,
-  Premium: 1.2,
+const generosityReturnRates: Record<Generosity, number> = {
+  Sparsam: 0.03,
+  Normal: 0.05,
+  Großzügig: 0.08,
+  Premium: 0.1,
+};
+
+const generosityHelpText: Record<Generosity, string> = {
+  Sparsam: "Vorsichtig kalkuliert.",
+  Normal: "Ausgewogen für die meisten Restaurants.",
+  Großzügig: "Stärkerer Anreiz für Gäste.",
+  Premium: "Sehr attraktiver Stammgäste-Anreiz.",
 };
 
 const starterRewardTemplates: StarterRewardTemplate[] = [
@@ -285,16 +295,21 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
 function calculateBonus(averageBill: number, firstRewardVisits: number, generosity: Generosity): BonusCalculation {
   const cleanAverageBill = Math.max(1, averageBill || 1);
   const cleanVisits = Math.max(1, firstRewardVisits || 1);
-  const pointsPerEuro = generosityMultiplier[generosity];
+  const returnRate = generosityReturnRates[generosity];
+  const expectedConsumptionEuro = Number((cleanAverageBill * cleanVisits).toFixed(2));
+  const pointsPerEuro = 1;
   const amountPerPoint = Number((1 / pointsPerEuro).toFixed(4));
   const firstRewardPoints = Math.max(10, Math.round(cleanAverageBill * cleanVisits * pointsPerEuro));
-  const rewardValueEuro = Number((cleanAverageBill * cleanVisits * pointsPerEuro).toFixed(2));
+  const rewardValueEuro = Number((expectedConsumptionEuro * returnRate).toFixed(2));
 
   return {
     pointsPerEuro,
     amountPerPoint,
     firstRewardPoints,
     rewardValueEuro,
+    expectedConsumptionEuro,
+    returnRate,
+    returnRatePercent: `${Math.round(returnRate * 100)} %`,
     amountTierPoints: {
       visit: Math.round(cleanAverageBill * pointsPerEuro),
       menu: Math.round(cleanAverageBill * 1.5 * pointsPerEuro),
@@ -306,6 +321,16 @@ function calculateBonus(averageBill: number, firstRewardVisits: number, generosi
       Math.round(firstRewardPoints * 3),
     ],
   };
+}
+
+function formatEuro(value: number, fixedCents = false) {
+  const hasCents = Math.round(value * 100) % 100 !== 0;
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: fixedCents || hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -1106,7 +1131,7 @@ export function RestaurantOnboarding() {
   const explanation = [
     `${form.restaurantName || "Dein Restaurant"} bekommt ein eigenes digitales Bonusprogramm.`,
     `Gäste sehen deine Öffnungszeiten: ${openDaysSummary(form.openingHours)}.`,
-    `Du belohnst Gäste ${form.generosity.toLowerCase()}; dein Bonusziel fühlt sich nach ca. ${form.firstRewardVisits} Besuchen erreichbar an.`,
+    `Du planst ${bonus.returnRatePercent} Rückgabe nach ca. ${form.firstRewardVisits} Besuchen.`,
     `${form.starterRewards.length || 1} Willkommens-Belohnung wartet später zufällig auf neue Gäste.`,
     "Willkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.",
   ];
@@ -1414,6 +1439,7 @@ export function RestaurantOnboarding() {
         onboardingChecklist: checklist,
         loyaltyMode: "amount_based",
         amountPerPoint: bonus.amountPerPoint,
+        redemptionReturnRate: bonus.returnRate,
         amountTierPoints: bonus.amountTierPoints,
         starterRewards: form.starterRewards.map((reward) => ({
           key: reward.key,
@@ -1742,7 +1768,7 @@ export function RestaurantOnboarding() {
           {step === 3 ? (
             <section className="wizard-screen">
               <h2>{stepTitles[3]}</h2>
-              <p className="muted">Lege fest, ab wann Gäste ihre Punkte gegen ein Produkt einlösen können.</p>
+              <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
               <div className="grid two">
                 <div className="field">
                   <label htmlFor="average-bill">Was gibt ein Gast durchschnittlich aus?</label>
@@ -1791,14 +1817,25 @@ export function RestaurantOnboarding() {
                     onClick={() => setForm((current) => ({ ...current, generosity: option }))}
                     type="button"
                   >
-                    {option}
+                      {option}
+                      <span>{Math.round(generosityReturnRates[option] * 100)} % Rückgabe</span>
+                      <small>{generosityHelpText[option]}</small>
                   </button>
                 ))}
               </div>
               <article className="calculation-card">
                 <strong>Unsere Empfehlung für dich</strong>
                 <p className="muted">
-                  Dein Bonusziel fühlt sich nach ca. {form.firstRewardVisits} Besuchen erreichbar an. Empfohlenes Bonusziel: ca. {bonus.rewardValueEuro.toFixed(2)} €.
+                  {form.generosity} gewählt: {bonus.returnRatePercent} Rückgabe.
+                </p>
+                <p className="muted">
+                  Erwartete Konsumation bis zur Einlösung: {formatEuro(form.averageBill)} × {form.firstRewardVisits} Besuche = {formatEuro(bonus.expectedConsumptionEuro)}
+                </p>
+                <p className="muted">
+                  Empfohlener Einlösewert: {bonus.returnRatePercent} von {formatEuro(bonus.expectedConsumptionEuro)} = {formatEuro(bonus.rewardValueEuro, true)}
+                </p>
+                <p className="muted">
+                  WUXUAI berechnet daraus später automatisch die passende Punkte-Einlösung.
                 </p>
               </article>
             </section>

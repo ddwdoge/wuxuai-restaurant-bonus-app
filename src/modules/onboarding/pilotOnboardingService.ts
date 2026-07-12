@@ -28,6 +28,7 @@ export type PilotOnboardingInput = {
   onboardingChecklist: Record<string, boolean>;
   loyaltyMode: LoyaltyMode;
   amountPerPoint: number;
+  redemptionReturnRate: number;
   amountTierPoints: {
     visit: number;
     menu: number;
@@ -138,13 +139,29 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
       restaurant_id: restaurantId,
       loyalty_mode: input.loyaltyMode,
       amount_per_point: input.amountPerPoint,
+      redemption_return_rate: input.redemptionReturnRate,
       stamps_required: 10,
       active: true,
     },
     { onConflict: "restaurant_id" },
   );
 
-  if (loyaltyError) throw loyaltyError;
+  if (loyaltyError && (loyaltyError.code === "42703" || /redemption_return_rate/i.test(loyaltyError.message ?? ""))) {
+    const { error: legacyLoyaltyError } = await supabase.from("loyalty_settings").upsert(
+      {
+        restaurant_id: restaurantId,
+        loyalty_mode: input.loyaltyMode,
+        amount_per_point: input.amountPerPoint,
+        stamps_required: 10,
+        active: true,
+      },
+      { onConflict: "restaurant_id" },
+    );
+
+    if (legacyLoyaltyError) throw legacyLoyaltyError;
+  } else if (loyaltyError) {
+    throw loyaltyError;
+  }
 
   const { error: rulesError } = await supabase.from("loyalty_rules").insert([
     {

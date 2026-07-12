@@ -134,7 +134,7 @@ Flow 01 besitzt nach aktueller V1-Entscheidung **7 Schritte**.
 1.  Restaurant
 2.  Aussehen
 3.  Geöffnet
-4.  Belohnen
+4.  Punkteeinlösung
 5.  Willkommens-Belohnungen
 6.  Restaurant Starter Kit
 7.  Startklar
@@ -242,11 +242,11 @@ V2 vorbereitet.
 
 ------------------------------------------------------------------------
 
-## 10. Schritt 4 -- Belohnen
+## 10. Schritt 4 -- Punkteeinlösung
 
 ### Ziel
 
-Der Besitzer definiert das Bonusprogramm, ohne Punkte zu berechnen.
+Der Besitzer definiert die spätere Punkte-Einlösung, ohne Punkte zu berechnen.
 
 ### Bonus Designer
 
@@ -257,19 +257,49 @@ Restaurantbesitzer soll nicht mit Punktformeln arbeiten.
 Er beantwortet einfache Fragen:
 
 -   Wie hoch ist der durchschnittliche Rechnungsbetrag?
--   Nach wie vielen Besuchen soll die erste Belohnung ungefähr
+-   Nach wie vielen Besuchen soll die erste Einlösung ungefähr
     erreichbar sein?
--   Wie großzügig soll das Bonusprogramm sein?
--   Welche erste Belohnungsart ist typisch?
+-   Welche Rückgabequote passt zum Restaurant?
+-   Welche Einlöseart ist typisch?
 
-Die Software berechnet daraus: - Punkte pro Euro - Bonusstufen - interne
-Einlöseschwellen - Standardregeln
+Die Software berechnet daraus:
+
+- erwartete Konsumation bis zur Einlösung
+- empfohlenen Einlösewert
+- spätere interne Punkte-Einlösung
 
 ### Verboten
 
 Verboten: - Punkteformel direkt zeigen - manuelle Punktewerte
 verlangen - technische Modusnamen wie `amount_based` -
 `required_points` - `reward threshold` - englische Begriffe
+
+### Rückgabequoten
+
+🟢 **FIX**
+
+Schritt 4 verwendet Restaurant-Sprache statt abstrakter Faktoren.
+
+V1-Rückgabequoten:
+
+- Sparsam: 3 %
+- Normal: 5 %
+- Großzügig: 8 %
+- Premium: 10 %
+
+Berechnung:
+
+```text
+Konsumation = Durchschnittsbon × Besuche
+Einlösewert = Konsumation × Rückgabequote
+```
+
+Beispiel:
+
+```text
+18 € × 5 Besuche = 90 €
+Normal: 5 % von 90 € = 4,50 €
+```
 
 ### Restaurant arbeitet mit Euro
 

@@ -15,6 +15,7 @@ type WizardStep = 1 | 2 | 3 | 4 | 5;
 type RewardCalculationSettings = {
   loyalty_mode: "amount_based" | "stamp_based" | "menu_points";
   amount_per_point: number;
+  redemption_return_rate?: number;
   stamps_required: number;
   active: boolean;
 };
@@ -52,6 +53,7 @@ const categoryAssets: Record<string, { icon: string; asset: string }> = {
 const fallbackSettings: RewardCalculationSettings = {
   loyalty_mode: "amount_based",
   amount_per_point: 1,
+  redemption_return_rate: 0.05,
   stamps_required: 10,
   active: true,
 };
@@ -94,15 +96,19 @@ function rewardFileExtension(file: File) {
 
 function calculateReward(price: number, settings: RewardCalculationSettings) {
   const amountPerPoint = Math.max(0.01, Number(settings.amount_per_point) || 1);
-  const targetRevenue = Math.max(0, price * 10);
+  const redemptionReturnRate = Math.max(0.01, Number(settings.redemption_return_rate) || 0.05);
+  const targetRevenue = price > 0 ? price / redemptionReturnRate : 0;
   const requiredPoints = Math.max(1, Math.ceil(targetRevenue / amountPerPoint));
   const estimatedRevenue = requiredPoints * amountPerPoint;
   const ratio = price > 0 ? estimatedRevenue / price : 0;
+  const quotePercent = Math.round(redemptionReturnRate * 100);
 
   if (ratio >= 10) {
     return {
       requiredPoints,
       estimatedRevenue,
+      redemptionReturnRate,
+      quotePercent,
       status: "🟢 Wirtschaftlich",
       statusClass: "good",
     };
@@ -112,6 +118,8 @@ function calculateReward(price: number, settings: RewardCalculationSettings) {
     return {
       requiredPoints,
       estimatedRevenue,
+      redemptionReturnRate,
+      quotePercent,
       status: "🟡 Prüfen",
       statusClass: "check",
     };
@@ -120,6 +128,8 @@ function calculateReward(price: number, settings: RewardCalculationSettings) {
   return {
     requiredPoints,
     estimatedRevenue,
+    redemptionReturnRate,
+    quotePercent,
     status: "🔴 Zu großzügig",
     statusClass: "risk",
   };
@@ -171,6 +181,7 @@ export function RewardsPage() {
           setSettings({
             loyalty_mode: nextSettings.loyalty_mode,
             amount_per_point: nextSettings.amount_per_point,
+            redemption_return_rate: nextSettings.redemption_return_rate ?? 0.05,
             stamps_required: nextSettings.stamps_required,
             active: nextSettings.active,
           });
@@ -322,7 +333,7 @@ export function RewardsPage() {
         source: "reward",
         restaurant_id: restaurantId,
         title: rewardTitle,
-        description: `Produktwert: ${formatEuro(productPrice)}. Punkte automatisch berechnet.`,
+        description: `Produktwert: ${formatEuro(productPrice)}. Einlösequote: ${calculation.quotePercent} %. Geschätzte Konsumation: ${formatEuro(calculation.estimatedRevenue)}.`,
         reward_type: "reward",
         required_points: calculation.requiredPoints,
         required_stamps: 0,
@@ -431,7 +442,11 @@ export function RewardsPage() {
                   <strong>{calculation.requiredPoints} Punkte</strong>
                 </article>
                 <article>
-                  <span>Geschätzter Umsatz bis zur Einlösung</span>
+                  <span>Einlösequote</span>
+                  <strong>{calculation.quotePercent} %</strong>
+                </article>
+                <article>
+                  <span>Geschätzte Konsumation bis zur Einlösung</span>
                   <strong>{formatEuro(calculation.estimatedRevenue)}</strong>
                 </article>
                 <article className={`reward-profit-status ${calculation.statusClass}`}>
@@ -503,6 +518,8 @@ export function RewardsPage() {
                   <span className="pill">{currentCategory}</span>
                   <h4>{rewardTitle}</h4>
                   <p>Produktpreis: {formatEuro(productPrice)}</p>
+                  <p>Einlösequote: {calculation.quotePercent} %</p>
+                  <p>Geschätzte Konsumation: {formatEuro(calculation.estimatedRevenue)}</p>
                   <p>Benötigte Punkte: {calculation.requiredPoints}</p>
                   <strong className={`reward-status-text ${calculation.statusClass}`}>{calculation.status}</strong>
                 </div>

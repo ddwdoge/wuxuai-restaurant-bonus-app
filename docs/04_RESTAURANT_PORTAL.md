@@ -191,8 +191,31 @@ Restaurantbesitzer geben keine Punkte ein.
 Restaurantbesitzer geben ein: - Produkt - Preis - Foto optional -
 Aktiv/Inaktiv
 
-WUXUAI berechnet: - Punkte - Wirtschaftlichkeit - fehlende Punkte -
+WUXUAI berechnet: - Einlösequote - geschätzte Konsumation bis zur
+Einlösung - benötigte Punkte - Wirtschaftlichkeit - fehlende Punkte -
 geschätzten fehlenden Umsatz
+
+Die Einlösequote kommt aus dem Onboarding-Schritt **Punkteeinlösung**:
+
+- Sparsam: 3 %
+- Normal: 5 %
+- Großzügig: 8 %
+- Premium: 10 %
+
+Formel:
+
+```text
+Geschätzte Konsumation = Produktpreis / Einlösequote
+Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+```
+
+Beispiel:
+
+```text
+Produktpreis: 5,40 €
+Normal: 5 %
+Geschätzte Konsumation: 108,00 €
+```
 
 ### 6.2 Neue Punkteeinlösung
 
@@ -391,30 +414,36 @@ Eine Entscheidung
 
 Onboarding Schritt 4 heißt **Punkteeinlösung**, nicht mehr „Belohnen“.
 
-In diesem Schritt legt der Restaurantbesitzer fest, ab wann Gäste ihre Punkte
-gegen ein Produkt einlösen können.
+In diesem Schritt legt der Restaurantbesitzer fest, wie viel Gegenwert Gäste
+nach mehreren Besuchen einlösen können.
 
-Für diese Punkteeinlösung gelten feste V1-Großzügigkeitsfaktoren:
+Für diese Punkteeinlösung gelten feste V1-Rückgabequoten:
 
-- Sparsam: 0,8
-- Normal: 1,0
-- Großzügig: 1,1
-- Premium: 1,2
+- Sparsam: 3 %
+- Normal: 5 %
+- Großzügig: 8 %
+- Premium: 10 %
 
 Berechnung:
 
 ```text
-Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
+Konsumation = Durchschnittsbon × Besuche
+Einlösewert = Konsumation × Rückgabequote
 ```
 
 Beispiel:
 
 ```text
-18 € × 5 Besuche × 0,8 = 72 €
+18 € × 5 Besuche = 90 €
+Sparsam: 3 % von 90 € = 2,70 €
+Normal: 5 % von 90 € = 4,50 €
+Großzügig: 8 % von 90 € = 7,20 €
+Premium: 10 % von 90 € = 9,00 €
 ```
 
-Diese Faktoren gelten für den Onboarding-Bonus-Designer und dürfen nicht mit
-späteren Bonus-Boost- oder Tages-PIN-Regeln vermischt werden.
+Diese Rückgabequoten gelten nur für den Onboarding-Bonus-Designer und dürfen
+nicht mit späteren Bonus-Boost-, Tages-PIN- oder Einlöse-Regeln vermischt
+werden.
 
 ### 13.1 RLS bleibt Quelle der Sicherheit
 

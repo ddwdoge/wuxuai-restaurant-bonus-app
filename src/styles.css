@@ -1399,15 +1399,32 @@ a {
   border: 1px solid #cfd8e3;
   border-radius: 8px;
   color: #22303d;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-weight: 800;
   min-height: 84px;
   padding: 14px;
+  text-align: left;
 }
 
 .choice-card.active {
   background: #eaf5f3;
   border-color: var(--tenant-primary, #0f766e);
   color: var(--tenant-primary, #0f766e);
+}
+
+.choice-card span {
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.choice-card small {
+  color: #5f6f7f;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .starter-reward-counter {

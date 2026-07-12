@@ -24,6 +24,25 @@ export const menuPointPresets = [
   { title: "Family Menu", points: 50, stamps: 0, min_amount: 0 },
 ];
 
+const loyaltySettingsSelect =
+  "id, restaurant_id, loyalty_mode, amount_per_point, redemption_return_rate, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at";
+
+const legacyLoyaltySettingsSelect =
+  "id, restaurant_id, loyalty_mode, amount_per_point, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at";
+
+function normalizeLoyaltySettings(settings: LoyaltySettings): LoyaltySettings {
+  return {
+    ...settings,
+    redemption_return_rate: Number(settings.redemption_return_rate) || 0.05,
+  };
+}
+
+function isMissingRedemptionReturnRate(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { code?: string; message?: string };
+  return maybeError.code === "42703" || /redemption_return_rate/i.test(maybeError.message ?? "");
+}
+
 export type LoyaltyRuleInput = {
   id?: string;
   restaurant_id: string;
@@ -85,6 +104,7 @@ export async function loadLoyaltySettings(restaurantId: string): Promise<Loyalty
     return {
       ...demoLoyaltySettings,
       restaurant_id: restaurantId,
+      redemption_return_rate: 0.05,
       bonus_boost_multiplier: 1,
       smart_upsell_enabled: true,
       smart_upsell_threshold: 5,
@@ -94,16 +114,25 @@ export async function loadLoyaltySettings(restaurantId: string): Promise<Loyalty
     };
   }
 
-  const { data, error } = await supabase
+  let query = await supabase
     .from("loyalty_settings")
-    .select("id, restaurant_id, loyalty_mode, amount_per_point, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at")
+    .select(loyaltySettingsSelect)
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
+  if (query.error && isMissingRedemptionReturnRate(query.error)) {
+    query = await supabase
+      .from("loyalty_settings")
+      .select(legacyLoyaltySettingsSelect)
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+  }
+
+  const { data, error } = query;
   if (error) throw error;
 
   if (data) {
-    return data as LoyaltySettings;
+    return normalizeLoyaltySettings(data as LoyaltySettings);
   }
 
   return saveLoyaltySettings(defaultSettingsForMode(restaurantId, "menu_points"));
@@ -121,6 +150,7 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
         restaurant_id: settings.restaurant_id,
         loyalty_mode: settings.loyalty_mode,
         amount_per_point: settings.amount_per_point,
+        redemption_return_rate: settings.redemption_return_rate ?? 0.05,
         stamps_required: settings.stamps_required,
         bonus_boost_multiplier: settings.bonus_boost_multiplier ?? 1,
         smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
@@ -132,11 +162,37 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
       },
       { onConflict: "restaurant_id" },
     )
-    .select("id, restaurant_id, loyalty_mode, amount_per_point, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at")
+    .select(loyaltySettingsSelect)
     .single();
 
+  if (error && isMissingRedemptionReturnRate(error)) {
+    const { data: legacyData, error: legacyError } = await supabase
+      .from("loyalty_settings")
+      .upsert(
+        {
+          restaurant_id: settings.restaurant_id,
+          loyalty_mode: settings.loyalty_mode,
+          amount_per_point: settings.amount_per_point,
+          stamps_required: settings.stamps_required,
+          bonus_boost_multiplier: settings.bonus_boost_multiplier ?? 1,
+          smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
+          smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
+          referral_boost_enabled: settings.referral_boost_enabled ?? true,
+          referral_boost_multiplier: settings.referral_boost_multiplier ?? 2,
+          referral_boost_duration_days: settings.referral_boost_duration_days ?? 30,
+          active: settings.active,
+        },
+        { onConflict: "restaurant_id" },
+      )
+      .select(legacyLoyaltySettingsSelect)
+      .single();
+
+    if (legacyError) throw legacyError;
+    return normalizeLoyaltySettings(legacyData as LoyaltySettings);
+  }
+
   if (error) throw error;
-  return data as LoyaltySettings;
+  return normalizeLoyaltySettings(data as LoyaltySettings);
 }
 
 export async function loadLoyaltyRules(restaurantId: string): Promise<LoyaltyRule[]> {
@@ -231,7 +287,7 @@ export type BonusAmountTier = {
   amount: number;
 };
 
-export type PublicLoyaltySettings = Pick<LoyaltySettings, "loyalty_mode" | "amount_per_point" | "stamps_required" | "active"> & {
+export type PublicLoyaltySettings = Pick<LoyaltySettings, "loyalty_mode" | "amount_per_point" | "redemption_return_rate" | "stamps_required" | "active"> & {
   bonus_amount_tiers?: BonusAmountTier[];
   bonus_boost_multiplier?: number;
   smart_upsell_enabled?: boolean;
