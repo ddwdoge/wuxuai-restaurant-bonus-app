@@ -1618,7 +1618,31 @@ widersprechen der WUXUAI-Philosophie.
 
 ---
 
-# 75. LOCK Kriterien
+## 75. Onboarding Bonus-Designer Großzügigkeitsfaktoren
+
+Status: **LOCK**
+
+Onboarding Schritt 4 heißt **Punkteeinlösung**, nicht mehr „Belohnen“.
+
+Im Onboarding-Schritt **Punkteeinlösung** gelten feste V1-Faktoren:
+
+- Sparsam: 0,8
+- Normal: 1,0
+- Großzügig: 1,1
+- Premium: 1,2
+
+Berechnung:
+
+```text
+Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
+```
+
+Diese Faktoren dienen der Onboarding-Empfehlung. Keine neue Preislogik, keine
+neue Tages-PIN-Logik und keine neue Bonus-Boost-Logik wird daraus abgeleitet.
+
+---
+
+# 76. LOCK Kriterien
 
 Diese CTO-Entscheidungsdatei gilt als LOCK, wenn:
 
@@ -1633,7 +1657,7 @@ Diese CTO-Entscheidungsdatei gilt als LOCK, wenn:
 
 ---
 
-# 76. Codex-Regeln
+# 77. Codex-Regeln
 
 Wenn Codex diese Datei liest:
 

@@ -279,7 +279,7 @@ Finale V1-Struktur:
 1. Restaurant
 2. Aussehen
 3. Geöffnet
-4. Belohnen
+4. Punkteeinlösung
 5. Willkommens-Belohnungen
 6. Restaurant Starter Kit
 7. Startklar
@@ -1416,7 +1416,60 @@ FINAL LOCK
 
 ---
 
-## 42. LOCK Kriterien
+## 42. Phase – Onboarding Bonus-Designer Faktoren fixiert
+
+Ziel:
+
+Der Onboarding-Schritt **Punkteeinlösung** verwendet die finalen V1-Faktoren
+für die Großzügigkeitsstufen.
+
+Änderung:
+
+- Sparsam: 0,8
+- Normal: 1,0
+- Großzügig: 1,1
+- Premium: 1,2
+- Die Empfehlung berechnet sich aus:
+  Durchschnittsbon × gewünschte Besuche bis erste Freude × Faktor.
+
+Warum:
+
+Restaurantbesitzer sollen im Onboarding eine einfache und verlässliche
+Empfehlung sehen. Die Faktoren sind fest und werden nicht als neue
+Preis-/Payment- oder Bonus-Boost-Logik interpretiert.
+
+Status:
+
+LOCK
+
+---
+
+## 43. Phase – Onboarding Schritt 4 Punkteeinlösung
+
+Ziel:
+
+Der Onboarding-Schritt 4 heißt nicht mehr „Belohnen“, sondern
+**Punkteeinlösung**.
+
+Änderung:
+
+- Step-Navigation: `Punkteeinlösung`
+- Seitentitel: `Wie sollen Gäste Punkte einlösen?`
+- Erklärung: Gäste lösen später gesammelte Punkte gegen ein Produkt ein.
+- Schritt 5 bleibt `Willkommensgeschenke`.
+
+Warum:
+
+„Belohnen“ war zu allgemein und konnte mit Willkommensgeschenken verwechselt
+werden. Schritt 4 beschreibt die normale spätere Punkte-Einlösung.
+
+Status:
+
+LOCK
+
+---
+
+## 44. LOCK Kriterien
 
 Dieser Changelog gilt als LOCK, wenn:
 
@@ -1429,7 +1482,7 @@ Dieser Changelog gilt als LOCK, wenn:
 
 ---
 
-## 43. Codex-Regeln
+## 45. Codex-Regeln
 
 Wenn Codex diesen Changelog liest:
 

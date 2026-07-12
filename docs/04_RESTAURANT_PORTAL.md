@@ -387,6 +387,35 @@ Eine Entscheidung
 
 ## 13. Technische Regeln
 
+### 13.0 Onboarding Bonus-Designer
+
+Onboarding Schritt 4 heißt **Punkteeinlösung**, nicht mehr „Belohnen“.
+
+In diesem Schritt legt der Restaurantbesitzer fest, ab wann Gäste ihre Punkte
+gegen ein Produkt einlösen können.
+
+Für diese Punkteeinlösung gelten feste V1-Großzügigkeitsfaktoren:
+
+- Sparsam: 0,8
+- Normal: 1,0
+- Großzügig: 1,1
+- Premium: 1,2
+
+Berechnung:
+
+```text
+Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
+```
+
+Beispiel:
+
+```text
+18 € × 5 Besuche × 0,8 = 72 €
+```
+
+Diese Faktoren gelten für den Onboarding-Bonus-Designer und dürfen nicht mit
+späteren Bonus-Boost- oder Tages-PIN-Regeln vermischt werden.
+
 ### 13.1 RLS bleibt Quelle der Sicherheit
 
 Frontend darf unterstützen, aber nicht Sicherheit ersetzen.

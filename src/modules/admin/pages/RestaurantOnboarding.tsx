@@ -94,7 +94,7 @@ const steps = [
   "Restaurant",
   "Aussehen",
   "Geöffnet",
-  "Belohnen",
+  "Punkteeinlösung",
   "Willkommens-Belohnungen",
   "Restaurant Starter Kit",
   "Startklar",
@@ -104,7 +104,7 @@ const stepTitles = [
   "Erzähl uns etwas über dein Restaurant.",
   "Wie soll dein Restaurant aussehen?",
   "Wann hast du geöffnet?",
-  "Wie möchtest du deine Gäste belohnen?",
+  "Wie sollen Gäste Punkte einlösen?",
   "Welche Willkommens-Belohnungen möchtest du anbieten?",
   "Restaurant Starter Kit",
   "Herzlichen Glückwunsch! Dein Restaurant ist startklar.",
@@ -141,17 +141,10 @@ const defaultOpeningHours: Record<Weekday, OpeningDay> = {
 };
 
 const generosityMultiplier: Record<Generosity, number> = {
-  Sparsam: 0.9,
+  Sparsam: 0.8,
   Normal: 1,
   Großzügig: 1.1,
   Premium: 1.2,
-};
-
-const generosityValue: Record<Generosity, number> = {
-  Sparsam: 0.06,
-  Normal: 0.08,
-  Großzügig: 0.1,
-  Premium: 0.12,
 };
 
 const starterRewardTemplates: StarterRewardTemplate[] = [
@@ -295,7 +288,7 @@ function calculateBonus(averageBill: number, firstRewardVisits: number, generosi
   const pointsPerEuro = generosityMultiplier[generosity];
   const amountPerPoint = Number((1 / pointsPerEuro).toFixed(4));
   const firstRewardPoints = Math.max(10, Math.round(cleanAverageBill * cleanVisits * pointsPerEuro));
-  const rewardValueEuro = Number((cleanAverageBill * generosityValue[generosity]).toFixed(2));
+  const rewardValueEuro = Number((cleanAverageBill * cleanVisits * pointsPerEuro).toFixed(2));
 
   return {
     pointsPerEuro,
@@ -1749,6 +1742,7 @@ export function RestaurantOnboarding() {
           {step === 3 ? (
             <section className="wizard-screen">
               <h2>{stepTitles[3]}</h2>
+              <p className="muted">Lege fest, ab wann Gäste ihre Punkte gegen ein Produkt einlösen können.</p>
               <div className="grid two">
                 <div className="field">
                   <label htmlFor="average-bill">Was gibt ein Gast durchschnittlich aus?</label>
@@ -1804,7 +1798,7 @@ export function RestaurantOnboarding() {
               <article className="calculation-card">
                 <strong>Unsere Empfehlung für dich</strong>
                 <p className="muted">
-                  Dein Bonusziel fühlt sich nach ca. {form.firstRewardVisits} Besuchen erreichbar an. Empfohlener Wert: ca. {bonus.rewardValueEuro.toFixed(2)} €.
+                  Dein Bonusziel fühlt sich nach ca. {form.firstRewardVisits} Besuchen erreichbar an. Empfohlenes Bonusziel: ca. {bonus.rewardValueEuro.toFixed(2)} €.
                 </p>
               </article>
             </section>

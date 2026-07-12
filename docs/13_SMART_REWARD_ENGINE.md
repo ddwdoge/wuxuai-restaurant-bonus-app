@@ -1034,13 +1034,14 @@ expliziter Demo-Modus aktiv ist.
 
 ---
 
-## 28. Großzügigkeitsfaktoren
+## 28. Großzügigkeitsfaktoren im Onboarding
 
-Für Punktebuchungen über Rechnungsstufen gelten feste V1-Faktoren:
+Für den Onboarding-Bonus-Designer im Schritt **Punkteeinlösung** gelten feste
+V1-Faktoren:
 
 | Einstellung | Faktor |
 |-------------|--------|
-| Sparsam | 0,9 |
+| Sparsam | 0,8 |
 | Normal | 1,0 |
 | Großzügig | 1,1 |
 | Premium | 1,2 |
@@ -1048,15 +1049,21 @@ Für Punktebuchungen über Rechnungsstufen gelten feste V1-Faktoren:
 Berechnung:
 
 ```text
-points = round(min_amount * multiplier)
+Durchschnittsbon × gewünschte Besuche bis erste Freude × Großzügigkeitsfaktor
 ```
 
-Regeln:
+Beispiel:
 
-- `min_amount` ist der Mindestbetrag der erreichten Rechnungsstufe.
-- Die obere Grenze der Stufe wird nicht verwendet.
-- Der echte Rechnungsbetrag wird nicht direkt als Punktewert verwendet.
-- Customer Portal Vorschau und RPC-Buchung müssen identisch rechnen.
+```text
+18 € × 5 Besuche = 90 €
+Sparsam: 90 € × 0,8 = 72 €
+Normal: 90 € × 1,0 = 90 €
+Großzügig: 90 € × 1,1 = 99 €
+Premium: 90 € × 1,2 = 108 €
+```
+
+Diese Faktoren betreffen den Onboarding-Bonus-Designer. Bestehende
+Tages-PIN-, Bonus-Boost- und RPC-Regeln werden dadurch nicht geaendert.
 
 ---
 
