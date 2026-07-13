@@ -118,10 +118,62 @@ export function App() {
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
       </Route>
       <Route
+        path="/admin/platform"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "platform_owner",
+              "platform_admin",
+              "app_admin",
+              "super_admin",
+              "wuxuai_admin",
+              "support",
+              "billing_admin",
+              "security_admin",
+              "viewer",
+            ]}
+            roleScope="platform"
+          >
+            {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/platform/restaurants/:restaurantId"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "platform_owner",
+              "platform_admin",
+              "app_admin",
+              "super_admin",
+              "wuxuai_admin",
+              "support",
+              "billing_admin",
+              "security_admin",
+              "viewer",
+            ]}
+            roleScope="platform"
+          >
+            {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/platform-admin"
         element={
           <ProtectedRoute
-            allowedRoles={["platform_owner", "platform_admin", "support", "billing_admin", "security_admin", "viewer"]}
+            allowedRoles={[
+              "platform_owner",
+              "platform_admin",
+              "app_admin",
+              "super_admin",
+              "wuxuai_admin",
+              "support",
+              "billing_admin",
+              "security_admin",
+              "viewer",
+            ]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -132,7 +184,17 @@ export function App() {
         path="/platform-admin/restaurants"
         element={
           <ProtectedRoute
-            allowedRoles={["platform_owner", "platform_admin", "support", "billing_admin", "security_admin", "viewer"]}
+            allowedRoles={[
+              "platform_owner",
+              "platform_admin",
+              "app_admin",
+              "super_admin",
+              "wuxuai_admin",
+              "support",
+              "billing_admin",
+              "security_admin",
+              "viewer",
+            ]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}

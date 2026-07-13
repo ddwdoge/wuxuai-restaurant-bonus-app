@@ -25,7 +25,17 @@ const demoUser = {
   user_metadata: {},
 } as User;
 
-const platformRoles: PlatformRole[] = ["platform_owner", "platform_admin", "support", "billing_admin", "security_admin", "viewer"];
+const platformRoles: PlatformRole[] = [
+  "platform_owner",
+  "platform_admin",
+  "app_admin",
+  "super_admin",
+  "wuxuai_admin",
+  "support",
+  "billing_admin",
+  "security_admin",
+  "viewer",
+];
 const restaurantRoles: RestaurantUserRole[] = ["owner", "admin", "manager", "staff", "supervisor", "customer"];
 const restaurantRolePriority: RestaurantUserRole[] = ["owner", "admin", "manager"];
 

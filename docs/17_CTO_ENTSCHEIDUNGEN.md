@@ -14,6 +14,47 @@ Jede Entscheidung in diesem Dokument wurde getroffen, um das Produkt einfacher, 
 
 Codex darf diese Entscheidungen nicht ignorieren, nicht „optimieren“, nicht durch eigene Annahmen ersetzen und nicht gegen sie arbeiten.
 
+## 0.1 WUXUAI Admin Restaurant-Verwaltung V1
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Die interne WUXUAI Admin Restaurant-Verwaltung ist ein Plattformwerkzeug,
+nicht Teil des Restaurant Portals.
+
+Route:
+
+```text
+/admin/platform
+```
+
+Regeln:
+
+- Nur Plattformrollen dürfen globale Restaurantdaten sehen.
+- Restaurant Owner dürfen diese Seite nicht öffnen.
+- Plattform-Admin und Restaurantrolle bleiben getrennt.
+- Globale Restaurantdaten werden über sichere Plattform-RPCs geladen.
+- Statusänderungen werden auditiert.
+- Keine Impersonation in V1.
+- Keine Löschung von Restaurants in V1.
+- Stripe-Automation bleibt ein Folgeblock.
+
+V1 erlaubt:
+
+- Restaurantliste
+- Restaurantdetails
+- Suche und Filter
+- Status aktiv / pausiert / gesperrt speichern
+- Trial-/Abo-Anzeige
+- Audit-Auszug
+
+V1 baut nicht:
+
+- Stripe Checkout
+- Stripe Webhooks
+- Impersonation
+- Feature-Flag-UI
+- komplexe Support-Workflows
+
 ---
 
 ## 1. Zweck dieses Dokuments

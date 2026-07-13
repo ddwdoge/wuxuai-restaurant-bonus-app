@@ -22,6 +22,9 @@ export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant
   }
 
   if (!activeRole || !allowedRoles.includes(activeRole)) {
+    if (roleScope === "platform") {
+      return <div className="auth-shell">Du hast keinen Zugriff auf diese Seite.</div>;
+    }
     return <Navigate to="/" replace />;
   }
 

@@ -11,6 +11,51 @@ das Kundenportal und **nicht** das Staff Portal.
 
 Es ist die interne Steuerzentrale für WUXUAI.
 
+## 0.1 V1 Restaurant-Verwaltung
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Die interne Restaurant-Verwaltung ist als V1-Basis vorgesehen unter:
+
+```text
+/admin/platform
+/admin/platform/restaurants/:id
+```
+
+Sie ist strikt vom Restaurant Portal getrennt und nur für Plattformrollen
+gedacht:
+
+- platform_owner
+- platform_admin
+- app_admin
+- super_admin
+- wuxuai_admin
+- support
+- billing_admin
+- security_admin
+- viewer
+
+Schreibaktionen bleiben auf Schreibrollen begrenzt. Lesende Rollen sehen
+Restaurantliste und Details, aber keine aktiven Schreibaktionen.
+
+V1 zeigt:
+
+- Restaurants gesamt
+- aktive Restaurants
+- aktive Testphasen
+- bald ablaufende Testphasen
+- gesperrte Restaurants
+- neue Restaurants heute
+- Restaurantliste mit Suche und Filter
+- Restaurantdetails
+- Trial-/Abo-Daten, falls vorhanden
+- QR-/Portal-Links
+- Statusverwaltung aktiv / pausiert / gesperrt
+- Audit-Auszug
+
+Alle globalen Restaurantdaten werden über sichere Plattform-RPCs geladen.
+Normale Restaurantbesitzer dürfen diese globale Seite nicht sehen.
+
 ------------------------------------------------------------------------
 
 ## 1. Zweck dieses Dokuments

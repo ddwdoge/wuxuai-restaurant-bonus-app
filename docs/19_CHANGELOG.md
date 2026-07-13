@@ -39,6 +39,37 @@ Der Changelog beantwortet später Fragen wie:
 
 Der Changelog schützt das Projekt vor Vergessen.
 
+## 1.1 2026-07-13 - WUXUAI Admin Restaurant-Verwaltung
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Die interne WUXUAI Admin Restaurant-Verwaltung wurde als V1-Basis
+ausgebaut.
+
+Geändert:
+
+- neue interne Route `/admin/platform`
+- Detailroute `/admin/platform/restaurants/:id`
+- Plattformrollen erweitert um `app_admin`, `super_admin`, `wuxuai_admin`
+- Restaurantliste mit Suche und Filter
+- KPI-Übersicht für globale Restaurantdaten
+- Restaurantdetails mit Branding, Trial/Abo, Links, Kennzahlen und Audit-Auszug
+- Statusverwaltung aktiv / pausiert / gesperrt
+- sichere Detail-RPC `get_platform_restaurant_detail(input_restaurant_id)`
+
+Nicht gebaut:
+
+- Stripe-Automation
+- Impersonation
+- Löschfunktion
+- Restaurant-Produktlogik
+- Customer-/Staff-/Punkte-Logik
+
+Offen:
+
+- Migration muss noch auf Supabase Staging angewendet werden, sobald ein
+  `SUPABASE_ACCESS_TOKEN` verfügbar ist.
+
 ---
 
 ## 2. Änderungsregel

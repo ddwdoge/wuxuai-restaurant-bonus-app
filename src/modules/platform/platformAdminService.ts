@@ -6,8 +6,12 @@ export type RestaurantStatus = "active" | "draft" | "suspended";
 
 export type PlatformSummary = {
   restaurants_total: number;
+  active_restaurants?: number;
   active_trials: number;
+  expiring_trials?: number;
   expired_trials: number;
+  suspended_restaurants?: number;
+  new_restaurants_today?: number;
   active_subscriptions: number;
   open_payments: number;
   points_today: number;
@@ -51,8 +55,12 @@ type PlatformRestaurantsResponse = {
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
+  active_restaurants: 0,
   active_trials: 0,
+  expiring_trials: 0,
   expired_trials: 0,
+  suspended_restaurants: 0,
+  new_restaurants_today: 0,
   active_subscriptions: 0,
   open_payments: 0,
   points_today: 0,
@@ -62,14 +70,54 @@ const emptySummary: PlatformSummary = {
 function normalizeSummary(summary?: Partial<PlatformSummary>): PlatformSummary {
   return {
     restaurants_total: Number(summary?.restaurants_total ?? 0),
+    active_restaurants: Number(summary?.active_restaurants ?? 0),
     active_trials: Number(summary?.active_trials ?? 0),
+    expiring_trials: Number(summary?.expiring_trials ?? 0),
     expired_trials: Number(summary?.expired_trials ?? 0),
+    suspended_restaurants: Number(summary?.suspended_restaurants ?? 0),
+    new_restaurants_today: Number(summary?.new_restaurants_today ?? 0),
     active_subscriptions: Number(summary?.active_subscriptions ?? 0),
     open_payments: Number(summary?.open_payments ?? 0),
     points_today: Number(summary?.points_today ?? 0),
     redemptions_today: Number(summary?.redemptions_today ?? 0),
   };
 }
+
+export type PlatformAuditEntry = {
+  id: string;
+  created_at: string;
+  action: string;
+  actor_type: string;
+  actor_id: string | null;
+  target_table: string | null;
+  target_id: string | null;
+};
+
+export type PlatformRestaurantDetail = {
+  restaurant: PlatformRestaurant & {
+    owner_phone?: string | null;
+    restaurant_type?: string | null;
+    language?: string | null;
+  };
+  branding: {
+    logo_url: string | null;
+    primary_color: string | null;
+    secondary_color: string | null;
+    button_color: string | null;
+  } | null;
+  metrics: {
+    customer_count: number;
+    points_transactions_count: number;
+    points_today: number;
+    points_total: number;
+    redemptions_today: number;
+    redemptions_total: number;
+    welcome_gifts_total: number;
+    welcome_gifts_active: number;
+    bonus_boosts_active: number;
+  };
+  audit: PlatformAuditEntry[];
+};
 
 export async function loadPlatformRestaurants() {
   if (!supabase) {
@@ -86,6 +134,22 @@ export async function loadPlatformRestaurants() {
     summary: normalizeSummary(payload.summary),
     restaurants: payload.restaurants ?? [],
   };
+}
+
+export async function loadPlatformRestaurantDetail(restaurantId: string): Promise<PlatformRestaurantDetail> {
+  if (!supabase) {
+    throw new Error("Supabase ist nicht konfiguriert.");
+  }
+
+  const { data, error } = await supabase.rpc("get_platform_restaurant_detail", {
+    input_restaurant_id: restaurantId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as PlatformRestaurantDetail;
 }
 
 export async function updatePlatformRestaurantSubscription(input: {

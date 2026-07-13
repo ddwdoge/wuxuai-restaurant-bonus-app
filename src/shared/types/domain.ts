@@ -1,4 +1,13 @@
-export type PlatformRole = "platform_owner" | "platform_admin" | "support" | "billing_admin" | "security_admin" | "viewer";
+export type PlatformRole =
+  | "platform_owner"
+  | "platform_admin"
+  | "app_admin"
+  | "super_admin"
+  | "wuxuai_admin"
+  | "support"
+  | "billing_admin"
+  | "security_admin"
+  | "viewer";
 export type RestaurantUserRole = "owner" | "admin" | "manager" | "staff" | "supervisor" | "customer";
 export type UserRole = RestaurantUserRole | PlatformRole;
 

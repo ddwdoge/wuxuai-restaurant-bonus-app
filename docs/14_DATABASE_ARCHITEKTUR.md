@@ -182,6 +182,33 @@ Regeln:
 - keine Experimente mit Kundendaten
 - Production wird erst nach Staging-Abnahme genutzt
 
+### 3.4 Plattform-Admin-RPCs
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Globale Restaurantdaten für das WUXUAI Admin Portal dürfen nicht direkt
+über öffentliche Tabellenzugriffe geladen werden.
+
+V1 nutzt sichere `security definer` RPCs:
+
+```text
+get_platform_restaurants()
+get_platform_restaurant_detail(input_restaurant_id)
+update_platform_restaurant_subscription(...)
+```
+
+Diese Funktionen prüfen serverseitig die Plattformrolle über
+`current_platform_role()` / `is_platform_admin()`.
+
+Nicht erlaubt:
+
+- public select auf globale Restaurantlisten
+- anon Zugriff auf Plattformdaten
+- Restaurant Owner Zugriff auf fremde Restaurants
+- Service Role im Frontend
+
+Status- und Abo-Änderungen werden über `audit_log` protokolliert.
+
 ---
 
 ## 4. Kernschema
