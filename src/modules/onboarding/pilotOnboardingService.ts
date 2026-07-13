@@ -1,7 +1,5 @@
 import {
   demoBranding,
-  demoCampaigns,
-  demoCoupons,
   demoLoyaltySettings,
   demoRestaurant,
   demoRewards,
@@ -49,7 +47,7 @@ export type StarterRewardInput = {
 };
 
 export type OnboardingDraftState<TDraft> = {
-  onboardingStatus: "draft" | "ready";
+  onboardingStatus: "draft" | "ready" | "completed";
   currentStep: number;
   draftData: Partial<TDraft> | null;
   checklist: Record<string, boolean>;
@@ -59,10 +57,13 @@ export type SetupChecklist = {
   brandingCompleted: boolean;
   loyaltyModeSelected: boolean;
   firstRewardCreated: boolean;
-  firstCampaignActive: boolean;
   staffMemberCreated: boolean;
   qrReady: boolean;
 };
+
+const CURRENT_ONBOARDING_LAST_STEP = 6;
+const CURRENT_ONBOARDING_STRUCTURE_VERSION = 3;
+const ZERO_BASED_ONBOARDING_STRUCTURE_VERSION = 2;
 
 export function isDemoMode() {
   return !isSupabaseConfigured;
@@ -232,18 +233,18 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
   return { restaurant, offer: rewards?.[0] ?? null, campaign: null };
 }
 
-function normalizeOnboardingStep(rawStep: unknown) {
-  const step = Math.max(0, Number(rawStep ?? 0));
+function normalizeOnboardingStep(rawStep: unknown, draftData?: unknown) {
+  const step = Math.max(0, Number(rawStep ?? 1));
+  const draftStructureVersion =
+    typeof draftData === "object" && draftData !== null && "onboardingStructureVersion" in draftData
+      ? Number((draftData as { onboardingStructureVersion?: unknown }).onboardingStructureVersion)
+      : null;
 
-  if (step >= 7) {
-    return 6;
+  if (draftStructureVersion === ZERO_BASED_ONBOARDING_STRUCTURE_VERSION) {
+    return Math.min(CURRENT_ONBOARDING_LAST_STEP, step);
   }
 
-  if (step >= 5) {
-    return 5;
-  }
-
-  return Math.min(4, step);
+  return Math.max(0, Math.min(CURRENT_ONBOARDING_LAST_STEP, step - 1));
 }
 
 export async function loadOnboardingDraft<TDraft>(restaurantId: string): Promise<OnboardingDraftState<TDraft>> {
@@ -273,8 +274,8 @@ export async function loadOnboardingDraft<TDraft>(restaurantId: string): Promise
   if (draftError) throw draftError;
 
   return {
-    onboardingStatus: (restaurant.onboarding_status as "draft" | "ready") ?? "draft",
-    currentStep: normalizeOnboardingStep(draft?.current_step),
+    onboardingStatus: (restaurant.onboarding_status as "draft" | "ready" | "completed") ?? "draft",
+    currentStep: normalizeOnboardingStep(draft?.current_step, draft?.draft_data),
     draftData: (draft?.draft_data as Partial<TDraft> | null) ?? null,
     checklist: (draft?.checklist as Record<string, boolean> | null) ?? (restaurant.onboarding_checklist as Record<string, boolean>) ?? {},
   };
@@ -290,13 +291,21 @@ export async function saveOnboardingDraft<TDraft>(
     return;
   }
 
+  const draftPayload =
+    typeof draftData === "object" && draftData !== null && !Array.isArray(draftData)
+      ? {
+          ...draftData,
+          onboardingStructureVersion: CURRENT_ONBOARDING_STRUCTURE_VERSION,
+        }
+      : draftData;
+
   const { error } = await supabase
     .from("restaurant_onboarding_drafts")
     .upsert(
       {
         restaurant_id: restaurantId,
-        current_step: Math.max(0, Math.min(6, currentStep)),
-        draft_data: draftData,
+        current_step: Math.max(1, Math.min(CURRENT_ONBOARDING_LAST_STEP + 1, currentStep + 1)),
+        draft_data: draftPayload,
         checklist,
       },
       { onConflict: "restaurant_id" },
@@ -310,36 +319,29 @@ export async function loadSetupChecklist(restaurantId: string): Promise<SetupChe
     return {
       brandingCompleted: Boolean(demoBranding.primary_color),
       loyaltyModeSelected: Boolean(demoLoyaltySettings.loyalty_mode),
-      firstRewardCreated: demoRewards.length + demoCoupons.length > 0,
-      firstCampaignActive: demoCampaigns.some((campaign) => campaign.status === "active"),
+      firstRewardCreated: demoRewards.some((reward) => reward.is_starter_reward && reward.active),
       staffMemberCreated: true,
       qrReady: true,
     };
   }
 
-  const [branding, loyalty, rewards, coupons, campaigns, staff] = await Promise.all([
+  const [branding, loyalty, rewards, staff] = await Promise.all([
     supabase.from("restaurant_branding").select("id, logo_url, primary_color, button_color").eq("restaurant_id", restaurantId).maybeSingle(),
     supabase.from("loyalty_settings").select("id, loyalty_mode").eq("restaurant_id", restaurantId).maybeSingle(),
     supabase.from("rewards").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("is_starter_reward", true).eq("active", true),
-    supabase.from("coupons").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "active"),
-    supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "active"),
     supabase.from("staff_members").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("active", true),
   ]);
 
-  for (const result of [branding, loyalty, rewards, coupons, campaigns, staff]) {
+  for (const result of [branding, loyalty, rewards, staff]) {
     if (result.error) throw result.error;
   }
-
-  const activeOffers = (rewards.count ?? 0) + (coupons.count ?? 0);
-  const activeCampaigns = campaigns.count ?? 0;
 
   return {
     brandingCompleted: Boolean(branding.data?.primary_color && branding.data?.button_color),
     loyaltyModeSelected: Boolean(loyalty.data?.loyalty_mode),
-    firstRewardCreated: activeOffers > 0,
-    firstCampaignActive: activeCampaigns > 0,
+    firstRewardCreated: (rewards.count ?? 0) > 0,
     staffMemberCreated: (staff.count ?? 0) > 0,
-    qrReady: activeCampaigns > 0,
+    qrReady: true,
   };
 }
 

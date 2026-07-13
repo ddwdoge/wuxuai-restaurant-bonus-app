@@ -462,7 +462,30 @@ Wenn abgeschlossen: - Restaurant Portal freigeschaltet
 
 SettingsPage ist eigene Seite.
 
-### 13.4 Einstellungen mit echten Daten
+### 13.4 Onboarding Fortschritt
+
+Onboarding-Fortschritt ist reload-sicher.
+
+Gespeichert werden:
+
+- aktueller Schritt
+- Formularwerte
+- Punkteeinlösungsquote
+- Willkommens-Belohnungen
+- Branding und Logo-Link
+- Öffnungszeiten
+- Checkliste
+
+Jeder Schrittwechsel wird sofort gespeichert. Zusätzlich läuft Autosave bei
+Feldänderungen.
+
+Beim erneuten Öffnen lädt der Wizard den gespeicherten Draft aus Supabase und
+öffnet den zuletzt gespeicherten Schritt.
+
+Wenn `onboarding_status` abgeschlossen ist, öffnet der Restaurantbesitzer das
+Dashboard und nicht erneut Schritt 1.
+
+### 13.5 Einstellungen mit echten Daten
 
 Einstellungen dürfen in V1 keine Platzhalter-Funktionen zeigen.
 

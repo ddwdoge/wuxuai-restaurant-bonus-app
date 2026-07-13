@@ -486,6 +486,28 @@ Restaurantbesitzer soll nie fragen:
 
 > Habe ich gespeichert?
 
+### 17.1 Onboarding-Fortschritt ist reload-sicher
+
+🟢 **FIX**
+
+Onboarding-Drafts speichern nicht nur Formulardaten, sondern immer auch den
+aktuellen Wizard-Schritt.
+
+Regel:
+
+- jeder Schrittwechsel wird sofort gespeichert
+- jede Feldänderung wird per Autosave gespeichert
+- Refresh öffnet den zuletzt gespeicherten Schritt
+- alte Drafts aus der früheren Angebotsstruktur werden auf die aktuelle
+  7-Schritt-Struktur gemappt
+- abgeschlossenes Onboarding öffnet das Dashboard statt erneut Schritt 1
+
+Fehler beim Speichern werden sichtbar in Restaurant-Sprache angezeigt:
+
+```text
+Fortschritt konnte gerade nicht gespeichert werden.
+```
+
 ---
 
 ## 18. „So funktioniert’s“ nicht dauerhaft sichtbar

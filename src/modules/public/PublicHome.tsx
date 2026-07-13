@@ -31,7 +31,7 @@ export function PublicHome() {
           <Link className="public-entry-card" to="/customer">
             <QrCode size={40} />
             <div>
-              <h2>Customer QR / Bonus</h2>
+              <h2>Bonus-QR für Gäste</h2>
               <p>Für Gäste, die ihren Bonus öffnen möchten.</p>
             </div>
           </Link>

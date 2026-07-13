@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useNavigate } from "react-router-dom";
-import { slugifyCampaign } from "../../campaigns/campaignService";
 import { useAuth } from "../../auth/AuthProvider";
 import {
   completePilotOnboarding,
@@ -331,6 +330,16 @@ function formatEuro(value: number, fixedCents = false) {
     minimumFractionDigits: fixedCents || hasCents ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function slugifyRestaurant(value: string) {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  return slug || "restaurant";
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -1043,6 +1052,18 @@ function missingChecklistItems(checklist: Record<keyof typeof checklistLabels, b
     .map(([, label]) => label);
 }
 
+function buildChecklist(form: OnboardingForm, step: number) {
+  return {
+    restaurantDataCompleted: Boolean(form.restaurantName.trim() && form.restaurantType && form.language),
+    brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
+    openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
+    bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
+    firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
+    qrReady: true,
+    guestTestReady: step >= 5,
+  };
+}
+
 function getStepBlocker(
   step: number,
   form: OnboardingForm,
@@ -1095,24 +1116,13 @@ export function RestaurantOnboarding() {
     [form.averageBill, form.firstRewardVisits, form.generosity],
   );
 
-  const restaurantSlug = slugifyCampaign(form.restaurantName || "restaurant");
+  const restaurantSlug = slugifyRestaurant(form.restaurantName || "restaurant");
   const restaurantQrUrl = `${window.location.origin}/customer/${restaurantSlug}`;
   const bonusQrUrl = `${window.location.origin}/w/${restaurantSlug}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 
-  const checklist = useMemo(
-    () => ({
-      restaurantDataCompleted: Boolean(form.restaurantName.trim() && form.restaurantType && form.language),
-      brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
-      openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
-      bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
-      firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
-      qrReady: true,
-      guestTestReady: step >= 5,
-    }),
-    [form, step],
-  );
+  const checklist = useMemo(() => buildChecklist(form, step), [form, step]);
 
   const allReady = Object.values(checklist).every(Boolean);
   const stepBlocker = getStepBlocker(step, form, checklist);
@@ -1157,7 +1167,7 @@ export function RestaurantOnboarding() {
           return;
         }
 
-        if (draft.onboardingStatus === "ready") {
+        if (draft.onboardingStatus === "ready" || draft.onboardingStatus === "completed") {
           navigate("/admin", { replace: true });
           return;
         }
@@ -1210,7 +1220,8 @@ export function RestaurantOnboarding() {
       saveOnboardingDraft(activeRestaurant.id, step, form, checklist)
         .catch((error) => {
           if (!cancelled) {
-            setStatus(error instanceof Error ? error.message : "Entwurf konnte nicht gespeichert werden.");
+            console.error("Onboarding-Fortschritt konnte nicht gespeichert werden.", error);
+            setStatus("Fortschritt konnte gerade nicht gespeichert werden.");
           }
         })
         .finally(() => {
@@ -1225,6 +1236,25 @@ export function RestaurantOnboarding() {
       window.clearTimeout(timeout);
     };
   }, [activeRestaurant?.id, checklist, draftLoading, form, step, tenantLoading]);
+
+  async function persistDraftSnapshot(nextStep: number, nextForm: OnboardingForm) {
+    if (!activeRestaurant?.id || tenantLoading || draftLoading) {
+      return true;
+    }
+
+    setSaving(true);
+
+    try {
+      await saveOnboardingDraft(activeRestaurant.id, nextStep, nextForm, buildChecklist(nextForm, nextStep));
+      return true;
+    } catch (error) {
+      console.error("Onboarding-Fortschritt konnte nicht gespeichert werden.", error);
+      setStatus("Fortschritt konnte gerade nicht gespeichert werden.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function updateOpeningDay(day: Weekday, nextDay: Partial<OpeningDay>) {
     setForm((current) => ({
@@ -1385,29 +1415,40 @@ export function RestaurantOnboarding() {
     setHowItWorksOpen(false);
   }
 
-  function goToPreviousStep() {
+  async function goToPreviousStep() {
     if (starterRewardConfirmationOpen) {
-      setForm((current) => ({ ...current, starterRewardConfirmed: false }));
+      const nextForm = { ...form, starterRewardConfirmed: false };
+      setForm(nextForm);
       setStatus(null);
+      await persistDraftSnapshot(step, nextForm);
       return;
     }
 
-    setStep((current) => Math.max(0, current - 1));
+    const nextStep = Math.max(0, step - 1);
+    setStatus(null);
+    if (await persistDraftSnapshot(nextStep, form)) {
+      setStep(nextStep);
+    }
   }
 
-  function goToNextStep() {
+  async function goToNextStep() {
     if (stepBlocker) {
       return;
     }
 
     if (step === 4 && form.starterRewards.length > 0 && !form.starterRewardConfirmed) {
+      const nextForm = { ...form, starterRewardConfirmed: true };
       setStatus(null);
-      setForm((current) => ({ ...current, starterRewardConfirmed: true }));
+      setForm(nextForm);
+      await persistDraftSnapshot(step, nextForm);
       return;
     }
 
+    const nextStep = Math.min(steps.length - 1, step + 1);
     setStatus(null);
-    setStep((current) => Math.min(steps.length - 1, current + 1));
+    if (await persistDraftSnapshot(nextStep, form)) {
+      setStep(nextStep);
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -1465,7 +1506,7 @@ export function RestaurantOnboarding() {
   }
 
   if (tenantLoading || draftLoading) {
-    return <div className="auth-shell">Dein Bonusprogramm wird vorbereitet...</div>;
+    return <div className="auth-shell">Onboarding wird geladen …</div>;
   }
 
   if (!activeRestaurant) {

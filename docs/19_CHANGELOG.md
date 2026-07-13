@@ -1577,6 +1577,41 @@ LOCK
 
 ---
 
+## 45.1 Phase – Onboarding Fortschritt reload-sicher
+
+Problem:
+
+Beim Reload konnte der Onboarding-Wizard wieder auf Schritt 1 fallen, obwohl der
+Restaurantbesitzer bereits weiter war.
+
+Ursache:
+
+Der Wizard nutzte zwar Autosave, aber Schrittwechsel mussten ebenfalls sofort
+und versionssicher im Onboarding-Draft gespeichert werden.
+
+Änderung:
+
+- `current_step` wird beim Weiter- und Zurückgehen sofort gespeichert.
+- Feldänderungen bleiben zusätzlich per Autosave gespeichert.
+- Drafts erhalten eine Wizard-Strukturversion.
+- Alte Draft-Schritte aus der früheren Angebotsstruktur werden weiterhin auf
+  die aktuelle 7-Schritt-Struktur gemappt.
+- Speichern-Fehler erscheinen sichtbar auf Deutsch:
+  „Fortschritt konnte gerade nicht gespeichert werden.“
+
+Nicht geändert:
+
+- keine neue Produktlogik
+- keine neue Datenbankstruktur
+- keine Kampagnen oder Aktionen
+- keine QR-, Punkte-, Tages-PIN- oder Willkommensgeschenk-Logik
+
+Status:
+
+LOCK
+
+---
+
 ## 46. LOCK Kriterien
 
 Dieser Changelog gilt als LOCK, wenn:
@@ -1603,3 +1638,47 @@ Wenn Codex diesen Changelog liest:
 ---
 
 Endstatus: **LOCK**
+
+---
+
+## 48. Phase – Kritischer technischer Cleanup Migration, UI-Text und Setup-Checklist
+
+Problem:
+
+Der App-Audit vom 2026-07-13 fand drei konkrete Blocker:
+
+- zwei lokale Supabase-Migrationen verwendeten denselben Timestamp `20260712001000`
+- die öffentliche Startseite zeigte den englischen sichtbaren Text
+  `Customer QR / Bonus`
+- `loadSetupChecklist` nutzte noch alte Campaign-/Coupon-Pfade als V1-Setup-
+  Kriterien
+
+Änderung:
+
+- Die bereits auf Staging angewendete Migration
+  `20260712001000_welcome_gifts_status_update_fix.sql` bleibt unverändert.
+- Die noch nicht auf Staging bestätigte Einlösequoten-Migration wurde auf
+  `20260712002000_loyalty_redemption_return_rate.sql` verschoben.
+- Die öffentliche Startseite zeigt jetzt `Bonus-QR für Gäste`.
+- `loadSetupChecklist` prüft für V1 keine Campaigns oder Coupons mehr.
+- QR-Bereitschaft ist nicht mehr an aktive Kampagnen gekoppelt.
+
+Nicht geändert:
+
+- keine Tabellen gelöscht
+- keine neue Produktlogik
+- keine Aktionen oder Kampagnen zurückgebracht
+- keine Tages-PIN-, Punkte-, Willkommensgeschenk- oder Bonus-Boost-Logik geändert
+
+Staging:
+
+`npx supabase db push --include-all` wurde nach Bereitstellung eines
+temporären Supabase Access Tokens ausgeführt.
+
+Angewendet:
+
+- `20260712002000_loyalty_redemption_return_rate.sql`
+
+Status:
+
+LOCK
