@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
-import { PublicHome } from "../modules/public/PublicHome";
+import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
 import { useTenant } from "../modules/tenant/TenantProvider";
 
 const RegisterPage = lazy(() => import("../modules/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })));
@@ -148,7 +148,7 @@ export function App() {
         }
       />
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
-      <Route path="/customer" element={<PublicHome />} />
+      <Route path="/customer" element={<GuestBonusInfoPage />} />
       <Route path="/customer/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
       <Route path="/w/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
       <Route path="*" element={<Navigate to="/" replace />} />

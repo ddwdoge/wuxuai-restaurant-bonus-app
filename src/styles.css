@@ -773,7 +773,9 @@ a {
   background: #f6f7f9;
   display: flex;
   min-height: 100vh;
+  overflow-x: hidden;
   padding: 24px;
+  width: 100%;
 }
 
 .public-entry {
@@ -781,6 +783,7 @@ a {
   gap: 28px;
   margin: 0 auto;
   max-width: 860px;
+  min-width: 0;
   width: 100%;
 }
 
@@ -790,6 +793,7 @@ a {
   line-height: 1.05;
   margin: 12px 0 10px;
   max-width: 620px;
+  overflow-wrap: anywhere;
 }
 
 .public-entry-grid {
@@ -803,25 +807,76 @@ a {
   background: #ffffff;
   border: 1px solid #dde3ea;
   border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
   display: grid;
   gap: 18px;
   min-height: 220px;
+  min-width: 0;
   padding: 24px;
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.public-entry-card:hover {
+.public-entry-card:hover,
+.public-entry-card:focus-visible {
   border-color: var(--tenant-primary, #0f766e);
+  box-shadow: 0 16px 36px rgba(15, 118, 110, 0.14);
+  transform: translateY(-2px);
+}
+
+.public-entry-card:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.28);
+  outline-offset: 3px;
 }
 
 .public-entry-card h2 {
   font-size: 24px;
   letter-spacing: 0;
   margin: 0 0 8px;
+  overflow-wrap: anywhere;
 }
 
 .public-entry-card p {
   color: #607080;
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.public-entry-action {
+  align-items: center;
+  color: var(--tenant-primary, #0f766e);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.guest-entry-page {
+  max-width: 720px;
+}
+
+.guest-entry-card {
+  background: #ffffff;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: 28px;
+}
+
+.guest-entry-card h2 {
+  font-size: 24px;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.guest-entry-card p {
+  color: #607080;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
 }
 
 .tablet-actions {

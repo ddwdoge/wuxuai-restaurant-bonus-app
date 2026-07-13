@@ -1682,3 +1682,34 @@ Angewendet:
 Status:
 
 LOCK
+
+---
+
+## 49. Phase – Startseite Karten klickbar und Gasttext deutsch
+
+Problem:
+
+Die öffentliche Startseite zeigte eine Gast-Karte mit englischem Text und die
+Karten wirkten optisch zu wenig wie klare Aktionen.
+
+Änderung:
+
+- `Customer QR / Bonus` wurde durch `Gast-Bonus öffnen` ersetzt.
+- Die Gast-Karte erklärt jetzt: `Für Gäste, die ihr Bonuskonto öffnen oder
+  einen QR-Code scannen möchten.`
+- Alle Startseiten-Karten zeigen eine sichtbare Aktion mit Pfeil.
+- Hover und Tastatur-Fokus sind sichtbar.
+- `/customer` ohne Restaurant-Kontext zeigt eine deutsche Hinweisseite statt
+  erneut die Startseite.
+
+Nicht geändert:
+
+- keine Auth-Logik
+- keine Customer-Token-Logik
+- keine Datenbank
+- keine RPCs
+- keine Punkte-, Tages-PIN-, QR- oder Willkommensgeschenk-Logik
+
+Status:
+
+LOCK
