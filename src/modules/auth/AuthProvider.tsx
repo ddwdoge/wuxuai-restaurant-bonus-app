@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { PlatformRole, RestaurantUserRole, UserRole } from "../../shared/types/domain";
 
 type AuthContextValue = {
@@ -45,7 +45,7 @@ function readAppMetadataPlatformRole(user: User | null): PlatformRole | null {
 
 async function readVerifiedRestaurantRole(user: User): Promise<RestaurantUserRole> {
   if (!supabase) {
-    return readAppMetadataRestaurantRole(user);
+    return isLocalDemoMode ? readAppMetadataRestaurantRole(user) : "customer";
   }
 
   const { data, error } = await supabase
@@ -63,7 +63,7 @@ async function readVerifiedRestaurantRole(user: User): Promise<RestaurantUserRol
 
 async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null> {
   if (!supabase) {
-    return readAppMetadataPlatformRole(user);
+    return isLocalDemoMode ? readAppMetadataPlatformRole(user) : null;
   }
 
   const metadataRole = readAppMetadataPlatformRole(user);
@@ -82,10 +82,10 @@ async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(isSupabaseConfigured ? null : demoUser);
-  const [authLoading, setAuthLoading] = useState(isSupabaseConfigured);
-  const [roleLoading, setRoleLoading] = useState(isSupabaseConfigured);
-  const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(isSupabaseConfigured ? null : "owner");
+  const [user, setUser] = useState<User | null>(isLocalDemoMode ? demoUser : null);
+  const [authLoading, setAuthLoading] = useState(Boolean(supabase));
+  const [roleLoading, setRoleLoading] = useState(Boolean(supabase));
+  const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(isLocalDemoMode ? "owner" : null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (!supabase) {
+      if (isLocalDemoMode) {
         setRestaurantRole(readAppMetadataRestaurantRole(user));
         setPlatformRole(readAppMetadataPlatformRole(user));
         setRoleLoading(false);
@@ -169,19 +169,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       platformRole,
       loading: authLoading || roleLoading,
       async signIn(email: string, password: string) {
-        if (!supabase) {
+        if (isLocalDemoMode) {
           setUser({ ...demoUser, email });
           return;
+        }
+        if (!supabase) {
+          throw new Error(liveDataUnavailableMessage);
         }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       },
       async signOut() {
-        if (!supabase) {
+        if (isLocalDemoMode) {
           setUser(null);
           return;
         }
-        await supabase.auth.signOut();
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
       },
     }),
     [authLoading, platformRole, restaurantRole, roleLoading, session, user],

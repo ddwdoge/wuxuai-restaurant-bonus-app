@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Gift, QrCode, Smartphone, Sparkles, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { demoCustomers } from "../../../shared/lib/demoData";
-import { supabase } from "../../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../../shared/lib/supabase";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
@@ -24,10 +24,13 @@ async function loadNewMembersToday(restaurantId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoCustomers.filter(
       (customer) => customer.restaurant_id === restaurantId && new Date(customer.created_at) >= today,
     ).length;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { count, error } = await supabase

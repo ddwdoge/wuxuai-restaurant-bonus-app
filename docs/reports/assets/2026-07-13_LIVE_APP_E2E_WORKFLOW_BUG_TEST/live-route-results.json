@@ -1,0 +1,237 @@
+[
+  {
+    "name": "home",
+    "path": "/",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "WUXUAI Bonus\nRestaurant Bonus einfach starten.\n\nEin Login für Restaurants. Ein QR für Gäste.\n\nRestaurant Login\n\nFür Restaurantbesitzer und Manager.\n\nÖffnen\n30 Tage kostenlos starten\n\nFür Restaurants, die ihr Bonusprogramm neu eröffnen.\n\nStarten\nGast-Bonus öffnen\n\nFür Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.\n\nÖffnen"
+    },
+    "messages": []
+  },
+  {
+    "name": "customer-no-token",
+    "path": "/customer",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/customer",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "WUXUAI Bonus\nBonus für Gäste\n\nScanne den QR-Code im Restaurant oder öffne deinen persönlichen Bonus-Link.\n\nSo kommst du zu deinem Bonuskonto\n\nDer QR-Code im Restaurant erkennt automatisch das richtige Bonusprogramm.\n\nWenn du schon Mitglied bist, kannst du deinen persönlichen Bonus-Link erneut öffnen.\n\nZurück zur Startseite"
+    },
+    "messages": []
+  },
+  {
+    "name": "customer-akakiko",
+    "path": "/w/akakiko-hietzing",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/w/akakiko-hietzing",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Daten konnten gerade nicht geladen werden."
+    },
+    "messages": [
+      {
+        "type": "error",
+        "text": "Kundenportal konnte nicht geladen werden. Error: Restaurant konnte nicht geladen werden.\n    at L (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/loyaltyService-CSYgMano.js:1:7346)\n    at a (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3419)\n    at https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3552\n    at fl (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/"
+      }
+    ]
+  },
+  {
+    "name": "customer-slug",
+    "path": "/customer/akakiko-hietzing",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/customer/akakiko-hietzing",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Daten konnten gerade nicht geladen werden."
+    },
+    "messages": [
+      {
+        "type": "error",
+        "text": "Kundenportal konnte nicht geladen werden. Error: Restaurant konnte nicht geladen werden.\n    at L (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/loyaltyService-CSYgMano.js:1:7346)\n    at a (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3419)\n    at https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3552\n    at fl (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/"
+      }
+    ]
+  },
+  {
+    "name": "unknown-slug",
+    "path": "/w/not-existing-restaurant",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/w/not-existing-restaurant",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Daten konnten gerade nicht geladen werden."
+    },
+    "messages": [
+      {
+        "type": "error",
+        "text": "Kundenportal konnte nicht geladen werden. Error: Restaurant konnte nicht geladen werden.\n    at L (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/loyaltyService-CSYgMano.js:1:7346)\n    at a (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3419)\n    at https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/assets/CustomerPortal-CcZwNFVg.js:1:3552\n    at fl (https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "path": "/admin",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "admin-settings",
+    "path": "/admin/settings",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/settings",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "K\nWUXUAI Bonus\nKai Sushi\nRestaurant Portal\naktiv\n Restaurant\nKai Sushi\nDashboard\nPunkteeinlösung\nWillkommensgeschenke\nGäste\nQR Center\nMitarbeiter\nEinstellungen\n\nBitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.\n\nEinstellungen\n\nKai Sushi verwalten.\n\nRestaurantdaten\n\nPasse die wichtigsten Angaben deines Restaurants an.\n\nRestaurantdaten bearbeiten\nBranding\n\nLogo und Darstellung deines Bonusprogramms.\n\nBranding bearbeiten\nÖffnungszeiten\n\nLege fest, wann dein Restaurant geöffnet ist.\n\nÖffnungszeiten bearbeiten\nPunkteeinlösung\n\nLege Produkte fest, die Gäste mit Punkten einlösen können.\n\nPunkteeinlösung verwalten\nWillkommensgeschenke\n\nLege fest, welche Geschenke neue Gäste erhalten können.\n\nWillkommensgeschenke verwalten\nMitarbeiter & Tages-PIN\n\nÖffne den Mitarbeiterbereich und sieh die heutige Tages-PIN.\n\nMitarbeiterbereich öffnen\nQR & Starter Kit\n\nDrucke QR-Codes und Starter Kit für dein Restaurant.\n\nQR Center öffnen\nAbo & Testphase\n\nSieh Testphase, Abo-Status und Zahlungsstatus.\n\nAbo & Testphase ansehen"
+    },
+    "messages": []
+  },
+  {
+    "name": "admin-rewards",
+    "path": "/admin/rewards",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "admin-welcome-gifts",
+    "path": "/admin/welcome-gifts",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "admin-qr",
+    "path": "/admin/qr",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "admin-staff",
+    "path": "/admin/staff",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "staff-akakiko",
+    "path": "/staff/akakiko-hietzing",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/admin/onboarding",
+      "title": "WUXUAI Restaurant Growth OS",
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "text": "Restaurant einrichten\nWillkommen! In wenigen Minuten startet dein digitales Bonusprogramm.\n\nGleich bereit für Gäste.\n\nSchritt 1 von 7\nSo funktioniert's\n1. Restaurant\n2. Aussehen\n3. Geöffnet\n4. Punkteeinlösung\n5. Willkommens-Belohnungen\n6. Restaurant Starter Kit\n7. Startklar\nErzähl uns etwas über dein Restaurant.\nWie heißt dein Restaurant?\nWas passt am besten zu dir?\nRestaurant\nCafé\nBar\nBistro\nFood Truck\nWelche Sprache sollen deine Gäste sehen?\nDeutsch\nEnglisch\n← Zurück\nWeiter →\n\nBitte gib den Namen deines Restaurants ein.\n\nSo funktioniert's\n\nDein Restaurant bekommt ein eigenes digitales Bonusprogramm.\n\nGäste sehen deine Öffnungszeiten: Mo, Di, Mi, Do, Fr, Sa.\n\nDu planst 5 % Rückgabe nach ca. 5 Besuchen.\n\n1 Willkommens-Belohnung wartet später zufällig auf neue Gäste.\n\nWillkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.\n\nDeine Gäste sollen schnell verstehen, warum sie wiederkommen.\n\nWir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.\n\nVerstanden"
+    },
+    "messages": []
+  },
+  {
+    "name": "home-390",
+    "path": "/",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/",
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "text": "WUXUAI Bonus\nRestaurant Bonus einfach starten.\n\nEin Login für Restaurants. Ein QR für Gäste.\n\nRestaurant Login\n\nFür Restaurantbesitzer und Manager.\n\nÖffnen\n30 Tage kostenlos starten\n\nFür Restaurants, die ihr Bonusprogramm neu eröffnen.\n\nStarten\nGast-Bonus öffnen\n\nFür Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.\n\nÖffnen"
+    },
+    "messages": []
+  },
+  {
+    "name": "home-430",
+    "path": "/",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/",
+      "innerWidth": 430,
+      "scrollWidth": 430,
+      "text": "WUXUAI Bonus\nRestaurant Bonus einfach starten.\n\nEin Login für Restaurants. Ein QR für Gäste.\n\nRestaurant Login\n\nFür Restaurantbesitzer und Manager.\n\nÖffnen\n30 Tage kostenlos starten\n\nFür Restaurants, die ihr Bonusprogramm neu eröffnen.\n\nStarten\nGast-Bonus öffnen\n\nFür Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.\n\nÖffnen"
+    },
+    "messages": []
+  },
+  {
+    "name": "home-768",
+    "path": "/",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/",
+      "innerWidth": 768,
+      "scrollWidth": 768,
+      "text": "WUXUAI Bonus\nRestaurant Bonus einfach starten.\n\nEin Login für Restaurants. Ein QR für Gäste.\n\nRestaurant Login\n\nFür Restaurantbesitzer und Manager.\n\nÖffnen\n30 Tage kostenlos starten\n\nFür Restaurants, die ihr Bonusprogramm neu eröffnen.\n\nStarten\nGast-Bonus öffnen\n\nFür Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.\n\nÖffnen"
+    },
+    "messages": []
+  },
+  {
+    "name": "home-1024",
+    "path": "/",
+    "status": 200,
+    "error": null,
+    "evalData": {
+      "url": "https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev/",
+      "innerWidth": 1024,
+      "scrollWidth": 1024,
+      "text": "WUXUAI Bonus\nRestaurant Bonus einfach starten.\n\nEin Login für Restaurants. Ein QR für Gäste.\n\nRestaurant Login\n\nFür Restaurantbesitzer und Manager.\n\nÖffnen\n30 Tage kostenlos starten\n\nFür Restaurants, die ihr Bonusprogramm neu eröffnen.\n\nStarten\nGast-Bonus öffnen\n\nFür Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.\n\nÖffnen"
+    },
+    "messages": []
+  }
+]

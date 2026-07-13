@@ -4,7 +4,7 @@ import {
   demoRedeemedOfferIds,
   demoRewards,
 } from "../../shared/lib/demoData";
-import { supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Coupon, Customer, Reward, RewardType } from "../../shared/types/domain";
 
 export type RewardOfferSource = "reward" | "coupon";
@@ -176,8 +176,11 @@ export function getRewardStatus(offer: RewardOffer, customer: Customer, redeemed
 }
 
 export async function loadRewardOffers(restaurantId: string): Promise<RewardOffer[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoOffers(restaurantId);
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   let rewardsQuery: { data: unknown; error: unknown; count?: number | null } = await supabase
@@ -212,7 +215,7 @@ export async function loadStaffCustomerRewards(
   restaurantId: string,
   customerId: string,
 ): Promise<StaffCustomerRewardView[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoOffers(restaurantId)
       .filter((offer) => offer.source === "reward" && offer.active)
       .slice(0, 1)
@@ -224,6 +227,9 @@ export async function loadStaffCustomerRewards(
         unlocked_at: new Date().toISOString(),
         redeemed_at: null,
       }));
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase
@@ -284,7 +290,7 @@ export async function loadStaffCustomerRewards(
 }
 
 export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOffer> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       ...input,
       id: input.id ?? `offer-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
@@ -301,6 +307,9 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
       starter_reward_order: input.starter_reward_order ?? 0,
       created_at: new Date().toISOString(),
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   if (input.source === "reward") {
@@ -379,8 +388,11 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
 }
 
 export async function setRewardOfferActive(offer: RewardOffer, active: boolean): Promise<RewardOffer> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return { ...offer, active };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   if (offer.source === "reward") {
@@ -414,8 +426,11 @@ export async function setRewardOfferActive(offer: RewardOffer, active: boolean):
 }
 
 export async function loadRedeemedOfferKeys(restaurantId: string, customerId: string): Promise<string[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoRedeemedOfferIds;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const [customerRewardsResult, couponRedemptionsResult] = await Promise.all([
@@ -442,7 +457,7 @@ export async function loadRedeemedOfferKeys(restaurantId: string, customerId: st
 }
 
 export async function redeemReward(input: RedeemRewardInput): Promise<RedeemRewardResult> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     const customer = demoCustomers.find((item) => item.id === input.customerId) ?? demoCustomers[0];
     const offer = demoOffers(input.restaurantId).find((item) => item.id === input.offerId && item.source === input.source);
     return {
@@ -450,6 +465,9 @@ export async function redeemReward(input: RedeemRewardInput): Promise<RedeemRewa
       stamp_balance: Math.max(0, customer.stamp_balance - (offer?.required_stamps ?? 0)),
       redeemed_offer_id: input.offerId,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("redeem_reward_with_staff_session", {
@@ -479,7 +497,7 @@ export async function redeemCustomerReward(input: RedeemCustomerRewardInput): Pr
 }
 
 export async function loadRewardKpis(restaurantId: string): Promise<RewardKpis> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       rewardsRedeemedToday: 3,
       pointsIssuedToday: 180,
@@ -487,6 +505,9 @@ export async function loadRewardKpis(restaurantId: string): Promise<RewardKpis> 
       activeRewards: demoOffers(restaurantId).filter((offer) => offer.active).length,
       activeCustomers: demoCustomers.length,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const today = new Date();

@@ -4,7 +4,7 @@ import {
   demoRestaurant,
   demoRewards,
 } from "../../shared/lib/demoData";
-import { isSupabaseConfigured, supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { LoyaltyMode, RewardType } from "../../shared/types/domain";
 
 export type PilotOnboardingInput = {
@@ -66,11 +66,11 @@ const CURRENT_ONBOARDING_STRUCTURE_VERSION = 3;
 const ZERO_BASED_ONBOARDING_STRUCTURE_VERSION = 2;
 
 export function isDemoMode() {
-  return !isSupabaseConfigured;
+  return isLocalDemoMode;
 }
 
 export async function completePilotOnboarding(input: PilotOnboardingInput) {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     const restaurant = {
       ...demoRestaurant,
       name: input.restaurantName,
@@ -86,6 +86,9 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
       offer: input.starterRewards[0] ? { ...demoRewards[0], title: input.starterRewards[0].title } : null,
       campaign: null,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const restaurantPayload = {
@@ -248,13 +251,16 @@ function normalizeOnboardingStep(rawStep: unknown, draftData?: unknown) {
 }
 
 export async function loadOnboardingDraft<TDraft>(restaurantId: string): Promise<OnboardingDraftState<TDraft>> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       onboardingStatus: "draft",
       currentStep: 0,
       draftData: null,
       checklist: {},
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const [{ data: restaurant, error: restaurantError }, { data: draft, error: draftError }] = await Promise.all([
@@ -287,8 +293,11 @@ export async function saveOnboardingDraft<TDraft>(
   draftData: TDraft,
   checklist: Record<string, boolean>,
 ) {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const draftPayload =
@@ -315,7 +324,7 @@ export async function saveOnboardingDraft<TDraft>(
 }
 
 export async function loadSetupChecklist(restaurantId: string): Promise<SetupChecklist> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       brandingCompleted: Boolean(demoBranding.primary_color),
       loyaltyModeSelected: Boolean(demoLoyaltySettings.loyalty_mode),
@@ -323,6 +332,9 @@ export async function loadSetupChecklist(restaurantId: string): Promise<SetupChe
       staffMemberCreated: true,
       qrReady: true,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const [branding, loyalty, rewards, staff] = await Promise.all([
@@ -346,7 +358,7 @@ export async function loadSetupChecklist(restaurantId: string): Promise<SetupChe
 }
 
 export async function resetDemoData() {
-  if (supabase) {
+  if (!isLocalDemoMode) {
     throw new Error("Demo reset is only available when Supabase is not configured.");
   }
 

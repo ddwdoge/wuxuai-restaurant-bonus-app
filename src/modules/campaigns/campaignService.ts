@@ -7,7 +7,7 @@ import {
   demoRestaurant,
   demoRewards,
 } from "../../shared/lib/demoData";
-import { supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Coupon, Customer, Restaurant, RestaurantBranding, Reward } from "../../shared/types/domain";
 import type { RewardOffer, RewardOfferSource } from "../rewards/rewardService";
 
@@ -108,8 +108,11 @@ export function offerLabel(offer: Pick<RewardOffer, "source" | "title">) {
 }
 
 export async function loadCampaigns(restaurantId: string): Promise<Campaign[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoCampaigns.map((campaign) => ({ ...campaign, restaurant_id: restaurantId }));
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase
@@ -136,12 +139,15 @@ export async function saveCampaign(input: CampaignInput): Promise<Campaign> {
     starter_coupon_id: input.starter_offer_source === "coupon" ? input.starter_coupon_id : null,
   };
 
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       id: input.id ?? `campaign-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
       ...payload,
       created_at: new Date().toISOString(),
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const query = input.id
@@ -158,7 +164,7 @@ export async function setCampaignStatus(campaign: Campaign, status: Campaign["st
 }
 
 export async function loadPublicCampaign(restaurantSlug: string, campaignSlug: string): Promise<PublicCampaignData> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     const campaign = demoCampaigns.find((item) => item.slug === campaignSlug) ?? demoCampaigns[0];
     return {
       restaurant: demoRestaurant,
@@ -172,6 +178,9 @@ export async function loadPublicCampaign(restaurantSlug: string, campaignSlug: s
         : null,
     };
   }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
+  }
 
   const { data, error } = await supabase.rpc("get_public_campaign", {
     input_restaurant_slug: restaurantSlug,
@@ -183,7 +192,7 @@ export async function loadPublicCampaign(restaurantSlug: string, campaignSlug: s
 }
 
 export async function registerCampaignCustomer(input: CampaignRegistrationInput): Promise<CampaignRegistrationResult> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       restaurant: demoRestaurant,
       campaign: demoCampaigns[0],
@@ -196,6 +205,9 @@ export async function registerCampaignCustomer(input: CampaignRegistrationInput)
       starter_offer_id: demoCampaigns[0].starter_coupon_id ?? demoCampaigns[0].starter_reward_id,
       starter_issued: true,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("register_campaign_customer", {
@@ -212,8 +224,11 @@ export async function registerCampaignCustomer(input: CampaignRegistrationInput)
 }
 
 export async function loadCampaignKpis(restaurantId: string): Promise<CampaignKpis> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoCampaignKpis;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const [scans, registrations, starterRewards] = await Promise.all([

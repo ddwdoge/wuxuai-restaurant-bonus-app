@@ -3,14 +3,15 @@ import { LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { completePendingOwnerRegistration } from "./registerOwnerService";
-import { isSupabaseConfigured } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(isSupabaseConfigured ? "" : "demo@example.test");
+  const [email, setEmail] = useState(isLocalDemoMode ? "demo@example.test" : "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const liveDataMissing = !supabase && !isLocalDemoMode;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -35,9 +36,7 @@ export function LoginPage() {
           <div>
             <h1>Restaurant Login</h1>
             <p className="muted">
-              {isSupabaseConfigured
-                ? "Für Besitzer und Manager."
-                : "Demo-Modus aktiv."}
+              {liveDataMissing ? liveDataUnavailableMessage : isLocalDemoMode ? "Demo-Modus aktiv." : "Für Besitzer und Manager."}
             </p>
           </div>
         </div>
@@ -63,7 +62,7 @@ export function LoginPage() {
             />
           </div>
           {error ? <p className="muted">{error}</p> : null}
-          <button className="button" type="submit">
+          <button className="button" disabled={liveDataMissing} type="submit">
             <LogIn size={18} />
             Anmelden
           </button>

@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { demoBranding, demoRestaurant } from "../../shared/lib/demoData";
-import { supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, supabase } from "../../shared/lib/supabase";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -18,6 +18,9 @@ const TenantContext = createContext<TenantContextValue | null>(null);
 type RestaurantMembership = {
   restaurant_id: string;
 };
+
+const restaurantSelect =
+  "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
 
 async function loadBrandingForRestaurant(restaurantId: string) {
   if (!supabase) {
@@ -53,28 +56,37 @@ function readDemoRestaurant() {
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(supabase ? [] : [readDemoRestaurant()]);
-  const [activeRestaurantId, setActiveRestaurantId] = useState(supabase ? "" : demoRestaurant.id);
-  const [branding, setBranding] = useState<RestaurantBranding | null>(supabase ? null : demoBranding);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(isLocalDemoMode ? [readDemoRestaurant()] : []);
+  const [activeRestaurantId, setActiveRestaurantId] = useState(isLocalDemoMode ? demoRestaurant.id : "");
+  const [branding, setBranding] = useState<RestaurantBranding | null>(isLocalDemoMode ? demoBranding : null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const tenantLoadRequestId = useRef(0);
 
-  async function loadTenantsForUser(userId: string) {
+  function replaceTenantState(nextRestaurants: Restaurant[], preferredRestaurantId?: string) {
+    setRestaurants(nextRestaurants);
+    setActiveRestaurantId((current) => {
+      const requestedRestaurantId = preferredRestaurantId && nextRestaurants.some((restaurant) => restaurant.id === preferredRestaurantId)
+        ? preferredRestaurantId
+        : current;
+      return nextRestaurants.some((restaurant) => restaurant.id === requestedRestaurantId)
+        ? requestedRestaurantId
+        : nextRestaurants[0]?.id || "";
+    });
+  }
+
+  async function loadTenantsForUser(userId: string, requestId = tenantLoadRequestId.current) {
     setLoading(true);
-    const [{ data: memberships, error: membershipError }, { data, error }] = await Promise.all([
-      supabase!
-        .from("restaurant_members")
-        .select("restaurant_id")
-        .eq("user_id", userId),
-      supabase!
-        .from("restaurants")
-        .select(
-          "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at",
-        )
-        .order("created_at", { ascending: true }),
-    ]);
+    const { data: memberships, error: membershipError } = await supabase!
+      .from("restaurant_members")
+      .select("restaurant_id")
+      .eq("user_id", userId);
 
-    if (error || membershipError || !data) {
-      console.error("Restaurants konnten nicht geladen werden.", error ?? membershipError);
+    if (requestId !== tenantLoadRequestId.current) {
+      return;
+    }
+
+    if (membershipError) {
+      console.error("Restaurant-Mitgliedschaften konnten nicht geladen werden.", membershipError);
       setRestaurants([]);
       setActiveRestaurantId("");
       setBranding(null);
@@ -85,19 +97,55 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const memberRestaurantIds = new Set(
       ((memberships ?? []) as RestaurantMembership[]).map((membership) => membership.restaurant_id),
     );
-    const nextRestaurants = (data as Restaurant[]).filter(
-      (restaurant) => restaurant.owner_id === userId || memberRestaurantIds.has(restaurant.id),
+    const [ownedResult, memberResult] = await Promise.all([
+      supabase!
+        .from("restaurants")
+        .select(restaurantSelect)
+        .eq("owner_id", userId)
+        .order("created_at", { ascending: true }),
+      memberRestaurantIds.size
+        ? supabase!
+            .from("restaurants")
+            .select(restaurantSelect)
+            .in("id", [...memberRestaurantIds])
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (ownedResult.error || memberResult.error) {
+      if (requestId !== tenantLoadRequestId.current) {
+        return;
+      }
+      console.error("Restaurants konnten nicht geladen werden.", ownedResult.error ?? memberResult.error);
+      setRestaurants([]);
+      setActiveRestaurantId("");
+      setBranding(null);
+      setLoading(false);
+      return;
+    }
+
+    if (requestId !== tenantLoadRequestId.current) {
+      return;
+    }
+
+    const uniqueRestaurants = new Map<string, Restaurant>();
+    [...((ownedResult.data ?? []) as Restaurant[]), ...((memberResult.data ?? []) as Restaurant[])].forEach((restaurant) => {
+      if (restaurant.owner_id === userId || memberRestaurantIds.has(restaurant.id)) {
+        uniqueRestaurants.set(restaurant.id, restaurant);
+      }
+    });
+
+    const nextRestaurants = [...uniqueRestaurants.values()].sort((left, right) =>
+      new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
     );
-    setRestaurants(nextRestaurants);
-    setActiveRestaurantId((current) =>
-      nextRestaurants.some((restaurant) => restaurant.id === current) ? current : nextRestaurants[0]?.id || "",
-    );
+    replaceTenantState(nextRestaurants);
     setLoading(false);
   }
 
   useEffect(() => {
     if (!supabase || !user) {
-      if (supabase) {
+      if (!isLocalDemoMode) {
+        tenantLoadRequestId.current += 1;
         setRestaurants([]);
         setActiveRestaurantId("");
         setBranding(null);
@@ -107,16 +155,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     const userId = user.id;
+    const requestId = tenantLoadRequestId.current + 1;
+    tenantLoadRequestId.current = requestId;
+    setRestaurants([]);
+    setActiveRestaurantId("");
+    setBranding(null);
+    setLoading(true);
 
     async function loadTenants() {
-      await loadTenantsForUser(userId);
+      await loadTenantsForUser(userId, requestId);
     }
 
     loadTenants();
   }, [user]);
 
   useEffect(() => {
-    if (supabase) {
+    if (!isLocalDemoMode) {
       return;
     }
 
@@ -169,7 +223,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       loading,
       refreshTenants: async () => {
         if (supabase && user) {
-          await loadTenantsForUser(user.id);
+          const requestId = tenantLoadRequestId.current + 1;
+          tenantLoadRequestId.current = requestId;
+          await loadTenantsForUser(user.id, requestId);
           if (activeRestaurant?.id) {
             try {
               setBranding(await loadBrandingForRestaurant(activeRestaurant.id));
@@ -179,10 +235,20 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           }
           return;
         }
-        setRestaurants([readDemoRestaurant()]);
-        setActiveRestaurantId(demoRestaurant.id);
+        if (isLocalDemoMode) {
+          setRestaurants([readDemoRestaurant()]);
+          setActiveRestaurantId(demoRestaurant.id);
+          return;
+        }
+        setRestaurants([]);
+        setActiveRestaurantId("");
+        setBranding(null);
       },
-      setActiveRestaurantId,
+      setActiveRestaurantId: (restaurantId: string) => {
+        setActiveRestaurantId((current) =>
+          restaurants.some((restaurant) => restaurant.id === restaurantId) ? restaurantId : current,
+        );
+      },
     }),
     [activeRestaurant, branding, loading, restaurants, user],
   );

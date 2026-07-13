@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export type RegisterOwnerInput = {
   ownerName: string;
@@ -102,8 +102,11 @@ function registrationErrorMessage(error: unknown): string {
 }
 
 export async function registerRestaurantOwner(input: RegisterOwnerInput): Promise<RegisterOwnerResult> {
-  if (!isSupabaseConfigured || !supabase) {
+  if (isLocalDemoMode) {
     return { requiresEmailConfirmation: false };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -133,8 +136,11 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
 }
 
 export async function completePendingOwnerRegistration(email: string): Promise<boolean> {
-  if (!isSupabaseConfigured || !supabase) {
+  if (isLocalDemoMode) {
     return false;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const pendingRegistration = readPendingRegistration(email);

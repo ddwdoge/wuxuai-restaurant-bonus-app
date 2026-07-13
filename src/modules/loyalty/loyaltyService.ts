@@ -9,7 +9,7 @@ import {
   demoBranding,
   demoRestaurant,
 } from "../../shared/lib/demoData";
-import { supabase } from "../../shared/lib/supabase";
+import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
@@ -100,7 +100,7 @@ export function rulesForMode(rules: LoyaltyRule[], mode: LoyaltyMode) {
 }
 
 export async function loadLoyaltySettings(restaurantId: string): Promise<LoyaltySettings> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       ...demoLoyaltySettings,
       restaurant_id: restaurantId,
@@ -112,6 +112,9 @@ export async function loadLoyaltySettings(restaurantId: string): Promise<Loyalty
       referral_boost_multiplier: 2,
       referral_boost_duration_days: 30,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   let query = await supabase
@@ -139,8 +142,11 @@ export async function loadLoyaltySettings(restaurantId: string): Promise<Loyalty
 }
 
 export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<LoyaltySettings> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return settings;
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase
@@ -196,8 +202,11 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
 }
 
 export async function loadLoyaltyRules(restaurantId: string): Promise<LoyaltyRule[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoLoyaltyRules.map((rule) => ({ ...rule, restaurant_id: restaurantId }));
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase
@@ -220,12 +229,15 @@ export async function saveLoyaltyRule(input: LoyaltyRuleInput): Promise<LoyaltyR
     active: input.active,
   };
 
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       id: input.id ?? demoId("rule"),
       ...payload,
       created_at: new Date().toISOString(),
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   if (input.id) {
@@ -256,8 +268,11 @@ export async function setLoyaltyRuleActive(rule: LoyaltyRule, active: boolean): 
 }
 
 export async function loadCustomers(restaurantId: string): Promise<Customer[]> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return demoCustomers.map((customer) => ({ ...customer, restaurant_id: restaurantId }));
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase
@@ -602,8 +617,11 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
 }
 
 export async function resolveCustomerQrToken(restaurantId: string, customerToken: string): Promise<StaffQrCustomer> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return { ...demoCustomers[0], restaurant_id: restaurantId };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("resolve_customer_qr_token", {
@@ -658,11 +676,14 @@ export async function createReferralLink(
   customerToken: string,
   deviceId?: string | null,
 ): Promise<ReferralLinkResult> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       referral_token: `demo-ref-${Math.random().toString(36).slice(2)}`,
       referral_id: `demo-referral-${Date.now()}`,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("create_referral_link", {
@@ -676,7 +697,7 @@ export async function createReferralLink(
 }
 
 export async function loadPublicReferral(restaurantSlug: string, referralToken: string): Promise<PublicReferralData> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       restaurant: demoRestaurant,
       branding: demoBranding,
@@ -687,6 +708,9 @@ export async function loadPublicReferral(restaurantSlug: string, referralToken: 
         referral_boost_duration_days: 30,
       },
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_public_referral", {
@@ -699,7 +723,7 @@ export async function loadPublicReferral(restaurantSlug: string, referralToken: 
 }
 
 export async function registerReferralGuest(input: ReferralRegistrationInput): Promise<ReferralRegistrationResult> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       restaurant: demoRestaurant,
       customer: {
@@ -709,6 +733,9 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
       },
       referral_status: "pending_registered",
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("register_referral_customer", {
@@ -725,11 +752,14 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
 }
 
 export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoostKpis> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       guestsCurrentlyBoosted: 1,
       guestsReturnedBecauseOfBoost: 1,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_bonus_boost_kpis", {
@@ -750,12 +780,15 @@ export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoo
 }
 
 export async function loadReferralAbuseWarnings(restaurantId: string): Promise<ReferralAbuseWarnings> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     return {
       devicesWithMultipleAccounts: 0,
       devicesWithMultipleReferrals: 0,
       manyReferralsShortTime: 0,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_referral_abuse_warnings", {
@@ -778,7 +811,7 @@ export async function loadReferralAbuseWarnings(restaurantId: string): Promise<R
 }
 
 export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): Promise<StaffLoyaltyActionResult> {
-  if (!supabase) {
+  if (isLocalDemoMode) {
     if (!input.dailyPin.trim()) {
       throw new Error("Bitte gib die Tages-PIN ein.");
     }
@@ -790,6 +823,9 @@ export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): P
       points_balance: customer.points_balance + input.points,
       stamp_balance: customer.stamp_balance + input.stamps,
     };
+  }
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("apply_staff_daily_pin_loyalty_action", {

@@ -9,6 +9,11 @@ export const isSupabaseConfigured =
   !supabaseUrl?.includes("your-project") &&
   supabaseAnonKey !== "your-anon-key";
 
+export const isLocalDemoMode = !isSupabaseConfigured && import.meta.env.DEV;
+
+export const liveDataUnavailableMessage =
+  "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.";
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {

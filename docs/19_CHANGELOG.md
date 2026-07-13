@@ -1713,3 +1713,82 @@ Nicht geändert:
 Status:
 
 LOCK
+
+---
+
+## 50. Phase – Tenant-Isolation gegen alte Restaurantdaten gehärtet
+
+Problem:
+
+Ein neu angemeldeter Restaurant-Account konnte kurzzeitig oder durch zu breite
+Frontend-Abfragen alte Daten eines anderen Restaurants sehen. Besonders
+kritisch war der Dashboard-/Tenant-Kontext:
+
+- alter Restaurant-State blieb beim User-Wechsel bis zum nächsten Tenant-Load
+  erhalten
+- Restaurants wurden zu breit geladen und erst im Frontend gefiltert
+- Demo-KPI-Fallbacks konnten im Supabase-/Live-Betrieb falsche Zahlen anzeigen
+
+Änderung:
+
+- `TenantProvider` leert Restaurant, Branding und aktive Restaurant-ID sofort
+  beim User-Wechsel.
+- Alte asynchrone Tenant-Loads dürfen nach einem User-Wechsel keinen alten
+  State mehr zurückschreiben.
+- Restaurants werden nur noch serverseitig eingeschränkt geladen:
+  `owner_id = aktueller User` oder explizite `restaurant_members`-
+  Mitgliedschaft.
+- `setActiveRestaurantId` akzeptiert nur IDs aus der aktuell erlaubten
+  Restaurantliste.
+- Dashboard-Neumitglieder verwenden Demo-Daten nur noch im lokalen Demo-Modus.
+- Reward-/Loyalty-Demo-Fallbacks bleiben auf lokale Entwicklung begrenzt.
+
+Nicht geändert:
+
+- keine neue Produktlogik
+- keine neue Datenbankstruktur
+- keine Tages-PIN-, Punkte-, Punkteeinlösungs-, Willkommensgeschenk-,
+  Bonus-Boost- oder QR-Logik
+
+Status:
+
+NOT READY bis Staging-User-Wechsel, neuer Account und RLS live geprüft sind.
+
+---
+
+## 51. Phase – Reward-RPC Security und Legacy Code+PIN deaktiviert
+
+Problem:
+
+Historische V1-Zwischenstände enthielten noch einen parallelen
+Code+PIN-Einlöseweg mit `create_redemption_code` und
+`redeem_reward_with_pin`. Diese Logik ist nicht mehr der V1-Standard und darf
+nicht als öffentlicher Einlöseweg neben der PIN-losen Punkteeinlösung bestehen.
+
+Änderung:
+
+- `redeem_customer_reward` bleibt der V1-Weg für die Kundenbestätigung ohne
+  PIN.
+- Die RPC prüft den Kundentoken, das Restaurant, die aktive Punkteeinlösung und
+  Willkommensgeschenke getrennt.
+- Normale Punkteeinlösungen bleiben Katalogprodukte und schreiben
+  Einlösungsverlauf sowie Punkteabzug.
+- Willkommensgeschenke bleiben einmalig und werden nach Einlösung auf
+  `redeemed` gesetzt.
+- `create_redemption_code` verwendet intern `gen_random_bytes` statt
+  `random()`.
+- `create_redemption_code` und `redeem_reward_with_pin` erhalten keinen
+  öffentlichen Execute-Grant mehr.
+
+Nicht geändert:
+
+- keine Tages-PIN-Logik
+- keine Punkteberechnung
+- keine Customer-Portal-UX
+- keine Willkommensgeschenk-Zufallslogik
+- keine Bonus-Boost-Logik
+
+Status:
+
+NOT READY bis Migration auf Staging angewendet und Tenant-/RLS-/Reward-Flows
+live geprüft sind.
