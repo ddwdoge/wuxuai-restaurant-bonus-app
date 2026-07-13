@@ -40,14 +40,14 @@ function formForMode(mode: LoyaltyMode): RuleForm {
     return { ...emptyRuleForm, title: "1 Euro = 1 Punkt", points: 1, min_amount: 1 };
   }
 
-  return { ...emptyRuleForm, title: "Visit", points: 10 };
+  return { ...emptyRuleForm, title: "Besuch", points: 10 };
 }
 
 export function LoyaltyPage() {
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
-    defaultSettingsForMode(restaurantId || "demo-restaurant", "menu_points"),
+    defaultSettingsForMode(restaurantId, "menu_points"),
   );
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
   const [ruleForm, setRuleForm] = useState<RuleForm>(() => formForMode("menu_points"));

@@ -57,6 +57,62 @@ V1 baut nicht:
 
 ---
 
+## 0.2 Public RPC für Punkteeinlösung im Kundenportal
+
+Status: **LOCK**
+
+Das Kundenportal ist öffentlich und arbeitet in V1 mit `customer_token`.
+
+Deshalb darf folgende RPC bewusst für `anon` ausführbar bleiben:
+
+```text
+redeem_customer_reward(customer_token, reward_id)
+```
+
+Diese Freigabe ist nur erlaubt, wenn die Funktion serverseitig hart prüft:
+
+- Kundentoken ist gültig und eindeutig,
+- Kunde, Reward, Restaurant und Branch gehören zusammen,
+- pro Kundentoken gelten maximal 5 Einlöseversuche in 10 Minuten,
+- Kundentokens werden in Attempt-Logs nur gehasht gespeichert,
+- Reward ist aktiv und nicht abgelaufen,
+- Willkommensgeschenk ist aktiv, freigeschaltet und noch nicht eingelöst,
+- normale Punkteeinlösung hat genug Punkte/Stempel,
+- Punkteabzug bzw. Statuswechsel passieren atomar,
+- Audit wird geschrieben.
+
+Nicht erlaubt:
+
+- PIN-Einlösung in V1 zurückbringen,
+- 6-stellige Code-Einlösung als öffentlichen V1-Weg nutzen,
+- Punkte oder Reward-Eigentum clientseitig als Wahrheit behandeln.
+
+---
+
+## 0.3 Owner Registration retry-safe und idempotent
+
+Status: **LOCK**
+
+Die Restaurant-Owner-Registrierung muss langsame Supabase-Session-Propagation
+nach E-Mail-Bestätigung vertragen.
+
+Regeln:
+
+- Pending-Registrierungsdaten werden erst gelöscht, wenn Restaurant,
+  Membership und Trial/Subscription erfolgreich erstellt oder gefunden wurden.
+- Wenn die Auth-Session noch nicht bereit ist, wird mit kurzem Backoff erneut
+  geprüft.
+- `start_restaurant_owner_trial` ist idempotent: erneute Ausführung für denselben
+  Owner erzeugt kein zweites Restaurant, keine doppelte Membership und keine
+  doppelte Subscription.
+- Fehlertext für Race-Zustand:
+
+```text
+Deine Registrierung wird noch vorbereitet. Bitte versuche es in wenigen Sekunden erneut.
+```
+
+---
+
 ## 1. Zweck dieses Dokuments
 
 Dieses Dokument beantwortet:
@@ -1726,7 +1782,52 @@ Neue oder bearbeitete Punkteeinlösungen verwenden diese Quote. Die alte feste
 
 ---
 
-# 76. LOCK Kriterien
+## 76. Live-Runtime ohne Demo-Modus
+
+Status: **LOCK**
+
+Ab V1 Live-Test gilt:
+
+- Die Runtime enthält keinen aktiven Demo-Modus.
+- `demoData`, Demo-Restaurant, Demo-Branding, Demo-User und Kai-Sushi-Daten
+  dürfen nicht mehr in aktive App-Flows importiert werden.
+- Wenn Supabase nicht konfiguriert ist, zeigt die App eine deutsche
+  Verbindungsfehlermeldung statt Demo-Daten:
+
+```text
+Live-Daten konnten nicht geladen werden.
+Bitte prüfe die Supabase-Verbindung.
+```
+
+Pflichtvariablen für Cloudflare / Live:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Optional:
+
+```text
+VITE_APP_BASE_URL
+```
+
+Nicht in die Live-App:
+
+```text
+SUPABASE_ACCESS_TOKEN
+Service Role Key
+Demo-Flags
+Demo-Daten
+```
+
+Öffentliche Kunden-URLs laden Restaurants ausschließlich per echtem Slug aus
+Supabase. Unbekannte Slugs zeigen einen deutschen Fehler und niemals
+Demo-Restaurantdaten.
+
+---
+
+# 77. LOCK Kriterien
 
 Diese CTO-Entscheidungsdatei gilt als LOCK, wenn:
 
@@ -1741,7 +1842,7 @@ Diese CTO-Entscheidungsdatei gilt als LOCK, wenn:
 
 ---
 
-# 77. Codex-Regeln
+# 78. Codex-Regeln
 
 Wenn Codex diese Datei liest:
 
@@ -1754,7 +1855,7 @@ Wenn Codex diese Datei liest:
 7. Build ausführen.
 8. Deutsch in UI.
 9. Mobile First.
-10. Echte Tenant-Daten vor Demo-Daten.
+10. Keine Demo-Daten in Live-/Staging-Runtime.
 11. Restaurantnutzen vor Technik.
 
 ---

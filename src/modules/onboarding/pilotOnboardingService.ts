@@ -1,10 +1,4 @@
-import {
-  demoBranding,
-  demoLoyaltySettings,
-  demoRestaurant,
-  demoRewards,
-} from "../../shared/lib/demoData";
-import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { LoyaltyMode, RewardType } from "../../shared/types/domain";
 
 export type PilotOnboardingInput = {
@@ -65,28 +59,7 @@ const CURRENT_ONBOARDING_LAST_STEP = 6;
 const CURRENT_ONBOARDING_STRUCTURE_VERSION = 3;
 const ZERO_BASED_ONBOARDING_STRUCTURE_VERSION = 2;
 
-export function isDemoMode() {
-  return isLocalDemoMode;
-}
-
 export async function completePilotOnboarding(input: PilotOnboardingInput) {
-  if (isLocalDemoMode) {
-    const restaurant = {
-      ...demoRestaurant,
-      name: input.restaurantName,
-      slug: input.slug,
-      onboarding_status: "ready",
-      onboarding_checklist: input.onboardingChecklist,
-    };
-    window.localStorage.setItem("wuxuai-demo-state", JSON.stringify({ restaurant }));
-    window.dispatchEvent(new Event("wuxuai-demo-state-changed"));
-
-    return {
-      restaurant,
-      offer: input.starterRewards[0] ? { ...demoRewards[0], title: input.starterRewards[0].title } : null,
-      campaign: null,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -251,14 +224,6 @@ function normalizeOnboardingStep(rawStep: unknown, draftData?: unknown) {
 }
 
 export async function loadOnboardingDraft<TDraft>(restaurantId: string): Promise<OnboardingDraftState<TDraft>> {
-  if (isLocalDemoMode) {
-    return {
-      onboardingStatus: "draft",
-      currentStep: 0,
-      draftData: null,
-      checklist: {},
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -293,9 +258,6 @@ export async function saveOnboardingDraft<TDraft>(
   draftData: TDraft,
   checklist: Record<string, boolean>,
 ) {
-  if (isLocalDemoMode) {
-    return;
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -324,15 +286,6 @@ export async function saveOnboardingDraft<TDraft>(
 }
 
 export async function loadSetupChecklist(restaurantId: string): Promise<SetupChecklist> {
-  if (isLocalDemoMode) {
-    return {
-      brandingCompleted: Boolean(demoBranding.primary_color),
-      loyaltyModeSelected: Boolean(demoLoyaltySettings.loyalty_mode),
-      firstRewardCreated: demoRewards.some((reward) => reward.is_starter_reward && reward.active),
-      staffMemberCreated: true,
-      qrReady: true,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -355,13 +308,4 @@ export async function loadSetupChecklist(restaurantId: string): Promise<SetupChe
     staffMemberCreated: (staff.count ?? 0) > 0,
     qrReady: true,
   };
-}
-
-export async function resetDemoData() {
-  if (!isLocalDemoMode) {
-    throw new Error("Demo reset is only available when Supabase is not configured.");
-  }
-
-  localStorage.removeItem("wuxuai-demo-state");
-  return true;
 }

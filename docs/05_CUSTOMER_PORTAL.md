@@ -204,11 +204,19 @@ Sie verschwinden nach einer Einlösung nicht aus der Kundenansicht.
 Wenn ein Gast eine Punkteeinlösung verwendet:
 
 1. Server prüft Kundentoken, Restaurant, aktive Punkteeinlösung und Punktestand.
+1. Die öffentliche Einlöse-RPC begrenzt Einlöseversuche pro Kundentoken, damit
+   fremde Reward-IDs, falsche Tokens und Spam nicht beliebig oft versucht
+   werden können.
 2. Benötigte Punkte werden vom Konto abgezogen.
 3. Einlöse-Historie und Audit werden geschrieben.
 4. Der neue Punktestand wird zurückgegeben.
 5. Die Produktkarte bleibt sichtbar.
 6. Der Status wird anhand des neuen Punktestands neu berechnet.
+
+Wenn zu viele Einlöseversuche in kurzer Zeit auftreten, zeigt das
+Kundenportal:
+
+> Zu viele Einlöseversuche. Bitte warte kurz und versuche es erneut.
 
 Wenn noch genügend Punkte übrig sind:
 

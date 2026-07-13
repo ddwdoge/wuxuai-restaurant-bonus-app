@@ -1,4 +1,4 @@
-import { supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export type StaffSession = {
   staff_member_id: string;
@@ -9,16 +9,7 @@ export type StaffSession = {
 
 export async function createStaffSession(restaurantId: string, pin: string): Promise<StaffSession> {
   if (!supabase) {
-    if (pin !== "1234") {
-      throw new Error("PIN ist ungültig.");
-    }
-
-    return {
-      staff_member_id: "demo-staff",
-      staff_member_name: "Demo Team",
-      staff_session_token: `demo-session-${Date.now()}`,
-      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-    };
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("create_staff_session", {

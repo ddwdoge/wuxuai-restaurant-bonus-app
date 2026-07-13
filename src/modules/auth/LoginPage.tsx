@@ -3,15 +3,15 @@ import { LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { completePendingOwnerRegistration } from "./registerOwnerService";
-import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(isLocalDemoMode ? "demo@example.test" : "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const liveDataMissing = !supabase && !isLocalDemoMode;
+  const liveDataMissing = !supabase;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -36,7 +36,7 @@ export function LoginPage() {
           <div>
             <h1>Restaurant Login</h1>
             <p className="muted">
-              {liveDataMissing ? liveDataUnavailableMessage : isLocalDemoMode ? "Demo-Modus aktiv." : "Für Besitzer und Manager."}
+              {liveDataMissing ? liveDataUnavailableMessage : "Für Besitzer und Manager."}
             </p>
           </div>
         </div>

@@ -1,10 +1,4 @@
-import {
-  demoCoupons,
-  demoCustomers,
-  demoRedeemedOfferIds,
-  demoRewards,
-} from "../../shared/lib/demoData";
-import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Coupon, Customer, Reward, RewardType } from "../../shared/types/domain";
 
 export type RewardOfferSource = "reward" | "coupon";
@@ -81,6 +75,9 @@ export type RedeemRewardInput = {
 };
 
 export type RedeemRewardResult = {
+  success?: boolean;
+  reason?: string;
+  message?: string;
   points_balance: number;
   stamp_balance: number;
   redeemed_offer_id: string;
@@ -140,13 +137,6 @@ function toRewardOffer(record: Reward | Coupon, source: RewardOfferSource): Rewa
   };
 }
 
-function demoOffers(restaurantId: string): RewardOffer[] {
-  return [
-    ...demoRewards.map((reward) => toRewardOffer({ ...reward, restaurant_id: restaurantId }, "reward")),
-    ...demoCoupons.map((coupon) => toRewardOffer({ ...coupon, restaurant_id: restaurantId }, "coupon")),
-  ];
-}
-
 function normalizeRewardRelation(reward: Reward | Reward[] | null | undefined): Reward | null {
   if (Array.isArray(reward)) return reward[0] ?? null;
   return reward ?? null;
@@ -176,9 +166,6 @@ export function getRewardStatus(offer: RewardOffer, customer: Customer, redeemed
 }
 
 export async function loadRewardOffers(restaurantId: string): Promise<RewardOffer[]> {
-  if (isLocalDemoMode) {
-    return demoOffers(restaurantId);
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -215,19 +202,6 @@ export async function loadStaffCustomerRewards(
   restaurantId: string,
   customerId: string,
 ): Promise<StaffCustomerRewardView[]> {
-  if (isLocalDemoMode) {
-    return demoOffers(restaurantId)
-      .filter((offer) => offer.source === "reward" && offer.active)
-      .slice(0, 1)
-      .map((offer) => ({
-        ...offer,
-        customer_reward_id: `demo-customer-reward-${offer.id}`,
-        customer_reward_status: "active" as const,
-        status: "unlocked" as const,
-        unlocked_at: new Date().toISOString(),
-        redeemed_at: null,
-      }));
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -290,24 +264,6 @@ export async function loadStaffCustomerRewards(
 }
 
 export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOffer> {
-  if (isLocalDemoMode) {
-    return {
-      ...input,
-      id: input.id ?? `offer-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
-      category: input.category ?? null,
-      product_group: input.product_group ?? null,
-      image_url: input.image_url ?? null,
-      product_price: input.product_price ?? null,
-      active_days: input.active_days ?? ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-      welcome_gift_mode: input.welcome_gift_mode ?? "value_limit",
-      fixed_product_name: input.fixed_product_name ?? null,
-      available_products: input.available_products ?? [],
-      is_starter_reward: input.is_starter_reward ?? false,
-      starter_reward_key: input.starter_reward_key ?? null,
-      starter_reward_order: input.starter_reward_order ?? 0,
-      created_at: new Date().toISOString(),
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -388,9 +344,6 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
 }
 
 export async function setRewardOfferActive(offer: RewardOffer, active: boolean): Promise<RewardOffer> {
-  if (isLocalDemoMode) {
-    return { ...offer, active };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -426,9 +379,6 @@ export async function setRewardOfferActive(offer: RewardOffer, active: boolean):
 }
 
 export async function loadRedeemedOfferKeys(restaurantId: string, customerId: string): Promise<string[]> {
-  if (isLocalDemoMode) {
-    return demoRedeemedOfferIds;
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -457,15 +407,6 @@ export async function loadRedeemedOfferKeys(restaurantId: string, customerId: st
 }
 
 export async function redeemReward(input: RedeemRewardInput): Promise<RedeemRewardResult> {
-  if (isLocalDemoMode) {
-    const customer = demoCustomers.find((item) => item.id === input.customerId) ?? demoCustomers[0];
-    const offer = demoOffers(input.restaurantId).find((item) => item.id === input.offerId && item.source === input.source);
-    return {
-      points_balance: Math.max(0, customer.points_balance - (offer?.required_points ?? 0)),
-      stamp_balance: Math.max(0, customer.stamp_balance - (offer?.required_stamps ?? 0)),
-      redeemed_offer_id: input.offerId,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -479,12 +420,16 @@ export async function redeemReward(input: RedeemRewardInput): Promise<RedeemRewa
   });
 
   if (error) throw error;
-  return data as RedeemRewardResult;
+  const result = data as RedeemRewardResult;
+  if (result.success === false) {
+    throw new Error(result.message || "Diese Punkteeinlösung ist nicht mehr verfügbar.");
+  }
+  return result;
 }
 
 export async function redeemCustomerReward(input: RedeemCustomerRewardInput): Promise<RedeemRewardResult> {
   if (!supabase) {
-    throw new Error("Punkteeinlösung konnte nicht verwendet werden.");
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("redeem_customer_reward", {
@@ -493,19 +438,14 @@ export async function redeemCustomerReward(input: RedeemCustomerRewardInput): Pr
   });
 
   if (error) throw error;
-  return data as RedeemRewardResult;
+  const result = data as RedeemRewardResult;
+  if (result.success === false) {
+    throw new Error(result.message || "Diese Punkteeinlösung ist nicht mehr verfügbar.");
+  }
+  return result;
 }
 
 export async function loadRewardKpis(restaurantId: string): Promise<RewardKpis> {
-  if (isLocalDemoMode) {
-    return {
-      rewardsRedeemedToday: 3,
-      pointsIssuedToday: 180,
-      stampsIssuedToday: 12,
-      activeRewards: demoOffers(restaurantId).filter((offer) => offer.active).length,
-      activeCustomers: demoCustomers.length,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }

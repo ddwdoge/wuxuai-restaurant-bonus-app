@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
+import { isSetupAllowedPath } from "./setupAllowedPath";
 
 export function AdminLayout() {
   const location = useLocation();
@@ -23,8 +24,7 @@ export function AdminLayout() {
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
-  const setupAllowedRoutes = ["/admin/onboarding", "/admin/settings"];
-  const isSetupAllowedRoute = isOnboardingRoute || location.pathname.startsWith("/admin/settings");
+  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
   const navItems = [
     { to: "/admin", label: "Dashboard", icon: Home, end: true },
     { to: "/admin/rewards", label: "Punkteeinlösung", icon: Gift },
@@ -64,25 +64,34 @@ export function AdminLayout() {
     <nav aria-label={variant === "drawer" ? "Restaurant Menü" : "Restaurant Portal Navigation"}>
       {navItems.map((item) => {
         const Icon = item.icon;
-        const locked = setupIncomplete && !setupAllowedRoutes.includes(item.to);
+        const locked = setupIncomplete && !isSetupAllowedPath(item.to);
+        if (locked) {
+          return (
+            <span
+              aria-disabled="true"
+              className="nav-link locked"
+              key={item.to}
+              role="link"
+            >
+              <Lock size={18} />
+              {item.label}
+            </span>
+          );
+        }
+
         return (
           <NavLink
-            aria-disabled={locked}
-            className={({ isActive }) => `nav-link${isActive ? " active" : ""}${locked ? " locked" : ""}`}
+            className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
             end={item.end}
             key={item.to}
             onClick={(event) => {
-              if (locked) {
-                event.preventDefault();
-                return;
-              }
               if (variant === "drawer") {
                 setMobileMenuOpen(false);
               }
             }}
-            to={locked ? "/admin/onboarding" : item.to}
+            to={item.to}
           >
-            {locked ? <Lock size={18} /> : <Icon size={18} />}
+            <Icon size={18} />
             {item.label}
           </NavLink>
         );

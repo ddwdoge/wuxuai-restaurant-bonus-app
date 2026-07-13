@@ -22,6 +22,7 @@ import {
   saveOnboardingDraft,
 } from "../../onboarding/pilotOnboardingService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -1117,8 +1118,9 @@ export function RestaurantOnboarding() {
   );
 
   const restaurantSlug = slugifyRestaurant(form.restaurantName || "restaurant");
-  const restaurantQrUrl = `${window.location.origin}/customer/${restaurantSlug}`;
-  const bonusQrUrl = `${window.location.origin}/w/${restaurantSlug}`;
+  const publicBaseUrl = getPublicAppBaseUrl();
+  const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
+  const bonusQrUrl = `${publicBaseUrl}/w/${restaurantSlug}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 

@@ -1,9 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCheck, Calculator, Camera, Gift, HandCoins, QrCode, Search, Stamp, UserSearch, X } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { supabase } from "../../shared/lib/supabase";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
-import { writeAuditLog } from "../audit/auditLog";
 import {
   applyStaffLoyaltyAction,
   defaultSettingsForMode,
@@ -78,7 +76,7 @@ export function StaffTablet() {
   const restaurantId = staffRestaurant?.id ?? "";
   const [view, setView] = useState<StaffView>("home");
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
-    defaultSettingsForMode(restaurantId || "demo-restaurant", "menu_points"),
+    defaultSettingsForMode(restaurantId, "menu_points"),
   );
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
   const [staffRewards, setStaffRewards] = useState<StaffCustomerRewardView[]>([]);
@@ -466,25 +464,6 @@ export function StaffTablet() {
           ruleId: payload.ruleId ?? null,
           billAmount: payload.billAmount ?? null,
         });
-
-        if (!supabase) {
-          await writeAuditLog({
-            restaurant_id: restaurantId,
-            actor_type: "staff",
-            actor_id: "demo-staff",
-            action: "staff_loyalty_credit",
-            target_table: "customers",
-            target_id: selectedCustomer.id,
-            metadata: {
-              source: "staff_portal",
-              confirmed_by_daily_pin: true,
-              loyalty_mode: settings.loyalty_mode,
-              points: payload.points,
-              stamps: payload.stamps,
-              reason: payload.reason,
-            },
-          });
-        }
 
         replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
         setBillAmount(0);

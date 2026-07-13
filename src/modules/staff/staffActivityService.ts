@@ -1,4 +1,4 @@
-import { supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export type StaffDailyActivity = {
   staff_member_id: string;
@@ -10,22 +10,7 @@ export type StaffDailyActivity = {
 
 export async function loadStaffDailyActivity(restaurantId: string): Promise<StaffDailyActivity[]> {
   if (!supabase) {
-    return [
-      {
-        staff_member_id: "demo-staff-1",
-        staff_name: "Mina",
-        points_issued: 90,
-        stamps_issued: 4,
-        rewards_redeemed: 2,
-      },
-      {
-        staff_member_id: "demo-staff-2",
-        staff_name: "Lukas",
-        points_issued: 40,
-        stamps_issued: 3,
-        rewards_redeemed: 1,
-      },
-    ];
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_staff_daily_activity", {

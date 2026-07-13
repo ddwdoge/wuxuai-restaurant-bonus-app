@@ -199,7 +199,7 @@ export function CustomerPortal() {
           setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
           return;
         }
-        setMessage("Daten konnten gerade nicht geladen werden.");
+        setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
         setCustomer(null);
         setRewards([]);
       }

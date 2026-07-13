@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { demoBranding, demoRestaurant } from "../../shared/lib/demoData";
-import { isLocalDemoMode, supabase } from "../../shared/lib/supabase";
+import { supabase } from "../../shared/lib/supabase";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -40,25 +39,11 @@ async function loadBrandingForRestaurant(restaurantId: string) {
   return (data as RestaurantBranding | null) ?? null;
 }
 
-function readDemoRestaurant() {
-  const rawState = window.localStorage.getItem("wuxuai-demo-state");
-  if (!rawState) {
-    return demoRestaurant;
-  }
-
-  try {
-    const parsed = JSON.parse(rawState) as { restaurant?: Restaurant };
-    return parsed.restaurant ? { ...demoRestaurant, ...parsed.restaurant } : demoRestaurant;
-  } catch {
-    return demoRestaurant;
-  }
-}
-
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(isLocalDemoMode ? [readDemoRestaurant()] : []);
-  const [activeRestaurantId, setActiveRestaurantId] = useState(isLocalDemoMode ? demoRestaurant.id : "");
-  const [branding, setBranding] = useState<RestaurantBranding | null>(isLocalDemoMode ? demoBranding : null);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [activeRestaurantId, setActiveRestaurantId] = useState("");
+  const [branding, setBranding] = useState<RestaurantBranding | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const tenantLoadRequestId = useRef(0);
 
@@ -144,13 +129,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !user) {
-      if (!isLocalDemoMode) {
-        tenantLoadRequestId.current += 1;
-        setRestaurants([]);
-        setActiveRestaurantId("");
-        setBranding(null);
-        setLoading(false);
-      }
+      tenantLoadRequestId.current += 1;
+      setRestaurants([]);
+      setActiveRestaurantId("");
+      setBranding(null);
+      setLoading(false);
       return;
     }
 
@@ -168,20 +151,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
     loadTenants();
   }, [user]);
-
-  useEffect(() => {
-    if (!isLocalDemoMode) {
-      return;
-    }
-
-    function refreshDemoTenant() {
-      setRestaurants([readDemoRestaurant()]);
-      setActiveRestaurantId(demoRestaurant.id);
-    }
-
-    window.addEventListener("wuxuai-demo-state-changed", refreshDemoTenant);
-    return () => window.removeEventListener("wuxuai-demo-state-changed", refreshDemoTenant);
-  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -233,11 +202,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               console.error("Restaurant-Aussehen konnte nicht aktualisiert werden.", error);
             }
           }
-          return;
-        }
-        if (isLocalDemoMode) {
-          setRestaurants([readDemoRestaurant()]);
-          setActiveRestaurantId(demoRestaurant.id);
           return;
         }
         setRestaurants([]);

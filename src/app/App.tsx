@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
+import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
 
 const RegisterPage = lazy(() => import("../modules/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })));
@@ -76,7 +77,7 @@ function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading /
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
   const { activeRestaurant, loading } = useTenant();
   const location = useLocation();
-  const isSetupAllowedRoute = location.pathname === "/admin/onboarding" || location.pathname.startsWith("/admin/settings");
+  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const onboardingCompleted = onboardingStatus === "ready" || onboardingStatus === "completed";
 

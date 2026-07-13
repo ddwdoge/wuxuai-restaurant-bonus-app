@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { useTenant } from "../../tenant/TenantProvider";
 
 type QrPrintPage = {
@@ -536,9 +537,10 @@ export function QrCenterPage() {
   const [starterKitLoading, setStarterKitLoading] = useState(false);
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const restaurantName = activeRestaurant?.name ?? "Restaurant";
-  const restaurantQrUrl = restaurantSlug ? `${window.location.origin}/customer/${restaurantSlug}` : window.location.origin;
-  const bonusQrUrl = restaurantSlug ? `${window.location.origin}/w/${restaurantSlug}` : window.location.origin;
-  const staffTabletUrl = restaurantSlug ? `${window.location.origin}/staff/${restaurantSlug}` : window.location.origin;
+  const publicBaseUrl = getPublicAppBaseUrl();
+  const restaurantQrUrl = restaurantSlug ? `${publicBaseUrl}/customer/${restaurantSlug}` : publicBaseUrl;
+  const bonusQrUrl = restaurantSlug ? `${publicBaseUrl}/w/${restaurantSlug}` : publicBaseUrl;
+  const staffTabletUrl = restaurantSlug ? `${publicBaseUrl}/staff/${restaurantSlug}` : publicBaseUrl;
   const primaryColor = safeColor(branding?.primary_color, "#0f766e");
   const secondaryColor = safeColor(branding?.secondary_color, "#f4a261");
 

@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { Gift, QrCode, Smartphone, Sparkles, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { demoCustomers } from "../../../shared/lib/demoData";
-import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../../shared/lib/supabase";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
 
-const fallbackKpis: RewardKpis = {
+const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
   pointsIssuedToday: 0,
   stampsIssuedToday: 0,
@@ -15,7 +14,7 @@ const fallbackKpis: RewardKpis = {
   activeCustomers: 0,
 };
 
-const fallbackBonusBoostKpis: BonusBoostKpis = {
+const emptyBonusBoostKpis: BonusBoostKpis = {
   guestsCurrentlyBoosted: 0,
   guestsReturnedBecauseOfBoost: 0,
 };
@@ -24,11 +23,6 @@ async function loadNewMembersToday(restaurantId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (isLocalDemoMode) {
-    return demoCustomers.filter(
-      (customer) => customer.restaurant_id === restaurantId && new Date(customer.created_at) >= today,
-    ).length;
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -45,9 +39,9 @@ async function loadNewMembersToday(restaurantId: string) {
 
 export function AdminDashboard() {
   const { activeRestaurant } = useTenant();
-  const [rewardKpis, setRewardKpis] = useState<RewardKpis>(fallbackKpis);
+  const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
   const [newMembersToday, setNewMembersToday] = useState(0);
-  const [bonusBoostKpis, setBonusBoostKpis] = useState<BonusBoostKpis>(fallbackBonusBoostKpis);
+  const [bonusBoostKpis, setBonusBoostKpis] = useState<BonusBoostKpis>(emptyBonusBoostKpis);
 
   useEffect(() => {
     if (!activeRestaurant?.id) return;
@@ -69,9 +63,9 @@ export function AdminDashboard() {
       .catch((error) => {
         if (!cancelled) {
           console.error("Dashboard-Daten konnten nicht geladen werden.", error);
-          setRewardKpis(fallbackKpis);
+          setRewardKpis(emptyKpis);
           setNewMembersToday(0);
-          setBonusBoostKpis(fallbackBonusBoostKpis);
+          setBonusBoostKpis(emptyBonusBoostKpis);
         }
       });
 

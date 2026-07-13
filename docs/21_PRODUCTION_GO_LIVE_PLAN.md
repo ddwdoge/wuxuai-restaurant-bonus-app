@@ -414,10 +414,27 @@ VITE_SUPABASE_ANON_KEY
 
 Optional später:
 
+- VITE_APP_BASE_URL
 - Stripe Publishable Key
 - Sentry/Monitoring DSN
 - Feature Flag Environment
-- App URL
+
+`VITE_APP_BASE_URL` ist die öffentliche Basis-URL der Live-App, zum Beispiel:
+
+```text
+https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev
+```
+
+QR Center und Starter-Kit verwenden diese URL für öffentliche Kunden-, Bonus-
+und Staff-Links. Wenn sie fehlt, verwendet die App den aktuellen Browser-Origin.
+
+Fehlen `VITE_SUPABASE_URL` oder `VITE_SUPABASE_ANON_KEY`, darf die Live-App
+keine Demo-Daten anzeigen. Stattdessen erscheint:
+
+```text
+Live-Daten konnten nicht geladen werden.
+Bitte prüfe die Supabase-Verbindung.
+```
 
 ### 9.4 Keine Secrets im Frontend
 
@@ -425,6 +442,7 @@ Nicht in Cloudflare Public Vars setzen:
 
 - Service Role Key
 - Supabase Access Token
+- SUPABASE_ACCESS_TOKEN
 - Stripe Secret Key
 - Datenbank Passwort
 - private DB URL

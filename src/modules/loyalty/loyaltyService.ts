@@ -1,27 +1,16 @@
-import {
-  demoCustomers,
-  demoLoyaltyRules,
-  demoLoyaltySettings,
-  demoLoyaltySettingsByMode,
-  demoRewards,
-  demoCoupons,
-  demoCampaigns,
-  demoBranding,
-  demoRestaurant,
-} from "../../shared/lib/demoData";
-import { isLocalDemoMode, liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
-  amount_based: "Amount based",
-  stamp_based: "Stamp based",
-  menu_points: "Menu points",
+  amount_based: "Betragsbasiert",
+  stamp_based: "Stempelkarte",
+  menu_points: "Punkte nach Bonstufe",
 };
 
 export const menuPointPresets = [
-  { title: "Visit", points: 10, stamps: 0, min_amount: 0 },
-  { title: "Menu", points: 20, stamps: 0, min_amount: 0 },
-  { title: "Family Menu", points: 50, stamps: 0, min_amount: 0 },
+  { title: "Besuch", points: 10, stamps: 0, min_amount: 0 },
+  { title: "Menü", points: 20, stamps: 0, min_amount: 0 },
+  { title: "Familienmenü", points: 50, stamps: 0, min_amount: 0 },
 ];
 
 const loyaltySettingsSelect =
@@ -72,22 +61,23 @@ export type StaffLoyaltyActionResult = {
   stamp_balance: number;
 };
 
-function demoId(prefix: string) {
-  return `${prefix}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
-}
-
 export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode): LoyaltySettings {
   return {
-    ...demoLoyaltySettingsByMode[mode],
-    id: demoLoyaltySettingsByMode[mode].id,
+    id: "",
     restaurant_id: restaurantId,
     loyalty_mode: mode,
+    amount_per_point: 1,
+    redemption_return_rate: 0.05,
+    stamps_required: 10,
+    bonus_amount_tiers: defaultBonusAmountTiers,
     bonus_boost_multiplier: 1,
     smart_upsell_enabled: true,
     smart_upsell_threshold: 5,
     referral_boost_enabled: true,
     referral_boost_multiplier: 2,
     referral_boost_duration_days: 30,
+    active: true,
+    created_at: new Date().toISOString(),
   };
 }
 
@@ -100,19 +90,6 @@ export function rulesForMode(rules: LoyaltyRule[], mode: LoyaltyMode) {
 }
 
 export async function loadLoyaltySettings(restaurantId: string): Promise<LoyaltySettings> {
-  if (isLocalDemoMode) {
-    return {
-      ...demoLoyaltySettings,
-      restaurant_id: restaurantId,
-      redemption_return_rate: 0.05,
-      bonus_boost_multiplier: 1,
-      smart_upsell_enabled: true,
-      smart_upsell_threshold: 5,
-      referral_boost_enabled: true,
-      referral_boost_multiplier: 2,
-      referral_boost_duration_days: 30,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -142,9 +119,6 @@ export async function loadLoyaltySettings(restaurantId: string): Promise<Loyalty
 }
 
 export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<LoyaltySettings> {
-  if (isLocalDemoMode) {
-    return settings;
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -202,9 +176,6 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
 }
 
 export async function loadLoyaltyRules(restaurantId: string): Promise<LoyaltyRule[]> {
-  if (isLocalDemoMode) {
-    return demoLoyaltyRules.map((rule) => ({ ...rule, restaurant_id: restaurantId }));
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -229,13 +200,6 @@ export async function saveLoyaltyRule(input: LoyaltyRuleInput): Promise<LoyaltyR
     active: input.active,
   };
 
-  if (isLocalDemoMode) {
-    return {
-      id: input.id ?? demoId("rule"),
-      ...payload,
-      created_at: new Date().toISOString(),
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -268,9 +232,6 @@ export async function setLoyaltyRuleActive(rule: LoyaltyRule, active: boolean): 
 }
 
 export async function loadCustomers(restaurantId: string): Promise<Customer[]> {
-  if (isLocalDemoMode) {
-    return demoCustomers.map((customer) => ({ ...customer, restaurant_id: restaurantId }));
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -468,6 +429,16 @@ function staffDailyPinActionErrorMessage(error: { message?: string; details?: st
   return "Punkte konnten gerade nicht gebucht werden. Bitte versuche es erneut.";
 }
 
+function publicPortalErrorMessage(error: { message?: string; details?: string; hint?: string; code?: string }) {
+  const technicalText = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" ").toLowerCase();
+
+  if (technicalText.includes("not found") || technicalText.includes("restaurant") || technicalText.includes("pgrst116")) {
+    return "Restaurant wurde nicht gefunden.";
+  }
+
+  return "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.";
+}
+
 export type ReferralLinkResult = {
   referral_token: string;
   referral_id: string;
@@ -537,47 +508,6 @@ export function calculateBonusTierPoints(tier: BonusAmountTier, amountPerPoint: 
   return Math.max(0, Math.round(basePoints * safeMultiplier));
 }
 
-function demoCustomerOffers(customer: Customer): PublicCustomerOfferView[] {
-  return [
-    ...demoRewards.map((reward) => ({
-      id: reward.id,
-      source: "reward" as const,
-      title: reward.title,
-      description: reward.description,
-      reward_type: reward.reward_type,
-      required_points: reward.required_points,
-      required_stamps: reward.required_stamps,
-      category: reward.category ?? null,
-      product_group: (reward.available_products ?? []).join(", ") || null,
-      active: reward.active,
-      expires_at: reward.expires_at,
-      status: customer.points_balance >= reward.required_points && customer.stamp_balance >= reward.required_stamps
-        ? ("unlocked" as const)
-        : ("locked" as const),
-      remaining_points: Math.max(0, reward.required_points - customer.points_balance),
-      remaining_stamps: Math.max(0, reward.required_stamps - customer.stamp_balance),
-    })),
-    ...demoCoupons.map((coupon) => ({
-      id: coupon.id,
-      source: "coupon" as const,
-      title: coupon.title,
-      description: coupon.description,
-      reward_type: coupon.reward_type,
-      required_points: coupon.required_points,
-      required_stamps: coupon.required_stamps,
-      category: null,
-      product_group: "Angebot",
-      active: coupon.status === "active",
-      expires_at: coupon.expires_at,
-      status: customer.points_balance >= coupon.required_points && customer.stamp_balance >= coupon.required_stamps
-        ? ("unlocked" as const)
-        : ("locked" as const),
-      remaining_points: Math.max(0, coupon.required_points - customer.points_balance),
-      remaining_stamps: Math.max(0, coupon.required_stamps - customer.stamp_balance),
-    })),
-  ];
-}
-
 export async function loadCustomerPortalData(
   restaurantSlug?: string,
   customerToken?: string | null,
@@ -587,7 +517,7 @@ export async function loadCustomerPortalData(
   }
 
   if (!supabase) {
-    throw new Error("Restaurant konnte nicht geladen werden.");
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_public_customer_portal", {
@@ -595,13 +525,13 @@ export async function loadCustomerPortalData(
     input_customer_token: customerToken ?? null,
   });
 
-  if (error) throw error;
+  if (error) throw new Error(publicPortalErrorMessage(error));
   return data as CustomerPortalData;
 }
 
 export async function registerRestaurantGuest(input: GuestRegistrationInput): Promise<GuestRegistrationResult> {
   if (!supabase) {
-    throw new Error("Restaurant konnte nicht geladen werden.");
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("register_restaurant_customer", {
@@ -617,9 +547,6 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
 }
 
 export async function resolveCustomerQrToken(restaurantId: string, customerToken: string): Promise<StaffQrCustomer> {
-  if (isLocalDemoMode) {
-    return { ...demoCustomers[0], restaurant_id: restaurantId };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -635,7 +562,7 @@ export async function resolveCustomerQrToken(restaurantId: string, customerToken
 
 export async function collectBonusPoints(input: BonusPointCollectionInput): Promise<BonusPointCollectionResult> {
   if (!supabase) {
-    throw new Error("Punkte konnten nicht gespeichert werden.");
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("collect_bonus_points", {
@@ -660,7 +587,7 @@ export async function collectBonusPoints(input: BonusPointCollectionInput): Prom
 
 export async function loadTodayRestaurantPin(restaurantId: string): Promise<TodayRestaurantPin> {
   if (!supabase) {
-    throw new Error("Tages-PIN konnte gerade nicht geladen werden.");
+    throw new Error(liveDataUnavailableMessage);
   }
 
   const { data, error } = await supabase.rpc("get_today_restaurant_pin", {
@@ -676,12 +603,6 @@ export async function createReferralLink(
   customerToken: string,
   deviceId?: string | null,
 ): Promise<ReferralLinkResult> {
-  if (isLocalDemoMode) {
-    return {
-      referral_token: `demo-ref-${Math.random().toString(36).slice(2)}`,
-      referral_id: `demo-referral-${Date.now()}`,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -697,18 +618,6 @@ export async function createReferralLink(
 }
 
 export async function loadPublicReferral(restaurantSlug: string, referralToken: string): Promise<PublicReferralData> {
-  if (isLocalDemoMode) {
-    return {
-      restaurant: demoRestaurant,
-      branding: demoBranding,
-      referrer: { first_name: demoCustomers[0].name.split(" ")[0] },
-      settings: {
-        referral_boost_enabled: true,
-        referral_boost_multiplier: 2,
-        referral_boost_duration_days: 30,
-      },
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -723,17 +632,6 @@ export async function loadPublicReferral(restaurantSlug: string, referralToken: 
 }
 
 export async function registerReferralGuest(input: ReferralRegistrationInput): Promise<ReferralRegistrationResult> {
-  if (isLocalDemoMode) {
-    return {
-      restaurant: demoRestaurant,
-      customer: {
-        name: input.firstName,
-        customer_code: `KAI-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-        customer_qr_token: `demo-token-${Math.random().toString(36).slice(2)}`,
-      },
-      referral_status: "pending_registered",
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -752,12 +650,6 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
 }
 
 export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoostKpis> {
-  if (isLocalDemoMode) {
-    return {
-      guestsCurrentlyBoosted: 1,
-      guestsReturnedBecauseOfBoost: 1,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -780,13 +672,6 @@ export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoo
 }
 
 export async function loadReferralAbuseWarnings(restaurantId: string): Promise<ReferralAbuseWarnings> {
-  if (isLocalDemoMode) {
-    return {
-      devicesWithMultipleAccounts: 0,
-      devicesWithMultipleReferrals: 0,
-      manyReferralsShortTime: 0,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
@@ -811,19 +696,6 @@ export async function loadReferralAbuseWarnings(restaurantId: string): Promise<R
 }
 
 export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): Promise<StaffLoyaltyActionResult> {
-  if (isLocalDemoMode) {
-    if (!input.dailyPin.trim()) {
-      throw new Error("Bitte gib die Tages-PIN ein.");
-    }
-
-    const customer = demoCustomers.find((item) => item.id === input.customerId) ?? demoCustomers[0];
-    return {
-      points_added: input.points,
-      stamps_added: input.stamps,
-      points_balance: customer.points_balance + input.points,
-      stamp_balance: customer.stamp_balance + input.stamps,
-    };
-  }
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }

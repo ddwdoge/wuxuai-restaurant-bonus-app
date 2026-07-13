@@ -72,6 +72,87 @@ Offen:
 
 ---
 
+## 1.2 2026-07-13 - Public-RPC-Entscheidung für Punkteeinlösung
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Die Security-Bewertung für `redeem_customer_reward(text, uuid)` wurde
+präzisiert.
+
+Entscheidung:
+
+- `anon` Execute ist für diese RPC in V1 bewusst erlaubt.
+- Grund: Das Kundenportal arbeitet öffentlich mit `customer_token` und ohne
+  Login.
+- Die Sicherheit liegt in der RPC selbst: Token, Customer, Restaurant, Branch,
+  Reward-Status, Willkommensgeschenk-Status, Punktestand, atomarer Update und
+  Audit.
+
+Geändert:
+
+- additive Migration
+  `20260713003000_redeem_customer_reward_anon_security_decision.sql`
+- SQL-Kommentar dokumentiert den bewussten Public-RPC-Grant.
+- Branch-Zugehörigkeit wurde in `redeem_customer_reward` explizit geprüft.
+- alte Code+PIN-RPCs bleiben für `anon` und `authenticated` gesperrt.
+- AdminLayout nutzt eine zentrale Setup-Pfadprüfung und rendert gesperrte
+  Menüpunkte nicht mehr als irreführende echte Routen.
+
+Nicht geändert:
+
+- keine Tages-PIN-Logik
+- keine Punkteformel
+- keine Customer-Portal-UX
+- keine Willkommensgeschenk-Zufallslogik
+- keine Bonus-Boost-Logik
+
+Offen:
+
+- Migration muss auf Supabase Staging angewendet werden.
+- Tests mit eigenem, fremdem, eingelöstem, gesperrtem und ungültigem Reward
+  müssen live gegen Staging bestätigt werden.
+
+---
+
+## 1.3 2026-07-13 - Live-Go Hardening Einlösung und Owner Registration
+
+Status: **CODE LOCK / STAGING OFFEN**
+
+Die öffentliche Punkteeinlösung und die Restaurant-Owner-Registrierung wurden
+für Live-Go gehärtet.
+
+Geändert:
+
+- neue Tabelle `customer_reward_redemption_attempts`
+- `redeem_customer_reward` limitiert auf maximal 5 Einlöseversuche pro
+  Kundentoken in 10 Minuten
+- Kundentokens werden in Attempt-Logs nur gehasht gespeichert
+- erwartete Ablehnungen werden als JSON-Fehler zurückgegeben, damit Attempt
+  Logging nicht durch Transaktionsrollback verloren geht
+- Customer Portal Service zeigt diese Fehler weiter als deutsche Meldung an
+- `start_restaurant_owner_trial` ist retry-/idempotenz-sicher
+- `completePendingOwnerRegistration` wartet mit kurzem Backoff auf
+  Supabase-Session/User und löscht Pending-Daten erst nach erfolgreichem
+  Abschluss
+
+Nicht geändert:
+
+- keine PIN-Einlösung
+- keine 6-stellige Code-Einlösung
+- keine Tages-PIN-Logik
+- keine Punkteformel
+- keine Customer-Portal-UX außer Fehlermeldung
+- keine Willkommensgeschenk-Zufallslogik
+- keine Bonus-Boost-Logik
+
+Offen:
+
+- Migration muss auf Supabase Staging angewendet werden.
+- Rate-Limit- und Owner-Registrierungs-Flows müssen live gegen Staging
+  bestätigt werden.
+
+---
+
 ## 2. Änderungsregel
 
 🟢 **FIX**
@@ -1823,3 +1904,37 @@ Status:
 
 NOT READY bis Migration auf Staging angewendet und Tenant-/RLS-/Reward-Flows
 live geprüft sind.
+
+---
+
+## 52. Phase – Demo-Modus aus Live-Runtime entfernt
+
+Problem:
+
+Live-Tests dürfen niemals Demo-Daten anzeigen. Alte Runtime-Fallbacks konnten
+bei fehlender Supabase-Verbindung oder lokalen Entwicklungsbedingungen noch
+Demo-Restaurant, Demo-User, Demo-KPIs oder Kai-Sushi-Daten liefern.
+
+Änderung:
+
+- Aktive `demoData`-Imports wurden aus Auth, Tenant, Onboarding, Loyalty,
+  Rewards, Campaigns, Dashboard und Staff entfernt.
+- `src/shared/lib/demoData.ts` wurde aus der Runtime entfernt.
+- Fehlende Supabase-Konfiguration führt zu:
+  `Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.`
+- Customer Portal lädt öffentliche Slugs nur noch über Supabase-RPCs.
+- QR Center und Onboarding-Starter-Kit verwenden `VITE_APP_BASE_URL`, wenn
+  gesetzt, sonst den aktuellen Origin.
+- Cloudflare Live-Env muss `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY`
+  enthalten. `SUPABASE_ACCESS_TOKEN` gehört nicht in die Live-App.
+
+Nicht geändert:
+
+- keine Datenbankänderung
+- keine RPC-Änderung
+- keine Tages-PIN-, Punkte-, Punkteeinlösungs-, Willkommensgeschenk-,
+  Bonus-Boost- oder QR-Token-Logik
+
+Status:
+
+NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.

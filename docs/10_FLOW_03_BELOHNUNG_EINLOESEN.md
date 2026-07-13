@@ -126,6 +126,7 @@ Eine Punkteeinlösung ist einlösbar, wenn:
 Bei Einlösung:
 
 - der Gast bestätigt final,
+- die öffentliche Einlöse-RPC prüft Kundentoken, Ownership und Rate-Limit,
 - Punkte werden abgezogen,
 - Redemption-Historie wird gespeichert,
 - Punkteeinlösung bleibt als Produktangebot sichtbar,
@@ -175,6 +176,8 @@ Wichtig:
 - keine QR-Einlösung in V1
 - normale Punkteeinlösungen dürfen bei erneut ausreichendem Punktestand erneut einlösbar sein
 - Willkommensgeschenke bleiben einmalig
+- maximal 5 öffentliche Einlöseversuche pro Kundentoken in 10 Minuten
+- Kundentokens werden für Attempt-Logging nur gehasht gespeichert
 
 ---
 
