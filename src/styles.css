@@ -3117,6 +3117,46 @@ a {
   gap: 14px;
 }
 
+.redemption-code-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.redemption-code-value {
+  display: block;
+  max-width: 100%;
+  color: var(--customer-primary, #16734a);
+  font-size: clamp(2.4rem, 12vw, 4.5rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  overflow-wrap: anywhere;
+}
+
+.redemption-countdown {
+  font-weight: 700;
+}
+
+.birthday-gift-section .reward-progress-card {
+  margin-top: 12px;
+}
+
+.redemption-code-check {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 24px;
+  max-width: 480px;
+}
+
+.redemption-code-input {
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
 .redemption-code-box {
   background: #f7f9fb;
   border: 1px solid #dde3ea;

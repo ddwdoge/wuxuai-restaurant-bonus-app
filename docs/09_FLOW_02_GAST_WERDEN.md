@@ -841,3 +841,11 @@ Wenn Codex an Flow 02 arbeitet:
 ---
 
 Endstatus: **LOCK**
+## CTO-Ergänzung 2026-07-14: Eindeutige Geschenkzuteilung
+
+🟢 **FIX / V1**
+
+- Eine normale Erstanmeldung erzeugt höchstens ein Willkommensgeschenk pro Gast und Restaurant/Filiale.
+- Reload, erneuter QR-Scan, Gerätewechsel und parallele Registrierung dürfen kein zweites Willkommensgeschenk erzeugen.
+- Geburtstagsgeschenke sind getrennte Zuteilungen und entstehen höchstens einmal pro Gast, Restaurant/Filiale und Kalenderjahr.
+- Die Geburtstagsauswahl erfolgt ausschließlich serverseitig aus dem aktiven Willkommensgeschenk-Pool.

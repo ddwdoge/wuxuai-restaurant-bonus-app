@@ -1182,3 +1182,8 @@ Wenn Codex an der Smart Reward Engine arbeitet:
 ---
 
 Endstatus: **LOCK**
+## CTO-Ergänzung 2026-07-14: Geburtstagsgeschenk
+
+🟢 **FIX / V1**
+
+V1 besitzt keinen separaten Geburtstagsgeschenk-Editor. Ein täglicher idempotenter Serverjob wählt 14 Tage vor dem Geburtstag zufällig genau ein aktives Willkommensgeschenk des Restaurants aus. Pro Gast, Restaurant/Filiale und Kalenderjahr ist nur eine Zuteilung erlaubt. Deaktivierte oder abgelaufene Vorlagen werden nicht verwendet; fehlt eine aktive Vorlage, wird nur ein Systemprotokoll geschrieben.

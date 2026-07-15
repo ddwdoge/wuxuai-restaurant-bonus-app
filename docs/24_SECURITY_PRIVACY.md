@@ -1083,3 +1083,11 @@ Wenn Codex an Sicherheit oder Datenschutz arbeitet:
 ---
 
 Endstatus: **LOCK**
+## Ergänzung 2026-07-14: PIN- und Codeschutz
+
+- Tages-PIN ist nur über eine berechtigte Restaurant-/Mitarbeiteransicht lesbar und nie Teil öffentlicher Kundenantworten.
+- Falsche Tages-PIN-Versuche werden serverseitig begrenzt und auditiert.
+- Einlösecodes werden nur als SHA-256-Hash gespeichert; der Klartext wird nur einmal an den bestätigenden Gast zurückgegeben.
+- Einlösecodes sind sechs Ziffern lang, 15 Minuten gültig und nur einmal verwendbar.
+- Aktivierung und Verbrauch werden auditiert und mandantenbezogen geprüft.
+- Öffentliche Zugriffe erhalten keine direkten Tabellenrechte auf Code-, Versuch- oder Geschenkprotokolle.

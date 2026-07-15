@@ -684,3 +684,16 @@ Customer Portal ist LOCK, wenn:
 ---
 
 Endstatus: **LOCK**
+## CTO-Ergänzung 2026-07-14: Geschenke und Einlösecode
+
+🟢 **FIX / V1**
+
+- Willkommensgeschenk: einmalig pro Gast und Restaurant/Filiale.
+- Geburtstagsgeschenk: einmalig pro Gast, Restaurant/Filiale und Kalenderjahr.
+- Das Geburtstagsgeschenk wird 14 Tage vor dem Geburtstag serverseitig zufällig aus den aktiven Willkommensgeschenken ausgewählt und bleibt bis zum Ende des Geburtstags gültig.
+- Vor einer Geschenk- oder Punkteeinlösung bestätigt der Gast verbindlich direkt vor dem Mitarbeiter.
+- Erst danach erzeugt der Server einen einmaligen sechsstelligen Einlösecode für 15 Minuten.
+- Das Kundenportal zeigt Code und Countdown; es gibt kein PIN-Feld für Einlösungen.
+- Abgelaufene oder verwendete Codes sind nicht erneut nutzbar.
+
+Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer sofort vollständig abgeschlossenen Einlösung direkt nach dem Bestätigungsbutton.

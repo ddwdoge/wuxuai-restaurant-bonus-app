@@ -913,3 +913,13 @@ Wenn Codex an API/RPC arbeitet:
 ---
 
 Endstatus: **LOCK**
+## Ergänzung 2026-07-14: Aktive V1-RPCs
+
+- `collect_bonus_points_v1`: Tages-PIN, Zwei-Buchungen-Limit und Idempotency-ID.
+- `apply_staff_daily_pin_loyalty_action_v1`: derselbe Schutz im Mitarbeiterweg.
+- `start_customer_redemption`: verbindliche Kundenbestätigung, atomare Reservierung und sechsstelliger Code.
+- `consume_redemption_code`: serverseitige einmalige Mitarbeiterbestätigung ohne PIN.
+- `issue_birthday_gifts`: serverseitige, idempotente Geburtstagsvergabe.
+- `expire_redemption_codes`: serverseitige Deaktivierung abgelaufener Codes.
+
+Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_code`, `redeem_reward_with_pin` und die alten nicht-idempotenten Punktebuchungssignaturen sind für `anon` und `authenticated` gesperrt.

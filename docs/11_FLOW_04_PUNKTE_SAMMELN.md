@@ -894,3 +894,13 @@ Wenn Codex an Flow 04 arbeitet:
 ---
 
 Endstatus: **LOCK**
+## CTO-Ergänzung 2026-07-14: Tageslimit und Idempotenz
+
+🟢 **FIX / V1**
+
+- Maximal zwei erfolgreiche Punktebuchungen pro Gast, Restaurant/Filiale und lokalem Kalendertag.
+- Die Prüfung und Buchung erfolgen atomar und serverseitig.
+- Jede Anfrage besitzt eine Idempotency-ID; derselbe Request erzeugt keine Doppelbuchung.
+- Kunden- und Mitarbeiterweg verwenden dieselbe Tages-PIN-, Fehlversuchs- und Tageslimit-Sicherung.
+- Sperrmeldung: „Du hast heute bereits zweimal Punkte gesammelt. Morgen kannst du wieder Punkte sammeln.“
+- Die Restaurant-Zeitzone bestimmt Tages-PIN und Tagesgrenze; V1-Standard ist `Europe/Vienna`.

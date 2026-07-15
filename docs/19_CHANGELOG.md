@@ -1938,3 +1938,17 @@ Nicht geändert:
 Status:
 
 NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
+
+---
+
+## 2026-07-14 – Tages-PIN, Buchungslimit, Geschenke und Einlösecode V1
+
+- idempotente Punktebuchungswrapper für Kunden- und Mitarbeiterportal ergänzt
+- maximal zwei erfolgreiche Punktebuchungen pro lokalem Tag serverseitig abgesichert
+- lokale Tages-PIN-Erzeugung an Restaurant-Zeitzone gebunden
+- harte Eindeutigkeit für Willkommens- und jährliche Geburtstagsgeschenke ergänzt
+- tägliche idempotente Geburtstagsvergabe aus aktiven Willkommensgeschenken ergänzt
+- gemeinsames gehashtes sechsstellige Codesystem mit 15-Minuten-Ablauf ergänzt
+- alte öffentliche Direkt-/PIN-Einlösewege gesperrt
+- Customer Portal und Staff Portal auf verbindliche Codebestätigung umgestellt
+- sichtbare Begriffe „Punkteeinlösung“, „Willkommensgeschenk“ und „Geburtstagsgeschenk“ vereinheitlicht

@@ -1861,3 +1861,15 @@ Wenn Codex diese Datei liest:
 ---
 
 Endstatus: **LOCK**
+## CTO-Entscheidung 2026-07-14: Tages-PIN, Geschenktypen und Einlösecode
+
+🟢 **FIX / V1**
+
+- Tages-PIN: vierstellig, automatisch, lokal pro Restaurant/Filiale und Tag, nur für Punkte sammeln.
+- Punkte sammeln: maximal zwei erfolgreiche Buchungen pro Gast, Restaurant/Filiale und lokalem Tag; atomar und idempotent.
+- Willkommensgeschenk: einmalig pro Gast und Restaurant/Filiale.
+- Geburtstagsgeschenk: einmalig pro Gast, Restaurant/Filiale und Jahr; 14 Tage vorher zufällig aus aktiven Willkommensgeschenken.
+- Einlösung: verbindliche Kundenbestätigung, danach sechsstelliger einmaliger Code für 15 Minuten, Mitarbeiterbestätigung ohne PIN.
+- Alte Screenshots und abgelaufene/verwendete Codes werden serverseitig abgelehnt.
+
+Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung ohne prüfbaren Code bereits unmittelbar nach dem Kundenbutton vollständig abgeschlossen ist.

@@ -31,7 +31,7 @@ const giftIcons: Record<string, string> = {
   Sushi: "🍣",
   Menü: "🍱",
   Belohnung: "🎁",
-  "Eigene Belohnung": "🎁",
+  "Eigene Überraschung": "🎁",
 };
 
 const giftAssets: Record<string, string> = {
@@ -43,7 +43,7 @@ const giftAssets: Record<string, string> = {
   Sushi: "sushi",
   Menü: "menu",
   Belohnung: "custom",
-  "Eigene Belohnung": "custom",
+  "Eigene Überraschung": "custom",
 };
 
 const giftCategoryOptions = [
@@ -54,7 +54,7 @@ const giftCategoryOptions = [
   "Menü",
   "Hauptspeise",
   "Sushi",
-  "Eigene Belohnung",
+  "Eigene Überraschung",
 ];
 
 function formatEuro(value: number | null | undefined) {
@@ -104,7 +104,9 @@ function fileExtension(file: File) {
 }
 
 function formFromGift(gift: RewardOffer): GiftForm {
-  const category = gift.category === "Belohnung" ? "Eigene Belohnung" : gift.category ?? "Eigene Belohnung";
+  const category = gift.category === "Belohnung" || gift.category === "Eigene Belohnung"
+    ? "Eigene Überraschung"
+    : gift.category ?? "Eigene Überraschung";
   return {
     id: gift.id,
     title: gift.title,
@@ -118,7 +120,7 @@ function formFromGift(gift: RewardOffer): GiftForm {
 }
 
 function standardGiftAsset(category: string | null | undefined, title: string) {
-  const safeCategory = category || "Belohnung";
+  const safeCategory = category || "Eigene Überraschung";
   return (
     <span className={`standard-asset reward-card-asset ${giftAssets[safeCategory] ?? "custom"}`} aria-label={`Standardbild ${title}`}>
       {giftIcons[safeCategory] ?? "🎁"}
@@ -230,7 +232,7 @@ export function WelcomeGiftsPage() {
       const uploadedUrl = photoFile ? await uploadPhoto(photoFile) : null;
       const fixedProductName = editing.mode === "fixed_product" ? editing.fixedProductName.trim() : null;
       const valueLimit = Math.max(0, parseEuro(editing.productPrice));
-      const category = editing.category.trim() || original.category || "Eigene Belohnung";
+      const category = editing.category.trim() || original.category || "Eigene Überraschung";
       const saved = await saveRewardOffer({
         ...original,
         title: editing.title.trim() || original.title,
@@ -427,7 +429,7 @@ export function WelcomeGiftsPage() {
             </div>
             <div>
               <strong>{gift.title}</strong>
-              <p className="muted">Kategorie: {gift.category ?? "Belohnung"}</p>
+              <p className="muted">Kategorie: {gift.category ?? "Eigene Überraschung"}</p>
               <p>{gift.welcome_gift_mode === "fixed_product" && gift.fixed_product_name
                 ? gift.fixed_product_name
                 : `bis ${formatEuro(gift.product_price ?? defaultGiftValue(gift.category))}`}</p>

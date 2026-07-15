@@ -98,7 +98,7 @@ const steps = [
   "Aussehen",
   "Geöffnet",
   "Punkteeinlösung",
-  "Willkommens-Belohnungen",
+  "Willkommensgeschenke",
   "Restaurant Starter Kit",
   "Startklar",
 ];
@@ -108,7 +108,7 @@ const stepTitles = [
   "Wie soll dein Restaurant aussehen?",
   "Wann hast du geöffnet?",
   "Wie sollen Gäste Punkte einlösen?",
-  "Welche Willkommens-Belohnungen möchtest du anbieten?",
+  "Welche Willkommensgeschenke möchtest du anbieten?",
   "Restaurant Starter Kit",
   "Herzlichen Glückwunsch! Dein Restaurant ist startklar.",
 ];
@@ -118,7 +118,7 @@ const checklistLabels = {
   brandingCompleted: "Aussehen fertig",
   openingHoursCompleted: "Öffnungszeiten fertig",
   bonusProgramCompleted: "Bonusprogramm fertig",
-  firstRewardCreated: "Willkommens-Belohnungen fertig",
+  firstRewardCreated: "Willkommensgeschenke fertig",
   guestTestReady: "Restaurant Starter Kit bereit",
   qrReady: "QR-Codes bereit",
 };
@@ -208,9 +208,9 @@ const starterRewardTemplates: StarterRewardTemplate[] = [
   },
   {
     key: "eigene-belohnung",
-    title: "Eigene Belohnung",
+    title: "Eigene Überraschung",
     description: "Deine eigene Willkommens-Idee.",
-    category: "Belohnung",
+    category: "Eigene Überraschung",
     availableProducts: "",
     asset: "custom",
   },
@@ -263,7 +263,7 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
           {
             key: "legacy-welcome-reward",
             title: legacyDraft.rewardTitle,
-            category: legacyDraft.rewardCategory ?? "Belohnung",
+            category: legacyDraft.rewardCategory ?? "Eigene Überraschung",
             availableProducts: legacyDraft.availableProducts ?? "",
             active: true,
           },
@@ -275,8 +275,8 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
     ...draftData,
     starterRewards: starterRewards.filter((reward) => reward.active !== false).map((reward, index) => ({
       key: reward.key || `starter-reward-${index + 1}`,
-      title: reward.title || "Eigene Belohnung",
-      category: reward.category || "Belohnung",
+      title: reward.title || "Eigene Überraschung",
+      category: reward.category || "Eigene Überraschung",
       availableProducts: reward.availableProducts || "",
       active: true,
     })),
@@ -1083,7 +1083,7 @@ function getStepBlocker(
   }
 
   if (step === 4 && form.starterRewards.filter((reward) => reward.title.trim()).length === 0) {
-    return "Bitte wähle mindestens eine Willkommens-Belohnung.";
+    return "Bitte wähle mindestens ein Willkommensgeschenk.";
   }
 
   if (step === 6) {
@@ -1144,8 +1144,8 @@ export function RestaurantOnboarding() {
     `${form.restaurantName || "Dein Restaurant"} bekommt ein eigenes digitales Bonusprogramm.`,
     `Gäste sehen deine Öffnungszeiten: ${openDaysSummary(form.openingHours)}.`,
     `Du planst ${bonus.returnRatePercent} Rückgabe nach ca. ${form.firstRewardVisits} Besuchen.`,
-    `${form.starterRewards.length || 1} Willkommens-Belohnung wartet später zufällig auf neue Gäste.`,
-    "Willkommens-Belohnungen sind ein fester Teil deines Bonusprogramms.",
+    `${form.starterRewards.length || 1} Willkommensgeschenk wartet später zufällig auf neue Gäste.`,
+    "Willkommensgeschenke sind ein fester Teil deines Bonusprogramms.",
   ];
 
   useEffect(() => {
@@ -1888,19 +1888,19 @@ export function RestaurantOnboarding() {
             <section className="wizard-screen">
               <h2>{stepTitles[4]}</h2>
               <article className="calculation-card">
-                <strong>Welche Willkommens-Belohnungen möchtest du anbieten?</strong>
-                <p className="muted">Empfohlen: 3–5 Willkommens-Belohnungen. Jeder neue Gast erhält zufällig eine davon.</p>
+                <strong>Welche Willkommensgeschenke möchtest du anbieten?</strong>
+                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Jeder neue Gast erhält zufällig eines davon.</p>
               </article>
 
               {!starterRewardConfirmationOpen ? (
                 <>
                   <div className={`starter-reward-counter ${starterRewardCounterTone}`}>
                     <div>
-                      <strong>Willkommens-Belohnungen</strong>
+                      <strong>Willkommensgeschenke</strong>
                       <p className="muted">{selectedStarterRewardCount} / 5 ausgewählt</p>
                     </div>
                     {selectedStarterRewardCount > 0 && selectedStarterRewardCount < 3 ? (
-                      <p className="muted">💡 Wir empfehlen 3–5 Willkommens-Belohnungen für mehr Abwechslung.</p>
+                      <p className="muted">💡 Wir empfehlen 3–5 Willkommensgeschenke für mehr Abwechslung.</p>
                     ) : null}
                   </div>
 
@@ -1935,7 +1935,7 @@ export function RestaurantOnboarding() {
                     ))}
                   </div>
                   <p className="muted">
-                    Jeder neue Gast erhält zufällig eine dieser Willkommens-Belohnungen.
+                    Jeder neue Gast erhält zufällig eines dieser Willkommensgeschenke.
                   </p>
                   <p className="muted">
                     Welches konkrete Produkt du verschenkst, entscheidest du später im Bereich Willkommensgeschenke.
@@ -1966,7 +1966,7 @@ export function RestaurantOnboarding() {
               </article>
               <div className="qr-launch-grid">
                 <QrLaunchCard
-                  description="Neue Gäste scannen diesen QR-Code. Sie werden Mitglied und erhalten ihre erste Willkommens-Belohnung."
+                  description="Neue Gäste scannen diesen QR-Code. Sie werden Mitglied und erhalten ihr erstes Willkommensgeschenk."
                   icon="👤"
                   id="restaurant-qr"
                   logoUrl={visibleLogoUrl}

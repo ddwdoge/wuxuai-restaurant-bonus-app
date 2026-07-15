@@ -14,6 +14,7 @@ import {
   type TodayRestaurantPin,
 } from "../loyalty/loyaltyService";
 import {
+  consumeRedemptionCode,
   loadStaffCustomerRewards,
   type StaffCustomerRewardView,
 } from "../rewards/rewardService";
@@ -101,6 +102,8 @@ export function StaffTablet() {
   const [staffError, setStaffError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [redemptionCode, setRedemptionCode] = useState("");
+  const [checkingRedemptionCode, setCheckingRedemptionCode] = useState(false);
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerAnimationRef = useRef<number | null>(null);
@@ -463,6 +466,7 @@ export function StaffTablet() {
           reason: payload.reason,
           ruleId: payload.ruleId ?? null,
           billAmount: payload.billAmount ?? null,
+          idempotencyKey: crypto.randomUUID(),
         });
 
         replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
@@ -475,6 +479,38 @@ export function StaffTablet() {
   async function handleSearch(event: FormEvent) {
     event.preventDefault();
     await findCustomerFromSearch(query);
+  }
+
+  async function handleRedemptionCode(event: FormEvent) {
+    event.preventDefault();
+    if (!restaurantId) return;
+    if (!/^\d{6}$/.test(redemptionCode)) {
+      setMessage("Bitte gib den sechsstelligen Einlösecode ein.");
+      return;
+    }
+
+    setCheckingRedemptionCode(true);
+    setMessage(null);
+    try {
+      const result = await consumeRedemptionCode(restaurantId, redemptionCode);
+      setMessage(`${result.title}: Einlösung erfolgreich bestätigt.`);
+      setRedemptionCode("");
+      if (selectedCustomerId) {
+        const nextRewards = await loadStaffCustomerRewards(restaurantId, selectedCustomerId);
+        setStaffRewards(nextRewards);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : "";
+      if (errorMessage.includes("abgelaufen")) {
+        setMessage("Der Einlösecode ist abgelaufen.");
+      } else if (errorMessage.includes("bereits verwendet")) {
+        setMessage("Der Einlösecode wurde bereits verwendet.");
+      } else {
+        setMessage("Der Einlösecode ist nicht gültig.");
+      }
+    } finally {
+      setCheckingRedemptionCode(false);
+    }
   }
 
   function selectCustomer(customerId: string, nextView: StaffView = "search") {
@@ -758,6 +794,24 @@ export function StaffTablet() {
       {view === "redeem" ? (
         <section className="card" style={{ marginTop: 16 }}>
           <h2>Punkteeinlösung prüfen</h2>
+          <form className="redemption-code-check" onSubmit={handleRedemptionCode}>
+            <div className="field">
+              <label htmlFor="redemption-code">Sechsstelliger Einlösecode</label>
+              <input
+                className="input redemption-code-input"
+                id="redemption-code"
+                inputMode="numeric"
+                maxLength={6}
+                onChange={(event) => setRedemptionCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                value={redemptionCode}
+              />
+            </div>
+            <button className="button" disabled={checkingRedemptionCode || redemptionCode.length !== 6} type="submit">
+              {checkingRedemptionCode ? "Code wird geprüft..." : "Einlösung bestätigen"}
+            </button>
+            <p className="muted">Für die Einlösung ist keine Tages-PIN erforderlich.</p>
+          </form>
           <h3>Verfügbare Punkteeinlösungen</h3>
           <div className="tablet-actions" style={{ marginTop: 16 }}>
             {staffRewardsLoading ? <p className="muted">Punkteeinlösungen werden geladen...</p> : null}
@@ -810,10 +864,11 @@ export function StaffTablet() {
                 className="input"
                 id="staff-pin-modal"
                 inputMode="numeric"
+                maxLength={4}
                 placeholder="Tages-PIN eingeben"
                 type="password"
                 value={pinDraft}
-                onChange={(event) => setPinDraft(event.target.value)}
+                onChange={(event) => setPinDraft(event.target.value.replace(/\D/g, "").slice(0, 4))}
               />
               <p className="muted">{pendingPinAction.pinHelp}</p>
             </div>

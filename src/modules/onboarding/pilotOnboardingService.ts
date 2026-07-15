@@ -174,7 +174,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     .map((reward, index) => ({
       restaurant_id: restaurantId,
       title: reward.title.trim(),
-      description: "Willkommens-Belohnung für neue Gäste.",
+      description: "Willkommensgeschenk für neue Gäste.",
       reward_type: "reward" as RewardType,
       required_points: 0,
       required_stamps: 0,
@@ -188,7 +188,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     }));
 
   if (starterRewardRows.length === 0) {
-    throw new Error("Bitte mindestens eine Willkommens-Belohnung anlegen.");
+    throw new Error("Bitte mindestens ein Willkommensgeschenk anlegen.");
   }
 
   const { data: rewards, error: rewardError } = await supabase

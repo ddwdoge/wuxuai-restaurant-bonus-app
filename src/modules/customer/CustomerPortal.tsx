@@ -1,10 +1,10 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Gift, Info, QrCode, UserPlus, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import type { LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
-import { redeemCustomerReward } from "../rewards/rewardService";
+import { startCustomerRedemption } from "../rewards/rewardService";
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
@@ -26,6 +26,16 @@ import {
 } from "./customerTokenStorage";
 
 type GuestStep = "welcome" | "register" | "success";
+
+type ActiveRedemptionCode = {
+  code: string;
+  expiresAt: string;
+  rewardId: string;
+  assignmentId: string | null;
+  title: string;
+  redemptionType: "welcome_gift" | "birthday_gift" | "points_redemption";
+  pointsSpent: number;
+};
 
 function formatBoostRemaining(activeUntil: string, remainingDays: number | undefined, nowMs: number) {
   const remainingMs = new Date(activeUntil).getTime() - nowMs;
@@ -130,6 +140,7 @@ export function CustomerPortal() {
   const [redeemOffer, setRedeemOffer] = useState<PublicCustomerOfferView | null>(null);
   const [redemptionStatus, setRedemptionStatus] = useState<string | null>(null);
   const [redemptionCompleted, setRedemptionCompleted] = useState(false);
+  const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
   const [redeemingReward, setRedeemingReward] = useState(false);
   const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(null);
   const [tokenAutoLoaded, setTokenAutoLoaded] = useState(false);
@@ -145,6 +156,8 @@ export function CustomerPortal() {
   const [creatingReferral, setCreatingReferral] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
+  const collectionInFlightRef = useRef(false);
+  const redemptionInFlightRef = useRef(false);
   const restaurantSlug = slug ?? restaurant?.slug ?? "";
   const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
@@ -232,11 +245,12 @@ export function CustomerPortal() {
   }, []);
 
   const visibleRewards = useMemo<PublicCustomerOfferView[]>(
-    () => rewards.filter((offer) => offer.active && offer.status !== "redeemed"),
+    () => rewards.filter((offer) => offer.active && offer.status !== "redeemed" && offer.status !== "redemption_started"),
     [rewards],
   );
   const pointRedemptions = visibleRewards.filter((offer) => offer.source === "reward" && !offer.is_starter_reward);
-  const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward) ?? null;
+  const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
+  const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
   const pointsLabel = settings?.loyalty_mode === "stamp_based" ? "Stempel" : "Punkte";
   const pointsTitle = settings?.loyalty_mode === "stamp_based" ? "Deine Stempel" : "Deine Punkte";
   const pointsValue = settings?.loyalty_mode === "stamp_based"
@@ -307,6 +321,32 @@ export function CustomerPortal() {
   const collectionBasePoints = collectionResult?.base_points ?? collectionResult?.points_added ?? 0;
   const collectionTotalPoints = collectionResult?.points_added ?? 0;
   const collectionBoostPoints = Math.max(0, collectionTotalPoints - collectionBasePoints);
+  const redemptionSecondsRemaining = activeRedemptionCode
+    ? Math.max(0, Math.ceil((new Date(activeRedemptionCode.expiresAt).getTime() - nowMs) / 1_000))
+    : 0;
+
+  useEffect(() => {
+    if (!restaurantSlug) return;
+    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
+    try {
+      const stored = window.sessionStorage.getItem(storageKey);
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as ActiveRedemptionCode;
+      if (new Date(parsed.expiresAt).getTime() > Date.now() && /^\d{6}$/.test(parsed.code)) {
+        setActiveRedemptionCode(parsed);
+        setRedemptionCompleted(true);
+      } else {
+        window.sessionStorage.removeItem(storageKey);
+      }
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  }, [restaurantSlug]);
+
+  useEffect(() => {
+    if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug) return;
+    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+  }, [activeRedemptionCode, redemptionSecondsRemaining, restaurantSlug]);
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
@@ -354,6 +394,7 @@ export function CustomerPortal() {
   }
 
   async function handleCollectPoints() {
+    if (collectionInFlightRef.current) return;
     if (!selectedTier || billAmount === null) {
       setMessage("Bitte gib deinen Rechnungsbetrag ein.");
       return;
@@ -369,6 +410,7 @@ export function CustomerPortal() {
       return;
     }
 
+    collectionInFlightRef.current = true;
     setCollecting(true);
     setMessage(null);
 
@@ -379,6 +421,7 @@ export function CustomerPortal() {
         amountTierKey: selectedTier.key,
         dailyPin: dailyPin.trim(),
         deviceId: getWebDeviceId(),
+        idempotencyKey: crypto.randomUUID(),
       });
       setCollectionResult(result);
       setCustomer((current) => current ? { ...current, points_balance: result.points_balance } : current);
@@ -388,6 +431,7 @@ export function CustomerPortal() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Punkte konnten gerade nicht gutgeschrieben werden. Bitte versuche es erneut.");
     } finally {
+      collectionInFlightRef.current = false;
       setCollecting(false);
     }
   }
@@ -438,21 +482,40 @@ export function CustomerPortal() {
   }
 
   async function handleRedeemCustomerReward() {
-    if (!activeToken || !redeemOffer) return;
+    if (!activeToken || !redeemOffer || redemptionInFlightRef.current) return;
+    redemptionInFlightRef.current = true;
     setRedeemingReward(true);
     setRedemptionStatus(null);
 
     try {
-      const result = await redeemCustomerReward({
+      const result = await startCustomerRedemption({
         customerToken: activeToken,
         rewardId: redeemOffer.id,
+        customerRewardId: redeemOffer.assignment_id ?? null,
+        idempotencyKey: crypto.randomUUID(),
       });
+      if (!result.redemption_code) {
+        setRedemptionStatus("Für diese Einlösung ist bereits ein Code aktiv. Bitte zeige den bereits geöffneten Code.");
+        return;
+      }
+      const nextActiveCode: ActiveRedemptionCode = {
+        code: result.redemption_code,
+        expiresAt: result.expires_at,
+        rewardId: redeemOffer.id,
+        assignmentId: redeemOffer.assignment_id ?? null,
+        title: redeemOffer.title,
+        redemptionType: result.redemption_type,
+        pointsSpent: result.points_spent ?? redeemOffer.required_points,
+      };
+      setActiveRedemptionCode(nextActiveCode);
+      window.sessionStorage.setItem(`wuxuai-active-redemption:${restaurantSlug}`, JSON.stringify(nextActiveCode));
       setCustomer((current) => current
         ? { ...current, points_balance: result.points_balance, stamp_balance: result.stamp_balance }
         : current);
       setRewards((current) => {
         if (redeemOffer.is_starter_reward) {
-          return current.filter((reward) => reward.id !== redeemOffer.id);
+          return current.filter((reward) =>
+            (reward.assignment_id ?? reward.id) !== (redeemOffer.assignment_id ?? redeemOffer.id));
         }
 
         return current.map((reward) => {
@@ -467,17 +530,14 @@ export function CustomerPortal() {
           };
         });
       });
-      setRedemptionStatus(
-        redeemOffer.is_starter_reward
-          ? "Willkommensgeschenk erfolgreich eingelöst. Zeige diese Bestätigung im Restaurant vor."
-          : `Punkteeinlösung erfolgreich. ${result.points_spent ?? redeemOffer.required_points} Punkte wurden eingelöst.`,
-      );
+      setRedemptionStatus("Einlösung verbindlich bestätigt. Zeige den Code jetzt dem Mitarbeiter.");
       setRedemptionCompleted(true);
       setRefreshToken((current) => current + 1);
     } catch (error) {
       console.error("Punkteeinlösung konnte nicht verwendet werden.", error);
       setRedemptionStatus(error instanceof Error ? error.message : "Diese Punkteeinlösung ist nicht mehr verfügbar.");
     } finally {
+      redemptionInFlightRef.current = false;
       setRedeemingReward(false);
     }
   }
@@ -872,7 +932,7 @@ export function CustomerPortal() {
                 {pointRedemptions.map((reward) => (
                   <div
                     className={`reward-progress-card${reward.status === "unlocked" ? " unlocked" : ""}`}
-                    key={`${reward.source}-${reward.id}`}
+                    key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                   >
                     <div className="reward-image-shell">
                       {rewardImage(reward)}
@@ -901,6 +961,27 @@ export function CustomerPortal() {
                 {pointRedemptions.length === 0 ? <p className="muted">Aktuell sind keine Punkteeinlösungen sichtbar.</p> : null}
               </div>
             </article>
+
+            {activeBirthdayGift ? (
+              <article className="card birthday-gift-section">
+                <h2>Dein Geburtstagsgeschenk</h2>
+                <div className="reward-progress-card unlocked">
+                  {rewardImage(activeBirthdayGift)}
+                  <strong>{activeBirthdayGift.title}</strong>
+                  <span className="pill">Geburtstagsgeschenk</span>
+                  <p>Dieses Geschenk wurde automatisch für deinen Geburtstag ausgewählt.</p>
+                  {activeBirthdayGift.valid_from && activeBirthdayGift.valid_until ? (
+                    <p className="muted">
+                      Gültig von {new Date(activeBirthdayGift.valid_from).toLocaleDateString("de-AT")} bis{" "}
+                      {new Date(new Date(activeBirthdayGift.valid_until).getTime() - 1).toLocaleDateString("de-AT")}.
+                    </p>
+                  ) : null}
+                  <button className="button" onClick={() => openRewardRedemption(activeBirthdayGift)} type="button">
+                    Jetzt einlösen
+                  </button>
+                </div>
+              </article>
+            ) : null}
 
             {activeWelcomeGift ? (
               <article className="card welcome-gift-section">
@@ -949,15 +1030,50 @@ export function CustomerPortal() {
               <p className="muted">Dieses Gerät ist mit deinem Bonuskonto verbunden.</p>
             </article>
 
-            {redeemOffer ? (
+            {activeRedemptionCode ? (
+              <article className="card redemption-code-card" aria-live="polite">
+                <span className="pill">
+                  {activeRedemptionCode.redemptionType === "birthday_gift"
+                    ? "Geburtstagsgeschenk"
+                    : activeRedemptionCode.redemptionType === "welcome_gift"
+                      ? "Willkommensgeschenk"
+                      : "Punkteeinlösung"}
+                </span>
+                <h2>{activeRedemptionCode.title}</h2>
+                {redemptionSecondsRemaining > 0 ? (
+                  <>
+                    <p>Zeige diesen Code jetzt dem Mitarbeiter.</p>
+                    <strong className="redemption-code-value">{activeRedemptionCode.code}</strong>
+                    <p className="redemption-countdown">
+                      Gültig noch {Math.floor(redemptionSecondsRemaining / 60)}:{String(redemptionSecondsRemaining % 60).padStart(2, "0")} Minuten
+                    </p>
+                    <p className="muted">Der Code kann nur einmal verwendet werden.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Code abgelaufen</h3>
+                    <p className="muted">Dieser Einlösecode kann nicht mehr verwendet werden.</p>
+                  </>
+                )}
+              </article>
+            ) : null}
+
+            {redeemOffer && !activeRedemptionCode ? (
               <article className="card redeem-show-card">
-                <span className="pill">{redeemOffer.is_starter_reward ? "Willkommensgeschenk" : "Punkteeinlösung"}</span>
+                <span className="pill">
+                  {redeemOffer.gift_type === "birthday"
+                    ? "Geburtstagsgeschenk"
+                    : redeemOffer.is_starter_reward
+                      ? "Willkommensgeschenk"
+                      : "Punkteeinlösung"}
+                </span>
                 <h2>{redeemOffer.title}</h2>
-                <h3>{redeemOffer.is_starter_reward ? "Willkommensgeschenk wirklich einlösen?" : "Punkte wirklich einlösen?"}</h3>
+                <h3>{redeemOffer.is_starter_reward ? "Geschenk wirklich einlösen?" : "Punkte wirklich einlösen?"}</h3>
+                <p><strong>Bitte erst direkt vor dem Mitarbeiter bestätigen.</strong></p>
                 <p className="muted">
                   {redeemOffer.is_starter_reward
-                    ? "Nach der Bestätigung ist dieses Willkommensgeschenk verbraucht und kann nicht erneut verwendet werden."
-                    : `Nach der Bestätigung werden ${redeemOffer.required_points} Punkte von deinem Konto abgezogen.`}
+                    ? "Nach der verbindlichen Bestätigung wird ein einmaliger Einlösecode erzeugt."
+                    : `Nach der verbindlichen Bestätigung werden ${redeemOffer.required_points} Punkte reserviert und ein einmaliger Einlösecode erzeugt.`}
                 </p>
 
                 {redemptionStatus ? <p className="status-message">{redemptionStatus}</p> : null}
@@ -973,7 +1089,7 @@ export function CustomerPortal() {
                     }}
                     type="button"
                   >
-                    {redemptionCompleted ? "Schließen" : "Abbrechen"}
+                    Abbrechen
                   </button>
                   {!redemptionCompleted ? (
                     <button
@@ -982,7 +1098,7 @@ export function CustomerPortal() {
                       onClick={handleRedeemCustomerReward}
                       type="button"
                     >
-                      {redeemOffer.is_starter_reward ? "Ja, einlösen" : "Ja, Punkte einlösen"}
+                      Jetzt verbindlich einlösen
                     </button>
                   ) : null}
                 </div>

@@ -1256,3 +1256,14 @@ Wenn Codex an der Datenbank arbeitet:
 ---
 
 Endstatus: **LOCK**
+## Ergänzung 2026-07-14: V1-Sicherheitsobjekte
+
+Neue additive Objekte:
+
+- `points_collection_requests`: idempotente Punktebuchungsanfragen.
+- `customer_rewards.gift_type`: Trennung `welcome`, `birthday`, `legacy`.
+- `birthday_gift_job_log`: nachvollziehbare tägliche Geburtstagsvergabe.
+- `redemption_codes`: gemeinsame gehashte Einlösecodes für Geschenke und Punkteeinlösungen.
+- `redemption_activation_attempts`: Rate Limit für Codeaktivierungen.
+
+Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburtstagsgeschenke pro Kalenderjahr.

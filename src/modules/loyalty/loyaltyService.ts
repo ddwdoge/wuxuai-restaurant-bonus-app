@@ -52,6 +52,7 @@ export type StaffLoyaltyActionInput = {
   reason: string;
   ruleId?: string | null;
   billAmount?: number | null;
+  idempotencyKey: string;
 };
 
 export type StaffLoyaltyActionResult = {
@@ -300,9 +301,14 @@ export type PublicCustomerOfferView = {
   welcome_gift_mode?: "value_limit" | "fixed_product";
   fixed_product_name?: string | null;
   is_starter_reward?: boolean;
+  assignment_id?: string | null;
+  gift_type?: "welcome" | "birthday" | "legacy" | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  birthday_year?: number | null;
   active: boolean;
   expires_at: string | null;
-  status: "locked" | "unlocked" | "redeemed";
+  status: "locked" | "unlocked" | "redemption_started" | "redeemed";
   remaining_points: number;
   remaining_stamps: number;
 };
@@ -347,6 +353,7 @@ export type BonusPointCollectionInput = {
   amountTierKey: string;
   dailyPin: string;
   deviceId?: string | null;
+  idempotencyKey: string;
 };
 
 export type BonusPointCollectionResult = {
@@ -381,7 +388,7 @@ function collectBonusPointsErrorMessage(error: { message?: string; details?: str
   }
 
   if (technicalText.includes("heute bereits punkte gesammelt")) {
-    return "Du hast heute bereits Punkte gesammelt. Wenn das nicht stimmt, wende dich bitte an das Restaurant.";
+    return "Du hast heute bereits zweimal Punkte gesammelt. Morgen kannst du wieder Punkte sammeln.";
   }
 
   if (technicalText.includes("points already collected recently")) {
@@ -526,7 +533,52 @@ export async function loadCustomerPortalData(
   });
 
   if (error) throw new Error(publicPortalErrorMessage(error));
-  return data as CustomerPortalData;
+
+  const portalData = data as CustomerPortalData;
+  if (!customerToken || !portalData.customer) return portalData;
+
+  const { data: giftMetadata, error: giftMetadataError } = await supabase.rpc("get_customer_gift_metadata", {
+    input_customer_token: customerToken,
+  });
+  if (giftMetadataError) throw new Error(publicPortalErrorMessage(giftMetadataError));
+
+  const availableMetadata = (giftMetadata ?? []) as Array<{
+    reward_id: string;
+    assignment_id: string;
+    gift_type: "welcome" | "birthday";
+    status: "locked" | "active" | "redemption_started";
+    valid_from: string | null;
+    valid_until: string | null;
+    birthday_year: number | null;
+  }>;
+
+  const starterOffers = portalData.offers.filter((offer) => offer.is_starter_reward);
+  const expandedStarterOffers = starterOffers.flatMap((offer) => {
+    const assignments = availableMetadata.filter((item) => item.reward_id === offer.id);
+    if (assignments.length === 0) return [offer];
+
+    return assignments.map((metadata) => ({
+      ...offer,
+      assignment_id: metadata.assignment_id,
+      gift_type: metadata.gift_type,
+      valid_from: metadata.valid_from,
+      valid_until: metadata.valid_until,
+      birthday_year: metadata.birthday_year,
+      status: metadata.status === "locked"
+        ? "locked" as const
+        : metadata.status === "redemption_started"
+          ? "redemption_started" as const
+          : "unlocked" as const,
+    }));
+  });
+
+  return {
+    ...portalData,
+    offers: [
+      ...portalData.offers.filter((offer) => !offer.is_starter_reward),
+      ...expandedStarterOffers,
+    ],
+  };
 }
 
 export async function registerRestaurantGuest(input: GuestRegistrationInput): Promise<GuestRegistrationResult> {
@@ -565,12 +617,13 @@ export async function collectBonusPoints(input: BonusPointCollectionInput): Prom
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("collect_bonus_points", {
+  const { data, error } = await supabase.rpc("collect_bonus_points_v1", {
     input_restaurant_slug: input.restaurantSlug,
     input_customer_token: input.customerToken,
     input_amount_tier_key: input.amountTierKey,
     input_daily_pin: input.dailyPin,
     input_device_id: input.deviceId ?? null,
+    input_idempotency_key: input.idempotencyKey,
   });
 
   if (error) {
@@ -700,7 +753,7 @@ export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): P
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("apply_staff_daily_pin_loyalty_action", {
+  const { data, error } = await supabase.rpc("apply_staff_daily_pin_loyalty_action_v1", {
     input_restaurant_id: input.restaurantId,
     input_customer_id: input.customerId,
     input_daily_pin: input.dailyPin,
@@ -710,6 +763,7 @@ export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): P
     input_reason: input.reason,
     input_rule_id: input.ruleId ?? null,
     input_bill_amount: input.billAmount ?? null,
+    input_idempotency_key: input.idempotencyKey,
   });
 
   if (error) {

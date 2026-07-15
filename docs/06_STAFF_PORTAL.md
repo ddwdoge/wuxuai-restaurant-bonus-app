@@ -595,3 +595,10 @@ Mitarbeiter-Portal ist nur LOCK, wenn:
 - V2 Hinweise
 
 Endstatus: **LOCK**
+## CTO-Ergänzung 2026-07-14: Einlösung per sechsstelliger Code
+
+🟢 **FIX / V1**
+
+Die Tages-PIN bleibt ausschließlich für Punktebuchungen. Bei Punkteeinlösungen, Willkommensgeschenken und Geburtstagsgeschenken gibt der Mitarbeiter keine PIN ein.
+
+Nach der verbindlichen Kundenbestätigung zeigt der Gast einen sechsstelligen Code. Die Mitarbeiteransicht prüft diesen Code serverseitig. Der Code ist 15 Minuten gültig, nur einmal verwendbar und wird nach Verwendung oder Ablauf deaktiviert. Diese Regel ersetzt ältere Hinweise, nach denen eine reine Bestätigungsansicht ohne prüfbaren Code ausreicht.

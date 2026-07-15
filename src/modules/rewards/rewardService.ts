@@ -87,9 +87,31 @@ export type RedeemRewardResult = {
   stamps_spent?: number;
 };
 
-export type RedeemCustomerRewardInput = {
+export type StartCustomerRedemptionInput = {
   customerToken: string;
   rewardId: string;
+  customerRewardId?: string | null;
+  idempotencyKey: string;
+};
+
+export type StartCustomerRedemptionResult = {
+  redemption_code: string | null;
+  already_active: boolean;
+  status: "active" | "redeemed" | "expired" | "cancelled";
+  expires_at: string;
+  points_balance: number;
+  stamp_balance: number;
+  redemption_type: "welcome_gift" | "birthday_gift" | "points_redemption";
+  redemption_id: string;
+  points_spent?: number;
+  stamps_spent?: number;
+};
+
+export type ConsumeRedemptionCodeResult = {
+  success: boolean;
+  redemption_type: "welcome_gift" | "birthday_gift" | "points_redemption";
+  title: string;
+  redeemed_at: string;
 };
 
 export type RewardKpis = {
@@ -427,22 +449,41 @@ export async function redeemReward(input: RedeemRewardInput): Promise<RedeemRewa
   return result;
 }
 
-export async function redeemCustomerReward(input: RedeemCustomerRewardInput): Promise<RedeemRewardResult> {
+export async function startCustomerRedemption(
+  input: StartCustomerRedemptionInput,
+): Promise<StartCustomerRedemptionResult> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("redeem_customer_reward", {
+  const { data, error } = await supabase.rpc("start_customer_redemption", {
     input_customer_token: input.customerToken,
     input_reward_id: input.rewardId,
+    input_customer_reward_id: input.customerRewardId ?? null,
+    input_idempotency_key: input.idempotencyKey,
   });
 
   if (error) throw error;
-  const result = data as RedeemRewardResult;
-  if (result.success === false) {
-    throw new Error(result.message || "Diese Punkteeinlösung ist nicht mehr verfügbar.");
+  return data as StartCustomerRedemptionResult;
+}
+
+export async function consumeRedemptionCode(
+  restaurantId: string,
+  code: string,
+  staffSessionToken?: string | null,
+): Promise<ConsumeRedemptionCodeResult> {
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
   }
-  return result;
+
+  const { data, error } = await supabase.rpc("consume_redemption_code", {
+    input_restaurant_id: restaurantId,
+    input_code: code,
+    input_staff_session_token: staffSessionToken ?? null,
+  });
+
+  if (error) throw error;
+  return data as ConsumeRedemptionCodeResult;
 }
 
 export async function loadRewardKpis(restaurantId: string): Promise<RewardKpis> {

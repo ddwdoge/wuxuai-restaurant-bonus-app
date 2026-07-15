@@ -759,3 +759,23 @@ Wenn Codex an Flow 03 arbeitet:
 ---
 
 Endstatus: **LOCK**
+## CTO-Entscheidung 2026-07-14: Verbindliche Bestätigung und Einlösecode
+
+🟢 **FIX / V1 / VORRANG VOR ÄLTEREN DIREKT-EINLÖSUNGSABSCHNITTEN**
+
+Der sichtbare Produktbegriff lautet „Punkteeinlösung“.
+
+Aktiver V1-Ablauf:
+
+1. Gast öffnet Punkteeinlösung, Willkommensgeschenk oder Geburtstagsgeschenk.
+2. Die UI warnt: „Bitte erst direkt vor dem Mitarbeiter bestätigen.“
+3. Gast bestätigt „Jetzt verbindlich einlösen“.
+4. Der Server prüft Gast, Restaurant/Filiale, Status und Punktestand atomar.
+5. Bei Punkteeinlösungen werden Punkte verbindlich reserviert/abgezogen; bei Geschenken wird die einmalige Zuteilung auf `redemption_started` gesetzt.
+6. Der Server erzeugt einen gehasht gespeicherten sechsstelligen Code mit 15 Minuten Gültigkeit.
+7. Der Mitarbeiter bestätigt den Code ohne PIN.
+8. Der Server setzt Code und Einlösung atomar auf verwendet/eingelöst.
+
+Ein abgelaufener Geschenkcode bleibt verbraucht. Bei einer normalen Punkteeinlösung ist ein neuer Versuch nur durch eine neue ausdrückliche Kundenbestätigung mit neuer Idempotency-ID möglich; der Punktestand wird erneut geprüft und Punkte werden erneut abgezogen. Screenshots alter Codes funktionieren nicht.
+
+Die Tages-PIN wird weiterhin niemals für Einlösungen verwendet. Aussagen in älteren Abschnitten, wonach die Einlösung unmittelbar nach dem Kundenbutton vollständig abgeschlossen ist oder eine reine Bestätigungsansicht ausreicht, sind durch diese Entscheidung ersetzt.

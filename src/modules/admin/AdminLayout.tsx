@@ -84,7 +84,7 @@ export function AdminLayout() {
             className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
             end={item.end}
             key={item.to}
-            onClick={(event) => {
+            onClick={() => {
               if (variant === "drawer") {
                 setMobileMenuOpen(false);
               }
