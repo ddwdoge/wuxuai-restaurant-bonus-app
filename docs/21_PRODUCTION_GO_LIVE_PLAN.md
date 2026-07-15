@@ -1053,6 +1053,27 @@ Workers Builds ignoriert benutzerdefinierte Build-Konfigurationen innerhalb
 der Wrangler-Datei. Build-Befehl, Branch, Root-Verzeichnis und Build-Variablen
 müssen deshalb zusätzlich im Cloudflare-Build-Trigger korrekt gesetzt sein.
 
+Die Reihenfolge im Build-Log muss sein:
+
+```text
+npm install
+npm run build
+npm run deploy
+```
+
+Wenn Cloudflare direkt `wrangler deploy` ausführt, ohne vorher den Build-Befehl
+auszuführen, existiert das ignorierte und nicht in Git gespeicherte Verzeichnis
+`dist/` noch nicht. Der Deploy bricht dann mit
+`The directory specified by assets.directory does not exist` ab.
+
+Der `build.command` in `wrangler.jsonc` schützt direkte lokale
+Wrangler-Aufrufe. Für Workers Builds ist trotzdem zwingend der separate
+Build-Befehl unter `Settings > Build > Build Configuration` erforderlich.
+Zusätzlich führen `npm run deploy` und `npm run deploy:preview` den Build selbst
+aus. Dadurch fehlt `dist/` auch dann nicht, wenn ein bestehender Cloudflare-
+Trigger nur das Repository-Deploy-Skript startet. Der separate Cloudflare-
+Build-Befehl bleibt die verbindliche und im Build-Log zuerst erwartete Stufe.
+
 ---
 
 Endstatus: **LOCK**

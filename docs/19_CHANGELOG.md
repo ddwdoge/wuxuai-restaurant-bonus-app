@@ -1963,3 +1963,11 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - audit-sauberen Wrangler festgelegt und Deployment-Standard auf Node 22 gesetzt
 - erforderliche Vite-Buildvariablen und Workers-Build-Einstellungen dokumentiert
 - keine Zugangsdaten oder Supabase-Secrets in die Konfiguration übernommen
+
+### Build-Reihenfolge korrigiert
+
+- `wrangler.jsonc` führt bei direkten Wrangler-Aufrufen zuerst den Vite-Build aus
+- Cloudflare Workers Builds ist auf `npm run build` vor `npm run deploy` festgelegt
+- `dist/` bleibt ein generiertes, nicht versioniertes Build-Artefakt
+- Ursache des Cloudflare-Fehlers `assets.directory does not exist` dokumentiert
+- Deploy- und Preview-Skripte erzeugen `dist/` zusätzlich selbstständig

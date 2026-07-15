@@ -13,8 +13,8 @@
     "typecheck": "tsc -b --pretty false",
     "test": "node --test tests/*.test.mjs",
     "preview": "vite preview --host 127.0.0.1",
-    "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:preview": "npm run build && wrangler versions upload",
     "deploy:check": "wrangler deploy --dry-run"
   },
   "dependencies": {
