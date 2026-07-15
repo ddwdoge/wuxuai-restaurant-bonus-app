@@ -1952,3 +1952,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - alte öffentliche Direkt-/PIN-Einlösewege gesperrt
 - Customer Portal und Staff Portal auf verbindliche Codebestätigung umgestellt
 - sichtbare Begriffe „Punkteeinlösung“, „Willkommensgeschenk“ und „Geburtstagsgeschenk“ vereinheitlicht
+
+---
+
+## 2026-07-15 – Cloudflare Workers Git-Deployment konfiguriert
+
+- fehlende `wrangler.jsonc` als Ursache der Cloudflare-Meldung behoben
+- Vite-SPA als statischer Assets-Worker mit History-Fallback konfiguriert
+- reproduzierbare Deploy-, Preview- und Dry-Run-Skripte ergänzt
+- audit-sauberen Wrangler festgelegt und Deployment-Standard auf Node 22 gesetzt
+- erforderliche Vite-Buildvariablen und Workers-Build-Einstellungen dokumentiert
+- keine Zugangsdaten oder Supabase-Secrets in die Konfiguration übernommen

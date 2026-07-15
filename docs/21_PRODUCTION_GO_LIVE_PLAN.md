@@ -1005,4 +1005,54 @@ Production Go-Live Plan gilt als LOCK, wenn:
 
 ---
 
+## 30. Cloudflare Workers Builds Konfiguration
+
+Die Anwendung wird als Vite-SPA gebaut und als statische Worker-Assets aus
+`dist/` ausgeliefert. Die verbindliche Wrangler-Konfiguration liegt im
+Repository-Root unter `wrangler.jsonc`.
+
+Cloudflare Workers Builds muss für das verbundene GitHub-Repository so
+konfiguriert sein:
+
+```text
+Produktionsbranch: main
+Root-Verzeichnis: /
+Build-Befehl: npm run build
+Deploy-Befehl: npm run deploy
+Preview-Deploy-Befehl: npm run deploy:preview
+Node-Version: 22
+```
+
+Folgende Variablen müssen als Build-Variablen im Cloudflare-Dashboard gesetzt
+werden, weil Vite sie während `npm run build` in das Browser-Bundle übernimmt:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+VITE_APP_BASE_URL
+```
+
+Die Werte werden nicht in `wrangler.jsonc` oder Git gespeichert. Insbesondere
+dürfen `SUPABASE_ACCESS_TOKEN` und ein Supabase Service-Role-Key niemals in den
+Frontend-Build gelangen. `keep_vars: true` verhindert, dass ein Wrangler-Deploy
+bereits im Dashboard gepflegte Worker-Variablen entfernt.
+
+Für React-Routen verwendet der Assets-Worker
+`not_found_handling: single-page-application`. Dadurch liefern direkte Aufrufe
+wie `/admin`, `/staff/...` oder `/w/...` die `index.html`, ohne eine parallele
+Worker-Funktion oder ein zweites Routing-System einzuführen.
+
+Vor einem Push kann die Konfiguration lokal geprüft werden:
+
+```bash
+npm run build
+npm run deploy:check
+```
+
+Workers Builds ignoriert benutzerdefinierte Build-Konfigurationen innerhalb
+der Wrangler-Datei. Build-Befehl, Branch, Root-Verzeichnis und Build-Variablen
+müssen deshalb zusätzlich im Cloudflare-Build-Trigger korrekt gesetzt sein.
+
+---
+
 Endstatus: **LOCK**
