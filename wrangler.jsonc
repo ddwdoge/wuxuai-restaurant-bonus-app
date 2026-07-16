@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "wuxuai-restaurant-bonus-os",
+  "name": "wuxuai-restaurant-bonus-app",
   "compatibility_date": "2026-07-15",
   "keep_vars": true,
   "build": {
