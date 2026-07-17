@@ -925,7 +925,7 @@ a {
   display: grid;
   gap: 28px;
   margin: 0 auto;
-  max-width: 860px;
+  max-width: 1040px;
   min-width: 0;
   width: 100%;
 }
@@ -942,7 +942,7 @@ a {
 .public-entry-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .public-entry-card {
@@ -954,11 +954,18 @@ a {
   cursor: pointer;
   display: grid;
   gap: 18px;
-  min-height: 220px;
+  min-height: 250px;
   min-width: 0;
   padding: 24px;
   text-decoration: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.public-entry-card > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
 }
 
 .public-entry-card:hover,
@@ -992,7 +999,8 @@ a {
   display: inline-flex;
   font-weight: 800;
   gap: 6px;
-  margin-top: 20px;
+  margin-top: auto;
+  padding-top: 24px;
 }
 
 .guest-entry-page {
@@ -3337,6 +3345,16 @@ a {
 }
 
 @media (max-width: 1023px) {
+  .public-entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-entry-card:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc((100% - 16px) / 2);
+  }
+
   .topbar {
     align-items: flex-start;
     display: grid;
@@ -3490,12 +3508,20 @@ a {
     display: grid;
   }
 
+  .public-entry h1 {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 639px) {
   .public-entry-grid {
     grid-template-columns: 1fr;
   }
 
-  .public-entry h1 {
-    font-size: 34px;
+  .public-entry-card:last-child {
+    grid-column: auto;
+    justify-self: stretch;
+    width: auto;
   }
 }
 

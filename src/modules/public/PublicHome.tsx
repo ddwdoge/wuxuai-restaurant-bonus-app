@@ -24,9 +24,9 @@ export function PublicHome() {
           <Link className="public-entry-card" to="/register">
             <Sparkles size={40} />
             <div>
-              <h2>30 Tage kostenlos starten</h2>
-              <p>Für Restaurants, die ihr Bonusprogramm neu eröffnen.</p>
-              <span className="public-entry-action">Starten <ArrowRight size={16} /></span>
+              <h2>Restaurant registrieren</h2>
+              <p>Bonusprogramm in wenigen Minuten einrichten und 30 Tage kostenlos testen.</p>
+              <span className="public-entry-action">Kostenlos starten <ArrowRight size={16} /></span>
             </div>
           </Link>
 
@@ -34,7 +34,7 @@ export function PublicHome() {
             <QrCode size={40} />
             <div>
               <h2>Gast-Bonus öffnen</h2>
-              <p>Für Gäste, die ihr Bonuskonto öffnen oder einen QR-Code scannen möchten.</p>
+              <p>Bonuskonto öffnen oder den QR-Code im Restaurant scannen.</p>
               <span className="public-entry-action">Öffnen <ArrowRight size={16} /></span>
             </div>
           </Link>
