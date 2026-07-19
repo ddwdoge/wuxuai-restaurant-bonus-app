@@ -260,6 +260,22 @@ a {
   white-space: nowrap;
 }
 
+.profile-menu-copy {
+  min-width: 0;
+}
+
+.profile-menu-role {
+  color: #6b7785;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.profile-menu-avatar,
+.restaurant-status-badge {
+  display: none;
+}
+
 .profile-menu-popover {
   background: #ffffff;
   border: 1px solid #dde3ea;
@@ -993,6 +1009,166 @@ a {
 .tenant-switcher {
   margin-left: auto;
   min-width: 220px;
+}
+
+@media (min-width: 1024px) {
+  .topbar {
+    flex-wrap: nowrap;
+    min-height: 76px;
+  }
+
+  .admin-restaurant-brand {
+    overflow: hidden;
+  }
+
+  .admin-restaurant-brand .restaurant-brand-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-actions {
+    flex: 0 1 auto;
+    gap: 10px;
+  }
+
+  .mobile-restaurant-status {
+    display: none;
+  }
+
+  .restaurant-status-badge {
+    align-items: center;
+    background: #ecf8f2;
+    border: 1px solid #b8e1cc;
+    border-radius: 8px;
+    color: #17633e;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 800;
+    gap: 8px;
+    height: 56px;
+    padding: 0 14px;
+    white-space: nowrap;
+  }
+
+  .restaurant-status-dot {
+    background: #22a35a;
+    border-radius: 50%;
+    height: 8px;
+    width: 8px;
+  }
+
+  .restaurant-status-draft {
+    background: #fff8e8;
+    border-color: #efd99d;
+    color: #795b0c;
+  }
+
+  .restaurant-status-draft .restaurant-status-dot {
+    background: #d6a321;
+  }
+
+  .restaurant-status-suspended,
+  .restaurant-status-inactive {
+    background: #f7f1f1;
+    border-color: #dfc6c6;
+    color: #7d3434;
+  }
+
+  .restaurant-status-suspended .restaurant-status-dot,
+  .restaurant-status-inactive .restaurant-status-dot {
+    background: #b34b4b;
+  }
+
+  .tenant-switcher {
+    flex: 0 1 238px;
+    margin-left: 0;
+    min-width: 190px;
+    width: 238px;
+  }
+
+  .tenant-switcher-field {
+    background: #ffffff;
+    border: 1px solid #cfd7df;
+    border-radius: 8px;
+    gap: 1px;
+    height: 56px;
+    padding: 7px 10px 6px;
+  }
+
+  .tenant-switcher-label {
+    align-items: center;
+    color: #6b7785;
+    display: flex;
+    font-size: 11px;
+    font-weight: 800;
+    gap: 5px;
+    line-height: 1.1;
+  }
+
+  .tenant-switcher-field .select {
+    border: 0;
+    border-radius: 0;
+    color: #22303d;
+    font-size: 14px;
+    font-weight: 800;
+    min-height: 24px;
+    overflow: hidden;
+    padding: 0 22px 0 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tenant-switcher-field:focus-within {
+    border-color: #97a6b5;
+    outline: 3px solid color-mix(in srgb, var(--tenant-primary, #0f766e) 24%, transparent);
+    outline-offset: 2px;
+  }
+
+  .tenant-switcher-field .select:focus {
+    outline: none;
+  }
+
+  .profile-menu-trigger {
+    height: 56px;
+    max-width: 238px;
+    min-width: 190px;
+    padding: 0 11px;
+  }
+
+  .profile-menu-avatar {
+    align-items: center;
+    background: var(--tenant-primary, #0f766e);
+    border-radius: 50%;
+    color: #ffffff;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-weight: 900;
+    height: 34px;
+    justify-content: center;
+    line-height: 1;
+    width: 34px;
+  }
+
+  .profile-menu-copy {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    text-align: left;
+  }
+
+  .profile-menu-label {
+    color: #22303d;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .profile-menu-chevron {
+    flex: 0 0 auto;
+  }
 }
 
 .tablet-shell,

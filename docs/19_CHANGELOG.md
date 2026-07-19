@@ -1993,3 +1993,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - `dist/` bleibt ein generiertes, nicht versioniertes Build-Artefakt
 - Ursache des Cloudflare-Fehlers `assets.directory does not exist` dokumentiert
 - Deploy- und Preview-Skripte erzeugen `dist/` zusätzlich selbstständig
+
+---
+
+## 2026-07-19 – Desktop-Header des Restaurant-Portals vereinheitlicht
+
+- Desktop-Status ab `1024 px` als klare Badge mit Statuspunkt dargestellt
+- Restaurantauswahl und Profilbereich auf eine einheitliche Höhe gebracht
+- Profil um Initial, Anzeigename/E-Mail-Kurzform und Restaurantrolle ergänzt
+- lange Restaurantnamen und Profiltexte gegen horizontalen Überlauf abgesichert
+- Restaurantwechsel, Profilmenü und Logout-Logik unverändert beibehalten
+- Mobile-Status, Hamburger und Drawer unter `1024 px` unverändert gelassen
+- keine Datenbank-, RPC- oder Businesslogik geändert

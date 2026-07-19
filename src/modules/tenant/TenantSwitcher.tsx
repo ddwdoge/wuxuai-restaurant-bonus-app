@@ -6,8 +6,8 @@ export function TenantSwitcher() {
 
   return (
     <div className="tenant-switcher">
-      <label className="field" htmlFor="tenant-switcher">
-        <span>
+      <label className="field tenant-switcher-field" htmlFor="tenant-switcher">
+        <span className="tenant-switcher-label">
           <Building2 size={14} /> Restaurant
         </span>
         <select

@@ -10,7 +10,6 @@ import {
   QrCode,
   Settings,
   Smartphone,
-  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -19,6 +18,24 @@ import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 
+const restaurantRoleLabels = {
+  owner: "Owner",
+  admin: "Administrator",
+  manager: "Manager",
+  staff: "Mitarbeiter",
+  supervisor: "Mitarbeiter",
+  customer: "Gast",
+} as const;
+
+function readProfileName(user: ReturnType<typeof useAuth>["user"]) {
+  const metadataName = user?.user_metadata?.full_name ?? user?.user_metadata?.name;
+  if (typeof metadataName === "string" && metadataName.trim()) {
+    return metadataName.trim();
+  }
+
+  return user?.email?.split("@")[0] || "Restaurantkonto";
+}
+
 export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,10 +43,16 @@ export function AdminLayout() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const { signOut, user } = useAuth();
+  const { restaurantRole, signOut, user } = useAuth();
   const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
+  const restaurantStatus = activeRestaurant?.status ?? "draft";
   const restaurantStatusLabel =
-    activeRestaurant?.status === "active" ? "aktiv" : activeRestaurant?.status === "draft" ? "Entwurf" : "gesperrt";
+    restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Einrichtung offen" : "Gesperrt";
+  const mobileRestaurantStatusLabel =
+    restaurantStatus === "active" ? "aktiv" : restaurantStatus === "draft" ? "Entwurf" : "gesperrt";
+  const profileName = readProfileName(user);
+  const profileInitial = profileName.charAt(0).toLocaleUpperCase("de-AT") || "R";
+  const profileRoleLabel = restaurantRole ? restaurantRoleLabels[restaurantRole] : "Restaurantkonto";
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
@@ -115,9 +138,14 @@ export function AdminLayout() {
         onClick={() => setProfileMenuOpen((current) => !current)}
         type="button"
       >
-        <UserRound aria-hidden="true" size={18} />
-        <span className="profile-menu-label">{user?.email ?? "Restaurantkonto"}</span>
-        <ChevronDown aria-hidden="true" size={16} />
+        <span aria-hidden="true" className="profile-menu-avatar">
+          {profileInitial}
+        </span>
+        <span className="profile-menu-copy" title={user?.email ?? profileName}>
+          <span className="profile-menu-label">{profileName}</span>
+          <span className="profile-menu-role">{profileRoleLabel}</span>
+        </span>
+        <ChevronDown aria-hidden="true" className="profile-menu-chevron" size={16} />
       </button>
       {profileMenuOpen ? (
         <div className="profile-menu-popover" role="menu">
@@ -216,7 +244,11 @@ export function AdminLayout() {
           </div>
         </div>
         <div className="topbar-actions">
-          <span className="pill">{restaurantStatusLabel}</span>
+          <span className="pill mobile-restaurant-status">{mobileRestaurantStatusLabel}</span>
+          <span className={`restaurant-status-badge restaurant-status-${restaurantStatus}`}>
+            <span aria-hidden="true" className="restaurant-status-dot" />
+            {restaurantStatusLabel}
+          </span>
           <TenantSwitcher />
           {profileMenu}
         </div>

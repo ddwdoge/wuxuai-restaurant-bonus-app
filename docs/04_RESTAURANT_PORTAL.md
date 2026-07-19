@@ -544,6 +544,19 @@ Standardtext:
 Daten konnten gerade nicht geladen werden.
 ```
 
+### 13.6 Desktop-Header
+
+Ab `1024 px` bildet der Restaurant-Portal-Header rechts eine einheitliche
+Gruppe aus Restaurantstatus, Restaurantauswahl und Benutzerprofil.
+
+- Der Status wird als Badge mit Punkt und verständlicher Bezeichnung gezeigt.
+- Die Restaurantauswahl bleibt mit dem bestehenden Tenant-Wechsel verbunden.
+- Das Profil zeigt Initial, Anzeigename oder E-Mail-Kurzform und Restaurantrolle.
+- Profilmenü und Abmeldung behalten ihren bestehenden Funktionsweg.
+- Lange Restaurant- und Profilnamen werden gekürzt, ohne horizontalen Überlauf.
+- Unter `1024 px` gelten unverändert der mobile Status, das mobile Menü und der
+  bestehende Drawer.
+
 ------------------------------------------------------------------------
 
 ## 14. Was ausdrücklich verboten ist
