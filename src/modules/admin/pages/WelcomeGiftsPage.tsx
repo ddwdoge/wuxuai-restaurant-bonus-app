@@ -1,5 +1,6 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Edit3, Gift, ImagePlus, Power, Save, Trash2 } from "lucide-react";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
 import {
   loadRewardOffers,
   saveRewardOffer,
@@ -131,14 +132,11 @@ function standardGiftAsset(category: string | null | undefined, title: string) {
 export function WelcomeGiftsPage() {
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
-  const editorRef = useRef<HTMLElement | null>(null);
-  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const [gifts, setGifts] = useState<RewardOffer[]>([]);
   const [editing, setEditing] = useState<GiftForm | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [editorHighlighted, setEditorHighlighted] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -166,12 +164,15 @@ export function WelcomeGiftsPage() {
     setEditing(formFromGift(gift));
     setPhotoFile(null);
     setStatus(null);
-    setEditorHighlighted(true);
-    window.setTimeout(() => {
-      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      titleInputRef.current?.focus({ preventScroll: true });
-    }, 0);
-    window.setTimeout(() => setEditorHighlighted(false), 1200);
+  }
+
+  function closeEditor() {
+    if (editing?.imageUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(editing.imageUrl);
+    }
+    setEditing(null);
+    setPhotoFile(null);
+    setStatus(null);
   }
 
   async function uploadPhoto(file: File) {
@@ -289,16 +290,32 @@ export function WelcomeGiftsPage() {
         <p>Sie sind unabhängig von Punkteeinlösungen.</p>
       </section>
 
-      {editing ? (
-        <section className={`card welcome-gift-editor${editorHighlighted ? " highlighted" : ""}`} ref={editorRef}>
-          <h2>Willkommensgeschenk bearbeiten</h2>
-          <form className="form" onSubmit={saveGift}>
+      <AppDrawer
+        description="Name, Wert, Foto und Status des ausgewählten Geschenks bearbeiten."
+        footer={editing ? (
+          <>
+            <button className="button secondary" onClick={closeEditor} type="button">
+              Abbrechen
+            </button>
+            <button className="button" disabled={saving} form="welcome-gift-editor-form" type="submit">
+              <Save size={18} />
+              Änderungen speichern
+            </button>
+          </>
+        ) : null}
+        onClose={closeEditor}
+        open={Boolean(editing)}
+        title="Willkommensgeschenk bearbeiten"
+      >
+        {editing ? (
+          <form className="form welcome-gift-drawer-form" id="welcome-gift-editor-form" onSubmit={saveGift}>
             <div className="grid two">
               <label className="field" htmlFor="gift-title">
                 <span>Name</span>
                 <input
-                  ref={titleInputRef}
+                  autoFocus
                   className="input"
+                  data-drawer-autofocus="true"
                   id="gift-title"
                   value={editing.title}
                   onChange={(event) => setEditing({ ...editing, title: event.target.value })}
@@ -407,23 +424,17 @@ export function WelcomeGiftsPage() {
               />
               Aktiv
             </label>
-
-            <div className="row-actions">
-              <button className="button secondary" onClick={() => setEditing(null)} type="button">
-                Zurück
-              </button>
-              <button className="button" disabled={saving} type="submit">
-                <Save size={18} />
-                Änderungen speichern
-              </button>
-            </div>
+            {status ? <p className="status-message" role="status">{status}</p> : null}
           </form>
-        </section>
-      ) : null}
+        ) : null}
+      </AppDrawer>
 
       <section className="welcome-gift-grid">
         {gifts.map((gift) => (
-          <article className={`card welcome-gift-card${gift.active ? "" : " inactive"}`} key={gift.id}>
+          <article
+            className={`card welcome-gift-card${gift.active ? "" : " inactive"}${editing?.id === gift.id ? " drawer-active" : ""}`}
+            key={gift.id}
+          >
             <div className="welcome-gift-image">
               {gift.image_url ? <img alt={gift.title} src={gift.image_url} /> : standardGiftAsset(gift.category, gift.title)}
             </div>

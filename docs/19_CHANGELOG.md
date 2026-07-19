@@ -2005,3 +2005,18 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Restaurantwechsel, Profilmenü und Logout-Logik unverändert beibehalten
 - Mobile-Status, Hamburger und Drawer unter `1024 px` unverändert gelassen
 - keine Datenbank-, RPC- oder Businesslogik geändert
+
+---
+
+## 2026-07-19 – Kartenbearbeitung auf gemeinsamen Drawer umgestellt
+
+- gemeinsame `AppDrawer`-Komponente mit Dialogsemantik eingeführt
+- Bearbeitung gespeicherter Punkteeinlösungen aus dem Inline-Scrollbereich in
+  den Drawer verschoben
+- Bearbeitung von Willkommensgeschenken aus dem Inline-Scrollbereich in den
+  Drawer verschoben
+- aktive Ursprungskarte während der Bearbeitung markiert
+- Desktop-, Tablet- und Mobile-Breiten sowie sticky Aktionsbereich ergänzt
+- Escape, Overlay, Schließen-Button, Fokus-Trap und Fokus-Rückgabe umgesetzt
+- Informations-KPIs und bestehende Navigationskarten unverändert gelassen
+- keine Datenbank-, RPC-, Routen- oder Businesslogik geändert

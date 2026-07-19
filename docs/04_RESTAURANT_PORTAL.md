@@ -557,6 +557,21 @@ Gruppe aus Restaurantstatus, Restaurantauswahl und Benutzerprofil.
 - Unter `1024 px` gelten unverändert der mobile Status, das mobile Menü und der
   bestehende Drawer.
 
+### 13.7 Karten mit Bearbeitungsinhalten
+
+Wenn eine Kartenaktion ein Detailformular öffnet, darf das Formular nicht nur
+an einer anderen Position derselben Seite erscheinen.
+
+- Bearbeiten gespeicherter Punkteeinlösungen öffnet einen Drawer.
+- Bearbeiten von Willkommensgeschenken öffnet denselben Drawer-Standard.
+- Desktop: rechter Drawer mit 420 bis 520 px Breite.
+- Tablet: maximal 80 Prozent der Viewportbreite.
+- Mobil: vollflächige Ansicht mit festem Aktionsbereich.
+- Escape, Overlay und Schließen-Button beenden die Ansicht.
+- Der Fokus bleibt im Drawer und kehrt danach zur auslösenden Karte zurück.
+- Reine Informations-KPIs bleiben nicht klickbar.
+- Echte Navigationskarten behalten ihre vorhandenen Routen.
+
 ------------------------------------------------------------------------
 
 ## 14. Was ausdrücklich verboten ist

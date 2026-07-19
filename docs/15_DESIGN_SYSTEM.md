@@ -225,9 +225,23 @@ Wenn Inhalt zu breit ist:
 - Grid anpassen
 - Spalten reduzieren
 
+### 3.5 Detail-Drawer
+
+Kartenaktionen mit Listen, Details oder Formularen öffnen eine klar erkennbare
+Detailansicht statt Inhalte unbemerkt weiter unten auf der Seite einzublenden.
+
+- Desktop: rechts, 420 bis 520 px breit, volle Viewporthöhe
+- Tablet: maximal 80 Prozent der Viewportbreite
+- Mobil: vollflächig, eigener scrollbarer Inhalt und fester Aktionsbereich
+- ruhiges Overlay, klare Kopfzeile und sichtbarer Schließen-Button
+- Schließen über X, Escape und Overlay
+- Fokus-Trap und Fokus-Rückgabe sind Pflicht
+- reine Informationskarten erhalten keinen Fake-Klick
+- Animationen respektieren `prefers-reduced-motion`
+
 ---
 
-### 3.5 Produktbilder in Punkteeinlösungen
+### 3.6 Produktbilder in Punkteeinlösungen
 
 Echte Produktfotos von Restaurants dürfen nicht abgeschnitten werden.
 

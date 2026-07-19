@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Edit3, Gift, ImagePlus, Power, Sparkles } from "lucide-react";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { loadLoyaltySettings } from "../../loyalty/loyaltyService";
 import {
   loadRewardOffers,
@@ -163,7 +164,6 @@ export function RewardsPage() {
   const [editingOffer, setEditingOffer] = useState<RewardOffer | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [highlightWizard, setHighlightWizard] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -209,25 +209,6 @@ export function RewardsPage() {
   const rewardTitle = rewardName.trim() || selectedTemplate?.defaultTitle || "Neue Punkteeinlösung";
   const currentCategory = rewardCategory.trim() || selectedTemplate?.category || "Eigenes Produkt";
   const canContinueFromPrice = productPrice > 0;
-
-  useEffect(() => {
-    if (!highlightWizard) return;
-
-    const highlightTimer = window.setTimeout(() => setHighlightWizard(false), 1400);
-    const focusTimer = window.setTimeout(() => {
-      if (step === 2) {
-        priceInputRef.current?.focus();
-        priceInputRef.current?.select();
-        return;
-      }
-      rewardNameInputRef.current?.focus();
-    }, 260);
-
-    return () => {
-      window.clearTimeout(highlightTimer);
-      window.clearTimeout(focusTimer);
-    };
-  }, [highlightWizard, step]);
 
   function selectTemplate(template: RewardTemplate) {
     setSelectedTemplate(template);
@@ -300,12 +281,12 @@ export function RewardsPage() {
     setPhotoPreview(offer.image_url);
     setPhotoFile(null);
     setStep(2);
-    setHighlightWizard(true);
     setStatus("Punkteeinlösung wird bearbeitet.");
+  }
 
-    window.setTimeout(() => {
-      wizardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+  function closeRewardEditor() {
+    resetWizard();
+    setStatus(null);
   }
 
   async function saveReward() {
@@ -372,6 +353,176 @@ export function RewardsPage() {
     setStatus(updated.active ? "Punkteeinlösung aktiviert." : "Punkteeinlösung deaktiviert.");
   }
 
+  const wizardContent = (
+    <>
+      <div className="reward-wizard-head">
+        <span className="pill">Schritt {step} von 5</span>
+        <h2>{editingOffer ? "Punkteeinlösung bearbeiten" : "Neue Punkteeinlösung erstellen"}</h2>
+        <p className="muted">
+          Du legst Produkt und Preis fest. WUXUAI berechnet automatisch, wie viele Punkte zur Einlösung nötig sind.
+        </p>
+      </div>
+
+      {step === 1 ? (
+        <div className="reward-wizard-step">
+          <h3>Was soll mit Punkten einlösbar sein?</h3>
+          <div className="reward-template-grid">
+            {rewardTemplates.map((template) => (
+              <button
+                className={`reward-template-card${selectedTemplate?.key === template.key ? " selected" : ""}`}
+                key={template.key}
+                onClick={() => selectTemplate(template)}
+                type="button"
+              >
+                <span className="reward-template-check">
+                  {selectedTemplate?.key === template.key ? <CheckCircle2 size={20} /> : null}
+                </span>
+                <span className="reward-template-icon" aria-hidden="true">{template.icon}</span>
+                <strong>{template.label}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {step === 2 ? (
+        <div className="reward-wizard-step">
+          <h3>Wie viel kostet dieses Produkt normalerweise?</h3>
+          <label className="field" htmlFor="reward-price">
+            <span>Preis in €</span>
+            <input
+              className="input reward-price-input"
+              data-drawer-autofocus={editingOffer ? "true" : undefined}
+              id="reward-price"
+              inputMode="decimal"
+              onChange={(event) => setPriceInput(event.target.value)}
+              placeholder="Beispiel: 5,50 €"
+              ref={priceInputRef}
+              value={priceInput}
+            />
+          </label>
+        </div>
+      ) : null}
+
+      {step === 3 ? (
+        <div className="reward-wizard-step">
+          <h3>Empfohlene Einlösung</h3>
+          <div className="reward-engine-summary">
+            <article>
+              <span>Empfohlene Einlösung</span>
+              <strong>{calculation.requiredPoints} Punkte</strong>
+            </article>
+            <article>
+              <span>Einlösequote</span>
+              <strong>{calculation.quotePercent} %</strong>
+            </article>
+            <article>
+              <span>Geschätzte Konsumation bis zur Einlösung</span>
+              <strong>{formatEuro(calculation.estimatedRevenue)}</strong>
+            </article>
+            <article className={`reward-profit-status ${calculation.statusClass}`}>
+              <span>Status</span>
+              <strong>{calculation.status}</strong>
+            </article>
+          </div>
+        </div>
+      ) : null}
+
+      {step === 4 ? (
+        <div className="reward-wizard-step">
+          <h3>Foto hochladen</h3>
+          <p className="muted">Optional. Wenn du kein Foto hochlädst, verwenden wir ein Standardbild.</p>
+          <div className="reward-photo-row">
+            <div className="reward-standard-image">
+              {photoPreview ? <img alt="Punkteeinlösung" src={photoPreview} /> : <span>{selectedTemplate?.icon ?? "🎁"}</span>}
+            </div>
+            <div>
+              <input
+                accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                className="visually-hidden"
+                id="reward-photo"
+                onChange={handlePhoto}
+                type="file"
+              />
+              <button
+                className="button secondary"
+                onClick={() => document.getElementById("reward-photo")?.click()}
+                type="button"
+              >
+                <ImagePlus size={18} />
+                Foto auswählen
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {step === 5 ? (
+        <div className="reward-wizard-step">
+          <h3>Vorschau</h3>
+          <div className="grid two">
+            <label className="field" htmlFor="reward-name">
+              <span>Name</span>
+              <input
+                className="input"
+                id="reward-name"
+                onChange={(event) => setRewardName(event.target.value)}
+                ref={rewardNameInputRef}
+                value={rewardName}
+              />
+            </label>
+            <label className="field" htmlFor="reward-category">
+              <span>Kategorie</span>
+              <input
+                className="input"
+                id="reward-category"
+                onChange={(event) => setRewardCategory(event.target.value)}
+                value={rewardCategory}
+              />
+            </label>
+          </div>
+          <article className="reward-preview-card">
+            <div className="reward-preview-image">
+              {photoPreview ? <img alt="Punkteeinlösung" src={photoPreview} /> : <span>{selectedTemplate?.icon ?? "🎁"}</span>}
+            </div>
+            <div>
+              <span className="pill">{currentCategory}</span>
+              <h4>{rewardTitle}</h4>
+              <p>Produktpreis: {formatEuro(productPrice)}</p>
+              <p>Einlösequote: {calculation.quotePercent} %</p>
+              <p>Geschätzte Konsumation: {formatEuro(calculation.estimatedRevenue)}</p>
+              <p>Benötigte Punkte: {calculation.requiredPoints}</p>
+              <strong className={`reward-status-text ${calculation.statusClass}`}>{calculation.status}</strong>
+            </div>
+          </article>
+        </div>
+      ) : null}
+    </>
+  );
+
+  const wizardActions = (
+    <>
+      <button className="button secondary" disabled={step === 1} onClick={goBack} type="button">
+        Zurück
+      </button>
+      {step < 5 ? (
+        <button
+          className="button"
+          disabled={(step === 1 && !selectedTemplate) || (step === 2 && !canContinueFromPrice)}
+          onClick={goNext}
+          type="button"
+        >
+          Weiter
+        </button>
+      ) : (
+        <button className="button" disabled={saving} onClick={saveReward} type="button">
+          <Sparkles size={18} />
+          {editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}
+        </button>
+      )}
+    </>
+  );
+
   return (
     <>
       <header className="page-header">
@@ -384,176 +535,21 @@ export function RewardsPage() {
       </header>
 
       <section className="reward-wizard-shell">
-        <article className={`card reward-wizard-card${highlightWizard ? " editing-highlight" : ""}`} ref={wizardRef}>
-          <div className="reward-wizard-head">
-            <span className="pill">Schritt {step} von 5</span>
-            <h2>{editingOffer ? "Punkteeinlösung bearbeiten" : "Neue Punkteeinlösung erstellen"}</h2>
-            <p className="muted">
-              Du legst Produkt und Preis fest. WUXUAI berechnet automatisch, wie viele Punkte zur Einlösung nötig sind.
-            </p>
-          </div>
-
-          {step === 1 ? (
-            <div className="reward-wizard-step">
-              <h3>Was soll mit Punkten einlösbar sein?</h3>
-              <div className="reward-template-grid">
-                {rewardTemplates.map((template) => (
-                  <button
-                    className={`reward-template-card${selectedTemplate?.key === template.key ? " selected" : ""}`}
-                    key={template.key}
-                    onClick={() => selectTemplate(template)}
-                    type="button"
-                  >
-                    <span className="reward-template-check">
-                      {selectedTemplate?.key === template.key ? <CheckCircle2 size={20} /> : null}
-                    </span>
-                    <span className="reward-template-icon" aria-hidden="true">{template.icon}</span>
-                    <strong>{template.label}</strong>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="reward-wizard-step">
-              <h3>Wie viel kostet dieses Produkt normalerweise?</h3>
-              <label className="field" htmlFor="reward-price">
-                <span>Preis in €</span>
-                <input
-                  className="input reward-price-input"
-                  id="reward-price"
-                  inputMode="decimal"
-                  onChange={(event) => setPriceInput(event.target.value)}
-                  placeholder="Beispiel: 5,50 €"
-                  ref={priceInputRef}
-                  value={priceInput}
-                />
-              </label>
-            </div>
-          ) : null}
-
-          {step === 3 ? (
-            <div className="reward-wizard-step">
-              <h3>Empfohlene Einlösung</h3>
-              <div className="reward-engine-summary">
-                <article>
-                  <span>Empfohlene Einlösung</span>
-                  <strong>{calculation.requiredPoints} Punkte</strong>
-                </article>
-                <article>
-                  <span>Einlösequote</span>
-                  <strong>{calculation.quotePercent} %</strong>
-                </article>
-                <article>
-                  <span>Geschätzte Konsumation bis zur Einlösung</span>
-                  <strong>{formatEuro(calculation.estimatedRevenue)}</strong>
-                </article>
-                <article className={`reward-profit-status ${calculation.statusClass}`}>
-                  <span>Status</span>
-                  <strong>{calculation.status}</strong>
-                </article>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 4 ? (
-            <div className="reward-wizard-step">
-              <h3>Foto hochladen</h3>
-              <p className="muted">Optional. Wenn du kein Foto hochlädst, verwenden wir ein Standardbild.</p>
-              <div className="reward-photo-row">
-                <div className="reward-standard-image">
-                  {photoPreview ? <img alt="Punkteeinlösung" src={photoPreview} /> : <span>{selectedTemplate?.icon ?? "🎁"}</span>}
-                </div>
-                <div>
-                  <input
-                    accept="image/png,image/jpeg,image/jpg,image/svg+xml"
-                    className="visually-hidden"
-                    id="reward-photo"
-                    onChange={handlePhoto}
-                    type="file"
-                  />
-                  <button
-                    className="button secondary"
-                    onClick={() => document.getElementById("reward-photo")?.click()}
-                    type="button"
-                  >
-                    <ImagePlus size={18} />
-                    Foto auswählen
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 5 ? (
-            <div className="reward-wizard-step">
-              <h3>Vorschau</h3>
-              <div className="grid two">
-                <label className="field" htmlFor="reward-name">
-                  <span>Name</span>
-                  <input
-                    className="input"
-                    id="reward-name"
-                    onChange={(event) => setRewardName(event.target.value)}
-                    ref={rewardNameInputRef}
-                    value={rewardName}
-                  />
-                </label>
-                <label className="field" htmlFor="reward-category">
-                  <span>Kategorie</span>
-                  <input
-                    className="input"
-                    id="reward-category"
-                    onChange={(event) => setRewardCategory(event.target.value)}
-                    value={rewardCategory}
-                  />
-                </label>
-              </div>
-              <article className="reward-preview-card">
-                <div className="reward-preview-image">
-                  {photoPreview ? <img alt="Punkteeinlösung" src={photoPreview} /> : <span>{selectedTemplate?.icon ?? "🎁"}</span>}
-                </div>
-                <div>
-                  <span className="pill">{currentCategory}</span>
-                  <h4>{rewardTitle}</h4>
-                  <p>Produktpreis: {formatEuro(productPrice)}</p>
-                  <p>Einlösequote: {calculation.quotePercent} %</p>
-                  <p>Geschätzte Konsumation: {formatEuro(calculation.estimatedRevenue)}</p>
-                  <p>Benötigte Punkte: {calculation.requiredPoints}</p>
-                  <strong className={`reward-status-text ${calculation.statusClass}`}>{calculation.status}</strong>
-                </div>
-              </article>
-            </div>
-          ) : null}
-
-          <div className="wizard-footer">
-            <button className="button secondary" disabled={step === 1} onClick={goBack} type="button">
-              Zurück
-            </button>
-            {step < 5 ? (
-              <button
-                className="button"
-                disabled={(step === 1 && !selectedTemplate) || (step === 2 && !canContinueFromPrice)}
-                onClick={goNext}
-                type="button"
-              >
-                Weiter
-              </button>
-            ) : (
-              <button className="button" disabled={saving} onClick={saveReward} type="button">
-                <Sparkles size={18} />
-                {editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}
-              </button>
-            )}
-          </div>
-        </article>
+        {!editingOffer ? (
+          <article className="card reward-wizard-card" ref={wizardRef}>
+            {wizardContent}
+            <div className="wizard-footer">{wizardActions}</div>
+          </article>
+        ) : null}
 
         <article className="card reward-list-card">
           <h2>Gespeicherte Punkteeinlösungen</h2>
           <div className="reward-management-grid">
             {offers.map((offer) => (
-              <article className={`reward-management-card${offer.active ? "" : " inactive"}`} key={`${offer.source}-${offer.id}`}>
+              <article
+                className={`reward-management-card${offer.active ? "" : " inactive"}${editingOffer?.id === offer.id ? " drawer-active" : ""}`}
+                key={`${offer.source}-${offer.id}`}
+              >
                 <div className="reward-management-image">
                   {offer.image_url ? (
                     <img alt={offer.title} src={offer.image_url} />
@@ -599,6 +595,19 @@ export function RewardsPage() {
           </div>
         </article>
       </section>
+
+      <AppDrawer
+        description="Produkt, Preis, Foto und automatische Punkteberechnung bearbeiten."
+        footer={editingOffer ? wizardActions : null}
+        onClose={closeRewardEditor}
+        open={Boolean(editingOffer)}
+        title="Punkteeinlösung bearbeiten"
+      >
+        <div className="reward-wizard-card drawer-reward-wizard">
+          {wizardContent}
+          {status ? <p className="status-message" role="status">{status}</p> : null}
+        </div>
+      </AppDrawer>
 
       {status ? <p className="status-message">{status}</p> : null}
     </>
