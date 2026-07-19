@@ -30,6 +30,15 @@ Das Ziel des Design Systems lautet:
 
 > Jede Oberfläche von WUXUAI Bonus soll einfach, ruhig, hochwertig, verständlich und schnell nutzbar sein.
 
+### Kundenportal Premium-Tokens
+
+Das Kundenportal kapselt seine Premium-Tokens in
+`src/modules/customer/customer-premium.css`. Die warme Creme-/Gold-Basis gilt
+nur für die Kundenoberfläche und überschreibt nicht unkontrolliert Restaurant-,
+Staff- oder Plattform-Portal. Gold bleibt auf Hauptaktionen, Fortschritt und
+aktive Navigation begrenzt. Lucide-Icons ersetzen Emoji-Icons in der
+eigentlichen Kundenoberfläche.
+
 Das Design soll nicht wie ein technisches Admin-System wirken.
 
 Es soll wirken wie:

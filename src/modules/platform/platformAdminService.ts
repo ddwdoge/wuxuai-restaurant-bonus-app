@@ -93,6 +93,41 @@ export type PlatformAuditEntry = {
   target_id: string | null;
 };
 
+export type PlatformAuditEvent = {
+  id: string;
+  created_at: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  customer_id: string | null;
+  actor_type: string;
+  actor_id: string | null;
+  event_type: string;
+  status: "success" | "failed" | "blocked";
+  source: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  request_id: string | null;
+  is_test_event: boolean;
+  test_session_id: string | null;
+  metadata: Record<string, unknown>;
+  error_code: string | null;
+  error_message: string | null;
+};
+
+export type PlatformAuditFilters = {
+  from?: string | null;
+  to?: string | null;
+  restaurantId?: string | null;
+  customerId?: string | null;
+  eventType?: string | null;
+  status?: PlatformAuditEvent["status"] | null;
+  source?: string | null;
+  actorType?: string | null;
+  testOnly?: boolean;
+  failedOnly?: boolean;
+  limit?: number;
+};
+
 export type PlatformRestaurantDetail = {
   restaurant: PlatformRestaurant & {
     owner_phone?: string | null;
@@ -176,4 +211,27 @@ export async function updatePlatformRestaurantSubscription(input: {
   if (error) {
     throw error;
   }
+}
+
+export async function loadPlatformAuditEvents(filters: PlatformAuditFilters = {}): Promise<PlatformAuditEvent[]> {
+  if (!supabase) {
+    throw new Error("Supabase ist nicht konfiguriert.");
+  }
+
+  const { data, error } = await supabase.rpc("get_platform_audit_events", {
+    input_from: filters.from ?? null,
+    input_to: filters.to ?? null,
+    input_restaurant_id: filters.restaurantId ?? null,
+    input_customer_id: filters.customerId ?? null,
+    input_event_type: filters.eventType ?? null,
+    input_status: filters.status ?? null,
+    input_source: filters.source ?? null,
+    input_actor_type: filters.actorType ?? null,
+    input_test_only: filters.testOnly ?? false,
+    input_failed_only: filters.failedOnly ?? false,
+    input_limit: filters.limit ?? 100,
+  });
+
+  if (error) throw error;
+  return (data ?? []) as PlatformAuditEvent[];
 }

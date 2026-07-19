@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Gift, QrCode, Smartphone, Sparkles, Users } from "lucide-react";
+import { Activity, Flame, Gift, QrCode, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { liveDataUnavailableMessage, supabase } from "../../../shared/lib/supabase";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
@@ -12,6 +11,9 @@ const emptyKpis: RewardKpis = {
   stampsIssuedToday: 0,
   activeRewards: 0,
   activeCustomers: 0,
+  newMembersToday: 0,
+  newMembersThisWeek: 0,
+  activeTodayCount: 0,
 };
 
 const emptyBonusBoostKpis: BonusBoostKpis = {
@@ -19,28 +21,9 @@ const emptyBonusBoostKpis: BonusBoostKpis = {
   guestsReturnedBecauseOfBoost: 0,
 };
 
-async function loadNewMembersToday(restaurantId: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (!supabase) {
-    throw new Error(liveDataUnavailableMessage);
-  }
-
-  const { count, error } = await supabase
-    .from("customers")
-    .select("id", { count: "exact", head: true })
-    .eq("restaurant_id", restaurantId)
-    .gte("created_at", today.toISOString());
-
-  if (error) throw error;
-  return count ?? 0;
-}
-
 export function AdminDashboard() {
   const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
-  const [newMembersToday, setNewMembersToday] = useState(0);
   const [bonusBoostKpis, setBonusBoostKpis] = useState<BonusBoostKpis>(emptyBonusBoostKpis);
 
   useEffect(() => {
@@ -50,13 +33,11 @@ export function AdminDashboard() {
 
     Promise.all([
       loadRewardKpis(activeRestaurant.id),
-      loadNewMembersToday(activeRestaurant.id),
       loadBonusBoostKpis(activeRestaurant.id),
     ])
-      .then(([nextRewardKpis, nextNewMembersToday, nextBonusBoostKpis]) => {
+      .then(([nextRewardKpis, nextBonusBoostKpis]) => {
         if (!cancelled) {
           setRewardKpis(nextRewardKpis);
-          setNewMembersToday(nextNewMembersToday);
           setBonusBoostKpis(nextBonusBoostKpis);
         }
       })
@@ -64,7 +45,6 @@ export function AdminDashboard() {
         if (!cancelled) {
           console.error("Dashboard-Daten konnten nicht geladen werden.", error);
           setRewardKpis(emptyKpis);
-          setNewMembersToday(0);
           setBonusBoostKpis(emptyBonusBoostKpis);
         }
       });
@@ -76,11 +56,14 @@ export function AdminDashboard() {
 
   const staffPath = activeRestaurant ? `/staff/${activeRestaurant.slug}` : "/admin";
   const dashboardKpis = [
-    { icon: "👥", label: "Neue Mitglieder heute", value: String(newMembersToday) },
-    { icon: "⭐", label: "Vergebene Bonuspunkte heute", value: String(rewardKpis.pointsIssuedToday) },
-    { icon: "🎁", label: "Eingelöste Punkteeinlösungen", value: String(rewardKpis.rewardsRedeemedToday) },
-    { icon: "🔥", label: "Bonus Boost aktiv", value: String(bonusBoostKpis.guestsCurrentlyBoosted) },
-    { icon: "📈", label: "Wiederkehrende Gäste", value: String(bonusBoostKpis.guestsReturnedBecauseOfBoost) },
+    { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers) },
+    { icon: UserPlus, label: "Neue Kunden heute", value: String(rewardKpis.newMembersToday) },
+    { icon: UserPlus, label: "Neue Kunden diese Woche", value: String(rewardKpis.newMembersThisWeek) },
+    { icon: Activity, label: "Heute aktiv", value: String(rewardKpis.activeTodayCount) },
+    { icon: Star, label: "Vergebene Bonuspunkte heute", value: String(rewardKpis.pointsIssuedToday) },
+    { icon: Gift, label: "Einlösungen heute", value: String(rewardKpis.rewardsRedeemedToday) },
+    { icon: Flame, label: "Bonus Boost aktiv", value: String(bonusBoostKpis.guestsCurrentlyBoosted) },
+    { icon: Activity, label: "Wiederkehrende Gäste", value: String(bonusBoostKpis.guestsReturnedBecauseOfBoost) },
   ];
   const quickLinks = [
     { label: "QR Center", to: "/admin/qr", icon: QrCode },
@@ -99,13 +82,16 @@ export function AdminDashboard() {
       </header>
 
       <section className="dashboard-kpi-grid" aria-label="Heute im Bonusprogramm">
-        {dashboardKpis.map((kpi) => (
-          <article className="card dashboard-kpi-card" key={kpi.label}>
-            <span className="dashboard-kpi-icon" aria-hidden="true">{kpi.icon}</span>
-            <strong>{kpi.value}</strong>
-            <p>{kpi.label}</p>
-          </article>
-        ))}
+        {dashboardKpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <article className="card dashboard-kpi-card" key={kpi.label}>
+              <span className="dashboard-kpi-icon" aria-hidden="true"><Icon size={24} /></span>
+              <strong>{kpi.value}</strong>
+              <p>{kpi.label}</p>
+            </article>
+          );
+        })}
       </section>
 
       <section className="dashboard-quick-grid" aria-label="Schnellzugriffe">
@@ -127,7 +113,7 @@ export function AdminDashboard() {
         </div>
         <article className="dashboard-recommendation">
           <Sparkles size={28} />
-          <strong>💡 Neue Punkteeinlösung erstellen</strong>
+          <strong>Neue Punkteeinlösung erstellen</strong>
           <p className="muted">Lege ein Produkt fest, das Gäste mit Punkten einlösen können.</p>
         </article>
       </section>

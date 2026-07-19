@@ -1006,6 +1006,142 @@ a {
   overflow-wrap: anywhere;
 }
 
+.platform-audit-shell {
+  max-width: 1440px;
+}
+
+.platform-audit-filters,
+.platform-audit-table-card {
+  display: grid;
+  gap: 16px;
+}
+
+.platform-audit-filters .section-heading h2 {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.platform-audit-filter-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.platform-audit-search {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dce3e8;
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.platform-audit-search input {
+  background: transparent;
+  border: 0;
+  min-width: 0;
+  outline: 0;
+  width: 100%;
+}
+
+.platform-audit-toggle-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.platform-audit-toggle-row label {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.platform-audit-toggle-row .button {
+  margin-left: auto;
+}
+
+.platform-audit-table-wrap {
+  overflow-x: auto;
+}
+
+.platform-audit-table {
+  border-collapse: collapse;
+  min-width: 980px;
+  width: 100%;
+}
+
+.platform-audit-table th,
+.platform-audit-table td {
+  border-bottom: 1px solid #e7ebee;
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.platform-audit-table th {
+  color: #607080;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.platform-audit-table tbody tr {
+  cursor: pointer;
+}
+
+.platform-audit-table tbody tr:hover,
+.platform-audit-table tbody tr:focus-visible {
+  background: #f4f8f7;
+  outline: 0;
+}
+
+.audit-status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.audit-status.success { background: #e7f5ee; color: #176641; }
+.audit-status.failed { background: #fff0ee; color: #a33a2b; }
+.audit-status.blocked { background: #fff5df; color: #8a5b09; }
+
+.platform-audit-detail,
+.platform-audit-detail dl,
+.platform-audit-detail section {
+  display: grid;
+  gap: 12px;
+}
+
+.platform-audit-detail dl {
+  margin: 0;
+}
+
+.platform-audit-detail dl div {
+  background: #f2f5f6;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.platform-audit-detail dt {
+  color: #687582;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.platform-audit-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .tenant-switcher {
   margin-left: auto;
   min-width: 220px;
@@ -3743,7 +3879,7 @@ a {
 
 @media (min-width: 1120px) {
   .dashboard-kpi-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .dashboard-quick-grid {
@@ -3762,6 +3898,10 @@ a {
 
   .platform-admin-grid {
     grid-template-columns: 1fr;
+  }
+
+  .platform-audit-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3862,6 +4002,20 @@ a {
 
   .platform-admin-header-actions .button,
   .platform-actions .button {
+    width: 100%;
+  }
+
+  .platform-audit-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-audit-toggle-row {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .platform-audit-toggle-row .button {
+    margin-left: 0;
     width: 100%;
   }
 

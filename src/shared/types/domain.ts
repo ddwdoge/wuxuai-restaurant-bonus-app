@@ -96,6 +96,8 @@ export type Customer = {
   points_balance: number;
   stamp_balance: number;
   membership_level: string;
+  is_test_customer?: boolean;
+  test_session_id?: string | null;
   created_at: string;
 };
 

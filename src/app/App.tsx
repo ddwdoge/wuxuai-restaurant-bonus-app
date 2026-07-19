@@ -39,6 +39,9 @@ const SettingsPage = lazy(() =>
 const PlatformAdminPage = lazy(() =>
   import("../modules/platform/PlatformAdminPage").then((module) => ({ default: module.PlatformAdminPage })),
 );
+const PlatformAuditPage = lazy(() =>
+  import("../modules/platform/PlatformAuditPage").then((module) => ({ default: module.PlatformAuditPage })),
+);
 const RestaurantOnboarding = lazy(() =>
   import("../modules/admin/pages/RestaurantOnboarding").then((module) => ({ default: module.RestaurantOnboarding })),
 );
@@ -137,6 +140,17 @@ export function App() {
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/platform/audit"
+        element={
+          <ProtectedRoute
+            allowedRoles={["platform_owner", "platform_admin", "app_admin", "super_admin", "wuxuai_admin", "support", "security_admin", "viewer"]}
+            roleScope="platform"
+          >
+            {withFallback(<PlatformAuditPage />, <PlatformLoading />)}
           </ProtectedRoute>
         }
       />

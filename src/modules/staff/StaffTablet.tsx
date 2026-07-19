@@ -500,7 +500,13 @@ export function StaffTablet() {
         setStaffRewards(nextRewards);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message.toLowerCase() : "";
+      const errorMessage = (
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" && error !== null && "message" in error
+            ? String(error.message)
+            : ""
+      ).toLowerCase();
       if (errorMessage.includes("abgelaufen")) {
         setMessage("Der Einlösecode ist abgelaufen.");
       } else if (errorMessage.includes("bereits verwendet")) {

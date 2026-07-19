@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, CheckCircle2, Clock, CreditCard, ExternalLink, Lock, PauseCircle, RefreshCw, Search } from "lucide-react";
+import { Activity, AlertCircle, Building2, CheckCircle2, Clock, ExternalLink, Lock, RefreshCw, Search } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   loadPlatformRestaurantDetail,
@@ -297,6 +297,10 @@ export function PlatformAdminPage() {
         </div>
         <div className="platform-admin-header-actions">
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
+          <button className="button secondary" onClick={() => navigate("/admin/platform/audit")} type="button">
+            <Activity size={18} />
+            Audit-Protokoll
+          </button>
           <button className="button secondary" onClick={() => loadData(selectedRestaurantId)} type="button">
             <RefreshCw size={18} />
             Aktualisieren

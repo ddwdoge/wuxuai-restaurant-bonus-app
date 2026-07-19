@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Gift, Info, QrCode, UserPlus, X } from "lucide-react";
+import { CheckCircle2, Copy, Flame, Gift, QrCode, Sparkles, UserPlus, WalletCards } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
-import type { LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
-import { startCustomerRedemption } from "../rewards/rewardService";
+import { AppDrawer } from "../../shared/components/AppDrawer";
+import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
+import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
@@ -24,12 +25,31 @@ import {
   removeStoredCustomerToken,
   saveStoredCustomerToken,
 } from "./customerTokenStorage";
+import {
+  AppShell,
+  BottomNavigation,
+  CustomerHeader,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageContainer,
+  PointsCard,
+  PremiumCard,
+  PrimaryButton,
+  RewardCard,
+  RewardImage,
+  SectionHeader,
+  SecondaryButton,
+  StatusBadge,
+  type CustomerView,
+} from "./components/PremiumCustomerUi";
 
 type GuestStep = "welcome" | "register" | "success";
 
 type ActiveRedemptionCode = {
   code: string;
   expiresAt: string;
+  redemptionId: string;
   rewardId: string;
   assignmentId: string | null;
   title: string;
@@ -82,16 +102,16 @@ function welcomeGiftDetail(reward: {
   return reward.product_group ?? null;
 }
 
-const rewardAssets: Record<string, { icon: string; asset: string }> = {
-  Getränk: { icon: "🥤", asset: "drink" },
-  Kaffee: { icon: "☕", asset: "coffee" },
-  Dessert: { icon: "🍰", asset: "dessert" },
-  Vorspeise: { icon: "🥗", asset: "appetizer" },
-  Hauptspeise: { icon: "🍽️", asset: "main" },
-  Sushi: { icon: "🍣", asset: "sushi" },
-  Menü: { icon: "🍱", asset: "menu" },
-  Belohnung: { icon: "🎁", asset: "custom" },
-  Punkteeinlösung: { icon: "🎁", asset: "custom" },
+const rewardAssets: Record<string, { asset: string }> = {
+  Getränk: { asset: "drink" },
+  Kaffee: { asset: "coffee" },
+  Dessert: { asset: "dessert" },
+  Vorspeise: { asset: "appetizer" },
+  Hauptspeise: { asset: "main" },
+  Sushi: { asset: "sushi" },
+  Menü: { asset: "menu" },
+  Belohnung: { asset: "custom" },
+  Punkteeinlösung: { asset: "custom" },
 };
 
 function standardRewardAsset(category: string | null | undefined, title: string) {
@@ -99,7 +119,7 @@ function standardRewardAsset(category: string | null | undefined, title: string)
 
   return (
     <span className={`standard-asset customer-reward-asset ${asset.asset}`} aria-label={`Standardbild ${title}`}>
-      {asset.icon}
+      <Gift aria-hidden="true" size={38} />
     </span>
   );
 }
@@ -117,20 +137,13 @@ function bonusTierForAmount(amount: number | null, tiers: PublicLoyaltySettings[
   return sortedTiers.find((tier) => amount >= tier.min && (tier.max === null || amount < tier.max)) ?? sortedTiers[0] ?? null;
 }
 
-function rewardImage(reward: PublicCustomerOfferView) {
-  return (
-    <div className="customer-reward-image">
-      {reward.image_url ? <img alt={reward.title} src={reward.image_url} /> : standardRewardAsset(reward.category, reward.title)}
-    </div>
-  );
-}
-
 export function CustomerPortal() {
   const { slug } = useParams();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
+  const [activeView, setActiveView] = useState<CustomerView>("home");
   const [restaurant, setRestaurant] = useState<Pick<Restaurant, "name" | "slug" | "status"> | null>(null);
   const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
   const [settings, setSettings] = useState<PublicLoyaltySettings | null>(null);
@@ -142,6 +155,7 @@ export function CustomerPortal() {
   const [redemptionCompleted, setRedemptionCompleted] = useState(false);
   const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
   const [redeemingReward, setRedeemingReward] = useState(false);
+  const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
   const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(null);
   const [tokenAutoLoaded, setTokenAutoLoaded] = useState(false);
   const [billAmountInput, setBillAmountInput] = useState("");
@@ -162,9 +176,6 @@ export function CustomerPortal() {
   const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
-  const missingRevenueForReward = (reward: PublicCustomerOfferView) =>
-    settings ? Math.max(0, reward.remaining_points * settings.amount_per_point) : 0;
-
   useEffect(() => {
     if (!restaurantSlug) return;
     setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
@@ -251,7 +262,11 @@ export function CustomerPortal() {
   const pointRedemptions = visibleRewards.filter((offer) => offer.source === "reward" && !offer.is_starter_reward);
   const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
   const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
-  const pointsLabel = settings?.loyalty_mode === "stamp_based" ? "Stempel" : "Punkte";
+  const previewRedemptions = pointRedemptions.slice(0, 3);
+  const nextPointRedemption = [...pointRedemptions].sort((left, right) => left.remaining_points - right.remaining_points)[0] ?? null;
+  const nextRedemptionProgress = nextPointRedemption?.required_points
+    ? clampPercent(((nextPointRedemption.required_points - nextPointRedemption.remaining_points) / nextPointRedemption.required_points) * 100)
+    : 0;
   const pointsTitle = settings?.loyalty_mode === "stamp_based" ? "Deine Stempel" : "Deine Punkte";
   const pointsValue = settings?.loyalty_mode === "stamp_based"
     ? `${customer?.stamp_balance ?? 0}/${settings.stamps_required}`
@@ -298,7 +313,7 @@ export function CustomerPortal() {
       : settings?.loyalty_mode === "stamp_based"
         ? `Sammle Stempel bis zur nächsten Punkteeinlösung.`
         : `Sammle Punkte bei jedem Besuch.`,
-    "🔥 Bonus Boost",
+    "Bonus Boost",
     activeBoost
       ? `Wenn dein Bonus Boost aktiv ist, sammelst du für begrenzte Zeit doppelte Punkte.`
       : `Lade einen Freund ein. Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`,
@@ -326,26 +341,102 @@ export function CustomerPortal() {
     : 0;
 
   useEffect(() => {
-    if (!restaurantSlug) return;
+    if (!restaurantSlug || !activeToken) return;
     const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
-    try {
-      const stored = window.sessionStorage.getItem(storageKey);
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as ActiveRedemptionCode;
-      if (new Date(parsed.expiresAt).getTime() > Date.now() && /^\d{6}$/.test(parsed.code)) {
-        setActiveRedemptionCode(parsed);
-        setRedemptionCompleted(true);
-      } else {
+    const customerTokenForCheck = activeToken;
+    let cancelled = false;
+
+    async function restoreActiveRedemption() {
+      try {
+        const stored = window.sessionStorage.getItem(storageKey);
+        if (!stored) return;
+        const parsed = JSON.parse(stored) as ActiveRedemptionCode;
+        const locallyValid = Boolean(
+          parsed.redemptionId
+          && /^\d{6}$/.test(parsed.code)
+          && new Date(parsed.expiresAt).getTime() > Date.now()
+        );
+        if (!locallyValid) {
+          window.sessionStorage.removeItem(storageKey);
+          return;
+        }
+
+        const serverStatus = await loadCustomerRedemptionStatus({
+          restaurantSlug,
+          customerToken: customerTokenForCheck,
+          redemptionId: parsed.redemptionId,
+        });
+        if (cancelled) return;
+
+        if (serverStatus.active && serverStatus.status === "active") {
+          setActiveRedemptionCode(parsed);
+          setRedemptionCompleted(true);
+          setRedemptionDrawerOpen(true);
+          return;
+        }
+
         window.sessionStorage.removeItem(storageKey);
+        setActiveRedemptionCode(null);
+      } catch (error) {
+        console.error("Einlösecode konnte nicht serverseitig geprüft werden.", error);
+        if (!cancelled) {
+          setActiveRedemptionCode(null);
+        }
       }
-    } catch {
-      window.sessionStorage.removeItem(storageKey);
     }
-  }, [restaurantSlug]);
+
+    void restoreActiveRedemption();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeToken, restaurantSlug]);
+
+  useEffect(() => {
+    if (!activeRedemptionCode || !activeToken || !restaurantSlug) return;
+    let cancelled = false;
+    let requestRunning = false;
+    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
+
+    const intervalId = window.setInterval(() => {
+      if (requestRunning) return;
+      requestRunning = true;
+      loadCustomerRedemptionStatus({
+        restaurantSlug,
+        customerToken: activeToken,
+        redemptionId: activeRedemptionCode.redemptionId,
+      })
+        .then((serverStatus) => {
+          if (cancelled || serverStatus.active) return;
+          window.sessionStorage.removeItem(storageKey);
+          setActiveRedemptionCode(null);
+          setRedeemOffer(null);
+          setRedemptionDrawerOpen(false);
+          setMessage(serverStatus.status === "redeemed"
+            ? "Einlösung erfolgreich bestätigt."
+            : "Der Einlösecode ist nicht mehr verfügbar.");
+          setRefreshToken((current) => current + 1);
+        })
+        .catch((error) => {
+          console.error("Einlösestatus konnte nicht aktualisiert werden.", error);
+        })
+        .finally(() => {
+          requestRunning = false;
+        });
+    }, 4_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [activeRedemptionCode, activeToken, restaurantSlug]);
 
   useEffect(() => {
     if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug) return;
     window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    setActiveRedemptionCode(null);
+    setRedeemOffer(null);
+    setRedemptionDrawerOpen(false);
+    setMessage("Der Einlösecode ist abgelaufen.");
   }, [activeRedemptionCode, redemptionSecondsRemaining, restaurantSlug]);
 
   async function handleRegister(event: FormEvent) {
@@ -465,6 +556,17 @@ export function CustomerPortal() {
     }
   }
 
+  function handleCustomerViewChange(view: CustomerView) {
+    if (view === "collect") {
+      const tokenQuery = activeToken ? `?token=${encodeURIComponent(activeToken)}` : "";
+      window.location.assign(`/w/${restaurantSlug}${tokenQuery}`);
+      return;
+    }
+
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function openRewardRedemption(reward: PublicCustomerOfferView) {
     if (!activeToken) {
       setMessage("Öffne zuerst deinen persönlichen Bonus.");
@@ -479,6 +581,7 @@ export function CustomerPortal() {
     setRedeemOffer(reward);
     setRedemptionCompleted(false);
     setRedemptionStatus(null);
+    setRedemptionDrawerOpen(true);
   }
 
   async function handleRedeemCustomerReward() {
@@ -501,6 +604,7 @@ export function CustomerPortal() {
       const nextActiveCode: ActiveRedemptionCode = {
         code: result.redemption_code,
         expiresAt: result.expires_at,
+        redemptionId: result.redemption_id,
         rewardId: redeemOffer.id,
         assignmentId: redeemOffer.assignment_id ?? null,
         title: redeemOffer.title,
@@ -544,78 +648,46 @@ export function CustomerPortal() {
 
   if (!settings || !restaurant || !branding) {
     return (
-      <main className="customer-shell">
-        <section className="customer-card">
-          <p className="muted">{message ?? "Bonus lädt."}</p>
-        </section>
-      </main>
+      <AppShell>
+        <PageContainer>
+          {message ? (
+            <ErrorState description={message} title="Dein Bonus konnte nicht geöffnet werden" />
+          ) : (
+            <LoadingState description="Dein Bonus wird geladen." />
+          )}
+        </PageContainer>
+      </AppShell>
     );
   }
 
   return (
-    <main
-      className="customer-shell"
-      style={{
-        color: "#17202a",
-        fontFamily: branding.font_family,
-      }}
-    >
-      <section className="customer-card guest-flow-card">
-        <header className="customer-brand-header restaurant-brand-header">
-          <span className="restaurant-logo-frame">
-            {branding.logo_url ? (
-              <img alt={`${restaurant.name} Logo`} className="customer-logo restaurant-logo-image" src={branding.logo_url} />
-            ) : (
-              <span className="restaurant-logo-placeholder" style={{ background: branding.primary_color }}>
-                {(restaurant.name.trim().charAt(0) || "W").toUpperCase()}
-              </span>
-            )}
-          </span>
-          <div className="restaurant-brand-copy">
-            <h1 className="restaurant-brand-title">{restaurant.name}</h1>
-            <p className="restaurant-brand-subtitle">Bonus für Gäste</p>
-          </div>
-          <button
-            aria-label="So funktioniert's öffnen"
-            className="icon-button customer-info-button"
-            onClick={() => setInfoOpen(true)}
-            type="button"
-          >
-            <Info size={22} />
-          </button>
-        </header>
+    <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
+      <PageContainer className="customer-portal-page">
+        <CustomerHeader
+          customerName={customer?.name}
+          logoUrl={branding.logo_url}
+          name={restaurant.name}
+          onInfo={() => setInfoOpen(true)}
+          primaryColor={branding.primary_color}
+          subtitle="Bonus für Gäste"
+        />
 
-        {infoOpen ? (
-          <div className="modal-backdrop customer-info-backdrop" onClick={() => setInfoOpen(false)} role="presentation">
-            <section
-              aria-labelledby="customer-info-title"
-              aria-modal="true"
-              className="how-modal customer-info-modal"
-              onClick={(event) => event.stopPropagation()}
-              role="dialog"
-            >
-              <div className="modal-header">
-                <h2 id="customer-info-title">So funktioniert's</h2>
-                <button
-                  aria-label="So funktioniert's schließen"
-                  className="icon-button customer-info-button"
-                  onClick={() => setInfoOpen(false)}
-                  type="button"
-                >
-                  <X size={22} />
-                </button>
-              </div>
-              <div className="rule-list">
-                {explanation.map((line) => (
-                  <p className="muted" key={line}>{line}</p>
-                ))}
-              </div>
-              <button className="button customer-primary-button" onClick={() => setInfoOpen(false)} type="button">
-                Schließen
-              </button>
-            </section>
+        <AppDrawer
+          footer={(
+            <button className="button customer-primary-button" onClick={() => setInfoOpen(false)} type="button">
+              Schließen
+            </button>
+          )}
+          onClose={() => setInfoOpen(false)}
+          open={infoOpen}
+          title="So funktioniert's"
+        >
+          <div className="rule-list customer-info-rules">
+            {explanation.map((line) => (
+              <p className="muted" key={line}>{line}</p>
+            ))}
           </div>
-        ) : null}
+        </AppDrawer>
 
         {!customer && guestStep === "welcome" && !activeToken && !isBonusCollection ? (
           <article className="customer-hero-card">
@@ -744,13 +816,13 @@ export function CustomerPortal() {
         {customer && isBonusCollection ? (
           <section className="bonus-collect-flow">
             {collectionResult ? (
-              <article className="customer-hero-card collect-success-card">
+              <article className="customer-hero-card collect-success-card premium-collect-success">
+                <span className="premium-success-icon"><CheckCircle2 aria-hidden="true" size={38} /></span>
                 <span className="pill">Fertig</span>
-                <h2>🎉</h2>
                 <p className="status-message" role="status">Punkte gesammelt!</p>
                 {collectionResult.bonus_multiplier > 1 ? (
                   <>
-                    <strong>Gesamt: {collectionTotalPoints} Punkte 🔥</strong>
+                    <strong className="premium-success-total">Gesamt: {collectionTotalPoints} Punkte</strong>
                     <div className="boost-success-grid">
                       <div>
                         <span className="pill">Normal</span>
@@ -762,7 +834,7 @@ export function CustomerPortal() {
                       </div>
                       <div>
                         <span className="pill">Gesamt</span>
-                        <strong>{collectionTotalPoints} Punkte 🔥</strong>
+                        <strong><Flame aria-hidden="true" size={18} /> {collectionTotalPoints} Punkte</strong>
                       </div>
                     </div>
                   </>
@@ -771,7 +843,7 @@ export function CustomerPortal() {
                 )}
                 <p className="muted">Aktuell: {collectionResult.points_balance} Punkte</p>
                 {collectionResult.welcome_gift_unlocked ? (
-                  <p className="muted">🎉 Dein Willkommensgeschenk ist jetzt freigeschaltet.</p>
+                  <p className="muted"><Sparkles aria-hidden="true" size={17} /> Dein Willkommensgeschenk ist jetzt freigeschaltet.</p>
                 ) : null}
                 {collectionResult.next_reward ? (
                   <p className="muted">
@@ -780,19 +852,20 @@ export function CustomerPortal() {
                 ) : (
                   <p className="muted">Deine nächsten Punkteeinlösungen sind im Bonus sichtbar.</p>
                 )}
-                <a className="button customer-primary-button" href={portalUrl}>
+                <a className="premium-button premium-button-primary" href={portalUrl}>
                   Mein Bonus
                 </a>
               </article>
             ) : (
               <>
-                <article className="customer-hero-card">
+                <article className="customer-hero-card premium-collect-intro">
+                  <span className="premium-flow-icon"><QrCode aria-hidden="true" size={24} /></span>
                   <span className="pill">Nach dem Bezahlen</span>
                   <h2>{tokenAutoLoaded ? `Willkommen zurück, ${customer.name.split(" ")[0]}` : "Punkte sammeln"}</h2>
                   <p className="muted">Gib deinen Rechnungsbetrag ein. Der Kassierer kann kurz mitschauen.</p>
                 </article>
 
-                <section className="calculation-card">
+                <section className="calculation-card premium-collect-form">
                   <label className="field" htmlFor="bill-amount">
                     <span>Rechnungsbetrag</span>
                     <input
@@ -819,14 +892,14 @@ export function CustomerPortal() {
                   </label>
                   <p className="muted">Bitte Mitarbeiter um die Tages-PIN.</p>
                   {!selectedTier ? (
-                    <button className="button customer-primary-button" disabled={collecting} onClick={handleCollectPoints} type="button">
+                    <PrimaryButton disabled={collecting} onClick={handleCollectPoints} type="button">
                       {collecting ? "Punkte werden gutgeschrieben..." : "Punkte sammeln"}
-                    </button>
+                    </PrimaryButton>
                   ) : null}
                 </section>
 
                 {selectedTier ? (
-                  <article className="calculation-card">
+                  <article className="calculation-card premium-calculation-result">
                     <p className="muted">Ausgewählt</p>
                     <h2>{selectedTier.label}</h2>
                     <strong>{previewPoints} Punkte</strong>
@@ -849,9 +922,9 @@ export function CustomerPortal() {
                     ) : (
                       <p className="muted">Höchste Bonusstufe erreicht</p>
                     )}
-                    <button className="button customer-primary-button" disabled={collecting} onClick={handleCollectPoints} type="button">
+                    <PrimaryButton disabled={collecting} onClick={handleCollectPoints} type="button">
                       {collecting ? "Punkte werden gutgeschrieben..." : "Punkte sammeln"}
-                    </button>
+                    </PrimaryButton>
                   </article>
                 ) : null}
                 {message ? <p className="status-message" role="alert">{message}</p> : null}
@@ -862,176 +935,192 @@ export function CustomerPortal() {
 
         {customer && !isBonusCollection ? (
           <>
-            <article className={`bonus-boost-banner${activeBoost ? " active" : " inactive"}`}>
-              <div>
-                <span className="pill">Bonus Boost</span>
-                <h2>{activeBoost ? `🔥 ${activeBoost.multiplier}× Punkte aktiv` : "🔥 Lade einen Freund ein"}</h2>
-                <p className="muted">
-                  {activeBoost
-                    ? activeBoost.multiplier === 2
-                      ? "Du sammelst aktuell doppelte Punkte."
-                      : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
-                    : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`}
-                </p>
-              </div>
-              <div className="boost-banner-stats">
-                <div>
-                  <span className="muted">Multiplikator</span>
-                  <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
+            {activeView === "home" ? (
+              <section className="premium-view-stack" aria-labelledby="customer-home-title">
+                <div className="premium-welcome-copy">
+                  <span>Mein Bonus</span>
+                  <h1 id="customer-home-title">Schön, dass du da bist.</h1>
+                  <p>Deine Punkte und Vorteile bei {restaurant.name}.</p>
                 </div>
-                <div>
-                  <span className="muted">Rest</span>
-                  <strong>{activeBoost ? boostRemainingLabel : `+${referralBoostDurationDays} Tage`}</strong>
-                </div>
-                <div>
-                  <span className="muted">Restzeit</span>
-                  <strong>{boostRemainingLabel ?? "Startbereit"}</strong>
-                </div>
-              </div>
-              <div className="boost-progress-track" aria-label="Bonus Boost Restzeit">
-                <span style={{ width: `${boostProgress}%` }} />
-              </div>
-              {referralBoostEnabled ? (
-                <button className="button customer-primary-button" disabled={creatingReferral} onClick={handleCreateReferralLink} type="button">
-                  Freund einladen
-                </button>
-              ) : null}
-              {referralLink ? (
-                <div className="referral-share-box">
-                  <QRCodeSVG value={referralLink} size={156} level="M" />
-                  <p className="muted">Dein Bonus Boost startet erst, wenn dein Freund erstmals Punkte sammelt.</p>
-                  <a href={referralLink}>{referralLink}</a>
-                </div>
-              ) : null}
-            </article>
 
-            <article className="customer-points-hero">
-              <span className="pill">{pointsLabel}</span>
-              <h2>{pointsTitle}</h2>
-              <strong>{activeBoost ? `${pointsValue} 🔥` : pointsValue}</strong>
-              {activeBoost ? (
-                <span className="boost-points-badge">{activeBoost.multiplier}× Bonus Boost aktiv</span>
-              ) : null}
-              <p className="muted">
-                {activeBoost
-                  ? activeBoost.multiplier === 2
-                    ? "Jede Punktebuchung zählt aktuell doppelt."
-                    : `Jede Punktebuchung zählt aktuell ${activeBoost.multiplier}×.`
-                  : settings?.loyalty_mode === "stamp_based"
-                  ? "Diese Stempel zeigen deinen Fortschritt."
-                  : "Diese Punkte kannst du für Punkteeinlösungen verwenden."}
-              </p>
-            </article>
-
-            <article className="card point-redemption-section">
-              <h2>
-                <Gift size={18} /> Mit Punkten einlösbar
-              </h2>
-              <p className="muted">Diese Produkte kannst du aktuell mit deinen Punkten einlösen.</p>
-              <div className="point-redemption-grid">
-                {pointRedemptions.map((reward) => (
-                  <div
-                    className={`reward-progress-card${reward.status === "unlocked" ? " unlocked" : ""}`}
-                    key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
-                  >
-                    <div className="reward-image-shell">
-                      {rewardImage(reward)}
-                      {reward.status !== "unlocked" ? <span className="reward-lock-badge" aria-label="Noch gesperrt">🔒</span> : null}
+                <PremiumCard className={`premium-boost-card ${activeBoost ? "active" : "inactive"}`} variant="information">
+                  <div className="premium-icon-heading">
+                    <span><Flame aria-hidden="true" size={22} /></span>
+                    <div>
+                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
+                      <h2>{activeBoost ? `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
                     </div>
-                    <strong>{reward.title}</strong>
-                    <span className="pill">{reward.category ?? reward.product_group ?? "Punkteeinlösung"}</span>
-                    <p className="muted">{reward.required_points} Punkte nötig</p>
-                    {reward.status === "unlocked" ? (
-                      <p>Einlösbar</p>
-                    ) : (
-                      <>
-                        <p>Noch gesperrt</p>
-                        <p>Dir fehlen noch {reward.remaining_points} Punkte.</p>
-                        <p className="muted">Nur noch ca. {formatEuro(missingRevenueForReward(reward))} bis zur Einlösung.</p>
-                      </>
-                    )}
-                    {reward.expires_at ? <p className="muted">Gültig bis {reward.expires_at.slice(0, 10)}</p> : null}
-                    {reward.status === "unlocked" ? (
-                      <button className="button" onClick={() => openRewardRedemption(reward)} type="button">
-                        Jetzt Punkte einlösen
-                      </button>
-                    ) : null}
                   </div>
-                ))}
-                {pointRedemptions.length === 0 ? <p className="muted">Aktuell sind keine Punkteeinlösungen sichtbar.</p> : null}
-              </div>
-            </article>
-
-            {activeBirthdayGift ? (
-              <article className="card birthday-gift-section">
-                <h2>Dein Geburtstagsgeschenk</h2>
-                <div className="reward-progress-card unlocked">
-                  {rewardImage(activeBirthdayGift)}
-                  <strong>{activeBirthdayGift.title}</strong>
-                  <span className="pill">Geburtstagsgeschenk</span>
-                  <p>Dieses Geschenk wurde automatisch für deinen Geburtstag ausgewählt.</p>
-                  {activeBirthdayGift.valid_from && activeBirthdayGift.valid_until ? (
-                    <p className="muted">
-                      Gültig von {new Date(activeBirthdayGift.valid_from).toLocaleDateString("de-AT")} bis{" "}
-                      {new Date(new Date(activeBirthdayGift.valid_until).getTime() - 1).toLocaleDateString("de-AT")}.
-                    </p>
-                  ) : null}
-                  <button className="button" onClick={() => openRewardRedemption(activeBirthdayGift)} type="button">
-                    Jetzt einlösen
-                  </button>
-                </div>
-              </article>
-            ) : null}
-
-            {activeWelcomeGift ? (
-              <article className="card welcome-gift-section">
-                <h2>Dein Willkommensgeschenk</h2>
-                <div className={`reward-progress-card${activeWelcomeGift.status === "unlocked" ? " unlocked" : ""}`}>
-                  {rewardImage(activeWelcomeGift)}
-                  <strong>{activeWelcomeGift.title}</strong>
-                  <span className="pill">Willkommensgeschenk</span>
                   <p>
-                    {activeWelcomeGift.status === "unlocked"
-                      ? "Dein Willkommensgeschenk ist freigeschaltet."
-                      : "Dieses Geschenk wurde bei deiner Anmeldung für dich reserviert."}
+                    {activeBoost
+                      ? activeBoost.multiplier === 2
+                        ? "Du sammelst aktuell doppelte Punkte."
+                        : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
+                      : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`}
                   </p>
-                  {activeWelcomeGift.status === "unlocked" ? (
-                    <p className="muted">Du kannst es jetzt einlösen.</p>
-                  ) : (
-                    <p className="muted">Es wird nach deiner ersten Punktebuchung freigeschaltet.</p>
-                  )}
-                  {welcomeGiftDetail(activeWelcomeGift) ? <p className="muted">{welcomeGiftDetail(activeWelcomeGift)}</p> : null}
-                  {activeWelcomeGift.status === "unlocked" ? (
-                    <button className="button" onClick={() => openRewardRedemption(activeWelcomeGift)} type="button">
-                      Jetzt einlösen
-                    </button>
+                  <div className="premium-boost-meta">
+                    <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
+                    <span>{boostRemainingLabel ?? `+${referralBoostDurationDays} Tage`}</span>
+                  </div>
+                  <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
+                  {referralBoostEnabled ? (
+                    <PrimaryButton disabled={creatingReferral} onClick={handleCreateReferralLink}>
+                      Freund einladen
+                    </PrimaryButton>
                   ) : null}
-                </div>
-              </article>
+                  {referralLink ? (
+                    <div className="referral-share-box premium-referral-share">
+                      <QRCodeSVG value={referralLink} size={156} level="M" />
+                      <p>Der Boost startet nach der ersten Punktebuchung deines Freundes.</p>
+                      <a href={referralLink}>Einladungslink öffnen</a>
+                    </div>
+                  ) : null}
+                </PremiumCard>
+
+                <PointsCard
+                  boostLabel={activeBoost ? `${activeBoost.multiplier}× Bonus Boost aktiv` : null}
+                  label={pointsTitle}
+                  note={nextPointRedemption
+                    ? nextPointRedemption.remaining_points > 0
+                      ? `Noch ${nextPointRedemption.remaining_points} Punkte bis ${nextPointRedemption.title}.`
+                      : `${nextPointRedemption.title} ist jetzt einlösbar.`
+                    : settings.loyalty_mode === "stamp_based"
+                      ? "Diese Stempel zeigen deinen Fortschritt."
+                      : "Diese Punkte kannst du für Punkteeinlösungen verwenden."}
+                  progress={nextPointRedemption ? nextRedemptionProgress : undefined}
+                  value={pointsValue}
+                />
+
+                <PrimaryButton className="premium-main-action" onClick={() => handleCustomerViewChange("collect")}>
+                  <QrCode aria-hidden="true" size={21} /> Punkte sammeln
+                </PrimaryButton>
+
+                <section className="premium-content-section">
+                  <SectionHeader
+                    action={pointRedemptions.length > 3 ? <button className="premium-text-button" onClick={() => setActiveView("redemptions")} type="button">Alle ansehen</button> : null}
+                    subtitle="Deine nächsten Möglichkeiten auf einen Blick."
+                    title="Mit Punkten einlösbar"
+                  />
+                  {previewRedemptions.length ? (
+                    <div className="premium-reward-grid">
+                      {previewRedemptions.map((reward) => (
+                        <RewardCard
+                          category={reward.category ?? reward.product_group}
+                          imageUrl={reward.image_url}
+                          key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
+                          locked={reward.status !== "unlocked"}
+                          meta={`${reward.required_points} Punkte`}
+                          onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
+                          status={reward.status === "unlocked" ? "Jetzt einlösbar" : `Noch ${reward.remaining_points} Punkte`}
+                          title={reward.title}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState description="Sobald das Restaurant eine Punkteeinlösung aktiviert, erscheint sie hier." title="Noch keine Punkteeinlösungen" />
+                  )}
+                </section>
+
+                {activeWelcomeGift || activeBirthdayGift ? (
+                  <section className="premium-content-section">
+                    <SectionHeader subtitle="Persönliche Vorteile, die für dich bereitliegen." title="Deine Geschenke" />
+                    <div className="premium-reward-grid">
+                      {activeWelcomeGift ? (
+                        <RewardCard
+                          category="Willkommensgeschenk"
+                          imageUrl={activeWelcomeGift.image_url}
+                          locked={activeWelcomeGift.status !== "unlocked"}
+                          meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
+                          onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
+                          status={activeWelcomeGift.status === "unlocked" ? "Jetzt einlösbar" : "Nach der ersten Punktebuchung verfügbar"}
+                          title={activeWelcomeGift.title}
+                        />
+                      ) : null}
+                      {activeBirthdayGift ? (
+                        <RewardCard
+                          category="Geburtstagsgeschenk"
+                          imageUrl={activeBirthdayGift.image_url}
+                          meta="Für deinen Geburtstag"
+                          onOpen={() => openRewardRedemption(activeBirthdayGift)}
+                          status="Jetzt einlösbar"
+                          title={activeBirthdayGift.title}
+                        />
+                      ) : null}
+                    </div>
+                  </section>
+                ) : null}
+              </section>
             ) : null}
 
-            <article className="customer-home-card qr-card customer-qr-lower-card">
-              <h2>Dein persönlicher Bonus-QR</h2>
-              <QRCodeSVG value={portalUrl} size={176} level="M" />
-              <p className="muted">Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
-              <p className="muted">
-                <QrCode size={16} /> {customer.customer_code}
-              </p>
-            </article>
+            {activeView === "redemptions" ? (
+              <section className="premium-view-stack" aria-labelledby="redemptions-title">
+                <div className="premium-page-heading">
+                  <span><Gift aria-hidden="true" size={20} /></span>
+                  <div><h1 id="redemptions-title">Punkteeinlösungen</h1><p>Entdecke, was du mit deinen Punkten einlösen kannst.</p></div>
+                </div>
+                <PointsCard label={pointsTitle} note="Dein aktueller Stand für Punkteeinlösungen." value={pointsValue} />
+                {pointRedemptions.length ? (
+                  <div className="premium-reward-grid">
+                    {pointRedemptions.map((reward) => (
+                      <RewardCard
+                        category={reward.category ?? reward.product_group}
+                        imageUrl={reward.image_url}
+                        key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
+                        locked={reward.status !== "unlocked"}
+                        meta={`${reward.required_points} Punkte`}
+                        onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
+                        status={reward.status === "unlocked" ? "Jetzt einlösbar" : `Dir fehlen noch ${reward.remaining_points} Punkte.`}
+                        title={reward.title}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState description="Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet." title="Noch nichts zum Einlösen" />
+                )}
+              </section>
+            ) : null}
 
-            <article className="card bonus-save-help-card">
-              <h2>Bonuskonto speichern</h2>
-              <p className="muted">Speichere diese Seite, damit du deine Punkte jederzeit ansehen kannst.</p>
-              <button className="button secondary" onClick={copyPortalLink} type="button">
-                Link kopieren
+            {activeView === "account" ? (
+              <section className="premium-view-stack" aria-labelledby="account-title">
+                <div className="premium-page-heading">
+                  <span className="premium-customer-avatar">{customer.name.trim().charAt(0).toUpperCase()}</span>
+                  <div><h1 id="account-title">Dein Bonuskonto</h1><p>{customer.name}</p></div>
+                </div>
+                <PremiumCard className="premium-account-summary">
+                  <div><span>Restaurant</span><strong>{restaurant.name}</strong></div>
+                  <div><span>Mitgliedsstatus</span><strong>{customer.membership_level || "Mitglied"}</strong></div>
+                  <div><span>Deine Nummer</span><strong>{customer.customer_code}</strong></div>
+                </PremiumCard>
+                <PremiumCard className="premium-personal-qr">
+                  <SectionHeader subtitle="Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto." title="Dein persönlicher Bonus-QR" />
+                  <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
+                  <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                </PremiumCard>
+                <PremiumCard className="premium-save-account" variant="information">
+                  <div className="premium-icon-heading"><span><WalletCards aria-hidden="true" size={22} /></span><div><h2>Bonuskonto speichern</h2><p>Speichere diese Seite für deinen nächsten Besuch.</p></div></div>
+                  <SecondaryButton onClick={copyPortalLink}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                  <p>iPhone: Teilen und „Zum Home-Bildschirm“ wählen.</p>
+                  <p>Android: Browsermenü öffnen und „Zum Startbildschirm“ wählen.</p>
+                </PremiumCard>
+              </section>
+            ) : null}
+
+            <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
+
+            {activeRedemptionCode && !redemptionDrawerOpen ? (
+              <button className="premium-active-code" onClick={() => setRedemptionDrawerOpen(true)} type="button">
+                <Sparkles aria-hidden="true" size={18} /> Aktiven Einlösecode anzeigen
               </button>
-              <p className="muted">iPhone: Teilen-Symbol drücken → Zum Home-Bildschirm</p>
-              <p className="muted">Android: Menü öffnen → Zum Startbildschirm hinzufügen</p>
-              <p className="muted">Dieses Gerät ist mit deinem Bonuskonto verbunden.</p>
-            </article>
+            ) : null}
 
-            {activeRedemptionCode ? (
-              <article className="card redemption-code-card" aria-live="polite">
+            <AppDrawer
+              description="Bitte bestätige die Einlösung erst direkt vor dem Mitarbeiter."
+              onClose={() => setRedemptionDrawerOpen(false)}
+              open={redemptionDrawerOpen && Boolean(activeRedemptionCode || redeemOffer)}
+              title={activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
+            >
+              {activeRedemptionCode ? (
+                <article className="redemption-code-card premium-redemption-code" aria-live="polite">
                 <span className="pill">
                   {activeRedemptionCode.redemptionType === "birthday_gift"
                     ? "Geburtstagsgeschenk"
@@ -1055,11 +1144,12 @@ export function CustomerPortal() {
                     <p className="muted">Dieser Einlösecode kann nicht mehr verwendet werden.</p>
                   </>
                 )}
-              </article>
-            ) : null}
+                </article>
+              ) : null}
 
-            {redeemOffer && !activeRedemptionCode ? (
-              <article className="card redeem-show-card">
+              {redeemOffer && !activeRedemptionCode ? (
+                <article className="redeem-show-card premium-redemption-confirmation">
+                <RewardImage imageUrl={redeemOffer.image_url} title={redeemOffer.title} />
                 <span className="pill">
                   {redeemOffer.gift_type === "birthday"
                     ? "Geburtstagsgeschenk"
@@ -1079,36 +1169,32 @@ export function CustomerPortal() {
                 {redemptionStatus ? <p className="status-message">{redemptionStatus}</p> : null}
 
                 <div className="row-actions">
-                  <button
-                    className="button secondary"
+                  <SecondaryButton
                     disabled={redeemingReward}
                     onClick={() => {
                       setRedeemOffer(null);
                       setRedemptionStatus(null);
                       setRedemptionCompleted(false);
+                      setRedemptionDrawerOpen(false);
                     }}
                     type="button"
-                  >
-                    Abbrechen
-                  </button>
+                  >Abbrechen</SecondaryButton>
                   {!redemptionCompleted ? (
-                    <button
-                      className="button customer-primary-button"
+                    <PrimaryButton
                       disabled={redeemingReward}
                       onClick={handleRedeemCustomerReward}
                       type="button"
-                    >
-                      Jetzt verbindlich einlösen
-                    </button>
+                    >Jetzt verbindlich einlösen</PrimaryButton>
                   ) : null}
                 </div>
-              </article>
-            ) : null}
+                </article>
+              ) : null}
+            </AppDrawer>
           </>
         ) : null}
 
         {message && !(customer && isBonusCollection) ? <p className="status-message" role="alert">{message}</p> : null}
-      </section>
-    </main>
+      </PageContainer>
+    </AppShell>
   );
 }

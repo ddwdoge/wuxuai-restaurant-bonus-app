@@ -643,6 +643,10 @@ export async function collectBonusPoints(input: BonusPointCollectionInput): Prom
     });
     throw new Error(collectBonusPointsErrorMessage(error));
   }
+  const payload = data as (BonusPointCollectionResult & { success?: boolean; error_message?: string }) | null;
+  if (payload?.success === false) {
+    throw new Error(payload.error_message ?? "Punkte konnten gerade nicht gebucht werden. Bitte versuche es erneut.");
+  }
   return data as BonusPointCollectionResult;
 }
 
@@ -782,6 +786,10 @@ export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): P
       message: error.message,
     });
     throw new Error(staffDailyPinActionErrorMessage(error));
+  }
+  const payload = data as (StaffLoyaltyActionResult & { success?: boolean; error_message?: string }) | null;
+  if (payload?.success === false) {
+    throw new Error(payload.error_message ?? "Punkte konnten gerade nicht gebucht werden. Bitte versuche es erneut.");
   }
   return data as StaffLoyaltyActionResult;
 }

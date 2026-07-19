@@ -114,12 +114,23 @@ export type ConsumeRedemptionCodeResult = {
   redeemed_at: string;
 };
 
+export type CustomerRedemptionStatus = {
+  active: boolean;
+  status: "active" | "redeemed" | "expired" | "cancelled" | "disabled";
+  source_status?: "started" | "redemption_started" | "redeemed" | "expired" | "cancelled";
+  expires_at?: string;
+  redemption_type?: "welcome_gift" | "birthday_gift" | "points_redemption";
+};
+
 export type RewardKpis = {
   rewardsRedeemedToday: number;
   pointsIssuedToday: number;
   stampsIssuedToday: number;
   activeRewards: number;
   activeCustomers: number;
+  newMembersToday: number;
+  newMembersThisWeek: number;
+  activeTodayCount: number;
 };
 
 const rewardSelect =
@@ -486,35 +497,45 @@ export async function consumeRedemptionCode(
   return data as ConsumeRedemptionCodeResult;
 }
 
+export async function loadCustomerRedemptionStatus(input: {
+  restaurantSlug: string;
+  customerToken: string;
+  redemptionId: string;
+}): Promise<CustomerRedemptionStatus> {
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
+  }
+
+  const { data, error } = await supabase.rpc("get_customer_redemption_status", {
+    input_restaurant_slug: input.restaurantSlug,
+    input_customer_token: input.customerToken,
+    input_redemption_id: input.redemptionId,
+  });
+
+  if (error) throw error;
+  return data as CustomerRedemptionStatus;
+}
+
 export async function loadRewardKpis(restaurantId: string): Promise<RewardKpis> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayIso = today.toISOString();
+  const { data, error } = await supabase.rpc("get_restaurant_dashboard_kpis", {
+    input_restaurant_id: restaurantId,
+  });
 
-  const [rewardRedemptions, couponRedemptions, points, stamps, activeRewards, activeCoupons, activeCustomers] =
-    await Promise.all([
-      supabase.from("customer_rewards").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "redeemed").gte("redeemed_at", todayIso),
-      supabase.from("coupon_redemptions").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).gte("redeemed_at", todayIso),
-      supabase.from("points_transactions").select("points").eq("restaurant_id", restaurantId).eq("type", "earn").gte("created_at", todayIso),
-      supabase.from("stamp_transactions").select("stamps").eq("restaurant_id", restaurantId).gte("created_at", todayIso),
-      supabase.from("rewards").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("active", true),
-      supabase.from("coupons").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "active"),
-      supabase.from("customers").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
-    ]);
-
-  for (const result of [rewardRedemptions, couponRedemptions, points, stamps, activeRewards, activeCoupons, activeCustomers]) {
-    if (result.error) throw result.error;
-  }
+  if (error) throw error;
+  const payload = data as Record<string, number>;
 
   return {
-    rewardsRedeemedToday: (rewardRedemptions.count ?? 0) + (couponRedemptions.count ?? 0),
-    pointsIssuedToday: ((points.data ?? []) as { points: number }[]).reduce((sum, item) => sum + item.points, 0),
-    stampsIssuedToday: ((stamps.data ?? []) as { stamps: number }[]).reduce((sum, item) => sum + item.stamps, 0),
-    activeRewards: (activeRewards.count ?? 0) + (activeCoupons.count ?? 0),
-    activeCustomers: activeCustomers.count ?? 0,
+    rewardsRedeemedToday: Number(payload.redemptions_today ?? 0),
+    pointsIssuedToday: Number(payload.points_issued_today ?? 0),
+    stampsIssuedToday: Number(payload.stamps_issued_today ?? 0),
+    activeRewards: Number(payload.active_rewards ?? 0),
+    activeCustomers: Number(payload.active_customers ?? 0),
+    newMembersToday: Number(payload.new_members_today ?? 0),
+    newMembersThisWeek: Number(payload.new_members_this_week ?? 0),
+    activeTodayCount: Number(payload.active_today_count ?? 0),
   };
 }

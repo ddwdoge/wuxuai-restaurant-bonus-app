@@ -5,6 +5,15 @@
 
 Status: **LOCK**
 
+## 20.07.2026 - Premium-Kundenportal Staging-E2E
+
+- Registrierten Kundenflow mit echter Staging-Punktebuchung und
+  Punkteeinlösung geprüft.
+- Staff-Fehlermapping übernimmt strukturierte Supabase-Fehler, damit ein
+  bereits verwendeter Einlösecode korrekt bezeichnet wird.
+- Verbleibende Blocker für aktiven Code-Status und Dashboard-Kundenkennzahlen
+  dokumentiert; keine Datenbank- oder Produktlogik geändert.
+
 Dieses Dokument dokumentiert die wichtigsten Produkt-, Architektur-, UX-, Sicherheits- und Engineering-Entscheidungen des WUXUAI Bonus Projekts.
 
 Der Changelog ist nicht nur eine Liste von Codeänderungen.  
@@ -2020,3 +2029,43 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Escape, Overlay, Schließen-Button, Fokus-Trap und Fokus-Rückgabe umgesetzt
 - Informations-KPIs und bestehende Navigationskarten unverändert gelassen
 - keine Datenbank-, RPC-, Routen- oder Businesslogik geändert
+
+---
+
+## 2026-07-20 – Kundenportal auf Premium Design Standard migriert
+
+- technische Kunden-Drawer auf den gemeinsamen `AppDrawer` vereinheitlicht
+- isolierte Premium-Tokens und wiederverwendbare Kundenkomponenten eingeführt
+- mobile Navigation mit Start, Einlösen, Sammeln und Konto ergänzt
+- Startansicht mit Bonus Boost, dominanter Punktekarte und Punkteeinlösungs-
+  Vorschau neu strukturiert
+- Punkteeinlösungen, Geschenke, Einlösebestätigung und Einlösecode visuell
+  vereinheitlicht
+- Punkte-sammeln-Flow, maskierte Tages-PIN sowie Erfolgs- und Fehlerzustände
+  modernisiert
+- Restaurant-QR-Einstieg und Freunde-Einladung in dieselbe Premium-Shell
+  überführt
+- Emoji-Icons in der Kundenoberfläche durch Lucide-Icons ersetzt
+- keine Datenbank-, RPC-, RLS-, Auth-, Punkte-, PIN-, QR-, Referral- oder
+  Einlöselogik geändert
+# 2026-07-20 - Audit-Protokoll und sicherer Testmodus
+
+- bestehendes `audit_log` um normalisierte Ereignisse, Status, Quelle, Entität, Anfrage-ID und sichere Testkennzeichnung erweitert
+- kontrollierte Testkunden mit verpflichtender Test-Sitzungs-ID ergänzt
+- Testkunden aus produktiven Restaurant-Dashboard- und Bonus-Boost-KPIs ausgeschlossen
+- persistente Auditierung falscher Tages-PINs und blockierter Punktebuchungen ergänzt
+- sensible Metadaten wie Token, PIN, Passwörter, Sitzungen und Codes serverseitig entfernt
+- Plattform-Auditseite unter `/admin/platform/audit` mit Filtern und sicherem Detail-Drawer ergänzt
+- Audit-RLS verschärft; `anon` und Kunden erhalten keinen direkten Audit-Zugriff
+- Migrationen `20260720001000` und `20260720002000` auf Staging angewendet
+
+## 2026-07-20 – Premium-KPI- und Einlösestatus-Korrektur
+
+- lokal gespeicherte Einlösecodes werden vor Wiederanzeige serverseitig geprüft
+- `redemption_started` bleibt als aktiver Vorzeigestatus erhalten
+- verbrauchte und abgelaufene Codes werden aus der Kundenansicht entfernt
+- Restaurant-Dashboard um Kunden gesamt, neue Kunden heute/diese Woche und heute aktiv ergänzt
+- Einlösungen heute umfasst finale Willkommens-/Geburtstagsgeschenke, Punkteangebote und Coupons
+- KPI-Zeitgrenzen serverseitig an Restaurant-Zeitzone gebunden
+- markierte Testkunden aus allen produktiven KPI-Quellen ausgeschlossen
+- Migration `20260720003000` auf Staging angewendet

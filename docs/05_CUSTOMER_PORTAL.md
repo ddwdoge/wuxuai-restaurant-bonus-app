@@ -9,6 +9,23 @@ Das Kundenportal ist die Oberfläche für Gäste. Es ist nicht das Restaurant Po
 
 Das Kundenportal muss so einfach sein, dass ein Gast es ohne Erklärung versteht.
 
+## Premium-Oberfläche V1
+
+Das Kundenportal verwendet eine mobile Premium-Shell mit warmer, ruhiger
+Farbwelt, stabilen Produktbildern und vier Hauptbereichen:
+
+1. Start
+2. Einlösen
+3. Sammeln
+4. Konto
+
+Die Navigation verändert keine Bonuslogik. `Sammeln` öffnet weiterhin den
+bestehenden Tages-PIN-Flow. Sichtbare Punkteangebote heißen weiterhin
+`Punkteeinlösungen`.
+
+Informationen und die finale Einlösebestätigung erscheinen im gemeinsamen,
+barrierefreien Drawer statt als Inline-Inhalt am Seitenende.
+
 ---
 
 ## 1. Ziel des Kundenportals
