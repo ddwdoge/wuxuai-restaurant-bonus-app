@@ -98,9 +98,20 @@ V1 Navigation:
 6.  Mitarbeiter
 7.  Einstellungen
 
+### 4.1 Sitzung beenden
+
+Restaurantbesitzer und Restaurantmanager können ihre Sitzung jederzeit klar
+beenden.
+
+- Desktop: Profilmenü oben rechts mit **„Abmelden“**.
+- Mobil: **„Abmelden“** am Ende des mobilen Restaurant-Menüs.
+- Nach der Abmeldung werden Auth- und Restaurantzustand lokal entfernt.
+- Geschützte Restaurant-Routen führen danach zum Restaurant-Login.
+- Eine bereits abgelaufene Sitzung verhindert die lokale Abmeldung nicht.
+
 Das Modul **Aktionen** existiert in V1 nicht.
 
-### 4.1 Warum Aktionen entfernt wurden
+### 4.2 Warum Aktionen entfernt wurden
 
 Der Begriff „Aktionen" ist zu unklar.
 

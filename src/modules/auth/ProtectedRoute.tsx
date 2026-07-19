@@ -18,7 +18,7 @@ export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/restaurant/login" state={{ from: location }} replace />;
   }
 
   if (!activeRole || !allowedRoles.includes(activeRole)) {

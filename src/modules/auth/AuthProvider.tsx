@@ -170,8 +170,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
       },
       async signOut() {
-        if (supabase) {
-          await supabase.auth.signOut();
+        let logoutFailed = false;
+
+        try {
+          if (supabase) {
+            const { error } = await supabase.auth.signOut();
+            const sessionAlreadyMissing = error?.name === "AuthSessionMissingError";
+            logoutFailed = Boolean(error && !sessionAlreadyMissing);
+            if (error) {
+              await supabase.auth.signOut({ scope: "local" });
+            }
+          }
+        } catch {
+          logoutFailed = true;
+        } finally {
+          setSession(null);
+          setUser(null);
+          setRestaurantRole(null);
+          setPlatformRole(null);
+          setAuthLoading(false);
+          setRoleLoading(false);
+        }
+
+        if (logoutFailed) {
+          throw new Error("Die Online-Abmeldung konnte gerade nicht vollständig bestätigt werden.");
         }
       },
     }),

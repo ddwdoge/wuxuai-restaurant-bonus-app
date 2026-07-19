@@ -963,10 +963,29 @@ $$;
 revoke execute on function public.generate_numeric_code(integer) from public, anon, authenticated;
 revoke execute on function public.expire_redemption_codes(timestamptz) from public, anon, authenticated;
 revoke execute on function public.issue_birthday_gifts(timestamptz) from public, anon, authenticated;
+revoke execute on function public.ensure_today_restaurant_pin(uuid, uuid) from public, anon, authenticated;
 
-revoke execute on function public.collect_bonus_points(text, text, text, text, text) from public, anon, authenticated;
-revoke execute on function public.collect_bonus_points(text, text, text, text) from public, anon, authenticated;
-revoke execute on function public.collect_bonus_points(text, text, text) from public, anon, authenticated;
+-- Revoke every legacy overload that actually exists. The four-argument overload
+-- was removed in 20260711003000, so hard-coded signatures make this migration
+-- fail before the V1 RPC grants are reached.
+do $$
+declare
+  function_signature text;
+begin
+  for function_signature in
+    select p.oid::regprocedure::text
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'collect_bonus_points'
+  loop
+    execute format(
+      'revoke execute on function %s from public, anon, authenticated',
+      function_signature
+    );
+  end loop;
+end;
+$$;
 revoke execute on function public.collect_bonus_points_v1(text, text, text, text, text, uuid) from public;
 grant execute on function public.collect_bonus_points_v1(text, text, text, text, text, uuid) to anon, authenticated;
 

@@ -1,17 +1,22 @@
 import { FormEvent, useState } from "react";
 import { LogIn } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { completePendingOwnerRegistration } from "./registerOwnerService";
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export function LoginPage() {
   const { signIn } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const liveDataMissing = !supabase;
+  const logoutMessage =
+    typeof (location.state as { logoutMessage?: unknown } | null)?.logoutMessage === "string"
+      ? (location.state as { logoutMessage: string }).logoutMessage
+      : null;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -41,6 +46,7 @@ export function LoginPage() {
           </div>
         </div>
         <form className="form" onSubmit={handleSubmit}>
+          {logoutMessage ? <p className="status-message error" role="status">{logoutMessage}</p> : null}
           <div className="field">
             <label htmlFor="email">E-Mail</label>
             <input

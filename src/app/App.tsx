@@ -97,6 +97,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<PublicHome />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/restaurant/login" element={<LoginPage />} />
       <Route path="/register" element={withFallback(<RegisterPage />)} />
       <Route
         path="/admin"

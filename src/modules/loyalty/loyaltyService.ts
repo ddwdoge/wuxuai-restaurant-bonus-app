@@ -439,11 +439,16 @@ function staffDailyPinActionErrorMessage(error: { message?: string; details?: st
 function publicPortalErrorMessage(error: { message?: string; details?: string; hint?: string; code?: string }) {
   const technicalText = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" ").toLowerCase();
 
-  if (technicalText.includes("not found") || technicalText.includes("restaurant") || technicalText.includes("pgrst116")) {
+  if (technicalText.includes("restaurant not found")) {
     return "Restaurant wurde nicht gefunden.";
   }
 
   return "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.";
+}
+
+function isMissingGiftMetadataRpc(error: { message?: string; details?: string; hint?: string; code?: string }) {
+  const technicalText = [error.message, error.details, error.hint].filter(Boolean).join(" ").toLowerCase();
+  return error.code === "PGRST202" && technicalText.includes("get_customer_gift_metadata");
 }
 
 export type ReferralLinkResult = {
@@ -540,7 +545,10 @@ export async function loadCustomerPortalData(
   const { data: giftMetadata, error: giftMetadataError } = await supabase.rpc("get_customer_gift_metadata", {
     input_customer_token: customerToken,
   });
-  if (giftMetadataError) throw new Error(publicPortalErrorMessage(giftMetadataError));
+  if (giftMetadataError) {
+    if (isMissingGiftMetadataRpc(giftMetadataError)) return portalData;
+    throw new Error(publicPortalErrorMessage(giftMetadataError));
+  }
 
   const availableMetadata = (giftMetadata ?? []) as Array<{
     reward_id: string;

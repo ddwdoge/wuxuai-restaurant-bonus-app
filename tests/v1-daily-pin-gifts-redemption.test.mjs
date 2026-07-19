@@ -18,6 +18,7 @@ test("Tages-PIN ist vierstellig, lokal datiert und nicht öffentlich lesbar", ()
   assert.match(migration, /ensure_today_restaurant_pin[\s\S]*timezone\(restaurant_record\.timezone_name, now\(\)\)::date/);
   assert.match(migration, /generate_daily_pin_code\(\)/);
   assert.match(dailyLimitMigration, /failed_attempts \+ 1 >= 5/);
+  assert.match(migration, /revoke execute on function public\.ensure_today_restaurant_pin\(uuid, uuid\) from public, anon, authenticated/);
   assert.doesNotMatch(migration, /grant execute on function public\.get_today_restaurant_pin\(uuid\) to anon/i);
 });
 
@@ -25,7 +26,9 @@ test("Punktebuchung ist auf zwei Erfolge begrenzt und idempotent", () => {
   assert.match(dailyLimitMigration, /today_points_collections >= 2/);
   assert.match(migration, /points_collection_requests/);
   assert.match(migration, /input_idempotency_key uuid/);
-  assert.match(migration, /revoke execute on function public\.collect_bonus_points\(text, text, text, text, text\) from public, anon, authenticated/);
+  assert.match(migration, /p\.proname = 'collect_bonus_points'/);
+  assert.match(migration, /revoke execute on function %s from public, anon, authenticated/);
+  assert.doesNotMatch(migration, /revoke execute on function public\.collect_bonus_points\(text, text, text, text\)/);
   assert.match(migration, /revoke execute on function public\.apply_loyalty_staff_action/);
   assert.match(customerPortal, /idempotencyKey: crypto\.randomUUID\(\)/);
   assert.match(loyaltyService, /bereits zweimal Punkte gesammelt/);

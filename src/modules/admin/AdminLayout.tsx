@@ -1,24 +1,33 @@
-import { useEffect, useState } from "react";
-import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  ChevronDown,
   Gift,
   Home,
   Lock,
+  LogOut,
   Menu,
   QrCode,
   Settings,
   Smartphone,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 
 export function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { activeRestaurant, branding, loading } = useTenant();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const { signOut, user } = useAuth();
+  const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
   const restaurantStatusLabel =
     activeRestaurant?.status === "active" ? "aktiv" : activeRestaurant?.status === "draft" ? "Entwurf" : "gesperrt";
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
@@ -37,12 +46,14 @@ export function AdminLayout() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setProfileMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setMobileMenuOpen(false);
+        setProfileMenuOpen(false);
       }
     }
 
@@ -59,6 +70,65 @@ export function AdminLayout() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  async function handleLogout() {
+    if (loggingOut) {
+      return;
+    }
+
+    setLoggingOut(true);
+    setMobileMenuOpen(false);
+    setProfileMenuOpen(false);
+    clearTenantState();
+    let logoutMessage: string | undefined;
+
+    try {
+      await signOut();
+    } catch {
+      logoutMessage = "Deine lokale Sitzung wurde beendet. Die Online-Abmeldung konnte gerade nicht vollständig bestätigt werden.";
+    } finally {
+      clearTenantState();
+      navigate("/restaurant/login", {
+        replace: true,
+        state: logoutMessage ? { logoutMessage } : null,
+      });
+    }
+  }
+
+  const profileMenu = (
+    <div className="profile-menu desktop-profile-menu" ref={profileMenuRef}>
+      <button
+        aria-expanded={profileMenuOpen}
+        aria-haspopup="menu"
+        className="profile-menu-trigger"
+        onClick={() => setProfileMenuOpen((current) => !current)}
+        type="button"
+      >
+        <UserRound aria-hidden="true" size={18} />
+        <span className="profile-menu-label">{user?.email ?? "Restaurantkonto"}</span>
+        <ChevronDown aria-hidden="true" size={16} />
+      </button>
+      {profileMenuOpen ? (
+        <div className="profile-menu-popover" role="menu">
+          <button disabled={loggingOut} onClick={handleLogout} role="menuitem" type="button">
+            <LogOut aria-hidden="true" size={18} />
+            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 
   const renderNavigation = (variant: "sidebar" | "drawer") => (
     <nav aria-label={variant === "drawer" ? "Restaurant Menü" : "Restaurant Portal Navigation"}>
@@ -110,6 +180,13 @@ export function AdminLayout() {
   if (isOnboardingRoute) {
     return (
       <div className="setup-shell">
+        <div className="setup-session-actions">
+          {profileMenu}
+          <button className="button secondary setup-mobile-logout" disabled={loggingOut} onClick={handleLogout} type="button">
+            <LogOut size={18} />
+            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+          </button>
+        </div>
         <Outlet />
       </div>
     );
@@ -141,6 +218,7 @@ export function AdminLayout() {
         <div className="topbar-actions">
           <span className="pill">{restaurantStatusLabel}</span>
           <TenantSwitcher />
+          {profileMenu}
         </div>
         <button
           aria-expanded={mobileMenuOpen}
@@ -186,6 +264,10 @@ export function AdminLayout() {
                 Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
               </p>
             ) : null}
+            <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
+              <LogOut aria-hidden="true" size={18} />
+              {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+            </button>
           </aside>
         </div>
       ) : null}

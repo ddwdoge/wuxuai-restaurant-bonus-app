@@ -39,6 +39,28 @@ Der Changelog beantwortet später Fragen wie:
 
 Der Changelog schützt das Projekt vor Vergessen.
 
+## 1.0 2026-07-19 - Restaurant Portal Logout
+
+Status: **CODE LOCK / LIVE-FLOW OFFEN**
+
+Das Restaurant Portal besitzt jetzt einen klaren Logout für Owner und Manager.
+
+Geändert:
+
+- Desktop-Profilmenü mit „Abmelden“
+- mobiler Logout am Ende des Navigations-Drawers
+- `supabase.auth.signOut()` mit lokalem Session-Cleanup
+- sofortiger Reset von Restaurant-, Branding- und Rollenstatus
+- Restaurant-Login unter `/restaurant/login`
+- geschützte Routen leiten ausgeloggte Nutzer zum Restaurant-Login
+- verständliche Meldung, wenn die Online-Abmeldung nicht bestätigt werden kann
+
+Offen:
+
+- authentifizierter Live-Test mit echtem Owner
+- authentifizierter Live-Test mit echtem Manager
+- Kontowechseltest mit zwei echten Restaurantkonten
+
 ## 1.1 2026-07-13 - WUXUAI Admin Restaurant-Verwaltung
 
 Status: **CODE LOCK / STAGING OFFEN**

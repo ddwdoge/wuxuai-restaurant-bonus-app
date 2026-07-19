@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../shared/lib/supabase";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { useAuth } from "../auth/AuthProvider";
@@ -8,6 +8,7 @@ type TenantContextValue = {
   activeRestaurant: Restaurant | null;
   branding: RestaurantBranding | null;
   loading: boolean;
+  clearTenantState: () => void;
   refreshTenants: () => Promise<void>;
   setActiveRestaurantId: (restaurantId: string) => void;
 };
@@ -46,6 +47,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [branding, setBranding] = useState<RestaurantBranding | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const tenantLoadRequestId = useRef(0);
+
+  const clearTenantState = useCallback(() => {
+    tenantLoadRequestId.current += 1;
+    setRestaurants([]);
+    setActiveRestaurantId("");
+    setBranding(null);
+    setLoading(false);
+  }, []);
 
   function replaceTenantState(nextRestaurants: Restaurant[], preferredRestaurantId?: string) {
     setRestaurants(nextRestaurants);
@@ -129,11 +138,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !user) {
-      tenantLoadRequestId.current += 1;
-      setRestaurants([]);
-      setActiveRestaurantId("");
-      setBranding(null);
-      setLoading(false);
+      clearTenantState();
       return;
     }
 
@@ -150,7 +155,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadTenants();
-  }, [user]);
+  }, [clearTenantState, user]);
 
   useEffect(() => {
     if (!supabase) {
@@ -189,6 +194,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       restaurants,
       activeRestaurant,
       branding,
+      clearTenantState,
       loading,
       refreshTenants: async () => {
         if (supabase && user) {
@@ -204,9 +210,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           }
           return;
         }
-        setRestaurants([]);
-        setActiveRestaurantId("");
-        setBranding(null);
+        clearTenantState();
       },
       setActiveRestaurantId: (restaurantId: string) => {
         setActiveRestaurantId((current) =>
@@ -214,7 +218,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         );
       },
     }),
-    [activeRestaurant, branding, loading, restaurants, user],
+    [activeRestaurant, branding, clearTenantState, loading, restaurants, user],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
