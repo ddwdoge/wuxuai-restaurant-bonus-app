@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Copy, Flame, Gift, QrCode, Sparkles, UserPlus, WalletCards } from "lucide-react";
+import { CakeSlice, CheckCircle2, Copy, Flame, Gift, QrCode, Sparkles, UserPlus, WalletCards } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
@@ -27,6 +27,7 @@ import {
 } from "./customerTokenStorage";
 import {
   AppShell,
+  BenefitTile,
   BottomNavigation,
   CustomerHeader,
   EmptyState,
@@ -262,7 +263,7 @@ export function CustomerPortal() {
   const pointRedemptions = visibleRewards.filter((offer) => offer.source === "reward" && !offer.is_starter_reward);
   const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
   const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
-  const previewRedemptions = pointRedemptions.slice(0, 3);
+  const previewRedemptions = pointRedemptions.slice(0, 2);
   const nextPointRedemption = [...pointRedemptions].sort((left, right) => left.remaining_points - right.remaining_points)[0] ?? null;
   const nextRedemptionProgress = nextPointRedemption?.required_points
     ? clampPercent(((nextPointRedemption.required_points - nextPointRedemption.remaining_points) / nextPointRedemption.required_points) * 100)
@@ -664,7 +665,7 @@ export function CustomerPortal() {
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
       <PageContainer className="customer-portal-page">
         <CustomerHeader
-          customerName={customer?.name}
+          compact
           logoUrl={branding.logo_url}
           name={restaurant.name}
           onInfo={() => setInfoOpen(true)}
@@ -938,44 +939,10 @@ export function CustomerPortal() {
             {activeView === "home" ? (
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
-                  <span>Mein Bonus</span>
-                  <h1 id="customer-home-title">Schön, dass du da bist.</h1>
-                  <p>Deine Punkte und Vorteile bei {restaurant.name}.</p>
+                  <span>Mein Bonus bei {restaurant.name}</span>
+                  <h1 id="customer-home-title">Hallo {customer.name.split(" ")[0]},</h1>
+                  <p>schön, dass du wieder da bist. Hier siehst du deine Punkte und Vorteile.</p>
                 </div>
-
-                <PremiumCard className={`premium-boost-card ${activeBoost ? "active" : "inactive"}`} variant="information">
-                  <div className="premium-icon-heading">
-                    <span><Flame aria-hidden="true" size={22} /></span>
-                    <div>
-                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
-                      <h2>{activeBoost ? `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
-                    </div>
-                  </div>
-                  <p>
-                    {activeBoost
-                      ? activeBoost.multiplier === 2
-                        ? "Du sammelst aktuell doppelte Punkte."
-                        : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
-                      : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`}
-                  </p>
-                  <div className="premium-boost-meta">
-                    <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
-                    <span>{boostRemainingLabel ?? `+${referralBoostDurationDays} Tage`}</span>
-                  </div>
-                  <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
-                  {referralBoostEnabled ? (
-                    <PrimaryButton disabled={creatingReferral} onClick={handleCreateReferralLink}>
-                      Freund einladen
-                    </PrimaryButton>
-                  ) : null}
-                  {referralLink ? (
-                    <div className="referral-share-box premium-referral-share">
-                      <QRCodeSVG value={referralLink} size={156} level="M" />
-                      <p>Der Boost startet nach der ersten Punktebuchung deines Freundes.</p>
-                      <a href={referralLink}>Einladungslink öffnen</a>
-                    </div>
-                  ) : null}
-                </PremiumCard>
 
                 <PointsCard
                   boostLabel={activeBoost ? `${activeBoost.multiplier}× Bonus Boost aktiv` : null}
@@ -991,18 +958,44 @@ export function CustomerPortal() {
                   value={pointsValue}
                 />
 
-                <PrimaryButton className="premium-main-action" onClick={() => handleCustomerViewChange("collect")}>
-                  <QrCode aria-hidden="true" size={21} /> Punkte sammeln
-                </PrimaryButton>
+                <section className="premium-content-section" aria-label="Deine Vorteile">
+                  <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
+                  <div className="premium-benefit-grid">
+                    <BenefitTile
+                      icon={<Gift size={22} />}
+                      label="Willkommensgeschenk"
+                      status={activeWelcomeGift
+                        ? activeWelcomeGift.status === "unlocked" ? "Einlösbar" : "Reserviert"
+                        : "Nicht vorhanden"}
+                    />
+                    <BenefitTile
+                      icon={<CakeSlice size={22} />}
+                      label="Geburtstagsgeschenk"
+                      status={activeBirthdayGift ? "Einlösbar" : "Nicht vorhanden"}
+                    />
+                    <BenefitTile
+                      icon={<Flame size={22} />}
+                      label="Bonus Boost"
+                      status={activeBoost ? `${activeBoost.multiplier}× aktiv` : "Nicht aktiv"}
+                    />
+                    <BenefitTile
+                      disabled={creatingReferral}
+                      icon={<UserPlus size={22} />}
+                      label="Freund einladen"
+                      onClick={referralBoostEnabled ? handleCreateReferralLink : undefined}
+                      status={referralBoostEnabled ? `${referralBoostMultiplier}× für euch` : "Nicht verfügbar"}
+                    />
+                  </div>
+                </section>
 
                 <section className="premium-content-section">
                   <SectionHeader
-                    action={pointRedemptions.length > 3 ? <button className="premium-text-button" onClick={() => setActiveView("redemptions")} type="button">Alle ansehen</button> : null}
+                    action={pointRedemptions.length > 2 ? <button className="premium-text-button" onClick={() => setActiveView("redemptions")} type="button">Alle ansehen</button> : null}
                     subtitle="Deine nächsten Möglichkeiten auf einen Blick."
                     title="Mit Punkten einlösbar"
                   />
                   {previewRedemptions.length ? (
-                    <div className="premium-reward-grid">
+                    <div className="premium-reward-grid premium-home-reward-grid">
                       {previewRedemptions.map((reward) => (
                         <RewardCard
                           category={reward.category ?? reward.product_group}
@@ -1022,10 +1015,19 @@ export function CustomerPortal() {
                 </section>
 
                 {activeWelcomeGift || activeBirthdayGift ? (
-                  <section className="premium-content-section">
-                    <SectionHeader subtitle="Persönliche Vorteile, die für dich bereitliegen." title="Deine Geschenke" />
+                  <section className="premium-content-section premium-gift-preview">
+                    <SectionHeader subtitle="Dein persönlicher Vorteil für den nächsten Besuch." title="Dein Geschenk" />
                     <div className="premium-reward-grid">
-                      {activeWelcomeGift ? (
+                      {activeBirthdayGift ? (
+                        <RewardCard
+                          category="Geburtstagsgeschenk"
+                          imageUrl={activeBirthdayGift.image_url}
+                          meta="Für deinen Geburtstag"
+                          onOpen={() => openRewardRedemption(activeBirthdayGift)}
+                          status="Jetzt einlösbar"
+                          title={activeBirthdayGift.title}
+                        />
+                      ) : activeWelcomeGift ? (
                         <RewardCard
                           category="Willkommensgeschenk"
                           imageUrl={activeWelcomeGift.image_url}
@@ -1036,19 +1038,44 @@ export function CustomerPortal() {
                           title={activeWelcomeGift.title}
                         />
                       ) : null}
-                      {activeBirthdayGift ? (
-                        <RewardCard
-                          category="Geburtstagsgeschenk"
-                          imageUrl={activeBirthdayGift.image_url}
-                          meta="Für deinen Geburtstag"
-                          onOpen={() => openRewardRedemption(activeBirthdayGift)}
-                          status="Jetzt einlösbar"
-                          title={activeBirthdayGift.title}
-                        />
-                      ) : null}
                     </div>
                   </section>
                 ) : null}
+
+                <PremiumCard className={`premium-boost-card ${activeBoost ? "active" : "inactive"}`} variant="information">
+                  <div className="premium-icon-heading">
+                    <span><Flame aria-hidden="true" size={22} /></span>
+                    <div>
+                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
+                      <h2>{activeBoost ? `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
+                    </div>
+                  </div>
+                  <p>
+                    {activeBoost
+                      ? activeBoost.multiplier === 2
+                        ? "Du sammelst aktuell doppelte Punkte."
+                        : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
+                      : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte.`}
+                  </p>
+                  <div className="premium-boost-meta">
+                    <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
+                    <span>{boostRemainingLabel ?? `+${referralBoostDurationDays} Tage`}</span>
+                  </div>
+                  {activeBoost ? (
+                    <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
+                  ) : null}
+                  {referralBoostEnabled ? (
+                    <PrimaryButton disabled={creatingReferral} onClick={handleCreateReferralLink}>
+                      Freund einladen
+                    </PrimaryButton>
+                  ) : null}
+                  {referralLink ? (
+                    <div className="referral-share-box premium-referral-share compact">
+                      <p>Dein Einladungslink ist bereit.</p>
+                      <a href={referralLink}>Einladungslink öffnen</a>
+                    </div>
+                  ) : null}
+                </PremiumCard>
               </section>
             ) : null}
 

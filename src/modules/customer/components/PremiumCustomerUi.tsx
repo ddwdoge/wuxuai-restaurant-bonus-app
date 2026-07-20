@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Gift, Home, Info, LockKeyhole, QrCode, UserRound } from "lucide-react";
+import { Gift, Home, Info, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import "../customer-premium.css";
 
@@ -17,7 +17,9 @@ export function AppShell({ children, fontFamily, primaryColor }: CustomerAppShel
       className="customer-premium-shell"
       style={{
         "--customer-brand": primaryColor ?? "#b88a3b",
-        fontFamily: fontFamily ?? undefined,
+        fontFamily: fontFamily
+          ? `"${fontFamily}", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
+          : undefined,
       } as CSSProperties}
     >
       {children}
@@ -50,17 +52,18 @@ export function RestaurantLogo({ logoUrl, name, primaryColor }: RestaurantLogoPr
 }
 
 type CustomerHeaderProps = RestaurantLogoProps & {
+  compact?: boolean;
   customerName?: string | null;
   onInfo: () => void;
   subtitle?: string;
 };
 
-export function CustomerHeader({ customerName, logoUrl, name, onInfo, primaryColor, subtitle = "Mein Bonus" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, logoUrl, name, onInfo, primaryColor, subtitle = "Mein Bonus" }: CustomerHeaderProps) {
   return (
-    <header className="premium-customer-header">
+    <header className={`premium-customer-header${compact ? " compact" : ""}`}>
       <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
       <div>
-        <span>{customerName ? `Willkommen zurück, ${customerName.split(" ")[0]}` : subtitle}</span>
+        {!compact ? <span>{subtitle}</span> : null}
         <strong>{name}</strong>
       </div>
       <button aria-label="So funktioniert's öffnen" className="premium-icon-button" onClick={onInfo} type="button">
@@ -78,22 +81,23 @@ type BottomNavigationProps = {
 const navigationItems = [
   { label: "Start", value: "home" as const, icon: Home },
   { label: "Einlösen", value: "redemptions" as const, icon: Gift },
-  { label: "Sammeln", value: "collect" as const, icon: QrCode },
+  { label: "Sammeln", value: "collect" as const, icon: ScanLine, primary: true },
   { label: "Konto", value: "account" as const, icon: UserRound },
 ];
 
 export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
   return (
     <nav aria-label="Mein Bonus Navigation" className="premium-bottom-navigation">
-      {navigationItems.map(({ icon: Icon, label, value }) => (
+      {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}
-          className={activeView === value ? "active" : ""}
+          aria-label={primary ? "Punkte sammeln" : undefined}
+          className={`${activeView === value ? "active " : ""}${primary ? "primary-action" : ""}`.trim()}
           key={value}
           onClick={() => onChange(value)}
           type="button"
         >
-          <Icon aria-hidden="true" size={21} />
+          <span className="premium-navigation-icon"><Icon aria-hidden="true" size={primary ? 24 : 21} /></span>
           <span>{label}</span>
         </button>
       ))}
@@ -169,6 +173,30 @@ export function PointsCard({ boostLabel, label, note, progress, progressLabel = 
       {typeof progress === "number" ? <ProgressBar label={progressLabel} value={progress} /> : null}
       <p>{note}</p>
     </PremiumCard>
+  );
+}
+
+type BenefitTileProps = {
+  disabled?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick?: () => void;
+  status: string;
+};
+
+export function BenefitTile({ disabled = false, icon, label, onClick, status }: BenefitTileProps) {
+  const content = (
+    <>
+      <span className="premium-benefit-icon" aria-hidden="true">{icon}</span>
+      <strong>{label}</strong>
+      <span>{status}</span>
+    </>
+  );
+
+  return onClick ? (
+    <button className="premium-benefit-tile interactive" disabled={disabled} onClick={onClick} type="button">{content}</button>
+  ) : (
+    <article className="premium-benefit-tile">{content}</article>
   );
 }
 

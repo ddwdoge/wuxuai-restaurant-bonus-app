@@ -10,7 +10,10 @@ const styles = readFileSync(new URL("../src/modules/customer/customer-premium.cs
 
 test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
   assert.match(styles, /--premium-background: #f8f5ef/);
-  assert.match(styles, /--premium-primary: #b88a3b/);
+  assert.match(styles, /--premium-gold: #bf8f36/);
+  assert.match(styles, /--premium-gold-dark: #956820/);
+  assert.match(styles, /--premium-gold-soft: #f3e6cc/);
+  assert.match(styles, /--premium-primary: var\(--premium-gold\)/);
   assert.match(components, /export function AppShell/);
   assert.match(components, /export function PremiumCard/);
   assert.match(components, /export function PointsCard/);
@@ -45,7 +48,9 @@ test("Kundenoberflächen verwenden keine Emoji-Icons", () => {
 
 test("Mobile Navigation berücksichtigt Safe Areas und Inhalte", () => {
   assert.match(styles, /env\(safe-area-inset-bottom\)/);
-  assert.match(styles, /padding: 18px 16px calc\(104px/);
+  assert.match(styles, /padding: 14px 16px calc\(110px/);
+  assert.match(styles, /height: calc\(100dvh - 112px/);
+  assert.match(styles, /overflow-y: auto/);
   assert.match(styles, /min-width: 0/);
 });
 
