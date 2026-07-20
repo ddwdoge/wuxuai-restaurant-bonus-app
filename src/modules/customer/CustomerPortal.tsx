@@ -1,5 +1,23 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CakeSlice, CheckCircle2, Clock3, Copy, Flame, Gift, LockKeyhole, QrCode, Sparkles, UserPlus, WalletCards } from "lucide-react";
+import {
+  CakeSlice,
+  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
+  Clock3,
+  Copy,
+  Flame,
+  Gift,
+  IdCard,
+  LockKeyhole,
+  LogOut,
+  QrCode,
+  Sparkles,
+  Store,
+  UserRound,
+  UserPlus,
+  WalletCards,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
@@ -49,6 +67,7 @@ import {
 type GuestStep = "welcome" | "register" | "success";
 type RewardFilter = "all" | "mine";
 type RedemptionSheetStep = "detail" | "confirm";
+type AccountSheet = "profile" | "membership" | "qr" | "save" | "restaurant" | "help" | "logout" | null;
 type RedemptionOutcome = {
   kind: "redeemed" | "expired" | "error";
   pointsSpent: number;
@@ -192,6 +211,7 @@ export function CustomerPortal() {
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
   const [form, setForm] = useState({ firstName: "", phone: "", birthday: "" });
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -605,6 +625,18 @@ export function CustomerPortal() {
 
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openMyRedemptions() {
+    setRewardFilter("mine");
+    setActiveView("redemptions");
+  }
+
+  function handleCustomerLogout() {
+    if (!restaurantSlug) return;
+    removeStoredCustomerToken(restaurantSlug);
+    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    window.location.assign(`/customer/${restaurantSlug}`);
   }
 
   function openRewardRedemption(reward: PublicCustomerOfferView) {
@@ -1222,26 +1254,79 @@ export function CustomerPortal() {
 
             {activeView === "account" ? (
               <section className="premium-view-stack" aria-labelledby="account-title">
-                <div className="premium-page-heading">
-                  <span className="premium-customer-avatar">{customer.name.trim().charAt(0).toUpperCase()}</span>
-                  <div><h1 id="account-title">Dein Bonuskonto</h1><p>{customer.name}</p></div>
+                <div className="premium-account-heading">
+                  <span aria-hidden="true" className="premium-customer-avatar">{customer.name.trim().charAt(0).toUpperCase()}</span>
+                  <div><span>Dein Konto</span><h1 id="account-title">{customer.name}</h1><p>Bonus-Mitglied bei {restaurant.name}</p></div>
                 </div>
-                <PremiumCard className="premium-account-summary">
-                  <div><span>Restaurant</span><strong>{restaurant.name}</strong></div>
-                  <div><span>Mitgliedsstatus</span><strong>{customer.membership_level || "Mitglied"}</strong></div>
-                  <div><span>Deine Nummer</span><strong>{customer.customer_code}</strong></div>
-                </PremiumCard>
-                <PremiumCard className="premium-personal-qr">
-                  <SectionHeader subtitle="Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto." title="Dein persönlicher Bonus-QR" />
-                  <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
-                  <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
-                </PremiumCard>
-                <PremiumCard className="premium-save-account" variant="information">
-                  <div className="premium-icon-heading"><span><WalletCards aria-hidden="true" size={22} /></span><div><h2>Bonuskonto speichern</h2><p>Speichere diese Seite für deinen nächsten Besuch.</p></div></div>
-                  <SecondaryButton onClick={copyPortalLink}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
-                  <p>iPhone: Teilen und „Zum Home-Bildschirm“ wählen.</p>
-                  <p>Android: Browsermenü öffnen und „Zum Startbildschirm“ wählen.</p>
-                </PremiumCard>
+
+                <article className="premium-member-card" aria-label="Digitale Kundenkarte">
+                  <div className="premium-member-card-top">
+                    <span className="premium-member-card-logo">
+                      {branding.logo_url
+                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
+                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
+                    </span>
+                    <div><span>Bonus-Mitglied</span><strong>{restaurant.name}</strong></div>
+                    <IdCard aria-hidden="true" size={24} />
+                  </div>
+                  <div className="premium-member-card-name"><span>Mitglied</span><strong>{customer.name}</strong></div>
+                  <div className="premium-member-card-meta">
+                    <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                    <div><span>{settings.loyalty_mode === "stamp_based" ? "Stempel" : "Punkte"}</span><strong>{pointsValue}</strong></div>
+                  </div>
+                </article>
+
+                <section className="premium-content-section" aria-labelledby="membership-overview-title">
+                  <SectionHeader title="Deine Mitgliedschaft" />
+                  <div className="premium-account-list">
+                    <button onClick={() => setAccountSheet("membership")} type="button">
+                      <span className="premium-account-list-icon"><IdCard aria-hidden="true" size={20} /></span>
+                      <span><strong id="membership-overview-title">Mitgliedschaft</strong><small>{customer.membership_level || "Mitglied"} · {pointsValue} {settings.loyalty_mode === "stamp_based" ? "Stempel" : "Punkte"}</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </button>
+                    <button onClick={() => setAccountSheet("profile")} type="button">
+                      <span className="premium-account-list-icon"><UserRound aria-hidden="true" size={20} /></span>
+                      <span><strong>Persönliche Daten</strong><small>{customer.name}</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </button>
+                  </div>
+                </section>
+
+                <section className="premium-content-section" aria-labelledby="account-more-title">
+                  <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
+                  <div className="premium-account-grid" id="account-more-title">
+                    <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
+                    <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
+                    <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
+                    <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>
+                  </div>
+                  {referralLink ? (
+                    <div className="referral-share-box premium-referral-share compact">
+                      <p>Dein Einladungslink ist bereit.</p>
+                      <a href={referralLink}>Einladungslink öffnen</a>
+                    </div>
+                  ) : null}
+                </section>
+
+                <section className="premium-content-section" aria-label="Konto und Hilfe">
+                  <div className="premium-account-list">
+                    <button onClick={() => setAccountSheet("save")} type="button">
+                      <span className="premium-account-list-icon"><WalletCards aria-hidden="true" size={20} /></span>
+                      <span><strong>Bonuskonto speichern</strong><small>Für deinen nächsten Besuch</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </button>
+                    <button onClick={() => setAccountSheet("help")} type="button">
+                      <span className="premium-account-list-icon"><CircleHelp aria-hidden="true" size={20} /></span>
+                      <span><strong>Hilfe & Kontakt</strong><small>Fragen zu deinem Bonus</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </button>
+                    <button className="danger" onClick={() => setAccountSheet("logout")} type="button">
+                      <span className="premium-account-list-icon"><LogOut aria-hidden="true" size={20} /></span>
+                      <span><strong>Abmelden</strong><small>Bonuskonto von diesem Gerät entfernen</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </button>
+                  </div>
+                </section>
               </section>
             ) : null}
 
@@ -1363,6 +1448,93 @@ export function CustomerPortal() {
                     </div>
                     {redemptionStatus ? <p className="status-message" role="alert">{redemptionStatus}</p> : null}
                   </article>
+                ) : null}
+              </div>
+            </AppDrawer>
+
+            <AppDrawer
+              description={accountSheet === "logout" ? "Dein Bonuskonto bleibt erhalten." : undefined}
+              footer={accountSheet === "logout" ? (
+                <>
+                  <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
+                  <PrimaryButton onClick={handleCustomerLogout}>Abmelden</PrimaryButton>
+                </>
+              ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
+              onClose={() => setAccountSheet(null)}
+              open={Boolean(accountSheet)}
+              title={accountSheet === "profile"
+                ? "Persönliche Daten"
+                : accountSheet === "membership"
+                  ? "Deine Mitgliedschaft"
+                  : accountSheet === "qr"
+                    ? "Dein persönlicher Bonus-QR"
+                    : accountSheet === "save"
+                      ? "Bonuskonto speichern"
+                      : accountSheet === "restaurant"
+                        ? "Restaurantinformationen"
+                        : accountSheet === "help"
+                          ? "Hilfe & Kontakt"
+                          : "Wirklich abmelden?"}
+            >
+              <div className="premium-account-sheet-content">
+                {accountSheet === "profile" ? (
+                  <div className="premium-account-detail-list">
+                    <div><span>Name</span><strong>{customer.name}</strong></div>
+                    <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                  </div>
+                ) : null}
+                {accountSheet === "membership" ? (
+                  <div className="premium-membership-detail">
+                    <span className="premium-account-sheet-icon"><IdCard aria-hidden="true" size={28} /></span>
+                    <h3>Bonus-Mitglied</h3>
+                    <p>Deine Mitgliedschaft gilt für {restaurant.name}.</p>
+                    <div className="premium-account-detail-list">
+                      <div><span>Status</span><strong>{customer.membership_level || "Mitglied"}</strong></div>
+                      <div><span>{settings.loyalty_mode === "stamp_based" ? "Stempel" : "Punkte"}</span><strong>{pointsValue}</strong></div>
+                    </div>
+                  </div>
+                ) : null}
+                {accountSheet === "qr" ? (
+                  <div className="premium-account-qr">
+                    <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
+                    <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
+                    <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                  </div>
+                ) : null}
+                {accountSheet === "save" ? (
+                  <div className="premium-account-save">
+                    <span className="premium-account-sheet-icon"><WalletCards aria-hidden="true" size={28} /></span>
+                    <p>Speichere diese Seite für deinen nächsten Besuch.</p>
+                    <SecondaryButton onClick={copyPortalLink}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                    <ul><li>iPhone: Teilen und „Zum Home-Bildschirm“ wählen.</li><li>Android: Browsermenü öffnen und „Zum Startbildschirm“ wählen.</li></ul>
+                  </div>
+                ) : null}
+                {accountSheet === "restaurant" ? (
+                  <div className="premium-restaurant-detail">
+                    <span className="premium-account-sheet-logo">
+                      {branding.logo_url
+                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
+                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
+                    </span>
+                    <h3>{restaurant.name}</h3>
+                    <StatusBadge tone="success">Bonusprogramm aktiv</StatusBadge>
+                    <p>Du bist in diesem Restaurant als Bonus-Mitglied gespeichert.</p>
+                  </div>
+                ) : null}
+                {accountSheet === "help" ? (
+                  <div className="premium-account-help">
+                    <span className="premium-account-sheet-icon"><CircleHelp aria-hidden="true" size={28} /></span>
+                    <h3>Fragen zu deinem Bonus?</h3>
+                    <p>Wende dich direkt an das Team von {restaurant.name}. Zeige dabei am besten deine Mitglieds-ID.</p>
+                    <div className="premium-account-detail-list"><div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div></div>
+                  </div>
+                ) : null}
+                {accountSheet === "logout" ? (
+                  <div className="premium-account-logout">
+                    <span className="premium-account-sheet-icon danger"><LogOut aria-hidden="true" size={28} /></span>
+                    <h3>Bonuskonto abmelden?</h3>
+                    <p>Der gespeicherte Zugang wird nur von diesem Gerät entfernt. Deine Punkte und Mitgliedschaft bleiben bestehen.</p>
+                  </div>
                 ) : null}
               </div>
             </AppDrawer>
