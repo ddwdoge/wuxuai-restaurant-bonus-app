@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Gift, Home, Info, LockKeyhole, ScanLine, UserRound } from "lucide-react";
+import { CheckCircle2, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import "../customer-premium.css";
 
@@ -208,30 +208,52 @@ export function RewardImage({ imageUrl, title }: { imageUrl?: string | null; tit
   );
 }
 
+export type RewardCardState = "available" | "locked" | "redeeming" | "redeemed" | "expired";
+
 type RewardCardProps = {
+  actionLabel?: string;
   category?: string | null;
   imageUrl?: string | null;
-  locked?: boolean;
   meta: string;
   onOpen?: () => void;
+  state: RewardCardState;
   status: string;
   title: string;
 };
 
-export function RewardCard({ category, imageUrl, locked, meta, onOpen, status, title }: RewardCardProps) {
+const rewardStateMeta: Record<RewardCardState, { icon: typeof LockKeyhole; label: string }> = {
+  available: { icon: CheckCircle2, label: "Einlösbar" },
+  locked: { icon: LockKeyhole, label: "Noch gesperrt" },
+  redeeming: { icon: LoaderCircle, label: "Einlösung läuft" },
+  redeemed: { icon: CheckCircle2, label: "Eingelöst" },
+  expired: { icon: Clock3, label: "Abgelaufen" },
+};
+
+export function RewardCard({ actionLabel = "Details ansehen", category, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+  const stateMeta = rewardStateMeta[state];
+  const StateIcon = stateMeta.icon;
+
   return (
-    <PremiumCard className={`premium-reward-card${locked ? " locked" : ""}`}>
+    <PremiumCard className={`premium-reward-card state-${state}`}>
       <div className="premium-reward-media">
         <RewardImage imageUrl={imageUrl} title={title} />
-        {locked ? <span className="premium-lock-badge" aria-label="Noch gesperrt"><LockKeyhole aria-hidden="true" size={18} /></span> : null}
+        {state !== "available" ? (
+          <span className="premium-lock-badge" aria-label={stateMeta.label}>
+            <StateIcon aria-hidden="true" size={18} />
+          </span>
+        ) : null}
       </div>
       <div className="premium-reward-copy">
         {category ? <span>{category}</span> : null}
         <h3>{title}</h3>
         <strong>{meta}</strong>
-        <p>{status}</p>
+        <p className={`premium-reward-status state-${state}`}><StateIcon aria-hidden="true" size={14} /> {status}</p>
       </div>
-      {onOpen ? <PrimaryButton onClick={onOpen}>Details ansehen</PrimaryButton> : null}
+      {onOpen ? (
+        state === "available"
+          ? <PrimaryButton aria-label={`${title}: ${actionLabel}`} onClick={onOpen}>{actionLabel}</PrimaryButton>
+          : <SecondaryButton aria-label={`${title}: ${actionLabel}`} onClick={onOpen}>{actionLabel}</SecondaryButton>
+      ) : null}
     </PremiumCard>
   );
 }
