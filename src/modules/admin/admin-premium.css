@@ -1,0 +1,676 @@
+.premium-owner-shell {
+  --owner-background: #f7f4ee;
+  --owner-surface: #ffffff;
+  --owner-surface-muted: #f3efe7;
+  --owner-ink: #171714;
+  --owner-muted: #706d65;
+  --owner-border: rgba(34, 31, 26, 0.1);
+  --owner-gold: #bf8f36;
+  --owner-gold-dark: #956820;
+  --owner-gold-soft: #f3e6cc;
+  --owner-sidebar: #1d1c19;
+  background: var(--owner-background);
+  color: var(--owner-ink);
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.premium-owner-shell .premium-owner-topbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: var(--owner-border);
+  box-shadow: 0 8px 28px rgba(41, 35, 25, 0.05);
+  min-height: 72px;
+  position: relative;
+  z-index: 30;
+}
+
+.premium-owner-shell .admin-restaurant-brand .restaurant-logo-frame {
+  border-color: var(--owner-border);
+  border-radius: 12px;
+  box-shadow: 0 7px 20px rgba(45, 38, 25, 0.08);
+  min-height: 50px;
+  min-width: 50px;
+  padding: 6px;
+}
+
+.premium-owner-shell .admin-restaurant-brand .restaurant-logo-image {
+  max-height: 40px;
+  max-width: 84px;
+}
+
+.premium-owner-shell .restaurant-logo-placeholder,
+.premium-owner-shell .profile-menu-avatar {
+  background: var(--owner-sidebar);
+}
+
+.premium-owner-shell .admin-brand-kicker,
+.premium-owner-shell .premium-dashboard-kicker,
+.premium-owner-shell .premium-mobile-menu-kicker {
+  color: var(--owner-gold-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.premium-owner-shell .restaurant-brand-title {
+  color: var(--owner-ink);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.premium-owner-shell .restaurant-brand-subtitle {
+  color: var(--owner-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.premium-owner-shell .layout {
+  max-width: 100%;
+  min-width: 0;
+  min-height: calc(100vh - 72px);
+  overflow-x: hidden;
+}
+
+.premium-owner-shell .premium-owner-sidebar {
+  background: var(--owner-sidebar);
+  border-right: 0;
+  color: #f7f3e9;
+  padding: 24px 16px;
+}
+
+.premium-sidebar-heading {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 4px;
+  margin: 0 4px 18px;
+  padding: 0 8px 18px;
+}
+
+.premium-sidebar-heading span {
+  color: #aaa69d;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.premium-sidebar-heading strong {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.premium-owner-shell .premium-owner-sidebar nav {
+  gap: 5px;
+}
+
+.premium-owner-shell .premium-owner-sidebar .nav-link {
+  border-radius: 10px;
+  color: #c9c5bc;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 46px;
+  padding: 0 13px;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.premium-owner-shell .premium-owner-sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.premium-owner-shell .premium-owner-sidebar .nav-link.active {
+  background: linear-gradient(135deg, rgba(191, 143, 54, 0.24), rgba(191, 143, 54, 0.12));
+  box-shadow: inset 2px 0 0 var(--owner-gold);
+  color: #f5d99f;
+  font-weight: 650;
+}
+
+.premium-owner-shell .premium-owner-sidebar .nav-link.locked {
+  color: #77736c;
+}
+
+.premium-owner-shell .premium-owner-content {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(191, 143, 54, 0.08), transparent 32rem),
+    var(--owner-background);
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  padding: 34px clamp(24px, 3vw, 48px) 48px;
+}
+
+.premium-dashboard {
+  margin: 0 auto;
+  max-width: 1280px;
+  min-width: 0;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.premium-owner-shell .dashboard-page-header {
+  align-items: flex-end;
+  margin-bottom: 26px;
+}
+
+.premium-owner-shell .dashboard-page-header h1 {
+  color: var(--owner-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 600;
+  line-height: 1.05;
+  margin: 6px 0 8px;
+}
+
+.premium-owner-shell .dashboard-page-header .muted {
+  color: var(--owner-muted);
+  font-size: 15px;
+}
+
+.premium-owner-shell .dashboard-kpi-grid {
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 100%;
+  min-width: 0;
+}
+
+.premium-owner-shell .dashboard-kpi-card {
+  align-items: start;
+  background: var(--owner-surface);
+  border: 1px solid var(--owner-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(45, 38, 25, 0.055);
+  display: grid;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 142px;
+  padding: 17px;
+  position: relative;
+  text-align: left;
+}
+
+.premium-owner-shell .dashboard-kpi-icon {
+  align-items: center;
+  background: var(--owner-gold-soft);
+  border-radius: 10px;
+  color: var(--owner-gold-dark);
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.premium-owner-shell .dashboard-kpi-card strong {
+  color: var(--owner-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.premium-owner-shell .dashboard-kpi-card p {
+  color: var(--owner-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.premium-owner-shell .dashboard-kpi-skeleton {
+  overflow: hidden;
+}
+
+.premium-skeleton {
+  animation: premium-owner-pulse 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, #eeeae2 25%, #f8f5ef 50%, #eeeae2 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.premium-skeleton-icon {
+  height: 38px;
+  width: 38px;
+}
+
+.premium-skeleton-value {
+  height: 34px;
+  width: 52%;
+}
+
+.premium-skeleton-label {
+  height: 15px;
+  width: 78%;
+}
+
+@keyframes premium-owner-pulse {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.premium-dashboard-state {
+  align-items: center;
+  border-color: rgba(156, 74, 55, 0.18);
+  border-radius: 16px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 142px;
+  padding: 22px;
+}
+
+.premium-dashboard-state h2,
+.premium-dashboard-state p {
+  margin: 0;
+}
+
+.premium-dashboard-state h2 {
+  font-size: 18px;
+  font-weight: 650;
+  margin-bottom: 5px;
+}
+
+.premium-dashboard-state p {
+  color: var(--owner-muted);
+}
+
+.dashboard-state-icon {
+  align-items: center;
+  background: #f5e8e3;
+  border-radius: 12px;
+  color: #994e3c;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.premium-owner-shell .button {
+  border-radius: 10px;
+}
+
+.premium-dashboard-empty {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px dashed rgba(149, 104, 32, 0.26);
+  border-radius: 12px;
+  color: var(--owner-muted);
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px 16px;
+}
+
+.premium-dashboard-empty svg {
+  color: var(--owner-gold-dark);
+  flex: 0 0 auto;
+}
+
+.premium-dashboard-empty p {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.premium-dashboard-section {
+  margin-top: 32px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.premium-dashboard-section-heading {
+  margin-bottom: 13px;
+}
+
+.premium-dashboard-section-heading h2,
+.premium-owner-shell .dashboard-recommendation-card h2 {
+  color: var(--owner-ink);
+  font-size: 20px;
+  font-weight: 650;
+  margin: 5px 0 0;
+}
+
+.premium-owner-shell .dashboard-quick-grid {
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  margin-bottom: 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.premium-owner-shell .dashboard-quick-card {
+  align-items: center;
+  background: var(--owner-surface);
+  border: 1px solid var(--owner-border);
+  border-radius: 14px;
+  box-shadow: 0 7px 22px rgba(45, 38, 25, 0.045);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 76px;
+  padding: 13px 14px;
+  text-align: left;
+}
+
+.premium-owner-shell .dashboard-quick-card:hover {
+  border-color: rgba(149, 104, 32, 0.34);
+  box-shadow: 0 12px 28px rgba(45, 38, 25, 0.08);
+  transform: translateY(-1px);
+}
+
+.dashboard-quick-icon,
+.dashboard-recommendation-icon {
+  align-items: center;
+  background: var(--owner-gold-soft);
+  border-radius: 10px;
+  color: var(--owner-gold-dark);
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.premium-owner-shell .dashboard-quick-card strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.premium-owner-shell .dashboard-quick-card small {
+  color: var(--owner-muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.dashboard-quick-arrow {
+  color: #9c988f;
+}
+
+.premium-owner-shell .dashboard-recommendation-card {
+  background: #25231f;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 16px 34px rgba(31, 27, 21, 0.14);
+  color: #ffffff;
+  gap: 14px;
+  margin-top: 32px;
+  padding: 20px;
+}
+
+.premium-owner-shell .dashboard-recommendation-card h2 {
+  color: #ffffff;
+}
+
+.premium-owner-shell .dashboard-recommendation-card > div .muted {
+  color: #bdb8ad;
+}
+
+.premium-owner-shell .dashboard-recommendation {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  color: #ffffff;
+  gap: 13px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: 15px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.premium-owner-shell .dashboard-recommendation:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(243, 230, 204, 0.28);
+}
+
+.premium-owner-shell .dashboard-recommendation strong {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.premium-owner-shell .dashboard-recommendation .muted {
+  color: #c5c0b6;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.premium-owner-shell .dashboard-recommendation-icon {
+  background: rgba(191, 143, 54, 0.22);
+  color: #f0cf8d;
+}
+
+.premium-owner-shell .restaurant-status-badge,
+.premium-owner-shell .tenant-switcher-field,
+.premium-owner-shell .profile-menu-trigger {
+  border-color: var(--owner-border);
+  border-radius: 11px;
+}
+
+.premium-owner-shell .restaurant-status-badge {
+  height: 52px;
+}
+
+.premium-owner-shell .tenant-switcher-field,
+.premium-owner-shell .profile-menu-trigger {
+  height: 52px;
+}
+
+.premium-owner-shell .profile-menu-popover {
+  border-color: var(--owner-border);
+  border-radius: 12px;
+  box-shadow: 0 18px 44px rgba(35, 30, 23, 0.15);
+}
+
+.premium-owner-shell .mobile-menu-drawer {
+  border-radius: 18px;
+  box-shadow: 0 28px 90px rgba(21, 19, 16, 0.3);
+  padding: 14px;
+}
+
+.premium-owner-shell .mobile-menu-header {
+  border-bottom: 1px solid var(--owner-border);
+  margin-bottom: 2px;
+  padding: 2px 2px 12px;
+}
+
+.premium-owner-shell .mobile-menu-header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.premium-owner-shell .mobile-menu-header strong {
+  color: var(--owner-ink);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.premium-owner-shell .mobile-menu-drawer .nav-link {
+  border-radius: 10px;
+  color: #4f4c45;
+  font-size: 14px;
+  font-weight: 550;
+  min-height: 46px;
+}
+
+.premium-owner-shell .mobile-menu-drawer .nav-link.active {
+  background: var(--owner-gold-soft);
+  color: var(--owner-gold-dark);
+  font-weight: 650;
+}
+
+@media (min-width: 1024px) {
+  .premium-owner-shell .layout {
+    grid-template-columns: 256px minmax(0, 1fr);
+  }
+
+  .premium-owner-shell .premium-owner-sidebar {
+    min-height: calc(100vh - 72px);
+  }
+
+  .premium-owner-shell .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .premium-owner-shell .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .premium-owner-shell .premium-owner-topbar {
+    align-items: center;
+    min-height: 72px;
+    padding: 11px 16px;
+  }
+
+  .premium-owner-shell .premium-owner-content {
+    padding: 26px 20px 40px;
+  }
+
+  .premium-owner-shell .topbar-actions {
+    margin-top: 2px;
+  }
+
+  .premium-owner-shell .mobile-restaurant-status {
+    background: #edf7f1;
+    color: #246346;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 639px) {
+  .premium-owner-shell .premium-owner-topbar {
+    column-gap: 10px;
+    padding: 8px 14px 10px;
+    row-gap: 6px;
+  }
+
+  .premium-owner-shell .admin-brand-kicker,
+  .premium-owner-shell .restaurant-brand-subtitle {
+    display: none;
+  }
+
+  .premium-owner-shell .admin-restaurant-brand {
+    gap: 10px;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .premium-owner-shell .admin-restaurant-brand .restaurant-logo-frame {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .premium-owner-shell .admin-restaurant-brand .restaurant-logo-image {
+    max-height: 34px;
+    max-width: 62px;
+  }
+
+  .premium-owner-shell .restaurant-brand-title {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .premium-owner-shell .button.mobile-menu-button {
+    min-width: 44px;
+    padding: 0 11px;
+  }
+
+  .premium-owner-shell .topbar-actions {
+    align-items: end;
+    gap: 8px;
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: 0;
+  }
+
+  .premium-owner-shell .mobile-restaurant-status {
+    font-size: 11px;
+    margin-bottom: 9px;
+    padding: 4px 8px;
+  }
+
+  .premium-owner-shell .topbar-actions .tenant-switcher {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .premium-owner-shell .tenant-switcher-field {
+    gap: 3px;
+  }
+
+  .premium-owner-shell .tenant-switcher-label {
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .premium-owner-shell .tenant-switcher-field .select {
+    min-height: 44px;
+    padding-block: 7px;
+  }
+
+  .premium-owner-shell .premium-owner-content {
+    padding: 20px 14px 36px;
+  }
+
+  .premium-owner-shell .dashboard-page-header {
+    margin-bottom: 16px;
+  }
+
+  .premium-owner-shell .dashboard-page-header h1 {
+    font-size: 31px;
+  }
+
+  .premium-owner-shell .dashboard-kpi-grid {
+    gap: 10px;
+  }
+
+  .premium-owner-shell .dashboard-kpi-card {
+    border-radius: 14px;
+    min-height: 132px;
+    padding: 14px;
+  }
+
+  .premium-owner-shell .dashboard-kpi-card strong {
+    font-size: 30px;
+  }
+
+  .premium-owner-shell .dashboard-kpi-card p {
+    font-size: 12px;
+  }
+
+  .premium-dashboard-state {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .premium-dashboard-state .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .premium-dashboard-section,
+  .premium-owner-shell .dashboard-recommendation-card {
+    margin-top: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-owner-shell *,
+  .premium-owner-shell *::before,
+  .premium-owner-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .premium-skeleton {
+    animation: none;
+  }
+}

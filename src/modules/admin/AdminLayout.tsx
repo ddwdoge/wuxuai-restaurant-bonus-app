@@ -17,6 +17,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
+import "./admin-premium.css";
 
 const restaurantRoleLabels = {
   owner: "Owner",
@@ -49,7 +50,7 @@ export function AdminLayout() {
   const restaurantStatusLabel =
     restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Einrichtung offen" : "Gesperrt";
   const mobileRestaurantStatusLabel =
-    restaurantStatus === "active" ? "aktiv" : restaurantStatus === "draft" ? "Entwurf" : "gesperrt";
+    restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Entwurf" : "Gesperrt";
   const profileName = readProfileName(user);
   const profileInitial = profileName.charAt(0).toLocaleUpperCase("de-AT") || "R";
   const profileRoleLabel = restaurantRole ? restaurantRoleLabels[restaurantRole] : "Restaurantkonto";
@@ -221,8 +222,8 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
+    <div className="app-shell premium-owner-shell">
+      <header className="topbar premium-owner-topbar">
         <div className="restaurant-brand-header admin-restaurant-brand">
           <span className="restaurant-logo-frame">
             {branding?.logo_url ? (
@@ -264,7 +265,11 @@ export function AdminLayout() {
         </button>
       </header>
       <div className="layout">
-        <aside className="sidebar">
+        <aside className="sidebar premium-owner-sidebar">
+          <div className="premium-sidebar-heading">
+            <span>Arbeitsbereich</span>
+            <strong>Restaurant Portal</strong>
+          </div>
           {renderNavigation("sidebar")}
           {setupIncomplete ? (
             <p className="sidebar-lock-message">
@@ -272,7 +277,7 @@ export function AdminLayout() {
             </p>
           ) : null}
         </aside>
-        <main className="content">
+        <main className="content premium-owner-content">
           <Outlet />
         </main>
       </div>
@@ -284,7 +289,10 @@ export function AdminLayout() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mobile-menu-header">
-              <strong>Restaurant Menü</strong>
+              <div>
+                <span className="premium-mobile-menu-kicker">WUXUAI Bonus</span>
+                <strong>Restaurant Menü</strong>
+              </div>
               <button className="button secondary mobile-menu-close" onClick={() => setMobileMenuOpen(false)} type="button">
                 <X size={18} />
                 Schließen
