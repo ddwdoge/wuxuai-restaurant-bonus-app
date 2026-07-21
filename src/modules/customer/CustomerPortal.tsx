@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   CakeSlice,
   CheckCircle2,
   ChevronRight,
@@ -12,6 +13,9 @@ import {
   LockKeyhole,
   LogOut,
   QrCode,
+  ReceiptText,
+  ScanLine,
+  ShieldCheck,
   Sparkles,
   Store,
   UserRound,
@@ -65,6 +69,7 @@ import {
 } from "./components/PremiumCustomerUi";
 
 type GuestStep = "welcome" | "register" | "success";
+type CollectStep = "entry" | "tier" | "pin";
 type RewardFilter = "all" | "mine";
 type RedemptionSheetStep = "detail" | "confirm";
 type AccountSheet = "profile" | "membership" | "qr" | "save" | "restaurant" | "help" | "logout" | null;
@@ -123,12 +128,6 @@ function formatEuro(value: number) {
   }).format(value);
 }
 
-function formatEuroSuffix(value: number) {
-  return `${new Intl.NumberFormat("de-AT", {
-    maximumFractionDigits: value % 1 === 0 ? 0 : 2,
-  }).format(value)} €`;
-}
-
 function welcomeGiftDetail(reward: {
   product_price?: number | null;
   welcome_gift_mode?: "value_limit" | "fixed_product";
@@ -170,19 +169,6 @@ function standardRewardAsset(category: string | null | undefined, title: string)
   );
 }
 
-function parseBillAmount(value: string) {
-  const normalized = value.replace(",", ".").replace(/[^0-9.]/g, "");
-  if (!normalized) return null;
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function bonusTierForAmount(amount: number | null, tiers: PublicLoyaltySettings["bonus_amount_tiers"]) {
-  if (amount === null || !tiers?.length) return null;
-  const sortedTiers = [...tiers].sort((left, right) => left.min - right.min);
-  return sortedTiers.find((tier) => amount >= tier.min && (tier.max === null || amount < tier.max)) ?? sortedTiers[0] ?? null;
-}
-
 export function CustomerPortal() {
   const { slug } = useParams();
   const location = useLocation();
@@ -205,8 +191,8 @@ export function CustomerPortal() {
   const [redeemingReward, setRedeemingReward] = useState(false);
   const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
   const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(null);
-  const [tokenAutoLoaded, setTokenAutoLoaded] = useState(false);
-  const [billAmountInput, setBillAmountInput] = useState("");
+  const [collectStep, setCollectStep] = useState<CollectStep>("entry");
+  const [selectedTierKey, setSelectedTierKey] = useState("");
   const [dailyPin, setDailyPin] = useState("");
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
@@ -220,6 +206,7 @@ export function CustomerPortal() {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
   const collectionInFlightRef = useRef(false);
+  const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
   const restaurantSlug = slug ?? restaurant?.slug ?? "";
   const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
@@ -228,7 +215,6 @@ export function CustomerPortal() {
   useEffect(() => {
     if (!restaurantSlug) return;
     setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
-    setTokenAutoLoaded(false);
   }, [restaurantSlug]);
 
   useEffect(() => {
@@ -253,7 +239,6 @@ export function CustomerPortal() {
         setRewards(data.offers);
         if (data.customer) {
           setGuestStep("welcome");
-          setTokenAutoLoaded(Boolean(activeToken && !customerToken));
         }
       }
     }
@@ -268,7 +253,6 @@ export function CustomerPortal() {
           setRewards([]);
           setRegistration(null);
           setGuestStep("welcome");
-          setTokenAutoLoaded(false);
           setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
           return;
         }
@@ -304,6 +288,12 @@ export function CustomerPortal() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (!isBonusCollection || collectStep !== "pin") return;
+    const frame = window.requestAnimationFrame(() => dailyPinInputRefs.current[0]?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [collectStep, isBonusCollection]);
+
   const visibleRewards = useMemo<PublicCustomerOfferView[]>(
     () => rewards.filter((offer) => offer.active && offer.status !== "redeemed" && offer.status !== "redemption_started"),
     [rewards],
@@ -325,10 +315,7 @@ export function CustomerPortal() {
     : String(customer?.points_balance ?? 0);
   const bonusTiers = settings?.bonus_amount_tiers?.length ? settings.bonus_amount_tiers : defaultBonusAmountTiers;
   const sortedBonusTiers = [...bonusTiers].sort((left, right) => left.min - right.min);
-  const billAmount = parseBillAmount(billAmountInput);
-  const selectedTier = bonusTierForAmount(billAmount, sortedBonusTiers);
-  const selectedTierIndex = selectedTier ? sortedBonusTiers.findIndex((tier) => tier.key === selectedTier.key) : -1;
-  const nextTier = selectedTierIndex >= 0 ? sortedBonusTiers[selectedTierIndex + 1] ?? null : null;
+  const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
   const referralBoostMultiplier = settings?.referral_boost_multiplier ?? 2;
@@ -347,18 +334,11 @@ export function CustomerPortal() {
   const previewPoints = selectedTier && settings
     ? calculateBonusTierPoints(selectedTier, settings.amount_per_point, activePointMultiplier)
     : 0;
-  const nextTierPoints = nextTier && settings
-    ? calculateBonusTierPoints(nextTier, settings.amount_per_point, activePointMultiplier)
-    : 0;
-  const eurosToNextTier = billAmount !== null && nextTier
-    ? Math.max(0, nextTier.min - billAmount)
-    : null;
-  const showNextTierHint = Boolean(selectedTier && nextTier && eurosToNextTier !== null);
   const reasonToJoin = `${restaurant?.name ?? "Dieses Restaurant"} belohnt treue Gäste.`;
   const explanation = [
     `${restaurant?.name ?? "Das Restaurant"} wurde über deinen QR automatisch erkannt.`,
     isBonusCollection
-      ? `Gib nach dem Bezahlen deinen Rechnungsbetrag ein.`
+      ? `Wähle nach dem Bezahlen die passende Bon-Stufe aus.`
       : "Du bekommst deinen persönlichen Bonus-QR.",
     isBonusCollection
       ? `Dieses Restaurant belohnt höhere Rechnungsstufen mit mehr Bonuspunkten.`
@@ -388,6 +368,10 @@ export function CustomerPortal() {
   const collectionBasePoints = collectionResult?.base_points ?? collectionResult?.points_added ?? 0;
   const collectionTotalPoints = collectionResult?.points_added ?? 0;
   const collectionBoostPoints = Math.max(0, collectionTotalPoints - collectionBasePoints);
+  const collectionRewardProgress = collectionResult?.next_reward?.required_points
+    ? clampPercent(((collectionResult.next_reward.required_points - collectionResult.next_reward.remaining_points)
+      / collectionResult.next_reward.required_points) * 100)
+    : 0;
   const redemptionSecondsRemaining = activeRedemptionCode
     ? Math.min(15 * 60, Math.max(0, Math.ceil((new Date(activeRedemptionCode.expiresAt).getTime() - nowMs) / 1_000)))
     : 0;
@@ -546,8 +530,8 @@ export function CustomerPortal() {
 
   async function handleCollectPoints() {
     if (collectionInFlightRef.current) return;
-    if (!selectedTier || billAmount === null) {
-      setMessage("Bitte gib deinen Rechnungsbetrag ein.");
+    if (!selectedTier) {
+      setMessage("Bitte wähle eine Bon-Stufe aus.");
       return;
     }
 
@@ -556,8 +540,8 @@ export function CustomerPortal() {
       return;
     }
 
-    if (!dailyPin.trim()) {
-      setMessage("Bitte gib die Tages-PIN ein.");
+    if (!/^\d{4}$/.test(dailyPin)) {
+      setMessage("Bitte gib die vierstellige Tages-PIN vollständig ein.");
       return;
     }
 
@@ -585,6 +569,36 @@ export function CustomerPortal() {
       collectionInFlightRef.current = false;
       setCollecting(false);
     }
+  }
+
+  function selectBonusTier(tierKey: string) {
+    setSelectedTierKey(tierKey);
+    setMessage(null);
+  }
+
+  function updateDailyPinDigit(index: number, input: string) {
+    const digit = input.replace(/\D/g, "").slice(-1);
+    if (!digit) {
+      setDailyPin((current) => current.slice(0, index));
+      return;
+    }
+    const digits = dailyPin.slice(0, index).split("");
+    digits[index] = digit;
+    setDailyPin(digits.join(""));
+    setMessage(null);
+    if (digit && index < 3) dailyPinInputRefs.current[index + 1]?.focus();
+  }
+
+  function handleDailyPinKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Backspace") return;
+    event.preventDefault();
+    if (dailyPin[index]) {
+      setDailyPin((current) => current.slice(0, index));
+      return;
+    }
+    const previousIndex = Math.max(0, index - 1);
+    setDailyPin((current) => current.slice(0, previousIndex));
+    dailyPinInputRefs.current[previousIndex]?.focus();
   }
 
   async function handleCreateReferralLink() {
@@ -754,7 +768,7 @@ export function CustomerPortal() {
   if (!settings || !restaurant || !branding) {
     return (
       <AppShell>
-        <PageContainer>
+        <PageContainer className={isBonusCollection ? "premium-collect-page premium-collect-loading-page" : undefined}>
           {message ? (
             <ErrorState description={message} title="Dein Bonus konnte nicht geöffnet werden" />
           ) : (
@@ -767,7 +781,7 @@ export function CustomerPortal() {
 
   return (
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
-      <PageContainer className="customer-portal-page">
+      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}`}>
         <CustomerHeader
           compact
           logoUrl={branding.logo_url}
@@ -919,120 +933,193 @@ export function CustomerPortal() {
         ) : null}
 
         {customer && isBonusCollection ? (
-          <section className="bonus-collect-flow">
+          <section className="bonus-collect-flow premium-collect-flow">
+            <div className="premium-collect-toolbar">
+              <a aria-label="Zurück zur Startseite" className="premium-collect-back" href={portalUrl}>
+                <ArrowLeft aria-hidden="true" size={20} />
+              </a>
+              <span>{collectionResult ? "Punkte gesammelt" : "Punkte sammeln"}</span>
+              <span aria-hidden="true" className="premium-collect-toolbar-spacer" />
+            </div>
             {collectionResult ? (
-              <article className="customer-hero-card collect-success-card premium-collect-success">
+              <article className="premium-collect-success" aria-live="polite">
                 <span className="premium-success-icon"><CheckCircle2 aria-hidden="true" size={38} /></span>
-                <span className="pill">Fertig</span>
-                <p className="status-message" role="status">Punkte gesammelt!</p>
+                <span className="premium-status-badge success">Buchung erfolgreich</span>
+                <h1>Punkte gesammelt!</h1>
                 {collectionResult.bonus_multiplier > 1 ? (
                   <>
-                    <strong className="premium-success-total">Gesamt: {collectionTotalPoints} Punkte</strong>
+                    <strong className="premium-success-total">+{collectionTotalPoints}</strong>
+                    <span className="premium-success-unit">Punkte</span>
                     <div className="boost-success-grid">
                       <div>
-                        <span className="pill">Normal</span>
+                        <span>Normal</span>
                         <strong>{collectionBasePoints} Punkte</strong>
                       </div>
                       <div>
-                        <span className="pill">Bonus Boost</span>
+                        <span>Bonus Boost</span>
                         <strong>+{collectionBoostPoints} Punkte</strong>
-                      </div>
-                      <div>
-                        <span className="pill">Gesamt</span>
-                        <strong><Flame aria-hidden="true" size={18} /> {collectionTotalPoints} Punkte</strong>
                       </div>
                     </div>
                   </>
                 ) : (
-                  <strong>{collectionTotalPoints} Punkte wurden gutgeschrieben.</strong>
+                  <>
+                    <strong className="premium-success-total">+{collectionTotalPoints}</strong>
+                    <span className="premium-success-unit">Punkte</span>
+                  </>
                 )}
-                <p className="muted">Aktuell: {collectionResult.points_balance} Punkte</p>
+                <div className="premium-collect-balance">
+                  <span>Dein neuer Punktestand</span>
+                  <strong>{collectionResult.points_balance} Punkte</strong>
+                </div>
                 {collectionResult.welcome_gift_unlocked ? (
-                  <p className="muted"><Sparkles aria-hidden="true" size={17} /> Dein Willkommensgeschenk ist jetzt freigeschaltet.</p>
+                  <div className="premium-collect-unlocked">
+                    <Sparkles aria-hidden="true" size={20} />
+                    <div>
+                      <strong>Geschenk freigeschaltet</strong>
+                      <span>Dein Willkommensgeschenk ist jetzt einlösbar.</span>
+                    </div>
+                  </div>
                 ) : null}
                 {collectionResult.next_reward ? (
-                  <p className="muted">
-                    Noch {collectionResult.next_reward.remaining_points} Punkte bis {collectionResult.next_reward.title}.
-                  </p>
+                  <div className="premium-collect-next-reward">
+                    <div>
+                      <span>{collectionResult.next_reward.remaining_points === 0 ? "Jetzt freigeschaltet" : "Nächste Punkteeinlösung"}</span>
+                      <strong>{collectionResult.next_reward.title}</strong>
+                    </div>
+                    <div className="premium-progress" aria-label={`${Math.round(collectionRewardProgress)} Prozent erreicht`}>
+                      <span style={{ width: `${collectionRewardProgress}%` }} />
+                    </div>
+                    <p>
+                      {collectionResult.next_reward.remaining_points === 0
+                        ? "Du kannst diese Punkteeinlösung jetzt verwenden."
+                        : `Noch ${collectionResult.next_reward.remaining_points} Punkte bis zur Einlösung.`}
+                    </p>
+                  </div>
                 ) : (
-                  <p className="muted">Deine nächsten Punkteeinlösungen sind im Bonus sichtbar.</p>
+                  <p className="premium-collect-success-note">Deine Punkteeinlösungen findest du in deinem Bonuskonto.</p>
                 )}
-                <a className="premium-button premium-button-primary" href={portalUrl}>
-                  Mein Bonus
+                <a className="premium-button premium-button-primary premium-collect-home-button" href={portalUrl}>
+                  Zur Startseite
                 </a>
               </article>
             ) : (
               <>
-                <article className="customer-hero-card premium-collect-intro">
-                  <span className="premium-flow-icon"><QrCode aria-hidden="true" size={24} /></span>
-                  <span className="pill">Nach dem Bezahlen</span>
-                  <h2>{tokenAutoLoaded ? `Willkommen zurück, ${customer.name.split(" ")[0]}` : "Punkte sammeln"}</h2>
-                  <p className="muted">Gib deinen Rechnungsbetrag ein. Der Kassierer kann kurz mitschauen.</p>
-                </article>
-
-                <section className="calculation-card premium-collect-form">
-                  <label className="field" htmlFor="bill-amount">
-                    <span>Rechnungsbetrag</span>
-                    <input
-                      className="input input-large"
-                      id="bill-amount"
-                      inputMode="decimal"
-                      onChange={(event) => setBillAmountInput(event.target.value)}
-                      placeholder="z. B. 82,50 €"
-                      value={billAmountInput}
-                    />
-                  </label>
-                  <label className="field" htmlFor="daily-pin">
-                    <span>Tages-PIN</span>
-                    <input
-                      className="input input-large"
-                      id="daily-pin"
-                      inputMode="numeric"
-                      maxLength={4}
-                      onChange={(event) => setDailyPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                      placeholder="Bitte Mitarbeiter um die Tages-PIN."
-                      type="password"
-                      value={dailyPin}
-                    />
-                  </label>
-                  <p className="muted">Bitte Mitarbeiter um die Tages-PIN.</p>
-                  {!selectedTier ? (
-                    <PrimaryButton disabled={collecting} onClick={handleCollectPoints} type="button">
-                      {collecting ? "Punkte werden gutgeschrieben..." : "Punkte sammeln"}
-                    </PrimaryButton>
-                  ) : null}
-                </section>
-
-                {selectedTier ? (
-                  <article className="calculation-card premium-calculation-result">
-                    <p className="muted">Ausgewählt</p>
-                    <h2>{selectedTier.label}</h2>
-                    <strong>{previewPoints} Punkte</strong>
-                    {showNextTierHint && nextTier && eurosToNextTier !== null ? (
-                      <div className="smart-upsell-box">
-                        <p className="muted">Noch {formatEuroSuffix(eurosToNextTier)} bis zur nächsten Bonusstufe</p>
-                        <div className="grid two">
-                          <div>
-                            <span className="pill">Aktuell</span>
-                            <strong>{selectedTier.label}</strong>
-                            <p className="muted">{previewPoints} Punkte</p>
-                          </div>
-                          <div>
-                            <span className="pill">Nächste Stufe</span>
-                            <strong>{nextTier?.label}</strong>
-                            <p className="muted">{nextTierPoints} Punkte</p>
-                          </div>
-                        </div>
+                {collectStep === "entry" ? (
+                  <article className="premium-collect-entry">
+                    <span className="premium-collect-kicker">Nach dem Bezahlen</span>
+                    <div className="premium-scanner-frame" aria-hidden="true">
+                      <span className="premium-scanner-corner top-left" />
+                      <span className="premium-scanner-corner top-right" />
+                      <span className="premium-scanner-corner bottom-left" />
+                      <span className="premium-scanner-corner bottom-right" />
+                      <ScanLine size={58} />
+                    </div>
+                    <div className="premium-collect-entry-copy">
+                      <h1>Punkte sammeln</h1>
+                      <p>Dein Restaurant wurde bereits über den QR-Code erkannt.</p>
+                    </div>
+                    <div className="premium-restaurant-recognized">
+                      <span><Store aria-hidden="true" size={20} /></span>
+                      <div>
+                        <small>Restaurant erkannt</small>
+                        <strong>{restaurant.name}</strong>
                       </div>
-                    ) : (
-                      <p className="muted">Höchste Bonusstufe erreicht</p>
-                    )}
-                    <PrimaryButton disabled={collecting} onClick={handleCollectPoints} type="button">
-                      {collecting ? "Punkte werden gutgeschrieben..." : "Punkte sammeln"}
-                    </PrimaryButton>
+                      <CheckCircle2 aria-hidden="true" size={20} />
+                    </div>
+                    <PrimaryButton onClick={() => {
+                      setCollectStep("tier");
+                      setMessage(null);
+                    }}>Bon-Stufe auswählen</PrimaryButton>
+                    <p className="premium-collect-security"><ShieldCheck aria-hidden="true" size={16} /> Sicher mit deinem Bonuskonto verbunden</p>
                   </article>
                 ) : null}
-                {message ? <p className="status-message" role="alert">{message}</p> : null}
+
+                {collectStep === "tier" ? (
+                  <article className="premium-collect-step premium-tier-step">
+                    <div className="premium-collect-step-heading">
+                      <span>Schritt 1 von 2</span>
+                      <h1>Welche Bon-Stufe passt?</h1>
+                      <p>Wähle gemeinsam mit dem Mitarbeiter den Bereich deiner Rechnung.</p>
+                    </div>
+                    <div className="premium-tier-grid" role="group" aria-label="Bon-Stufe auswählen">
+                      {sortedBonusTiers.map((tier) => {
+                        const tierPoints = settings
+                          ? calculateBonusTierPoints(tier, settings.amount_per_point, activePointMultiplier)
+                          : 0;
+                        const isSelected = selectedTier?.key === tier.key;
+                        return (
+                          <button
+                            aria-pressed={isSelected}
+                            className={isSelected ? "selected" : ""}
+                            key={tier.key}
+                            onClick={() => selectBonusTier(tier.key)}
+                            type="button"
+                          >
+                            <ReceiptText aria-hidden="true" size={19} />
+                            <strong>{tier.label}</strong>
+                            <span>{tierPoints} Punkte</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {message ? <p className="premium-collect-error" role="alert">{message}</p> : null}
+                    <PrimaryButton disabled={!selectedTier} onClick={() => {
+                      if (!selectedTier) {
+                        setMessage("Bitte wähle eine Bon-Stufe aus.");
+                        return;
+                      }
+                      setCollectStep("pin");
+                      setMessage(null);
+                    }}>Weiter zur Tages-PIN</PrimaryButton>
+                    <button className="premium-collect-text-button" onClick={() => setCollectStep("entry")} type="button">
+                      Zurück
+                    </button>
+                  </article>
+                ) : null}
+
+                {collectStep === "pin" && selectedTier ? (
+                  <article className="premium-collect-step premium-pin-step">
+                    <div className="premium-collect-step-heading">
+                      <span>Schritt 2 von 2</span>
+                      <h1>Tages-PIN eingeben</h1>
+                      <p>Bitte den Mitarbeiter um die heutige vierstellige Tages-PIN.</p>
+                    </div>
+                    <div className="premium-selected-tier">
+                      <div>
+                        <span>Ausgewählte Bon-Stufe</span>
+                        <strong>{selectedTier.label}</strong>
+                      </div>
+                      <strong>{previewPoints} Punkte</strong>
+                    </div>
+                    <div className="premium-pin-fields" role="group" aria-label="Vierstellige Tages-PIN">
+                      {[0, 1, 2, 3].map((index) => (
+                        <input
+                          aria-label={`Tages-PIN Ziffer ${index + 1}`}
+                          autoComplete="off"
+                          inputMode="numeric"
+                          key={index}
+                          maxLength={1}
+                          onChange={(event) => updateDailyPinDigit(index, event.target.value)}
+                          onKeyDown={(event) => handleDailyPinKeyDown(index, event)}
+                          pattern="[0-9]*"
+                          ref={(element) => { dailyPinInputRefs.current[index] = element; }}
+                          type="password"
+                          value={dailyPin[index] ?? ""}
+                        />
+                      ))}
+                    </div>
+                    <p className="premium-pin-hint"><LockKeyhole aria-hidden="true" size={17} /> Die PIN bleibt auf dem Bildschirm verborgen.</p>
+                    {message ? <p className="premium-collect-error" role="alert">{message}</p> : null}
+                    <PrimaryButton disabled={collecting} onClick={handleCollectPoints}>
+                      {collecting ? "Punkte werden gebucht …" : "Punkte jetzt sammeln"}
+                    </PrimaryButton>
+                    <button className="premium-collect-text-button" disabled={collecting} onClick={() => {
+                      setCollectStep("tier");
+                      setDailyPin("");
+                      setMessage(null);
+                    }} type="button">Bon-Stufe ändern</button>
+                  </article>
+                ) : null}
               </>
             )}
           </section>

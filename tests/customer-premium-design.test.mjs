@@ -32,7 +32,9 @@ test("Punkte sammeln und Einlösung behalten vorhandene Service-Aufrufe", () => 
   assert.match(portal, /collectBonusPoints\(\{/);
   assert.match(portal, /startCustomerRedemption\(\{/);
   assert.match(portal, /type="password"/);
-  assert.match(portal, /maxLength=\{4\}/);
+  assert.match(portal, /\[0, 1, 2, 3\]\.map/);
+  assert.match(portal, /maxLength=\{1\}/);
+  assert.match(portal, /Vierstellige Tages-PIN/);
 });
 
 test("Info und Einlösung verwenden den gemeinsamen barrierefreien Drawer", () => {
