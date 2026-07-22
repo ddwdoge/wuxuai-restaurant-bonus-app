@@ -203,9 +203,11 @@
   border-radius: 50%;
   color: var(--premium-text-secondary);
   display: inline-flex;
-  height: 40px;
+  height: 44px;
   justify-content: center;
-  width: 40px;
+  min-height: 44px;
+  min-width: 44px;
+  width: 44px;
 }
 
 .premium-bottom-navigation {

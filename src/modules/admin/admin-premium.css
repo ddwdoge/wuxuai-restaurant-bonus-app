@@ -475,6 +475,27 @@
   height: 52px;
 }
 
+@media (min-width: 1024px) {
+  .premium-owner-shell .tenant-switcher-field {
+    padding: 0;
+    position: relative;
+  }
+
+  .premium-owner-shell .tenant-switcher-label {
+    left: 10px;
+    pointer-events: none;
+    position: absolute;
+    top: 7px;
+    z-index: 1;
+  }
+
+  .premium-owner-shell .tenant-switcher-field .select {
+    height: 52px;
+    min-height: 52px;
+    padding: 18px 28px 4px 10px;
+  }
+}
+
 .premium-owner-shell .profile-menu-popover {
   border-color: var(--owner-border);
   border-radius: 12px;

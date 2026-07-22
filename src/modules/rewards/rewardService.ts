@@ -508,6 +508,14 @@ export async function consumeRedemptionCode(
   });
 
   if (error) throw error;
+  if (data && typeof data === "object" && "success" in data && data.success === false) {
+    const payload = data as { error_code?: string; error_message?: string };
+    const consumeError = new Error(payload.error_message || "Einlösung konnte nicht bestätigt werden.") as Error & {
+      code?: string;
+    };
+    consumeError.code = payload.error_code;
+    throw consumeError;
+  }
   return data as ConsumeRedemptionCodeResult;
 }
 

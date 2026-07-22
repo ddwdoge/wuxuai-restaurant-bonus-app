@@ -49,3 +49,7 @@ test("Owner Navigation bleibt responsiv und berührungsfreundlich", () => {
   assert.match(styles, /repeat\(auto-fit, minmax\(min\(220px, 100%\), 1fr\)\)/);
   assert.match(styles, /overflow-x: hidden/);
 });
+
+test("Desktop-Restaurantauswahl nutzt die vollständige Touchfläche", () => {
+  assert.match(styles, /@media \(min-width: 1024px\)[\s\S]*tenant-switcher-field \.select[\s\S]*min-height: 52px/);
+});
