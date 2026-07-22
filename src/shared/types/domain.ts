@@ -169,6 +169,7 @@ export type Reward = {
   welcome_gift_mode?: "value_limit" | "fixed_product";
   fixed_product_name?: string | null;
   is_starter_reward?: boolean;
+  birthday_pool_enabled?: boolean;
   starter_reward_key?: string | null;
   starter_reward_order?: number;
   active: boolean;

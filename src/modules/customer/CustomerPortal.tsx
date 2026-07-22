@@ -1,6 +1,7 @@
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  BellRing,
   CakeSlice,
   CheckCircle2,
   ChevronRight,
@@ -67,6 +68,17 @@ import {
   type CustomerView,
   type RewardCardState,
 } from "./components/PremiumCustomerUi";
+import {
+  customerPushAvailable,
+  disableCustomerPush,
+  drawCustomerBirthdayGift,
+  enableCustomerPush,
+  loadCustomerRetentionStatus,
+  markExpiryReminder,
+  updateCustomerBirthday,
+  type CustomerRetentionStatus,
+  type ExpiryReminder,
+} from "./retentionService";
 
 type GuestStep = "welcome" | "register" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -197,6 +209,11 @@ export function CustomerPortal() {
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
+  const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
+  const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
+  const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
   const [form, setForm] = useState({ firstName: "", phone: "", birthday: "" });
   const [message, setMessage] = useState<string | null>(null);
@@ -208,6 +225,7 @@ export function CustomerPortal() {
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
+  const processedReminderDeepLinkRef = useRef<string | null>(null);
   const restaurantSlug = slug ?? restaurant?.slug ?? "";
   const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
@@ -241,6 +259,25 @@ export function CustomerPortal() {
           setGuestStep("welcome");
         }
       }
+      if (data.customer && activeToken && restaurantSlug) {
+        try {
+          const retentionData = await loadCustomerRetentionStatus(restaurantSlug, activeToken);
+          if (!cancelled) {
+            setRetention(retentionData);
+            setBirthdayForm({
+              day: retentionData.birthday.day ? String(retentionData.birthday.day) : "",
+              month: retentionData.birthday.month ? String(retentionData.birthday.month) : "",
+            });
+          }
+        } catch (retentionError) {
+          if (!cancelled) {
+            console.warn("Zusätzliche Kundenhinweise konnten nicht geladen werden.", retentionError);
+            setRetention(null);
+          }
+        }
+      } else if (!cancelled) {
+        setRetention(null);
+      }
     }
 
     loadPortal().catch((error) => {
@@ -266,6 +303,42 @@ export function CustomerPortal() {
       cancelled = true;
     };
   }, [activeToken, customerToken, refreshToken, restaurantSlug, slug]);
+
+  useEffect(() => {
+    if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
+    const sessionKey = `wuxuai:expiry-reminders:${restaurantSlug}:${customer.customer_code}`;
+    if (window.sessionStorage.getItem(sessionKey)) return;
+    window.sessionStorage.setItem(sessionKey, "seen");
+    setInfoOpen(true);
+    retention.reminders.forEach((reminder) => {
+      void markExpiryReminder(activeToken, reminder.id, "displayed").catch(() => undefined);
+    });
+  }, [accountSheet, activeToken, customer, infoOpen, redemptionDrawerOpen, restaurantSlug, retention]);
+
+  useEffect(() => {
+    const reminderId = searchParams.get("reminder");
+    const rewardId = searchParams.get("reward");
+    if (!activeToken || !customer || !reminderId || !rewardId || processedReminderDeepLinkRef.current === reminderId) return;
+
+    const reminder = retention?.reminders.find((entry) => entry.id === reminderId && entry.reward_id === rewardId);
+    const reward = rewards.find((entry) => entry.id === rewardId
+      && (!reminder?.customer_reward_id || entry.assignment_id === reminder.customer_reward_id));
+    if (!reward) return;
+
+    processedReminderDeepLinkRef.current = reminderId;
+    if (reminder) void markExpiryReminder(activeToken, reminder.id, "opened").catch(() => undefined);
+    setActiveView("redemptions");
+    setRedeemOffer(reward);
+    setRedemptionSheetStep("detail");
+    setRedemptionOutcome(null);
+    setRedemptionStatus(null);
+    setRedemptionDrawerOpen(true);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("reminder");
+    nextSearchParams.delete("reward");
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [activeToken, customer, retention, rewards, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!customerToken) return;
@@ -318,8 +391,8 @@ export function CustomerPortal() {
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
-  const referralBoostMultiplier = settings?.referral_boost_multiplier ?? 2;
-  const referralBoostDurationDays = settings?.referral_boost_duration_days ?? 30;
+  const referralBoostMultiplier = 2;
+  const referralBoostDurationDays = 30;
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
   const activePointMultiplier = activeBoost?.multiplier ?? 1;
@@ -620,6 +693,82 @@ export function CustomerPortal() {
     }
   }
 
+  async function handleBirthdaySave() {
+    if (!activeToken || !restaurantSlug) return;
+    const day = Number(birthdayForm.day);
+    const month = Number(birthdayForm.month);
+    if (!Number.isInteger(day) || !Number.isInteger(month)) {
+      setRetentionMessage("Bitte gib Tag und Monat vollständig ein.");
+      return;
+    }
+    try {
+      await updateCustomerBirthday(restaurantSlug, activeToken, day, month);
+      setRetentionMessage("Geburtstag gespeichert.");
+      setRefreshToken((current) => current + 1);
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Geburtstag konnte nicht gespeichert werden.");
+    }
+  }
+
+  async function handleBirthdayGiftDraw() {
+    if (!activeToken || !restaurantSlug || drawingBirthdayGift) return;
+    setDrawingBirthdayGift(true);
+    setRetentionMessage(null);
+    try {
+      const gift = await drawCustomerBirthdayGift(restaurantSlug, activeToken, crypto.randomUUID());
+      setRetentionMessage(gift.already_drawn
+        ? "Deine Geburtstagsüberraschung ist bereits für dich reserviert."
+        : `${gift.title} wurde für dich ausgelost.`);
+      setRefreshToken((current) => current + 1);
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Geburtstagsüberraschung konnte nicht ausgelost werden.");
+    } finally {
+      setDrawingBirthdayGift(false);
+    }
+  }
+
+  async function handleEnablePush() {
+    if (!activeToken || !restaurantSlug || enablingPush) return;
+    setEnablingPush(true);
+    setRetentionMessage(null);
+    try {
+      await enableCustomerPush(restaurantSlug, activeToken);
+      setRetention((current) => current ? { ...current, push: { subscribed: true } } : current);
+      setRetentionMessage("Ablauf-Erinnerungen sind aktiviert.");
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Push-Benachrichtigungen konnten nicht aktiviert werden.");
+    } finally {
+      setEnablingPush(false);
+    }
+  }
+
+  async function handleDisablePush() {
+    if (!activeToken || !restaurantSlug || enablingPush) return;
+    setEnablingPush(true);
+    try {
+      await disableCustomerPush(restaurantSlug, activeToken);
+      setRetention((current) => current ? { ...current, push: { subscribed: false } } : current);
+      setRetentionMessage("Push-Erinnerungen sind deaktiviert.");
+    } catch {
+      setRetentionMessage("Push-Erinnerungen konnten gerade nicht deaktiviert werden.");
+    } finally {
+      setEnablingPush(false);
+    }
+  }
+
+  function openExpiryReminder(reminder: ExpiryReminder) {
+    const reward = rewards.find((offer) => offer.id === reminder.reward_id
+      && (!reminder.customer_reward_id || offer.assignment_id === reminder.customer_reward_id));
+    if (!reward) {
+      setActiveView("redemptions");
+      setInfoOpen(false);
+      return;
+    }
+    if (activeToken) void markExpiryReminder(activeToken, reminder.id, "opened").catch(() => undefined);
+    setInfoOpen(false);
+    openRewardRedemption(reward);
+  }
+
   async function copyPortalLink() {
     if (!portalUrl) return;
     try {
@@ -802,9 +951,36 @@ export function CustomerPortal() {
           title="So funktioniert's"
         >
           <div className="rule-list customer-info-rules">
+            {retention?.reminders.length ? (
+              <section className="premium-expiry-reminders" aria-labelledby="expiry-reminders-title">
+                <div className="premium-icon-heading">
+                  <span><BellRing aria-hidden="true" size={21} /></span>
+                  <div><StatusBadge tone="warning">Hinweis</StatusBadge><h2 id="expiry-reminders-title">Bald ablaufend</h2></div>
+                </div>
+                {retention.reminders.map((reminder) => (
+                  <article key={reminder.id}>
+                    <div>
+                      <strong>{reminder.title}</strong>
+                      <span>{reminder.remaining_days === 0
+                        ? "Nur noch heute gültig"
+                        : `Noch ${reminder.remaining_days} ${reminder.remaining_days === 1 ? "Tag" : "Tage"} gültig`}</span>
+                      <small>Ablauf: {new Date(reminder.expires_at).toLocaleDateString("de-AT")}</small>
+                    </div>
+                    <button className="premium-text-button" onClick={() => openExpiryReminder(reminder)} type="button">Öffnen</button>
+                  </article>
+                ))}
+                {!retention.push.subscribed ? (
+                  <button className="button secondary" disabled={enablingPush || !customerPushAvailable()} onClick={handleEnablePush} type="button">
+                    <BellRing aria-hidden="true" size={18} />
+                    {customerPushAvailable() ? "Push-Erinnerungen aktivieren" : "Push auf diesem Gerät nicht verfügbar"}
+                  </button>
+                ) : <div className="premium-push-active"><p><CheckCircle2 aria-hidden="true" size={17} /> Push-Erinnerungen sind aktiv.</p><button className="premium-text-button" disabled={enablingPush} onClick={handleDisablePush} type="button">Deaktivieren</button></div>}
+              </section>
+            ) : null}
             {explanation.map((line) => (
               <p className="muted" key={line}>{line}</p>
             ))}
+            {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
           </div>
         </AppDrawer>
 
@@ -1149,6 +1325,14 @@ export function CustomerPortal() {
                   value={pointsValue}
                 />
 
+                {retention?.reminders.length ? (
+                  <button className="premium-expiry-summary" onClick={() => setInfoOpen(true)} type="button">
+                    <span><BellRing aria-hidden="true" size={20} /></span>
+                    <div><strong>Bald ablaufend</strong><small>{retention.reminders.length === 1 ? "Eine Erinnerung ansehen" : `${retention.reminders.length} Erinnerungen ansehen`}</small></div>
+                    <ChevronRight aria-hidden="true" size={19} />
+                  </button>
+                ) : null}
+
                 <section className="premium-content-section" aria-label="Deine Vorteile">
                   <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
                   <div className="premium-benefit-grid">
@@ -1162,7 +1346,9 @@ export function CustomerPortal() {
                     <BenefitTile
                       icon={<CakeSlice size={22} />}
                       label="Geburtstagsgeschenk"
-                      status={activeBirthdayGift ? "Einlösbar" : "Nicht vorhanden"}
+                      status={activeBirthdayGift
+                        ? "Einlösbar"
+                        : retention?.birthday.eligible ? "Überraschung wartet" : "Nicht vorhanden"}
                     />
                     <BenefitTile
                       icon={<Flame size={22} />}
@@ -1178,6 +1364,18 @@ export function CustomerPortal() {
                     />
                   </div>
                 </section>
+
+                {retention?.birthday.eligible && !activeBirthdayGift && !retention.birthday.gift ? (
+                  <PremiumCard className="premium-birthday-draw-card" variant="highlight">
+                    <span className="premium-birthday-icon"><CakeSlice aria-hidden="true" size={25} /></span>
+                    <div><StatusBadge tone="warning">Für dich</StatusBadge><h2>Alles Gute zum Geburtstag!</h2><p>Deine Geburtstagsüberraschung wartet auf dich.</p></div>
+                    <PrimaryButton disabled={drawingBirthdayGift} onClick={handleBirthdayGiftDraw}>
+                      <Gift aria-hidden="true" size={19} />
+                      {drawingBirthdayGift ? "Geschenk wird ausgewählt …" : "Geschenk abholen"}
+                    </PrimaryButton>
+                    {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
+                  </PremiumCard>
+                ) : null}
 
                 <section className="premium-content-section">
                   <SectionHeader
@@ -1263,10 +1461,12 @@ export function CustomerPortal() {
                   ) : null}
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
-                      <p>Dein Einladungslink ist bereit.</p>
+                      <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
+                      <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
                     </div>
                   ) : null}
+                  {retention ? <p className="premium-referral-count">{retention.referral.successful_referrals} erfolgreiche {retention.referral.successful_referrals === 1 ? "Empfehlung" : "Empfehlungen"}</p> : null}
                 </PremiumCard>
               </section>
             ) : null}
@@ -1389,7 +1589,8 @@ export function CustomerPortal() {
                   </div>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
-                      <p>Dein Einladungslink ist bereit.</p>
+                      <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
+                      <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
                     </div>
                   ) : null}
@@ -1546,6 +1747,11 @@ export function CustomerPortal() {
                   <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
                   <PrimaryButton onClick={handleCustomerLogout}>Abmelden</PrimaryButton>
                 </>
+              ) : accountSheet === "profile" ? (
+                <>
+                  <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
+                  <PrimaryButton disabled={!retention?.birthday.can_update} onClick={handleBirthdaySave}>Geburtstag speichern</PrimaryButton>
+                </>
               ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
               onClose={() => setAccountSheet(null)}
               open={Boolean(accountSheet)}
@@ -1565,9 +1771,20 @@ export function CustomerPortal() {
             >
               <div className="premium-account-sheet-content">
                 {accountSheet === "profile" ? (
-                  <div className="premium-account-detail-list">
-                    <div><span>Name</span><strong>{customer.name}</strong></div>
-                    <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                  <div className="premium-account-profile-form">
+                    <div className="premium-account-detail-list">
+                      <div><span>Name</span><strong>{customer.name}</strong></div>
+                      <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                    </div>
+                    <section>
+                      <div><h3>Geburtstag</h3><p>Freiwillig. Für deine Geburtstagsüberraschung benötigen wir nur Tag und Monat.</p></div>
+                      <div className="premium-birthday-fields">
+                        <label><span>Tag</span><input inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, day: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="TT" value={birthdayForm.day} /></label>
+                        <label><span>Monat</span><input inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, month: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="MM" value={birthdayForm.month} /></label>
+                      </div>
+                      {!retention?.birthday.can_update ? <p className="muted">Dein Geburtstag kann erst später wieder geändert werden.</p> : null}
+                      {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
+                    </section>
                   </div>
                 ) : null}
                 {accountSheet === "membership" ? (

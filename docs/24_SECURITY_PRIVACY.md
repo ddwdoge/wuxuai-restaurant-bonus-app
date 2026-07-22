@@ -1091,3 +1091,13 @@ Endstatus: **LOCK**
 - Einlösecodes sind sechs Ziffern lang, 15 Minuten gültig und nur einmal verwendbar.
 - Aktivierung und Verbrauch werden auditiert und mandantenbezogen geprüft.
 - Öffentliche Zugriffe erhalten keine direkten Tabellenrechte auf Code-, Versuch- oder Geschenkprotokolle.
+
+## Ergänzung 2026-07-22: Retention-Daten
+
+- Push-Berechtigung wird ausschließlich nach einer sichtbaren Kundenzustimmung angefragt.
+- Push-Subscriptions sind per RLS gesperrt und werden nur über tokengeprüfte RPCs beziehungsweise die serverseitige Sender-Funktion verarbeitet.
+- Die Sender-Funktion erfordert zusätzlich zu Supabase-Funktionsschutz ein separates Scheduler-Secret; dieses wird ausschließlich als Staging-/Deployment-Secret konfiguriert.
+- Ungültige Push-Endpunkte werden deaktiviert; Push-Inhalte enthalten weder Kundentoken noch PIN, Code oder personenbezogene Kontaktdaten.
+- Ablauf-Erinnerungen enthalten nur die notwendige Reward-Referenz und werden nicht öffentlich aus Tabellen gelesen.
+- Die Geburtstagsauslosung verwendet nur Tag und Monat; Audit-Metadaten enthalten kein vollständiges Geburtsdatum.
+- Referral- und Boost-Aktivierung bleiben serverseitig, mandantenbezogen, atomar und idempotent.

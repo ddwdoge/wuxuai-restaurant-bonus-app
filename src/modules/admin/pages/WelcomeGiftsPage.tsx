@@ -39,6 +39,7 @@ type GiftForm = {
   fixedProductName: string;
   imageUrl: string | null;
   active: boolean;
+  birthdayPoolEnabled: boolean;
 };
 
 const giftCategoryOptions = ["Kaffee", "Getränk", "Dessert", "Vorspeise", "Menü", "Hauptspeise", "Sushi", "Eigene Überraschung"];
@@ -111,6 +112,7 @@ function formFromGift(gift: RewardOffer): GiftForm {
     fixedProductName: gift.fixed_product_name ?? gift.available_products[0] ?? "",
     imageUrl: gift.image_url,
     active: gift.active,
+    birthdayPoolEnabled: gift.birthday_pool_enabled,
   };
 }
 
@@ -124,6 +126,7 @@ function newGiftForm(): GiftForm {
     fixedProductName: "",
     imageUrl: null,
     active: true,
+    birthdayPoolEnabled: false,
   };
 }
 
@@ -254,6 +257,7 @@ export function WelcomeGiftsPage() {
         active_days: original?.active_days?.length ? original.active_days : defaultDays,
         available_products: fixedProductName ? [fixedProductName] : [category],
         is_starter_reward: true,
+        birthday_pool_enabled: editing.birthdayPoolEnabled,
         starter_reward_key: starterRewardKeyForCategory(category),
         starter_reward_order: original?.starter_reward_order ?? gifts.length,
         active: editing.active,
@@ -321,7 +325,7 @@ export function WelcomeGiftsPage() {
                 description="Einmalig für neue Gäste nach der Anmeldung."
                 imageUrl={gift.image_url}
                 key={gift.id}
-                meta={[{ label: "Bedingung", value: condition }, { label: "Punkte", value: "Kostenlos" }]}
+                meta={[{ label: "Bedingung", value: condition }, { label: "Geburtstagspool", value: gift.birthday_pool_enabled ? "Dabei" : "Nicht dabei" }]}
                 PlaceholderIcon={PlaceholderIcon}
                 title={gift.title}
               />
@@ -355,6 +359,7 @@ export function WelcomeGiftsPage() {
               <div><p className="premium-owner-kicker">Darstellung</p><h3>Bild und Sichtbarkeit</h3></div>
               <div className="reward-photo-row"><div className="reward-standard-image">{editing.imageUrl ? <img alt={editing.title || "Willkommensgeschenk"} src={editing.imageUrl} /> : categoryIcon(editing.category, 44)}</div><div className="premium-owner-photo-actions"><input accept="image/png,image/jpeg,image/jpg,image/svg+xml" className="visually-hidden" id="welcome-gift-photo" onChange={handlePhoto} type="file" /><button className="button secondary" onClick={() => document.getElementById("welcome-gift-photo")?.click()} type="button"><ImagePlus size={18} />Foto auswählen</button>{editing.imageUrl ? <button className="button secondary" onClick={removePhoto} type="button"><Trash2 size={18} />Bild entfernen</button> : null}<p>Du kannst den Standardplatzhalter behalten.</p></div></div>
               <label className="premium-owner-toggle"><input checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
+              <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsüberraschungen verwenden</strong><small>Nur aktive Geschenke in diesem Pool können zufällig ausgelost werden.</small></span></label>
             </section>
             {status && editing ? <p className="status-message" role="status">{status}</p> : null}
           </form>

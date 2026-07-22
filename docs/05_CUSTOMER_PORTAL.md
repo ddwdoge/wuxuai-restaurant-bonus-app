@@ -714,3 +714,12 @@ Endstatus: **LOCK**
 - Abgelaufene oder verwendete Codes sind nicht erneut nutzbar.
 
 Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer sofort vollständig abgeschlossenen Einlösung direkt nach dem Bestätigungsbutton.
+
+## CTO-Ergänzung 2026-07-22: Retention V1
+
+- Bald ablaufende Punkteeinlösungen werden 7, 3 und 1 Tag vor Ablauf sowie am letzten Gültigkeitstag im bestehenden Info-Drawer angezeigt.
+- Der Drawer öffnet automatisch höchstens einmal je Browser-Session; der Hinweis bleibt danach auf der Startseite erreichbar.
+- Web Push ist freiwillig und ergänzt den Drawer. Ohne Zustimmung oder Browserunterstützung bleibt der Drawer vollständig nutzbar.
+- Ein Push-Link öffnet ausschließlich die zugehörige Punkteeinlösung; er löst nichts automatisch ein.
+- Geburtstagstag und -monat können freiwillig im Konto gespeichert werden. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag kann der Gast genau einmal pro Kalenderjahr eine serverseitig ausgeloste Überraschung abholen.
+- Der Freunde-Bonus ist fest auf 2× Punkte für beide Beteiligten während 30 Tagen gesetzt.

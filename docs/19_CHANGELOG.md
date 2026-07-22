@@ -2069,3 +2069,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - KPI-Zeitgrenzen serverseitig an Restaurant-Zeitzone gebunden
 - markierte Testkunden aus allen produktiven KPI-Quellen ausgeschlossen
 - Migration `20260720003000` auf Staging angewendet
+
+## 2026-07-22 – V1 Retention-Funktionen vorbereitet
+
+- Ablauf-Erinnerungen für 7, 3, 1 und 0 verbleibende Tage mit einmaligem Auto-Drawer pro Session ergänzt
+- freiwillige Web-Push-Registrierung, Service Worker und sichere Edge-Sender-Funktion vorbereitet
+- Push-Deep-Links öffnen die passende Punkteeinlösung ohne automatische Einlösung
+- freiwillige Geburtstagseingabe aus Tag und Monat sowie einmalige serverseitige Geburtstagsauslosung im Zeitraum -3/+7 Tage ergänzt
+- bestehender Willkommensgeschenk-Pool um eine explizite Geburtstagsfreigabe erweitert
+- alte automatische Geburtstagszuteilung zugunsten der kundenausgelösten, idempotenten Auslosung deaktiviert
+- Bonus Boost auf feste V1-Werte 2×/30 Tage für beide Beteiligten vereinheitlicht; aktive Empfehlenden-Boosts verlängern sich um 30 Tage
+- neue Bonus-Boost-KPIs schließen markierte Testkunden aus
+- additive Migration `20260722003000_v1_retention_features.sql` erstellt, noch nicht auf Staging angewendet

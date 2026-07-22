@@ -137,8 +137,8 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
         smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
         smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
         referral_boost_enabled: settings.referral_boost_enabled ?? true,
-        referral_boost_multiplier: settings.referral_boost_multiplier ?? 2,
-        referral_boost_duration_days: settings.referral_boost_duration_days ?? 30,
+        referral_boost_multiplier: 2,
+        referral_boost_duration_days: 30,
         active: settings.active,
       },
       { onConflict: "restaurant_id" },
@@ -159,8 +159,8 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
           smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
           smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
           referral_boost_enabled: settings.referral_boost_enabled ?? true,
-          referral_boost_multiplier: settings.referral_boost_multiplier ?? 2,
-          referral_boost_duration_days: settings.referral_boost_duration_days ?? 30,
+          referral_boost_multiplier: 2,
+          referral_boost_duration_days: 30,
           active: settings.active,
         },
         { onConflict: "restaurant_id" },
@@ -485,6 +485,9 @@ export type ReferralRegistrationResult = {
 export type BonusBoostKpis = {
   guestsCurrentlyBoosted: number;
   guestsReturnedBecauseOfBoost: number;
+  successfulReferrals: number;
+  newCustomersFromReferrals: number;
+  boostExtraPoints: number;
 };
 
 export type TodayRestaurantPin = {
@@ -728,11 +731,17 @@ export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoo
   const payload = data as {
     guests_currently_boosted?: number;
     guests_returned_because_of_boost?: number;
+    successful_referrals?: number;
+    new_customers_from_referrals?: number;
+    boost_extra_points?: number;
   };
 
   return {
     guestsCurrentlyBoosted: payload.guests_currently_boosted ?? 0,
     guestsReturnedBecauseOfBoost: payload.guests_returned_because_of_boost ?? 0,
+    successfulReferrals: payload.successful_referrals ?? 0,
+    newCustomersFromReferrals: payload.new_customers_from_referrals ?? 0,
+    boostExtraPoints: payload.boost_extra_points ?? 0,
   };
 }
 

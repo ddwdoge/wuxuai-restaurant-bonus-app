@@ -21,6 +21,7 @@ export type RewardOffer = {
   fixed_product_name: string | null;
   available_products: string[];
   is_starter_reward: boolean;
+  birthday_pool_enabled: boolean;
   starter_reward_key: string | null;
   starter_reward_order: number;
   active: boolean;
@@ -46,6 +47,7 @@ export type RewardOfferInput = {
   fixed_product_name?: string | null;
   available_products?: string[];
   is_starter_reward?: boolean;
+  birthday_pool_enabled?: boolean;
   starter_reward_key?: string | null;
   starter_reward_order?: number;
   active: boolean;
@@ -148,7 +150,7 @@ export type RewardKpis = {
 };
 
 const rewardSelect =
-  "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, product_price, active_days, welcome_gift_mode, fixed_product_name, is_starter_reward, starter_reward_key, starter_reward_order, active, expires_at, created_at";
+  "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, product_price, active_days, welcome_gift_mode, fixed_product_name, is_starter_reward, birthday_pool_enabled, starter_reward_key, starter_reward_order, active, expires_at, created_at";
 const legacyRewardSelect =
   "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, is_starter_reward, active, expires_at, created_at";
 
@@ -176,6 +178,7 @@ function toRewardOffer(record: Reward | Coupon, source: RewardOfferSource): Rewa
     fixed_product_name: source === "reward" ? (record as Reward).fixed_product_name ?? null : null,
     available_products: source === "reward" ? (record as Reward).available_products ?? [] : [],
     is_starter_reward: source === "reward" ? Boolean((record as Reward).is_starter_reward) : false,
+    birthday_pool_enabled: source === "reward" ? Boolean((record as Reward).birthday_pool_enabled) : false,
     starter_reward_key: source === "reward" ? (record as Reward).starter_reward_key ?? null : null,
     starter_reward_order: source === "reward" ? (record as Reward).starter_reward_order ?? 0 : 0,
     active: source === "reward" ? (record as Reward).active : (record as Coupon).status === "active",
@@ -192,7 +195,7 @@ function normalizeRewardRelation(reward: Reward | Reward[] | null | undefined): 
 function isMissingRewardColumnError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };
-  return maybeError.code === "42703" || /product_price|active_days|welcome_gift_mode|fixed_product_name|starter_reward_key|starter_reward_order/i.test(maybeError.message ?? "");
+  return maybeError.code === "42703" || /product_price|active_days|welcome_gift_mode|fixed_product_name|birthday_pool_enabled|starter_reward_key|starter_reward_order/i.test(maybeError.message ?? "");
 }
 
 export function getRewardStatus(offer: RewardOffer, customer: Customer, redeemedIds: string[]): CustomerRewardView {
@@ -331,6 +334,7 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
       welcome_gift_mode: input.welcome_gift_mode ?? "value_limit",
       fixed_product_name: input.fixed_product_name ?? null,
       is_starter_reward: input.is_starter_reward ?? false,
+      birthday_pool_enabled: input.birthday_pool_enabled ?? false,
       starter_reward_key: input.starter_reward_key ?? null,
       starter_reward_order: input.starter_reward_order ?? 0,
       active: input.active,

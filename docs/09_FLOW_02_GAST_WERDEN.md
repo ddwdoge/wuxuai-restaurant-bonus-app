@@ -849,3 +849,11 @@ Endstatus: **LOCK**
 - Reload, erneuter QR-Scan, Gerätewechsel und parallele Registrierung dürfen kein zweites Willkommensgeschenk erzeugen.
 - Geburtstagsgeschenke sind getrennte Zuteilungen und entstehen höchstens einmal pro Gast, Restaurant/Filiale und Kalenderjahr.
 - Die Geburtstagsauswahl erfolgt ausschließlich serverseitig aus dem aktiven Willkommensgeschenk-Pool.
+
+## CTO-Ergänzung 2026-07-22: Geburtstag und Empfehlung
+
+- Der Geburtstag ist freiwillig; für V1 werden Tag und Monat verwendet.
+- Die bisherige automatische Zuteilung 14 Tage vor dem Geburtstag ist ersetzt: Der Gast löst im gültigen Zeitraum selbst einmalig die serverseitige Auslosung aus.
+- Die gespeicherte Auswahl bleibt bei Reload und erneutem Drücken identisch.
+- Eine Empfehlung gilt erst nach der ersten gültigen Punktebuchung des neuen Restaurantkunden als qualifiziert.
+- Erst dann erhalten der empfehlende und der geworbene Gast jeweils 30 Tage lang 2× Punkte.

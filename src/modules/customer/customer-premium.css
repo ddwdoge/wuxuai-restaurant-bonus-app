@@ -939,6 +939,43 @@
 .customer-info-rules { display: grid; gap: 12px; }
 .customer-info-rules p { line-height: 1.55; margin: 0; }
 
+.premium-expiry-reminders { border-bottom: 1px solid var(--premium-border); display: grid; gap: 12px; margin-bottom: 4px; padding-bottom: 18px; }
+.premium-expiry-reminders .premium-icon-heading h2 { font-size: 22px; margin: 4px 0 0; }
+.premium-expiry-reminders article { align-items: center; background: var(--premium-background-soft); border-radius: 16px; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; padding: 13px 14px; }
+.premium-expiry-reminders article > div { display: grid; gap: 3px; min-width: 0; }
+.premium-expiry-reminders article strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.premium-expiry-reminders article span, .premium-expiry-reminders article small { color: var(--premium-text-secondary); }
+.premium-expiry-reminders article small { font-size: 12px; }
+.premium-expiry-reminders .button { min-height: 46px; width: 100%; }
+.premium-push-active { align-items: center; color: var(--premium-success); display: flex; gap: 12px; justify-content: space-between; }
+.premium-push-active p { align-items: center; display: flex; gap: 8px; }
+
+.premium-expiry-summary { align-items: center; background: #fffdf9; border: 1px solid var(--premium-border); border-radius: 18px; box-shadow: var(--premium-shadow-soft); color: var(--premium-text); display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 64px; padding: 12px 14px; text-align: left; width: 100%; }
+.premium-expiry-summary > span { align-items: center; background: var(--premium-gold-soft); border-radius: 13px; color: var(--premium-gold-dark); display: flex; height: 42px; justify-content: center; width: 42px; }
+.premium-expiry-summary > div { display: grid; gap: 3px; min-width: 0; }
+.premium-expiry-summary small { color: var(--premium-text-secondary); }
+.premium-expiry-summary > svg { color: var(--premium-gold-dark); }
+
+.premium-birthday-draw-card { align-items: start; display: grid; gap: 14px; grid-template-columns: auto minmax(0, 1fr); }
+.premium-birthday-draw-card > .premium-button, .premium-birthday-draw-card > .status-message { grid-column: 1 / -1; width: 100%; }
+.premium-birthday-draw-card h2, .premium-birthday-draw-card p { margin: 0; }
+.premium-birthday-draw-card h2 { font-family: var(--premium-display-font); font-size: 27px; font-weight: 600; margin-top: 6px; }
+.premium-birthday-draw-card p { color: var(--premium-text-secondary); line-height: 1.45; margin-top: 5px; }
+.premium-birthday-icon { align-items: center; background: var(--premium-gold-soft); border-radius: 15px; color: var(--premium-gold-dark); display: flex; height: 50px; justify-content: center; width: 50px; }
+
+.premium-referral-qr { align-items: center; align-self: center; background: #fff; border-radius: 14px; display: flex; justify-content: center; padding: 10px; }
+.premium-referral-count { color: var(--premium-text-secondary); font-size: 13px; margin: 0; text-align: center; }
+
+.premium-account-profile-form { display: grid; gap: 20px; }
+.premium-account-profile-form > section { background: var(--premium-background-soft); border-radius: 18px; display: grid; gap: 15px; padding: 16px; }
+.premium-account-profile-form h3, .premium-account-profile-form p { margin: 0; }
+.premium-account-profile-form p { color: var(--premium-text-secondary); line-height: 1.45; margin-top: 5px; }
+.premium-birthday-fields { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.premium-birthday-fields label { display: grid; gap: 7px; }
+.premium-birthday-fields label span { color: var(--premium-text-secondary); font-size: 13px; }
+.premium-birthday-fields input { background: #fff; border: 1px solid var(--premium-border-strong); border-radius: 14px; font-size: 18px; min-height: 50px; min-width: 0; padding: 0 14px; width: 100%; }
+.premium-birthday-fields input:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.35); outline-offset: 2px; }
+
 @keyframes premium-spin { to { transform: rotate(360deg); } }
 
 @media (min-width: 768px) {
