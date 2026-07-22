@@ -5,6 +5,7 @@ import test from "node:test";
 const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const referral = readFileSync(new URL("../src/modules/customer/ReferralLanding.tsx", import.meta.url), "utf8");
 const staff = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", import.meta.url), "utf8");
+const staffErrors = readFileSync(new URL("../src/modules/staff/staffRedemptionError.ts", import.meta.url), "utf8");
 const components = readFileSync(new URL("../src/modules/customer/components/PremiumCustomerUi.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
 
@@ -57,6 +58,7 @@ test("Mobile Navigation berücksichtigt Safe Areas und Inhalte", () => {
 });
 
 test("Staff-Portal übernimmt konkrete Supabase-Fehlermeldungen", () => {
-  assert.match(staff, /typeof error === "object" && error !== null && "message" in error/);
-  assert.match(staff, /Der Einlösecode wurde bereits verwendet\./);
+  assert.match(staff, /classifyStaffRedemptionError\(error, phase\)/);
+  assert.match(staffErrors, /typeof errorLike\?\.message === "string"/);
+  assert.match(staffErrors, /Diese Belohnung wurde bereits eingelöst/);
 });

@@ -777,6 +777,52 @@
   color: #3e754d;
 }
 
+.staff-redemption-error {
+  overflow: hidden;
+  position: relative;
+}
+
+.staff-redemption-error::before {
+  background: #b85d52;
+  content: "";
+  height: 3px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.staff-redemption-error-warning::before {
+  background: #c28b36;
+}
+
+.staff-redemption-error-neutral::before {
+  background: #969087;
+}
+
+.staff-redemption-error-icon {
+  background: #f8ebe8;
+  color: #9b4f46;
+}
+
+.staff-redemption-error-warning .staff-redemption-error-icon {
+  background: #f8eedc;
+  color: #9a6b25;
+}
+
+.staff-redemption-error-neutral .staff-redemption-error-icon {
+  background: #eeece8;
+  color: #68635c;
+}
+
+.staff-redemption-error h2:focus {
+  outline: none;
+}
+
+.staff-redemption-error .staff-redemption-actions {
+  margin-top: 2px;
+}
+
 .staff-redemption-reward-card {
   background:
     radial-gradient(circle at 86% 8%, rgba(243, 230, 204, 0.17), transparent 34%),

@@ -11,14 +11,17 @@ import {
   HelpCircle,
   Home,
   KeyRound,
+  LockKeyhole,
   LogOut,
   Menu,
   MoreHorizontal,
   QrCode,
   Search,
+  SearchX,
   ShieldCheck,
   Stamp,
   UserSearch,
+  WifiOff,
   X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -46,6 +49,11 @@ import {
 } from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
+import {
+  classifyStaffRedemptionError,
+  staffRedemptionErrorContent,
+  type StaffRedemptionErrorKind,
+} from "./staffRedemptionError";
 import "./staff-premium.css";
 
 type StaffView = "home" | "search" | "earn" | "redeem";
@@ -131,9 +139,10 @@ export function StaffTablet() {
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [redemptionDigits, setRedemptionDigits] = useState<string[]>(() => Array(6).fill(""));
-  const [redemptionStep, setRedemptionStep] = useState<"entry" | "preview" | "result">("entry");
+  const [redemptionStep, setRedemptionStep] = useState<"entry" | "preview" | "result" | "error">("entry");
   const [redemptionPreview, setRedemptionPreview] = useState<RedemptionCodePreview | null>(null);
   const [redemptionResult, setRedemptionResult] = useState<ConsumeRedemptionCodeResult | null>(null);
+  const [redemptionErrorKind, setRedemptionErrorKind] = useState<StaffRedemptionErrorKind | null>(null);
   const [checkingRedemptionCode, setCheckingRedemptionCode] = useState(false);
   const [todayActivity, setTodayActivity] = useState<StaffDailyActivity[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -147,6 +156,7 @@ export function StaffTablet() {
   const scannerAnimationRef = useRef<number | null>(null);
   const scannerActiveRef = useRef(false);
   const redemptionInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const redemptionErrorHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
@@ -331,6 +341,14 @@ export function StaffTablet() {
   }
 
   function openStaffView(nextView: StaffView) {
+    if (nextView !== "redeem") {
+      setRedemptionDigits(Array(6).fill(""));
+      setRedemptionStep("entry");
+      setRedemptionPreview(null);
+      setRedemptionResult(null);
+      setRedemptionErrorKind(null);
+      setMessage(null);
+    }
     setView(nextView);
     setMoreOpen(false);
   }
@@ -574,11 +592,13 @@ export function StaffTablet() {
     setRedemptionStep("entry");
     setRedemptionPreview(null);
     setRedemptionResult(null);
+    setRedemptionErrorKind(null);
     setMessage(null);
     window.setTimeout(() => redemptionInputRefs.current[0]?.focus(), 0);
   }
 
   function updateRedemptionDigits(startIndex: number, value: string) {
+    setMessage(null);
     const incomingDigits = value.replace(/\D/g, "").slice(0, 6 - startIndex).split("");
     if (incomingDigits.length === 0) {
       setRedemptionDigits((current) => current.map((digit, index) => (index === startIndex ? "" : digit)));
@@ -609,53 +629,52 @@ export function StaffTablet() {
     const pastedDigits = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (!pastedDigits) return;
     event.preventDefault();
+    setMessage(null);
     setRedemptionDigits(Array.from({ length: 6 }, (_, index) => pastedDigits[index] ?? ""));
     redemptionInputRefs.current[Math.min(pastedDigits.length, 6) - 1]?.focus();
   }
 
-  function getRedemptionErrorMessage(error: unknown) {
-    const errorMessage = (
-      error instanceof Error
-        ? error.message
-        : typeof error === "object" && error !== null && "message" in error
-          ? String(error.message)
-          : ""
-    ).toLowerCase();
-
-    if (errorMessage.includes("abgelaufen")) return "Der Einlösecode ist abgelaufen.";
-    if (errorMessage.includes("bereits verwendet")) return "Der Einlösecode wurde bereits verwendet.";
-    if (errorMessage.includes("nicht berechtigt") || errorMessage.includes("mitarbeitersitzung")) {
-      return "Du bist für diese Einlösung nicht berechtigt.";
-    }
-    return "Der Einlösecode ist nicht gültig.";
+  function showRedemptionError(error: unknown, phase: "preview" | "consume") {
+    setRedemptionPreview(null);
+    setRedemptionResult(null);
+    setRedemptionErrorKind(classifyStaffRedemptionError(error, phase));
+    setRedemptionStep("error");
+    setMessage(null);
   }
 
-  async function handleRedemptionCode(event: FormEvent) {
-    event.preventDefault();
+  async function runRedemptionPreview() {
     if (!restaurantId || checkingRedemptionCode) return;
     if (!/^\d{6}$/.test(redemptionCode)) {
       setMessage("Bitte gib den sechsstelligen Einlösecode ein.");
+      const firstEmptyIndex = Math.max(0, redemptionDigits.findIndex((digit) => !digit));
+      window.setTimeout(() => redemptionInputRefs.current[firstEmptyIndex]?.focus(), 0);
       return;
     }
 
     setCheckingRedemptionCode(true);
     setMessage(null);
+    setRedemptionErrorKind(null);
     try {
       const preview = await inspectRedemptionCode(restaurantId, redemptionCode);
       setRedemptionPreview(preview);
       setRedemptionStep("preview");
     } catch (error) {
-      setRedemptionPreview(null);
-      setMessage(getRedemptionErrorMessage(error));
+      showRedemptionError(error, "preview");
     } finally {
       setCheckingRedemptionCode(false);
     }
+  }
+
+  async function handleRedemptionCode(event: FormEvent) {
+    event.preventDefault();
+    await runRedemptionPreview();
   }
 
   async function confirmRedemptionCode() {
     if (!restaurantId || checkingRedemptionCode || !/^\d{6}$/.test(redemptionCode)) return;
     setCheckingRedemptionCode(true);
     setMessage(null);
+    setRedemptionErrorKind(null);
     try {
       const result = await consumeRedemptionCode(restaurantId, redemptionCode);
       setRedemptionResult(result);
@@ -665,13 +684,49 @@ export function StaffTablet() {
         setStaffRewards(nextRewards);
       }
     } catch (error) {
-      setMessage(getRedemptionErrorMessage(error));
-      setRedemptionPreview(null);
-      setRedemptionStep("entry");
+      showRedemptionError(error, "consume");
     } finally {
       setCheckingRedemptionCode(false);
     }
   }
+
+  function handleRedemptionErrorPrimaryAction() {
+    if (redemptionErrorKind === "unauthorized") {
+      openStaffView("home");
+      return;
+    }
+
+    if (redemptionErrorKind === "preview_network_error" || redemptionErrorKind === "consume_unknown") {
+      void runRedemptionPreview();
+      return;
+    }
+
+    resetRedemptionFlow();
+  }
+
+  useEffect(() => {
+    if (view !== "redeem" || redemptionStep !== "error") return;
+    window.setTimeout(() => redemptionErrorHeadingRef.current?.focus(), 0);
+  }, [redemptionErrorKind, redemptionStep, view]);
+
+  useEffect(() => {
+    if (view !== "redeem" || redemptionStep === "entry" || checkingRedemptionCode) return;
+
+    function handleEscape(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setRedemptionDigits(Array(6).fill(""));
+      setRedemptionStep("entry");
+      setRedemptionPreview(null);
+      setRedemptionResult(null);
+      setRedemptionErrorKind(null);
+      setMessage(null);
+      window.setTimeout(() => redemptionInputRefs.current[0]?.focus(), 0);
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [checkingRedemptionCode, redemptionStep, view]);
 
   function selectCustomer(customerId: string, nextView: StaffView = "search") {
     setSelectedCustomerId(customerId);
@@ -1111,6 +1166,45 @@ export function StaffTablet() {
               <div className="staff-redemption-actions">
                 <button className="staff-redemption-primary" onClick={resetRedemptionFlow} type="button">Nächsten Code prüfen<ChevronRight aria-hidden="true" size={20} /></button>
                 <button className="staff-redemption-secondary" onClick={() => openStaffView("home")} type="button">Zur Startseite</button>
+              </div>
+            </div>
+          ) : null}
+
+          {redemptionStep === "error" && redemptionErrorKind ? (
+            <div
+              aria-live="assertive"
+              className={"staff-redemption-step staff-redemption-error staff-redemption-error-" + staffRedemptionErrorContent[redemptionErrorKind].tone}
+              role="alert"
+            >
+              <div className="staff-redemption-heading">
+                <span className="staff-redemption-icon staff-redemption-error-icon">
+                  {redemptionErrorKind === "preview_network_error" || redemptionErrorKind === "consume_unknown" ? <WifiOff aria-hidden="true" size={24} /> : null}
+                  {redemptionErrorKind === "unauthorized" ? <LockKeyhole aria-hidden="true" size={24} /> : null}
+                  {redemptionErrorKind === "not_found" ? <SearchX aria-hidden="true" size={24} /> : null}
+                  {redemptionErrorKind === "expired" ? <Clock3 aria-hidden="true" size={24} /> : null}
+                  {!["preview_network_error", "consume_unknown", "unauthorized", "not_found", "expired"].includes(redemptionErrorKind) ? <CircleAlert aria-hidden="true" size={24} /> : null}
+                </span>
+                <span className="staff-premium-kicker">{staffRedemptionErrorContent[redemptionErrorKind].eyebrow}</span>
+                <h2 id="staff-redemption-title" ref={redemptionErrorHeadingRef} tabIndex={-1}>{staffRedemptionErrorContent[redemptionErrorKind].title}</h2>
+                <p>{staffRedemptionErrorContent[redemptionErrorKind].text}</p>
+              </div>
+
+              {redemptionErrorKind === "consume_unknown" ? (
+                <aside className="staff-redemption-notice">
+                  <ShieldCheck aria-hidden="true" size={20} />
+                  <p>Die erneute Prüfung fragt nur den aktuellen Serverstatus ab. Sie bestätigt die Einlösung nicht automatisch erneut.</p>
+                </aside>
+              ) : null}
+
+              <div className="staff-redemption-actions">
+                <button className="staff-redemption-primary" disabled={checkingRedemptionCode} onClick={handleRedemptionErrorPrimaryAction} type="button">
+                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Status wird geprüft …</> : <>{staffRedemptionErrorContent[redemptionErrorKind].primaryAction}<ChevronRight aria-hidden="true" size={20} /></>}
+                </button>
+                {staffRedemptionErrorContent[redemptionErrorKind].secondaryAction ? (
+                  <button className="staff-redemption-secondary" disabled={checkingRedemptionCode} onClick={() => openStaffView("home")} type="button">
+                    {staffRedemptionErrorContent[redemptionErrorKind].secondaryAction}
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}
