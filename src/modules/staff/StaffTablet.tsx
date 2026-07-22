@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   CalendarDays,
@@ -38,7 +38,10 @@ import {
 } from "../loyalty/loyaltyService";
 import {
   consumeRedemptionCode,
+  inspectRedemptionCode,
   loadStaffCustomerRewards,
+  type ConsumeRedemptionCodeResult,
+  type RedemptionCodePreview,
   type StaffCustomerRewardView,
 } from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
@@ -108,8 +111,6 @@ export function StaffTablet() {
   );
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
   const [staffRewards, setStaffRewards] = useState<StaffCustomerRewardView[]>([]);
-  const [staffRewardsLoading, setStaffRewardsLoading] = useState(false);
-  const [staffRewardsError, setStaffRewardsError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
@@ -129,7 +130,10 @@ export function StaffTablet() {
   const [staffError, setStaffError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [redemptionCode, setRedemptionCode] = useState("");
+  const [redemptionDigits, setRedemptionDigits] = useState<string[]>(() => Array(6).fill(""));
+  const [redemptionStep, setRedemptionStep] = useState<"entry" | "preview" | "result">("entry");
+  const [redemptionPreview, setRedemptionPreview] = useState<RedemptionCodePreview | null>(null);
+  const [redemptionResult, setRedemptionResult] = useState<ConsumeRedemptionCodeResult | null>(null);
   const [checkingRedemptionCode, setCheckingRedemptionCode] = useState(false);
   const [todayActivity, setTodayActivity] = useState<StaffDailyActivity[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -142,6 +146,7 @@ export function StaffTablet() {
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerAnimationRef = useRef<number | null>(null);
   const scannerActiveRef = useRef(false);
+  const redemptionInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
@@ -259,14 +264,10 @@ export function StaffTablet() {
   useEffect(() => {
     if (!restaurantId || !selectedCustomerId) {
       setStaffRewards([]);
-      setStaffRewardsError(null);
-      setStaffRewardsLoading(false);
       return;
     }
 
     let cancelled = false;
-    setStaffRewardsLoading(true);
-    setStaffRewardsError(null);
 
     loadStaffCustomerRewards(restaurantId, selectedCustomerId)
       .then((nextRewards) => {
@@ -276,11 +277,7 @@ export function StaffTablet() {
         console.error("Punkteeinlösungen konnten nicht geladen werden.", error);
         if (!cancelled) {
           setStaffRewards([]);
-          setStaffRewardsError("Punkteeinlösungen konnten gerade nicht geladen werden.");
         }
-      })
-      .finally(() => {
-        if (!cancelled) setStaffRewardsLoading(false);
       });
 
     return () => {
@@ -311,7 +308,7 @@ export function StaffTablet() {
   const calculatedPoints = Math.max(0, Math.floor(billAmount / settings.amount_per_point));
   const stampRules = activeRules.filter((rule) => rule.stamps > 0);
   const unlockedRewards = staffRewards.filter((offer) => offer.status === "unlocked");
-  const lockedWelcomeGift = staffRewards.find((offer) => offer.status === "locked" && offer.is_starter_reward) ?? null;
+  const redemptionCode = redemptionDigits.join("");
   const todayPointsIssued = todayActivity.reduce((total, activity) => total + activity.points_issued, 0);
   const todayRewardsRedeemed = todayActivity.reduce((total, activity) => total + activity.rewards_redeemed, 0);
   const currentDateLabel = useMemo(
@@ -572,9 +569,70 @@ export function StaffTablet() {
     await findCustomerFromSearch(query);
   }
 
+  function resetRedemptionFlow() {
+    setRedemptionDigits(Array(6).fill(""));
+    setRedemptionStep("entry");
+    setRedemptionPreview(null);
+    setRedemptionResult(null);
+    setMessage(null);
+    window.setTimeout(() => redemptionInputRefs.current[0]?.focus(), 0);
+  }
+
+  function updateRedemptionDigits(startIndex: number, value: string) {
+    const incomingDigits = value.replace(/\D/g, "").slice(0, 6 - startIndex).split("");
+    if (incomingDigits.length === 0) {
+      setRedemptionDigits((current) => current.map((digit, index) => (index === startIndex ? "" : digit)));
+      return;
+    }
+
+    setRedemptionDigits((current) => {
+      const next = [...current];
+      incomingDigits.forEach((digit, offset) => {
+        next[startIndex + offset] = digit;
+      });
+      return next;
+    });
+
+    const nextIndex = Math.min(startIndex + incomingDigits.length, 5);
+    redemptionInputRefs.current[nextIndex]?.focus();
+  }
+
+  function handleRedemptionKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace" && !redemptionDigits[index] && index > 0) {
+      event.preventDefault();
+      setRedemptionDigits((current) => current.map((digit, digitIndex) => (digitIndex === index - 1 ? "" : digit)));
+      redemptionInputRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleRedemptionPaste(event: ClipboardEvent<HTMLInputElement>) {
+    const pastedDigits = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedDigits) return;
+    event.preventDefault();
+    setRedemptionDigits(Array.from({ length: 6 }, (_, index) => pastedDigits[index] ?? ""));
+    redemptionInputRefs.current[Math.min(pastedDigits.length, 6) - 1]?.focus();
+  }
+
+  function getRedemptionErrorMessage(error: unknown) {
+    const errorMessage = (
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null && "message" in error
+          ? String(error.message)
+          : ""
+    ).toLowerCase();
+
+    if (errorMessage.includes("abgelaufen")) return "Der Einlösecode ist abgelaufen.";
+    if (errorMessage.includes("bereits verwendet")) return "Der Einlösecode wurde bereits verwendet.";
+    if (errorMessage.includes("nicht berechtigt") || errorMessage.includes("mitarbeitersitzung")) {
+      return "Du bist für diese Einlösung nicht berechtigt.";
+    }
+    return "Der Einlösecode ist nicht gültig.";
+  }
+
   async function handleRedemptionCode(event: FormEvent) {
     event.preventDefault();
-    if (!restaurantId) return;
+    if (!restaurantId || checkingRedemptionCode) return;
     if (!/^\d{6}$/.test(redemptionCode)) {
       setMessage("Bitte gib den sechsstelligen Einlösecode ein.");
       return;
@@ -583,28 +641,33 @@ export function StaffTablet() {
     setCheckingRedemptionCode(true);
     setMessage(null);
     try {
+      const preview = await inspectRedemptionCode(restaurantId, redemptionCode);
+      setRedemptionPreview(preview);
+      setRedemptionStep("preview");
+    } catch (error) {
+      setRedemptionPreview(null);
+      setMessage(getRedemptionErrorMessage(error));
+    } finally {
+      setCheckingRedemptionCode(false);
+    }
+  }
+
+  async function confirmRedemptionCode() {
+    if (!restaurantId || checkingRedemptionCode || !/^\d{6}$/.test(redemptionCode)) return;
+    setCheckingRedemptionCode(true);
+    setMessage(null);
+    try {
       const result = await consumeRedemptionCode(restaurantId, redemptionCode);
-      setMessage(`${result.title}: Einlösung erfolgreich bestätigt.`);
-      setRedemptionCode("");
+      setRedemptionResult(result);
+      setRedemptionStep("result");
       if (selectedCustomerId) {
         const nextRewards = await loadStaffCustomerRewards(restaurantId, selectedCustomerId);
         setStaffRewards(nextRewards);
       }
     } catch (error) {
-      const errorMessage = (
-        error instanceof Error
-          ? error.message
-          : typeof error === "object" && error !== null && "message" in error
-            ? String(error.message)
-            : ""
-      ).toLowerCase();
-      if (errorMessage.includes("abgelaufen")) {
-        setMessage("Der Einlösecode ist abgelaufen.");
-      } else if (errorMessage.includes("bereits verwendet")) {
-        setMessage("Der Einlösecode wurde bereits verwendet.");
-      } else {
-        setMessage("Der Einlösecode ist nicht gültig.");
-      }
+      setMessage(getRedemptionErrorMessage(error));
+      setRedemptionPreview(null);
+      setRedemptionStep("entry");
     } finally {
       setCheckingRedemptionCode(false);
     }
@@ -732,7 +795,7 @@ export function StaffTablet() {
           <button className="staff-premium-back" onClick={() => openStaffView("home")} type="button"><Home aria-hidden="true" size={18} />Zur Startseite</button>
         )}
 
-      {view !== "home" ? <section className="grid two staff-premium-existing-grid">
+      {view !== "home" && view !== "redeem" ? <section className="grid two staff-premium-existing-grid">
         <article className="card">
           <form className="form" onSubmit={handleSearch}>
             <div className="field">
@@ -947,55 +1010,110 @@ export function StaffTablet() {
       ) : null}
 
       {view === "redeem" ? (
-        <section className="card" style={{ marginTop: 16 }}>
-          <h2>Punkteeinlösung prüfen</h2>
-          <form className="redemption-code-check" onSubmit={handleRedemptionCode}>
-            <div className="field">
-              <label htmlFor="redemption-code">Sechsstelliger Einlösecode</label>
-              <input
-                className="input redemption-code-input"
-                id="redemption-code"
-                inputMode="numeric"
-                maxLength={6}
-                onChange={(event) => setRedemptionCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000"
-                value={redemptionCode}
-              />
-            </div>
-            <button className="button" disabled={checkingRedemptionCode || redemptionCode.length !== 6} type="submit">
-              {checkingRedemptionCode ? "Code wird geprüft..." : "Einlösung bestätigen"}
-            </button>
-            <p className="muted">Für die Einlösung ist keine Tages-PIN erforderlich.</p>
-          </form>
-          <h3>Verfügbare Punkteeinlösungen</h3>
-          <div className="tablet-actions" style={{ marginTop: 16 }}>
-            {staffRewardsLoading ? <p className="muted">Punkteeinlösungen werden geladen...</p> : null}
-            {!staffRewardsLoading && staffRewardsError ? <p className="status-message error">{staffRewardsError}</p> : null}
-            {unlockedRewards.map((offer) => (
-              <article
-                className="large-action staff-reward-card"
-                key={offer.customer_reward_id}
-              >
-                <Gift size={32} />
-                {offer.title}
-                <span className="pill">Zum Einlösen bereit</span>
-                <span className="muted">{offer.category ?? offer.product_group ?? "Punkteeinlösung"}</span>
-              </article>
-            ))}
-            {!staffRewardsLoading && !staffRewardsError && unlockedRewards.length === 0 ? (
-              <p className="muted">Keine verfügbare Punkteeinlösung.</p>
-            ) : null}
-          </div>
-          {lockedWelcomeGift ? (
-            <aside className="staff-how-box">
-              <h3>Willkommensgeschenk noch gesperrt.</h3>
-              <p className="muted">Es wird nach der ersten Punktebuchung freigeschaltet.</p>
-            </aside>
+        <section className="staff-redemption-workflow" aria-labelledby="staff-redemption-title">
+          {redemptionStep === "entry" ? (
+            <form className="staff-redemption-step" onSubmit={handleRedemptionCode}>
+              <div className="staff-redemption-heading">
+                <span className="staff-redemption-icon"><Gift aria-hidden="true" size={24} /></span>
+                <span className="staff-premium-kicker">Punkteeinlösung</span>
+                <h2 id="staff-redemption-title">Einlösecode prüfen</h2>
+                <p>Bitte gib den sechsstelligen Code ein, den der Gast auf seinem Smartphone zeigt.</p>
+              </div>
+
+              <fieldset className="staff-code-fieldset">
+                <legend>Sechsstelliger Einlösecode</legend>
+                <div className="staff-code-inputs" onPaste={handleRedemptionPaste}>
+                  {redemptionDigits.map((digit, index) => (
+                    <input
+                      aria-label={`Ziffer ${index + 1} des Einlösecodes`}
+                      autoComplete="one-time-code"
+                      autoFocus={index === 0}
+                      inputMode="numeric"
+                      key={index}
+                      maxLength={1}
+                      onChange={(event) => updateRedemptionDigits(index, event.target.value)}
+                      onKeyDown={(event) => handleRedemptionKeyDown(index, event)}
+                      ref={(element) => { redemptionInputRefs.current[index] = element; }}
+                      type="text"
+                      value={digit}
+                    />
+                  ))}
+                </div>
+                <p><ShieldCheck aria-hidden="true" size={17} />Für die Einlösung ist keine Tages-PIN erforderlich. Die Prüfung verbraucht den Code noch nicht.</p>
+              </fieldset>
+
+              {message ? <p className="staff-redemption-inline-error" role="alert">{message}</p> : null}
+
+              <div className="staff-redemption-actions">
+                <button className="staff-redemption-primary" disabled={checkingRedemptionCode || redemptionCode.length !== 6} type="submit">
+                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Code wird geprüft …</> : <>Code sicher prüfen
+                  <ChevronRight aria-hidden="true" size={20} />
+                  </>}
+                </button>
+                <button className="staff-redemption-secondary" onClick={() => openStaffView("home")} type="button">Abbrechen</button>
+              </div>
+            </form>
           ) : null}
-          <aside className="staff-how-box">
-            <h3>So funktioniert's</h3>
-            <p className="muted">Bereits verwendete Punkteeinlösungen werden hier nicht mehr angezeigt.</p>
-          </aside>
+
+          {redemptionStep === "preview" && redemptionPreview ? (
+            <div className="staff-redemption-step staff-redemption-confirmation">
+              <div className="staff-redemption-heading">
+                <span className="staff-redemption-icon"><ShieldCheck aria-hidden="true" size={24} /></span>
+                <span className="staff-premium-kicker">Code gültig</span>
+                <h2 id="staff-redemption-title">{redemptionPreview.title}</h2>
+                <p>Prüfe die Punkteeinlösung gemeinsam mit dem Gast. Erst die folgende Bestätigung verbraucht den Code.</p>
+              </div>
+
+              <div className="staff-redemption-review-card">
+                <div><span>Kategorie</span><strong>{redemptionPreview.category ?? (redemptionPreview.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk")}</strong></div>
+                {redemptionPreview.product_price !== null ? <div><span>Produktwert</span><strong>Wert bis {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(redemptionPreview.product_price)}</strong></div> : null}
+                {redemptionPreview.description ? <div><span>Bedingung</span><strong>{redemptionPreview.description}</strong></div> : null}
+                <div><span>Restaurant</span><strong>{redemptionPreview.restaurant_name}</strong></div>
+                <div><span>Status</span><strong className="staff-redemption-valid-status">Code gültig</strong></div>
+                <div><span>Gültig bis</span><strong>{new Intl.DateTimeFormat("de-AT", { dateStyle: "short", timeStyle: "short" }).format(new Date(redemptionPreview.expires_at))} Uhr</strong></div>
+              </div>
+
+              <aside className="staff-redemption-notice">
+                <Clock3 aria-hidden="true" size={20} />
+                <p>Der Server prüft Status, Ablauf und Restaurant bei der finalen Bestätigung erneut.</p>
+              </aside>
+
+              {message ? <p className="staff-redemption-inline-error" role="alert">{message}</p> : null}
+
+              <div className="staff-redemption-actions">
+                <button className="staff-redemption-primary" disabled={checkingRedemptionCode} onClick={() => void confirmRedemptionCode()} type="button">
+                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Einlösung wird bestätigt …</> : <>Einlösung bestätigen<BadgeCheck aria-hidden="true" size={20} /></>}
+                </button>
+                <button className="staff-redemption-secondary" disabled={checkingRedemptionCode} onClick={() => { setRedemptionPreview(null); setRedemptionStep("entry"); }} type="button">Zurück</button>
+              </div>
+            </div>
+          ) : null}
+
+          {redemptionStep === "result" && redemptionResult ? (
+            <div className="staff-redemption-step staff-redemption-result">
+              <div className="staff-redemption-heading">
+                <span className="staff-redemption-icon staff-redemption-icon-success"><BadgeCheck aria-hidden="true" size={25} /></span>
+                <span className="staff-premium-kicker">Serverseitig bestätigt</span>
+                <h2 id="staff-redemption-title">Gültige Punkteeinlösung</h2>
+                <p>Der Code wurde geprüft und verbindlich als verwendet markiert.</p>
+              </div>
+
+              <article className="staff-redemption-reward-card">
+                <span className="staff-redemption-reward-visual"><Gift aria-hidden="true" size={30} /></span>
+                <div><span>{redemptionResult.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk"}</span><h3>{redemptionResult.title}</h3></div>
+                <dl>
+                  <div><dt>Restaurant</dt><dd>{staffRestaurant?.name ?? "Restaurant"}</dd></div>
+                  <div><dt>Status</dt><dd>Bestätigt</dd></div>
+                  <div><dt>Zeitpunkt</dt><dd>{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(new Date(redemptionResult.redeemed_at))} Uhr</dd></div>
+                </dl>
+              </article>
+
+              <div className="staff-redemption-actions">
+                <button className="staff-redemption-primary" onClick={resetRedemptionFlow} type="button">Nächsten Code prüfen<ChevronRight aria-hidden="true" size={20} /></button>
+                <button className="staff-redemption-secondary" onClick={() => openStaffView("home")} type="button">Zur Startseite</button>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -1101,7 +1219,7 @@ export function StaffTablet() {
         </div>
       </AppDrawer>
 
-      {message ? <p className="status-message">{message}</p> : null}
+      {message && view !== "redeem" ? <p className="status-message">{message}</p> : null}
 
       {pendingPinAction ? (
         <div className="modal-backdrop" role="presentation">

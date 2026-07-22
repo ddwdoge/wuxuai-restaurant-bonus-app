@@ -39,3 +39,44 @@ test("Premium-Styles schützen Mobile-Layout, Safe Area und Touchflächen", () =
   assert.match(styles, /@media \(min-width: 700px\)/);
   assert.match(styles, /@media \(min-width: 1024px\)/);
 });
+
+test("Einlösecode wird als sechsstellige Premium-Eingabe geführt", () => {
+  assert.match(staffPortal, /Array\(6\)\.fill\(""\)/);
+  assert.match(staffPortal, /Ziffer \$\{index \+ 1\} des Einlösecodes/);
+  assert.match(staffPortal, /inputMode="numeric"/);
+  assert.match(staffPortal, /autoFocus=\{index === 0\}/);
+  assert.match(staffPortal, /handleRedemptionKeyDown/);
+  assert.match(staffPortal, /handleRedemptionPaste/);
+  assert.match(styles, /grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
+});
+
+test("Code wird serverseitig geprüft, bevor der atomare Verbrauch möglich ist", () => {
+  const previewIndex = staffPortal.indexOf("inspectRedemptionCode(restaurantId, redemptionCode)");
+  const consumeIndex = staffPortal.indexOf("consumeRedemptionCode(restaurantId, redemptionCode)");
+  assert.ok(previewIndex > -1 && consumeIndex > previewIndex);
+  assert.match(staffPortal, /setRedemptionStep\("preview"\)/);
+  assert.match(staffPortal, /Erst die folgende Bestätigung verbraucht den Code/);
+  assert.match(staffPortal, /Code gültig/);
+  assert.match(staffPortal, /redemptionPreview\.title/);
+  assert.match(staffPortal, /redemptionPreview\.expires_at/);
+  assert.match(staffPortal, /disabled=\{checkingRedemptionCode\}/);
+  assert.match(staffPortal, /Einlösung wird bestätigt …/);
+});
+
+test("Zurück aus der Vorschau verbraucht den Code nicht", () => {
+  assert.match(staffPortal, /setRedemptionPreview\(null\); setRedemptionStep\("entry"\)/);
+  assert.equal((staffPortal.match(/consumeRedemptionCode\(restaurantId, redemptionCode\)/g) ?? []).length, 1);
+});
+
+test("Desktop-Staff-Workspace und Bottom-Navigation sind ohne Sidebar-Offset zentriert", () => {
+  assert.match(styles, /width: min\(calc\(100% - 32px\), 980px\)/);
+  assert.match(styles, /left: 50%/);
+  assert.match(styles, /transform: translateX\(-50%\)/);
+  assert.doesNotMatch(styles, /margin-left:\s*(?:var\(--admin|2[4-9][0-9]px|3[0-9]{2}px)/);
+});
+
+test("Vollständiger Einlösecode wird weder protokolliert noch gespeichert", () => {
+  assert.doesNotMatch(staffPortal, /localStorage[^\n]*redemption/i);
+  assert.doesNotMatch(staffPortal, /sessionStorage[^\n]*redemption/i);
+  assert.doesNotMatch(staffPortal, /console\.(?:log|info|debug)\([^\n]*redemptionCode/);
+});

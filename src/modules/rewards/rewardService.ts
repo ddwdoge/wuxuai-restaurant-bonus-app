@@ -114,6 +114,20 @@ export type ConsumeRedemptionCodeResult = {
   redeemed_at: string;
 };
 
+export type RedemptionCodePreview = {
+  valid: true;
+  status: "active";
+  redemption_type: "welcome_gift" | "birthday_gift" | "points_redemption";
+  title: string;
+  description: string | null;
+  category: string | null;
+  product_price: number | null;
+  required_points: number;
+  required_stamps: number;
+  restaurant_name: string;
+  expires_at: string;
+};
+
 export type CustomerRedemptionStatus = {
   active: boolean;
   status: "active" | "redeemed" | "expired" | "cancelled" | "disabled";
@@ -495,6 +509,25 @@ export async function consumeRedemptionCode(
 
   if (error) throw error;
   return data as ConsumeRedemptionCodeResult;
+}
+
+export async function inspectRedemptionCode(
+  restaurantId: string,
+  code: string,
+  staffSessionToken?: string | null,
+): Promise<RedemptionCodePreview> {
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
+  }
+
+  const { data, error } = await supabase.rpc("inspect_redemption_code", {
+    input_restaurant_id: restaurantId,
+    input_code: code,
+    input_staff_session_token: staffSessionToken ?? null,
+  });
+
+  if (error) throw error;
+  return data as RedemptionCodePreview;
 }
 
 export async function loadCustomerRedemptionStatus(input: {
