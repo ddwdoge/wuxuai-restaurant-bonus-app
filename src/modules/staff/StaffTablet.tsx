@@ -1,7 +1,30 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { BadgeCheck, Calculator, Camera, Gift, HandCoins, QrCode, Search, Stamp, UserSearch, X } from "lucide-react";
-import { useParams } from "react-router-dom";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Calculator,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  Gift,
+  HandCoins,
+  HelpCircle,
+  Home,
+  KeyRound,
+  LogOut,
+  Menu,
+  MoreHorizontal,
+  QrCode,
+  Search,
+  ShieldCheck,
+  Stamp,
+  UserSearch,
+  X,
+} from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
+import { AppDrawer } from "../../shared/components/AppDrawer";
+import { useAuth } from "../auth/AuthProvider";
 import {
   applyStaffLoyaltyAction,
   defaultSettingsForMode,
@@ -19,6 +42,8 @@ import {
   type StaffCustomerRewardView,
 } from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
+import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
+import "./staff-premium.css";
 
 type StaffView = "home" | "search" | "earn" | "redeem";
 
@@ -65,7 +90,9 @@ function extractCustomerToken(value: string) {
 }
 
 export function StaffTablet() {
+  const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  const { signOut, user } = useAuth();
   const { activeRestaurant, branding, loading: tenantLoading, restaurants } = useTenant();
   const staffRestaurant = useMemo(() => {
     if (slug) {
@@ -104,6 +131,13 @@ export function StaffTablet() {
   const [saving, setSaving] = useState(false);
   const [redemptionCode, setRedemptionCode] = useState("");
   const [checkingRedemptionCode, setCheckingRedemptionCode] = useState(false);
+  const [todayActivity, setTodayActivity] = useState<StaffDailyActivity[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [pinDetailOpen, setPinDetailOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerAnimationRef = useRef<number | null>(null);
@@ -148,6 +182,38 @@ export function StaffTablet() {
     }
 
     loadStaffData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!restaurantId) {
+      setTodayActivity([]);
+      setActivityError(null);
+      setActivityLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setActivityLoading(true);
+    setActivityError(null);
+
+    loadStaffDailyActivity(restaurantId)
+      .then((activity) => {
+        if (!cancelled) setTodayActivity(activity);
+      })
+      .catch((error) => {
+        console.error("Heutige Aktivität konnte nicht geladen werden.", error);
+        if (!cancelled) {
+          setTodayActivity([]);
+          setActivityError("Die heutige Übersicht konnte gerade nicht geladen werden.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -246,6 +312,31 @@ export function StaffTablet() {
   const stampRules = activeRules.filter((rule) => rule.stamps > 0);
   const unlockedRewards = staffRewards.filter((offer) => offer.status === "unlocked");
   const lockedWelcomeGift = staffRewards.find((offer) => offer.status === "locked" && offer.is_starter_reward) ?? null;
+  const todayPointsIssued = todayActivity.reduce((total, activity) => total + activity.points_issued, 0);
+  const todayRewardsRedeemed = todayActivity.reduce((total, activity) => total + activity.rewards_redeemed, 0);
+  const currentDateLabel = useMemo(
+    () => new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
+    [],
+  );
+
+  async function handleStaffLogout() {
+    setLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      await signOut();
+      navigate("/restaurant/login", { replace: true });
+    } catch {
+      setLogoutError("Abmelden ist gerade nicht möglich. Bitte versuche es erneut.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  function openStaffView(nextView: StaffView) {
+    setView(nextView);
+    setMoreOpen(false);
+  }
 
   function replaceCustomerBalance(customerId: string, pointsBalance: number, stampBalance: number) {
     setCustomers((currentCustomers) =>
@@ -525,9 +616,9 @@ export function StaffTablet() {
   }
 
   return (
-    <main className="tablet-shell">
-      <header className="page-header">
-        <div className="restaurant-brand-header">
+    <main className="tablet-shell staff-premium-shell">
+      <header className="staff-premium-header">
+        <div className="restaurant-brand-header staff-premium-brand">
           <span className="restaurant-logo-frame">
             {staffBranding?.logo_url ? (
               <img
@@ -542,48 +633,106 @@ export function StaffTablet() {
             )}
           </span>
           <div className="restaurant-brand-copy">
-            <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"} Mitarbeiter</h1>
-            <p className="restaurant-brand-subtitle">QR scannen, Gast finden, Punkteeinlösung prüfen.</p>
+            <span className="staff-premium-kicker">WUXUAI Bonus</span>
+            <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"}</h1>
           </div>
         </div>
-        <span className="pill">Bonusprogramm</span>
+        <button
+          aria-expanded={moreOpen}
+          aria-label="Mitarbeitermenü öffnen"
+          className="staff-premium-menu-button"
+          onClick={() => setMoreOpen(true)}
+          type="button"
+        >
+          <Menu aria-hidden="true" size={20} />
+          <span>Menü</span>
+        </button>
+        <div className="staff-premium-header-meta">
+          <span><ShieldCheck aria-hidden="true" size={16} />Mitarbeiterbereich</span>
+          <time dateTime={new Date().toISOString().slice(0, 10)}><CalendarDays aria-hidden="true" size={16} />{currentDateLabel}</time>
+        </div>
       </header>
 
-      <section className="card daily-pin-card">
-        <span className="pill">Heutige Tages-PIN</span>
-        {todayPinLoading ? <p className="daily-pin-state">Tages-PIN wird geladen...</p> : null}
-        {!todayPinLoading && todayPinError ? <p className="daily-pin-state error">{todayPinError}</p> : null}
-        {!todayPinLoading && !todayPinError && todayPin ? (
-          <strong className="daily-pin-code">{todayPin.pin_code}</strong>
-        ) : null}
-        <p className="muted">Diese PIN wird benötigt, wenn Gäste Punkte sammeln.</p>
-        <p className="muted">Gültig bis heute 23:59.</p>
-      </section>
+      <div className="staff-premium-workspace">
+        {view === "home" ? (
+          <>
+            <section className="staff-premium-intro">
+              <span className="staff-premium-kicker">Heute im Service</span>
+              <h2>Bereit für den nächsten Gast.</h2>
+              <p>Tages-PIN zeigen, Einlösecode prüfen oder einen Gast schnell finden.</p>
+            </section>
 
-      <section className="tablet-actions staff-home-actions">
-        <button className="large-action" onClick={() => void startQrScanner()} type="button">
-          <QrCode size={34} />
-          QR scannen
-          <span className="muted">Kamera öffnen</span>
-        </button>
-        <button className="large-action" onClick={() => setView("search")} type="button">
-          <UserSearch size={34} />
-          Gast suchen
-          <span className="muted">Name, Telefon, Code</span>
-        </button>
-        <button className="large-action" onClick={() => setView("earn")} type="button">
-          <HandCoins size={34} />
-          Punkte/Stempel geben
-          <span className="muted">Tages-PIN erforderlich</span>
-        </button>
-        <button className="large-action" onClick={() => setView("redeem")} type="button">
-          <Gift size={34} />
-          Punkteeinlösung prüfen
-          <span className="muted">{unlockedRewards.length} verfügbar</span>
-        </button>
-      </section>
+            <button
+              aria-label="Details zur heutigen Tages-PIN öffnen"
+              className="staff-premium-pin-card"
+              onClick={() => setPinDetailOpen(true)}
+              type="button"
+            >
+              <span className="staff-premium-pin-head"><KeyRound aria-hidden="true" size={19} />Heutige Tages-PIN</span>
+              {todayPinLoading ? (
+                <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
+              ) : null}
+              {!todayPinLoading && todayPinError ? (
+                <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
+              ) : null}
+              {!todayPinLoading && !todayPinError && todayPin ? (
+                <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
+                  {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
+                </strong>
+              ) : null}
+              <span className="staff-premium-pin-copy">Nur für heutige Punktebuchungen.</span>
+              <span className="staff-premium-pin-valid"><Clock3 aria-hidden="true" size={16} />Gültig bis heute 23:59<ChevronRight aria-hidden="true" size={18} /></span>
+            </button>
 
-      <section className="grid two" style={{ marginTop: 16 }}>
+            <button className="staff-premium-primary-action" onClick={() => openStaffView("redeem")} type="button">
+              <span><Gift aria-hidden="true" size={24} /></span>
+              <strong>Einlösecode prüfen</strong>
+              <small>Sechsstelligen Kundencode sicher prüfen</small>
+              <ChevronRight aria-hidden="true" size={22} />
+            </button>
+
+            <section className="staff-premium-activity" aria-labelledby="staff-activity-title">
+              <div className="staff-premium-section-heading">
+                <div><span className="staff-premium-kicker">Schnellübersicht</span><h2 id="staff-activity-title">Heute</h2></div>
+                {!activityLoading && !activityError ? <span className="staff-premium-live-badge"><span aria-hidden="true" />Aktuell</span> : null}
+              </div>
+              {activityLoading ? (
+                <div aria-label="Heutige Übersicht wird geladen" className="staff-premium-state staff-premium-state-loading">
+                  <span aria-hidden="true" /><div><span /><span /></div>
+                </div>
+              ) : null}
+              {!activityLoading && activityError ? (
+                <div className="staff-premium-state staff-premium-state-error" role="alert">
+                  <CircleAlert aria-hidden="true" size={23} /><div><strong>Übersicht nicht verfügbar</strong><p>{activityError}</p></div>
+                </div>
+              ) : null}
+              {!activityLoading && !activityError && todayActivity.length === 0 ? (
+                <div className="staff-premium-state staff-premium-state-empty">
+                  <Clock3 aria-hidden="true" size={23} /><div><strong>Heute noch keine Aktivität</strong><p>Einlösungen und Punktebuchungen erscheinen hier automatisch.</p></div>
+                </div>
+              ) : null}
+              {!activityLoading && !activityError && todayActivity.length > 0 ? (
+                <div className="staff-premium-activity-grid">
+                  <article><span>Einlösungen heute</span><strong>{todayRewardsRedeemed}</strong></article>
+                  <article><span>Bonuspunkte heute</span><strong>{todayPointsIssued}</strong></article>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="staff-premium-quick-section" aria-labelledby="staff-quick-title">
+              <div className="staff-premium-section-heading"><div><span className="staff-premium-kicker">Weitere Aufgaben</span><h2 id="staff-quick-title">Schnell starten</h2></div></div>
+              <div className="staff-premium-quick-grid">
+                <button onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={22} /><span><strong>QR scannen</strong><small>Kamera öffnen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                <button onClick={() => openStaffView("search")} type="button"><UserSearch aria-hidden="true" size={22} /><span><strong>Gast suchen</strong><small>Name oder Code</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+              </div>
+            </section>
+          </>
+        ) : (
+          <button className="staff-premium-back" onClick={() => openStaffView("home")} type="button"><Home aria-hidden="true" size={18} />Zur Startseite</button>
+        )}
+
+      {view !== "home" ? <section className="grid two staff-premium-existing-grid">
         <article className="card">
           <form className="form" onSubmit={handleSearch}>
             <div className="field">
@@ -686,7 +835,7 @@ export function StaffTablet() {
             <p className="muted">Bitte QR scannen oder Gast suchen.</p>
           )}
         </article>
-      </section>
+      </section> : null}
 
       {view === "earn" ? (
         <section className="card" style={{ marginTop: 16 }}>
@@ -849,6 +998,108 @@ export function StaffTablet() {
           </aside>
         </section>
       ) : null}
+
+      </div>
+
+      <nav aria-label="Mitarbeiter-Navigation" className="staff-premium-bottom-nav">
+        <button
+          aria-current={view === "home" ? "page" : undefined}
+          className={view === "home" ? "active" : ""}
+          onClick={() => openStaffView("home")}
+          type="button"
+        >
+          <Home aria-hidden="true" size={21} />
+          <span>Start</span>
+        </button>
+        <button
+          aria-current={view === "redeem" ? "page" : undefined}
+          className={view === "redeem" ? "active" : ""}
+          onClick={() => openStaffView("redeem")}
+          type="button"
+        >
+          <Gift aria-hidden="true" size={21} />
+          <span>Code prüfen</span>
+        </button>
+        <button onClick={() => setPinDetailOpen(true)} type="button">
+          <KeyRound aria-hidden="true" size={21} />
+          <span>Tages-PIN</span>
+        </button>
+        <button aria-expanded={moreOpen} onClick={() => setMoreOpen(true)} type="button">
+          <MoreHorizontal aria-hidden="true" size={21} />
+          <span>Mehr</span>
+        </button>
+      </nav>
+
+      <AppDrawer
+        description="Diese PIN wird für heutige Punktebuchungen benötigt."
+        footer={
+          <button className="button staff-premium-drawer-button" onClick={() => setPinDetailOpen(false)} type="button">
+            Schließen
+          </button>
+        }
+        onClose={() => setPinDetailOpen(false)}
+        open={pinDetailOpen}
+        title="Heutige Tages-PIN"
+      >
+        <div className="staff-premium-pin-detail">
+          <span className="staff-premium-pin-detail-icon"><KeyRound aria-hidden="true" size={23} /></span>
+          {todayPinLoading ? <p>Tages-PIN wird geladen …</p> : null}
+          {!todayPinLoading && todayPinError ? (
+            <div className="staff-premium-state staff-premium-state-error" role="alert">
+              <CircleAlert aria-hidden="true" size={22} />
+              <div><strong>Tages-PIN nicht verfügbar</strong><p>{todayPinError}</p></div>
+            </div>
+          ) : null}
+          {!todayPinLoading && !todayPinError && todayPin ? (
+            <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
+              {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-detail-${index}`}>{digit}</span>)}
+            </strong>
+          ) : null}
+          <div className="staff-premium-pin-detail-copy">
+            <strong>Nur für Punktebuchungen</strong>
+            <p>Zeige Gästen diese PIN nur direkt beim Sammeln von Punkten.</p>
+          </div>
+          <div className="staff-premium-pin-detail-valid">
+            <Clock3 aria-hidden="true" size={18} />
+            <span><strong>Heute gültig</strong><small>Automatisch bis 23:59</small></span>
+          </div>
+        </div>
+      </AppDrawer>
+
+      <AppDrawer
+        description="Schnelle Wege für den Service."
+        onClose={() => setMoreOpen(false)}
+        open={moreOpen}
+        title="Mehr"
+      >
+        <div className="staff-premium-more-menu">
+          <section aria-label="Service-Aufgaben">
+            <button onClick={() => { setMoreOpen(false); void startQrScanner(); }} type="button">
+              <QrCode aria-hidden="true" size={21} /><span><strong>QR scannen</strong><small>Gast über Kamera öffnen</small></span><ChevronRight aria-hidden="true" size={18} />
+            </button>
+            <button onClick={() => openStaffView("search")} type="button">
+              <UserSearch aria-hidden="true" size={21} /><span><strong>Gast suchen</strong><small>Name oder Gästecode</small></span><ChevronRight aria-hidden="true" size={18} />
+            </button>
+            <button onClick={() => openStaffView("earn")} type="button">
+              <HandCoins aria-hidden="true" size={21} /><span><strong>Punkte geben</strong><small>Tages-PIN erforderlich</small></span><ChevronRight aria-hidden="true" size={18} />
+            </button>
+          </section>
+
+          <aside className="staff-premium-help-card">
+            <HelpCircle aria-hidden="true" size={22} />
+            <div><strong>Hilfe im Service</strong><p>Bei Fragen zu einem Vorgang wende dich an die Restaurantleitung.</p></div>
+          </aside>
+
+          <div className="staff-premium-session-card">
+            <span>{user?.email ?? "Angemeldeter Mitarbeiter"}</span>
+            {logoutError ? <p role="alert">{logoutError}</p> : null}
+            <button disabled={loggingOut} onClick={() => void handleStaffLogout()} type="button">
+              <LogOut aria-hidden="true" size={19} />
+              {loggingOut ? "Abmeldung läuft …" : "Abmelden"}
+            </button>
+          </div>
+        </div>
+      </AppDrawer>
 
       {message ? <p className="status-message">{message}</p> : null}
 
