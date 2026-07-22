@@ -29,7 +29,7 @@ test("AppDrawer hält den Fokus und gibt ihn beim Schließen zurück", () => {
 test("Punkteeinlösungen und Willkommensgeschenke bearbeiten im gemeinsamen Drawer", () => {
   assert.match(rewardsPage, /<AppDrawer[\s\S]*title="Punkteeinlösung bearbeiten"/);
   assert.match(rewardsPage, /editingOffer\?\.id === offer\.id \? " drawer-active"/);
-  assert.match(welcomeGiftsPage, /<AppDrawer[\s\S]*title="Willkommensgeschenk bearbeiten"/);
+  assert.match(welcomeGiftsPage, /<AppDrawer[\s\S]*title=\{editing\?\.id \? "Willkommensgeschenk bearbeiten"/);
   assert.match(welcomeGiftsPage, /editing\?\.id === gift\.id \? " drawer-active"/);
   assert.doesNotMatch(welcomeGiftsPage, /scrollIntoView/);
 });
