@@ -1,13 +1,14 @@
 # Partnerrestaurant-Finder mit OpenStreetMap
 
 Datum: 2026-07-23
-Status: **READY_FOR_STAGING**
+Status: **READY_FOR_REVIEW**
 
 ## Ausgangslage
 
 - Ausgangsbranch: `codex/fix-qr-restaurant-context`
 - Ausgangscommit: `c6e8fcf`
 - Feature-Branch: `codex/partner-restaurant-finder`
+- Feature-Commit: `083ef0d feat: add partner restaurant finder with OpenStreetMap`
 - Die V1-Datenstruktur hat `restaurants` und eine über `branches.restaurant_id` eindeutig zugeordnete Hauptfiliale.
 - Vor dieser Änderung gab es keine Standortkoordinaten, öffentliche Sichtbarkeitsfreigabe oder Kartenbibliothek.
 - QR-Slug, Kundentoken, Punkte und aktive Einlösungen bleiben restaurantbezogen. Die Restaurantsuche verändert diesen Kontext nicht.
@@ -90,13 +91,67 @@ Die Update-Abfrage ist mit Filial-ID und Restaurant-ID gescopet; bestehende Owne
 - Tests: 103/103 erfolgreich.
 - Build: erfolgreich.
 
+## Staging-Abschluss
+
+- Bestätigtes Projekt: `wuxuai-bonus-staging`
+- Projekt-Ref: `bwhvfjuwixgwduoeqaya`
+- Umgebung: ausschließlich Staging, keine Production-Migration.
+- Migration `20260723001000_partner_restaurant_finder.sql` erfolgreich angewendet.
+- Erneuter Dry-Run: Remote-Datenbank ist aktuell, keine ausstehende Migration.
+- Public-RPC mit `anon`: HTTP 200 und ausschließlich freigegebene Finder-Felder.
+- Direkter `anon`-Select auf `branches`: keine Zeilen sichtbar.
+- Drei freigegebene Partnerstandorte vorbereitet: zwei in Wien, einer in Mödling.
+- Ein aktiver Standort mit gültigen Koordinaten und `is_discoverable = false`
+  blieb vollständig aus der öffentlichen RPC, Karte und Liste ausgeschlossen.
+
+### Authentifizierter Owner-Test
+
+- Temporären Owner ausschließlich für ein isoliertes Staging-Restaurant erstellt.
+- Standortdaten, Adresse, Koordinaten, Kurzbeschreibung und Markervorschau geladen.
+- Adresse, Koordinate, Beschreibung und Sichtbarkeit über die echte Owner-UI geändert und gespeichert.
+- Deaktivierte Sichtbarkeit entfernte den Standort sofort aus der öffentlichen Suche.
+- Standort anschließend auf den vorgesehenen Staging-Teststand zurückgesetzt und wieder freigegeben.
+- Fremde Filiale mit Owner-JWT zu ändern ergab eine leere Update-Menge; der Datensatz blieb unverändert.
+- Keine Multi-Filialverwaltung sichtbar; V1 bearbeitet nur den primären Standort.
+- Temporäre Mitgliedschaft und Auth-Benutzer vollständig gelöscht.
+- Erneute Anmeldung des gelöschten Benutzers schlug erwartungsgemäß fehl; geschützte Route leitete zurück.
+
+### Kunden- und QR-Livetest
+
+- Suche nach `Wien`: exakt zwei Wiener Partner.
+- Suche nach `1030`, Restaurantname, Groß-/Kleinschreibung und Umlaut-Fallback `modling`: korrekt.
+- Keine-Treffer-Suche: korrekt leer.
+- Drei temporäre, als Testkunden markierte Restaurantmitgliedschaften lieferten getrennt:
+  - Punkte: 25, 122 und 7
+  - Besuche: 2, 2 und 1
+  - sofort verfügbare Punkteeinlösung beim ersten Restaurant
+  - `Nur noch 12 Punkte` beim zweiten Restaurant
+- Keine restaurantübergreifende Punkteaddition.
+- Externer Google-Maps-Link enthielt die richtigen Zielkoordinaten und keinen API-Key.
+- QR-Regression mit aktiver Einlösung:
+  - Code bei Restaurant A aktiv.
+  - Wechsel zu Restaurant B zeigte weder Restaurant-A-Daten noch dessen Code.
+  - Rückkehr zu A stellte denselben servervalidierten Code wieder her.
+- Temporäre Testkunden, Tokens, Punktetransaktionen und der aktive Testcode wurden nach dem Test gelöscht.
+
+### Responsive und PWA
+
+- Staging-Daten bei 390, 430, 768, 1024 und 1440 px geprüft.
+- `scrollWidth === innerWidth` auf allen fünf Breiten.
+- Keine sichtbare Touchfläche unter 44 px außerhalb der vorgeschriebenen Kartenattribution.
+- Production Preview bei 390 px: drei Partner, Attribution sichtbar, kein Overflow.
+- `sw.js` im Production Preview mit HTTP 200 erreichbar.
+- Physischer Mobile-Safari-Test: nicht verfügbar.
+- Installierte PWA auf einem physischen Gerät: nicht verfügbar.
+- Browser-Console-Errors über Finder-, Owner- und Kundenflows: 0.
+- Unerwartete Network-Errors: 0. Zwei fehlerhafte Testdaten-Inserts wurden vor erfolgreicher Korrektur serverseitig vollständig mit HTTP 400 abgelehnt und erzeugten keine Teilzeilen.
+
 ## Supabase-Status
 
-`npx supabase db push --dry-run` war erfolgreich und zeigt ausschließlich:
-
-`20260723001000_partner_restaurant_finder.sql`
-
-Die Migration wurde nicht angewendet. Es wurden keine Produktionsdaten verändert.
+`npx supabase db push` war gegen das eindeutig bestätigte Staging-Projekt
+erfolgreich. `npx supabase migration list` führt die Migration lokal und remote.
+Der abschließende Dry-Run meldet eine aktuelle Remote-Datenbank. Es wurden keine
+Produktionsdaten verändert.
 
 ## Geänderte Hauptdateien
 
@@ -113,15 +168,14 @@ Die Migration wurde nicht angewendet. Es wurden keine Produktionsdaten veränder
 
 ## Offene Risiken vor Final Lock
 
-- Migration noch nicht auf einem eindeutig bestätigten Staging-Projekt angewendet.
-- Public-RPCs und echte Partnerdaten deshalb noch nicht live gegen Staging getestet.
-- Owner-Einstellungen noch nicht mit authentifiziertem Staging-Owner geprüft.
 - Physischer Mobile-Safari- und installierter PWA-Test stehen aus.
 - Reale Standortberechtigung wurde nicht erteilt; Ablehnung/Fallback und Entfernung sind automatisiert beziehungsweise ohne präzise Standortübertragung geprüft.
 - Das öffentliche Cover wird in V1 als HTTPS-URL gepflegt; ein eigener Bild-Upload wurde bewusst nicht ergänzt.
 
 ## Entscheidung
 
-Der Code ist build- und testbereit für die Staging-Migration und den anschließenden echten Staging-Flow. Ohne angewendete Migration und Live-Verifikation ist der Status nicht `READY_FOR_FINAL_LOCK`.
+Code, Migration, RLS-Negativtest, Owner-Flow, Kundenstatus und QR-Regression sind
+auf Staging geprüft. Wegen des nicht verfügbaren physischen Mobile-Safari- und
+installierten PWA-Tests wird kein `READY_FOR_FINAL_LOCK` behauptet.
 
-Status: **READY_FOR_STAGING**
+Status: **READY_FOR_REVIEW**
