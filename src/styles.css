@@ -471,6 +471,16 @@ a {
   max-width: 760px;
 }
 
+.settings-location-description { min-height: 110px; padding-block: 12px; resize: vertical; }
+.settings-location-toggle { align-items: start; background: #fbf7ef; border: 1px solid #eadfcf; border-radius: 16px; display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr); min-height: 64px; padding: 14px; }
+.settings-location-toggle input { height: 22px; margin-top: 2px; width: 22px; }
+.settings-location-toggle > span { display: grid; gap: 4px; }
+.settings-location-toggle strong { font-weight: 600; }
+.settings-location-toggle small { color: var(--muted); line-height: 1.4; }
+.settings-location-preview { display: grid; gap: 12px; }
+.settings-location-preview h2 { font-size: 18px; margin: 0; }
+.settings-location-preview .partner-map-canvas { border: 1px solid var(--border); border-radius: 18px; height: 300px; overflow: hidden; }
+
 .settings-card-action {
   align-items: center;
   color: var(--tenant-primary, #0f766e);

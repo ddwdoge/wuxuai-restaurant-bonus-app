@@ -1267,3 +1267,15 @@ Neue additive Objekte:
 - `redemption_activation_attempts`: Rate Limit für Codeaktivierungen.
 
 Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburtstagsgeschenke pro Kalenderjahr.
+
+## Ergänzung 2026-07-23: Öffentliche Partnerstandorte
+
+- Standortfelder liegen an der bestehenden 1:1-`branches`-Zeile.
+- `is_discoverable` ist bei Bestandsdaten standardmäßig `false`.
+- Latitude und Longitude besitzen Datenbank-Checks für gültige Wertebereiche.
+- Es gibt keine öffentliche Select-Policy auf `restaurants` oder `branches`.
+- `get_public_partner_restaurants()` liefert nur aktive, ausdrücklich
+  freigegebene Standorte und ausschließlich öffentliche Finder-Felder.
+- `get_customer_partner_membership(slug, token)` validiert den gehashten
+  Kundenzugang gegen dasselbe Restaurant, bevor Punkte, Besuche oder
+  Punkteeinlösungen ausgegeben werden.

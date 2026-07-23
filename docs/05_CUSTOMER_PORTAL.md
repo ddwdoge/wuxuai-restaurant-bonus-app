@@ -743,3 +743,19 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   serverseitiger Statusprüfung angezeigt und erneut überwacht.
 - Ein Portal-Ladefehler entfernt Restaurantname, Branding, Einstellungen,
   Kundendaten und Punkteeinlösungen aus der sichtbaren Oberfläche.
+
+## CTO-Ergänzung 2026-07-23: Optionale Partnerrestaurantsuche
+
+- Die QR-URL bleibt die einzige Quelle der Wahrheit für den aktiven Restaurant-
+  und Punkte-Sammelkontext.
+- Zusätzlich darf der Gast unter `Restaurants entdecken` eine optionale,
+  rein lesende Karte der ausdrücklich freigegebenen WUXUAI Partner öffnen.
+- Die Suche ist kein Standard-Einstieg und ersetzt den Restaurant-QR nicht.
+- Karten- oder Listenauswahl registriert keinen Gast, bucht keine Punkte und
+  startet keine Punkteeinlösung.
+- Punktestände werden je Restaurant getrennt und nur nach Validierung des dort
+  gespeicherten Kundenzugangs angezeigt.
+- OpenStreetMap dient ausschließlich als Kartenbasis. Partnerstatus und Marker
+  stammen ausschließlich aus der WUXUAI Datenbank.
+- Externe Navigation darf über einen Google-Maps-Weblink ohne API-Key geöffnet
+  werden; es wird keine Google Maps Platform API verwendet.

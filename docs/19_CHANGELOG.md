@@ -5,6 +5,18 @@
 
 Status: **LOCK**
 
+## 23.07.2026 - Partnerrestaurant-Finder mit OpenStreetMap
+
+- CTO-Ausnahme für eine optionale, rein lesende Partnerrestaurantsuche ergänzt.
+- Leaflet und OpenStreetMap als einzige interne Kartenlösung gewählt.
+- Bestehende primäre Standortzeile additiv um öffentliche Standortfelder
+  erweitert; Altbestände bleiben standardmäßig unsichtbar.
+- Minimalen öffentlichen Partner-RPC und restaurantgebundene
+  Kundenmitgliedschafts-RPC vorbereitet.
+- Keine Google Maps Platform API und kein API-Key erforderlich.
+- Google Maps wird ausschließlich als externer Navigationslink verwendet.
+- QR-, Punkte- und Redemption-Kontext bleiben unverändert restaurantgebunden.
+
 ## 20.07.2026 - Premium-Kundenportal Staging-E2E
 
 - Registrierten Kundenflow mit echter Staging-Punktebuchung und

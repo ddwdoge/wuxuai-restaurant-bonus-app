@@ -49,6 +49,9 @@ const StaffTablet = lazy(() => import("../modules/staff/StaffTablet").then((modu
 const CustomerPortal = lazy(() =>
   import("../modules/customer/CustomerPortal").then((module) => ({ default: module.CustomerPortal })),
 );
+const PartnerRestaurantFinderPage = lazy(() =>
+  import("../modules/customer/PartnerRestaurantFinderPage").then((module) => ({ default: module.PartnerRestaurantFinderPage })),
+);
 const ReferralLanding = lazy(() =>
   import("../modules/customer/ReferralLanding").then((module) => ({ default: module.ReferralLanding })),
 );
@@ -240,6 +243,7 @@ export function App() {
       />
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
       <Route path="/customer" element={<GuestBonusInfoPage />} />
+      <Route path="/customer/restaurants" element={withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)} />
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />

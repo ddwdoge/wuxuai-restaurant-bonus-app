@@ -614,3 +614,14 @@ Restaurant Portal gilt als LOCK, wenn:
 ------------------------------------------------------------------------
 
 Endstatus: **LOCK**
+
+## CTO-Ergänzung 2026-07-23: Standort & Restaurantsuche
+
+- Owner verwalten in V1 ausschließlich den bestehenden primären Standort ihres
+  Restaurants. Dies ist keine allgemeine Filialverwaltung.
+- Adresse, PLZ, Ort, Land, Koordinaten, öffentliche Kurzbeschreibung und
+  öffentliches Bild können gepflegt werden.
+- `In Restaurantsuche sichtbar` ist eine ausdrückliche Freigabe und setzt ein
+  aktives Restaurant, vollständige Adressdaten und valide Koordinaten voraus.
+- Bestehende Restaurants bleiben standardmäßig unsichtbar.
+- Owner können durch bestehende RLS nur den Standort ihres Restaurants ändern.

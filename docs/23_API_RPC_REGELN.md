@@ -923,3 +923,15 @@ Endstatus: **LOCK**
 - `expire_redemption_codes`: serverseitige Deaktivierung abgelaufener Codes.
 
 Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_code`, `redeem_reward_with_pin` und die alten nicht-idempotenten Punktebuchungssignaturen sind für `anon` und `authenticated` gesperrt.
+
+## Ergänzung 2026-07-23: Partnerrestaurant-Finder
+
+- `get_public_partner_restaurants()` gibt nur öffentliche Standort- und
+  Angebotsindikatoren aktiver, freigegebener Partner zurück.
+- `get_customer_partner_membership(input_restaurant_slug,
+  input_customer_token)` gibt Mitgliedsdaten ausschließlich nach serverseitiger
+  Token-Restaurant-Prüfung zurück.
+- Beide Funktionen entziehen `public` die Ausführung und gewähren sie bewusst
+  nur `anon` und `authenticated`.
+- Es werden keine Owner-, Mitarbeiter-, Kundenkontakt- oder Umsatzdaten
+  veröffentlicht.

@@ -1376,6 +1376,21 @@ EN/ZH nach Feature Freeze.
 
 Nicht V1.
 
+## 66. Optionale Partnerrestaurant-Karte ist V1
+
+🟢 **FIX / V1 – 23.07.2026**
+
+- Die Karte ist eine optionale Entdecken-Seite, kein Ersatz für den QR-Einstieg.
+- Leaflet mit OpenStreetMap ist die einzige interne Kartenlösung.
+- Es wird keine Google Maps JavaScript-, Places-, Nearby-, Routes- oder
+  Distance-Matrix-API verwendet.
+- Marker stammen ausschließlich aus der eigenen Datenbank und benötigen eine
+  ausdrückliche öffentliche Freigabe.
+- Owner bearbeiten in V1 nur den bestehenden primären Standort. Eine echte
+  Multi-Filialverwaltung bleibt V2.
+- Auswahl auf Karte oder Liste verändert keinen aktiven Kundentoken und startet
+  weder Registrierung, Punktebuchung noch Einlösung.
+
 ---
 
 ## 66. WUXUAI Admin Basis

@@ -13,6 +13,7 @@ import {
   IdCard,
   LockKeyhole,
   LogOut,
+  MapPinned,
   QrCode,
   ReceiptText,
   ScanLine,
@@ -24,7 +25,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
@@ -1424,6 +1425,12 @@ export function CustomerPortal() {
                   </div>
                 </section>
 
+                <Link className="premium-restaurant-finder-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}>
+                  <span><MapPinned aria-hidden="true" size={22} /></span>
+                  <div><strong>Restaurants entdecken</strong><small>WUXUAI Partner in deiner Nähe finden</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
+
                 {retention?.birthday.eligible && !activeBirthdayGift && !retention.birthday.gift ? (
                   <PremiumCard className="premium-birthday-draw-card" variant="highlight">
                     <span className="premium-birthday-icon"><CakeSlice aria-hidden="true" size={25} /></span>
@@ -1642,6 +1649,7 @@ export function CustomerPortal() {
                   <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
+                    <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
                     <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
                     <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
                     <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>

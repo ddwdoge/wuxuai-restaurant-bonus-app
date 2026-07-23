@@ -956,6 +956,47 @@
 .premium-expiry-summary small { color: var(--premium-text-secondary); }
 .premium-expiry-summary > svg { color: var(--premium-gold-dark); }
 
+.premium-restaurant-finder-link {
+  align-items: center;
+  background: var(--premium-surface);
+  border: 1px solid var(--premium-border);
+  border-radius: 18px;
+  box-shadow: var(--premium-shadow);
+  color: var(--premium-text);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 70px;
+  padding: 11px 14px;
+  text-decoration: none;
+}
+.premium-restaurant-finder-link > span { align-items: center; background: var(--premium-gold-soft); border-radius: 13px; color: var(--premium-gold-dark); display: flex; height: 44px; justify-content: center; width: 44px; }
+.premium-restaurant-finder-link > div { display: grid; gap: 3px; min-width: 0; }
+.premium-restaurant-finder-link strong { font-size: 15px; font-weight: 600; }
+.premium-restaurant-finder-link small { color: var(--premium-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.premium-restaurant-finder-link > svg { color: var(--premium-gold-dark); }
+.premium-restaurant-finder-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--premium-gold) 30%, transparent); outline-offset: 3px; }
+
+.premium-account-grid .premium-account-grid-link {
+  align-content: start;
+  background: var(--premium-surface);
+  border: 1px solid rgba(80, 60, 30, 0.06);
+  border-radius: 18px;
+  box-shadow: var(--premium-shadow);
+  color: var(--premium-text);
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  min-height: 122px;
+  padding: 15px;
+  text-align: left;
+  text-decoration: none;
+}
+.premium-account-grid .premium-account-grid-link > svg { color: var(--premium-gold-dark); margin-bottom: 4px; }
+.premium-account-grid .premium-account-grid-link strong { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.premium-account-grid .premium-account-grid-link span { color: var(--premium-text-secondary); font-size: 13px; }
+.premium-account-grid .premium-account-grid-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--premium-gold) 30%, transparent); outline-offset: -3px; }
+
 .premium-birthday-draw-card { align-items: start; display: grid; gap: 14px; grid-template-columns: auto minmax(0, 1fr); }
 .premium-birthday-draw-card > .premium-button, .premium-birthday-draw-card > .status-message { grid-column: 1 / -1; width: 100%; }
 .premium-birthday-draw-card h2, .premium-birthday-draw-card p { margin: 0; }
