@@ -723,3 +723,15 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Ein Push-Link öffnet ausschließlich die zugehörige Punkteeinlösung; er löst nichts automatisch ein.
 - Geburtstagstag und -monat können freiwillig im Konto gespeichert werden. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag kann der Gast genau einmal pro Kalenderjahr eine serverseitig ausgeloste Überraschung abholen.
 - Der Freunde-Bonus ist fest auf 2× Punkte für beide Beteiligten während 30 Tagen gesetzt.
+
+## CTO-Ergänzung 2026-07-23: QR-Restaurantkontext
+
+- Der Restaurant-Slug der aktuell geöffneten QR-URL ist immer die einzige Quelle
+  der Wahrheit für den Restaurantkontext.
+- Beim Wechsel zwischen zwei Restaurant-QRs wird die Kundenportal-Instanz neu
+  aufgebaut; lokaler React-State des vorherigen Restaurants wird nicht übernommen.
+- Ein Token aus der aktuellen URL hat Vorrang vor lokal gespeicherten Tokens.
+- Lokal gespeicherte Kundentokens bleiben nach Restaurant-Slug getrennt und dürfen
+  einen gültigen URL-Kontext niemals überschreiben.
+- Ein ungültiger Restaurant-Slug zeigt eine neutrale Fehleransicht. Ein zuvor
+  geladenes Restaurant darf dabei nicht sichtbar bleiben.

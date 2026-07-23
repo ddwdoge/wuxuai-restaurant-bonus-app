@@ -2081,3 +2081,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Bonus Boost auf feste V1-Werte 2×/30 Tage für beide Beteiligten vereinheitlicht; aktive Empfehlenden-Boosts verlängern sich um 30 Tage
 - neue Bonus-Boost-KPIs schließen markierte Testkunden aus
 - additive Migration `20260722003000_v1_retention_features.sql` am 23.07.2026 auf das verknüpfte Supabase-Projekt angewendet und per Migrationsliste, leerem Dry-Run sowie erreichbarer PostgREST-RPC verifiziert
+
+## 2026-07-23 – P0 QR-Restaurantkontext korrigiert
+
+- Kundenportal-Routen werden bei Wechsel von Restaurant-Slug oder Sammelmodus mit
+  einem neuen, URL-basierten Schlüssel aufgebaut
+- aktueller URL-Slug ist die einzige Quelle für Restaurantladen und Punktebuchung
+- ein URL-Kundentoken hat Vorrang vor Registrierungs- und lokalem Token-State
+- ungültige QR-URLs können nicht mehr auf zuvor angezeigte Restaurantdaten
+  zurückfallen
+- Regressionstests für QR-Wechsel, Token-Priorität, slug-getrennten Cache,
+  Punkte-RPC-Bindung und ungültigen QR-Kontext ergänzt
+- keine Datenbank-, RPC-, RLS-, Tages-PIN- oder Punkteberechnungslogik geändert

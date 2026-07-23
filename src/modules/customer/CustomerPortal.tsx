@@ -226,8 +226,8 @@ export function CustomerPortal() {
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
   const processedReminderDeepLinkRef = useRef<string | null>(null);
-  const restaurantSlug = slug ?? restaurant?.slug ?? "";
-  const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
+  const restaurantSlug = slug?.trim() ?? "";
+  const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   useEffect(() => {
@@ -248,7 +248,7 @@ export function CustomerPortal() {
     let cancelled = false;
 
     async function loadPortal() {
-      const data = await loadCustomerPortalData(slug, activeToken);
+      const data = await loadCustomerPortalData(restaurantSlug, activeToken);
       if (!cancelled) {
         setRestaurant(data.restaurant);
         setBranding(data.branding);

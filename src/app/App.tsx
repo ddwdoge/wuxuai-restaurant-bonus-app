@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
@@ -75,6 +75,17 @@ function PlatformLoading() {
 
 function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading />) {
   return <Suspense fallback={fallback}>{children}</Suspense>;
+}
+
+function CustomerPortalRoute() {
+  const { slug = "" } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const routeKind = location.pathname.startsWith("/w/") ? "collect" : "portal";
+
+  return withFallback(
+    <CustomerPortal key={`${routeKind}:${slug}`} />,
+    <CustomerLoading />,
+  );
 }
 
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
@@ -227,8 +238,8 @@ export function App() {
       />
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
       <Route path="/customer" element={<GuestBonusInfoPage />} />
-      <Route path="/customer/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
-      <Route path="/w/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
+      <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
+      <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
