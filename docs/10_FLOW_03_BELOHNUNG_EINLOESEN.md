@@ -162,6 +162,26 @@ Buttons:
 
 Erst nach dieser Bestätigung wird serverseitig eingelöst.
 
+### 5.4 Wiederherstellung eines aktiven Einlösecodes
+
+- Die lokale Wiederherstellung ist nach Restaurant und Kundenzugang getrennt.
+- Der Kundenzugang erscheint nicht im Klartext im Speicherschlüssel.
+- Ein Restaurantwechsel beendet nur das lokale Polling der verlassenen Seite;
+  der gescopte Wiederherstellungsdatensatz bleibt für die Rückkehr erhalten.
+- Vor jeder Wiederanzeige prüft `get_customer_redemption_status` Restaurant,
+  Kundenzugang, Einlösungs-ID und Serverstatus.
+- Nur ein serverseitig aktiver Vorgang zeigt den Code erneut. Eingelöste und
+  abgelaufene Vorgänge wechseln in den entsprechenden Endzustand.
+- Ein manipulierter oder nicht zum Scope passender Browserdatensatz startet
+  keine Einlösung und wird nicht angezeigt.
+
+Offener V1-Befund: Bei normalen Punkteeinlösungen zieht
+`start_customer_redemption` die Punkte beim Start ab.
+`expire_redemption_codes` markiert einen nicht verbrauchten Code als abgelaufen,
+bucht diese Punkte aber nicht zurück. Eine Rückbuchungs- oder
+Wiederherstellungsregel benötigt eine eigene CTO-Entscheidung und wurde mit dem
+QR-Kontext-Fix nicht verändert.
+
 Nach erfolgreicher Einlösung sieht der Gast:
 
 ```text

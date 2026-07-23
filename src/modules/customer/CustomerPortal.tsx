@@ -49,6 +49,14 @@ import {
   saveStoredCustomerToken,
 } from "./customerTokenStorage";
 import {
+  isUsableRestaurantSlug,
+  loadPortalForRestaurant,
+  persistScopedActiveRedemption,
+  removeScopedActiveRedemption,
+  restoreScopedActiveRedemption,
+  type ScopedActiveRedemption,
+} from "./customerRedemptionSession.mjs";
+import {
   AppShell,
   BenefitTile,
   BottomNavigation,
@@ -91,16 +99,7 @@ type RedemptionOutcome = {
   title: string;
 };
 
-type ActiveRedemptionCode = {
-  code: string;
-  expiresAt: string;
-  redemptionId: string;
-  rewardId: string;
-  assignmentId: string | null;
-  title: string;
-  redemptionType: "welcome_gift" | "birthday_gift" | "points_redemption";
-  pointsSpent: number;
-};
+type ActiveRedemptionCode = ScopedActiveRedemption;
 
 function formatBoostRemaining(activeUntil: string, remainingDays: number | undefined, nowMs: number) {
   const remainingMs = new Date(activeUntil).getTime() - nowMs;
@@ -231,7 +230,7 @@ export function CustomerPortal() {
   const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   useEffect(() => {
-    if (!restaurantSlug) return;
+    if (!isUsableRestaurantSlug(restaurantSlug)) return;
     setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
   }, [restaurantSlug]);
 
@@ -247,14 +246,38 @@ export function CustomerPortal() {
   useEffect(() => {
     let cancelled = false;
 
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setRestaurant(null);
+      setBranding(null);
+      setSettings(null);
+      setCustomer(null);
+      setRewards([]);
+      setRetention(null);
+      setActiveRedemptionCode(null);
+      setRedeemOffer(null);
+      setRedemptionOutcome(null);
+      setRedemptionDrawerOpen(false);
+      setMessage("Restaurant wurde nicht gefunden.");
+      return undefined;
+    }
+
     async function loadPortal() {
-      const data = await loadCustomerPortalData(restaurantSlug, activeToken);
+      const portalResult = await loadPortalForRestaurant({
+        restaurantSlug,
+        customerToken: activeToken,
+        loadPortal: loadCustomerPortalData,
+      });
+      if (portalResult.status !== "loaded") {
+        throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
+      }
+      const data = portalResult.data;
       if (!cancelled) {
         setRestaurant(data.restaurant);
         setBranding(data.branding);
         setSettings(data.settings);
         setCustomer(data.customer);
         setRewards(data.offers);
+        setMessage(null);
         if (data.customer) {
           setGuestStep("welcome");
         }
@@ -283,19 +306,29 @@ export function CustomerPortal() {
     loadPortal().catch((error) => {
       if (!cancelled) {
         console.error("Kundenportal konnte nicht geladen werden.", error);
+        setRestaurant(null);
+        setBranding(null);
+        setSettings(null);
+        setCustomer(null);
+        setRewards([]);
+        setRetention(null);
+        setActiveRedemptionCode(null);
+        setRedeemOffer(null);
+        setRedemptionOutcome(null);
+        setRedemptionDrawerOpen(false);
         if (activeToken && isInvalidCustomerTokenError(error)) {
           removeStoredCustomerToken(restaurantSlug);
           setStoredCustomerToken(null);
-          setCustomer(null);
-          setRewards([]);
           setRegistration(null);
           setGuestStep("welcome");
+          void removeScopedActiveRedemption(window.sessionStorage, {
+            restaurantSlug,
+            customerToken: activeToken,
+          });
           setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
-        setCustomer(null);
-        setRewards([]);
       }
     });
 
@@ -450,42 +483,42 @@ export function CustomerPortal() {
     : 0;
 
   useEffect(() => {
-    if (!restaurantSlug || !activeToken) return;
-    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
+    setActiveRedemptionCode(null);
+    setRedeemOffer(null);
+    setRedemptionOutcome(null);
+    setRedemptionDrawerOpen(false);
+  }, [activeToken, restaurantSlug]);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug) || !activeToken || !customer) return;
     const customerTokenForCheck = activeToken;
     let cancelled = false;
 
     async function restoreActiveRedemption() {
       try {
-        const stored = window.sessionStorage.getItem(storageKey);
-        if (!stored) return;
-        const parsed = JSON.parse(stored) as ActiveRedemptionCode;
-        const locallyValid = Boolean(
-          parsed.redemptionId
-          && /^\d{6}$/.test(parsed.code)
-          && new Date(parsed.expiresAt).getTime() > Date.now()
-        );
-        if (!locallyValid) {
-          window.sessionStorage.removeItem(storageKey);
-          return;
-        }
-
-        const serverStatus = await loadCustomerRedemptionStatus({
+        const restored = await restoreScopedActiveRedemption(window.sessionStorage, {
           restaurantSlug,
           customerToken: customerTokenForCheck,
-          redemptionId: parsed.redemptionId,
-        });
+        }, loadCustomerRedemptionStatus);
         if (cancelled) return;
+        if (!restored.redemption) return;
 
-        if (serverStatus.active && serverStatus.status === "active") {
-          setActiveRedemptionCode(parsed);
+        if (restored.state === "active") {
+          setActiveRedemptionCode(restored.redemption);
           setRedemptionOutcome(null);
           setRedemptionDrawerOpen(true);
           return;
         }
 
-        window.sessionStorage.removeItem(storageKey);
         setActiveRedemptionCode(null);
+        if (restored.state === "redeemed" || restored.state === "expired") {
+          setRedemptionOutcome({
+            kind: restored.state,
+            pointsSpent: restored.redemption.pointsSpent,
+            title: restored.redemption.title,
+          });
+          setRedemptionDrawerOpen(true);
+        }
       } catch (error) {
         console.error("Einlösecode konnte nicht serverseitig geprüft werden.", error);
         if (!cancelled) {
@@ -498,14 +531,12 @@ export function CustomerPortal() {
     return () => {
       cancelled = true;
     };
-  }, [activeToken, restaurantSlug]);
+  }, [activeToken, customer, restaurantSlug]);
 
   useEffect(() => {
     if (!activeRedemptionCode || !activeToken || !restaurantSlug) return;
     let cancelled = false;
     let requestRunning = false;
-    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
-
     const intervalId = window.setInterval(() => {
       if (requestRunning) return;
       requestRunning = true;
@@ -516,7 +547,11 @@ export function CustomerPortal() {
       })
         .then((serverStatus) => {
           if (cancelled || serverStatus.active) return;
-          window.sessionStorage.removeItem(storageKey);
+          void removeScopedActiveRedemption(window.sessionStorage, {
+            restaurantSlug,
+            customerToken: activeToken,
+            redemptionId: activeRedemptionCode.redemptionId,
+          });
           setRedemptionOutcome({
             kind: serverStatus.status === "redeemed" ? "redeemed" : serverStatus.status === "expired" ? "expired" : "error",
             pointsSpent: activeRedemptionCode.pointsSpent,
@@ -544,8 +579,12 @@ export function CustomerPortal() {
   }, [activeRedemptionCode, activeToken, restaurantSlug]);
 
   useEffect(() => {
-    if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug) return;
-    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug || !activeToken) return;
+    void removeScopedActiveRedemption(window.sessionStorage, {
+      restaurantSlug,
+      customerToken: activeToken,
+      redemptionId: activeRedemptionCode.redemptionId,
+    });
     setRedemptionOutcome({
       kind: "expired",
       pointsSpent: activeRedemptionCode.pointsSpent,
@@ -554,7 +593,7 @@ export function CustomerPortal() {
     setActiveRedemptionCode(null);
     setRedemptionDrawerOpen(true);
     setMessage("Der Einlösecode ist abgelaufen.");
-  }, [activeRedemptionCode, redemptionSecondsRemaining, restaurantSlug]);
+  }, [activeRedemptionCode, activeToken, redemptionSecondsRemaining, restaurantSlug]);
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
@@ -795,10 +834,15 @@ export function CustomerPortal() {
     setActiveView("redemptions");
   }
 
-  function handleCustomerLogout() {
+  async function handleCustomerLogout() {
     if (!restaurantSlug) return;
     removeStoredCustomerToken(restaurantSlug);
-    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    if (activeToken) {
+      await removeScopedActiveRedemption(window.sessionStorage, {
+        restaurantSlug,
+        customerToken: activeToken,
+      });
+    }
     window.location.assign(`/customer/${restaurantSlug}`);
   }
 
@@ -859,7 +903,11 @@ export function CustomerPortal() {
       };
       setActiveRedemptionCode(nextActiveCode);
       setRedemptionOutcome(null);
-      window.sessionStorage.setItem(`wuxuai-active-redemption:${restaurantSlug}`, JSON.stringify(nextActiveCode));
+      await persistScopedActiveRedemption(window.sessionStorage, {
+        restaurantSlug,
+        customerToken: activeToken,
+        redemption: nextActiveCode,
+      });
       setCustomer((current) => current
         ? { ...current, points_balance: result.points_balance, stamp_balance: result.stamp_balance }
         : current);
@@ -919,7 +967,18 @@ export function CustomerPortal() {
       <AppShell>
         <PageContainer className={isBonusCollection ? "premium-collect-page premium-collect-loading-page" : undefined}>
           {message ? (
-            <ErrorState description={message} title="Dein Bonus konnte nicht geöffnet werden" />
+            <ErrorState
+              action={isUsableRestaurantSlug(restaurantSlug) ? (
+                <PrimaryButton onClick={() => {
+                  setMessage(null);
+                  setRefreshToken((current) => current + 1);
+                }}>
+                  Erneut versuchen
+                </PrimaryButton>
+              ) : undefined}
+              description={message}
+              title="Dein Bonus konnte nicht geöffnet werden"
+            />
           ) : (
             <LoadingState description="Dein Bonus wird geladen." />
           )}

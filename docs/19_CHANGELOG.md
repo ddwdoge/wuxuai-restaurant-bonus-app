@@ -2093,3 +2093,23 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Regressionstests für QR-Wechsel, Token-Priorität, slug-getrennten Cache,
   Punkte-RPC-Bindung und ungültigen QR-Kontext ergänzt
 - keine Datenbank-, RPC-, RLS-, Tages-PIN- oder Punkteberechnungslogik geändert
+
+## 2026-07-23 – QR-Kontext-Restbugs für Staging behoben
+
+- aktive Einlösungen nach Restaurant, gehashtem Kundenzugang und
+  Einlösungs-ID in `sessionStorage` getrennt
+- Wechsel A → B zeigt und pollt keinen Einlösezustand von A; Rückkehr zu A
+  restauriert nur nach positiver Serverprüfung
+- URL-Tokenwechsel erzeugt zusätzlich eine neue Kundenportal-Instanz
+- Loader-Fehler entfernt Restaurant, Branding, Einstellungen, Kunde, Rewards
+  und aktiven UI-Einlösestatus vollständig
+- leere und syntaktisch ungültige Slugs lösen keine Portal-, Kunden-,
+  Restore- oder Polling-Aufrufe aus
+- Retry-Aktion im neutralen Portal-Fehlerzustand mit mindestens 44 px
+  Touchhöhe ergänzt
+- sechs echte Speicher-/Service-Verhaltenstests sowie bestehende statische
+  Regressionstests ausgeführt; Gesamtsuite 96/96
+- keine Migration, RPC-, RLS-, Punkte-, PIN- oder Einlöse-Geschäftslogik
+  geändert
+- fehlende Punkterückbuchung bei abgelaufenem reserviertem Einlösecode als
+  separater offener Produktentscheid dokumentiert

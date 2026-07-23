@@ -735,3 +735,11 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   einen gültigen URL-Kontext niemals überschreiben.
 - Ein ungültiger Restaurant-Slug zeigt eine neutrale Fehleransicht. Ein zuvor
   geladenes Restaurant darf dabei nicht sichtbar bleiben.
+- Aktive Einlösecodes werden in `sessionStorage` nach Restaurant, gehashtem
+  Kundenzugang und Einlösung getrennt gespeichert.
+- Beim Wechsel zu einem anderen Restaurant bleibt der ursprüngliche Zustand
+  erhalten, wird dort aber nicht angezeigt und nicht weiter abgefragt.
+- Bei der Rückkehr wird der gespeicherte Zustand erst nach positiver
+  serverseitiger Statusprüfung angezeigt und erneut überwacht.
+- Ein Portal-Ladefehler entfernt Restaurantname, Branding, Einstellungen,
+  Kundendaten und Punkteeinlösungen aus der sichtbaren Oberfläche.

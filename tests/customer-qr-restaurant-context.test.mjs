@@ -10,7 +10,7 @@ const pointsMigration = readFileSync(new URL("../supabase/migrations/20260720002
 
 test("ein neuer QR-Slug erzeugt eine neue CustomerPortal-Instanz", () => {
   assert.match(app, /function CustomerPortalRoute\(\)/);
-  assert.match(app, /<CustomerPortal key={`\$\{routeKind\}:\$\{slug\}`} \/>/);
+  assert.match(app, /<CustomerPortal key={`\$\{routeKind\}:\$\{slug\}:\$\{customerToken\}`} \/>/);
   assert.match(app, /path="\/customer\/:slug" element={<CustomerPortalRoute \/>}/);
   assert.match(app, /path="\/w\/:slug" element={<CustomerPortalRoute \/>}/);
 });
@@ -18,7 +18,7 @@ test("ein neuer QR-Slug erzeugt eine neue CustomerPortal-Instanz", () => {
 test("der aktuelle URL-Slug ist die einzige Restaurantquelle", () => {
   assert.match(portal, /const restaurantSlug = slug\?\.trim\(\) \?\? "";/);
   assert.doesNotMatch(portal, /slug \?\? restaurant\?\.slug/);
-  assert.match(portal, /loadCustomerPortalData\(restaurantSlug, activeToken\)/);
+  assert.match(portal, /loadPortalForRestaurant\(\{[\s\S]*?restaurantSlug,[\s\S]*?customerToken: activeToken,[\s\S]*?loadPortal: loadCustomerPortalData/);
 });
 
 test("ein URL-Token gewinnt vor Registrierung und lokalem Cache", () => {
@@ -44,7 +44,17 @@ test("die Punkte-RPC bindet Kundentoken und Kunde an das URL-Restaurant", () => 
 
 test("ungültiger QR-Kontext kann nicht auf ein altes Restaurant zurückfallen", () => {
   assert.match(portal, /setRestaurant\(data\.restaurant\)/);
+  assert.match(portal, /setRestaurant\(null\)/);
+  assert.match(portal, /setBranding\(null\)/);
+  assert.match(portal, /setSettings\(null\)/);
   assert.match(portal, /setCustomer\(null\)/);
   assert.match(portal, /setRewards\(\[\]\)/);
   assert.doesNotMatch(portal, /restaurant\?\.slug \?\?/);
+});
+
+test("aktive Einlösungen verwenden den gescopten Restore-Service", () => {
+  assert.match(portal, /restoreScopedActiveRedemption\(window\.sessionStorage/);
+  assert.match(portal, /persistScopedActiveRedemption\(window\.sessionStorage/);
+  assert.match(portal, /removeScopedActiveRedemption\(window\.sessionStorage/);
+  assert.doesNotMatch(portal, /wuxuai-active-redemption:\$\{restaurantSlug\}/);
 });

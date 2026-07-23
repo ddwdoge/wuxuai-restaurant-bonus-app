@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
@@ -80,10 +80,12 @@ function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading /
 function CustomerPortalRoute() {
   const { slug = "" } = useParams<{ slug: string }>();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const routeKind = location.pathname.startsWith("/w/") ? "collect" : "portal";
+  const customerToken = searchParams.get("token") ?? "";
 
   return withFallback(
-    <CustomerPortal key={`${routeKind}:${slug}`} />,
+    <CustomerPortal key={`${routeKind}:${slug}:${customerToken}`} />,
     <CustomerLoading />,
   );
 }
