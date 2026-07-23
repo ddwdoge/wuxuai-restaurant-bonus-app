@@ -62,7 +62,9 @@ Ausgangscommit: `851cb4c0a411768f772a8c9afeb3d41cb493d731`
 - Öffentliche Kundenaktionen erfolgen nur über tokengeprüfte `SECURITY DEFINER`-RPCs mit festem `search_path`.
 - Customer Token, Tages-PIN, Einlösecode, VAPID Private Key und Scheduler-Secret werden weder im UI noch im Audit ausgegeben.
 - Supabase Dry-Run war erfolgreich und listet ausschließlich die neue Migration als ausstehend.
-- Migration wurde gemäß Auftrag nicht auf Staging oder Produktion angewendet.
+- Migration wurde am 23.07.2026 erfolgreich auf das verknüpfte Supabase-Projekt `bwhvfjuwixgwduoeqaya` angewendet.
+- Die anschließende Migrationsliste zeigt `20260722003000` lokal und remote; der erneute Dry-Run meldet die Remote-Datenbank als aktuell.
+- `get_customer_retention_status(text, text)` wurde über PostgREST mit einem absichtlich ungültigen Testtoken geprüft. Die RPC antwortete fachlich mit `P0001`; `PGRST202` trat nicht auf. Damit sind Schema-Cache und `anon`-EXECUTE bestätigt.
 
 ## Tests und Qualität
 
@@ -71,20 +73,20 @@ Ausgangscommit: `851cb4c0a411768f772a8c9afeb3d41cb493d731`
 - Typecheck: erfolgreich.
 - Lint: 0 Fehler; 8 bereits bestehende Warnungen.
 - Build: erfolgreich.
-- Supabase Dry-Run: erfolgreich.
+- Supabase Migration-Push: erfolgreich.
+- Supabase Dry-Run nach Push: erfolgreich, keine ausstehenden Migrationen.
 - Responsive Regeln sind in den vorhandenen Premium-Komponenten und Styles umgesetzt; eine echte Staging-Abnahme bei 390/430/768/1024/1440 px war ohne angewendete Migration nicht möglich.
 
 ## Offene Blocker
 
-1. Migration auf isoliertem Staging anwenden und alle RPC-Signaturen, Grants, RLS sowie Europe/Vienna-Grenzen live prüfen.
-2. Edge Function `expiry-reminders` auf Staging deployen.
-3. VAPID Public/Private Key, `VITE_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` und `EXPIRY_REMINDER_SCHEDULER_SECRET` ausschließlich als Staging-Secrets konfigurieren.
-4. Einen authentisierten täglichen Scheduler für die Sender-Funktion konfigurieren und Push erlaubt/abgelehnt/ungültig live prüfen.
-5. Geburtstag, parallele Auslosung, Referral-Qualifizierung, Boost-Verlängerung und Punkteverdopplung mit isolierten Staging-Testkunden testen.
-6. Responsive Screenshots und Console-/Network-Prüfung mit echten Retention-Daten nachholen.
+1. Edge Function `expiry-reminders` auf Staging deployen.
+2. VAPID Public/Private Key, `VITE_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` und `EXPIRY_REMINDER_SCHEDULER_SECRET` ausschließlich als Staging-Secrets konfigurieren.
+3. Einen authentisierten täglichen Scheduler für die Sender-Funktion konfigurieren und Push erlaubt/abgelehnt/ungültig live prüfen.
+4. RLS, Europe/Vienna-Grenzen, Geburtstag, parallele Auslosung, Referral-Qualifizierung, Boost-Verlängerung und Punkteverdopplung mit isolierten Staging-Testkunden vollständig testen.
+5. Responsive Screenshots und Console-/Network-Prüfung mit echten Retention-Daten nachholen.
 
 ## Status
 
 **PARTIALLY_IMPLEMENTED**
 
-Der Code ist lokal vollständig vorbereitet, getestet und buildfähig. Ein Status `READY_FOR_REVIEW` ist erst nach Staging-Migration, Push-Infrastruktur und echten End-to-End-Tests vertretbar.
+Der Code ist lokal vollständig vorbereitet, getestet und buildfähig; die additive Migration ist remote angewendet. Ein Status `READY_FOR_REVIEW` ist erst nach Push-Infrastruktur und echten End-to-End-Tests vertretbar.

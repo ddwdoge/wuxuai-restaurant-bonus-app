@@ -2080,4 +2080,4 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - alte automatische Geburtstagszuteilung zugunsten der kundenausgelösten, idempotenten Auslosung deaktiviert
 - Bonus Boost auf feste V1-Werte 2×/30 Tage für beide Beteiligten vereinheitlicht; aktive Empfehlenden-Boosts verlängern sich um 30 Tage
 - neue Bonus-Boost-KPIs schließen markierte Testkunden aus
-- additive Migration `20260722003000_v1_retention_features.sql` erstellt, noch nicht auf Staging angewendet
+- additive Migration `20260722003000_v1_retention_features.sql` am 23.07.2026 auf das verknüpfte Supabase-Projekt angewendet und per Migrationsliste, leerem Dry-Run sowie erreichbarer PostgREST-RPC verifiziert
