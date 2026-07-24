@@ -324,6 +324,14 @@ export type GuestRegistrationInput = {
   phone: string;
   birthday: string | null;
   deviceId?: string | null;
+  legal: {
+    termsAccepted: boolean;
+    privacyAcknowledged: boolean;
+    marketingPush: boolean;
+    marketingSms: boolean;
+    marketingEmail: boolean;
+    birthdayProcessing: boolean;
+  };
 };
 
 export type GuestRegistrationResult = {
@@ -472,6 +480,7 @@ export type ReferralRegistrationInput = {
   phone: string;
   birthday: string | null;
   deviceId?: string | null;
+  legal: GuestRegistrationInput["legal"];
 };
 
 export type ReferralRegistrationResult = {
@@ -597,12 +606,18 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("register_restaurant_customer", {
+  const { data, error } = await supabase.rpc("register_restaurant_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_first_name: input.firstName,
     input_phone: input.phone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
+    input_terms_accepted: input.legal.termsAccepted,
+    input_privacy_acknowledged: input.legal.privacyAcknowledged,
+    input_marketing_push: input.legal.marketingPush,
+    input_marketing_sms: input.legal.marketingSms,
+    input_marketing_email: input.legal.marketingEmail,
+    input_birthday_processing: input.legal.birthdayProcessing,
   });
 
   if (error) throw error;
@@ -704,13 +719,19 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("register_referral_customer", {
+  const { data, error } = await supabase.rpc("register_referral_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_referral_token: input.referralToken,
     input_first_name: input.firstName,
     input_phone: input.phone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
+    input_terms_accepted: input.legal.termsAccepted,
+    input_privacy_acknowledged: input.legal.privacyAcknowledged,
+    input_marketing_push: input.legal.marketingPush,
+    input_marketing_sms: input.legal.marketingSms,
+    input_marketing_email: input.legal.marketingEmail,
+    input_birthday_processing: input.legal.birthdayProcessing,
   });
 
   if (error) throw error;

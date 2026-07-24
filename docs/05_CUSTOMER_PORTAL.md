@@ -759,3 +759,10 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   stammen ausschließlich aus der WUXUAI Datenbank.
 - Externe Navigation darf über einen Google-Maps-Weblink ohne API-Key geöffnet
   werden; es wird keine Google Maps Platform API verwendet.
+
+## Legal Center V1
+
+- `Rechtliches & Datenschutz` bleibt ohne Anmeldung für öffentliche Inhalte erreichbar.
+- Persönliche Einwilligungen, restaurantbezogener Datenexport und Datenschutzanfragen verlangen einen gültigen Kundenzugang für genau dieses Restaurant.
+- Teilnahme- und Datenschutzhinweis sind Pflicht; Marketing-Push, SMS, E-Mail und Geburtstagsverarbeitung bleiben getrennt, freiwillig und standardmäßig aus.
+- Punkte werden als nicht auszahlbar, nicht übertragbar und restaurantbezogen erklärt. Die aktuelle Gültigkeitsregel wird angezeigt; ein konkretes historisches Ablaufdatum nur, wenn es verlässlich berechenbar ist.

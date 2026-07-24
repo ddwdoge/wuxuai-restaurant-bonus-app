@@ -191,6 +191,7 @@ export function PartnerRestaurantFinderPage() {
           <div><span>WUXUAI Bonus</span><h1>Restaurants entdecken</h1></div>
           <MapPin aria-hidden="true" size={24} />
         </header>
+        <p className="partner-finder-legal-note">Punkte und Punkteeinlösungen werden für jedes Restaurant getrennt geführt.</p>
 
         <section className="partner-finder-controls" aria-label="Restaurantsuche">
           <label className="partner-search-field">

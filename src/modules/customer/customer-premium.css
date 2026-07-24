@@ -936,6 +936,17 @@
 .customer-premium-shell .input { border-color: var(--premium-border-strong); border-radius: 14px; min-height: 50px; }
 .customer-premium-shell .status-message { border-radius: 14px; }
 
+.customer-registration-legal,.customer-registration-consents { background: var(--premium-background-soft); border: 1px solid var(--premium-border); border-radius: 16px; display: grid; gap: 11px; padding: 15px; }
+.customer-registration-legal h3,.customer-registration-consents h3 { font-size: 17px; font-weight: 600; margin: 0; }
+.customer-registration-legal p,.customer-registration-consents p,.customer-registration-legal ul { color: var(--premium-text-secondary); font-size: 13px; line-height: 1.5; margin: 0; }
+.customer-registration-legal ul { padding-left: 20px; }.customer-registration-legal a { color: var(--premium-gold-dark); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.customer-registration-legal label,.customer-registration-consents label { align-items: start; cursor: pointer; display: grid; gap: 10px; grid-template-columns: 22px minmax(0,1fr); min-height: 44px; padding: 8px 0; }
+.customer-registration-legal input,.customer-registration-consents input { accent-color: var(--premium-gold); height: 21px; margin-top: 1px; width: 21px; }
+.premium-legal-notice { background: var(--premium-gold-soft); border-radius: 14px; color: #725320; font-size: 13px; line-height: 1.5; margin: 0; padding: 13px 14px; }
+.premium-legal-note-small { color: var(--premium-text-secondary); font-size: 12px; line-height: 1.45; margin: 0; }
+.premium-account-list .premium-account-list-link { align-items: center; background: transparent; border-bottom: 1px solid var(--premium-border); color: var(--premium-text); display: grid; gap: 12px; grid-template-columns: auto minmax(0,1fr) auto; min-height: 62px; padding: 10px 12px; text-align: left; width: 100%; }
+.premium-account-list .premium-account-list-link > span:nth-child(2) { display: grid; gap: 3px; }.premium-account-list .premium-account-list-link small { color: var(--premium-text-secondary); line-height: 1.35; }
+
 .customer-info-rules { display: grid; gap: 12px; }
 .customer-info-rules p { line-height: 1.55; margin: 0; }
 

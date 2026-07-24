@@ -1899,3 +1899,15 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Bonus Boost: beide Beteiligten erhalten nach der ersten gültigen Punktebuchung des geworbenen Neukunden 30 Tage lang exakt 2× Punkte.
 - Weitere erfolgreiche Empfehlungen verlängern den aktiven Boost des Empfehlenden jeweils um 30 Tage.
 - Keine Push-Nachricht, Auslosung oder Empfehlung darf die bestehende serverseitige Punkte- oder Einlösesicherheit umgehen.
+
+## CTO-Entscheidung 2026-07-24: Legal-Compliance-Layer
+
+🟢 **TECHNISCHE GRUNDLAGE / EXTERNE PRÜFUNG ERFORDERLICH**
+
+- Das Restaurant ist Betreiber und Aussteller seines restaurantbezogenen Bonusprogramms; WUXUAI ist technischer SaaS-Plattformanbieter und hält keine Kundengelder.
+- Punkte sind kein Geld, kein Bankguthaben, keine E-Wallet und kein allgemeines Zahlungsmittel. Sie sind nicht auszahlbar, verkäuflich oder zwischen Kunden beziehungsweise Restaurants übertragbar.
+- Teilnahmebedingungen und Datenschutzinformationen sind je Restaurant versioniert und unveränderlich. Eine konfigurierte erneute Annahme wird versionsgebunden gespeichert.
+- Marketing-Push, Marketing-SMS und Marketing-E-Mail sind getrennte, freiwillige Einwilligungen und standardmäßig aus. Ohne gültige kanalspezifische Einwilligung blockiert der Server Marketingversand.
+- Öffentliche rechtliche Inhalte laufen über begrenzte RPCs. Legal-, Consent- und Kundentabellen erhalten keine öffentliche Lesepolicy.
+- Datenschutzlöschung und Programmende sind geprüfte Abläufe, keine sofortigen Lösch- oder Abschaltaktionen.
+- Die technische Grundlage benötigt vor Production externe österreichische Rechts- und Steuerprüfung.

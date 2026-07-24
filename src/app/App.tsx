@@ -52,6 +52,12 @@ const CustomerPortal = lazy(() =>
 const PartnerRestaurantFinderPage = lazy(() =>
   import("../modules/customer/PartnerRestaurantFinderPage").then((module) => ({ default: module.PartnerRestaurantFinderPage })),
 );
+const LegalCenterPage = lazy(() =>
+  import("../modules/legal/LegalCenterPage").then((module) => ({ default: module.LegalCenterPage })),
+);
+const OwnerLegalSettingsPage = lazy(() =>
+  import("../modules/legal/OwnerLegalSettingsPage").then((module) => ({ default: module.OwnerLegalSettingsPage })),
+);
 const ReferralLanding = lazy(() =>
   import("../modules/customer/ReferralLanding").then((module) => ({ default: module.ReferralLanding })),
 );
@@ -137,6 +143,7 @@ export function App() {
         <Route path="rewards" element={withFallback(<RewardsPage />, <AdminLoading />)} />
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
+        <Route path="legal" element={withFallback(<OwnerLegalSettingsPage />, <AdminLoading />)} />
       </Route>
       <Route
         path="/admin/platform"
@@ -244,6 +251,7 @@ export function App() {
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
       <Route path="/customer" element={<GuestBonusInfoPage />} />
       <Route path="/customer/restaurants" element={withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)} />
+      <Route path="/legal/:slug" element={withFallback(<LegalCenterPage />, <CustomerLoading />)} />
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />

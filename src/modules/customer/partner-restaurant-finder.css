@@ -7,6 +7,7 @@
   overflow: hidden;
   padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
 }
+.partner-finder-legal-note { background: #f3e6cc; border-radius: 14px; color: #725320; font-size: 13px; line-height: 1.45; margin: 0; padding: 12px 14px; }
 
 .partner-finder-header {
   align-items: center;

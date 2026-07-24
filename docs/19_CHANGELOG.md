@@ -2125,3 +2125,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   geändert
 - fehlende Punkterückbuchung bei abgelaufenem reserviertem Einlösecode als
   separater offener Produktentscheid dokumentiert
+
+## 2026-07-24 – Legal-Compliance-Layer für Rechtsprüfung vorbereitet
+
+- öffentliches restaurantbezogenes Legal Center mit Teilnahmebedingungen, Datenschutz, Impressum, Speicherhinweisen, Barrierefreiheit und Beschwerdekontakt ergänzt
+- unveränderliche Dokumentversionen, Annahmen, getrennte Einwilligungen, Consent-Ereignisse und Datenschutzanfragen additiv modelliert
+- Registrierung verlangt Teilnahmebedingungen und Datenschutzhinweis; Marketing und Geburtstagsverarbeitung bleiben freiwillig und standardmäßig aus
+- Marketingversand ohne kanalspezifische Einwilligung serverseitig blockiert
+- Owner-Bereich um Rechtstexte, Bereitschaftscheckliste, Programmende, offene Datenschutzanfragen und technischen Einlösungs-CSV erweitert
+- Punkte als restaurantbezogenes Nicht-Geld-Produkt erklärt; keine Auszahlung oder Übertragung ergänzt
+- Aufbewahrung nur als konfigurierbarer Dry-Run vorbereitet; keine Daten gelöscht
+- Migration `20260724001000` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet

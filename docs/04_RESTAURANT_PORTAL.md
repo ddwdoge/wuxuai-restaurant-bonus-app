@@ -625,3 +625,10 @@ Endstatus: **LOCK**
   aktives Restaurant, vollständige Adressdaten und valide Koordinaten voraus.
 - Bestehende Restaurants bleiben standardmäßig unsichtbar.
 - Owner können durch bestehende RLS nur den Standort ihres Restaurants ändern.
+
+## Rechtliche Bereitschaft V1
+
+- Unter Einstellungen verwaltet der Owner Impressumsangaben, versionierte Teilnahmebedingungen, Datenschutztext, Beschwerdekontakt und Programmende für das eigene Restaurant.
+- Öffentliche Sichtbarkeit neuer Standorte setzt Betriebs-, Rechts- und Sicherheitsbereitschaft voraus. Bestehende Teststandorte werden nicht ungeprüft deaktiviert.
+- Offene Datenschutzanfragen werden pseudonymisiert angezeigt. Eine Anfrage führt nicht automatisch zu ungeprüfter Löschung.
+- Der Einlösungs-CSV ist eine technische Aufzeichnung und keine Steuerberatung.

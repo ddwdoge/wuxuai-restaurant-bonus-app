@@ -9,6 +9,7 @@ import {
   ImageUp,
   KeyRound,
   MapPinned,
+  Scale,
   Palette,
   QrCode,
   Save,
@@ -891,6 +892,13 @@ export function SettingsPage() {
       </header>
 
       <section className="grid two">
+        <SettingsLinkCard
+          description="Impressum, Teilnahmebedingungen, Datenschutz und Programmende."
+          icon={Scale}
+          label="Rechtliche Bereitschaft prüfen"
+          title="Rechtliches & Datenschutz"
+          to="/admin/legal"
+        />
         <SettingsLinkCard
           description="Passe die wichtigsten Angaben deines Restaurants an."
           icon={Building2}

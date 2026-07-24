@@ -30,6 +30,7 @@ import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
+import { loadPublicLegalCenter, type PublicLegalCenter } from "../legal/legalService";
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
@@ -210,12 +211,17 @@ export function CustomerPortal() {
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
+  const [legalCenter, setLegalCenter] = useState<PublicLegalCenter | null>(null);
   const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
   const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
   const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
   const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
-  const [form, setForm] = useState({ firstName: "", phone: "", birthday: "" });
+  const [form, setForm] = useState({
+    firstName: "", phone: "", birthday: "", termsAccepted: false,
+    privacyAcknowledged: false, marketingPush: false, marketingSms: false,
+    marketingEmail: false, birthdayProcessing: false,
+  });
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
@@ -254,6 +260,7 @@ export function CustomerPortal() {
       setCustomer(null);
       setRewards([]);
       setRetention(null);
+      setLegalCenter(null);
       setActiveRedemptionCode(null);
       setRedeemOffer(null);
       setRedemptionOutcome(null);
@@ -282,6 +289,12 @@ export function CustomerPortal() {
         if (data.customer) {
           setGuestStep("welcome");
         }
+      }
+      try {
+        const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
+        if (!cancelled) setLegalCenter(legalData);
+      } catch {
+        if (!cancelled) setLegalCenter(null);
       }
       if (data.customer && activeToken && restaurantSlug) {
         try {
@@ -313,6 +326,7 @@ export function CustomerPortal() {
         setCustomer(null);
         setRewards([]);
         setRetention(null);
+        setLegalCenter(null);
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
         setRedemptionOutcome(null);
@@ -420,6 +434,11 @@ export function CustomerPortal() {
   const pointsValue = settings?.loyalty_mode === "stamp_based"
     ? `${customer?.stamp_balance ?? 0}/${settings.stamps_required}`
     : String(customer?.points_balance ?? 0);
+  const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
+  const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
+  const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
+    ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
+    : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
   const bonusTiers = settings?.bonus_amount_tiers?.length ? settings.bonus_amount_tiers : defaultBonusAmountTiers;
   const sortedBonusTiers = [...bonusTiers].sort((left, right) => left.min - right.min);
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
@@ -602,6 +621,14 @@ export function CustomerPortal() {
       setMessage("Vorname und Telefonnummer sind erforderlich.");
       return;
     }
+    if (!form.termsAccepted || !form.privacyAcknowledged) {
+      setMessage("Bitte akzeptiere die Teilnahmebedingungen und bestätige die Datenschutzerklärung.");
+      return;
+    }
+    if (form.birthday && !form.birthdayProcessing) {
+      setMessage("Bitte bestätige die freiwillige Geburtstagsverarbeitung oder entferne das Geburtsdatum.");
+      return;
+    }
 
     setSubmitting(true);
     setMessage(null);
@@ -613,6 +640,14 @@ export function CustomerPortal() {
         phone: form.phone.trim(),
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
+        legal: {
+          termsAccepted: form.termsAccepted,
+          privacyAcknowledged: form.privacyAcknowledged,
+          marketingPush: form.marketingPush,
+          marketingSms: form.marketingSms,
+          marketingEmail: form.marketingEmail,
+          birthdayProcessing: form.birthdayProcessing,
+        },
       });
       saveStoredCustomerToken(restaurantSlug, {
         customer_token: result.customer.customer_qr_token,
@@ -1104,6 +1139,27 @@ export function CustomerPortal() {
                   onChange={(event) => setForm((current) => ({ ...current, birthday: event.target.value }))}
                 />
               </div>
+              <section className="customer-registration-legal" aria-labelledby="registration-legal-title">
+                <h3 id="registration-legal-title">Deine Teilnahme bei {restaurant.name}</h3>
+                <p>Das Restaurant betreibt dieses Bonusprogramm. WUXUAI stellt die technische Plattform bereit.</p>
+                <ul>
+                  <li>Maximal zwei erfolgreiche Punktebuchungen pro Tag.</li>
+                  <li>{pointsValidityText}</li>
+                  <li>Punkte haben keinen Geldwert und werden nicht bar ausgezahlt.</li>
+                  <li>Punkte und Punkteeinlösungen gelten nur bei {restaurant.name}.</li>
+                </ul>
+                <p><Link to={`/legal/${encodeURIComponent(restaurant.slug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurant.slug)}#privacy`}>Datenschutzerklärung</Link></p>
+                <label><input checked={form.termsAccepted} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
+                <label><input checked={form.privacyAcknowledged} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+              </section>
+              <section className="customer-registration-consents" aria-labelledby="registration-consents-title">
+                <h3 id="registration-consents-title">Freiwillige Einwilligungen</h3>
+                <p>Diese Auswahl ist freiwillig und für dein Bonuskonto nicht erforderlich.</p>
+                <label><input checked={form.birthdayProcessing} onChange={(event) => setForm((current) => ({ ...current, birthdayProcessing: event.target.checked }))} type="checkbox" /><span>Geburtstag für ein mögliches Geburtstagsgeschenk verwenden.</span></label>
+                <label><input checked={form.marketingPush} onChange={(event) => setForm((current) => ({ ...current, marketingPush: event.target.checked }))} type="checkbox" /><span>Marketing per Push erhalten.</span></label>
+                <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
+                <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
+              </section>
               <div className="grid two">
                 <button className="button secondary" onClick={() => setGuestStep("welcome")} type="button">
                   Zurück
@@ -1384,6 +1440,7 @@ export function CustomerPortal() {
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
                 />
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
 
                 {retention?.reminders.length ? (
                   <button className="premium-expiry-summary" onClick={() => setInfoOpen(true)} type="button">
@@ -1439,6 +1496,7 @@ export function CustomerPortal() {
                       <Gift aria-hidden="true" size={19} />
                       {drawingBirthdayGift ? "Geschenk wird ausgewählt …" : "Geschenk abholen"}
                     </PrimaryButton>
+                    <p className="premium-legal-note-small">Die Geburtstagsangabe ist freiwillig. Pro Restaurant und Jahr ist höchstens ein Geburtstagsgeschenk vorgesehen.</p>
                     {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
                   </PremiumCard>
                 ) : null}
@@ -1525,6 +1583,7 @@ export function CustomerPortal() {
                       Freund einladen
                     </PrimaryButton>
                   ) : null}
+                  <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
@@ -1569,6 +1628,7 @@ export function CustomerPortal() {
                     ? `${redemptionCatalog.length} ${redemptionCatalog.length === 1 ? "Belohnung" : "Belohnungen"} im Restaurant`
                     : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
                 </div>
+                <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
                 {filteredRedemptions.length ? (
                   <div
                     aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
@@ -1645,6 +1705,8 @@ export function CustomerPortal() {
                   </div>
                 </section>
 
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+
                 <section className="premium-content-section" aria-labelledby="account-more-title">
                   <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
                   <div className="premium-account-grid" id="account-more-title">
@@ -1675,6 +1737,11 @@ export function CustomerPortal() {
                       <span><strong>Hilfe & Kontakt</strong><small>Fragen zu deinem Bonus</small></span>
                       <ChevronRight aria-hidden="true" size={19} />
                     </button>
+                    <Link className="premium-account-list-link" to={`/legal/${encodeURIComponent(restaurant.slug)}?token=${encodeURIComponent(activeToken ?? "")}`}>
+                      <span className="premium-account-list-icon"><ShieldCheck aria-hidden="true" size={20} /></span>
+                      <span><strong>Rechtliches & Datenschutz</strong><small>Einwilligungen, Datenexport und Teilnahmebedingungen</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </Link>
                     <button className="danger" onClick={() => setAccountSheet("logout")} type="button">
                       <span className="premium-account-list-icon"><LogOut aria-hidden="true" size={20} /></span>
                       <span><strong>Abmelden</strong><small>Bonuskonto von diesem Gerät entfernen</small></span>
