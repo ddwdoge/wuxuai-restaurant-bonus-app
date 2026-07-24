@@ -1,19 +1,24 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  accountingRowsToCsv,
-  canPubliclyActivate,
-  legalReadiness,
-  marketingMessageAllowed,
-  termsAreComplete,
-} from "../src/modules/legal/legalCompliance.mjs";
+import ts from "typescript";
+
+const legalComplianceSource = readFileSync(new URL("../src/modules/legal/legalCompliance.ts", import.meta.url), "utf8");
+const legalComplianceJavaScript = ts.transpileModule(legalComplianceSource, {
+  compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2020 },
+}).outputText;
+const legalCompliance = await import(`data:text/javascript;base64,${Buffer.from(legalComplianceJavaScript).toString("base64")}`);
+const { accountingRowsToCsv, canPubliclyActivate, legalReadiness, marketingMessageAllowed, termsAreComplete } = legalCompliance;
 
 const migration = readFileSync(new URL("../supabase/migrations/20260724001000_legal_compliance_layer.sql", import.meta.url), "utf8");
+const hardeningMigration = readFileSync(new URL("../supabase/migrations/20260724002000_legal_maps_hardening.sql", import.meta.url), "utf8");
 const customerPortal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const referralLanding = readFileSync(new URL("../src/modules/customer/ReferralLanding.tsx", import.meta.url), "utf8");
 const legalCenter = readFileSync(new URL("../src/modules/legal/LegalCenterPage.tsx", import.meta.url), "utf8");
 const finder = readFileSync(new URL("../src/modules/customer/PartnerRestaurantFinderPage.tsx", import.meta.url), "utf8");
+const lazyMap = readFileSync(new URL("../src/modules/customer/LazyPartnerRestaurantMap.tsx", import.meta.url), "utf8");
+const viteConfig = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
 
 const completeTerms = {
   program_operator_name: "Testrestaurant", program_operator_address: "Teststraße 1, 1010 Wien",
@@ -28,6 +33,12 @@ const completeTerms = {
 test("Teilnahmebedingungen verlangen alle Pflichtfelder", () => {
   assert.equal(termsAreComplete(completeTerms), true);
   assert.equal(termsAreComplete({ ...completeTerms, complaint_contact: "" }), false);
+});
+
+test("TypeScript-Implementierung leitet die Feldtypen aus readonly Konstanten ab", () => {
+  assert.match(legalComplianceSource, /participationTermFields\s*=\s*\[/);
+  assert.match(legalComplianceSource, /\]\s*as const/);
+  assert.match(legalComplianceSource, /type ParticipationTermField = \(typeof participationTermFields\)\[number\]/);
 });
 
 test("Marketing ohne kanalspezifische Einwilligung ist blockiert", () => {
@@ -120,6 +131,21 @@ test("Datenschutzexport und Löschantrag bleiben restaurantbezogen", () => {
   assert.match(migration, /DATA_EXPORT_CREATED/);
 });
 
+test("Datenschutzexport enthält Nachweismetadaten statt Dokumentvolltexte", () => {
+  const exportFunction = hardeningMigration.slice(
+    hardeningMigration.indexOf("create or replace function public.get_customer_data_export"),
+    hardeningMigration.indexOf("create or replace function public.register_restaurant_customer_legal"),
+  );
+  assert.doesNotMatch(exportFunction, /rendered_text|content\s*[,)]/);
+  assert.match(exportFunction, /document_title/);
+  assert.match(exportFunction, /document_version/);
+  assert.match(exportFunction, /document_hash/);
+  assert.match(exportFunction, /accepted_at/);
+  assert.match(exportFunction, /acceptance_source/);
+  assert.match(exportFunction, /a\.customer_id = customer_record\.id/);
+  assert.match(exportFunction, /a\.restaurant_id = restaurant_record\.id/);
+});
+
 test("Mitgliedschaftsbeendigung wird zunächst nur als Antrag protokolliert", () => {
   assert.match(migration, /MEMBERSHIP_TERMINATION_REQUESTED/);
   assert.doesNotMatch(migration, /event_type_value := 'MEMBERSHIP_TERMINATED'/);
@@ -144,6 +170,70 @@ test("öffentliche Antwort enthält nur sichere Legal- und Laufzeitinformationen
   assert.match(publicFunction, /points_validity/);
   assert.match(publicFunction, /program_operator/);
   assert.doesNotMatch(publicFunction, /owner_email|service_role|customer_token_hash/);
+});
+
+test("gehärtetes Public Legal Center ist read-only und meldet fehlende Konfiguration", () => {
+  const publicFunction = hardeningMigration.slice(
+    hardeningMigration.indexOf("create or replace function public.get_public_legal_center"),
+    hardeningMigration.indexOf("create or replace function public.get_customer_data_export"),
+  );
+  assert.doesNotMatch(publicFunction, /ensure_restaurant_legal_templates|\binsert\b|\bupdate\b|\bdelete\b/i);
+  assert.match(publicFunction, /'legal_ready'/);
+  assert.match(publicFunction, /'missing_configuration'/);
+  assert.match(hardeningMigration, /for restaurant_record in select id from public\.restaurants loop/);
+  assert.match(hardeningMigration, /perform public\.ensure_restaurant_legal_templates\(restaurant_record\.id\)/);
+});
+
+test("Template-Backfill ergänzt nur Fehlendes und überschreibt keine vorhandene Version", () => {
+  const helperFunction = hardeningMigration.slice(
+    hardeningMigration.indexOf("create or replace function public.ensure_restaurant_legal_templates"),
+    hardeningMigration.indexOf("-- Idempotent backfill"),
+  );
+  assert.match(helperFunction, /on conflict \(restaurant_id, document_type\) do nothing/);
+  assert.doesNotMatch(helperFunction, /on conflict \(restaurant_id, document_type\) do update/);
+  assert.match(helperFunction, /if not exists \(select 1 from public\.legal_document_versions/);
+  assert.match(helperFunction, /current_published_version_id is null/);
+});
+
+test("Registrierungs-Wrapper blockieren fehlende Pflichtdokumente ohne Public-Backfill", () => {
+  const registrationFunctions = hardeningMigration.slice(
+    hardeningMigration.indexOf("create or replace function public.register_restaurant_customer_legal"),
+    hardeningMigration.indexOf("revoke execute on function public.get_public_legal_center"),
+  );
+  assert.doesNotMatch(registrationFunctions, /ensure_restaurant_legal_templates/);
+  assert.match(registrationFunctions, /document_type in \('participation_terms', 'privacy'\)/);
+  assert.match(registrationFunctions, /Rechtliche Informationen sind noch nicht verfügbar/);
+});
+
+test("Legal-Fehler bleibt vom Bonusportal getrennt und blockiert nur Registrierung", () => {
+  assert.match(customerPortal, /setLegalCenterState\(\{ status: "error"/);
+  assert.match(customerPortal, /Dein Bonuskonto bleibt nutzbar/);
+  assert.match(customerPortal, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(customerPortal, /reloadLegalCenter/);
+  assert.match(referralLanding, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(legalCenter, /data\.missing_configuration/);
+});
+
+test("Kartenbibliothek wird lazy geladen und besitzt einen isolierten Fallback", () => {
+  assert.match(finder, /LazyPartnerRestaurantMap/);
+  assert.doesNotMatch(finder, /from "\.\/PartnerRestaurantMap"/);
+  assert.match(lazyMap, /lazy\(\(\) =>\s*\n?\s*import\("\.\/PartnerRestaurantMap"\)/);
+  assert.match(lazyMap, /class MapErrorBoundary/);
+  assert.match(lazyMap, /Die Restaurantliste bleibt verfügbar/);
+  assert.match(viteConfig, /return "vendor-maps"/);
+  assert.match(viteConfig, /node_modules\/leaflet/);
+});
+
+test("keine identischen Dokumentduplikate mit Suffix 2 bleiben bestehen", () => {
+  const docsUrl = new URL("../docs/", import.meta.url);
+  const duplicateNames = readdirSync(docsUrl).filter((name) => name.endsWith(" 2.md"));
+  for (const duplicateName of duplicateNames) {
+    const canonicalName = duplicateName.replace(/ 2\.md$/, ".md");
+    const canonical = readFileSync(new URL(canonicalName, docsUrl));
+    const duplicate = readFileSync(new URL(duplicateName, docsUrl));
+    const hash = (value) => createHash("sha256").update(value).digest("hex");
+    assert.notEqual(hash(duplicate), hash(canonical), `${duplicateName} ist ein identisches Duplikat`);
+  }
 });
 
 test("Owner sieht offene Datenschutzanfragen nur restaurantbezogen", () => {

@@ -8,7 +8,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import type { PartnerRestaurant } from "./partnerRestaurantService";
 import { markerStatus } from "./partnerRestaurantFinder.mjs";
 
-type PartnerRestaurantMapProps = {
+export type PartnerRestaurantMapProps = {
   currentSlug?: string | null;
   locations: PartnerRestaurant[];
   onSelect: (location: PartnerRestaurant) => void;

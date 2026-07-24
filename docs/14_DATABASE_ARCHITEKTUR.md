@@ -1279,3 +1279,13 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
 - `get_customer_partner_membership(slug, token)` validiert den gehashten
   Kundenzugang gegen dasselbe Restaurant, bevor Punkte, Besuche oder
   Punkteeinlösungen ausgegeben werden.
+
+## Ergänzung 2026-07-24: Legal-Template-Hardening
+
+- Bestehende Restaurants erhalten fehlende Legal-Vorlagen einmalig über eine
+  additive, idempotente Backfill-Migration.
+- Öffentliche Legal-Abfragen erzeugen keine Tabellenzeilen und verändern keine
+  Dokumentversionen.
+- Fehlende Pflichtdokumente werden als kontrollierter Status ausgegeben und
+  blockieren ausschließlich neue Registrierungen.
+- Bestehende veröffentlichte Versionen werden beim Backfill nicht ersetzt.

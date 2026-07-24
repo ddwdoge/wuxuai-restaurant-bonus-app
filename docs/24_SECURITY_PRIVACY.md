@@ -1101,3 +1101,15 @@ Endstatus: **LOCK**
 - Ablauf-Erinnerungen enthalten nur die notwendige Reward-Referenz und werden nicht öffentlich aus Tabellen gelesen.
 - Die Geburtstagsauslosung verwendet nur Tag und Monat; Audit-Metadaten enthalten kein vollständiges Geburtsdatum.
 - Referral- und Boost-Aktivierung bleiben serverseitig, mandantenbezogen, atomar und idempotent.
+
+## Ergänzung 2026-07-24: Datenminimierter Legal-Nachweis
+
+- Dokumentannahmen werden mit Restaurant, Kunde, Dokumentversion, Hash,
+  serverseitigem Zeitstempel und Quelle nachgewiesen.
+- Freiwillige Einwilligungen bleiben kanalbezogen und widerrufbar.
+- Vollständige IP-Adressen werden für diesen Nachweis nicht gespeichert.
+- Optionale technische Kennungen müssen pseudonymisiert und Browserangaben auf
+  eine nicht eindeutig identifizierende Klasse minimiert bleiben.
+- Browser-Push-Permission und Marketingeinwilligung sind getrennte Nachweise.
+- Der öffentliche Legal-Endpunkt besitzt keine Tabellen-Schreiboperation und
+  keine direkte Public-Select-Policy auf Legal- oder Kundentabellen.

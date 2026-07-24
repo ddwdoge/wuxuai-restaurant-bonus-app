@@ -1,10 +1,14 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Gift, QrCode, UserPlus } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Link, useParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
-import { loadPublicLegalCenter, type PublicLegalCenter } from "../legal/legalService";
+import {
+  legalCenterStateFromResponse,
+  loadPublicLegalCenter,
+  type LegalCenterState,
+} from "../legal/legalService";
 import {
   loadPublicReferral,
   registerReferralGuest,
@@ -25,7 +29,7 @@ import {
 export function ReferralLanding() {
   const { restaurantSlug = "", referralToken = "" } = useParams();
   const [data, setData] = useState<PublicReferralData | null>(null);
-  const [legalCenter, setLegalCenter] = useState<PublicLegalCenter | null>(null);
+  const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [registration, setRegistration] = useState<ReferralRegistrationResult | null>(null);
   const [form, setForm] = useState({ firstName: "", phone: "", birthday: "", termsAccepted: false, privacyAcknowledged: false, birthdayProcessing: false, marketingPush: false, marketingSms: false, marketingEmail: false });
   const [message, setMessage] = useState<string | null>(null);
@@ -34,6 +38,21 @@ export function ReferralLanding() {
   const portalUrl = registration
     ? `${window.location.origin}/customer/${restaurantSlug}?token=${encodeURIComponent(registration.customer.customer_qr_token)}`
     : "";
+  const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
+
+  const reloadLegalCenter = useCallback(async () => {
+    if (!restaurantSlug) {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      return;
+    }
+    setLegalCenterState({ status: "loading" });
+    try {
+      const nextData = await loadPublicLegalCenter(restaurantSlug);
+      setLegalCenterState(legalCenterStateFromResponse(nextData));
+    } catch {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+    }
+  }, [restaurantSlug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,19 +64,21 @@ export function ReferralLanding() {
       .catch((error) => {
         if (!cancelled) setMessage(error instanceof Error ? error.message : "Einladung nicht verfügbar.");
       });
-    loadPublicLegalCenter(restaurantSlug)
-      .then((nextData) => { if (!cancelled) setLegalCenter(nextData); })
-      .catch(() => { if (!cancelled) setLegalCenter(null); });
+    void reloadLegalCenter();
 
     return () => {
       cancelled = true;
     };
-  }, [referralToken, restaurantSlug]);
+  }, [referralToken, reloadLegalCenter, restaurantSlug]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.firstName.trim() || !form.phone.trim()) {
       setMessage("Vorname und Telefonnummer sind erforderlich.");
+      return;
+    }
+    if (legalCenterState.status !== "ready") {
+      setMessage("Teilnahmebedingungen und Datenschutzinformationen müssen vor der Registrierung verfügbar sein. Bitte versuche es erneut.");
       return;
     }
     if (!form.termsAccepted || !form.privacyAcknowledged) {
@@ -214,8 +235,15 @@ export function ReferralLanding() {
                 <p>{pointsValidityText}</p>
                 <p>Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                 <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
-                <label><input checked={form.termsAccepted} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
-                <label><input checked={form.privacyAcknowledged} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+                {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
+                {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
+                  <div className="customer-legal-load-warning" role="alert">
+                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
+                    <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
+                  </div>
+                ) : null}
+                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
+                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
               </section>
               <section className="customer-registration-consents">
                 <h3>Freiwillige Einwilligungen</h3>
@@ -224,7 +252,7 @@ export function ReferralLanding() {
                 <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
                 <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
               </section>
-              <PrimaryButton disabled={submitting} type="submit">
+              <PrimaryButton disabled={submitting || legalCenterState.status !== "ready"} type="submit">
                 <UserPlus size={20} />
                 Mitglied werden
               </PrimaryButton>

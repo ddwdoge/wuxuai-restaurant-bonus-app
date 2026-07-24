@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileCheck2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTenant } from "../tenant/TenantProvider";
-import { legalReadiness } from "./legalCompliance.mjs";
+import { legalReadiness } from "./legalCompliance";
 import {
   downloadRewardAccountingCsv,
   loadRestaurantLegalSetup,

@@ -1,5 +1,5 @@
 import { supabase } from "../../shared/lib/supabase";
-import { accountingRowsToCsv } from "./legalCompliance.mjs";
+import { accountingRowsToCsv } from "./legalCompliance";
 
 export type ConsentType = "marketing_push" | "marketing_sms" | "marketing_email" | "personalized_recommendations" | "birthday_processing";
 export type ConsentStatus = "granted" | "withdrawn" | "denied";
@@ -28,7 +28,21 @@ export type PublicLegalCenter = {
   points_validity: { months: number | null; oldest_expiry_at: string | null; calculation_status: string; notice: string };
   program: { status: "active" | "scheduled"; planned_end_at?: string; last_points_earning_at?: string; final_redemption_at?: string; customer_notice?: string };
   product_notice: string;
+  legal_ready: boolean;
+  missing_configuration: boolean;
 };
+
+export type LegalCenterState =
+  | { status: "loading" }
+  | { status: "ready"; data: PublicLegalCenter }
+  | { status: "not_configured" }
+  | { status: "error"; message: string };
+
+export function legalCenterStateFromResponse(data: PublicLegalCenter): LegalCenterState {
+  return data.legal_ready && !data.missing_configuration
+    ? { status: "ready", data }
+    : { status: "not_configured" };
+}
 
 export type RegistrationLegalChoices = {
   termsAccepted: boolean;

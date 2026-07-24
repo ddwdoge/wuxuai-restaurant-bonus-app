@@ -22,7 +22,7 @@ import {
   sortPartnerRestaurants,
 } from "./partnerRestaurantFinder.mjs";
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
-import { PartnerRestaurantMap } from "./PartnerRestaurantMap";
+import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
@@ -216,7 +216,19 @@ export function PartnerRestaurantFinderPage() {
         {!loading && !error && filteredLocations.length ? (
           <div className={`partner-finder-content view-${view}`}>
             <section className="partner-map-panel" aria-label="Karte der Partnerrestaurants">
-              <PartnerRestaurantMap currentSlug={currentSlug} locations={filteredLocations} onSelect={selectLocation} selectedId={selected?.branch_id ?? null} userLocation={userLocation} />
+              <LazyPartnerRestaurantMap
+                currentSlug={currentSlug}
+                errorFallback={(
+                  <div className="partner-map-fallback" role="status">
+                    <p>Die Karte konnte nicht geladen werden. Alle Partnerrestaurants bleiben in der Liste verfügbar.</p>
+                    <button className="premium-button premium-button-secondary" onClick={() => setView("list")} type="button">Liste anzeigen</button>
+                  </div>
+                )}
+                locations={filteredLocations}
+                onSelect={selectLocation}
+                selectedId={selected?.branch_id ?? null}
+                userLocation={userLocation}
+              />
             </section>
             <section className="partner-list-panel" aria-label="Liste der Partnerrestaurants">
               <div className="partner-results-list">

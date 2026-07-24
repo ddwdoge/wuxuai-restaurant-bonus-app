@@ -23,6 +23,14 @@ export default defineConfig({
             return "vendor-supabase";
           }
 
+          if (
+            id.includes("/node_modules/leaflet/")
+            || id.includes("/node_modules/react-leaflet/")
+            || id.includes("/node_modules/leaflet.markercluster/")
+          ) {
+            return "vendor-maps";
+          }
+
           if (id.includes("/lucide-react/") || id.includes("/qrcode.react/")) {
             return "vendor-ui";
           }

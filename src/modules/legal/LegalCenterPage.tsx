@@ -197,6 +197,7 @@ export function LegalCenterPage() {
 
   if (loading) return <AppShell><main className="legal-center-shell"><LoadingState description="Rechtliche Informationen werden geladen …" /></main></AppShell>;
   if (error || !data) return <AppShell><main className="legal-center-shell"><ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error ?? "Keine Daten verfügbar."} title="Rechtliches nicht verfügbar" /></main></AppShell>;
+  if (!data.legal_ready || data.missing_configuration) return <AppShell><main className="legal-center-shell"><ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description="Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet." title="Rechtliches noch nicht verfügbar" /></main></AppShell>;
 
   const terms = documentByType(data, "participation_terms");
   const privacy = documentByType(data, "privacy");

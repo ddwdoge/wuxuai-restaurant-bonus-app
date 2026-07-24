@@ -19,7 +19,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import type { BranchSubscription, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
-import { PartnerRestaurantMap } from "../../customer/PartnerRestaurantMap";
+import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -786,7 +786,7 @@ export function SettingsPage() {
               <div className="field"><label htmlFor="location-cover">Öffentliches Bild (HTTPS-Adresse)</label><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
-                <div className="settings-location-preview"><h2>Markervorschau</h2><PartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
+                <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
               ) : <p className="muted">Gib gültige Koordinaten ein, um die Kartenposition zu prüfen.</p>}
               <FormActions saving={saving} submitLabel="Standort speichern" />
             </form>

@@ -5,6 +5,22 @@
 
 Status: **LOCK**
 
+## 24.07.2026 - Legal- und Karten-Hardening
+
+- Leaflet, React Leaflet und Marker Cluster hinter einen echten dynamischen
+  Kartenimport verschoben und in einen separat cachebaren Maps-Chunk gelegt.
+- Listenansicht bleibt bei einem Kartenimportfehler nutzbar.
+- Legal-Hilfslogik vollständig nach TypeScript migriert; manuelle Declaration
+  entfernt.
+- Öffentlichen Legal-Center-Pfad read-only gemacht und fehlende Konfiguration
+  als kontrollierten Status modelliert.
+- Registrierungen bleiben ohne verfügbare Pflichtdokumente blockiert, während
+  bestehende Bonuskonten bei einem temporären Legal-Fehler weiter nutzbar sind.
+- Kundendatenexport auf Nachweismetadaten statt Legal-Dokumentvolltexte
+  begrenzt.
+- Identische, unreferenzierte Dokumentduplikate entfernt und minimierten
+  Consent-Nachweis ohne vollständige IP-Adresse dokumentiert.
+
 ## 23.07.2026 - Partnerrestaurant-Finder mit OpenStreetMap
 
 - CTO-Ausnahme für eine optionale, rein lesende Partnerrestaurantsuche ergänzt.

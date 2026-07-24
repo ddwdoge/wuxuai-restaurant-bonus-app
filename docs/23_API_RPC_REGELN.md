@@ -935,3 +935,14 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   nur `anon` und `authenticated`.
 - Es werden keine Owner-, Mitarbeiter-, Kundenkontakt- oder Umsatzdaten
   veröffentlicht.
+
+## Ergänzung 2026-07-24: Public Legal Center und Datenexport
+
+- `get_public_legal_center(slug, token)` ist im normalen Public-Pfad read-only.
+- Fehlen veröffentlichte Pflichtdokumente, liefert die RPC
+  `legal_ready = false` und `missing_configuration = true` ohne interne Details.
+- Registrierungs-RPCs prüfen die vorhandenen veröffentlichten Pflichtdokumente
+  serverseitig und erzeugen keine Vorlagen im Gastpfad.
+- `get_customer_data_export(slug, token)` gibt bei Dokumentannahmen nur
+  Nachweismetadaten wie Titel, Version, Hash, Gültigkeitsdatum, Annahmezeit und
+  Quelle aus. Dokumentvolltexte sind nicht Teil des personenbezogenen Exports.

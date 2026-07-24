@@ -38,3 +38,26 @@ Diese technische Umsetzung ist keine Rechts- oder Steuerberatung und keine Produ
 - Verlässliche Verbrauchsreihenfolge für konkrete älteste Punkte-Ablaufdaten fachlich definieren
 - Manuelle Punkte- und Rewardkorrekturen mit Grund, Bearbeiter, Vorher-/Nachher-Wert und Audit in einem gesondert freigegebenen V1-Flow klären; die aktuelle Bible verbietet allgemeine manuelle Punkteingabe
 - Physische Mobile-Safari-/Screenreader-Prüfung durchführen
+
+## Consent-Nachweis ohne vollständige IP-Adresse
+
+Die technische Nachweisführung bleibt datenminimiert. Eine vollständige
+IP-Adresse wird weder für die Dokumentannahme noch für freiwillige
+Einwilligungen gespeichert.
+
+Der vorgesehene Nachweis besteht aus:
+
+- `customer_id` und `restaurant_id`
+- Einwilligungsart beziehungsweise Dokumenttyp
+- Dokumentversion und Dokument-Hash
+- serverseitigem Zeitstempel
+- Quelle des Vorgangs
+- optional einer minimierten Browserklasse ohne eindeutigen Fingerprint
+- einer pseudonymisierten Sitzungs- oder Anfragekennung
+- `test_session_id` bei kontrollierten Tests
+
+Ob diese Nachweisform für die vorgesehenen Kommunikationskanäle rechtlich
+ausreicht, muss vor Production durch österreichische Rechtsberatung bestätigt
+werden. Für SMS- oder E-Mail-Marketing kann zusätzlich ein Double-Opt-in
+sinnvoll oder erforderlich sein. Die Push-Berechtigung des Browsers ersetzt
+nicht automatisch die wettbewerbsrechtliche Marketingeinwilligung.

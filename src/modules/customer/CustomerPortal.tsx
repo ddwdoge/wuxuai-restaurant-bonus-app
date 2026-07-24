@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   BellRing,
@@ -30,7 +30,11 @@ import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
-import { loadPublicLegalCenter, type PublicLegalCenter } from "../legal/legalService";
+import {
+  legalCenterStateFromResponse,
+  loadPublicLegalCenter,
+  type LegalCenterState,
+} from "../legal/legalService";
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
@@ -211,7 +215,7 @@ export function CustomerPortal() {
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
-  const [legalCenter, setLegalCenter] = useState<PublicLegalCenter | null>(null);
+  const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
   const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
   const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
@@ -236,6 +240,21 @@ export function CustomerPortal() {
   const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
+  const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
+
+  const reloadLegalCenter = useCallback(async () => {
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      return;
+    }
+    setLegalCenterState({ status: "loading" });
+    try {
+      const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
+      setLegalCenterState(legalCenterStateFromResponse(legalData));
+    } catch {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+    }
+  }, [activeToken, restaurantSlug]);
   useEffect(() => {
     if (!isUsableRestaurantSlug(restaurantSlug)) return;
     setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
@@ -260,7 +279,7 @@ export function CustomerPortal() {
       setCustomer(null);
       setRewards([]);
       setRetention(null);
-      setLegalCenter(null);
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
       setActiveRedemptionCode(null);
       setRedeemOffer(null);
       setRedemptionOutcome(null);
@@ -290,12 +309,7 @@ export function CustomerPortal() {
           setGuestStep("welcome");
         }
       }
-      try {
-        const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
-        if (!cancelled) setLegalCenter(legalData);
-      } catch {
-        if (!cancelled) setLegalCenter(null);
-      }
+      if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
         try {
           const retentionData = await loadCustomerRetentionStatus(restaurantSlug, activeToken);
@@ -326,7 +340,7 @@ export function CustomerPortal() {
         setCustomer(null);
         setRewards([]);
         setRetention(null);
-        setLegalCenter(null);
+        setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
         setRedemptionOutcome(null);
@@ -350,7 +364,7 @@ export function CustomerPortal() {
     return () => {
       cancelled = true;
     };
-  }, [activeToken, customerToken, refreshToken, restaurantSlug, slug]);
+  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, slug]);
 
   useEffect(() => {
     if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
@@ -619,6 +633,10 @@ export function CustomerPortal() {
     event.preventDefault();
     if (!restaurantSlug || !form.firstName.trim() || !form.phone.trim()) {
       setMessage("Vorname und Telefonnummer sind erforderlich.");
+      return;
+    }
+    if (legalCenterState.status !== "ready") {
+      setMessage("Teilnahmebedingungen und Datenschutzinformationen müssen vor der Registrierung verfügbar sein. Bitte versuche es erneut.");
       return;
     }
     if (!form.termsAccepted || !form.privacyAcknowledged) {
@@ -1149,8 +1167,15 @@ export function CustomerPortal() {
                   <li>Punkte und Punkteeinlösungen gelten nur bei {restaurant.name}.</li>
                 </ul>
                 <p><Link to={`/legal/${encodeURIComponent(restaurant.slug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurant.slug)}#privacy`}>Datenschutzerklärung</Link></p>
-                <label><input checked={form.termsAccepted} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
-                <label><input checked={form.privacyAcknowledged} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+                {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
+                {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
+                  <div className="customer-legal-load-warning" role="alert">
+                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
+                    <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
+                  </div>
+                ) : null}
+                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
+                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
               </section>
               <section className="customer-registration-consents" aria-labelledby="registration-consents-title">
                 <h3 id="registration-consents-title">Freiwillige Einwilligungen</h3>
@@ -1164,7 +1189,7 @@ export function CustomerPortal() {
                 <button className="button secondary" onClick={() => setGuestStep("welcome")} type="button">
                   Zurück
                 </button>
-                <button className="button" disabled={submitting} type="submit">
+                <button className="button" disabled={submitting || legalCenterState.status !== "ready"} type="submit">
                   <CheckCircle2 size={20} />
                   Fertig
                 </button>
@@ -1441,6 +1466,12 @@ export function CustomerPortal() {
                   value={pointsValue}
                 />
                 <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
+                  <div className="premium-legal-load-warning" role="status">
+                    <span>Rechtliche Informationen sind vorübergehend nicht verfügbar. Dein Bonuskonto bleibt nutzbar.</span>
+                    <button onClick={() => void reloadLegalCenter()} type="button">Erneut laden</button>
+                  </div>
+                ) : null}
 
                 {retention?.reminders.length ? (
                   <button className="premium-expiry-summary" onClick={() => setInfoOpen(true)} type="button">
