@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -7,7 +7,6 @@ import {
   Edit3,
   Eye,
   Gift,
-  ImagePlus,
   Power,
   PowerOff,
   RefreshCw,
@@ -20,7 +19,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
-import { supabase } from "../../../shared/lib/supabase";
 import { loadLoyaltySettings } from "../../loyalty/loyaltyService";
 import {
   loadRewardOffers,
@@ -30,6 +28,8 @@ import {
 } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
+import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
+import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type RewardCalculationSettings = {
@@ -92,14 +92,6 @@ function extractProductPrice(description: string) {
   return match ? parseEuro(match[1]) : null;
 }
 
-function rewardFileExtension(file: File) {
-  const fromName = file.name.toLowerCase().split(".").pop();
-  if (fromName && ["png", "jpg", "jpeg", "svg"].includes(fromName)) return fromName;
-  if (file.type === "image/svg+xml") return "svg";
-  if (file.type === "image/png") return "png";
-  return "jpg";
-}
-
 function calculateReward(price: number, settings: RewardCalculationSettings) {
   const amountPerPoint = Math.max(0.01, Number(settings.amount_per_point) || 1);
   const redemptionReturnRate = Math.max(0.01, Number(settings.redemption_return_rate) || 0.05);
@@ -143,6 +135,7 @@ export function RewardsPage() {
   const [priceInput, setPriceInput] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [editingOffer, setEditingOffer] = useState<RewardOffer | null>(null);
   const [previewOffer, setPreviewOffer] = useState<RewardOffer | null>(null);
   const [pendingStatusOffer, setPendingStatusOffer] = useState<RewardOffer | null>(null);
@@ -187,6 +180,10 @@ export function RewardsPage() {
     return () => { cancelled = true; };
   }, [restaurantId, reloadKey]);
 
+  useEffect(() => () => {
+    if (photoPreview?.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
+  }, [photoPreview]);
+
   const reloadRewards = useCallback(() => setReloadKey((current) => current + 1), []);
   const productPrice = parseEuro(priceInput);
   const calculation = useMemo(() => calculateReward(productPrice, settings), [productPrice, settings]);
@@ -202,6 +199,7 @@ export function RewardsPage() {
     setPriceInput("");
     setPhotoPreview(null);
     setPhotoFile(null);
+    setPhotoError(null);
     setEditingOffer(null);
   }
 
@@ -220,6 +218,7 @@ export function RewardsPage() {
     setPriceInput(formatPriceInput(offer.product_price ?? extractProductPrice(offer.description)));
     setPhotoPreview(offer.image_url);
     setPhotoFile(null);
+    setPhotoError(null);
     setStep(2);
     setStatus(null);
     setEditorOpen(true);
@@ -231,35 +230,31 @@ export function RewardsPage() {
     setStatus(null);
   }
 
-  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(file.type)) {
-      setStatus("Bitte wähle PNG, JPG, JPEG oder SVG.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus("Das Bild darf maximal 5 MB groß sein.");
-      return;
-    }
-    if (photoPreview?.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
+  function handlePhoto(file: File) {
     setPhotoPreview(URL.createObjectURL(file));
     setPhotoFile(file);
+    setPhotoError(null);
+    setStatus(null);
   }
 
   async function saveReward() {
-    if (!restaurantId || !selectedTemplate || productPrice <= 0) return;
+    if (saving || !restaurantId || !selectedTemplate || productPrice <= 0) return;
     const wasEditing = Boolean(editingOffer);
     setSaving(true);
     setStatus(null);
+    setPhotoError(null);
+    let uploadedObjectPath: string | null = null;
     try {
       let imageUrl: string | null = null;
-      if (photoFile && supabase) {
-        const path = `${restaurantId}/rewards/reward-${Date.now()}.${rewardFileExtension(photoFile)}`;
-        const { error } = await supabase.storage.from("restaurant-media").upload(path, photoFile, { cacheControl: "3600", upsert: true });
-        if (error) throw error;
-        imageUrl = supabase.storage.from("restaurant-media").getPublicUrl(path).data.publicUrl;
+      if (photoFile) {
+        const upload = await uploadOwnerRewardImage({
+          restaurantId,
+          folder: "rewards",
+          entityId: editingOffer?.id,
+          file: photoFile,
+        });
+        uploadedObjectPath = upload.objectPath;
+        imageUrl = upload.publicUrl;
       }
       const saved = await saveRewardOffer({
         id: editingOffer?.id,
@@ -287,7 +282,9 @@ export function RewardsPage() {
       resetWizard();
       setStatus(wasEditing ? "Punkteeinlösung aktualisiert." : "Punkteeinlösung erstellt.");
     } catch (error) {
+      if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Punkteeinlösung konnte nicht gespeichert werden.", error);
+      if (photoFile) setPhotoError("Das Foto konnte nicht gespeichert werden. Das bisherige Bild bleibt erhalten.");
       setStatus("Punkteeinlösung konnte gerade nicht gespeichert werden.");
     } finally {
       setSaving(false);
@@ -358,8 +355,16 @@ export function RewardsPage() {
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Bild</p><h3>Produktfoto hinzufügen</h3><p>Optional. Ohne Foto erscheint ein ruhiger Standardplatzhalter.</p></div>
           <div className="reward-photo-row">
-            <div className="reward-standard-image">{photoPreview ? <img alt="Punkteeinlösung" src={photoPreview} /> : <SelectedIcon aria-hidden="true" size={44} />}</div>
-            <div><input accept="image/png,image/jpeg,image/jpg,image/svg+xml" className="visually-hidden" id="reward-photo" onChange={handlePhoto} type="file" /><button className="button secondary" onClick={() => document.getElementById("reward-photo")?.click()} type="button"><ImagePlus size={18} />Foto auswählen</button></div>
+            <OwnerRewardImageUploader
+              categoryIcon={<SelectedIcon aria-hidden="true" size={46} />}
+              disabled={saving}
+              error={photoError}
+              imageUrl={editingOffer?.image_url}
+              label={rewardTitle}
+              loading={saving && Boolean(photoFile)}
+              onFileSelected={handlePhoto}
+              previewUrl={photoPreview}
+            />
           </div>
         </section>
       ) : null}
@@ -386,7 +391,7 @@ export function RewardsPage() {
       {step < 5 ? (
         <button className="button" disabled={(step === 1 && !selectedTemplate) || (step === 2 && productPrice <= 0)} onClick={() => setStep((current) => Math.min(5, current + 1) as WizardStep)} type="button">Weiter</button>
       ) : (
-        <button className="button" disabled={saving || !rewardName.trim()} onClick={saveReward} type="button"><Sparkles size={18} />{editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}</button>
+        <button className="button" disabled={saving || !rewardName.trim()} onClick={saveReward} type="button"><Sparkles size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}</button>
       )}
     </>
   );

@@ -236,6 +236,11 @@ Schritte: 1. Produktart wählen 2. Produktpreis eingeben 3.
 Automatische Punkteberechnung sehen 4. Foto optional hochladen 5.
 Vorschau prüfen 6. Punkteeinlösung erstellen
 
+Der große Bildbereich im Erstellen- und Bearbeiten-Formular öffnet per Klick
+oder Tastatur direkt die native Bildauswahl. JPG, PNG und WebP sind bis 5 MB
+zulässig. Eine lokale Vorschau erscheint vor dem Speichern; der Upload erfolgt
+erst gemeinsam mit dem Formular.
+
 ### 6.3 Gespeicherte Punkteeinlösungen
 
 Gespeicherte Punkteeinlösungen werden als Karten angezeigt.
@@ -299,6 +304,10 @@ schaltet es frei - Einlösung erst beim nächsten Besuch
 
 Restaurant kann bearbeiten: - Name - Kategorie - Wertgrenze in € -
 Foto - Standardbild behalten - Aktiv/Inaktiv
+
+Auch hier öffnet der große Bildbereich direkt die native Bildauswahl. Abbrechen
+verwirft eine neue lokale Auswahl. Bei einem Upload- oder Speicherfehler bleibt
+das bisher gespeicherte Bild erhalten.
 
 Keine Punkte. Keine Einlösungspunkte. Keine Punkteberechnung.
 

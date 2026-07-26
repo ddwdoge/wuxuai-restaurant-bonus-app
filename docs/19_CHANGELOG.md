@@ -2152,3 +2152,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Punkte als restaurantbezogenes Nicht-Geld-Produkt erklärt; keine Auszahlung oder Übertragung ergänzt
 - Aufbewahrung nur als konfigurierbarer Dry-Run vorbereitet; keine Daten gelöscht
 - Migration `20260724001000` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet
+
+## 2026-07-26 – Direkter Owner-Fotoupload für Belohnungen
+
+- großer Bildbereich in Punkteeinlösungs- und Willkommensgeschenk-Formularen öffnet direkt die native Bildauswahl
+- gemeinsame Owner-Komponente mit Tastaturbedienung, lokaler Vorschau, Lade- und Fehlerzustand ergänzt
+- bestehender Bucket `restaurant-media` und vorhandene tenantgebundene Storage-Policies werden weiterverwendet
+- Upload erfolgt erst beim Speichern; bei einem nachfolgenden Speicherfehler wird nur das neu hochgeladene Objekt bereinigt und das alte Bild bleibt erhalten
+- sichere, restaurantbezogene Objektpfade verwenden UUIDs statt Original-Dateinamen
+- additive Migration `20260726001000_owner_reward_image_webp.sql` ergänzt WebP im bestehenden Bucket; am 26.07.2026 auf `wuxuai-bonus-staging` angewendet und per Migrationsliste synchron bestätigt
+- keine Customer-, Staff-, Plattform-, Reward-, Punkte-, RLS- oder Auth-Logik geändert

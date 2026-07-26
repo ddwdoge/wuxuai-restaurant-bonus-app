@@ -1,11 +1,10 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   Coffee,
   Cookie,
   Edit3,
   Eye,
   Gift,
-  ImagePlus,
   Power,
   PowerOff,
   RefreshCw,
@@ -13,12 +12,10 @@ import {
   Save,
   Soup,
   Sparkles,
-  Trash2,
   Utensils,
   Wine,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
-import { supabase } from "../../../shared/lib/supabase";
 import {
   loadRewardOffers,
   saveRewardOffer,
@@ -27,6 +24,8 @@ import {
 } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
+import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
+import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
 
 type WelcomeGiftMode = "value_limit" | "fixed_product";
 
@@ -76,14 +75,6 @@ function starterRewardKeyForCategory(category: string) {
   if (category === "Sushi") return "sushi";
   if (category === "Menü") return "menü";
   return "eigene-belohnung";
-}
-
-function fileExtension(file: File) {
-  const fromName = file.name.toLowerCase().split(".").pop();
-  if (fromName && ["png", "jpg", "jpeg", "svg"].includes(fromName)) return fromName;
-  if (file.type === "image/svg+xml") return "svg";
-  if (file.type === "image/png") return "png";
-  return "jpg";
 }
 
 function iconForCategory(category: string | null | undefined) {
@@ -144,6 +135,7 @@ export function WelcomeGiftsPage() {
   const [previewGift, setPreviewGift] = useState<RewardOffer | null>(null);
   const [pendingStatusGift, setPendingStatusGift] = useState<RewardOffer | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -174,17 +166,23 @@ export function WelcomeGiftsPage() {
     return () => { cancelled = true; };
   }, [restaurantId, reloadKey]);
 
+  useEffect(() => () => {
+    if (editing?.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(editing.imageUrl);
+  }, [editing?.imageUrl]);
+
   const reloadGifts = useCallback(() => setReloadKey((current) => current + 1), []);
 
   function startCreate() {
     setEditing(newGiftForm());
     setPhotoFile(null);
+    setPhotoError(null);
     setStatus(null);
   }
 
   function startEdit(gift: RewardOffer) {
     setEditing(formFromGift(gift));
     setPhotoFile(null);
+    setPhotoError(null);
     setStatus(null);
   }
 
@@ -192,32 +190,16 @@ export function WelcomeGiftsPage() {
     if (editing?.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(editing.imageUrl);
     setEditing(null);
     setPhotoFile(null);
+    setPhotoError(null);
     setStatus(null);
   }
 
-  async function uploadPhoto(file: File) {
-    if (!supabase || !restaurantId) return null;
-    const path = `${restaurantId}/starter-rewards/reward-${Date.now()}.${fileExtension(file)}`;
-    const { error } = await supabase.storage.from("restaurant-media").upload(path, file, { cacheControl: "3600", upsert: true });
-    if (error) throw error;
-    return supabase.storage.from("restaurant-media").getPublicUrl(path).data.publicUrl;
-  }
-
-  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || !editing) return;
-    if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(file.type)) {
-      setStatus("Bitte wähle PNG, JPG, JPEG oder SVG.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus("Das Bild darf maximal 5 MB groß sein.");
-      return;
-    }
-    if (editing.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(editing.imageUrl);
+  function handlePhoto(file: File) {
+    if (!editing) return;
     setEditing({ ...editing, imageUrl: URL.createObjectURL(file) });
     setPhotoFile(file);
+    setPhotoError(null);
+    setStatus(null);
   }
 
   function removePhoto() {
@@ -225,17 +207,27 @@ export function WelcomeGiftsPage() {
     if (editing.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(editing.imageUrl);
     setEditing({ ...editing, imageUrl: null });
     setPhotoFile(null);
+    setPhotoError(null);
     setStatus("Das Standardbild wird nach dem Speichern verwendet.");
   }
 
   async function saveGift(event: FormEvent) {
     event.preventDefault();
-    if (!editing || !restaurantId || !editing.title.trim()) return;
+    if (saving || !editing || !restaurantId || !editing.title.trim()) return;
     const original = gifts.find((gift) => gift.id === editing.id);
     setSaving(true);
     setStatus(null);
+    setPhotoError(null);
+    let uploadedObjectPath: string | null = null;
     try {
-      const uploadedUrl = photoFile ? await uploadPhoto(photoFile) : null;
+      const upload = photoFile ? await uploadOwnerRewardImage({
+        restaurantId,
+        folder: "starter-rewards",
+        entityId: original?.id,
+        file: photoFile,
+      }) : null;
+      uploadedObjectPath = upload?.objectPath ?? null;
+      const uploadedUrl = upload?.publicUrl ?? null;
       const fixedProductName = editing.mode === "fixed_product" ? editing.fixedProductName.trim() : null;
       const valueLimit = Math.max(0, parseEuro(editing.productPrice));
       const category = editing.category.trim() || original?.category || "Eigene Überraschung";
@@ -270,7 +262,9 @@ export function WelcomeGiftsPage() {
       setPhotoFile(null);
       setStatus(original ? "Willkommensgeschenk aktualisiert." : "Willkommensgeschenk erstellt.");
     } catch (error) {
+      if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Willkommensgeschenk konnte nicht gespeichert werden.", error);
+      if (photoFile) setPhotoError("Das Foto konnte nicht gespeichert werden. Das bisherige Bild bleibt erhalten.");
       setStatus("Willkommensgeschenk konnte gerade nicht gespeichert werden.");
     } finally {
       setSaving(false);
@@ -334,7 +328,7 @@ export function WelcomeGiftsPage() {
         </section>
       )}
 
-      <AppDrawer description="Name, Wert, Foto und Status des Geschenks." footer={editing ? <><button className="button secondary" onClick={closeEditor} type="button">Abbrechen</button><button className="button" disabled={saving || !editing.title.trim()} form="welcome-gift-editor-form" type="submit"><Save size={18} />{editing.id ? "Änderungen speichern" : "Willkommensgeschenk erstellen"}</button></> : null} onClose={closeEditor} open={Boolean(editing)} title={editing?.id ? "Willkommensgeschenk bearbeiten" : "Willkommensgeschenk erstellen"}>
+      <AppDrawer description="Name, Wert, Foto und Status des Geschenks." footer={editing ? <><button className="button secondary" disabled={saving} onClick={closeEditor} type="button">Abbrechen</button><button className="button" disabled={saving || !editing.title.trim()} form="welcome-gift-editor-form" type="submit"><Save size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editing.id ? "Änderungen speichern" : "Willkommensgeschenk erstellen"}</button></> : null} onClose={closeEditor} open={Boolean(editing)} title={editing?.id ? "Willkommensgeschenk bearbeiten" : "Willkommensgeschenk erstellen"}>
         {editing ? (
           <form className="form premium-owner-editor welcome-gift-drawer-form" id="welcome-gift-editor-form" onSubmit={saveGift}>
             <section className="premium-owner-editor-section">
@@ -357,7 +351,19 @@ export function WelcomeGiftsPage() {
 
             <section className="premium-owner-editor-section">
               <div><p className="premium-owner-kicker">Darstellung</p><h3>Bild und Sichtbarkeit</h3></div>
-              <div className="reward-photo-row"><div className="reward-standard-image">{editing.imageUrl ? <img alt={editing.title || "Willkommensgeschenk"} src={editing.imageUrl} /> : categoryIcon(editing.category, 44)}</div><div className="premium-owner-photo-actions"><input accept="image/png,image/jpeg,image/jpg,image/svg+xml" className="visually-hidden" id="welcome-gift-photo" onChange={handlePhoto} type="file" /><button className="button secondary" onClick={() => document.getElementById("welcome-gift-photo")?.click()} type="button"><ImagePlus size={18} />Foto auswählen</button>{editing.imageUrl ? <button className="button secondary" onClick={removePhoto} type="button"><Trash2 size={18} />Bild entfernen</button> : null}<p>Du kannst den Standardplatzhalter behalten.</p></div></div>
+              <div className="reward-photo-row">
+                <OwnerRewardImageUploader
+                  categoryIcon={categoryIcon(editing.category, 46)}
+                  disabled={saving}
+                  error={photoError}
+                  imageUrl={gifts.find((gift) => gift.id === editing.id)?.image_url}
+                  label={editing.title || "Willkommensgeschenk"}
+                  loading={saving && Boolean(photoFile)}
+                  onFileSelected={handlePhoto}
+                  onRemove={removePhoto}
+                  previewUrl={editing.imageUrl}
+                />
+              </div>
               <label className="premium-owner-toggle"><input checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
               <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsüberraschungen verwenden</strong><small>Nur aktive Geschenke in diesem Pool können zufällig ausgelost werden.</small></span></label>
             </section>
