@@ -153,13 +153,52 @@ Marketingeinwilligung bleiben ausdrücklich Gegenstand rechtlicher Prüfung.
 
 ## Migration und Staging
 
-- Migration erstellt: Ja, `20260724002000_legal_maps_hardening.sql`
-- `npx supabase db push --dry-run --include-all`: erfolgreich
-- Migration angewendet: Nein
-- Dry-Run zeigt zwei ausstehende Migrationen:
-  - `20260724001000_legal_compliance_layer.sql`
-  - `20260724002000_legal_maps_hardening.sql`
+- Migrationen erstellt: Ja,
+  `20260724001000_legal_compliance_layer.sql` und
+  `20260724002000_legal_maps_hardening.sql`
+- Ziel vor Anwendung erneut bestaetigt: `wuxuai-bonus-staging`; keine
+  Production-Verbindung.
+- Finaler `npx supabase db push --dry-run`: erfolgreich; angezeigt wurden
+  exakt die zwei freigegebenen Migrationen und keine dritte Migration.
+- Beide Migrationen wurden am 25.07.2026 in der freigegebenen Reihenfolge
+  erfolgreich auf Staging angewendet.
+- `npx supabase migration list`: lokal 60, remote 60; keine Remote-only-
+  Migration und kein Versionskonflikt.
+- Abschliessender `npx supabase db push --dry-run`: `Remote database is up to
+  date.`
 - Production wurde nicht verändert.
+
+## Live-Verifikation nach Staging-Migration
+
+- `get_public_legal_center` wurde dreimal parallel fuer `wuxuai-food`
+  aufgerufen: dreimal HTTP 200, kein `PGRST202`, identischer Response-Hash.
+- Die Antwort enthielt genau die fuenf vorgesehenen Dokumenttypen
+  `accessibility`, `imprint`, `participation_terms`, `privacy` und `storage`
+  sowie den kontrollierten Legal-Readiness-Vertrag.
+- Direkte anonyme Abfragen auf `restaurant_legal_profiles`,
+  `legal_documents`, `legal_document_versions`,
+  `customer_legal_acceptances`, `customer_consents` und `privacy_requests`
+  wurden jeweils mit HTTP 401 / PostgreSQL `42501` blockiert.
+- Die read-only Tabellenstatistik zeigte 24 Restaurantprofile, 120 Dokumente
+  und 120 Dokumentversionen. Das entspricht exakt fuenf Dokumenten je
+  Restaurant; nach parallelen Public-Aufrufen waren keine zusaetzlichen
+  Templates oder Versionen erkennbar.
+- Der Backfill-Helper wurde innerhalb einer vollstaendig zurueckgerollten
+  Staging-Transaktion zweimal nacheinander ausgefuehrt. Dokument-IDs,
+  veroeffentlichte Versionen und Dokumenthashes blieben unveraendert;
+  doppelte Dokumente: 0.
+- Registrierung ohne Teilnahmebedingungen sowie ohne
+  Datenschutzbestaetigung wurde jeweils serverseitig mit HTTP 400 blockiert,
+  bevor eine Kundenerstellung stattfinden konnte.
+- Export und Consent mit ungueltigem Kundentoken wurden serverseitig neutral
+  blockiert. Der interne Marketing-Autorisierer ist fuer `anon` nicht
+  ausfuehrbar (HTTP 401 / `42501`).
+- Ein positiver Staging-E2E lief innerhalb einer vollstaendig
+  zurueckgerollten Transaktion: Registrierung ohne Marketingeinwilligung,
+  Marketing-Block ohne Consent, kanalspezifischer Grant, sofortiger Widerruf,
+  unveraenderter Punktestand, Export ohne Dokumentvolltexte und neutral
+  blockierter Fremdrestaurant-Zugriff. Es blieben keine Testkunden, Tokens,
+  Consent- oder Audit-Testdaten bestehen.
 
 ## Was nicht geändert wurde
 
@@ -173,11 +212,12 @@ Marketingeinwilligung bleiben ausdrücklich Gegenstand rechtlicher Prüfung.
 
 ## Offene Risiken
 
-- Beide Legal-Migrationen müssen in Reihenfolge auf Staging angewendet und die
-  RPCs dort live geprüft werden, bevor eine finale Freigabe möglich ist.
 - Standardvorlagen ersetzen keine österreichische Rechts- und Steuerprüfung.
 - Consent-Nachweis und Double-Opt-in-Anforderungen sind je Kanal juristisch zu
   bestätigen.
+- Der UI-Fall eines bereits registrierten Kunden bei einem absichtlich
+  provozierten Legal-RPC-Ausfall ist automatisiert abgesichert, wurde aber
+  nicht mit einem persistenten Testkunden im Browser gegen Staging provoziert.
 - Physischer Mobile-Safari- und Screenreader-Test bleibt offen.
 
-Status: **READY_FOR_REVIEW**
+Status: **READY_FOR_LEGAL_REVIEW**
