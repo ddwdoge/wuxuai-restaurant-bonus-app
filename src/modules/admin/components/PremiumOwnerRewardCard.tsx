@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
+import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 
 type PremiumOwnerRewardCardProps = {
   actions: ReactNode;
@@ -9,6 +11,8 @@ type PremiumOwnerRewardCardProps = {
   className?: string;
   description?: string;
   imageUrl?: string | null;
+  imageCrop?: Partial<RewardImageCrop> | null;
+  media?: ReactNode;
   meta: Array<{ label: string; value: string }>;
   PlaceholderIcon: LucideIcon;
   title: string;
@@ -22,6 +26,8 @@ export function PremiumOwnerRewardCard({
   className = "",
   description,
   imageUrl,
+  imageCrop,
+  media,
   meta,
   PlaceholderIcon,
   title,
@@ -29,13 +35,13 @@ export function PremiumOwnerRewardCard({
   return (
     <article className={`premium-owner-reward-card ${className}`.trim()}>
       <div className="premium-owner-reward-media">
-        {imageUrl ? (
-          <img alt={title} src={imageUrl} />
+        {media ?? (imageUrl ? (
+          <RewardImageFrame alt={title} crop={imageCrop} imageUrl={imageUrl} />
         ) : (
           <span className="premium-owner-reward-placeholder" aria-label={`Standardbild ${title}`}>
             <PlaceholderIcon aria-hidden="true" size={42} strokeWidth={1.5} />
           </span>
-        )}
+        ))}
         <span className={`premium-owner-status-badge ${badgeTone}`}>
           <span aria-hidden="true" />
           {badgeLabel}

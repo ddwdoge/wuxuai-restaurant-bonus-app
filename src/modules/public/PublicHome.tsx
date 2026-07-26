@@ -1,71 +1,48 @@
-import { ArrowRight, QrCode, Sparkles, Store } from "lucide-react";
-import { Link } from "react-router-dom";
+import { QrCode, Sparkles, Store } from "lucide-react";
+import {
+  PublicContentCard,
+  PublicEntryCard,
+  PublicPageShell,
+  PublicPrimaryLink,
+} from "./PublicPageComponents";
 
 export function PublicHome() {
   return (
-    <main className="public-shell">
-      <section className="public-entry">
-        <div>
-          <span className="pill">WUXUAI Bonus</span>
-          <h1>Restaurant Bonus einfach starten.</h1>
-          <p className="muted">Ein Login für Restaurants. Ein QR für Gäste.</p>
-        </div>
-
-        <div className="public-entry-grid">
-          <Link className="public-entry-card" to="/login">
-            <Store size={40} />
-            <div>
-              <h2>Restaurant Login</h2>
-              <p>Für Restaurantbesitzer und Manager.</p>
-              <span className="public-entry-action">Öffnen <ArrowRight size={16} /></span>
-            </div>
-          </Link>
-
-          <Link className="public-entry-card" to="/register">
-            <Sparkles size={40} />
-            <div>
-              <h2>Restaurant registrieren</h2>
-              <p>Bonusprogramm in wenigen Minuten einrichten und 30 Tage kostenlos testen.</p>
-              <span className="public-entry-action">Kostenlos starten <ArrowRight size={16} /></span>
-            </div>
-          </Link>
-
-          <Link className="public-entry-card" to="/customer">
-            <QrCode size={40} />
-            <div>
-              <h2>Gast-Bonus öffnen</h2>
-              <p>Bonuskonto öffnen oder den QR-Code im Restaurant scannen.</p>
-              <span className="public-entry-action">Öffnen <ArrowRight size={16} /></span>
-            </div>
-          </Link>
-        </div>
-      </section>
-    </main>
+    <PublicPageShell
+      description="Ein Login für Restaurants. Ein QR für Gäste."
+      eyebrow="WUXUAI Bonus"
+      title="Restaurant Bonus einfach starten."
+      width="entry"
+    >
+      <div className="public-premium-entry-grid">
+        <PublicEntryCard action="Öffnen" description="Für Restaurantbesitzer und Manager." icon={Store} title="Restaurant Login" to="/login" />
+        <PublicEntryCard action="Kostenlos starten" description="Bonusprogramm in wenigen Minuten einrichten und 30 Tage kostenlos testen." icon={Sparkles} title="Restaurant registrieren" to="/register" />
+        <PublicEntryCard action="Öffnen" description="Bonuskonto öffnen oder den QR-Code im Restaurant scannen." icon={QrCode} title="Gast-Bonus öffnen" to="/customer" />
+      </div>
+    </PublicPageShell>
   );
 }
 
 export function GuestBonusInfoPage() {
   return (
-    <main className="public-shell">
-      <section className="public-entry guest-entry-page">
-        <div>
-          <span className="pill">WUXUAI Bonus</span>
-          <h1>Bonus für Gäste</h1>
-          <p className="muted">Scanne den QR-Code im Restaurant oder öffne deinen persönlichen Bonus-Link.</p>
+    <PublicPageShell
+      description="Scanne den QR-Code im Restaurant oder öffne deinen persönlichen Bonus-Link."
+      eyebrow="WUXUAI Bonus"
+      title="Bonus für Gäste"
+    >
+      <PublicContentCard className="public-premium-guest-card">
+        <div className="public-premium-guest-heading">
+          <span className="public-premium-guest-icon" aria-hidden="true"><QrCode size={26} /></span>
+          <h2>So kommst du zu deinem Bonuskonto</h2>
         </div>
-
-        <div className="guest-entry-card">
-          <QrCode size={44} />
-          <div>
-            <h2>So kommst du zu deinem Bonuskonto</h2>
-            <p>Der QR-Code im Restaurant erkennt automatisch das richtige Bonusprogramm.</p>
-            <p>Wenn du schon Mitglied bist, kannst du deinen persönlichen Bonus-Link erneut öffnen.</p>
-          </div>
-          <Link className="button secondary-button" to="/">
-            Zurück zur Startseite
-          </Link>
-        </div>
-      </section>
-    </main>
+        <ol className="public-premium-steps">
+          <li>QR-Code im Restaurant scannen</li>
+          <li>Das richtige Restaurant wird automatisch erkannt</li>
+          <li>Bonus sammeln und Punkteeinlösungen nutzen</li>
+        </ol>
+        <p className="public-premium-notice">Bereits Mitglied? Öffne deinen persönlichen Bonus-Link erneut.</p>
+        <PublicPrimaryLink to="/">Zurück zur Startseite</PublicPrimaryLink>
+      </PublicContentCard>
+    </PublicPageShell>
   );
 }

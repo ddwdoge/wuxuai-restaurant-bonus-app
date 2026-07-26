@@ -164,6 +164,11 @@ export type Reward = {
   category?: string | null;
   available_products?: string[];
   image_url?: string | null;
+  image_zoom?: number | null;
+  image_position_x?: number | null;
+  image_position_y?: number | null;
+  image_aspect_ratio?: string | null;
+  image_crop_version?: number | null;
   product_price?: number | null;
   active_days?: string[];
   welcome_gift_mode?: "value_limit" | "fixed_product";

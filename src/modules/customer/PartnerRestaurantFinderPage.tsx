@@ -11,6 +11,7 @@ import {
   Search,
   Store,
   Trophy,
+  X,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppShell, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
@@ -81,13 +82,14 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
   );
 }
 
-function PartnerDetail({ current, location }: { current: boolean; location: PartnerRestaurant }) {
+function PartnerDetail({ current, location, onClose }: { current: boolean; location: PartnerRestaurant; onClose: () => void }) {
   const membership = location.membership;
   const customerToken = readStoredCustomerToken(location.slug);
   const portalUrl = `/customer/${encodeURIComponent(location.slug)}${customerToken ? `?token=${encodeURIComponent(customerToken)}` : ""}`;
 
   return (
-    <article className="partner-detail-card">
+    <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
+      <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
       {location.cover_image_url ? <img alt={`${location.name} Titelbild`} className="partner-detail-cover" src={location.cover_image_url} /> : null}
       <div className="partner-detail-heading">
         <span className="partner-detail-logo">
@@ -161,7 +163,7 @@ export function PartnerRestaurantFinderPage() {
     return sortPartnerRestaurants(matches);
   }, [locations, query, userLocation]);
 
-  const selected = filteredLocations.find((location) => location.branch_id === selectedId) ?? filteredLocations[0] ?? null;
+  const selected = selectedId ? filteredLocations.find((location) => location.branch_id === selectedId) ?? null : null;
 
   function requestLocation() {
     setLocationMessage("Dein Standort wird nur für diese Suche verwendet.");
@@ -236,7 +238,7 @@ export function PartnerRestaurantFinderPage() {
                   <PartnerResultCard key={location.branch_id} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
                 ))}
               </div>
-              {selected ? <PartnerDetail current={selected.slug === currentSlug} location={selected} /> : null}
+              {selected ? <PartnerDetail current={selected.slug === currentSlug} location={selected} onClose={() => setSelectedId(null)} /> : null}
             </section>
           </div>
         ) : null}

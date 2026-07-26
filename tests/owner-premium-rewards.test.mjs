@@ -17,6 +17,7 @@ const webpMigration = readFileSync(new URL("../supabase/migrations/2026072600100
 const customerPortal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const staffPortal = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", import.meta.url), "utf8");
 const platformPortal = readFileSync(new URL("../src/modules/platform/PlatformAdminPage.tsx", import.meta.url), "utf8");
+const rewardService = readFileSync(new URL("../src/modules/rewards/rewardService.ts", import.meta.url), "utf8");
 
 test("Premium-Verwaltung bleibt im Restaurant-Portal gekapselt", () => {
   assert.match(rewardsPage, /premium-owner-management-page/);
@@ -83,9 +84,9 @@ test("großer Owner-Bildbereich öffnet den nativen Picker per Klick und Tastatu
   assert.match(imageUploader, /type="file"/);
   assert.match(imageUploader, /accept="image\/jpeg,image\/png,image\/webp"/);
   assert.match(imageUploader, /fileInputRef\.current\?\.click\(\)/);
-  assert.match(imageUploader, /event\.key === "Enter" \|\| event\.key === " "/);
-  assert.match(imageUploader, /role="button"/);
-  assert.match(imageUploader, /tabIndex=/);
+  assert.match(imageUploader, /<button[\s\S]*className=\{`owner-reward-image-trigger/);
+  assert.match(imageUploader, /type="button"/);
+  assert.match(imageUploader, /disabled=\{interactionDisabled\}/);
   assert.match(imageUploader, /aria-live="polite"/);
   assert.match(styles, /owner-reward-image-trigger:focus-visible/);
 });
@@ -120,4 +121,32 @@ test("Uploader bleibt ausschließlich im Restaurant-Owner-Portal", () => {
   assert.doesNotMatch(platformPortal, /OwnerRewardImageUploader|Foto ändern|Foto hinzufügen/);
   assert.match(styles, /owner-reward-image-trigger[\s\S]*min-height: 176px/);
   assert.match(styles, /owner-reward-image-remove[\s\S]*height: 44px[\s\S]*width: 44px/);
+});
+
+test("Übersichtskarten öffnen den direkten Fotoaustausch ohne Vollformular", () => {
+  assert.match(rewardCard, /media\?: ReactNode/);
+  assert.match(rewardCard, /media \?\?/);
+  assert.match(rewardsPage, /ariaLabel=\{offer\.image_url \? "Rewardbild ändern" : "Rewardbild hinzufügen"\}/);
+  assert.match(welcomeGiftsPage, /ariaLabel=\{gift\.image_url \? "Geschenkbild ändern" : "Geschenkbild hinzufügen"\}/);
+  for (const page of [rewardsPage, welcomeGiftsPage]) {
+    assert.match(page, /compact/);
+    assert.match(page, /showMessage=\{false\}/);
+    assert.match(page, /title="Bildausschnitt bearbeiten"/);
+    assert.match(page, /Foto speichern/);
+  }
+});
+
+test("direkter Fotoaustausch aktualisiert ausschließlich tenantgebundene Bildfelder", () => {
+  assert.match(rewardService, /export async function setRewardOfferImage/);
+  assert.match(rewardService, /image_url: imageUrl/);
+  assert.match(rewardService, /image_zoom:/);
+  assert.match(rewardService, /image_position_x:/);
+  assert.match(rewardService, /image_position_y:/);
+  assert.match(rewardService, /\.eq\("id", offer\.id\)[\s\S]*\.eq\("restaurant_id", offer\.restaurant_id\)/);
+  assert.doesNotMatch(rewardService.match(/export async function setRewardOfferImage[\s\S]*?\n\}/)?.[0] ?? "", /required_points|title:|active:/);
+  for (const page of [rewardsPage, welcomeGiftsPage]) {
+    assert.match(page, /setRewardOfferImage\(/);
+    assert.match(page, /if \(uploadedObjectPath\) await removeOwnerRewardImageUpload/);
+    assert.match(page, /Das bisherige Bild bleibt erhalten/);
+  }
 });

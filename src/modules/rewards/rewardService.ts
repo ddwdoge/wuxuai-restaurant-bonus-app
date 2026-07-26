@@ -15,6 +15,11 @@ export type RewardOffer = {
   category: string | null;
   product_group: string | null;
   image_url: string | null;
+  image_zoom: number;
+  image_position_x: number;
+  image_position_y: number;
+  image_aspect_ratio: string;
+  image_crop_version: number;
   product_price: number | null;
   active_days: string[];
   welcome_gift_mode: "value_limit" | "fixed_product";
@@ -41,6 +46,11 @@ export type RewardOfferInput = {
   category?: string | null;
   product_group?: string | null;
   image_url?: string | null;
+  image_zoom?: number | null;
+  image_position_x?: number | null;
+  image_position_y?: number | null;
+  image_aspect_ratio?: string | null;
+  image_crop_version?: number | null;
   product_price?: number | null;
   active_days?: string[];
   welcome_gift_mode?: "value_limit" | "fixed_product";
@@ -150,12 +160,17 @@ export type RewardKpis = {
 };
 
 const rewardSelect =
-  "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, product_price, active_days, welcome_gift_mode, fixed_product_name, is_starter_reward, birthday_pool_enabled, starter_reward_key, starter_reward_order, active, expires_at, created_at";
+  "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, image_zoom, image_position_x, image_position_y, image_aspect_ratio, image_crop_version, product_price, active_days, welcome_gift_mode, fixed_product_name, is_starter_reward, birthday_pool_enabled, starter_reward_key, starter_reward_order, active, expires_at, created_at";
 const legacyRewardSelect =
   "id, restaurant_id, title, description, reward_type, required_points, required_stamps, category, available_products, image_url, is_starter_reward, active, expires_at, created_at";
 
 const couponSelect =
   "id, restaurant_id, campaign_id, title, description, reward_type, required_points, required_stamps, status, expires_at, created_at";
+
+function normalizedCropValue(value: number | null | undefined, fallback: number, min: number, max: number) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.min(max, Math.max(min, numeric)) : fallback;
+}
 
 function toRewardOffer(record: Reward | Coupon, source: RewardOfferSource): RewardOffer {
   return {
@@ -170,6 +185,11 @@ function toRewardOffer(record: Reward | Coupon, source: RewardOfferSource): Rewa
     category: source === "reward" ? (record as Reward).category ?? null : null,
     product_group: source === "reward" ? ((record as Reward).available_products ?? []).join(", ") || null : "Angebot",
     image_url: source === "reward" ? (record as Reward).image_url ?? null : null,
+    image_zoom: source === "reward" ? normalizedCropValue((record as Reward).image_zoom, 1, 0.1, 4) : 1,
+    image_position_x: source === "reward" ? normalizedCropValue((record as Reward).image_position_x, 0.5, 0, 1) : 0.5,
+    image_position_y: source === "reward" ? normalizedCropValue((record as Reward).image_position_y, 0.5, 0, 1) : 0.5,
+    image_aspect_ratio: source === "reward" ? (record as Reward).image_aspect_ratio ?? "16:9" : "16:9",
+    image_crop_version: source === "reward" ? Math.max(1, Number((record as Reward).image_crop_version) || 1) : 1,
     product_price: source === "reward" ? (record as Reward).product_price ?? null : null,
     active_days: source === "reward"
       ? (record as Reward).active_days ?? ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -195,7 +215,24 @@ function normalizeRewardRelation(reward: Reward | Reward[] | null | undefined): 
 function isMissingRewardColumnError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };
-  return maybeError.code === "42703" || /product_price|active_days|welcome_gift_mode|fixed_product_name|birthday_pool_enabled|starter_reward_key|starter_reward_order/i.test(maybeError.message ?? "");
+  return maybeError.code === "42703" || /product_price|active_days|welcome_gift_mode|fixed_product_name|birthday_pool_enabled|starter_reward_key|starter_reward_order|image_zoom|image_position_x|image_position_y|image_aspect_ratio|image_crop_version/i.test(maybeError.message ?? "");
+}
+
+function isMissingImageCropColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { message?: string };
+  return /image_zoom|image_position_x|image_position_y|image_aspect_ratio|image_crop_version/i.test(maybeError.message ?? "");
+}
+
+export class RewardImageCropMigrationRequiredError extends Error {
+  constructor() {
+    super("Die Datenbank unterstützt den gespeicherten Bildausschnitt noch nicht.");
+    this.name = "RewardImageCropMigrationRequiredError";
+  }
+}
+
+export function isRewardImageCropMigrationRequiredError(error: unknown) {
+  return error instanceof RewardImageCropMigrationRequiredError;
 }
 
 export function getRewardStatus(offer: RewardOffer, customer: Customer, redeemedIds: string[]): CustomerRewardView {
@@ -329,6 +366,11 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
       category: input.category ?? null,
       available_products: input.available_products ?? [],
       image_url: input.image_url ?? null,
+      image_zoom: normalizedCropValue(input.image_zoom, 1, 0.1, 4),
+      image_position_x: normalizedCropValue(input.image_position_x, 0.5, 0, 1),
+      image_position_y: normalizedCropValue(input.image_position_y, 0.5, 0, 1),
+      image_aspect_ratio: "16:9",
+      image_crop_version: Math.max(1, Number(input.image_crop_version) || 1),
       product_price: input.product_price ?? null,
       active_days: input.active_days ?? ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
       welcome_gift_mode: input.welcome_gift_mode ?? "value_limit",
@@ -345,6 +387,10 @@ export async function saveRewardOffer(input: RewardOfferInput): Promise<RewardOf
       ? supabase.from("rewards").update(payload).eq("id", input.id).eq("restaurant_id", input.restaurant_id)
       : supabase.from("rewards").insert(payload);
     let { data, error }: { data: unknown; error: unknown } = await query.select(rewardSelect).single();
+
+    if (error && isMissingImageCropColumnError(error)) {
+      throw new RewardImageCropMigrationRequiredError();
+    }
 
     if (error && isMissingRewardColumnError(error)) {
       const legacyPayload = {
@@ -427,6 +473,42 @@ export async function setRewardOfferActive(offer: RewardOffer, active: boolean):
   }
 
   return saveRewardOffer({ ...offer, active });
+}
+
+export async function setRewardOfferImage(
+  offer: RewardOffer,
+  imageUrl: string | null,
+  crop: { zoom: number; positionX: number; positionY: number },
+): Promise<RewardOffer> {
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
+  }
+  if (offer.source !== "reward") {
+    throw new Error("Für dieses Angebot kann kein Bild gespeichert werden.");
+  }
+
+  const { data, error }: { data: unknown; error: unknown } = await supabase
+    .from("rewards")
+    .update({
+      image_url: imageUrl,
+      image_zoom: normalizedCropValue(crop.zoom, 1, 0.1, 4),
+      image_position_x: normalizedCropValue(crop.positionX, 0.5, 0, 1),
+      image_position_y: normalizedCropValue(crop.positionY, 0.5, 0, 1),
+      image_aspect_ratio: "16:9",
+      image_crop_version: 1,
+    })
+    .eq("id", offer.id)
+    .eq("restaurant_id", offer.restaurant_id)
+    .eq("is_starter_reward", offer.is_starter_reward)
+    .select(rewardSelect)
+    .single();
+
+  if (error && isMissingImageCropColumnError(error)) {
+    throw new RewardImageCropMigrationRequiredError();
+  }
+
+  if (error) throw error;
+  return toRewardOffer(data as Reward, "reward");
 }
 
 export async function loadRedeemedOfferKeys(restaurantId: string, customerId: string): Promise<string[]> {

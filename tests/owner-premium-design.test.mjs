@@ -44,7 +44,7 @@ test("Owner Navigation bleibt responsiv und berührungsfreundlich", () => {
   assert.match(styles, /@media \(min-width: 1024px\)[\s\S]*dashboard-kpi-grid[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(styles, /@media \(min-width: 1200px\)[\s\S]*dashboard-kpi-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(styles, /@media \(max-width: 1023px\)/);
-  assert.match(styles, /\.mobile-menu-drawer \.nav-link[\s\S]*min-height: 46px/);
+  assert.match(styles, /\.mobile-menu-navigation \.nav-link[\s\S]*min-height: 46px/);
   assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(styles, /repeat\(auto-fit, minmax\(min\(220px, 100%\), 1fr\)\)/);
   assert.match(styles, /overflow-x: hidden/);

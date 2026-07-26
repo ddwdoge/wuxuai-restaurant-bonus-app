@@ -82,6 +82,8 @@ import {
   type CustomerView,
   type RewardCardState,
 } from "./components/PremiumCustomerUi";
+import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
+import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
 import {
   customerPushAvailable,
   disableCustomerPush,
@@ -1208,7 +1210,7 @@ export function CustomerPortal() {
               <article className="welcome-reward-preview">
                 <div className="customer-reward-image">
                   {registration.welcome_reward.image_url ? (
-                    <img alt={registration.welcome_reward.title} src={registration.welcome_reward.image_url} />
+                    <RewardImageFrame alt={registration.welcome_reward.title} crop={rewardImageCropFromRecord(registration.welcome_reward)} imageUrl={registration.welcome_reward.image_url} />
                   ) : (
                     standardRewardAsset(registration.welcome_reward.category, registration.welcome_reward.title)
                   )}
@@ -1544,6 +1546,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category={reward.category ?? reward.product_group}
                           imageUrl={reward.image_url}
+                          imageCrop={rewardImageCropFromRecord(reward)}
                           key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                           meta={`${reward.required_points} Punkte`}
                           onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
@@ -1566,6 +1569,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category="Geburtstagsgeschenk"
                           imageUrl={activeBirthdayGift.image_url}
+                          imageCrop={rewardImageCropFromRecord(activeBirthdayGift)}
                           meta="Für deinen Geburtstag"
                           onOpen={() => openRewardRedemption(activeBirthdayGift)}
                           state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode)}
@@ -1576,6 +1580,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category="Willkommensgeschenk"
                           imageUrl={activeWelcomeGift.image_url}
+                          imageCrop={rewardImageCropFromRecord(activeWelcomeGift)}
                           meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
                           onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
                           state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode)}
@@ -1673,6 +1678,7 @@ export function CustomerPortal() {
                       <RewardCard
                         category={reward.category ?? reward.product_group}
                         imageUrl={reward.image_url}
+                        imageCrop={rewardImageCropFromRecord(reward)}
                         key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                         meta={reward.is_starter_reward
                           ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
@@ -1855,7 +1861,7 @@ export function CustomerPortal() {
 
                 {redeemOffer && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "detail" ? (
                   <article className="premium-reward-detail">
-                    <div className="premium-reward-detail-media"><RewardImage imageUrl={redeemOffer.image_url} title={redeemOffer.title} /></div>
+                    <div className="premium-reward-detail-media"><RewardImage crop={rewardImageCropFromRecord(redeemOffer)} imageUrl={redeemOffer.image_url} title={redeemOffer.title} /></div>
                     <div className="premium-reward-detail-heading">
                       <StatusBadge tone={selectedRewardState === "available" ? "success" : selectedRewardState === "expired" ? "error" : "neutral"}>
                         {selectedRewardState ? rewardStatusText(redeemOffer, selectedRewardState) : "Details"}
@@ -1907,6 +1913,7 @@ export function CustomerPortal() {
 
             <AppDrawer
               description={accountSheet === "logout" ? "Dein Bonuskonto bleibt erhalten." : undefined}
+              dismissOnOverlay={accountSheet !== "profile"}
               footer={accountSheet === "logout" ? (
                 <>
                   <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
@@ -1920,6 +1927,7 @@ export function CustomerPortal() {
               ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
               onClose={() => setAccountSheet(null)}
               open={Boolean(accountSheet)}
+              size={accountSheet === "logout" ? "compact" : "standard"}
               title={accountSheet === "profile"
                 ? "Persönliche Daten"
                 : accountSheet === "membership"

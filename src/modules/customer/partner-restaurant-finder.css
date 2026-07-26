@@ -130,7 +130,9 @@
 .partner-result-copy span { color: var(--premium-gold-dark); font-size: 12px; font-weight: 600; }
 .partner-result-card > svg { color: var(--premium-text-muted); }
 
-.partner-detail-card { background: var(--premium-surface); border: 1px solid var(--premium-border); border-radius: 20px; box-shadow: var(--premium-shadow); display: grid; gap: 15px; overflow: hidden; padding: 16px; }
+.partner-detail-card { background: var(--wux-surface, var(--premium-surface)); border: 1px solid var(--wux-border, var(--premium-border)); border-radius: var(--wux-radius-card, 20px); box-shadow: var(--wux-shadow-card, var(--premium-shadow)); display: grid; gap: 15px; overflow: hidden; padding: 16px; position: relative; }
+.partner-detail-close { align-items: center; background: var(--wux-background, var(--premium-background-soft)); border-radius: 50%; color: var(--premium-text); display: none; height: 44px; justify-content: center; position: absolute; right: 10px; top: 10px; width: 44px; z-index: 2; }
+.partner-detail-close:focus-visible { outline: 3px solid color-mix(in srgb, var(--wux-gold, var(--premium-gold)) 32%, transparent); outline-offset: 2px; }
 .partner-detail-cover { height: 112px; margin: -16px -16px 0; object-fit: cover; width: calc(100% + 32px); }
 .partner-detail-heading { align-items: start; display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr); }
 .partner-detail-heading > div { min-width: 0; }
@@ -161,8 +163,9 @@
   .partner-finder-content.view-list .partner-map-panel { display: none; }
   .partner-finder-content.view-list .partner-list-panel { overflow: visible; }
   .partner-finder-content.view-map .partner-list-panel { overflow: visible; }
-  .partner-finder-content.view-map .partner-detail-card { border-radius: 22px 22px 0 0; bottom: 0; box-shadow: 0 -12px 35px rgba(50, 40, 25, 0.14); left: 0; max-height: 48dvh; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); position: fixed; right: 0; z-index: 900; }
+  .partner-finder-content.view-map .partner-detail-card { border-radius: var(--wux-radius-sheet, 24px) var(--wux-radius-sheet, 24px) 0 0; bottom: 0; box-shadow: var(--wux-shadow-overlay, 0 -18px 54px rgba(35, 28, 19, 0.18)); left: 0; max-height: 62dvh; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); position: fixed; right: 0; z-index: 900; }
   .partner-finder-content.view-map .partner-detail-card::before { background: var(--premium-border-strong); border-radius: 999px; content: ""; height: 4px; justify-self: center; margin-top: -7px; width: 42px; }
+  .partner-finder-content.view-map .partner-detail-close { display: inline-flex; }
 }
 
 @media (min-width: 768px) {

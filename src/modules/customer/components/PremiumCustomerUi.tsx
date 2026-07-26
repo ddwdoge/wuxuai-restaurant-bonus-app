@@ -1,6 +1,8 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { CheckCircle2, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
+import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
 
 export type CustomerView = "home" | "redemptions" | "collect" | "account";
@@ -200,10 +202,10 @@ export function BenefitTile({ disabled = false, icon, label, onClick, status }: 
   );
 }
 
-export function RewardImage({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+export function RewardImage({ crop, imageUrl, title }: { crop?: Partial<RewardImageCrop> | null; imageUrl?: string | null; title: string }) {
   return (
     <div className="premium-reward-image">
-      {imageUrl ? <img alt={title} src={imageUrl} /> : <Gift aria-label={`Standardbild ${title}`} size={38} />}
+      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} /> : <Gift aria-label={`Standardbild ${title}`} size={38} />}
     </div>
   );
 }
@@ -214,6 +216,7 @@ type RewardCardProps = {
   actionLabel?: string;
   category?: string | null;
   imageUrl?: string | null;
+  imageCrop?: Partial<RewardImageCrop> | null;
   meta: string;
   onOpen?: () => void;
   state: RewardCardState;
@@ -229,14 +232,14 @@ const rewardStateMeta: Record<RewardCardState, { icon: typeof LockKeyhole; label
   expired: { icon: Clock3, label: "Abgelaufen" },
 };
 
-export function RewardCard({ actionLabel = "Details ansehen", category, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+export function RewardCard({ actionLabel = "Details ansehen", category, imageCrop, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
   const stateMeta = rewardStateMeta[state];
   const StateIcon = stateMeta.icon;
 
   return (
     <PremiumCard className={`premium-reward-card state-${state}`}>
       <div className="premium-reward-media">
-        <RewardImage imageUrl={imageUrl} title={title} />
+        <RewardImage crop={imageCrop} imageUrl={imageUrl} title={title} />
         {state !== "available" ? (
           <span className="premium-lock-badge" aria-label={stateMeta.label}>
             <StateIcon aria-hidden="true" size={18} />

@@ -297,6 +297,11 @@ export type PublicCustomerOfferView = {
   category: string | null;
   product_group: string | null;
   image_url?: string | null;
+  image_zoom?: number | null;
+  image_position_x?: number | null;
+  image_position_y?: number | null;
+  image_aspect_ratio?: string | null;
+  image_crop_version?: number | null;
   product_price?: number | null;
   welcome_gift_mode?: "value_limit" | "fixed_product";
   fixed_product_name?: string | null;
@@ -349,6 +354,11 @@ export type GuestRegistrationResult = {
     category: string | null;
     available_products: string[] | null;
     image_url: string | null;
+    image_zoom?: number | null;
+    image_position_x?: number | null;
+    image_position_y?: number | null;
+    image_aspect_ratio?: string | null;
+    image_crop_version?: number | null;
     product_price?: number | null;
     welcome_gift_mode?: "value_limit" | "fixed_product";
     fixed_product_name?: string | null;

@@ -2162,3 +2162,21 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - sichere, restaurantbezogene Objektpfade verwenden UUIDs statt Original-Dateinamen
 - additive Migration `20260726001000_owner_reward_image_webp.sql` ergänzt WebP im bestehenden Bucket; am 26.07.2026 auf `wuxuai-bonus-staging` angewendet und per Migrationsliste synchron bestätigt
 - keine Customer-, Staff-, Plattform-, Reward-, Punkte-, RLS- oder Auth-Logik geändert
+
+## 2026-07-26 – Einheitlicher Reward-Bildausschnitt
+
+- Owner-Bearbeitung um Zoom, Fokusposition, Ziehen, Tastatursteuerung und Zurücksetzen ergänzt
+- Bildausschnitt wird als normalisierte Metadaten gemeinsam mit Reward oder Willkommensgeschenk gespeichert
+- Owner-Karten, Owner-Vorschau und Kundenportal verwenden dieselbe 16:9-Bildkomponente
+- bestehende Bilder bleiben mit zentriertem Standardausschnitt kompatibel
+- additive Migration `20260726002000_reward_image_crop_metadata.sql` im Staging-Dry-Run als einzige ausstehende Migration bestätigt, auf `wuxuai-bonus-staging` angewendet und per Migrationsliste sowie generiertem Remote-Schema verifiziert
+- keine RLS-, Auth-, Punkte-, Einlöse- oder Tenant-Logik verändert
+
+## 2026-07-26 – Öffentliche Einstiegsseiten vereinheitlicht
+
+- Startseite, Restaurant-Login, Restaurant-Registrierung und Gast-Bonus-Information auf eine gemeinsame Premium-Shell umgestellt
+- gemeinsame öffentliche Komponenten für Hero, Inhaltskarte, Formularfeld, Hauptbutton und Einstiegskarte ergänzt
+- alte seitenbezogene Public-Styles aus der globalen Stylesammlung entfernt und in ein portalbegrenztes Stylesheet überführt
+- sichtbare Labels, Autofill, Live-Regionen, Tastaturbedienung und mindestens 44 px große Touchziele vereinheitlicht
+- Responsive-Abnahme bei 320, 375, 390, 430, 768, 1024 und 1440 px ohne horizontalen Overflow durchgeführt
+- keine Auth-, Registrierungs-, Routing-, Supabase-, Datenbank-, RLS- oder Portal-Logik verändert

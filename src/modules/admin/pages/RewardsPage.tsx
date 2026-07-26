@@ -19,16 +19,23 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import {
+  RewardImageFrame,
+} from "../../../shared/components/RewardImageFrame";
+import { DEFAULT_REWARD_IMAGE_CROP, rewardImageCropFromRecord, type RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { loadLoyaltySettings } from "../../loyalty/loyaltyService";
 import {
+  isRewardImageCropMigrationRequiredError,
   loadRewardOffers,
   saveRewardOffer,
   setRewardOfferActive,
+  setRewardOfferImage,
   type RewardOffer,
 } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
+import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -38,6 +45,13 @@ type RewardCalculationSettings = {
   redemption_return_rate?: number;
   stamps_required: number;
   active: boolean;
+};
+
+type PendingQuickPhoto = {
+  crop: RewardImageCrop;
+  file: File | null;
+  offer: RewardOffer;
+  previewUrl: string;
 };
 
 type RewardTemplate = {
@@ -135,10 +149,16 @@ export function RewardsPage() {
   const [priceInput, setPriceInput] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoCrop, setPhotoCrop] = useState<RewardImageCrop>(DEFAULT_REWARD_IMAGE_CROP);
+  const [photoCropEditing, setPhotoCropEditing] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [editingOffer, setEditingOffer] = useState<RewardOffer | null>(null);
   const [previewOffer, setPreviewOffer] = useState<RewardOffer | null>(null);
   const [pendingStatusOffer, setPendingStatusOffer] = useState<RewardOffer | null>(null);
+  const [pendingQuickPhoto, setPendingQuickPhoto] = useState<PendingQuickPhoto | null>(null);
+  const [quickPhotoSaving, setQuickPhotoSaving] = useState(false);
+  const [quickPhotoError, setQuickPhotoError] = useState<string | null>(null);
+  const [quickPhotoUnavailable, setQuickPhotoUnavailable] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -184,6 +204,10 @@ export function RewardsPage() {
     if (photoPreview?.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
 
+  useEffect(() => () => {
+    if (pendingQuickPhoto?.previewUrl.startsWith("blob:")) URL.revokeObjectURL(pendingQuickPhoto.previewUrl);
+  }, [pendingQuickPhoto]);
+
   const reloadRewards = useCallback(() => setReloadKey((current) => current + 1), []);
   const productPrice = parseEuro(priceInput);
   const calculation = useMemo(() => calculateReward(productPrice, settings), [productPrice, settings]);
@@ -199,6 +223,8 @@ export function RewardsPage() {
     setPriceInput("");
     setPhotoPreview(null);
     setPhotoFile(null);
+    setPhotoCrop(DEFAULT_REWARD_IMAGE_CROP);
+    setPhotoCropEditing(false);
     setPhotoError(null);
     setEditingOffer(null);
   }
@@ -218,6 +244,8 @@ export function RewardsPage() {
     setPriceInput(formatPriceInput(offer.product_price ?? extractProductPrice(offer.description)));
     setPhotoPreview(offer.image_url);
     setPhotoFile(null);
+    setPhotoCrop(rewardImageCropFromRecord(offer));
+    setPhotoCropEditing(false);
     setPhotoError(null);
     setStep(2);
     setStatus(null);
@@ -233,6 +261,8 @@ export function RewardsPage() {
   function handlePhoto(file: File) {
     setPhotoPreview(URL.createObjectURL(file));
     setPhotoFile(file);
+    setPhotoCrop(DEFAULT_REWARD_IMAGE_CROP);
+    setPhotoCropEditing(true);
     setPhotoError(null);
     setStatus(null);
   }
@@ -268,6 +298,11 @@ export function RewardsPage() {
         category: currentCategory,
         product_group: currentCategory,
         image_url: imageUrl ?? editingOffer?.image_url ?? null,
+        image_zoom: photoCrop.zoom,
+        image_position_x: photoCrop.positionX,
+        image_position_y: photoCrop.positionY,
+        image_aspect_ratio: "16:9",
+        image_crop_version: 1,
         product_price: productPrice,
         active_days: editingOffer?.active_days?.length ? editingOffer.active_days : defaultActiveDays,
         available_products: [currentCategory],
@@ -303,6 +338,62 @@ export function RewardsPage() {
       setStatus("Status konnte gerade nicht geändert werden.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function selectQuickPhoto(offer: RewardOffer, file: File) {
+    setPendingQuickPhoto({ crop: DEFAULT_REWARD_IMAGE_CROP, file, offer, previewUrl: URL.createObjectURL(file) });
+    setQuickPhotoError(null);
+    setQuickPhotoUnavailable(false);
+    setStatus(null);
+  }
+
+  function editQuickPhoto(offer: RewardOffer) {
+    if (!offer.image_url) return;
+    setPendingQuickPhoto({ crop: rewardImageCropFromRecord(offer), file: null, offer, previewUrl: offer.image_url });
+    setQuickPhotoError(null);
+    setQuickPhotoUnavailable(false);
+    setStatus(null);
+  }
+
+  function closeQuickPhoto() {
+    setPendingQuickPhoto(null);
+    setQuickPhotoError(null);
+    setQuickPhotoUnavailable(false);
+  }
+
+  async function saveQuickPhoto() {
+    if (!pendingQuickPhoto || quickPhotoSaving || pendingQuickPhoto.offer.restaurant_id !== restaurantId) return;
+    setQuickPhotoSaving(true);
+    setQuickPhotoError(null);
+    setStatus(null);
+    let uploadedObjectPath: string | null = null;
+    try {
+      let imageUrl = pendingQuickPhoto.offer.image_url;
+      if (pendingQuickPhoto.file) {
+        const upload = await uploadOwnerRewardImage({
+          restaurantId,
+          folder: "rewards",
+          entityId: pendingQuickPhoto.offer.id,
+          file: pendingQuickPhoto.file,
+        });
+        uploadedObjectPath = upload.objectPath;
+        imageUrl = upload.publicUrl;
+      }
+      const updated = await setRewardOfferImage(pendingQuickPhoto.offer, imageUrl, pendingQuickPhoto.crop);
+      setOffers((current) => current.map((offer) => offer.id === updated.id ? updated : offer));
+      setPendingQuickPhoto(null);
+      setStatus("Foto gespeichert.");
+    } catch (error) {
+      if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
+      console.error("Foto der Punkteeinlösung konnte nicht gespeichert werden.", error);
+      const migrationRequired = isRewardImageCropMigrationRequiredError(error);
+      setQuickPhotoUnavailable(migrationRequired);
+      setQuickPhotoError(migrationRequired
+        ? "Der Bildausschnitt konnte noch nicht gespeichert werden. Bitte versuche es später erneut."
+        : "Foto konnte nicht gespeichert werden. Das bisherige Foto bleibt erhalten.");
+    } finally {
+      setQuickPhotoSaving(false);
     }
   }
 
@@ -359,12 +450,24 @@ export function RewardsPage() {
               categoryIcon={<SelectedIcon aria-hidden="true" size={46} />}
               disabled={saving}
               error={photoError}
+              crop={photoCrop}
               imageUrl={editingOffer?.image_url}
               label={rewardTitle}
               loading={saving && Boolean(photoFile)}
               onFileSelected={handlePhoto}
+              onEdit={() => setPhotoCropEditing(true)}
               previewUrl={photoPreview}
             />
+            {photoPreview && photoCropEditing ? (
+              <OwnerRewardImageEditor
+                crop={photoCrop}
+                disabled={saving}
+                imageUrl={photoPreview}
+                label={rewardTitle}
+                onCropChange={setPhotoCrop}
+                onFileSelected={handlePhoto}
+              />
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -375,8 +478,8 @@ export function RewardsPage() {
             <label className="field" htmlFor="reward-name"><span>Name</span><input className="input" id="reward-name" onChange={(event) => setRewardName(event.target.value)} value={rewardName} /></label>
             <label className="field" htmlFor="reward-category"><span>Kategorie</span><input className="input" id="reward-category" onChange={(event) => setRewardCategory(event.target.value)} value={rewardCategory} /></label>
           </div>
-          <article className="premium-customer-reward-preview">
-            <div>{photoPreview ? <img alt={rewardTitle} src={photoPreview} /> : <SelectedIcon aria-hidden="true" size={48} />}</div>
+          <article className="premium-customer-reward-preview large">
+            <div>{photoPreview ? <RewardImageFrame alt={rewardTitle} crop={photoCrop} imageUrl={photoPreview} /> : <SelectedIcon aria-hidden="true" size={48} />}</div>
             <section><span>{currentCategory}</span><h4>{rewardTitle}</h4><strong>{calculation.requiredPoints} Punkte</strong><p>Produktwert {formatEuro(productPrice)}</p></section>
           </article>
         </section>
@@ -424,7 +527,22 @@ export function RewardsPage() {
                 category={offer.category ?? "Eigenes Produkt"}
                 className={`${offer.active ? "" : "inactive"}${editingOffer?.id === offer.id ? " drawer-active" : ""}`}
                 imageUrl={offer.image_url}
+                imageCrop={rewardImageCropFromRecord(offer)}
                 key={offer.id}
+                media={(
+                  <OwnerRewardImageUploader
+                    ariaLabel={offer.image_url ? "Rewardbild ändern" : "Rewardbild hinzufügen"}
+                    categoryIcon={<PlaceholderIcon aria-hidden="true" size={42} strokeWidth={1.5} />}
+                    compact
+                    disabled={quickPhotoSaving}
+                    crop={rewardImageCropFromRecord(offer)}
+                    imageUrl={offer.image_url}
+                    label={offer.title}
+                    onFileSelected={(file) => selectQuickPhoto(offer, file)}
+                    onEdit={() => editQuickPhoto(offer)}
+                    showMessage={false}
+                  />
+                )}
                 meta={[{ label: "Benötigte Punkte", value: `${offer.required_points} Punkte` }, { label: "Produktwert", value: offer.product_price ? formatEuro(offer.product_price) : "Nicht hinterlegt" }, { label: "Gültigkeit", value: formatValidity(offer.expires_at) }]}
                 PlaceholderIcon={PlaceholderIcon}
                 title={offer.title}
@@ -434,16 +552,20 @@ export function RewardsPage() {
         </section>
       )}
 
-      <AppDrawer description="Produkt, Preis, Foto und automatische Punkteberechnung." footer={editorOpen && !editingOffer ? wizardActions : null} onClose={closeRewardEditor} open={editorOpen && !editingOffer} title="Neue Punkteeinlösung">{wizardContent}</AppDrawer>
+      <AppDrawer description="Produkt, Preis, Foto und automatische Punkteberechnung." dismissOnOverlay={false} footer={editorOpen && !editingOffer ? wizardActions : null} onClose={closeRewardEditor} open={editorOpen && !editingOffer} size="large" title="Neue Punkteeinlösung">{wizardContent}</AppDrawer>
 
-      <AppDrawer description="Produkt, Preis, Foto und automatische Punkteberechnung bearbeiten." footer={editingOffer ? wizardActions : null} onClose={closeRewardEditor} open={editorOpen && Boolean(editingOffer)} title="Punkteeinlösung bearbeiten">{wizardContent}</AppDrawer>
+      <AppDrawer description="Produkt, Preis, Foto und automatische Punkteberechnung bearbeiten." dismissOnOverlay={false} footer={editingOffer ? wizardActions : null} onClose={closeRewardEditor} open={editorOpen && Boolean(editingOffer)} size="large" title="Punkteeinlösung bearbeiten">{wizardContent}</AppDrawer>
 
       <AppDrawer description="So sehen Gäste dieses Angebot im Kundenportal." footer={<button className="button" onClick={() => setPreviewOffer(null)} type="button">Vorschau schließen</button>} onClose={() => setPreviewOffer(null)} open={Boolean(previewOffer)} title="Vorschau im Kundenportal">
-        {previewOffer ? (() => { const Icon = iconForCategory(previewOffer.category); return <div className="premium-owner-preview-shell"><article className="premium-customer-reward-preview large"><div>{previewOffer.image_url ? <img alt={previewOffer.title} src={previewOffer.image_url} /> : <Icon aria-hidden="true" size={54} />}</div><section><span>{previewOffer.category ?? "Eigenes Produkt"}</span><h3>{previewOffer.title}</h3><strong>{previewOffer.required_points} Punkte</strong><p>{previewOffer.active ? "Im Kundenportal sichtbar" : "Derzeit nicht sichtbar"}</p></section></article><p className="premium-owner-preview-note"><Eye size={18} />Diese Vorschau löst keine Punkteeinlösung aus.</p></div>; })() : null}
+        {previewOffer ? (() => { const Icon = iconForCategory(previewOffer.category); return <div className="premium-owner-preview-shell"><article className="premium-customer-reward-preview large"><div>{previewOffer.image_url ? <RewardImageFrame alt={previewOffer.title} crop={rewardImageCropFromRecord(previewOffer)} imageUrl={previewOffer.image_url} /> : <Icon aria-hidden="true" size={54} />}</div><section><span>{previewOffer.category ?? "Eigenes Produkt"}</span><h3>{previewOffer.title}</h3><strong>{previewOffer.required_points} Punkte</strong><p>{previewOffer.active ? "Im Kundenportal sichtbar" : "Derzeit nicht sichtbar"}</p></section></article><p className="premium-owner-preview-note"><Eye size={18} />Diese Vorschau löst keine Punkteeinlösung aus.</p></div>; })() : null}
       </AppDrawer>
 
-      <AppDrawer description={pendingStatusOffer?.active ? "Neue Kunden können sie danach nicht mehr einlösen." : "Sie wird danach im Kundenportal sichtbar."} footer={pendingStatusOffer ? <><button className="button secondary" onClick={() => setPendingStatusOffer(null)} type="button">Abbrechen</button><button className="button" disabled={saving} onClick={() => toggleOffer(pendingStatusOffer)} type="button">{pendingStatusOffer.active ? "Deaktivieren" : "Aktivieren"}</button></> : null} onClose={() => setPendingStatusOffer(null)} open={Boolean(pendingStatusOffer)} title={pendingStatusOffer?.active ? "Belohnung deaktivieren?" : "Belohnung aktivieren?"}>
+      <AppDrawer description={pendingStatusOffer?.active ? "Neue Kunden können sie danach nicht mehr einlösen." : "Sie wird danach im Kundenportal sichtbar."} footer={pendingStatusOffer ? <><button className="button secondary" onClick={() => setPendingStatusOffer(null)} type="button">Abbrechen</button><button className="button" disabled={saving} onClick={() => toggleOffer(pendingStatusOffer)} type="button">{pendingStatusOffer.active ? "Deaktivieren" : "Aktivieren"}</button></> : null} onClose={() => setPendingStatusOffer(null)} open={Boolean(pendingStatusOffer)} size="compact" title={pendingStatusOffer?.active ? "Belohnung deaktivieren?" : "Belohnung aktivieren?"}>
         {pendingStatusOffer ? <div className="premium-owner-confirmation"><span><Star size={26} /></span><h3>{pendingStatusOffer.title}</h3><p>{pendingStatusOffer.active ? "Die Punkteeinlösung bleibt gespeichert und kann später wieder aktiviert werden." : "Gäste sehen die Punkteeinlösung nach der Aktivierung wieder."}</p></div> : null}
+      </AppDrawer>
+
+      <AppDrawer description="Nur Foto und Ausschnitt werden geändert. Punkte, Status und Bedingungen bleiben unverändert." dismissOnOverlay={false} footer={pendingQuickPhoto ? <><button className="button secondary" disabled={quickPhotoSaving} onClick={closeQuickPhoto} type="button">Abbrechen</button><button className="button" disabled={quickPhotoSaving || quickPhotoUnavailable} onClick={saveQuickPhoto} type="button">{quickPhotoSaving ? "Foto wird gespeichert …" : "Foto speichern"}</button></> : null} onClose={closeQuickPhoto} open={Boolean(pendingQuickPhoto)} size="compact" title="Bildausschnitt bearbeiten">
+        {pendingQuickPhoto ? <div className="premium-owner-quick-photo"><OwnerRewardImageEditor crop={pendingQuickPhoto.crop} disabled={quickPhotoSaving || quickPhotoUnavailable} imageUrl={pendingQuickPhoto.previewUrl} label={pendingQuickPhoto.offer.title} onCropChange={(crop) => setPendingQuickPhoto((current) => current ? { ...current, crop } : current)} onFileSelected={(file) => selectQuickPhoto(pendingQuickPhoto.offer, file)} /><h3>{pendingQuickPhoto.offer.title}</h3><p>Nach dem Speichern erscheint derselbe Ausschnitt in Übersicht und Kundenportal.</p>{quickPhotoError ? <p className="status-message error" role="alert">{quickPhotoError}</p> : null}</div> : null}
       </AppDrawer>
 
       {status && !editorOpen ? <p className="status-message" role="status">{status}</p> : null}

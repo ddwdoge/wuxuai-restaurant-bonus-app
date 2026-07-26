@@ -1315,22 +1315,35 @@ export function StaffTablet() {
 
       {message && view !== "redeem" ? <p className="status-message">{message}</p> : null}
 
-      {pendingPinAction ? (
-        <div className="modal-backdrop" role="presentation">
+      <AppDrawer
+        description={pendingPinAction?.detail}
+        dismissOnOverlay={false}
+        footer={pendingPinAction ? (
+          <>
+            <button className="button secondary" disabled={saving} onClick={() => setPendingPinAction(null)} type="button">Abbrechen</button>
+            <button className="button" disabled={!pinDraft || saving} form="staff-pin-confirmation" type="submit">Bestätigen</button>
+          </>
+        ) : null}
+        onClose={() => setPendingPinAction(null)}
+        open={Boolean(pendingPinAction)}
+        size="compact"
+        title={pendingPinAction?.title ?? "Punkte bestätigen"}
+      >
+        {pendingPinAction ? (
           <form
-            className="pin-modal card"
+            className="form"
+            id="staff-pin-confirmation"
             onSubmit={(event) => {
               event.preventDefault();
               void executePinAction(pendingPinAction, pinDraft);
             }}
           >
-            <h2>{pendingPinAction.title}</h2>
-            <p className="muted">{pendingPinAction.detail}</p>
             <div className="field">
               <label htmlFor="staff-pin-modal">{pendingPinAction.pinLabel}</label>
               <input
                 autoFocus
                 className="input"
+                data-drawer-autofocus="true"
                 id="staff-pin-modal"
                 inputMode="numeric"
                 maxLength={4}
@@ -1341,17 +1354,9 @@ export function StaffTablet() {
               />
               <p className="muted">{pendingPinAction.pinHelp}</p>
             </div>
-            <div className="row-actions">
-              <button className="button secondary" onClick={() => setPendingPinAction(null)} type="button">
-                Abbrechen
-              </button>
-              <button className="button" disabled={!pinDraft || saving} type="submit">
-                Bestätigen
-              </button>
-            </div>
           </form>
-        </div>
-      ) : null}
+        ) : null}
+      </AppDrawer>
     </main>
   );
 }

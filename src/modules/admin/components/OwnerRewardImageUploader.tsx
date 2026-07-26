@@ -1,5 +1,7 @@
-import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Camera, LoaderCircle, Trash2 } from "lucide-react";
+import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
+import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { validateOwnerRewardImage } from "../services/ownerRewardImageService";
 
 type OwnerRewardImageUploaderProps = {
@@ -10,6 +12,11 @@ type OwnerRewardImageUploaderProps = {
   disabled?: boolean;
   loading?: boolean;
   error?: string | null;
+  ariaLabel?: string;
+  compact?: boolean;
+  crop?: Partial<RewardImageCrop> | null;
+  showMessage?: boolean;
+  onEdit?: () => void;
   onFileSelected: (file: File) => void;
   onRemove?: () => void;
 };
@@ -22,6 +29,11 @@ export function OwnerRewardImageUploader({
   disabled = false,
   loading = false,
   error,
+  ariaLabel,
+  compact = false,
+  crop,
+  showMessage = true,
+  onEdit,
   onFileSelected,
   onRemove,
 }: OwnerRewardImageUploaderProps) {
@@ -29,17 +41,12 @@ export function OwnerRewardImageUploader({
   const [validationError, setValidationError] = useState<string | null>(null);
   const displayUrl = previewUrl ?? imageUrl ?? null;
   const interactionDisabled = disabled || loading;
-  const actionLabel = displayUrl ? `Foto für ${label} ändern` : `Foto für ${label} hinzufügen`;
+  const actionLabel = ariaLabel ?? (displayUrl ? `Foto für ${label} ändern` : `Foto für ${label} hinzufügen`);
 
   function openFilePicker() {
-    if (!interactionDisabled) fileInputRef.current?.click();
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openFilePicker();
-    }
+    if (interactionDisabled) return;
+    if (displayUrl && onEdit) onEdit();
+    else fileInputRef.current?.click();
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -55,7 +62,7 @@ export function OwnerRewardImageUploader({
   const visibleError = validationError ?? error;
 
   return (
-    <div className="owner-reward-image-uploader">
+    <div className={`owner-reward-image-uploader${compact ? " compact" : ""}`}>
       <input
         accept="image/jpeg,image/png,image/webp"
         hidden
@@ -63,17 +70,15 @@ export function OwnerRewardImageUploader({
         ref={fileInputRef}
         type="file"
       />
-      <div
-        aria-disabled={interactionDisabled}
+      <button
         aria-label={actionLabel}
         className={`owner-reward-image-trigger${interactionDisabled ? " disabled" : ""}`}
+        disabled={interactionDisabled}
         onClick={openFilePicker}
-        onKeyDown={handleKeyDown}
-        role="button"
-        tabIndex={interactionDisabled ? -1 : 0}
+        type="button"
       >
         {displayUrl ? (
-          <img alt={`Foto ${label}`} src={displayUrl} />
+          <RewardImageFrame alt={`Foto ${label}`} crop={crop} imageUrl={displayUrl} />
         ) : (
           <span className="owner-reward-image-placeholder">
             {categoryIcon}
@@ -84,15 +89,18 @@ export function OwnerRewardImageUploader({
           {loading ? <LoaderCircle aria-hidden="true" className="owner-reward-image-spinner" size={21} /> : <Camera aria-hidden="true" size={20} />}
           {loading ? "Foto wird hochgeladen" : displayUrl ? "Foto ändern" : "Foto hinzufügen"}
         </span>
-      </div>
+      </button>
       {displayUrl && onRemove && !loading ? (
         <button aria-label={`Foto für ${label} entfernen`} className="owner-reward-image-remove" onClick={onRemove} title="Foto entfernen" type="button">
           <Trash2 aria-hidden="true" size={17} />
         </button>
       ) : null}
-      <p aria-live="polite" className={`owner-reward-image-message${visibleError ? " error" : ""}`}>
-        {visibleError ?? (displayUrl ? "Klicke auf das Foto, um es zu ändern." : "JPG, PNG oder WebP, maximal 5 MB.")}
-      </p>
+      {showMessage ? (
+        <p aria-live="polite" className={`owner-reward-image-message${visibleError ? " error" : ""}`}>
+          {visibleError ?? (displayUrl ? "Klicke auf das Foto, um es zu ändern." : "JPG, PNG oder WebP, maximal 5 MB.")}
+        </p>
+      ) : null}
+      {!showMessage && visibleError ? <span aria-live="assertive" className="visually-hidden">{visibleError}</span> : null}
     </div>
   );
 }
