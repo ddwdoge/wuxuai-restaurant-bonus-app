@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  customerPortalInstanceKey,
+  readCustomerScanContext,
+} from "../src/modules/customer/customerScanContext.mjs";
 
 const app = readFileSync(new URL("../src/app/App.tsx", import.meta.url), "utf8");
 const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
@@ -9,16 +13,48 @@ const loyalty = readFileSync(new URL("../src/modules/loyalty/loyaltyService.ts",
 const pointsMigration = readFileSync(new URL("../supabase/migrations/20260720002000_persist_pin_and_points_failures.sql", import.meta.url), "utf8");
 
 test("ein neuer QR-Slug erzeugt eine neue CustomerPortal-Instanz", () => {
+  const restaurantA = readCustomerScanContext("/w/restaurant-a");
+  const restaurantB = readCustomerScanContext("/w/restaurant-b");
+
+  assert.deepEqual(restaurantA, { restaurantSlug: "restaurant-a", routeKind: "collect" });
+  assert.deepEqual(restaurantB, { restaurantSlug: "restaurant-b", routeKind: "collect" });
+  assert.notEqual(
+    customerPortalInstanceKey(restaurantA, "customer-token", 0),
+    customerPortalInstanceKey(restaurantB, "customer-token", 0),
+  );
   assert.match(app, /function CustomerPortalRoute\(\)/);
-  assert.match(app, /<CustomerPortal key={`\$\{routeKind\}:\$\{slug\}:\$\{customerToken\}`} \/>/);
+  assert.match(app, /key=\{customerPortalInstanceKey\(scanContext, customerToken, historyRevision\)\}/);
   assert.match(app, /path="\/customer\/:slug" element={<CustomerPortalRoute \/>}/);
   assert.match(app, /path="\/w\/:slug" element={<CustomerPortalRoute \/>}/);
 });
 
 test("der aktuelle URL-Slug ist die einzige Restaurantquelle", () => {
-  assert.match(portal, /const restaurantSlug = slug\?\.trim\(\) \?\? "";/);
+  assert.match(app, /const scanContext = readCustomerScanContext\(location\.pathname\);/);
+  assert.match(app, /restaurantSlug=\{scanContext\.restaurantSlug\}/);
+  assert.match(portal, /export function CustomerPortal\(\{ isBonusCollection, restaurantSlug \}: CustomerPortalProps\)/);
+  assert.doesNotMatch(portal, /useParams|useLocation/);
   assert.doesNotMatch(portal, /slug \?\? restaurant\?\.slug/);
   assert.match(portal, /loadPortalForRestaurant\(\{[\s\S]*?restaurantSlug,[\s\S]*?customerToken: activeToken,[\s\S]*?loadPortal: loadCustomerPortalData/);
+});
+
+test("ohne aktuellen Restaurantpfad existiert kein Restaurantkontext", () => {
+  assert.equal(readCustomerScanContext("/"), null);
+  assert.equal(readCustomerScanContext("/customer"), null);
+  assert.equal(readCustomerScanContext("/customer/restaurants"), null);
+  assert.equal(readCustomerScanContext("/w/"), null);
+  assert.equal(readCustomerScanContext("/w/restaurant%20a"), null);
+  assert.match(app, /if \(!scanContext\) return <Navigate to="\/customer" replace \/>/);
+});
+
+test("Reload und Browser-History verwenden ausschließlich den aktuellen URL-Kontext", () => {
+  const firstLoad = readCustomerScanContext("/customer/restaurant-a");
+  const reload = readCustomerScanContext("/customer/restaurant-a");
+  const forwardToB = readCustomerScanContext("/customer/restaurant-b");
+
+  assert.deepEqual(reload, firstLoad);
+  assert.equal(forwardToB?.restaurantSlug, "restaurant-b");
+  assert.match(app, /window\.addEventListener\("pageshow", handlePageShow\)/);
+  assert.match(app, /if \(event\.persisted\) setHistoryRevision/);
 });
 
 test("ein URL-Token gewinnt vor Registrierung und lokalem Cache", () => {

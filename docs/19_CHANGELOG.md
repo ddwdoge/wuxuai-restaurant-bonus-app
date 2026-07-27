@@ -2180,3 +2180,26 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - sichtbare Labels, Autofill, Live-Regionen, Tastaturbedienung und mindestens 44 px große Touchziele vereinheitlicht
 - Responsive-Abnahme bei 320, 375, 390, 430, 768, 1024 und 1440 px ohne horizontalen Overflow durchgeführt
 - keine Auth-, Registrierungs-, Routing-, Supabase-, Datenbank-, RLS- oder Portal-Logik verändert
+
+## 2026-07-27 – Mobiler QR- und Registrierungsablauf stabilisiert
+
+- ein temporär fehlgeschlagener öffentlicher Portalaufruf wird einmal kontrolliert wiederholt, bevor der endgültige Fehlerzustand erscheint
+- URL-Slug und Kundenzugang bleiben während des Retries unverändert; ein Route-Wechsel bricht den alten Wiederholungsversuch vor dem nächsten Request ab
+- ungültige Restaurants und ungültige Kundenzugänge werden nicht automatisch wiederholt
+- Registrierungsformular erzwingt auf der weißen Karte dunklen Primär- und Sekundärtext
+- Pflicht- und freiwillige Checkboxen starten sichtbar leer; bestehende serverseitige Consent-Defaults bleiben `false`
+- das bestehende native Geburtstagsfeld und seine freiwillige Verarbeitung bleiben unverändert
+- `Fertig` wird erst bei gültigem Vornamen, gültiger Telefonnummer und beiden Pflichtbestätigungen aktiv
+- freiwillige Einwilligungen sind mobil kompakt einklappbar; Abschlussaktionen bleiben oberhalb der Safe Area erreichbar
+- keine Datenbank-, RPC-, RLS-, QR-, Tages-PIN- oder Punktelogik geändert
+
+## 2026-07-27 – Aktiver Restaurantkontext strikt an QR-URL gebunden
+
+- `/customer/:slug` und `/w/:slug` werden zentral aus dem aktuellen URL-Pfad validiert; ohne gültigen Restaurantpfad wird kein Customer Portal initialisiert
+- QR-Wechsel A → B erzeugt eine neue Portalinstanz und verwirft Restaurant-, Branding-, Reward-, Bonstufen- und Ladezustand von A
+- Kundenzugänge bleiben ausschließlich restaurantbezogen gespeichert; ein globaler aktiver Restaurantkontext wird weder in Local Storage noch Session Storage geschrieben
+- Safari-BFCache wird über `pageshow` erkannt und initialisiert das Portal erneut aus der aktuell sichtbaren URL
+- ein kontrollierter Retry verwendet weiterhin nur den beim aktuellen Scan validierten Slug und Kundenzugang
+- `/customer` zeigt ohne QR-Kontext den Hinweis „Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen.“
+- der Service Worker besitzt keinen Fetch-Handler und hält deshalb keine Restaurant- oder Portalantworten im PWA-Cache
+- keine Datenbank-, RPC-, RLS-, Punkte-, Tages-PIN-, Geburtstags- oder Portalrollenlogik geändert

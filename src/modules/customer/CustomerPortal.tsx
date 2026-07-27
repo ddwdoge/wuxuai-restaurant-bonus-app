@@ -25,7 +25,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
@@ -95,6 +95,12 @@ import {
   type CustomerRetentionStatus,
   type ExpiryReminder,
 } from "./retentionService";
+import {
+  customerRegistrationCanSubmit,
+  emptyCustomerRegistrationForm,
+  isValidCustomerFirstName,
+  isValidCustomerPhone,
+} from "./customerRegistration.mjs";
 
 type GuestStep = "welcome" | "register" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -188,9 +194,12 @@ function standardRewardAsset(category: string | null | undefined, title: string)
   );
 }
 
-export function CustomerPortal() {
-  const { slug } = useParams();
-  const location = useLocation();
+type CustomerPortalProps = {
+  isBonusCollection: boolean;
+  restaurantSlug: string;
+};
+
+export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPortalProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
@@ -223,11 +232,7 @@ export function CustomerPortal() {
   const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
   const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
-  const [form, setForm] = useState({
-    firstName: "", phone: "", birthday: "", termsAccepted: false,
-    privacyAcknowledged: false, marketingPush: false, marketingSms: false,
-    marketingEmail: false, birthdayProcessing: false,
-  });
+  const [form, setForm] = useState(() => ({ ...emptyCustomerRegistrationForm }));
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
@@ -238,9 +243,7 @@ export function CustomerPortal() {
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
   const processedReminderDeepLinkRef = useRef<string | null>(null);
-  const restaurantSlug = slug?.trim() ?? "";
   const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
-  const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
 
@@ -295,7 +298,16 @@ export function CustomerPortal() {
         restaurantSlug,
         customerToken: activeToken,
         loadPortal: loadCustomerPortalData,
+        maxAttempts: 2,
+        retryDelayMs: 450,
+        isCancelled: () => cancelled,
+        shouldRetry: (error: unknown) => {
+          const message = error instanceof Error ? error.message.toLowerCase() : "";
+          return !message.includes("restaurant wurde nicht gefunden")
+            && !message.includes("customer token not valid");
+        },
       });
+      if (portalResult.status === "cancelled") return;
       if (portalResult.status !== "loaded") {
         throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
       }
@@ -366,7 +378,7 @@ export function CustomerPortal() {
     return () => {
       cancelled = true;
     };
-  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, slug]);
+  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug]);
 
   useEffect(() => {
     if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
@@ -633,8 +645,12 @@ export function CustomerPortal() {
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
-    if (!restaurantSlug || !form.firstName.trim() || !form.phone.trim()) {
-      setMessage("Vorname und Telefonnummer sind erforderlich.");
+    if (!restaurantSlug || !isValidCustomerFirstName(form.firstName)) {
+      setMessage("Bitte gib einen gültigen Vornamen ein.");
+      return;
+    }
+    if (!isValidCustomerPhone(form.phone)) {
+      setMessage("Bitte gib eine gültige Telefonnummer ein.");
       return;
     }
     if (legalCenterState.status !== "ready") {
@@ -1017,6 +1033,7 @@ export function CustomerPortal() {
       ) : null}
     </>
   ) : null;
+  const registrationCanSubmit = customerRegistrationCanSubmit(form, legalCenterState.status === "ready");
 
   if (!settings || !restaurant || !branding) {
     return (
@@ -1045,7 +1062,7 @@ export function CustomerPortal() {
 
   return (
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
-      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}`}>
+      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" ? " customer-registration-page" : ""}`}>
         <CustomerHeader
           compact
           logoUrl={branding.logo_url}
@@ -1126,7 +1143,7 @@ export function CustomerPortal() {
         ) : null}
 
         {!customer && guestStep === "register" ? (
-          <article className="customer-hero-card">
+          <article className="customer-hero-card customer-registration-card">
             <h2>Mitglied werden</h2>
             <form className="form compact-customer-form" onSubmit={handleRegister}>
               <div className="field">
@@ -1179,19 +1196,20 @@ export function CustomerPortal() {
                 <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
                 <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
               </section>
-              <section className="customer-registration-consents" aria-labelledby="registration-consents-title">
-                <h3 id="registration-consents-title">Freiwillige Einwilligungen</h3>
+              <details className="customer-registration-consents">
+                <summary id="registration-consents-title">Freiwillige Einwilligungen <span>Optional</span></summary>
                 <p>Diese Auswahl ist freiwillig und für dein Bonuskonto nicht erforderlich.</p>
                 <label><input checked={form.birthdayProcessing} onChange={(event) => setForm((current) => ({ ...current, birthdayProcessing: event.target.checked }))} type="checkbox" /><span>Geburtstag für ein mögliches Geburtstagsgeschenk verwenden.</span></label>
                 <label><input checked={form.marketingPush} onChange={(event) => setForm((current) => ({ ...current, marketingPush: event.target.checked }))} type="checkbox" /><span>Marketing per Push erhalten.</span></label>
                 <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
                 <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
-              </section>
-              <div className="grid two">
+              </details>
+              {message ? <p className="status-message error" role="alert">{message}</p> : null}
+              <div className="grid two customer-registration-actions">
                 <button className="button secondary" onClick={() => setGuestStep("welcome")} type="button">
                   Zurück
                 </button>
-                <button className="button" disabled={submitting || legalCenterState.status !== "ready"} type="submit">
+                <button className="button" disabled={submitting || !registrationCanSubmit} type="submit">
                   <CheckCircle2 size={20} />
                   Fertig
                 </button>

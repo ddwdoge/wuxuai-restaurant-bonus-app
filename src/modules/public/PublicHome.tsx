@@ -26,7 +26,7 @@ export function PublicHome() {
 export function GuestBonusInfoPage() {
   return (
     <PublicPageShell
-      description="Scanne den QR-Code im Restaurant oder öffne deinen persönlichen Bonus-Link."
+      description="Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen."
       eyebrow="WUXUAI Bonus"
       title="Bonus für Gäste"
     >

@@ -461,6 +461,10 @@ function publicPortalErrorMessage(error: { message?: string; details?: string; h
     return "Restaurant wurde nicht gefunden.";
   }
 
+  if (technicalText.includes("customer token not valid")) {
+    return "Customer token not valid.";
+  }
+
   return "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.";
 }
 

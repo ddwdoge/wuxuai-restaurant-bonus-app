@@ -1,11 +1,15 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
+import {
+  customerPortalInstanceKey,
+  readCustomerScanContext,
+} from "../modules/customer/customerScanContext.mjs";
 
 const RegisterPage = lazy(() => import("../modules/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout").then((module) => ({ default: module.AdminLayout })));
@@ -87,14 +91,29 @@ function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading /
 }
 
 function CustomerPortalRoute() {
-  const { slug = "" } = useParams<{ slug: string }>();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const routeKind = location.pathname.startsWith("/w/") ? "collect" : "portal";
   const customerToken = searchParams.get("token") ?? "";
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const scanContext = readCustomerScanContext(location.pathname);
+
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) setHistoryRevision((current) => current + 1);
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  if (!scanContext) return <Navigate to="/customer" replace />;
 
   return withFallback(
-    <CustomerPortal key={`${routeKind}:${slug}:${customerToken}`} />,
+    <CustomerPortal
+      isBonusCollection={scanContext.routeKind === "collect"}
+      key={customerPortalInstanceKey(scanContext, customerToken, historyRevision)}
+      restaurantSlug={scanContext.restaurantSlug}
+    />,
     <CustomerLoading />,
   );
 }

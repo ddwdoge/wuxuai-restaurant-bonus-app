@@ -936,12 +936,51 @@
 .customer-premium-shell .input { border-color: var(--premium-border-strong); border-radius: 14px; min-height: 50px; }
 .customer-premium-shell .status-message { border-radius: 14px; }
 
+.customer-registration-card,
+.premium-collect-page .customer-registration-card {
+  color: var(--premium-text);
+}
+
+.customer-registration-card :is(h2, h3, label, li, .field > label) {
+  color: var(--premium-text);
+}
+
+.customer-registration-card .field { gap: 7px; }
+.customer-registration-card .field small { color: var(--premium-text-secondary); font-size: 12px; line-height: 1.4; }
+.customer-registration-card .input {
+  background: #fff;
+  color: var(--premium-text);
+  -webkit-text-fill-color: var(--premium-text);
+}
+.customer-registration-card .input::placeholder { color: #8a847c; opacity: 1; }
+.customer-registration-card .input:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.3); outline-offset: 2px; }
+
 .customer-registration-legal,.customer-registration-consents { background: var(--premium-background-soft); border: 1px solid var(--premium-border); border-radius: 16px; display: grid; gap: 11px; padding: 15px; }
-.customer-registration-legal h3,.customer-registration-consents h3 { font-size: 17px; font-weight: 600; margin: 0; }
+.customer-registration-legal h3,.customer-registration-consents h3 { color: var(--premium-text); font-size: 17px; font-weight: 600; margin: 0; }
 .customer-registration-legal p,.customer-registration-consents p,.customer-registration-legal ul { color: var(--premium-text-secondary); font-size: 13px; line-height: 1.5; margin: 0; }
 .customer-registration-legal ul { padding-left: 20px; }.customer-registration-legal a { color: var(--premium-gold-dark); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.customer-registration-legal label,.customer-registration-consents label { align-items: start; cursor: pointer; display: grid; gap: 10px; grid-template-columns: 22px minmax(0,1fr); min-height: 44px; padding: 8px 0; }
-.customer-registration-legal input,.customer-registration-consents input { accent-color: var(--premium-gold); height: 21px; margin-top: 1px; width: 21px; }
+.customer-registration-consents summary { align-items: center; color: var(--premium-text); cursor: pointer; display: flex; font-size: 17px; font-weight: 600; justify-content: space-between; min-height: 44px; }
+.customer-registration-consents summary span { background: var(--premium-gold-soft); border-radius: 999px; color: var(--premium-gold-dark); font-size: 12px; padding: 5px 9px; }
+.customer-registration-consents[open] summary { margin-bottom: 4px; }
+.customer-registration-legal label,.customer-registration-consents label { align-items: start; color: var(--premium-text); cursor: pointer; display: grid; gap: 10px; grid-template-columns: 24px minmax(0,1fr); min-height: 44px; padding: 8px 0; }
+.customer-registration-legal label span,.customer-registration-consents label span { color: var(--premium-text); line-height: 1.4; }
+.customer-registration-legal input[type="checkbox"],.customer-registration-consents input[type="checkbox"] { appearance: none; background: #fff; border: 2px solid #8a847c; border-radius: 6px; display: grid; height: 22px; margin: 0; place-content: center; width: 22px; }
+.customer-registration-legal input[type="checkbox"]::before,.customer-registration-consents input[type="checkbox"]::before { border-color: #fff; border-style: solid; border-width: 0 2px 2px 0; content: ""; height: 10px; opacity: 0; transform: rotate(45deg) translate(-1px, -1px); width: 5px; }
+.customer-registration-legal input[type="checkbox"]:checked,.customer-registration-consents input[type="checkbox"]:checked { background: var(--premium-gold); border-color: var(--premium-gold-dark); }
+.customer-registration-legal input[type="checkbox"]:checked::before,.customer-registration-consents input[type="checkbox"]:checked::before { opacity: 1; }
+.customer-registration-legal input[type="checkbox"]:disabled { background: #f1eee8; border-color: #b7b0a6; cursor: not-allowed; }
+.customer-registration-actions { margin-top: 2px; }
+
+@media (max-width: 767px) {
+  .customer-registration-page { padding-bottom: calc(126px + env(safe-area-inset-bottom)); scroll-padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
+  .customer-registration-card { gap: 10px; padding: 16px; }
+  .customer-registration-card h2 { font-size: 27px !important; }
+  .customer-registration-card .form { gap: 12px; }
+  .customer-registration-legal,.customer-registration-consents { gap: 7px; padding: 12px; }
+  .customer-registration-legal label,.customer-registration-consents label { padding: 6px 0; }
+  .customer-registration-card .customer-registration-actions { backdrop-filter: blur(14px); background: rgba(255, 253, 249, 0.96); border-top: 1px solid var(--premium-border); bottom: 0; box-shadow: 0 -10px 28px rgba(50, 40, 25, 0.08); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); left: 50%; margin: 0; max-width: 460px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); position: fixed; transform: translateX(-50%); width: 100%; z-index: 45; }
+  .customer-registration-actions .button { min-height: 50px; min-width: 0; width: 100%; }
+}
 .premium-legal-notice { background: var(--premium-gold-soft); border-radius: 14px; color: #725320; font-size: 13px; line-height: 1.5; margin: 0; padding: 13px 14px; }
 .customer-legal-load-warning,
 .premium-legal-load-warning { align-items: flex-start; background: #fff8e8; border: 1px solid rgba(191, 143, 54, 0.3); border-radius: 14px; color: #5d4a27; display: flex; flex-direction: column; gap: 10px; padding: 14px; }

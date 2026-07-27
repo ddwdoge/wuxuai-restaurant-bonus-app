@@ -151,10 +151,29 @@ export async function loadPortalForRestaurant(input) {
   if (!isUsableRestaurantSlug(input.restaurantSlug)) {
     return { status: "invalid", data: null, error: null };
   }
-  try {
-    const data = await input.loadPortal(normalizeSlug(input.restaurantSlug), input.customerToken);
-    return { status: "loaded", data, error: null };
-  } catch (error) {
-    return { status: "error", data: null, error };
+
+  const restaurantSlug = normalizeSlug(input.restaurantSlug);
+  const maxAttempts = Math.max(1, Math.min(3, Number(input.maxAttempts) || 1));
+  const retryDelayMs = Math.max(0, Number(input.retryDelayMs) || 0);
+  const wait = input.wait ?? ((delayMs) => new Promise((resolve) => globalThis.setTimeout(resolve, delayMs)));
+  let lastError = null;
+  let attempts = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (input.isCancelled?.()) {
+      return { status: "cancelled", data: null, error: null, attempts };
+    }
+    attempts = attempt;
+    try {
+      const data = await input.loadPortal(restaurantSlug, input.customerToken);
+      return { status: "loaded", data, error: null, attempts: attempt };
+    } catch (error) {
+      lastError = error;
+      const canRetry = attempt < maxAttempts && (input.shouldRetry?.(error) ?? true);
+      if (!canRetry) break;
+      await wait(retryDelayMs);
+    }
   }
+
+  return { status: "error", data: null, error: lastError, attempts };
 }

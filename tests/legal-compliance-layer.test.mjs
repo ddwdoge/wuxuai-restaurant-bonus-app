@@ -208,7 +208,8 @@ test("Registrierungs-Wrapper blockieren fehlende Pflichtdokumente ohne Public-Ba
 test("Legal-Fehler bleibt vom Bonusportal getrennt und blockiert nur Registrierung", () => {
   assert.match(customerPortal, /setLegalCenterState\(\{ status: "error"/);
   assert.match(customerPortal, /Dein Bonuskonto bleibt nutzbar/);
-  assert.match(customerPortal, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(customerPortal, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
+  assert.match(customerPortal, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
   assert.match(customerPortal, /reloadLegalCenter/);
   assert.match(referralLanding, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
   assert.match(legalCenter, /data\.missing_configuration/);

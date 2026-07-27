@@ -53,8 +53,14 @@ export function loadPortalForRestaurant<T>(input: {
   restaurantSlug: string;
   customerToken: string | null;
   loadPortal: (restaurantSlug: string, customerToken: string | null) => Promise<T>;
+  maxAttempts?: number;
+  retryDelayMs?: number;
+  shouldRetry?: (error: unknown) => boolean;
+  wait?: (delayMs: number) => Promise<unknown>;
+  isCancelled?: () => boolean;
 }): Promise<
-  | { status: "loaded"; data: T; error: null }
-  | { status: "invalid"; data: null; error: null }
-  | { status: "error"; data: null; error: unknown }
+  | { status: "loaded"; data: T; error: null; attempts: number }
+  | { status: "invalid"; data: null; error: null; attempts?: undefined }
+  | { status: "cancelled"; data: null; error: null; attempts: number }
+  | { status: "error"; data: null; error: unknown; attempts: number }
 >;
