@@ -1,17 +1,32 @@
-# Reward Accounting Export
+# Interner Bonus-Aktivitätsexport
 
-Der Owner-Export enthält, soweit technisch vorhanden:
+Der bestehende technische RPC `get_reward_accounting_export` bleibt als
+Kompatibilitätsvertrag erhalten. Er liefert nach Einführung des V1-Journals
+ausschließlich Daten aus dem unveränderbaren Bonus-Aktivitätsprotokoll.
 
-- Restaurant- und Reward-ID
-- Name, Kategorie und optional regulären Verkaufspreis
+Der Owner-Export enthält, soweit historisch sicher vorhanden:
+
+- WUXUAI-Aktivitätsnummer
+- Restaurant-, Filial- und Rewardbezug
+- Rewardname zum Einlösezeitpunkt
 - verbrauchte Punkte
+- Menge
 - Einlösezeitpunkt und Status
-- Mitarbeiterbestätigung als technischer Status
+- ausführende Rolle
 - maskierte Einlösereferenz statt vollständigem sechsstelligen Code
-- optionale Beleg- und Steuerkategorie
-- Storno-/Korrekturreferenz
+- Stornozeitpunkt und Stornogrund
+- Snapshotstatus
 - Audit-Event-ID
 
-Filter der RPC: Zeitraum, Reward und Status. Die V1-Oberfläche exportiert standardmäßig die letzten zwölf Monate als CSV. Mitarbeiterfilter ist nur möglich, wenn ein belastbarer Mitarbeiterbezug in den Einlösedaten vorhanden ist; dieser fehlt in einzelnen historischen Datensätzen.
+Historische Werte werden nicht aus heutigen Reward-Stammdaten rekonstruiert.
+Fehlende Altdaten bleiben leer und werden als `partial_legacy` oder
+`missing_source_data` gekennzeichnet. Testkundendaten sind standardmäßig
+ausgeschlossen.
 
-Hinweis: Die steuerliche und kassentechnische Behandlung von Punkteeinlösungen ist mit der Buchhaltung oder Steuerberatung des Restaurants abzustimmen. WUXUAI stellt technische Aufzeichnungen bereit und erteilt keine Steuerberatung.
+> Dieser Bericht dokumentiert ausschließlich Aktivitäten des WUXUAI
+> Bonusprogramms. Er ist kein Kassenbeleg, keine Registrierkasse und keine
+> steuerliche oder buchhalterische Aufzeichnung. Die ordnungsgemäße Erfassung
+> steuerlich, buchhalterisch oder kassentechnisch relevanter Vorgänge im eigenen
+> Kassensystem obliegt dem Restaurantbetreiber.
+
+Status des Rechtstexts: `LEGAL_REVIEW_REQUIRED`.

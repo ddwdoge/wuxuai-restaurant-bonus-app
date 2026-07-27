@@ -640,4 +640,22 @@ Endstatus: **LOCK**
 - Unter Einstellungen verwaltet der Owner Impressumsangaben, versionierte Teilnahmebedingungen, Datenschutztext, Beschwerdekontakt und Programmende für das eigene Restaurant.
 - Öffentliche Sichtbarkeit neuer Standorte setzt Betriebs-, Rechts- und Sicherheitsbereitschaft voraus. Bestehende Teststandorte werden nicht ungeprüft deaktiviert.
 - Offene Datenschutzanfragen werden pseudonymisiert angezeigt. Eine Anfrage führt nicht automatisch zu ungeprüfter Löschung.
-- Der Einlösungs-CSV ist eine technische Aufzeichnung und keine Steuerberatung.
+- Der interne Bonus-Aktivitätsexport ist eine technische Aufzeichnung des Bonusprogramms und kein Kassen- oder Steuerbericht.
+
+## V1 Bonus-Aktivitätsberichte
+
+Der Owner-Bereich `Berichte` enthält:
+
+- Monatsübersicht
+- Jahresübersicht
+- chronologisches Einlösungsprotokoll
+- CSV-Detailprotokoll
+- druckbare Zusammenfassung
+
+Die Berichte dokumentieren ausschließlich Aktivitäten des Bonusprogramms. Sie
+sind keine Kassen-, RKSV-, Steuer- oder Buchhaltungsberichte. Testkunden sind
+standardmäßig ausgeschlossen; alle Zeiträume werden serverseitig nach
+`Europe/Vienna` gebildet. Zugriff erhalten nur Owner und Restaurantadmins.
+
+Historische Einlösungsdaten werden niemals aus später geänderten Rewardwerten
+rekonstruiert. Fehlende Altdaten müssen sichtbar gekennzeichnet bleiben.

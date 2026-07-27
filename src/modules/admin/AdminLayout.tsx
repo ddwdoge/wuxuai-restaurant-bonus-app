@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   QrCode,
+  ScrollText,
   Settings,
   Smartphone,
   Users,
@@ -65,6 +66,7 @@ export function AdminLayout() {
     { to: "/admin/customers", label: "Gäste", icon: Users },
     { to: "/admin/qr", label: "QR Center", icon: QrCode },
     { to: "/admin/staff", label: "Mitarbeiter", icon: Smartphone },
+    { to: "/admin/reports", label: "Berichte", icon: ScrollText },
     { to: "/admin/settings", label: "Einstellungen", icon: Settings },
   ];
 

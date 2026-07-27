@@ -2227,3 +2227,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Owner- und Staff-Kundenlisten auf maskierte, minimierte Felder umgestellt
 - SMS-Verifizierung nur als deaktivierte spätere Konfiguration vorbereitet; keine OTP- oder Provider-Abhängigkeit ergänzt
 - Migration `20260727001000_customer_identity_v1_no_sms.sql` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet
+## 2026-07-28 - V1 Bonus-Aktivitätsprotokoll
+
+- Append-only Journal für final bestätigte Einlösungen vorbereitet.
+- Unveränderbare Reward-, Punkte-, Mengen-, Rollen- und Zeit-Snapshots ergänzt.
+- Legacy-Einlösungen ohne sichere Snapshotwerte werden sichtbar gekennzeichnet.
+- Owner-Bereich `Berichte` mit Monats-, Jahres- und Journalansicht ergänzt.
+- CSV-Detailprotokoll und druckbare Zusammenfassung ergänzt.
+- Testkunden sind standardmäßig ausgeschlossen; Zeiträume verwenden `Europe/Vienna`.
+- Bestehender Export-RPC bleibt kompatibel und liest aus dem Journal.
+- Sichtbare Kassen-/Steuerbezeichnungen wurden durch klare Bonusprogramm-Begriffe ersetzt.
+- Keine RKSV-, Kassen-, Steuer- oder Buchhaltungsfunktion eingeführt.

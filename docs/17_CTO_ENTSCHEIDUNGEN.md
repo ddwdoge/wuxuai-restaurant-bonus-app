@@ -1911,3 +1911,18 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Öffentliche rechtliche Inhalte laufen über begrenzte RPCs. Legal-, Consent- und Kundentabellen erhalten keine öffentliche Lesepolicy.
 - Datenschutzlöschung und Programmende sind geprüfte Abläufe, keine sofortigen Lösch- oder Abschaltaktionen.
 - Die technische Grundlage benötigt vor Production externe österreichische Rechts- und Steuerprüfung.
+
+## CTO-Entscheidung 2026-07-28: V1 Bonus-Aktivitätsprotokoll
+
+🟢 **FIX / V1 / EXTERNE RECHTSPRÜFUNG ERFORDERLICH**
+
+- WUXUAI dokumentiert Punktebewegungen und Einlösungsaktivitäten innerhalb des Bonusprogramms.
+- WUXUAI ist keine Registrierkasse, kein RKSV-System, kein Kassenbelegsystem, kein Buchhaltungssystem und keine Steuerberatung.
+- Steuerlich, kassentechnisch oder buchhalterisch relevante Vorgänge erfasst das Restaurant eigenverantwortlich in seinem Kassensystem.
+- Erfolgreiche Einlösungen erhalten genau einen unveränderbaren Snapshot im Bonus-Aktivitätsprotokoll.
+- Korrekturen erfolgen als auditiertes Protokollstorno; der Ursprungsdatensatz bleibt erhalten.
+- Monats- und Jahresübersichten verwenden serverseitige Kalendergrenzen in `Europe/Vienna` und schließen Testkunden standardmäßig aus.
+- Historische Lücken werden gekennzeichnet und niemals mit heutigen Stammdaten als historische Wahrheit aufgefüllt.
+- Der bestehende RPC `get_reward_accounting_export` bleibt als technischer Kompatibilitätsvertrag erhalten, wird aber nicht als Steuer- oder Kassenexport bezeichnet.
+- Referral-, Werbe- und Kompensationsarten werden im Journal klassifizierbar, ohne dadurch neue V1-Ausgabe- oder Einlöseflows einzuführen.
+- Alle rechtlichen Hinweise tragen bis zur externen Prüfung den Status `LEGAL_REVIEW_REQUIRED` beziehungsweise `DRAFT_LEGAL_REVIEW_REQUIRED`.

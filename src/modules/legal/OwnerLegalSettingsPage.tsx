@@ -1,10 +1,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, FileCheck2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileCheck2, ScrollText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTenant } from "../tenant/TenantProvider";
 import { legalReadiness } from "./legalCompliance";
 import {
-  downloadRewardAccountingCsv,
   loadRestaurantLegalSetup,
   saveRestaurantLegalSetup,
   scheduleProgramTermination,
@@ -120,13 +119,6 @@ export function OwnerLegalSettingsPage() {
     finally { setSaving(false); }
   }
 
-  async function handleExport() {
-    if (!activeRestaurant?.id) return;
-    const to = new Date(); const from = new Date(); from.setMonth(from.getMonth() - 12);
-    try { await downloadRewardAccountingCsv(activeRestaurant.id, from.toISOString(), to.toISOString()); setMessage("CSV-Export wurde erstellt."); }
-    catch { setError("CSV-Export konnte gerade nicht erstellt werden."); }
-  }
-
   if (loading) return <section className="card settings-detail-card"><h1>Rechtliches & Datenschutz</h1><p className="muted">Rechtliche Bereitschaft wird geladen …</p></section>;
   if (!activeRestaurant || !setup) return <section className="card settings-detail-card"><h1>Rechtliches & Datenschutz</h1><p className="status-message error">{error ?? "Restaurantdaten fehlen."}</p></section>;
 
@@ -152,7 +144,7 @@ export function OwnerLegalSettingsPage() {
 
       <section className="card owner-legal-termination"><h2>Programmende planen</h2><p className="muted">Kein sofortiges Abschalten: zuerst Sammelstopp, Programmende und letzte Einlösefrist festlegen.</p><div className="owner-legal-grid"><label className="field"><span>Letzte Punktevergabe</span><input className="input" onChange={(event) => setTermination((current) => ({ ...current, lastPointsAt: event.target.value }))} type="datetime-local" value={termination.lastPointsAt} /></label><label className="field"><span>Geplantes Programmende</span><input className="input" onChange={(event) => setTermination((current) => ({ ...current, plannedEndAt: event.target.value }))} type="datetime-local" value={termination.plannedEndAt} /></label><label className="field"><span>Letzte Einlösung</span><input className="input" onChange={(event) => setTermination((current) => ({ ...current, finalRedemptionAt: event.target.value }))} type="datetime-local" value={termination.finalRedemptionAt} /></label><label className="field full"><span>Hinweis an Kunden</span><textarea className="input" onChange={(event) => setTermination((current) => ({ ...current, notice: event.target.value }))} rows={4} value={termination.notice} /></label></div><button className="button secondary" disabled={saving || !termination.plannedEndAt || !termination.lastPointsAt || !termination.finalRedemptionAt || termination.notice.trim().length < 40} onClick={() => void handleTermination()} type="button">Programmende planen</button></section>
 
-      <section className="card owner-legal-export"><h2>Aufzeichnungen für Buchhaltung</h2><p>Exportiert technische Einlösedaten der letzten zwölf Monate. Die steuerliche und kassentechnische Behandlung ist mit der Buchhaltung oder Steuerberatung abzustimmen. WUXUAI erteilt keine Steuerberatung.</p><button className="button secondary" onClick={() => void handleExport()} type="button"><Download aria-hidden="true" size={19} /> CSV herunterladen</button></section>
+      <section className="card owner-legal-export"><h2>Kassenerfassung und Verantwortung</h2><p>WUXUAI verwaltet Bonuspunkte und Einlösungsaktivitäten und stellt keinen Kassenbeleg aus. Das Restaurant entscheidet gemeinsam mit seiner Steuerberatung, wie Rabatte, Gratisprodukte, Gutscheine und Bonusleistungen im eigenen Kassensystem erfasst werden.</p><p className="owner-legal-disclaimer">DRAFT_LEGAL_REVIEW_REQUIRED</p><Link className="button secondary" to="/admin/reports"><ScrollText aria-hidden="true" size={19} /> Bonus-Aktivitätsberichte öffnen</Link></section>
 
       <section className="card owner-legal-requests">
         <h2>Datenschutzanfragen</h2>

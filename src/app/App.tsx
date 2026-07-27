@@ -62,6 +62,9 @@ const LegalCenterPage = lazy(() =>
 const OwnerLegalSettingsPage = lazy(() =>
   import("../modules/legal/OwnerLegalSettingsPage").then((module) => ({ default: module.OwnerLegalSettingsPage })),
 );
+const BonusActivityReportsPage = lazy(() =>
+  import("../modules/reports/BonusActivityReportsPage").then((module) => ({ default: module.BonusActivityReportsPage })),
+);
 const ReferralLanding = lazy(() =>
   import("../modules/customer/ReferralLanding").then((module) => ({ default: module.ReferralLanding })),
 );
@@ -162,6 +165,7 @@ export function App() {
         <Route path="rewards" element={withFallback(<RewardsPage />, <AdminLoading />)} />
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
+        <Route path="reports" element={withFallback(<BonusActivityReportsPage />, <AdminLoading />)} />
         <Route path="legal" element={withFallback(<OwnerLegalSettingsPage />, <AdminLoading />)} />
       </Route>
       <Route
