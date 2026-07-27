@@ -28,7 +28,6 @@ export function customerRegistrationCanSubmit(form, legalReady) {
     && isValidCustomerFirstName(form.firstName)
     && isValidCustomerPhone(form.phone)
     && form.termsAccepted
-    && form.privacyAcknowledged
-    && (!form.birthday || form.birthdayProcessing),
+    && form.privacyAcknowledged,
   );
 }

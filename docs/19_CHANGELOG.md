@@ -5,6 +5,19 @@
 
 Status: **LOCK**
 
+## 27.07.2026 - Optionale Einwilligungen und Restaurant-Neuscan
+
+- Der Registrierungsabschluss verlangt nur noch gültige Pflichtfelder,
+  Teilnahmebedingungen und Datenschutzbestätigung.
+- Freiwillige Geburtstags- und Marketingeinwilligungen dürfen deaktiviert
+  bleiben und erzeugen dadurch keinen aktiven Marketingstatus.
+- Der Sammel-Flow bietet einen echten kamerabasierten Restaurant-QR-Scanner.
+- Ein neuer Scan übernimmt ausschließlich den neuen Restaurant-Slug und keine
+  Token oder Query-Daten aus dem gescannten Link.
+- Ungültige und fremde QR-Codes aktivieren keinen alten Restaurantkontext;
+  Abbrechen führt bewusst zum neutralen Gast-Bonus-Einstieg.
+- Keine Datenbank-, RLS-, Punkte- oder Rewardlogik wurde geändert.
+
 ## 24.07.2026 - Legal- und Karten-Hardening
 
 - Leaflet, React Leaflet und Marker Cluster hinter einen echten dynamischen

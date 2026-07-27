@@ -211,7 +211,8 @@ test("Legal-Fehler bleibt vom Bonusportal getrennt und blockiert nur Registrieru
   assert.match(customerPortal, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
   assert.match(customerPortal, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
   assert.match(customerPortal, /reloadLegalCenter/);
-  assert.match(referralLanding, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(referralLanding, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
+  assert.match(referralLanding, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
   assert.match(legalCenter, /data\.missing_configuration/);
 });
 

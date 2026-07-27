@@ -84,6 +84,7 @@ import {
 } from "./components/PremiumCustomerUi";
 import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
 import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
+import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanner";
 import {
   customerPushAvailable,
   disableCustomerPush,
@@ -237,6 +238,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [creatingReferral, setCreatingReferral] = useState(false);
+  const [restaurantScannerOpen, setRestaurantScannerOpen] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
   const collectionInFlightRef = useRef(false);
@@ -661,11 +663,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setMessage("Bitte akzeptiere die Teilnahmebedingungen und bestätige die Datenschutzerklärung.");
       return;
     }
-    if (form.birthday && !form.birthdayProcessing) {
-      setMessage("Bitte bestätige die freiwillige Geburtstagsverarbeitung oder entferne das Geburtsdatum.");
-      return;
-    }
-
     setSubmitting(true);
     setMessage(null);
 
@@ -899,6 +896,25 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openRestaurantScanner() {
+    setSelectedTierKey("");
+    setDailyPin("");
+    setCollectionResult(null);
+    setMessage(null);
+    setCollectStep("entry");
+    setRestaurantScannerOpen(true);
+  }
+
+  function cancelRestaurantScanner() {
+    setRestaurantScannerOpen(false);
+    window.location.assign("/customer");
+  }
+
+  function handleRestaurantDetected(_nextRestaurantSlug: string, targetPath: string) {
+    setRestaurantScannerOpen(false);
+    window.location.assign(targetPath);
   }
 
   function openMyRedemptions() {
@@ -1367,6 +1383,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       setCollectStep("tier");
                       setMessage(null);
                     }}>Bon-Stufe auswählen</PrimaryButton>
+                    <button
+                      aria-label="Anderes Restaurant scannen"
+                      className="premium-collect-text-button premium-restaurant-rescan-button"
+                      onClick={openRestaurantScanner}
+                      type="button"
+                    >
+                      <QrCode aria-hidden="true" size={18} />
+                      Anderes Restaurant scannen
+                    </button>
                     <p className="premium-collect-security"><ShieldCheck aria-hidden="true" size={16} /> Sicher mit deinem Bonuskonto verbunden</p>
                   </article>
                 ) : null}
@@ -2037,6 +2062,11 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         ) : null}
 
         {message && !(customer && isBonusCollection) ? <p className="status-message" role="alert">{message}</p> : null}
+        <CustomerRestaurantScanner
+          onCancel={cancelRestaurantScanner}
+          onRestaurantDetected={handleRestaurantDetected}
+          open={restaurantScannerOpen}
+        />
       </PageContainer>
     </AppShell>
   );

@@ -13,6 +13,7 @@ import {
 const portalSource = await readFile(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const premiumCss = await readFile(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
 const loyaltySource = await readFile(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
+const referralSource = await readFile(new URL("../src/modules/customer/ReferralLanding.tsx", import.meta.url), "utf8");
 
 test("QR-Kontext bleibt bei einem kontrollierten Portal-Retry unverändert", async () => {
   const calls = [];
@@ -96,8 +97,20 @@ test("Fertig verlangt nur gültige Pflichtfelder und Pflichtzustimmungen", () =>
   assert.equal(customerRegistrationCanSubmit({ ...validRequired, termsAccepted: false }, true), false);
   assert.equal(customerRegistrationCanSubmit({ ...validRequired, privacyAcknowledged: false }, true), false);
   assert.equal(customerRegistrationCanSubmit({ ...validRequired, phone: "123" }, true), false);
-  assert.equal(customerRegistrationCanSubmit({ ...validRequired, birthday: "1990-07-27" }, true), false);
+  assert.equal(customerRegistrationCanSubmit({ ...validRequired, birthday: "1990-07-27" }, true), true);
   assert.equal(customerRegistrationCanSubmit({ ...validRequired, birthday: "1990-07-27", birthdayProcessing: true }, true), true);
+  assert.equal(customerRegistrationCanSubmit({ ...validRequired, marketingPush: true }, true), true);
+  assert.equal(customerRegistrationCanSubmit({ ...validRequired, marketingSms: true }, true), true);
+  assert.equal(customerRegistrationCanSubmit({ ...validRequired, marketingEmail: true }, true), true);
+});
+
+test("freiwillige Einwilligungen blockieren weder Restaurant- noch Referral-Registrierung", () => {
+  assert.doesNotMatch(portalSource, /if \(form\.birthday && !form\.birthdayProcessing\)/);
+  assert.doesNotMatch(referralSource, /if \(form\.birthday && !form\.birthdayProcessing\)/);
+  assert.match(referralSource, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
+  assert.match(loyaltySource, /input_marketing_push:\s*input\.legal\.marketingPush/);
+  assert.match(loyaltySource, /input_marketing_sms:\s*input\.legal\.marketingSms/);
+  assert.match(loyaltySource, /input_marketing_email:\s*input\.legal\.marketingEmail/);
 });
 
 test("Mobile Registrierung erzwingt dunkle Texte, leere Checkboxen und Safe Area", () => {

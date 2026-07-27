@@ -855,6 +855,77 @@
 .premium-tier-grid button.selected svg, .premium-tier-grid button.selected span { color: #d9b975; }
 .premium-tier-grid button:active { transform: scale(0.985); }
 .premium-collect-text-button { background: transparent; color: #aaa39a; font-weight: 600; min-height: 44px; width: 100%; }
+.premium-restaurant-rescan-button { align-items: center; display: inline-flex; gap: 8px; justify-content: center; margin-top: -8px; }
+.premium-restaurant-rescan-button:hover { color: #d7c8b0; }
+
+.customer-restaurant-scanner { display: grid; gap: 16px; min-width: 0; }
+.customer-restaurant-scanner-frame {
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  background: #151412;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.customer-restaurant-scanner-frame video { height: 100%; object-fit: cover; width: 100%; }
+.customer-restaurant-scanner-reticle {
+  align-items: center;
+  border: 2px solid rgba(217, 185, 117, 0.9);
+  border-radius: 22px;
+  color: #e0bf79;
+  display: flex;
+  height: min(58vw, 230px);
+  justify-content: center;
+  max-height: calc(100% - 44px);
+  max-width: calc(100% - 44px);
+  position: absolute;
+  width: min(58vw, 230px);
+}
+.customer-restaurant-scanner-loading {
+  align-items: center;
+  background: rgba(21, 20, 18, 0.88);
+  border-radius: 999px;
+  color: #f7f2e9;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 8px;
+  padding: 10px 14px;
+  position: absolute;
+}
+.customer-restaurant-scanner-status,
+.customer-restaurant-scanner-security { align-items: center; color: var(--premium-text-secondary); display: flex; gap: 8px; line-height: 1.5; margin: 0; }
+.customer-restaurant-scanner-security { font-size: 13px; justify-content: center; text-align: center; }
+.customer-restaurant-scanner-error {
+  background: #fff2f0;
+  border: 1px solid #f1d1cc;
+  border-radius: 16px;
+  color: #8a3128;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+.customer-restaurant-scanner-error p { line-height: 1.5; margin: 0; }
+.customer-restaurant-scanner-error button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2b7b1;
+  border-radius: 12px;
+  color: #7c2d25;
+  display: inline-flex;
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+.customer-restaurant-scanner-error button:focus-visible,
+.customer-restaurant-scanner-cancel:focus-visible,
+.premium-restaurant-rescan-button:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.5); outline-offset: 3px; }
+.customer-restaurant-scanner-cancel { min-height: 44px; width: 100%; }
 
 .premium-selected-tier {
   align-items: center;

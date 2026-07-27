@@ -17,6 +17,12 @@ import {
 } from "../loyalty/loyaltyService";
 import { saveStoredCustomerToken } from "./customerTokenStorage";
 import {
+  customerRegistrationCanSubmit,
+  emptyCustomerRegistrationForm,
+  isValidCustomerFirstName,
+  isValidCustomerPhone,
+} from "./customerRegistration.mjs";
+import {
   AppShell,
   CustomerHeader,
   ErrorState,
@@ -31,7 +37,7 @@ export function ReferralLanding() {
   const [data, setData] = useState<PublicReferralData | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [registration, setRegistration] = useState<ReferralRegistrationResult | null>(null);
-  const [form, setForm] = useState({ firstName: "", phone: "", birthday: "", termsAccepted: false, privacyAcknowledged: false, birthdayProcessing: false, marketingPush: false, marketingSms: false, marketingEmail: false });
+  const [form, setForm] = useState(() => ({ ...emptyCustomerRegistrationForm }));
   const [message, setMessage] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -73,8 +79,12 @@ export function ReferralLanding() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!form.firstName.trim() || !form.phone.trim()) {
-      setMessage("Vorname und Telefonnummer sind erforderlich.");
+    if (!isValidCustomerFirstName(form.firstName)) {
+      setMessage("Bitte gib einen gültigen Vornamen ein.");
+      return;
+    }
+    if (!isValidCustomerPhone(form.phone)) {
+      setMessage("Bitte gib eine gültige Telefonnummer ein.");
       return;
     }
     if (legalCenterState.status !== "ready") {
@@ -85,11 +95,6 @@ export function ReferralLanding() {
       setMessage("Bitte akzeptiere die Teilnahmebedingungen und bestätige die Datenschutzerklärung.");
       return;
     }
-    if (form.birthday && !form.birthdayProcessing) {
-      setMessage("Bitte bestätige die freiwillige Geburtstagsverarbeitung oder entferne das Geburtsdatum.");
-      return;
-    }
-
     setSubmitting(true);
     setMessage(null);
 
@@ -138,6 +143,7 @@ export function ReferralLanding() {
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
     ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
     : "Die Punktegültigkeit ist in den Teilnahmebedingungen beschrieben.";
+  const registrationCanSubmit = customerRegistrationCanSubmit(form, legalCenterState.status === "ready");
 
   return (
     <AppShell fontFamily={data.branding.font_family} primaryColor={data.branding.primary_color}>
@@ -252,7 +258,7 @@ export function ReferralLanding() {
                 <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
                 <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
               </section>
-              <PrimaryButton disabled={submitting || legalCenterState.status !== "ready"} type="submit">
+              <PrimaryButton disabled={submitting || !registrationCanSubmit} type="submit">
                 <UserPlus size={20} />
                 Mitglied werden
               </PrimaryButton>
