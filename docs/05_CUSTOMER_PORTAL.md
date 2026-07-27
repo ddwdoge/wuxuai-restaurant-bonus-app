@@ -714,3 +714,55 @@ Endstatus: **LOCK**
 - Abgelaufene oder verwendete Codes sind nicht erneut nutzbar.
 
 Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer sofort vollständig abgeschlossenen Einlösung direkt nach dem Bestätigungsbutton.
+
+## CTO-Ergänzung 2026-07-22: Retention V1
+
+- Bald ablaufende Punkteeinlösungen werden 7, 3 und 1 Tag vor Ablauf sowie am letzten Gültigkeitstag im bestehenden Info-Drawer angezeigt.
+- Der Drawer öffnet automatisch höchstens einmal je Browser-Session; der Hinweis bleibt danach auf der Startseite erreichbar.
+- Web Push ist freiwillig und ergänzt den Drawer. Ohne Zustimmung oder Browserunterstützung bleibt der Drawer vollständig nutzbar.
+- Ein Push-Link öffnet ausschließlich die zugehörige Punkteeinlösung; er löst nichts automatisch ein.
+- Geburtstagstag und -monat können freiwillig im Konto gespeichert werden. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag kann der Gast genau einmal pro Kalenderjahr eine serverseitig ausgeloste Überraschung abholen.
+- Der Freunde-Bonus ist fest auf 2× Punkte für beide Beteiligten während 30 Tagen gesetzt.
+
+## CTO-Ergänzung 2026-07-23: QR-Restaurantkontext
+
+- Der Restaurant-Slug der aktuell geöffneten QR-URL ist immer die einzige Quelle
+  der Wahrheit für den Restaurantkontext.
+- Beim Wechsel zwischen zwei Restaurant-QRs wird die Kundenportal-Instanz neu
+  aufgebaut; lokaler React-State des vorherigen Restaurants wird nicht übernommen.
+- Ein Token aus der aktuellen URL hat Vorrang vor lokal gespeicherten Tokens.
+- Lokal gespeicherte Kundentokens bleiben nach Restaurant-Slug getrennt und dürfen
+  einen gültigen URL-Kontext niemals überschreiben.
+- Ein ungültiger Restaurant-Slug zeigt eine neutrale Fehleransicht. Ein zuvor
+  geladenes Restaurant darf dabei nicht sichtbar bleiben.
+- Aktive Einlösecodes werden in `sessionStorage` nach Restaurant, gehashtem
+  Kundenzugang und Einlösung getrennt gespeichert.
+- Beim Wechsel zu einem anderen Restaurant bleibt der ursprüngliche Zustand
+  erhalten, wird dort aber nicht angezeigt und nicht weiter abgefragt.
+- Bei der Rückkehr wird der gespeicherte Zustand erst nach positiver
+  serverseitiger Statusprüfung angezeigt und erneut überwacht.
+- Ein Portal-Ladefehler entfernt Restaurantname, Branding, Einstellungen,
+  Kundendaten und Punkteeinlösungen aus der sichtbaren Oberfläche.
+
+## CTO-Ergänzung 2026-07-23: Optionale Partnerrestaurantsuche
+
+- Die QR-URL bleibt die einzige Quelle der Wahrheit für den aktiven Restaurant-
+  und Punkte-Sammelkontext.
+- Zusätzlich darf der Gast unter `Restaurants entdecken` eine optionale,
+  rein lesende Karte der ausdrücklich freigegebenen WUXUAI Partner öffnen.
+- Die Suche ist kein Standard-Einstieg und ersetzt den Restaurant-QR nicht.
+- Karten- oder Listenauswahl registriert keinen Gast, bucht keine Punkte und
+  startet keine Punkteeinlösung.
+- Punktestände werden je Restaurant getrennt und nur nach Validierung des dort
+  gespeicherten Kundenzugangs angezeigt.
+- OpenStreetMap dient ausschließlich als Kartenbasis. Partnerstatus und Marker
+  stammen ausschließlich aus der WUXUAI Datenbank.
+- Externe Navigation darf über einen Google-Maps-Weblink ohne API-Key geöffnet
+  werden; es wird keine Google Maps Platform API verwendet.
+
+## Legal Center V1
+
+- `Rechtliches & Datenschutz` bleibt ohne Anmeldung für öffentliche Inhalte erreichbar.
+- Persönliche Einwilligungen, restaurantbezogener Datenexport und Datenschutzanfragen verlangen einen gültigen Kundenzugang für genau dieses Restaurant.
+- Teilnahme- und Datenschutzhinweis sind Pflicht; Marketing-Push, SMS, E-Mail und Geburtstagsverarbeitung bleiben getrennt, freiwillig und standardmäßig aus.
+- Punkte werden als nicht auszahlbar, nicht übertragbar und restaurantbezogen erklärt. Die aktuelle Gültigkeitsregel wird angezeigt; ein konkretes historisches Ablaufdatum nur, wenn es verlässlich berechenbar ist.

@@ -1,0 +1,20 @@
+.reward-image-frame {
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.reward-image-frame > img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  object-position: var(--reward-image-position-x, 50%) var(--reward-image-position-y, 50%);
+  transform: scale(var(--reward-image-render-scale, 1));
+  transform-origin: var(--reward-image-position-x, 50%) var(--reward-image-position-y, 50%);
+  width: 100%;
+}

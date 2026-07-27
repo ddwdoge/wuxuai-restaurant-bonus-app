@@ -923,3 +923,26 @@ Endstatus: **LOCK**
 - `expire_redemption_codes`: serverseitige Deaktivierung abgelaufener Codes.
 
 Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_code`, `redeem_reward_with_pin` und die alten nicht-idempotenten Punktebuchungssignaturen sind für `anon` und `authenticated` gesperrt.
+
+## Ergänzung 2026-07-23: Partnerrestaurant-Finder
+
+- `get_public_partner_restaurants()` gibt nur öffentliche Standort- und
+  Angebotsindikatoren aktiver, freigegebener Partner zurück.
+- `get_customer_partner_membership(input_restaurant_slug,
+  input_customer_token)` gibt Mitgliedsdaten ausschließlich nach serverseitiger
+  Token-Restaurant-Prüfung zurück.
+- Beide Funktionen entziehen `public` die Ausführung und gewähren sie bewusst
+  nur `anon` und `authenticated`.
+- Es werden keine Owner-, Mitarbeiter-, Kundenkontakt- oder Umsatzdaten
+  veröffentlicht.
+
+## Ergänzung 2026-07-24: Public Legal Center und Datenexport
+
+- `get_public_legal_center(slug, token)` ist im normalen Public-Pfad read-only.
+- Fehlen veröffentlichte Pflichtdokumente, liefert die RPC
+  `legal_ready = false` und `missing_configuration = true` ohne interne Details.
+- Registrierungs-RPCs prüfen die vorhandenen veröffentlichten Pflichtdokumente
+  serverseitig und erzeugen keine Vorlagen im Gastpfad.
+- `get_customer_data_export(slug, token)` gibt bei Dokumentannahmen nur
+  Nachweismetadaten wie Titel, Version, Hash, Gültigkeitsdatum, Annahmezeit und
+  Quelle aus. Dokumentvolltexte sind nicht Teil des personenbezogenen Exports.

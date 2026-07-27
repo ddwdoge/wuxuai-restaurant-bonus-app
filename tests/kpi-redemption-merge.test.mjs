@@ -5,14 +5,15 @@ import test from "node:test";
 const portal = await readFile(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const dashboard = await readFile(new URL("../src/modules/admin/pages/AdminDashboard.tsx", import.meta.url), "utf8");
 const service = await readFile(new URL("../src/modules/rewards/rewardService.ts", import.meta.url), "utf8");
+const redemptionSession = await readFile(new URL("../src/modules/customer/customerRedemptionSession.mjs", import.meta.url), "utf8");
 const app = await readFile(new URL("../src/app/App.tsx", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/20260720003000_dashboard_kpis_and_redemption_status.sql", import.meta.url), "utf8");
 
 test("cached redemption is restored only after a positive server status", () => {
-  assert.match(portal, /loadCustomerRedemptionStatus\(\{/);
-  assert.match(portal, /serverStatus\.active && serverStatus\.status === "active"/);
+  assert.match(portal, /restoreScopedActiveRedemption\(window\.sessionStorage/);
+  assert.match(redemptionSession, /serverStatus\?\.active && serverStatus\.status === "active"/);
   assert.match(portal, /redemptionId: result\.redemption_id/);
-  assert.match(portal, /sessionStorage\.removeItem\(storageKey\)/);
+  assert.match(redemptionSession, /removeScopedActiveRedemption\(storage/);
   assert.doesNotMatch(portal, /status === "redemption_started"\).*alreadyRedeemed/s);
 });
 

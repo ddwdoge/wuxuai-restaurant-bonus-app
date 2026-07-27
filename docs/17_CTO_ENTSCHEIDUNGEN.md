@@ -1376,6 +1376,21 @@ EN/ZH nach Feature Freeze.
 
 Nicht V1.
 
+## 66. Optionale Partnerrestaurant-Karte ist V1
+
+🟢 **FIX / V1 – 23.07.2026**
+
+- Die Karte ist eine optionale Entdecken-Seite, kein Ersatz für den QR-Einstieg.
+- Leaflet mit OpenStreetMap ist die einzige interne Kartenlösung.
+- Es wird keine Google Maps JavaScript-, Places-, Nearby-, Routes- oder
+  Distance-Matrix-API verwendet.
+- Marker stammen ausschließlich aus der eigenen Datenbank und benötigen eine
+  ausdrückliche öffentliche Freigabe.
+- Owner bearbeiten in V1 nur den bestehenden primären Standort. Eine echte
+  Multi-Filialverwaltung bleibt V2.
+- Auswahl auf Karte oder Liste verändert keinen aktiven Kundentoken und startet
+  weder Registrierung, Punktebuchung noch Einlösung.
+
 ---
 
 ## 66. WUXUAI Admin Basis
@@ -1873,3 +1888,26 @@ Endstatus: **LOCK**
 - Alte Screenshots und abgelaufene/verwendete Codes werden serverseitig abgelehnt.
 
 Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung ohne prüfbaren Code bereits unmittelbar nach dem Kundenbutton vollständig abgeschlossen ist.
+
+## CTO-Entscheidung 2026-07-22: Retention-Funktionen V1
+
+🟢 **FIX / V1**
+
+- Ablauf-Erinnerungen: serverseitige Stufen 7/3/1/0 Tage, Darstellung im Startseiten-Drawer und freiwilliger Web Push. Drawer ist der vollständige Fallback.
+- Geburtstagsgeschenk: freiwilliger Tag/Monat, Abholung 3 Tage vor bis 7 Tage nach dem Geburtstag, serverseitige Zufallsauswahl aus dem freigegebenen aktiven Willkommensgeschenk-Pool, höchstens einmal pro Jahr.
+- Diese Geburtstagsregel ersetzt die automatische Auswahl 14 Tage vor dem Geburtstag.
+- Bonus Boost: beide Beteiligten erhalten nach der ersten gültigen Punktebuchung des geworbenen Neukunden 30 Tage lang exakt 2× Punkte.
+- Weitere erfolgreiche Empfehlungen verlängern den aktiven Boost des Empfehlenden jeweils um 30 Tage.
+- Keine Push-Nachricht, Auslosung oder Empfehlung darf die bestehende serverseitige Punkte- oder Einlösesicherheit umgehen.
+
+## CTO-Entscheidung 2026-07-24: Legal-Compliance-Layer
+
+🟢 **TECHNISCHE GRUNDLAGE / EXTERNE PRÜFUNG ERFORDERLICH**
+
+- Das Restaurant ist Betreiber und Aussteller seines restaurantbezogenen Bonusprogramms; WUXUAI ist technischer SaaS-Plattformanbieter und hält keine Kundengelder.
+- Punkte sind kein Geld, kein Bankguthaben, keine E-Wallet und kein allgemeines Zahlungsmittel. Sie sind nicht auszahlbar, verkäuflich oder zwischen Kunden beziehungsweise Restaurants übertragbar.
+- Teilnahmebedingungen und Datenschutzinformationen sind je Restaurant versioniert und unveränderlich. Eine konfigurierte erneute Annahme wird versionsgebunden gespeichert.
+- Marketing-Push, Marketing-SMS und Marketing-E-Mail sind getrennte, freiwillige Einwilligungen und standardmäßig aus. Ohne gültige kanalspezifische Einwilligung blockiert der Server Marketingversand.
+- Öffentliche rechtliche Inhalte laufen über begrenzte RPCs. Legal-, Consent- und Kundentabellen erhalten keine öffentliche Lesepolicy.
+- Datenschutzlöschung und Programmende sind geprüfte Abläufe, keine sofortigen Lösch- oder Abschaltaktionen.
+- Die technische Grundlage benötigt vor Production externe österreichische Rechts- und Steuerprüfung.

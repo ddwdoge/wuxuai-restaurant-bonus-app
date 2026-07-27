@@ -210,6 +210,13 @@ Bereits vorbereitet:
 
 Codex darf V1 UI nicht mit Filialen überladen.
 
+### 6.7 Abgrenzung zur V1-Partnerkarte
+
+Die optionale V1-Partnerkarte zeigt eigenständige aktive Restaurants und deren
+bestehenden primären Standort. Sie führt keine Organisation mit mehreren
+Filialen ein. Filialerstellung, filialübergreifende Punkte, zentrale
+Kettenverwaltung und Organisations-Abrechnung bleiben V2.
+
 ---
 
 ## 7. Branch Merge / Zusammenführung

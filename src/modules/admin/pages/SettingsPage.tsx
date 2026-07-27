@@ -8,6 +8,8 @@ import {
   Gift,
   ImageUp,
   KeyRound,
+  MapPinned,
+  Scale,
   Palette,
   QrCode,
   Save,
@@ -15,8 +17,10 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
-import type { BranchSubscription, Restaurant, RestaurantBranding } from "../../../shared/types/domain";
+import type { BranchSubscription, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
+import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
+import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -40,6 +44,19 @@ type RestaurantDetails = Pick<
   | "primary_branch_id"
   | "organization_id"
 >;
+
+type PartnerLocationForm = {
+  id: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  latitude: string;
+  longitude: string;
+  isDiscoverable: boolean;
+  shortDescription: string;
+  coverImageUrl: string;
+};
 
 const weekdays: { key: Weekday; label: string }[] = [
   { key: "mon", label: "Montag" },
@@ -213,6 +230,7 @@ export function SettingsPage() {
   });
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
   const [subscription, setSubscription] = useState<BranchSubscription | null>(null);
+  const [partnerLocation, setPartnerLocation] = useState<PartnerLocationForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draggingLogo, setDraggingLogo] = useState(false);
@@ -260,6 +278,30 @@ export function SettingsPage() {
           ownerPhone: nextDetails.owner_phone ?? "",
         });
         setOpeningHours(normalizeOpeningHours(nextDetails.opening_hours));
+
+        if (supabase) {
+          const { data: locationData, error: locationError } = await supabase
+            .from("branches")
+            .select("id, address, postal_code, city, country, latitude, longitude, is_discoverable, public_short_description, public_cover_image_url")
+            .eq("restaurant_id", nextDetails.id)
+            .limit(1)
+            .maybeSingle();
+          if (locationError) throw locationError;
+          setPartnerLocation(locationData ? {
+            id: locationData.id,
+            address: locationData.address ?? "",
+            postalCode: locationData.postal_code ?? "",
+            city: locationData.city ?? "",
+            country: locationData.country ?? "AT",
+            latitude: locationData.latitude === null ? "" : String(locationData.latitude),
+            longitude: locationData.longitude === null ? "" : String(locationData.longitude),
+            isDiscoverable: Boolean(locationData.is_discoverable),
+            shortDescription: locationData.public_short_description ?? "",
+            coverImageUrl: locationData.public_cover_image_url ?? "",
+          } : null);
+        } else {
+          setPartnerLocation(null);
+        }
 
         try {
           const nextSubscription = await loadPrimarySubscription(nextDetails);
@@ -358,6 +400,55 @@ export function SettingsPage() {
     } catch (error) {
       console.error("Öffnungszeiten konnten nicht gespeichert werden.", error);
       setErrorMessage("Öffnungszeiten konnten nicht gespeichert werden.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function savePartnerLocation(event: FormEvent) {
+    event.preventDefault();
+    if (!details?.id || !partnerLocation) return;
+
+    const latitude = Number(partnerLocation.latitude);
+    const longitude = Number(partnerLocation.longitude);
+    const coordinatesValid = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+      && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+    const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim() && partnerLocation.city.trim());
+
+    if (!coordinatesValid) {
+      setErrorMessage("Bitte gib eine gültige Kartenposition ein.");
+      return;
+    }
+    if (partnerLocation.isDiscoverable && (!publicDetailsComplete || details.status !== "active")) {
+      setErrorMessage("Für die Sichtbarkeit müssen Adresse, PLZ und Ort vollständig sein und das Restaurant aktiv sein.");
+      return;
+    }
+
+    setSaving(true);
+    setStatus(null);
+    setErrorMessage(null);
+    try {
+      if (!supabase) throw new Error("Live-Daten sind nicht verbunden.");
+      const { error } = await supabase
+        .from("branches")
+        .update({
+          address: partnerLocation.address.trim(),
+          postal_code: partnerLocation.postalCode.trim(),
+          city: partnerLocation.city.trim(),
+          country: partnerLocation.country.trim().toUpperCase() || "AT",
+          latitude,
+          longitude,
+          is_discoverable: partnerLocation.isDiscoverable,
+          public_short_description: partnerLocation.shortDescription.trim() || null,
+          public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
+        })
+        .eq("id", partnerLocation.id)
+        .eq("restaurant_id", details.id);
+      if (error) throw error;
+      setStatus("Standort für die Restaurantsuche gespeichert.");
+    } catch (error) {
+      console.error("Standort konnte nicht gespeichert werden.", error);
+      setErrorMessage("Standort konnte gerade nicht gespeichert werden.");
     } finally {
       setSaving(false);
     }
@@ -651,6 +742,61 @@ export function SettingsPage() {
     );
   }
 
+  if (section === "standort") {
+    const latitude = Number(partnerLocation?.latitude);
+    const longitude = Number(partnerLocation?.longitude);
+    const previewAvailable = partnerLocation && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+      && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+    const previewLocation: PartnerRestaurant | null = previewAvailable ? {
+      restaurant_id: details.id,
+      branch_id: partnerLocation.id,
+      name: details.name,
+      slug: details.slug,
+      address: partnerLocation.address,
+      postal_code: partnerLocation.postalCode,
+      city: partnerLocation.city,
+      country: partnerLocation.country,
+      latitude,
+      longitude,
+      logo_url: branding?.logo_url ?? null,
+      cover_image_url: partnerLocation.coverImageUrl || null,
+      short_description: partnerLocation.shortDescription || null,
+      opening_hours: details.opening_hours,
+      welcome_reward_available: false,
+      active_reward_count: 0,
+      membership: null,
+      distance_km: null,
+    } : null;
+
+    return (
+      <>
+        <SettingsHeader title="Standort & Restaurantsuche" description="Lege fest, wie dein Restaurant für Gäste auf der Partnerkarte erscheint." />
+        <section className="card settings-detail-card">
+          {partnerLocation ? (
+            <form className="form" onSubmit={savePartnerLocation}>
+              <div className="grid two">
+                <div className="field"><label htmlFor="location-address">Adresse</label><input className="input" id="location-address" onChange={(event) => setPartnerLocation((current) => current ? { ...current, address: event.target.value } : current)} value={partnerLocation.address} /></div>
+                <div className="field"><label htmlFor="location-postal-code">Postleitzahl</label><input className="input" id="location-postal-code" inputMode="numeric" onChange={(event) => setPartnerLocation((current) => current ? { ...current, postalCode: event.target.value } : current)} value={partnerLocation.postalCode} /></div>
+                <div className="field"><label htmlFor="location-city">Ort</label><input className="input" id="location-city" onChange={(event) => setPartnerLocation((current) => current ? { ...current, city: event.target.value } : current)} value={partnerLocation.city} /></div>
+                <div className="field"><label htmlFor="location-country">Land</label><input className="input" id="location-country" maxLength={2} onChange={(event) => setPartnerLocation((current) => current ? { ...current, country: event.target.value } : current)} value={partnerLocation.country} /></div>
+                <div className="field"><label htmlFor="location-latitude">Breitengrad</label><input className="input" id="location-latitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, latitude: event.target.value } : current)} placeholder="48.208174" value={partnerLocation.latitude} /></div>
+                <div className="field"><label htmlFor="location-longitude">Längengrad</label><input className="input" id="location-longitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, longitude: event.target.value } : current)} placeholder="16.373819" value={partnerLocation.longitude} /></div>
+              </div>
+              <div className="field"><label htmlFor="location-description">Öffentliche Kurzbeschreibung</label><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
+              <div className="field"><label htmlFor="location-cover">Öffentliches Bild (HTTPS-Adresse)</label><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
+              <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
+              {previewLocation ? (
+                <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
+              ) : <p className="muted">Gib gültige Koordinaten ein, um die Kartenposition zu prüfen.</p>}
+              <FormActions saving={saving} submitLabel="Standort speichern" />
+            </form>
+          ) : <p className="status-message error">Für dieses Restaurant wurde kein primärer Standort gefunden.</p>}
+        </section>
+        <StatusMessages errorMessage={errorMessage} status={status} />
+      </>
+    );
+  }
+
   if (section === "bonusprogramm") {
     return (
       <>
@@ -747,6 +893,13 @@ export function SettingsPage() {
 
       <section className="grid two">
         <SettingsLinkCard
+          description="Impressum, Teilnahmebedingungen, Datenschutz und Programmende."
+          icon={Scale}
+          label="Rechtliche Bereitschaft prüfen"
+          title="Rechtliches & Datenschutz"
+          to="/admin/legal"
+        />
+        <SettingsLinkCard
           description="Passe die wichtigsten Angaben deines Restaurants an."
           icon={Building2}
           label="Restaurantdaten bearbeiten"
@@ -766,6 +919,13 @@ export function SettingsPage() {
           label="Öffnungszeiten bearbeiten"
           title="Öffnungszeiten"
           to="/admin/settings/oeffnungszeiten"
+        />
+        <SettingsLinkCard
+          description="Adresse, Kartenposition und Sichtbarkeit für die Partnersuche."
+          icon={MapPinned}
+          label="Standort bearbeiten"
+          title="Standort & Restaurantsuche"
+          to="/admin/settings/standort"
         />
         <SettingsLinkCard
           description="Lege Produkte fest, die Gäste mit Punkten einlösen können."

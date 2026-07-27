@@ -235,46 +235,11 @@ export function LoyaltyPage() {
                 Aktiv
               </label>
               <div className="grid two">
-                <div className="field">
-                  <label htmlFor="referral-boost-multiplier">Multiplikator</label>
-                  <select
-                    className="select"
-                    id="referral-boost-multiplier"
-                    value={settings.referral_boost_multiplier ?? 2}
-                    onChange={(event) =>
-                      setSettings((current) => ({
-                        ...current,
-                        referral_boost_multiplier: Number(event.target.value),
-                      }))
-                    }
-                  >
-                    <option value={1.25}>1.25×</option>
-                    <option value={1.5}>1.5×</option>
-                    <option value={2}>2×</option>
-                    <option value={3}>3×</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label htmlFor="referral-boost-duration">Dauer</label>
-                  <select
-                    className="select"
-                    id="referral-boost-duration"
-                    value={settings.referral_boost_duration_days ?? 30}
-                    onChange={(event) =>
-                      setSettings((current) => ({
-                        ...current,
-                        referral_boost_duration_days: Number(event.target.value),
-                      }))
-                    }
-                  >
-                    <option value={14}>14 Tage</option>
-                    <option value={30}>30 Tage</option>
-                    <option value={60}>60 Tage</option>
-                  </select>
-                </div>
+                <div className="field"><span>Multiplikator</span><strong>2× Punkte</strong></div>
+                <div className="field"><span>Dauer</span><strong>30 Tage</strong></div>
               </div>
               <p className="muted">
-                Gäste erhalten {settings.referral_boost_multiplier ?? 2}× Punkte für {settings.referral_boost_duration_days ?? 30} Tage, sobald der eingeladene Gast erstmals Punkte sammelt.
+                Beide Gäste erhalten 30 Tage lang 2× Punkte, sobald der eingeladene Gast erstmals Punkte sammelt.
               </p>
             </div>
 

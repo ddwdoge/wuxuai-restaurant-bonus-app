@@ -1,6 +1,7 @@
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  BellRing,
   CakeSlice,
   CheckCircle2,
   ChevronRight,
@@ -12,6 +13,7 @@ import {
   IdCard,
   LockKeyhole,
   LogOut,
+  MapPinned,
   QrCode,
   ReceiptText,
   ScanLine,
@@ -23,11 +25,16 @@ import {
   WalletCards,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
+import {
+  legalCenterStateFromResponse,
+  loadPublicLegalCenter,
+  type LegalCenterState,
+} from "../legal/legalService";
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
@@ -48,6 +55,14 @@ import {
   saveStoredCustomerToken,
 } from "./customerTokenStorage";
 import {
+  isUsableRestaurantSlug,
+  loadPortalForRestaurant,
+  persistScopedActiveRedemption,
+  removeScopedActiveRedemption,
+  restoreScopedActiveRedemption,
+  type ScopedActiveRedemption,
+} from "./customerRedemptionSession.mjs";
+import {
   AppShell,
   BenefitTile,
   BottomNavigation,
@@ -67,6 +82,19 @@ import {
   type CustomerView,
   type RewardCardState,
 } from "./components/PremiumCustomerUi";
+import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
+import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
+import {
+  customerPushAvailable,
+  disableCustomerPush,
+  drawCustomerBirthdayGift,
+  enableCustomerPush,
+  loadCustomerRetentionStatus,
+  markExpiryReminder,
+  updateCustomerBirthday,
+  type CustomerRetentionStatus,
+  type ExpiryReminder,
+} from "./retentionService";
 
 type GuestStep = "welcome" | "register" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -79,16 +107,7 @@ type RedemptionOutcome = {
   title: string;
 };
 
-type ActiveRedemptionCode = {
-  code: string;
-  expiresAt: string;
-  redemptionId: string;
-  rewardId: string;
-  assignmentId: string | null;
-  title: string;
-  redemptionType: "welcome_gift" | "birthday_gift" | "points_redemption";
-  pointsSpent: number;
-};
+type ActiveRedemptionCode = ScopedActiveRedemption;
 
 function formatBoostRemaining(activeUntil: string, remainingDays: number | undefined, nowMs: number) {
   const remainingMs = new Date(activeUntil).getTime() - nowMs;
@@ -197,8 +216,18 @@ export function CustomerPortal() {
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
+  const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
+  const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
+  const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
+  const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
-  const [form, setForm] = useState({ firstName: "", phone: "", birthday: "" });
+  const [form, setForm] = useState({
+    firstName: "", phone: "", birthday: "", termsAccepted: false,
+    privacyAcknowledged: false, marketingPush: false, marketingSms: false,
+    marketingEmail: false, birthdayProcessing: false,
+  });
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
@@ -208,12 +237,28 @@ export function CustomerPortal() {
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
-  const restaurantSlug = slug ?? restaurant?.slug ?? "";
-  const activeToken = registration?.customer.customer_qr_token ?? customerToken ?? storedCustomerToken;
+  const processedReminderDeepLinkRef = useRef<string | null>(null);
+  const restaurantSlug = slug?.trim() ?? "";
+  const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
   const isBonusCollection = location.pathname.startsWith("/w/");
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
+  const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
+
+  const reloadLegalCenter = useCallback(async () => {
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      return;
+    }
+    setLegalCenterState({ status: "loading" });
+    try {
+      const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
+      setLegalCenterState(legalCenterStateFromResponse(legalData));
+    } catch {
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+    }
+  }, [activeToken, restaurantSlug]);
   useEffect(() => {
-    if (!restaurantSlug) return;
+    if (!isUsableRestaurantSlug(restaurantSlug)) return;
     setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
   }, [restaurantSlug]);
 
@@ -229,43 +274,135 @@ export function CustomerPortal() {
   useEffect(() => {
     let cancelled = false;
 
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setRestaurant(null);
+      setBranding(null);
+      setSettings(null);
+      setCustomer(null);
+      setRewards([]);
+      setRetention(null);
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      setActiveRedemptionCode(null);
+      setRedeemOffer(null);
+      setRedemptionOutcome(null);
+      setRedemptionDrawerOpen(false);
+      setMessage("Restaurant wurde nicht gefunden.");
+      return undefined;
+    }
+
     async function loadPortal() {
-      const data = await loadCustomerPortalData(slug, activeToken);
+      const portalResult = await loadPortalForRestaurant({
+        restaurantSlug,
+        customerToken: activeToken,
+        loadPortal: loadCustomerPortalData,
+      });
+      if (portalResult.status !== "loaded") {
+        throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
+      }
+      const data = portalResult.data;
       if (!cancelled) {
         setRestaurant(data.restaurant);
         setBranding(data.branding);
         setSettings(data.settings);
         setCustomer(data.customer);
         setRewards(data.offers);
+        setMessage(null);
         if (data.customer) {
           setGuestStep("welcome");
         }
+      }
+      if (!cancelled) await reloadLegalCenter();
+      if (data.customer && activeToken && restaurantSlug) {
+        try {
+          const retentionData = await loadCustomerRetentionStatus(restaurantSlug, activeToken);
+          if (!cancelled) {
+            setRetention(retentionData);
+            setBirthdayForm({
+              day: retentionData.birthday.day ? String(retentionData.birthday.day) : "",
+              month: retentionData.birthday.month ? String(retentionData.birthday.month) : "",
+            });
+          }
+        } catch (retentionError) {
+          if (!cancelled) {
+            console.warn("Zusätzliche Kundenhinweise konnten nicht geladen werden.", retentionError);
+            setRetention(null);
+          }
+        }
+      } else if (!cancelled) {
+        setRetention(null);
       }
     }
 
     loadPortal().catch((error) => {
       if (!cancelled) {
         console.error("Kundenportal konnte nicht geladen werden.", error);
+        setRestaurant(null);
+        setBranding(null);
+        setSettings(null);
+        setCustomer(null);
+        setRewards([]);
+        setRetention(null);
+        setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+        setActiveRedemptionCode(null);
+        setRedeemOffer(null);
+        setRedemptionOutcome(null);
+        setRedemptionDrawerOpen(false);
         if (activeToken && isInvalidCustomerTokenError(error)) {
           removeStoredCustomerToken(restaurantSlug);
           setStoredCustomerToken(null);
-          setCustomer(null);
-          setRewards([]);
           setRegistration(null);
           setGuestStep("welcome");
+          void removeScopedActiveRedemption(window.sessionStorage, {
+            restaurantSlug,
+            customerToken: activeToken,
+          });
           setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
-        setCustomer(null);
-        setRewards([]);
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [activeToken, customerToken, refreshToken, restaurantSlug, slug]);
+  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, slug]);
+
+  useEffect(() => {
+    if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
+    const sessionKey = `wuxuai:expiry-reminders:${restaurantSlug}:${customer.customer_code}`;
+    if (window.sessionStorage.getItem(sessionKey)) return;
+    window.sessionStorage.setItem(sessionKey, "seen");
+    setInfoOpen(true);
+    retention.reminders.forEach((reminder) => {
+      void markExpiryReminder(activeToken, reminder.id, "displayed").catch(() => undefined);
+    });
+  }, [accountSheet, activeToken, customer, infoOpen, redemptionDrawerOpen, restaurantSlug, retention]);
+
+  useEffect(() => {
+    const reminderId = searchParams.get("reminder");
+    const rewardId = searchParams.get("reward");
+    if (!activeToken || !customer || !reminderId || !rewardId || processedReminderDeepLinkRef.current === reminderId) return;
+
+    const reminder = retention?.reminders.find((entry) => entry.id === reminderId && entry.reward_id === rewardId);
+    const reward = rewards.find((entry) => entry.id === rewardId
+      && (!reminder?.customer_reward_id || entry.assignment_id === reminder.customer_reward_id));
+    if (!reward) return;
+
+    processedReminderDeepLinkRef.current = reminderId;
+    if (reminder) void markExpiryReminder(activeToken, reminder.id, "opened").catch(() => undefined);
+    setActiveView("redemptions");
+    setRedeemOffer(reward);
+    setRedemptionSheetStep("detail");
+    setRedemptionOutcome(null);
+    setRedemptionStatus(null);
+    setRedemptionDrawerOpen(true);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("reminder");
+    nextSearchParams.delete("reward");
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [activeToken, customer, retention, rewards, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!customerToken) return;
@@ -313,13 +450,18 @@ export function CustomerPortal() {
   const pointsValue = settings?.loyalty_mode === "stamp_based"
     ? `${customer?.stamp_balance ?? 0}/${settings.stamps_required}`
     : String(customer?.points_balance ?? 0);
+  const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
+  const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
+  const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
+    ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
+    : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
   const bonusTiers = settings?.bonus_amount_tiers?.length ? settings.bonus_amount_tiers : defaultBonusAmountTiers;
   const sortedBonusTiers = [...bonusTiers].sort((left, right) => left.min - right.min);
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
-  const referralBoostMultiplier = settings?.referral_boost_multiplier ?? 2;
-  const referralBoostDurationDays = settings?.referral_boost_duration_days ?? 30;
+  const referralBoostMultiplier = 2;
+  const referralBoostDurationDays = 30;
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
   const activePointMultiplier = activeBoost?.multiplier ?? 1;
@@ -377,42 +519,42 @@ export function CustomerPortal() {
     : 0;
 
   useEffect(() => {
-    if (!restaurantSlug || !activeToken) return;
-    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
+    setActiveRedemptionCode(null);
+    setRedeemOffer(null);
+    setRedemptionOutcome(null);
+    setRedemptionDrawerOpen(false);
+  }, [activeToken, restaurantSlug]);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug) || !activeToken || !customer) return;
     const customerTokenForCheck = activeToken;
     let cancelled = false;
 
     async function restoreActiveRedemption() {
       try {
-        const stored = window.sessionStorage.getItem(storageKey);
-        if (!stored) return;
-        const parsed = JSON.parse(stored) as ActiveRedemptionCode;
-        const locallyValid = Boolean(
-          parsed.redemptionId
-          && /^\d{6}$/.test(parsed.code)
-          && new Date(parsed.expiresAt).getTime() > Date.now()
-        );
-        if (!locallyValid) {
-          window.sessionStorage.removeItem(storageKey);
-          return;
-        }
-
-        const serverStatus = await loadCustomerRedemptionStatus({
+        const restored = await restoreScopedActiveRedemption(window.sessionStorage, {
           restaurantSlug,
           customerToken: customerTokenForCheck,
-          redemptionId: parsed.redemptionId,
-        });
+        }, loadCustomerRedemptionStatus);
         if (cancelled) return;
+        if (!restored.redemption) return;
 
-        if (serverStatus.active && serverStatus.status === "active") {
-          setActiveRedemptionCode(parsed);
+        if (restored.state === "active") {
+          setActiveRedemptionCode(restored.redemption);
           setRedemptionOutcome(null);
           setRedemptionDrawerOpen(true);
           return;
         }
 
-        window.sessionStorage.removeItem(storageKey);
         setActiveRedemptionCode(null);
+        if (restored.state === "redeemed" || restored.state === "expired") {
+          setRedemptionOutcome({
+            kind: restored.state,
+            pointsSpent: restored.redemption.pointsSpent,
+            title: restored.redemption.title,
+          });
+          setRedemptionDrawerOpen(true);
+        }
       } catch (error) {
         console.error("Einlösecode konnte nicht serverseitig geprüft werden.", error);
         if (!cancelled) {
@@ -425,14 +567,12 @@ export function CustomerPortal() {
     return () => {
       cancelled = true;
     };
-  }, [activeToken, restaurantSlug]);
+  }, [activeToken, customer, restaurantSlug]);
 
   useEffect(() => {
     if (!activeRedemptionCode || !activeToken || !restaurantSlug) return;
     let cancelled = false;
     let requestRunning = false;
-    const storageKey = `wuxuai-active-redemption:${restaurantSlug}`;
-
     const intervalId = window.setInterval(() => {
       if (requestRunning) return;
       requestRunning = true;
@@ -443,7 +583,11 @@ export function CustomerPortal() {
       })
         .then((serverStatus) => {
           if (cancelled || serverStatus.active) return;
-          window.sessionStorage.removeItem(storageKey);
+          void removeScopedActiveRedemption(window.sessionStorage, {
+            restaurantSlug,
+            customerToken: activeToken,
+            redemptionId: activeRedemptionCode.redemptionId,
+          });
           setRedemptionOutcome({
             kind: serverStatus.status === "redeemed" ? "redeemed" : serverStatus.status === "expired" ? "expired" : "error",
             pointsSpent: activeRedemptionCode.pointsSpent,
@@ -471,8 +615,12 @@ export function CustomerPortal() {
   }, [activeRedemptionCode, activeToken, restaurantSlug]);
 
   useEffect(() => {
-    if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug) return;
-    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    if (!activeRedemptionCode || redemptionSecondsRemaining > 0 || !restaurantSlug || !activeToken) return;
+    void removeScopedActiveRedemption(window.sessionStorage, {
+      restaurantSlug,
+      customerToken: activeToken,
+      redemptionId: activeRedemptionCode.redemptionId,
+    });
     setRedemptionOutcome({
       kind: "expired",
       pointsSpent: activeRedemptionCode.pointsSpent,
@@ -481,12 +629,24 @@ export function CustomerPortal() {
     setActiveRedemptionCode(null);
     setRedemptionDrawerOpen(true);
     setMessage("Der Einlösecode ist abgelaufen.");
-  }, [activeRedemptionCode, redemptionSecondsRemaining, restaurantSlug]);
+  }, [activeRedemptionCode, activeToken, redemptionSecondsRemaining, restaurantSlug]);
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
     if (!restaurantSlug || !form.firstName.trim() || !form.phone.trim()) {
       setMessage("Vorname und Telefonnummer sind erforderlich.");
+      return;
+    }
+    if (legalCenterState.status !== "ready") {
+      setMessage("Teilnahmebedingungen und Datenschutzinformationen müssen vor der Registrierung verfügbar sein. Bitte versuche es erneut.");
+      return;
+    }
+    if (!form.termsAccepted || !form.privacyAcknowledged) {
+      setMessage("Bitte akzeptiere die Teilnahmebedingungen und bestätige die Datenschutzerklärung.");
+      return;
+    }
+    if (form.birthday && !form.birthdayProcessing) {
+      setMessage("Bitte bestätige die freiwillige Geburtstagsverarbeitung oder entferne das Geburtsdatum.");
       return;
     }
 
@@ -500,6 +660,14 @@ export function CustomerPortal() {
         phone: form.phone.trim(),
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
+        legal: {
+          termsAccepted: form.termsAccepted,
+          privacyAcknowledged: form.privacyAcknowledged,
+          marketingPush: form.marketingPush,
+          marketingSms: form.marketingSms,
+          marketingEmail: form.marketingEmail,
+          birthdayProcessing: form.birthdayProcessing,
+        },
       });
       saveStoredCustomerToken(restaurantSlug, {
         customer_token: result.customer.customer_qr_token,
@@ -620,6 +788,82 @@ export function CustomerPortal() {
     }
   }
 
+  async function handleBirthdaySave() {
+    if (!activeToken || !restaurantSlug) return;
+    const day = Number(birthdayForm.day);
+    const month = Number(birthdayForm.month);
+    if (!Number.isInteger(day) || !Number.isInteger(month)) {
+      setRetentionMessage("Bitte gib Tag und Monat vollständig ein.");
+      return;
+    }
+    try {
+      await updateCustomerBirthday(restaurantSlug, activeToken, day, month);
+      setRetentionMessage("Geburtstag gespeichert.");
+      setRefreshToken((current) => current + 1);
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Geburtstag konnte nicht gespeichert werden.");
+    }
+  }
+
+  async function handleBirthdayGiftDraw() {
+    if (!activeToken || !restaurantSlug || drawingBirthdayGift) return;
+    setDrawingBirthdayGift(true);
+    setRetentionMessage(null);
+    try {
+      const gift = await drawCustomerBirthdayGift(restaurantSlug, activeToken, crypto.randomUUID());
+      setRetentionMessage(gift.already_drawn
+        ? "Deine Geburtstagsüberraschung ist bereits für dich reserviert."
+        : `${gift.title} wurde für dich ausgelost.`);
+      setRefreshToken((current) => current + 1);
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Geburtstagsüberraschung konnte nicht ausgelost werden.");
+    } finally {
+      setDrawingBirthdayGift(false);
+    }
+  }
+
+  async function handleEnablePush() {
+    if (!activeToken || !restaurantSlug || enablingPush) return;
+    setEnablingPush(true);
+    setRetentionMessage(null);
+    try {
+      await enableCustomerPush(restaurantSlug, activeToken);
+      setRetention((current) => current ? { ...current, push: { subscribed: true } } : current);
+      setRetentionMessage("Ablauf-Erinnerungen sind aktiviert.");
+    } catch (error) {
+      setRetentionMessage(error instanceof Error ? error.message : "Push-Benachrichtigungen konnten nicht aktiviert werden.");
+    } finally {
+      setEnablingPush(false);
+    }
+  }
+
+  async function handleDisablePush() {
+    if (!activeToken || !restaurantSlug || enablingPush) return;
+    setEnablingPush(true);
+    try {
+      await disableCustomerPush(restaurantSlug, activeToken);
+      setRetention((current) => current ? { ...current, push: { subscribed: false } } : current);
+      setRetentionMessage("Push-Erinnerungen sind deaktiviert.");
+    } catch {
+      setRetentionMessage("Push-Erinnerungen konnten gerade nicht deaktiviert werden.");
+    } finally {
+      setEnablingPush(false);
+    }
+  }
+
+  function openExpiryReminder(reminder: ExpiryReminder) {
+    const reward = rewards.find((offer) => offer.id === reminder.reward_id
+      && (!reminder.customer_reward_id || offer.assignment_id === reminder.customer_reward_id));
+    if (!reward) {
+      setActiveView("redemptions");
+      setInfoOpen(false);
+      return;
+    }
+    if (activeToken) void markExpiryReminder(activeToken, reminder.id, "opened").catch(() => undefined);
+    setInfoOpen(false);
+    openRewardRedemption(reward);
+  }
+
   async function copyPortalLink() {
     if (!portalUrl) return;
     try {
@@ -646,10 +890,15 @@ export function CustomerPortal() {
     setActiveView("redemptions");
   }
 
-  function handleCustomerLogout() {
+  async function handleCustomerLogout() {
     if (!restaurantSlug) return;
     removeStoredCustomerToken(restaurantSlug);
-    window.sessionStorage.removeItem(`wuxuai-active-redemption:${restaurantSlug}`);
+    if (activeToken) {
+      await removeScopedActiveRedemption(window.sessionStorage, {
+        restaurantSlug,
+        customerToken: activeToken,
+      });
+    }
     window.location.assign(`/customer/${restaurantSlug}`);
   }
 
@@ -710,7 +959,11 @@ export function CustomerPortal() {
       };
       setActiveRedemptionCode(nextActiveCode);
       setRedemptionOutcome(null);
-      window.sessionStorage.setItem(`wuxuai-active-redemption:${restaurantSlug}`, JSON.stringify(nextActiveCode));
+      await persistScopedActiveRedemption(window.sessionStorage, {
+        restaurantSlug,
+        customerToken: activeToken,
+        redemption: nextActiveCode,
+      });
       setCustomer((current) => current
         ? { ...current, points_balance: result.points_balance, stamp_balance: result.stamp_balance }
         : current);
@@ -770,7 +1023,18 @@ export function CustomerPortal() {
       <AppShell>
         <PageContainer className={isBonusCollection ? "premium-collect-page premium-collect-loading-page" : undefined}>
           {message ? (
-            <ErrorState description={message} title="Dein Bonus konnte nicht geöffnet werden" />
+            <ErrorState
+              action={isUsableRestaurantSlug(restaurantSlug) ? (
+                <PrimaryButton onClick={() => {
+                  setMessage(null);
+                  setRefreshToken((current) => current + 1);
+                }}>
+                  Erneut versuchen
+                </PrimaryButton>
+              ) : undefined}
+              description={message}
+              title="Dein Bonus konnte nicht geöffnet werden"
+            />
           ) : (
             <LoadingState description="Dein Bonus wird geladen." />
           )}
@@ -802,9 +1066,36 @@ export function CustomerPortal() {
           title="So funktioniert's"
         >
           <div className="rule-list customer-info-rules">
+            {retention?.reminders.length ? (
+              <section className="premium-expiry-reminders" aria-labelledby="expiry-reminders-title">
+                <div className="premium-icon-heading">
+                  <span><BellRing aria-hidden="true" size={21} /></span>
+                  <div><StatusBadge tone="warning">Hinweis</StatusBadge><h2 id="expiry-reminders-title">Bald ablaufend</h2></div>
+                </div>
+                {retention.reminders.map((reminder) => (
+                  <article key={reminder.id}>
+                    <div>
+                      <strong>{reminder.title}</strong>
+                      <span>{reminder.remaining_days === 0
+                        ? "Nur noch heute gültig"
+                        : `Noch ${reminder.remaining_days} ${reminder.remaining_days === 1 ? "Tag" : "Tage"} gültig`}</span>
+                      <small>Ablauf: {new Date(reminder.expires_at).toLocaleDateString("de-AT")}</small>
+                    </div>
+                    <button className="premium-text-button" onClick={() => openExpiryReminder(reminder)} type="button">Öffnen</button>
+                  </article>
+                ))}
+                {!retention.push.subscribed ? (
+                  <button className="button secondary" disabled={enablingPush || !customerPushAvailable()} onClick={handleEnablePush} type="button">
+                    <BellRing aria-hidden="true" size={18} />
+                    {customerPushAvailable() ? "Push-Erinnerungen aktivieren" : "Push auf diesem Gerät nicht verfügbar"}
+                  </button>
+                ) : <div className="premium-push-active"><p><CheckCircle2 aria-hidden="true" size={17} /> Push-Erinnerungen sind aktiv.</p><button className="premium-text-button" disabled={enablingPush} onClick={handleDisablePush} type="button">Deaktivieren</button></div>}
+              </section>
+            ) : null}
             {explanation.map((line) => (
               <p className="muted" key={line}>{line}</p>
             ))}
+            {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
           </div>
         </AppDrawer>
 
@@ -868,11 +1159,39 @@ export function CustomerPortal() {
                   onChange={(event) => setForm((current) => ({ ...current, birthday: event.target.value }))}
                 />
               </div>
+              <section className="customer-registration-legal" aria-labelledby="registration-legal-title">
+                <h3 id="registration-legal-title">Deine Teilnahme bei {restaurant.name}</h3>
+                <p>Das Restaurant betreibt dieses Bonusprogramm. WUXUAI stellt die technische Plattform bereit.</p>
+                <ul>
+                  <li>Maximal zwei erfolgreiche Punktebuchungen pro Tag.</li>
+                  <li>{pointsValidityText}</li>
+                  <li>Punkte haben keinen Geldwert und werden nicht bar ausgezahlt.</li>
+                  <li>Punkte und Punkteeinlösungen gelten nur bei {restaurant.name}.</li>
+                </ul>
+                <p><Link to={`/legal/${encodeURIComponent(restaurant.slug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurant.slug)}#privacy`}>Datenschutzerklärung</Link></p>
+                {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
+                {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
+                  <div className="customer-legal-load-warning" role="alert">
+                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
+                    <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
+                  </div>
+                ) : null}
+                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
+                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+              </section>
+              <section className="customer-registration-consents" aria-labelledby="registration-consents-title">
+                <h3 id="registration-consents-title">Freiwillige Einwilligungen</h3>
+                <p>Diese Auswahl ist freiwillig und für dein Bonuskonto nicht erforderlich.</p>
+                <label><input checked={form.birthdayProcessing} onChange={(event) => setForm((current) => ({ ...current, birthdayProcessing: event.target.checked }))} type="checkbox" /><span>Geburtstag für ein mögliches Geburtstagsgeschenk verwenden.</span></label>
+                <label><input checked={form.marketingPush} onChange={(event) => setForm((current) => ({ ...current, marketingPush: event.target.checked }))} type="checkbox" /><span>Marketing per Push erhalten.</span></label>
+                <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
+                <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
+              </section>
               <div className="grid two">
                 <button className="button secondary" onClick={() => setGuestStep("welcome")} type="button">
                   Zurück
                 </button>
-                <button className="button" disabled={submitting} type="submit">
+                <button className="button" disabled={submitting || legalCenterState.status !== "ready"} type="submit">
                   <CheckCircle2 size={20} />
                   Fertig
                 </button>
@@ -891,7 +1210,7 @@ export function CustomerPortal() {
               <article className="welcome-reward-preview">
                 <div className="customer-reward-image">
                   {registration.welcome_reward.image_url ? (
-                    <img alt={registration.welcome_reward.title} src={registration.welcome_reward.image_url} />
+                    <RewardImageFrame alt={registration.welcome_reward.title} crop={rewardImageCropFromRecord(registration.welcome_reward)} imageUrl={registration.welcome_reward.image_url} />
                   ) : (
                     standardRewardAsset(registration.welcome_reward.category, registration.welcome_reward.title)
                   )}
@@ -1148,6 +1467,21 @@ export function CustomerPortal() {
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
                 />
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
+                  <div className="premium-legal-load-warning" role="status">
+                    <span>Rechtliche Informationen sind vorübergehend nicht verfügbar. Dein Bonuskonto bleibt nutzbar.</span>
+                    <button onClick={() => void reloadLegalCenter()} type="button">Erneut laden</button>
+                  </div>
+                ) : null}
+
+                {retention?.reminders.length ? (
+                  <button className="premium-expiry-summary" onClick={() => setInfoOpen(true)} type="button">
+                    <span><BellRing aria-hidden="true" size={20} /></span>
+                    <div><strong>Bald ablaufend</strong><small>{retention.reminders.length === 1 ? "Eine Erinnerung ansehen" : `${retention.reminders.length} Erinnerungen ansehen`}</small></div>
+                    <ChevronRight aria-hidden="true" size={19} />
+                  </button>
+                ) : null}
 
                 <section className="premium-content-section" aria-label="Deine Vorteile">
                   <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
@@ -1162,7 +1496,9 @@ export function CustomerPortal() {
                     <BenefitTile
                       icon={<CakeSlice size={22} />}
                       label="Geburtstagsgeschenk"
-                      status={activeBirthdayGift ? "Einlösbar" : "Nicht vorhanden"}
+                      status={activeBirthdayGift
+                        ? "Einlösbar"
+                        : retention?.birthday.eligible ? "Überraschung wartet" : "Nicht vorhanden"}
                     />
                     <BenefitTile
                       icon={<Flame size={22} />}
@@ -1179,6 +1515,25 @@ export function CustomerPortal() {
                   </div>
                 </section>
 
+                <Link className="premium-restaurant-finder-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}>
+                  <span><MapPinned aria-hidden="true" size={22} /></span>
+                  <div><strong>Restaurants entdecken</strong><small>WUXUAI Partner in deiner Nähe finden</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
+
+                {retention?.birthday.eligible && !activeBirthdayGift && !retention.birthday.gift ? (
+                  <PremiumCard className="premium-birthday-draw-card" variant="highlight">
+                    <span className="premium-birthday-icon"><CakeSlice aria-hidden="true" size={25} /></span>
+                    <div><StatusBadge tone="warning">Für dich</StatusBadge><h2>Alles Gute zum Geburtstag!</h2><p>Deine Geburtstagsüberraschung wartet auf dich.</p></div>
+                    <PrimaryButton disabled={drawingBirthdayGift} onClick={handleBirthdayGiftDraw}>
+                      <Gift aria-hidden="true" size={19} />
+                      {drawingBirthdayGift ? "Geschenk wird ausgewählt …" : "Geschenk abholen"}
+                    </PrimaryButton>
+                    <p className="premium-legal-note-small">Die Geburtstagsangabe ist freiwillig. Pro Restaurant und Jahr ist höchstens ein Geburtstagsgeschenk vorgesehen.</p>
+                    {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
+                  </PremiumCard>
+                ) : null}
+
                 <section className="premium-content-section">
                   <SectionHeader
                     action={pointRedemptions.length > 2 ? <button className="premium-text-button" onClick={() => setActiveView("redemptions")} type="button">Alle ansehen</button> : null}
@@ -1191,6 +1546,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category={reward.category ?? reward.product_group}
                           imageUrl={reward.image_url}
+                          imageCrop={rewardImageCropFromRecord(reward)}
                           key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                           meta={`${reward.required_points} Punkte`}
                           onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
@@ -1213,6 +1569,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category="Geburtstagsgeschenk"
                           imageUrl={activeBirthdayGift.image_url}
+                          imageCrop={rewardImageCropFromRecord(activeBirthdayGift)}
                           meta="Für deinen Geburtstag"
                           onOpen={() => openRewardRedemption(activeBirthdayGift)}
                           state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode)}
@@ -1223,6 +1580,7 @@ export function CustomerPortal() {
                         <RewardCard
                           category="Willkommensgeschenk"
                           imageUrl={activeWelcomeGift.image_url}
+                          imageCrop={rewardImageCropFromRecord(activeWelcomeGift)}
                           meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
                           onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
                           state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode)}
@@ -1261,12 +1619,15 @@ export function CustomerPortal() {
                       Freund einladen
                     </PrimaryButton>
                   ) : null}
+                  <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
-                      <p>Dein Einladungslink ist bereit.</p>
+                      <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
+                      <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
                     </div>
                   ) : null}
+                  {retention ? <p className="premium-referral-count">{retention.referral.successful_referrals} erfolgreiche {retention.referral.successful_referrals === 1 ? "Empfehlung" : "Empfehlungen"}</p> : null}
                 </PremiumCard>
               </section>
             ) : null}
@@ -1303,6 +1664,7 @@ export function CustomerPortal() {
                     ? `${redemptionCatalog.length} ${redemptionCatalog.length === 1 ? "Belohnung" : "Belohnungen"} im Restaurant`
                     : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
                 </div>
+                <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
                 {filteredRedemptions.length ? (
                   <div
                     aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
@@ -1316,6 +1678,7 @@ export function CustomerPortal() {
                       <RewardCard
                         category={reward.category ?? reward.product_group}
                         imageUrl={reward.image_url}
+                        imageCrop={rewardImageCropFromRecord(reward)}
                         key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                         meta={reward.is_starter_reward
                           ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
@@ -1379,17 +1742,21 @@ export function CustomerPortal() {
                   </div>
                 </section>
 
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+
                 <section className="premium-content-section" aria-labelledby="account-more-title">
                   <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
+                    <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
                     <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
                     <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
                     <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>
                   </div>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
-                      <p>Dein Einladungslink ist bereit.</p>
+                      <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
+                      <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
                     </div>
                   ) : null}
@@ -1407,6 +1774,11 @@ export function CustomerPortal() {
                       <span><strong>Hilfe & Kontakt</strong><small>Fragen zu deinem Bonus</small></span>
                       <ChevronRight aria-hidden="true" size={19} />
                     </button>
+                    <Link className="premium-account-list-link" to={`/legal/${encodeURIComponent(restaurant.slug)}?token=${encodeURIComponent(activeToken ?? "")}`}>
+                      <span className="premium-account-list-icon"><ShieldCheck aria-hidden="true" size={20} /></span>
+                      <span><strong>Rechtliches & Datenschutz</strong><small>Einwilligungen, Datenexport und Teilnahmebedingungen</small></span>
+                      <ChevronRight aria-hidden="true" size={19} />
+                    </Link>
                     <button className="danger" onClick={() => setAccountSheet("logout")} type="button">
                       <span className="premium-account-list-icon"><LogOut aria-hidden="true" size={20} /></span>
                       <span><strong>Abmelden</strong><small>Bonuskonto von diesem Gerät entfernen</small></span>
@@ -1489,7 +1861,7 @@ export function CustomerPortal() {
 
                 {redeemOffer && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "detail" ? (
                   <article className="premium-reward-detail">
-                    <div className="premium-reward-detail-media"><RewardImage imageUrl={redeemOffer.image_url} title={redeemOffer.title} /></div>
+                    <div className="premium-reward-detail-media"><RewardImage crop={rewardImageCropFromRecord(redeemOffer)} imageUrl={redeemOffer.image_url} title={redeemOffer.title} /></div>
                     <div className="premium-reward-detail-heading">
                       <StatusBadge tone={selectedRewardState === "available" ? "success" : selectedRewardState === "expired" ? "error" : "neutral"}>
                         {selectedRewardState ? rewardStatusText(redeemOffer, selectedRewardState) : "Details"}
@@ -1541,14 +1913,21 @@ export function CustomerPortal() {
 
             <AppDrawer
               description={accountSheet === "logout" ? "Dein Bonuskonto bleibt erhalten." : undefined}
+              dismissOnOverlay={accountSheet !== "profile"}
               footer={accountSheet === "logout" ? (
                 <>
                   <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
                   <PrimaryButton onClick={handleCustomerLogout}>Abmelden</PrimaryButton>
                 </>
+              ) : accountSheet === "profile" ? (
+                <>
+                  <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
+                  <PrimaryButton disabled={!retention?.birthday.can_update} onClick={handleBirthdaySave}>Geburtstag speichern</PrimaryButton>
+                </>
               ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
               onClose={() => setAccountSheet(null)}
               open={Boolean(accountSheet)}
+              size={accountSheet === "logout" ? "compact" : "standard"}
               title={accountSheet === "profile"
                 ? "Persönliche Daten"
                 : accountSheet === "membership"
@@ -1565,9 +1944,20 @@ export function CustomerPortal() {
             >
               <div className="premium-account-sheet-content">
                 {accountSheet === "profile" ? (
-                  <div className="premium-account-detail-list">
-                    <div><span>Name</span><strong>{customer.name}</strong></div>
-                    <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                  <div className="premium-account-profile-form">
+                    <div className="premium-account-detail-list">
+                      <div><span>Name</span><strong>{customer.name}</strong></div>
+                      <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
+                    </div>
+                    <section>
+                      <div><h3>Geburtstag</h3><p>Freiwillig. Für deine Geburtstagsüberraschung benötigen wir nur Tag und Monat.</p></div>
+                      <div className="premium-birthday-fields">
+                        <label><span>Tag</span><input inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, day: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="TT" value={birthdayForm.day} /></label>
+                        <label><span>Monat</span><input inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, month: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="MM" value={birthdayForm.month} /></label>
+                      </div>
+                      {!retention?.birthday.can_update ? <p className="muted">Dein Geburtstag kann erst später wieder geändert werden.</p> : null}
+                      {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
+                    </section>
                   </div>
                 ) : null}
                 {accountSheet === "membership" ? (

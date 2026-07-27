@@ -5,9 +5,11 @@ import { X } from "lucide-react";
 type AppDrawerProps = {
   children: ReactNode;
   description?: string;
+  dismissOnOverlay?: boolean;
   footer?: ReactNode;
   onClose: () => void;
   open: boolean;
+  size?: "compact" | "standard" | "large";
   title: string;
 };
 
@@ -20,7 +22,16 @@ const focusableSelector = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
-export function AppDrawer({ children, description, footer, onClose, open, title }: AppDrawerProps) {
+export function AppDrawer({
+  children,
+  description,
+  dismissOnOverlay = true,
+  footer,
+  onClose,
+  open,
+  size = "standard",
+  title,
+}: AppDrawerProps) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLElement | null>(null);
@@ -90,7 +101,7 @@ export function AppDrawer({ children, description, footer, onClose, open, title 
     <div
       className="app-drawer-overlay"
       onClick={(event) => {
-        if (event.target === event.currentTarget) closeRef.current();
+        if (dismissOnOverlay && event.target === event.currentTarget) closeRef.current();
       }}
       role="presentation"
     >
@@ -98,11 +109,12 @@ export function AppDrawer({ children, description, footer, onClose, open, title 
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="app-drawer-panel"
+        className={`app-drawer-panel app-drawer-${size}`}
         ref={panelRef}
         role="dialog"
         tabIndex={-1}
       >
+        <span aria-hidden="true" className="app-drawer-handle" />
         <header className="app-drawer-header">
           <div>
             <h2 id={titleId}>{title}</h2>

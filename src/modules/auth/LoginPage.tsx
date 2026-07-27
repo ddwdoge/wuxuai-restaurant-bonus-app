@@ -4,6 +4,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { completePendingOwnerRegistration } from "./registerOwnerService";
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import {
+  PublicContentCard,
+  PublicFormField,
+  PublicPageShell,
+  PublicPrimaryButton,
+} from "../public/PublicPageComponents";
+import { Link } from "react-router-dom";
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -11,6 +18,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const liveDataMissing = !supabase;
   const logoutMessage =
@@ -21,6 +29,7 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       await signIn(email, password);
       const completedPendingRegistration = await completePendingOwnerRegistration(email);
@@ -31,49 +40,57 @@ export function LoginPage() {
       navigate("/admin");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Login fehlgeschlagen.");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <main className="auth-shell">
-      <section className="card">
-        <div className="page-header">
-          <div>
-            <h1>Restaurant Login</h1>
-            <p className="muted">
-              {liveDataMissing ? liveDataUnavailableMessage : "Für Besitzer und Manager."}
-            </p>
-          </div>
-        </div>
-        <form className="form" onSubmit={handleSubmit}>
-          {logoutMessage ? <p className="status-message error" role="status">{logoutMessage}</p> : null}
-          <div className="field">
-            <label htmlFor="email">E-Mail</label>
-            <input
-              className="input"
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Passwort</label>
-            <input
-              className="input"
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
-          {error ? <p className="muted">{error}</p> : null}
-          <button className="button" disabled={liveDataMissing} type="submit">
-            <LogIn size={18} />
+    <PublicPageShell
+      description="Willkommen zurück. Verwalte dein Bonusprogramm, deine Gäste und deine Punkteeinlösungen."
+      eyebrow="WUXUAI Bonus"
+      title="Restaurant Login"
+    >
+      <PublicContentCard>
+        <form className="public-premium-form" onSubmit={handleSubmit}>
+          {logoutMessage ? <p className="public-premium-alert public-premium-alert-success" role="status">{logoutMessage}</p> : null}
+          {liveDataMissing ? <p className="public-premium-alert public-premium-alert-error" role="alert">{liveDataUnavailableMessage}</p> : null}
+          <PublicFormField
+            autoComplete="email"
+            disabled={loading}
+            id="login-email"
+            label="E-Mail"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            type="email"
+            value={email}
+          />
+          <PublicFormField
+            autoComplete="current-password"
+            disabled={loading}
+            id="login-password"
+            label="Passwort"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            type="password"
+            value={password}
+          />
+          {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
+          <PublicPrimaryButton
+            disabled={liveDataMissing}
+            icon={<LogIn size={18} />}
+            loading={loading}
+            loadingLabel="Anmeldung läuft …"
+            type="submit"
+          >
             Anmelden
-          </button>
+          </PublicPrimaryButton>
+          <div className="public-premium-secondary-actions">
+            <Link className="public-premium-secondary-link" to="/">Zurück zur Startseite</Link>
+            <Link className="public-premium-secondary-link" to="/register">Noch nicht registriert?</Link>
+          </div>
         </form>
-      </section>
-    </main>
+      </PublicContentCard>
+    </PublicPageShell>
   );
 }

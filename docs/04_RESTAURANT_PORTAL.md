@@ -236,6 +236,11 @@ Schritte: 1. Produktart wählen 2. Produktpreis eingeben 3.
 Automatische Punkteberechnung sehen 4. Foto optional hochladen 5.
 Vorschau prüfen 6. Punkteeinlösung erstellen
 
+Der große Bildbereich im Erstellen- und Bearbeiten-Formular öffnet per Klick
+oder Tastatur direkt die native Bildauswahl. JPG, PNG und WebP sind bis 5 MB
+zulässig. Eine lokale Vorschau erscheint vor dem Speichern; der Upload erfolgt
+erst gemeinsam mit dem Formular.
+
 ### 6.3 Gespeicherte Punkteeinlösungen
 
 Gespeicherte Punkteeinlösungen werden als Karten angezeigt.
@@ -299,6 +304,10 @@ schaltet es frei - Einlösung erst beim nächsten Besuch
 
 Restaurant kann bearbeiten: - Name - Kategorie - Wertgrenze in € -
 Foto - Standardbild behalten - Aktiv/Inaktiv
+
+Auch hier öffnet der große Bildbereich direkt die native Bildauswahl. Abbrechen
+verwirft eine neue lokale Auswahl. Bei einem Upload- oder Speicherfehler bleibt
+das bisher gespeicherte Bild erhalten.
 
 Keine Punkte. Keine Einlösungspunkte. Keine Punkteberechnung.
 
@@ -614,3 +623,21 @@ Restaurant Portal gilt als LOCK, wenn:
 ------------------------------------------------------------------------
 
 Endstatus: **LOCK**
+
+## CTO-Ergänzung 2026-07-23: Standort & Restaurantsuche
+
+- Owner verwalten in V1 ausschließlich den bestehenden primären Standort ihres
+  Restaurants. Dies ist keine allgemeine Filialverwaltung.
+- Adresse, PLZ, Ort, Land, Koordinaten, öffentliche Kurzbeschreibung und
+  öffentliches Bild können gepflegt werden.
+- `In Restaurantsuche sichtbar` ist eine ausdrückliche Freigabe und setzt ein
+  aktives Restaurant, vollständige Adressdaten und valide Koordinaten voraus.
+- Bestehende Restaurants bleiben standardmäßig unsichtbar.
+- Owner können durch bestehende RLS nur den Standort ihres Restaurants ändern.
+
+## Rechtliche Bereitschaft V1
+
+- Unter Einstellungen verwaltet der Owner Impressumsangaben, versionierte Teilnahmebedingungen, Datenschutztext, Beschwerdekontakt und Programmende für das eigene Restaurant.
+- Öffentliche Sichtbarkeit neuer Standorte setzt Betriebs-, Rechts- und Sicherheitsbereitschaft voraus. Bestehende Teststandorte werden nicht ungeprüft deaktiviert.
+- Offene Datenschutzanfragen werden pseudonymisiert angezeigt. Eine Anfrage führt nicht automatisch zu ungeprüfter Löschung.
+- Der Einlösungs-CSV ist eine technische Aufzeichnung und keine Steuerberatung.

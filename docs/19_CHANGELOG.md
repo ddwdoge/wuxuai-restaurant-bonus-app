@@ -5,6 +5,34 @@
 
 Status: **LOCK**
 
+## 24.07.2026 - Legal- und Karten-Hardening
+
+- Leaflet, React Leaflet und Marker Cluster hinter einen echten dynamischen
+  Kartenimport verschoben und in einen separat cachebaren Maps-Chunk gelegt.
+- Listenansicht bleibt bei einem Kartenimportfehler nutzbar.
+- Legal-Hilfslogik vollständig nach TypeScript migriert; manuelle Declaration
+  entfernt.
+- Öffentlichen Legal-Center-Pfad read-only gemacht und fehlende Konfiguration
+  als kontrollierten Status modelliert.
+- Registrierungen bleiben ohne verfügbare Pflichtdokumente blockiert, während
+  bestehende Bonuskonten bei einem temporären Legal-Fehler weiter nutzbar sind.
+- Kundendatenexport auf Nachweismetadaten statt Legal-Dokumentvolltexte
+  begrenzt.
+- Identische, unreferenzierte Dokumentduplikate entfernt und minimierten
+  Consent-Nachweis ohne vollständige IP-Adresse dokumentiert.
+
+## 23.07.2026 - Partnerrestaurant-Finder mit OpenStreetMap
+
+- CTO-Ausnahme für eine optionale, rein lesende Partnerrestaurantsuche ergänzt.
+- Leaflet und OpenStreetMap als einzige interne Kartenlösung gewählt.
+- Bestehende primäre Standortzeile additiv um öffentliche Standortfelder
+  erweitert; Altbestände bleiben standardmäßig unsichtbar.
+- Minimalen öffentlichen Partner-RPC und restaurantgebundene
+  Kundenmitgliedschafts-RPC vorbereitet.
+- Keine Google Maps Platform API und kein API-Key erforderlich.
+- Google Maps wird ausschließlich als externer Navigationslink verwendet.
+- QR-, Punkte- und Redemption-Kontext bleiben unverändert restaurantgebunden.
+
 ## 20.07.2026 - Premium-Kundenportal Staging-E2E
 
 - Registrierten Kundenflow mit echter Staging-Punktebuchung und
@@ -2069,3 +2097,86 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - KPI-Zeitgrenzen serverseitig an Restaurant-Zeitzone gebunden
 - markierte Testkunden aus allen produktiven KPI-Quellen ausgeschlossen
 - Migration `20260720003000` auf Staging angewendet
+
+## 2026-07-22 – V1 Retention-Funktionen vorbereitet
+
+- Ablauf-Erinnerungen für 7, 3, 1 und 0 verbleibende Tage mit einmaligem Auto-Drawer pro Session ergänzt
+- freiwillige Web-Push-Registrierung, Service Worker und sichere Edge-Sender-Funktion vorbereitet
+- Push-Deep-Links öffnen die passende Punkteeinlösung ohne automatische Einlösung
+- freiwillige Geburtstagseingabe aus Tag und Monat sowie einmalige serverseitige Geburtstagsauslosung im Zeitraum -3/+7 Tage ergänzt
+- bestehender Willkommensgeschenk-Pool um eine explizite Geburtstagsfreigabe erweitert
+- alte automatische Geburtstagszuteilung zugunsten der kundenausgelösten, idempotenten Auslosung deaktiviert
+- Bonus Boost auf feste V1-Werte 2×/30 Tage für beide Beteiligten vereinheitlicht; aktive Empfehlenden-Boosts verlängern sich um 30 Tage
+- neue Bonus-Boost-KPIs schließen markierte Testkunden aus
+- additive Migration `20260722003000_v1_retention_features.sql` am 23.07.2026 auf das verknüpfte Supabase-Projekt angewendet und per Migrationsliste, leerem Dry-Run sowie erreichbarer PostgREST-RPC verifiziert
+
+## 2026-07-23 – P0 QR-Restaurantkontext korrigiert
+
+- Kundenportal-Routen werden bei Wechsel von Restaurant-Slug oder Sammelmodus mit
+  einem neuen, URL-basierten Schlüssel aufgebaut
+- aktueller URL-Slug ist die einzige Quelle für Restaurantladen und Punktebuchung
+- ein URL-Kundentoken hat Vorrang vor Registrierungs- und lokalem Token-State
+- ungültige QR-URLs können nicht mehr auf zuvor angezeigte Restaurantdaten
+  zurückfallen
+- Regressionstests für QR-Wechsel, Token-Priorität, slug-getrennten Cache,
+  Punkte-RPC-Bindung und ungültigen QR-Kontext ergänzt
+- keine Datenbank-, RPC-, RLS-, Tages-PIN- oder Punkteberechnungslogik geändert
+
+## 2026-07-23 – QR-Kontext-Restbugs für Staging behoben
+
+- aktive Einlösungen nach Restaurant, gehashtem Kundenzugang und
+  Einlösungs-ID in `sessionStorage` getrennt
+- Wechsel A → B zeigt und pollt keinen Einlösezustand von A; Rückkehr zu A
+  restauriert nur nach positiver Serverprüfung
+- URL-Tokenwechsel erzeugt zusätzlich eine neue Kundenportal-Instanz
+- Loader-Fehler entfernt Restaurant, Branding, Einstellungen, Kunde, Rewards
+  und aktiven UI-Einlösestatus vollständig
+- leere und syntaktisch ungültige Slugs lösen keine Portal-, Kunden-,
+  Restore- oder Polling-Aufrufe aus
+- Retry-Aktion im neutralen Portal-Fehlerzustand mit mindestens 44 px
+  Touchhöhe ergänzt
+- sechs echte Speicher-/Service-Verhaltenstests sowie bestehende statische
+  Regressionstests ausgeführt; Gesamtsuite 96/96
+- keine Migration, RPC-, RLS-, Punkte-, PIN- oder Einlöse-Geschäftslogik
+  geändert
+- fehlende Punkterückbuchung bei abgelaufenem reserviertem Einlösecode als
+  separater offener Produktentscheid dokumentiert
+
+## 2026-07-24 – Legal-Compliance-Layer für Rechtsprüfung vorbereitet
+
+- öffentliches restaurantbezogenes Legal Center mit Teilnahmebedingungen, Datenschutz, Impressum, Speicherhinweisen, Barrierefreiheit und Beschwerdekontakt ergänzt
+- unveränderliche Dokumentversionen, Annahmen, getrennte Einwilligungen, Consent-Ereignisse und Datenschutzanfragen additiv modelliert
+- Registrierung verlangt Teilnahmebedingungen und Datenschutzhinweis; Marketing und Geburtstagsverarbeitung bleiben freiwillig und standardmäßig aus
+- Marketingversand ohne kanalspezifische Einwilligung serverseitig blockiert
+- Owner-Bereich um Rechtstexte, Bereitschaftscheckliste, Programmende, offene Datenschutzanfragen und technischen Einlösungs-CSV erweitert
+- Punkte als restaurantbezogenes Nicht-Geld-Produkt erklärt; keine Auszahlung oder Übertragung ergänzt
+- Aufbewahrung nur als konfigurierbarer Dry-Run vorbereitet; keine Daten gelöscht
+- Migration `20260724001000` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet
+
+## 2026-07-26 – Direkter Owner-Fotoupload für Belohnungen
+
+- großer Bildbereich in Punkteeinlösungs- und Willkommensgeschenk-Formularen öffnet direkt die native Bildauswahl
+- gemeinsame Owner-Komponente mit Tastaturbedienung, lokaler Vorschau, Lade- und Fehlerzustand ergänzt
+- bestehender Bucket `restaurant-media` und vorhandene tenantgebundene Storage-Policies werden weiterverwendet
+- Upload erfolgt erst beim Speichern; bei einem nachfolgenden Speicherfehler wird nur das neu hochgeladene Objekt bereinigt und das alte Bild bleibt erhalten
+- sichere, restaurantbezogene Objektpfade verwenden UUIDs statt Original-Dateinamen
+- additive Migration `20260726001000_owner_reward_image_webp.sql` ergänzt WebP im bestehenden Bucket; am 26.07.2026 auf `wuxuai-bonus-staging` angewendet und per Migrationsliste synchron bestätigt
+- keine Customer-, Staff-, Plattform-, Reward-, Punkte-, RLS- oder Auth-Logik geändert
+
+## 2026-07-26 – Einheitlicher Reward-Bildausschnitt
+
+- Owner-Bearbeitung um Zoom, Fokusposition, Ziehen, Tastatursteuerung und Zurücksetzen ergänzt
+- Bildausschnitt wird als normalisierte Metadaten gemeinsam mit Reward oder Willkommensgeschenk gespeichert
+- Owner-Karten, Owner-Vorschau und Kundenportal verwenden dieselbe 16:9-Bildkomponente
+- bestehende Bilder bleiben mit zentriertem Standardausschnitt kompatibel
+- additive Migration `20260726002000_reward_image_crop_metadata.sql` im Staging-Dry-Run als einzige ausstehende Migration bestätigt, auf `wuxuai-bonus-staging` angewendet und per Migrationsliste sowie generiertem Remote-Schema verifiziert
+- keine RLS-, Auth-, Punkte-, Einlöse- oder Tenant-Logik verändert
+
+## 2026-07-26 – Öffentliche Einstiegsseiten vereinheitlicht
+
+- Startseite, Restaurant-Login, Restaurant-Registrierung und Gast-Bonus-Information auf eine gemeinsame Premium-Shell umgestellt
+- gemeinsame öffentliche Komponenten für Hero, Inhaltskarte, Formularfeld, Hauptbutton und Einstiegskarte ergänzt
+- alte seitenbezogene Public-Styles aus der globalen Stylesammlung entfernt und in ein portalbegrenztes Stylesheet überführt
+- sichtbare Labels, Autofill, Live-Regionen, Tastaturbedienung und mindestens 44 px große Touchziele vereinheitlicht
+- Responsive-Abnahme bei 320, 375, 390, 430, 768, 1024 und 1440 px ohne horizontalen Overflow durchgeführt
+- keine Auth-, Registrierungs-, Routing-, Supabase-, Datenbank-, RLS- oder Portal-Logik verändert

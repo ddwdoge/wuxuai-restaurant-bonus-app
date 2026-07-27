@@ -137,8 +137,8 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
         smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
         smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
         referral_boost_enabled: settings.referral_boost_enabled ?? true,
-        referral_boost_multiplier: settings.referral_boost_multiplier ?? 2,
-        referral_boost_duration_days: settings.referral_boost_duration_days ?? 30,
+        referral_boost_multiplier: 2,
+        referral_boost_duration_days: 30,
         active: settings.active,
       },
       { onConflict: "restaurant_id" },
@@ -159,8 +159,8 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
           smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
           smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
           referral_boost_enabled: settings.referral_boost_enabled ?? true,
-          referral_boost_multiplier: settings.referral_boost_multiplier ?? 2,
-          referral_boost_duration_days: settings.referral_boost_duration_days ?? 30,
+          referral_boost_multiplier: 2,
+          referral_boost_duration_days: 30,
           active: settings.active,
         },
         { onConflict: "restaurant_id" },
@@ -297,6 +297,11 @@ export type PublicCustomerOfferView = {
   category: string | null;
   product_group: string | null;
   image_url?: string | null;
+  image_zoom?: number | null;
+  image_position_x?: number | null;
+  image_position_y?: number | null;
+  image_aspect_ratio?: string | null;
+  image_crop_version?: number | null;
   product_price?: number | null;
   welcome_gift_mode?: "value_limit" | "fixed_product";
   fixed_product_name?: string | null;
@@ -324,6 +329,14 @@ export type GuestRegistrationInput = {
   phone: string;
   birthday: string | null;
   deviceId?: string | null;
+  legal: {
+    termsAccepted: boolean;
+    privacyAcknowledged: boolean;
+    marketingPush: boolean;
+    marketingSms: boolean;
+    marketingEmail: boolean;
+    birthdayProcessing: boolean;
+  };
 };
 
 export type GuestRegistrationResult = {
@@ -341,6 +354,11 @@ export type GuestRegistrationResult = {
     category: string | null;
     available_products: string[] | null;
     image_url: string | null;
+    image_zoom?: number | null;
+    image_position_x?: number | null;
+    image_position_y?: number | null;
+    image_aspect_ratio?: string | null;
+    image_crop_version?: number | null;
     product_price?: number | null;
     welcome_gift_mode?: "value_limit" | "fixed_product";
     fixed_product_name?: string | null;
@@ -472,6 +490,7 @@ export type ReferralRegistrationInput = {
   phone: string;
   birthday: string | null;
   deviceId?: string | null;
+  legal: GuestRegistrationInput["legal"];
 };
 
 export type ReferralRegistrationResult = {
@@ -485,6 +504,9 @@ export type ReferralRegistrationResult = {
 export type BonusBoostKpis = {
   guestsCurrentlyBoosted: number;
   guestsReturnedBecauseOfBoost: number;
+  successfulReferrals: number;
+  newCustomersFromReferrals: number;
+  boostExtraPoints: number;
 };
 
 export type TodayRestaurantPin = {
@@ -594,12 +616,18 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("register_restaurant_customer", {
+  const { data, error } = await supabase.rpc("register_restaurant_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_first_name: input.firstName,
     input_phone: input.phone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
+    input_terms_accepted: input.legal.termsAccepted,
+    input_privacy_acknowledged: input.legal.privacyAcknowledged,
+    input_marketing_push: input.legal.marketingPush,
+    input_marketing_sms: input.legal.marketingSms,
+    input_marketing_email: input.legal.marketingEmail,
+    input_birthday_processing: input.legal.birthdayProcessing,
   });
 
   if (error) throw error;
@@ -701,13 +729,19 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("register_referral_customer", {
+  const { data, error } = await supabase.rpc("register_referral_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_referral_token: input.referralToken,
     input_first_name: input.firstName,
     input_phone: input.phone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
+    input_terms_accepted: input.legal.termsAccepted,
+    input_privacy_acknowledged: input.legal.privacyAcknowledged,
+    input_marketing_push: input.legal.marketingPush,
+    input_marketing_sms: input.legal.marketingSms,
+    input_marketing_email: input.legal.marketingEmail,
+    input_birthday_processing: input.legal.birthdayProcessing,
   });
 
   if (error) throw error;
@@ -728,11 +762,17 @@ export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoo
   const payload = data as {
     guests_currently_boosted?: number;
     guests_returned_because_of_boost?: number;
+    successful_referrals?: number;
+    new_customers_from_referrals?: number;
+    boost_extra_points?: number;
   };
 
   return {
     guestsCurrentlyBoosted: payload.guests_currently_boosted ?? 0,
     guestsReturnedBecauseOfBoost: payload.guests_returned_because_of_boost ?? 0,
+    successfulReferrals: payload.successful_referrals ?? 0,
+    newCustomersFromReferrals: payload.new_customers_from_referrals ?? 0,
+    boostExtraPoints: payload.boost_extra_points ?? 0,
   };
 }
 

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
@@ -49,6 +49,15 @@ const StaffTablet = lazy(() => import("../modules/staff/StaffTablet").then((modu
 const CustomerPortal = lazy(() =>
   import("../modules/customer/CustomerPortal").then((module) => ({ default: module.CustomerPortal })),
 );
+const PartnerRestaurantFinderPage = lazy(() =>
+  import("../modules/customer/PartnerRestaurantFinderPage").then((module) => ({ default: module.PartnerRestaurantFinderPage })),
+);
+const LegalCenterPage = lazy(() =>
+  import("../modules/legal/LegalCenterPage").then((module) => ({ default: module.LegalCenterPage })),
+);
+const OwnerLegalSettingsPage = lazy(() =>
+  import("../modules/legal/OwnerLegalSettingsPage").then((module) => ({ default: module.OwnerLegalSettingsPage })),
+);
 const ReferralLanding = lazy(() =>
   import("../modules/customer/ReferralLanding").then((module) => ({ default: module.ReferralLanding })),
 );
@@ -75,6 +84,19 @@ function PlatformLoading() {
 
 function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading />) {
   return <Suspense fallback={fallback}>{children}</Suspense>;
+}
+
+function CustomerPortalRoute() {
+  const { slug = "" } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const routeKind = location.pathname.startsWith("/w/") ? "collect" : "portal";
+  const customerToken = searchParams.get("token") ?? "";
+
+  return withFallback(
+    <CustomerPortal key={`${routeKind}:${slug}:${customerToken}`} />,
+    <CustomerLoading />,
+  );
 }
 
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
@@ -121,6 +143,7 @@ export function App() {
         <Route path="rewards" element={withFallback(<RewardsPage />, <AdminLoading />)} />
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
+        <Route path="legal" element={withFallback(<OwnerLegalSettingsPage />, <AdminLoading />)} />
       </Route>
       <Route
         path="/admin/platform"
@@ -227,8 +250,10 @@ export function App() {
       />
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
       <Route path="/customer" element={<GuestBonusInfoPage />} />
-      <Route path="/customer/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
-      <Route path="/w/:slug" element={withFallback(<CustomerPortal />, <CustomerLoading />)} />
+      <Route path="/customer/restaurants" element={withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)} />
+      <Route path="/legal/:slug" element={withFallback(<LegalCenterPage />, <CustomerLoading />)} />
+      <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
+      <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

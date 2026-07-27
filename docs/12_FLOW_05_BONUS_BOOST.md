@@ -879,3 +879,13 @@ Wenn Codex an Flow 05 arbeitet:
 ---
 
 Endstatus: **LOCK**
+
+## CTO-Ergänzung 2026-07-22: Feste V1-Werte
+
+- Multiplikator: exakt 2×.
+- Dauer: exakt 30 Tage ab erfolgreicher Qualifizierung.
+- Beide Beteiligten erhalten einen eigenen Boost.
+- Qualifizierung erfolgt atomar erst mit der ersten gültigen Punktebuchung des geworbenen Neukunden.
+- Eine weitere qualifizierte Empfehlung verlängert einen aktiven Boost des Empfehlenden um weitere 30 Tage; ein abgelaufener Boost beginnt ab dem neuen Qualifizierungszeitpunkt.
+- Linkaufruf und Registrierung allein aktivieren keinen Boost.
+- Der Multiplikator wird serverseitig genau einmal auf die Basispunkte angewendet.

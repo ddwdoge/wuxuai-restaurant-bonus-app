@@ -11,7 +11,6 @@ import {
   Soup,
   Utensils,
   UtensilsCrossed,
-  X,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +23,7 @@ import {
 import { useTenant } from "../../tenant/TenantProvider";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
@@ -2061,32 +2061,26 @@ export function RestaurantOnboarding() {
         </form>
       </section>
 
-      {howItWorksOpen ? (
-        <div className="modal-backdrop" role="presentation">
-          <aside className="how-modal" aria-modal="true" role="dialog" aria-labelledby="how-title">
-            <div className="modal-header">
-              <h2 id="how-title">So funktioniert's</h2>
-              <button className="icon-button" onClick={closeHowItWorks} type="button" aria-label="Schließen">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="rule-list">
-              {explanation.map((line) => (
-                <p className="muted" key={line}>{line}</p>
-              ))}
-            </div>
-            <article className="calculation-card">
-              <strong>Deine Gäste sollen schnell verstehen, warum sie wiederkommen.</strong>
-              <p className="muted">
-                Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.
-              </p>
-            </article>
-            <button className="button" onClick={closeHowItWorks} type="button">
-              Verstanden
-            </button>
-          </aside>
+      <AppDrawer
+        description="Die wichtigsten Schritte deines Bonusprogramms."
+        footer={<button className="button" onClick={closeHowItWorks} type="button">Verstanden</button>}
+        onClose={closeHowItWorks}
+        open={howItWorksOpen}
+        size="compact"
+        title="So funktioniert's"
+      >
+        <div className="rule-list">
+          {explanation.map((line) => (
+            <p className="muted" key={line}>{line}</p>
+          ))}
         </div>
-      ) : null}
+        <article className="calculation-card">
+          <strong>Deine Gäste sollen schnell verstehen, warum sie wiederkommen.</strong>
+          <p className="muted">
+            Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.
+          </p>
+        </article>
+      </AppDrawer>
     </>
   );
 }

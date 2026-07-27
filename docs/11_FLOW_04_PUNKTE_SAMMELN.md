@@ -904,3 +904,14 @@ Endstatus: **LOCK**
 - Kunden- und Mitarbeiterweg verwenden dieselbe Tages-PIN-, Fehlversuchs- und Tageslimit-Sicherung.
 - Sperrmeldung: „Du hast heute bereits zweimal Punkte gesammelt. Morgen kannst du wieder Punkte sammeln.“
 - Die Restaurant-Zeitzone bestimmt Tages-PIN und Tagesgrenze; V1-Standard ist `Europe/Vienna`.
+
+## CTO-Ergänzung 2026-07-23: Restaurantwechsel per QR
+
+- `/w/:slug` verwendet ausschließlich den Restaurant-Slug der aktuellen URL.
+- Ein neuer QR-Scan ersetzt jeden vorherigen Restaurantkontext vollständig.
+- Refresh sowie Browser-Zurück/-Vor behalten den jeweils in der URL stehenden
+  Restaurantkontext bei.
+- Die Punkte-RPC erhält den aktuellen URL-Slug und prüft serverseitig, dass
+  Kundentoken und Kunde demselben Restaurant zugeordnet sind.
+- Bei ungültigem QR-Slug gibt es keinen Rückfall auf das zuletzt verwendete
+  Restaurant und keine Punktebuchung.

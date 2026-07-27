@@ -11,8 +11,8 @@ import {
   Settings,
   Smartphone,
   Users,
-  X,
 } from "lucide-react";
+import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
@@ -281,36 +281,28 @@ export function AdminLayout() {
           <Outlet />
         </main>
       </div>
-      {mobileMenuOpen ? (
-        <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} role="presentation">
-          <aside
-            aria-label="Restaurant Menü"
-            className="mobile-menu-drawer"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mobile-menu-header">
-              <div>
-                <span className="premium-mobile-menu-kicker">WUXUAI Bonus</span>
-                <strong>Restaurant Menü</strong>
-              </div>
-              <button className="button secondary mobile-menu-close" onClick={() => setMobileMenuOpen(false)} type="button">
-                <X size={18} />
-                Schließen
-              </button>
-            </div>
-            {renderNavigation("drawer")}
-            {setupIncomplete ? (
-              <p className="sidebar-lock-message">
-                Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
-              </p>
-            ) : null}
-            <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
-              <LogOut aria-hidden="true" size={18} />
-              {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
-            </button>
-          </aside>
+      <AppDrawer
+        description="Navigation im Restaurant Portal"
+        footer={(
+          <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
+            <LogOut aria-hidden="true" size={18} />
+            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+          </button>
+        )}
+        onClose={() => setMobileMenuOpen(false)}
+        open={mobileMenuOpen}
+        size="standard"
+        title="Restaurant Menü"
+      >
+        <div className="mobile-menu-navigation">
+          {renderNavigation("drawer")}
+          {setupIncomplete ? (
+            <p className="sidebar-lock-message">
+              Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
+            </p>
+          ) : null}
         </div>
-      ) : null}
+      </AppDrawer>
     </div>
   );
 }

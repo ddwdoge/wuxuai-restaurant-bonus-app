@@ -1267,3 +1267,25 @@ Neue additive Objekte:
 - `redemption_activation_attempts`: Rate Limit für Codeaktivierungen.
 
 Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburtstagsgeschenke pro Kalenderjahr.
+
+## Ergänzung 2026-07-23: Öffentliche Partnerstandorte
+
+- Standortfelder liegen an der bestehenden 1:1-`branches`-Zeile.
+- `is_discoverable` ist bei Bestandsdaten standardmäßig `false`.
+- Latitude und Longitude besitzen Datenbank-Checks für gültige Wertebereiche.
+- Es gibt keine öffentliche Select-Policy auf `restaurants` oder `branches`.
+- `get_public_partner_restaurants()` liefert nur aktive, ausdrücklich
+  freigegebene Standorte und ausschließlich öffentliche Finder-Felder.
+- `get_customer_partner_membership(slug, token)` validiert den gehashten
+  Kundenzugang gegen dasselbe Restaurant, bevor Punkte, Besuche oder
+  Punkteeinlösungen ausgegeben werden.
+
+## Ergänzung 2026-07-24: Legal-Template-Hardening
+
+- Bestehende Restaurants erhalten fehlende Legal-Vorlagen einmalig über eine
+  additive, idempotente Backfill-Migration.
+- Öffentliche Legal-Abfragen erzeugen keine Tabellenzeilen und verändern keine
+  Dokumentversionen.
+- Fehlende Pflichtdokumente werden als kontrollierter Status ausgegeben und
+  blockieren ausschließlich neue Registrierungen.
+- Bestehende veröffentlichte Versionen werden beim Backfill nicht ersetzt.

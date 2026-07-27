@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Activity, ArrowRight, Gift, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
+import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 
 const emptyKpis: RewardKpis = {
@@ -14,10 +15,12 @@ const emptyKpis: RewardKpis = {
   newMembersThisWeek: 0,
   activeTodayCount: 0,
 };
+const emptyBoostKpis: BonusBoostKpis = { guestsCurrentlyBoosted: 0, guestsReturnedBecauseOfBoost: 0, successfulReferrals: 0, newCustomersFromReferrals: 0, boostExtraPoints: 0 };
 
 export function AdminDashboard() {
   const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
+  const [boostKpis, setBoostKpis] = useState<BonusBoostKpis>(emptyBoostKpis);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -36,10 +39,11 @@ export function AdminDashboard() {
     setLoading(true);
     setLoadError(false);
 
-    loadRewardKpis(activeRestaurant.id)
-      .then((nextRewardKpis) => {
+    Promise.all([loadRewardKpis(activeRestaurant.id), loadBonusBoostKpis(activeRestaurant.id)])
+      .then(([nextRewardKpis, nextBoostKpis]) => {
         if (!cancelled) {
           setRewardKpis(nextRewardKpis);
+          setBoostKpis(nextBoostKpis);
         }
       })
       .catch((error) => {
@@ -151,6 +155,16 @@ export function AdminDashboard() {
             </Link>
           );
         })}
+        </div>
+      </section>
+
+      <section className="premium-dashboard-section" aria-labelledby="boost-overview-title">
+        <div className="premium-dashboard-section-heading"><div><span className="premium-dashboard-kicker">Empfehlungen</span><h2 id="boost-overview-title">Bonus Boost</h2></div></div>
+        <div className="dashboard-quick-grid">
+          <article className="card dashboard-quick-card"><span className="dashboard-quick-icon"><UserPlus size={22} /></span><span><strong>{boostKpis.successfulReferrals}</strong><small>Erfolgreiche Empfehlungen</small></span></article>
+          <article className="card dashboard-quick-card"><span className="dashboard-quick-icon"><Users size={22} /></span><span><strong>{boostKpis.newCustomersFromReferrals}</strong><small>Gewonnene Neukunden</small></span></article>
+          <article className="card dashboard-quick-card"><span className="dashboard-quick-icon"><Sparkles size={22} /></span><span><strong>{boostKpis.guestsCurrentlyBoosted}</strong><small>Aktive Bonus Boosts</small></span></article>
+          <article className="card dashboard-quick-card"><span className="dashboard-quick-icon"><Star size={22} /></span><span><strong>{boostKpis.boostExtraPoints}</strong><small>Zusatzpunkte durch Boost</small></span></article>
         </div>
       </section>
 

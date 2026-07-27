@@ -1187,3 +1187,9 @@ Endstatus: **LOCK**
 🟢 **FIX / V1**
 
 V1 besitzt keinen separaten Geburtstagsgeschenk-Editor. Ein täglicher idempotenter Serverjob wählt 14 Tage vor dem Geburtstag zufällig genau ein aktives Willkommensgeschenk des Restaurants aus. Pro Gast, Restaurant/Filiale und Kalenderjahr ist nur eine Zuteilung erlaubt. Deaktivierte oder abgelaufene Vorlagen werden nicht verwendet; fehlt eine aktive Vorlage, wird nur ein Systemprotokoll geschrieben.
+
+## CTO-Ergänzung 2026-07-22: Geburtstagsauslosung ersetzt Auto-Zuteilung
+
+Die Entscheidung vom 22.07.2026 ersetzt den beschriebenen 14-Tage-Autojob. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag löst der Gast die Auslosung mit „Geschenk abholen“ aus. Der Server wählt genau eine aktive, für den Geburtstag freigegebene Vorlage aus dem vorhandenen Willkommensgeschenk-Pool. Die Auswahl wird mit der bestehenden Eindeutigkeitsregel pro Gast, Restaurant/Filiale und Kalenderjahr dauerhaft gespeichert und über den vorhandenen sicheren Einlösecode-Flow verwendet.
+
+Ablauf-Erinnerungen werden serverseitig anhand der Restaurant-Zeitzone erzeugt. Die Redemption-RPC bleibt für Gültigkeit und Einlösbarkeit die letzte Autorität; Clientzeit und Push-Nachricht können keine Einlösung freigeben.
