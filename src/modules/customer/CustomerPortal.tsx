@@ -90,9 +90,10 @@ import {
   disableCustomerPush,
   drawCustomerBirthdayGift,
   enableCustomerPush,
+  loadCustomerIdentitySummary,
   loadCustomerRetentionStatus,
   markExpiryReminder,
-  updateCustomerBirthday,
+  type CustomerIdentitySummary,
   type CustomerRetentionStatus,
   type ExpiryReminder,
 } from "./retentionService";
@@ -227,9 +228,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
+  const [identitySummary, setIdentitySummary] = useState<CustomerIdentitySummary | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
-  const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
   const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
   const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
@@ -328,22 +329,24 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
         try {
-          const retentionData = await loadCustomerRetentionStatus(restaurantSlug, activeToken);
+          const [retentionData, identityData] = await Promise.all([
+            loadCustomerRetentionStatus(restaurantSlug, activeToken),
+            loadCustomerIdentitySummary(restaurantSlug, activeToken),
+          ]);
           if (!cancelled) {
             setRetention(retentionData);
-            setBirthdayForm({
-              day: retentionData.birthday.day ? String(retentionData.birthday.day) : "",
-              month: retentionData.birthday.month ? String(retentionData.birthday.month) : "",
-            });
+            setIdentitySummary(identityData);
           }
         } catch (retentionError) {
           if (!cancelled) {
             console.warn("Zusätzliche Kundenhinweise konnten nicht geladen werden.", retentionError);
             setRetention(null);
+            setIdentitySummary(null);
           }
         }
       } else if (!cancelled) {
         setRetention(null);
+        setIdentitySummary(null);
       }
     }
 
@@ -356,6 +359,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setCustomer(null);
         setRewards([]);
         setRetention(null);
+        setIdentitySummary(null);
         setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
@@ -798,23 +802,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setMessage(error instanceof Error ? error.message : "Einladung konnte nicht erstellt werden.");
     } finally {
       setCreatingReferral(false);
-    }
-  }
-
-  async function handleBirthdaySave() {
-    if (!activeToken || !restaurantSlug) return;
-    const day = Number(birthdayForm.day);
-    const month = Number(birthdayForm.month);
-    if (!Number.isInteger(day) || !Number.isInteger(month)) {
-      setRetentionMessage("Bitte gib Tag und Monat vollständig ein.");
-      return;
-    }
-    try {
-      await updateCustomerBirthday(restaurantSlug, activeToken, day, month);
-      setRetentionMessage("Geburtstag gespeichert.");
-      setRefreshToken((current) => current + 1);
-    } catch (error) {
-      setRetentionMessage(error instanceof Error ? error.message : "Geburtstag konnte nicht gespeichert werden.");
     }
   }
 
@@ -1962,11 +1949,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
                   <PrimaryButton onClick={handleCustomerLogout}>Abmelden</PrimaryButton>
                 </>
-              ) : accountSheet === "profile" ? (
-                <>
-                  <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
-                  <PrimaryButton disabled={!retention?.birthday.can_update} onClick={handleBirthdaySave}>Geburtstag speichern</PrimaryButton>
-                </>
               ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
               onClose={() => setAccountSheet(null)}
               open={Boolean(accountSheet)}
@@ -1990,16 +1972,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <div className="premium-account-profile-form">
                     <div className="premium-account-detail-list">
                       <div><span>Name</span><strong>{customer.name}</strong></div>
+                      <div><span>Telefon</span><strong>{identitySummary?.phone_masked ?? "Nicht verfügbar"}</strong></div>
+                      <div><span>Geburtstag</span><strong>{identitySummary?.birthday_masked ?? "Nicht hinterlegt"}</strong></div>
                       <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
                     </div>
                     <section>
-                      <div><h3>Geburtstag</h3><p>Freiwillig. Für deine Geburtstagsüberraschung benötigen wir nur Tag und Monat.</p></div>
-                      <div className="premium-birthday-fields">
-                        <label><span>Tag</span><input inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, day: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="TT" value={birthdayForm.day} /></label>
-                        <label><span>Monat</span><input inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, month: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="MM" value={birthdayForm.month} /></label>
+                      <div>
+                        <h3>Identitätsdaten geschützt</h3>
+                        <p>Telefonnummer oder Geburtsdatum ändern? Bitte wende dich direkt an das Restaurant.</p>
                       </div>
-                      {!retention?.birthday.can_update ? <p className="muted">Dein Geburtstag kann erst später wieder geändert werden.</p> : null}
-                      {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
                     </section>
                   </div>
                 ) : null}

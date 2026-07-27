@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { QrCode, Search, Users } from "lucide-react";
+import { Copy, Search, ShieldCheck, Users } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
 import type { Customer } from "../../../shared/types/domain";
-import { loadCustomers } from "../../loyalty/loyaltyService";
+import {
+  canManageCustomerIdentity,
+  loadCustomerIdentitySupportDetail,
+  loadCustomers,
+  updateCustomerIdentityBySupport,
+  type CustomerIdentitySupportDetail,
+} from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 
 function customerStatus(customer: Customer) {
@@ -23,15 +31,32 @@ export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [identitySupportAllowed, setIdentitySupportAllowed] = useState(false);
+  const [supportCustomer, setSupportCustomer] = useState<Customer | null>(null);
+  const [supportDetail, setSupportDetail] = useState<CustomerIdentitySupportDetail | null>(null);
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportSaving, setSupportSaving] = useState(false);
+  const [supportMessage, setSupportMessage] = useState<string | null>(null);
+  const [changeType, setChangeType] = useState<"phone" | "birthday">("phone");
+  const [newPhone, setNewPhone] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
+  const [verificationMethod, setVerificationMethod] = useState("");
+  const [reason, setReason] = useState("");
+  const [identityVerified, setIdentityVerified] = useState(false);
+  const [newAccessLink, setNewAccessLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (!restaurantId) return;
 
     let cancelled = false;
 
-    loadCustomers(restaurantId)
-      .then((nextCustomers) => {
-        if (!cancelled) setCustomers(nextCustomers);
+    Promise.all([loadCustomers(restaurantId), canManageCustomerIdentity(restaurantId)])
+      .then(([nextCustomers, supportAllowed]) => {
+        if (!cancelled) {
+          setCustomers(nextCustomers);
+          setIdentitySupportAllowed(supportAllowed);
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -52,6 +77,77 @@ export function CustomersPage() {
     );
   }, [customers, query]);
 
+  async function openIdentitySupport(customer: Customer) {
+    setSupportCustomer(customer);
+    setSupportDetail(null);
+    setSupportMessage(null);
+    setNewAccessLink(null);
+    setSupportLoading(true);
+    try {
+      const detail = await loadCustomerIdentitySupportDetail(restaurantId, customer.id);
+      setSupportDetail(detail);
+      setNewPhone(detail.phone);
+      setBirthdayDay(detail.birthday_day ? String(detail.birthday_day) : "");
+      setBirthdayMonth(detail.birthday_month ? String(detail.birthday_month) : "");
+    } catch {
+      setSupportMessage("Identitätsdaten konnten nicht geöffnet werden. Prüfe deine Berechtigung.");
+    } finally {
+      setSupportLoading(false);
+    }
+  }
+
+  function closeIdentitySupport() {
+    if (supportSaving) return;
+    setSupportCustomer(null);
+    setSupportDetail(null);
+    setSupportMessage(null);
+    setNewAccessLink(null);
+    setVerificationMethod("");
+    setReason("");
+    setIdentityVerified(false);
+  }
+
+  async function saveIdentityChange() {
+    if (!supportCustomer || !supportDetail || !activeRestaurant) return;
+    setSupportSaving(true);
+    setSupportMessage(null);
+    try {
+      const result = await updateCustomerIdentityBySupport({
+        restaurantId,
+        customerId: supportCustomer.id,
+        changeType,
+        newPhone: changeType === "phone" ? newPhone : null,
+        birthdayDay: changeType === "birthday" ? Number(birthdayDay) : null,
+        birthdayMonth: changeType === "birthday" ? Number(birthdayMonth) : null,
+        identityVerified,
+        verificationMethod,
+        reason,
+      });
+      if (result.new_customer_token) {
+        const link = new URL(`/customer/${activeRestaurant.slug}`, window.location.origin);
+        link.searchParams.set("token", result.new_customer_token);
+        setNewAccessLink(link.toString());
+      }
+      setSupportMessage(changeType === "phone"
+        ? "Telefonnummer geändert. Alte Zugänge wurden widerrufen."
+        : "Geburtsdatum wurde korrigiert.");
+      const nextCustomers = await loadCustomers(restaurantId);
+      setCustomers(nextCustomers);
+      const detail = await loadCustomerIdentitySupportDetail(restaurantId, supportCustomer.id);
+      setSupportDetail(detail);
+      setNewPhone(detail.phone);
+      setBirthdayDay(detail.birthday_day ? String(detail.birthday_day) : "");
+      setBirthdayMonth(detail.birthday_month ? String(detail.birthday_month) : "");
+      setIdentityVerified(false);
+      setVerificationMethod("");
+      setReason("");
+    } catch (error) {
+      setSupportMessage(error instanceof Error ? error.message : "Identitätsdaten konnten nicht geändert werden.");
+    } finally {
+      setSupportSaving(false);
+    }
+  }
+
   return (
     <>
       <header className="page-header">
@@ -70,7 +166,7 @@ export function CustomersPage() {
               className="input"
               id="guest-search"
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Name, Telefon oder Gästecode"
+              placeholder="Name oder maskierte Telefonnummer"
               value={query}
             />
           </div>
@@ -92,10 +188,12 @@ export function CustomersPage() {
               <span className="pill">{customer.stamp_balance} Stempel</span>
               <span className="pill">{customer.membership_level}</span>
             </div>
-            <p className="guest-code muted">
-              <QrCode size={16} /> {customer.customer_code}
-            </p>
             <p className="muted">Seit {formatDate(customer.created_at)} Mitglied.</p>
+            {identitySupportAllowed ? (
+              <button className="button secondary" onClick={() => openIdentitySupport(customer)} type="button">
+                <ShieldCheck aria-hidden="true" size={17} /> Identitätsdaten korrigieren
+              </button>
+            ) : null}
           </article>
         ))}
         {filteredCustomers.length === 0 ? (
@@ -108,6 +206,74 @@ export function CustomersPage() {
       </section>
 
       {status ? <p className="status-message">{status}</p> : null}
+
+      <AppDrawer
+        description="Nur Owner und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
+        dismissOnOverlay={!supportSaving}
+        footer={supportDetail ? (
+          <>
+            <button className="button secondary" disabled={supportSaving} onClick={closeIdentitySupport} type="button">Schließen</button>
+            <button
+              className="button"
+              disabled={supportSaving || !identityVerified || !verificationMethod.trim() || !reason.trim()}
+              onClick={saveIdentityChange}
+              type="button"
+            >
+              {supportSaving ? "Änderung wird geprüft …" : "Identitätsdaten ändern"}
+            </button>
+          </>
+        ) : <button className="button" onClick={closeIdentitySupport} type="button">Schließen</button>}
+        onClose={closeIdentitySupport}
+        open={Boolean(supportCustomer)}
+        size="large"
+        title="Identitätsdaten korrigieren"
+      >
+        {supportLoading ? <p>Identitätsdaten werden sicher geladen …</p> : null}
+        {supportDetail ? (
+          <div className="customer-identity-support">
+            <div className="premium-account-detail-list">
+              <div><span>Gast</span><strong>{supportDetail.name}</strong></div>
+              <div><span>Telefon</span><strong>{supportDetail.phone}</strong></div>
+              <div><span>Geburtstag</span><strong>{supportDetail.birthday_day && supportDetail.birthday_month ? `${String(supportDetail.birthday_day).padStart(2, "0")}.${String(supportDetail.birthday_month).padStart(2, "0")}.****` : "Nicht hinterlegt"}</strong></div>
+            </div>
+
+            <div className="field">
+              <span>Änderung</span>
+              <div className="segmented-control">
+                <button aria-pressed={changeType === "phone"} onClick={() => setChangeType("phone")} type="button">Telefonnummer</button>
+                <button aria-pressed={changeType === "birthday"} onClick={() => setChangeType("birthday")} type="button">Geburtsdatum</button>
+              </div>
+            </div>
+
+            {changeType === "phone" ? (
+              <label className="field"><span>Neue Telefonnummer</span><input className="input" inputMode="tel" onChange={(event) => setNewPhone(event.target.value)} value={newPhone} /></label>
+            ) : (
+              <div className="premium-birthday-fields">
+                <label><span>Tag</span><input className="input" inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayDay(event.target.value.replace(/\D/g, "").slice(0, 2))} value={birthdayDay} /></label>
+                <label><span>Monat</span><input className="input" inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayMonth(event.target.value.replace(/\D/g, "").slice(0, 2))} value={birthdayMonth} /></label>
+              </div>
+            )}
+
+            <label className="field"><span>Prüfart</span><input className="input" onChange={(event) => setVerificationMethod(event.target.value)} placeholder="Zum Beispiel persönlich im Restaurant" value={verificationMethod} /></label>
+            <label className="field"><span>Änderungsgrund</span><textarea className="input" onChange={(event) => setReason(event.target.value)} placeholder="Kurze sachliche Begründung" value={reason} /></label>
+            <label className="checkbox-row">
+              <input checked={identityVerified} onChange={(event) => setIdentityVerified(event.target.checked)} type="checkbox" />
+              <span>Die Identität des Kunden wurde geprüft.</span>
+            </label>
+            <p className="muted">Diese Änderung betrifft die Identität des Kunden. Bitte bestätige, dass die Identität geprüft wurde.</p>
+
+            {newAccessLink ? (
+              <section className="customer-new-access">
+                <h3>Neuer persönlicher Zugang</h3>
+                <p>Zeige diesen QR-Code jetzt dem Gast. Nach dem Schließen wird der Zugang hier nicht erneut angezeigt.</p>
+                <QRCodeSVG level="M" size={196} value={newAccessLink} />
+                <button className="button secondary" onClick={() => navigator.clipboard.writeText(newAccessLink)} type="button"><Copy aria-hidden="true" size={17} /> Link kopieren</button>
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+        {supportMessage ? <p className="status-message" role="status">{supportMessage}</p> : null}
+      </AppDrawer>
     </>
   );
 }

@@ -766,3 +766,13 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Persönliche Einwilligungen, restaurantbezogener Datenexport und Datenschutzanfragen verlangen einen gültigen Kundenzugang für genau dieses Restaurant.
 - Teilnahme- und Datenschutzhinweis sind Pflicht; Marketing-Push, SMS, E-Mail und Geburtstagsverarbeitung bleiben getrennt, freiwillig und standardmäßig aus.
 - Punkte werden als nicht auszahlbar, nicht übertragbar und restaurantbezogen erklärt. Die aktuelle Gültigkeitsregel wird angezeigt; ein konkretes historisches Ablaufdatum nur, wenn es verlässlich berechenbar ist.
+
+## CTO-Ergänzung 2026-07-27: Kundenidentität ohne SMS-OTP
+
+- Die V1-Kundenidentität ist `restaurant_id + normalisierte Telefonnummer`.
+- Registrierung und bekannter Kundenzugang bleiben passwortlos und verwenden kein SMS-OTP.
+- Ein vorhandenes Konto wird auf einem unbekannten Gerät nicht über die bekannte Telefonnummer geöffnet und erhält dabei keinen neuen Token. Der Gast wird neutral an sein bekanntes Gerät oder das Restaurant verwiesen.
+- Telefonnummer und freiwillig erfasster Geburtstag sind nach der ersten Speicherung im Kundenportal nur maskiert lesbar.
+- Korrekturen erfolgen ausschließlich über einen kontrollierten Owner/Admin-Supportpfad mit Identitätsprüfung, Prüfart, Grund und Audit.
+- Eine Telefonnummernkorrektur widerruft alte Tokens und bekannte Geräte. Es findet keine automatische Kontozusammenführung statt.
+- SMS-Verifizierung ist nur als standardmäßig deaktivierte spätere Konfiguration vorbereitet und hat keine V1-Runtime oder UI.

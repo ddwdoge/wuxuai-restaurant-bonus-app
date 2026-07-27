@@ -1,5 +1,6 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
+import { normalizeCustomerPhone } from "../customer/customerIdentity.mjs";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
   amount_based: "Betragsbasiert",
@@ -237,11 +238,9 @@ export async function loadCustomers(restaurantId: string): Promise<Customer[]> {
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, restaurant_id, name, phone, email, birthday, customer_code, points_balance, stamp_balance, membership_level, created_at")
-    .eq("restaurant_id", restaurantId)
-    .order("created_at", { ascending: true });
+  const { data, error } = await supabase.rpc("list_restaurant_customers_safe", {
+    input_restaurant_id: restaurantId,
+  });
 
   if (error) throw error;
   return (data ?? []) as Customer[];
@@ -340,6 +339,9 @@ export type GuestRegistrationInput = {
 };
 
 export type GuestRegistrationResult = {
+  success?: boolean;
+  error_code?: string;
+  error_message?: string;
   restaurant: Pick<Restaurant, "name" | "slug" | "status">;
   campaign: Pick<Campaign, "title" | "slug" | "description" | "status"> | null;
   customer: Pick<Customer, "name" | "customer_code"> & {
@@ -363,6 +365,32 @@ export type GuestRegistrationResult = {
     welcome_gift_mode?: "value_limit" | "fixed_product";
     fixed_product_name?: string | null;
   } | null;
+};
+
+export type CustomerIdentitySupportDetail = {
+  customer_id: string;
+  name: string;
+  phone: string;
+  birthday_day: number | null;
+  birthday_month: number | null;
+};
+
+export type CustomerIdentitySupportUpdate = {
+  restaurantId: string;
+  customerId: string;
+  changeType: "phone" | "birthday";
+  newPhone?: string | null;
+  birthdayDay?: number | null;
+  birthdayMonth?: number | null;
+  identityVerified: boolean;
+  verificationMethod: string;
+  reason: string;
+};
+
+export type CustomerIdentitySupportUpdateResult = {
+  success: true;
+  customer_id: string;
+  new_customer_token: string | null;
 };
 
 export type BonusPointCollectionInput = {
@@ -620,10 +648,12 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
     throw new Error(liveDataUnavailableMessage);
   }
 
+  const normalizedPhone = normalizeCustomerPhone(input.phone);
+  if (!normalizedPhone) throw new Error("Bitte gib eine gültige Telefonnummer ein.");
   const { data, error } = await supabase.rpc("register_restaurant_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_first_name: input.firstName,
-    input_phone: input.phone,
+    input_phone: normalizedPhone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
     input_terms_accepted: input.legal.termsAccepted,
@@ -635,7 +665,52 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
   });
 
   if (error) throw error;
-  return data as GuestRegistrationResult;
+  const payload = data as GuestRegistrationResult;
+  if (payload.success === false) {
+    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");
+  }
+  return payload;
+}
+
+export async function loadCustomerIdentitySupportDetail(
+  restaurantId: string,
+  customerId: string,
+): Promise<CustomerIdentitySupportDetail> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("get_customer_identity_support_detail", {
+    input_restaurant_id: restaurantId,
+    input_customer_id: customerId,
+  });
+  if (error) throw error;
+  return data as CustomerIdentitySupportDetail;
+}
+
+export async function canManageCustomerIdentity(restaurantId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc("can_manage_customer_identity", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) return false;
+  return data === true;
+}
+
+export async function updateCustomerIdentityBySupport(
+  input: CustomerIdentitySupportUpdate,
+): Promise<CustomerIdentitySupportUpdateResult> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("support_update_customer_identity", {
+    input_restaurant_id: input.restaurantId,
+    input_customer_id: input.customerId,
+    input_change_type: input.changeType,
+    input_new_phone: input.newPhone ?? null,
+    input_birthday_day: input.birthdayDay ?? null,
+    input_birthday_month: input.birthdayMonth ?? null,
+    input_identity_verified: input.identityVerified,
+    input_verification_method: input.verificationMethod,
+    input_reason: input.reason,
+  });
+  if (error) throw error;
+  return data as CustomerIdentitySupportUpdateResult;
 }
 
 export async function resolveCustomerQrToken(restaurantId: string, customerToken: string): Promise<StaffQrCustomer> {
@@ -733,11 +808,13 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
     throw new Error(liveDataUnavailableMessage);
   }
 
+  const normalizedPhone = normalizeCustomerPhone(input.phone);
+  if (!normalizedPhone) throw new Error("Bitte gib eine gültige Telefonnummer ein.");
   const { data, error } = await supabase.rpc("register_referral_customer_legal", {
     input_restaurant_slug: input.restaurantSlug,
     input_referral_token: input.referralToken,
     input_first_name: input.firstName,
-    input_phone: input.phone,
+    input_phone: normalizedPhone,
     input_birthday: input.birthday,
     input_device_id: input.deviceId ?? null,
     input_terms_accepted: input.legal.termsAccepted,
@@ -749,7 +826,11 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
   });
 
   if (error) throw error;
-  return data as ReferralRegistrationResult;
+  const payload = data as ReferralRegistrationResult & { success?: boolean; error_message?: string };
+  if (payload.success === false) {
+    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");
+  }
+  return payload;
 }
 
 export async function loadBonusBoostKpis(restaurantId: string): Promise<BonusBoostKpis> {

@@ -1289,3 +1289,13 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
 - Fehlende Pflichtdokumente werden als kontrollierter Status ausgegeben und
   blockieren ausschließlich neue Registrierungen.
 - Bestehende veröffentlichte Versionen werden beim Backfill nicht ersetzt.
+
+## Ergänzung 2026-07-27: Kundenidentität V1
+
+- `customers.normalized_phone` ist die kanonische restaurantbezogene Identität.
+- Ein partieller Unique-Index verhindert mehrere Konten für `(restaurant_id, normalized_phone)`.
+- Die Migration stoppt bei ungültigen Bestandsnummern oder normalisierten Dubletten und löscht beziehungsweise verbindet keine Konten automatisch.
+- Direkte Browserrechte auf `customers` sind entzogen. Owner und Staff lesen ausschließlich eine minimierte Security-Definer-RPC.
+- Identitätsfelder werden durch einen Trigger gesperrt. Nur der kontrollierte Owner/Admin-Support-RPC darf sie ändern.
+- Telefonnummernänderungen widerrufen alle aktiven Kundentokens und bekannten Geräte und erzeugen genau einen neuen, nur einmal zurückgegebenen Zugang.
+- `restaurant_security_settings.sms_verification_enabled` ist standardmäßig `false`; es existiert keine SMS-Runtime-Abhängigkeit.

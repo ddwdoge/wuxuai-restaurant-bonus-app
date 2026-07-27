@@ -2216,3 +2216,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - `/customer` zeigt ohne QR-Kontext den Hinweis „Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen.“
 - der Service Worker besitzt keinen Fetch-Handler und hält deshalb keine Restaurant- oder Portalantworten im PWA-Cache
 - keine Datenbank-, RPC-, RLS-, Punkte-, Tages-PIN-, Geburtstags- oder Portalrollenlogik geändert
+
+## 2026-07-27 – Kundenidentität V1 ohne SMS-OTP gehärtet
+
+- österreichische Telefonnummern werden zentral normalisiert und pro Restaurant eindeutig abgesichert
+- bekannte Telefonnummern erzeugen bei erneuter öffentlicher Registrierung weder ein zweites Konto noch einen neuen Zugang
+- unbekannte Geräte erhalten eine neutrale Supportmeldung; bekannte Geräte verwenden weiterhin ihren restaurantbezogenen Token
+- Kunden können Telefonnummer und Geburtstag nach der Erfassung nicht selbst ändern
+- kontrollierter Owner/Admin-Supportpfad mit Identitätsprüfung, Änderungsgrund, Audit und Token-/Gerätewiderruf ergänzt
+- Owner- und Staff-Kundenlisten auf maskierte, minimierte Felder umgestellt
+- SMS-Verifizierung nur als deaktivierte spätere Konfiguration vorbereitet; keine OTP- oder Provider-Abhängigkeit ergänzt
+- Migration `20260727001000_customer_identity_v1_no_sms.sql` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet

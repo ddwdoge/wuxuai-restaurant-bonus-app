@@ -41,6 +41,11 @@ export type CustomerRetentionStatus = {
   push: { subscribed: boolean };
 };
 
+export type CustomerIdentitySummary = {
+  phone_masked: string | null;
+  birthday_masked: string | null;
+};
+
 export async function loadCustomerRetentionStatus(
   restaurantSlug: string,
   customerToken: string,
@@ -54,21 +59,17 @@ export async function loadCustomerRetentionStatus(
   return data as CustomerRetentionStatus;
 }
 
-export async function updateCustomerBirthday(
+export async function loadCustomerIdentitySummary(
   restaurantSlug: string,
   customerToken: string,
-  day: number,
-  month: number,
-) {
+): Promise<CustomerIdentitySummary> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
-  const { data, error } = await supabase.rpc("update_customer_birthday", {
+  const { data, error } = await supabase.rpc("get_customer_identity_summary", {
     input_restaurant_slug: restaurantSlug,
     input_customer_token: customerToken,
-    input_day: day,
-    input_month: month,
   });
   if (error) throw error;
-  return data as { day: number; month: number; changed: boolean };
+  return data as CustomerIdentitySummary;
 }
 
 export async function drawCustomerBirthdayGift(
