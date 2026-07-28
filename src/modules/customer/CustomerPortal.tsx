@@ -49,6 +49,7 @@ import {
   type PublicPortalCustomer,
 } from "../loyalty/loyaltyService";
 import {
+  emitCustomerAccessDiagnostic,
   isInvalidCustomerTokenError,
   readStoredCustomerToken,
   removeStoredCustomerToken,
@@ -104,7 +105,7 @@ import {
   isValidCustomerPhone,
 } from "./customerRegistration.mjs";
 
-type GuestStep = "welcome" | "register" | "success";
+type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
 type RewardFilter = "all" | "mine";
 type RedemptionSheetStep = "detail" | "confirm";
@@ -220,7 +221,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
   const [redeemingReward, setRedeemingReward] = useState(false);
   const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
-  const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(null);
+  const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(() => (
+    isUsableRestaurantSlug(restaurantSlug) ? readStoredCustomerToken(restaurantSlug) : null
+  ));
   const [collectStep, setCollectStep] = useState<CollectStep>("entry");
   const [selectedTierKey, setSelectedTierKey] = useState("");
   const [dailyPin, setDailyPin] = useState("");
@@ -246,7 +249,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
   const processedReminderDeepLinkRef = useRef<string | null>(null);
-  const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
+  const activeToken = customerToken ?? storedCustomerToken;
+  const activeTokenSource = customerToken
+    ? "url"
+    : storedCustomerToken
+      ? "stored"
+      : "none";
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
 
@@ -264,18 +272,21 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     }
   }, [activeToken, restaurantSlug]);
   useEffect(() => {
-    if (!isUsableRestaurantSlug(restaurantSlug)) return;
-    setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
-  }, [restaurantSlug]);
-
-  useEffect(() => {
     if (!restaurantSlug || !activeToken || !customer) return;
-    saveStoredCustomerToken(restaurantSlug, {
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
       customer_token: activeToken,
       restaurant_id: null,
-      customer_name: customer.name,
+      device_id: getWebDeviceId(),
     });
-  }, [activeToken, customer, restaurantSlug]);
+    if (!persisted) return;
+    setStoredCustomerToken(activeToken);
+
+    if (customerToken === activeToken) {
+      const nextSearchParams = new URLSearchParams(searchParams);
+      nextSearchParams.delete("token");
+      setSearchParams(nextSearchParams, { replace: true });
+    }
+  }, [activeToken, customer, customerToken, restaurantSlug, searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -324,6 +335,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setMessage(null);
         if (data.customer) {
           setGuestStep("welcome");
+          if (activeTokenSource === "stored") {
+            emitCustomerAccessDiagnostic("CUSTOMER_EXISTING_MEMBERSHIP_RESTORED", restaurantSlug);
+          }
         }
       }
       if (!cancelled) await reloadLegalCenter();
@@ -366,15 +380,18 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setRedemptionOutcome(null);
         setRedemptionDrawerOpen(false);
         if (activeToken && isInvalidCustomerTokenError(error)) {
-          removeStoredCustomerToken(restaurantSlug);
-          setStoredCustomerToken(null);
+          emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_INVALID", restaurantSlug);
+          if (activeTokenSource !== "url" || storedCustomerToken === activeToken) {
+            removeStoredCustomerToken(restaurantSlug);
+            setStoredCustomerToken(null);
+          }
           setRegistration(null);
           setGuestStep("welcome");
           void removeScopedActiveRedemption(window.sessionStorage, {
             restaurantSlug,
             customerToken: activeToken,
           });
-          setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
+          setMessage("Dein gespeicherter Zugang ist nicht mehr gültig. Bitte registriere dich erneut oder wende dich an das Restaurant.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
@@ -384,7 +401,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     return () => {
       cancelled = true;
     };
-  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug]);
+  }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken]);
 
   useEffect(() => {
     if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
@@ -423,20 +440,27 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   }, [activeToken, customer, retention, rewards, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!customerToken) return;
+    if (!activeToken) return;
 
     function refreshOnFocus() {
+      if (document.visibilityState === "hidden") return;
       setRefreshToken((current) => current + 1);
     }
 
+    function refreshFromPageCache(event: PageTransitionEvent) {
+      if (event.persisted) setRefreshToken((current) => current + 1);
+    }
+
     window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener("pageshow", refreshFromPageCache);
     document.addEventListener("visibilitychange", refreshOnFocus);
 
     return () => {
       window.removeEventListener("focus", refreshOnFocus);
+      window.removeEventListener("pageshow", refreshFromPageCache);
       document.removeEventListener("visibilitychange", refreshOnFocus);
     };
-  }, [customerToken]);
+  }, [activeToken]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 1_000);
@@ -686,13 +710,18 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           birthdayProcessing: form.birthdayProcessing,
         },
       });
-      saveStoredCustomerToken(restaurantSlug, {
+      setRegistration(result);
+      const persisted = saveStoredCustomerToken(restaurantSlug, {
         customer_token: result.customer.customer_qr_token,
         restaurant_id: null,
-        customer_name: result.customer.name,
+        device_id: getWebDeviceId(),
       });
+      if (!persisted) {
+        setGuestStep("persist");
+        setMessage("Dein Bonuskonto wurde erstellt, konnte auf diesem Gerät aber nicht gespeichert werden. Bitte versuche das Speichern erneut.");
+        return;
+      }
       setStoredCustomerToken(result.customer.customer_qr_token);
-      setRegistration(result);
       setGuestStep("success");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Registrierung fehlgeschlagen.");
@@ -701,15 +730,39 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     }
   }
 
+  function retryPersistRegisteredAccess() {
+    const token = registration?.customer.customer_qr_token;
+    if (!token) return;
+    setMessage(null);
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
+      customer_token: token,
+      restaurant_id: null,
+      device_id: getWebDeviceId(),
+    });
+    if (!persisted) {
+      setMessage("Der Zugang konnte noch nicht gespeichert werden. Prüfe bitte die Browser-Einstellungen und versuche es erneut.");
+      return;
+    }
+    setStoredCustomerToken(token);
+    setGuestStep("success");
+  }
+
   function openMemberHome() {
     if (!registration?.customer.customer_qr_token) return;
-    saveStoredCustomerToken(restaurantSlug, {
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
       customer_token: registration.customer.customer_qr_token,
       restaurant_id: null,
-      customer_name: registration.customer.name,
+      device_id: getWebDeviceId(),
     });
+    if (!persisted) {
+      setGuestStep("persist");
+      setMessage("Dein Zugang konnte nicht sicher gespeichert werden. Bitte versuche es erneut.");
+      return;
+    }
     setStoredCustomerToken(registration.customer.customer_qr_token);
-    setSearchParams({ token: registration.customer.customer_qr_token });
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("token");
+    setSearchParams(nextSearchParams, { replace: true });
     setRegistration(null);
   }
 
@@ -1056,7 +1109,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
               title="Dein Bonus konnte nicht geöffnet werden"
             />
           ) : (
-            <LoadingState description="Dein Bonus wird geladen." />
+            <LoadingState description="Dein Bonuskonto wird erkannt …" />
           )}
         </PageContainer>
       </AppShell>
@@ -1065,7 +1118,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
   return (
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
-      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" ? " customer-registration-page" : ""}`}>
+      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}`}>
         <CustomerHeader
           compact
           logoUrl={branding.logo_url}
@@ -1218,6 +1271,18 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 </button>
               </div>
             </form>
+          </article>
+        ) : null}
+
+        {!customer && guestStep === "persist" && registration ? (
+          <article className="customer-hero-card" role="alert">
+            <span className="pill">Speichern erforderlich</span>
+            <h2>Dein Bonuskonto ist bereits erstellt</h2>
+            <p className="muted">Damit du beim nächsten QR-Scan automatisch erkannt wirst, muss der Zugang noch auf diesem Gerät gespeichert werden.</p>
+            {message ? <p className="status-message error">{message}</p> : null}
+            <button className="button customer-primary-button" onClick={retryPersistRegisteredAccess} type="button">
+              Erneut speichern
+            </button>
           </article>
         ) : null}
 

@@ -5,6 +5,21 @@
 
 Status: **LOCK**
 
+## 28.07.2026 - Wiedererkennung nach erneutem Restaurant-QR
+
+- Kundenzugänge werden vor dem ersten Portal-Request synchron und getrennt je
+  Restaurant-Slug aus einem versionierten lokalen Zugangsspeicher gelesen.
+- Bestehende Legacy-Tokens werden in den neuen restaurantbezogenen Schlüssel
+  übernommen; Restaurant A und Restaurant B überschreiben sich nicht.
+- Eine Registrierung gilt im Browser erst nach verifiziertem Speichern des
+  Zugangs als abgeschlossen. Bei blockiertem Safari-Speicher wird nur das
+  Speichern wiederholt und kein zweites Kundenkonto angelegt.
+- URL-Tokens werden nach erfolgreicher Servervalidierung und lokaler
+  Persistierung aus der Browseradresse entfernt.
+- Fokus, Sichtbarkeitswechsel und Safari-BFCache lösen eine erneute
+  serverseitige Zugangsprüfung aus.
+- Keine Punkte-, Reward-, Tages-PIN-, RLS- oder Datenbanklogik wurde geändert.
+
 ## 27.07.2026 - Optionale Einwilligungen und Restaurant-Neuscan
 
 - Der Registrierungsabschluss verlangt nur noch gültige Pflichtfelder,

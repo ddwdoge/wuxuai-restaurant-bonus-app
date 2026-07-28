@@ -74,7 +74,7 @@ function RouteLoading() {
 }
 
 function CustomerLoading() {
-  return <div className="auth-shell">Mein Bonus wird geöffnet...</div>;
+  return <div className="auth-shell">Dein Bonuskonto wird erkannt …</div>;
 }
 
 function AdminLoading() {

@@ -37,6 +37,7 @@ export function ReferralLanding() {
   const [data, setData] = useState<PublicReferralData | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [registration, setRegistration] = useState<ReferralRegistrationResult | null>(null);
+  const [accessPersisted, setAccessPersisted] = useState(false);
   const [form, setForm] = useState(() => ({ ...emptyCustomerRegistrationForm }));
   const [message, setMessage] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -115,17 +116,35 @@ export function ReferralLanding() {
           birthdayProcessing: form.birthdayProcessing,
         },
       });
-      saveStoredCustomerToken(restaurantSlug, {
+      setRegistration(result);
+      const persisted = saveStoredCustomerToken(restaurantSlug, {
         customer_token: result.customer.customer_qr_token,
         restaurant_id: null,
-        customer_name: result.customer.name,
+        device_id: getWebDeviceId(),
       });
-      setRegistration(result);
+      setAccessPersisted(persisted);
+      if (!persisted) {
+        setMessage("Dein Bonuskonto wurde erstellt, konnte auf diesem Gerät aber nicht gespeichert werden. Bitte versuche das Speichern erneut.");
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Registrierung fehlgeschlagen.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function retryPersistAccess() {
+    const token = registration?.customer.customer_qr_token;
+    if (!token) return;
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
+      customer_token: token,
+      restaurant_id: null,
+      device_id: getWebDeviceId(),
+    });
+    setAccessPersisted(persisted);
+    setMessage(persisted
+      ? null
+      : "Der Zugang konnte noch nicht gespeichert werden. Prüfe bitte die Browser-Einstellungen und versuche es erneut.");
   }
 
   if (!data) {
@@ -188,9 +207,13 @@ export function ReferralLanding() {
                 <QrCode size={16} /> {registration.customer.customer_code}
               </p>
             </div>
-            <a className="premium-button premium-button-primary" href={portalUrl}>
-              Mein Bonus öffnen
-            </a>
+            {accessPersisted ? (
+              <a className="premium-button premium-button-primary" href={portalUrl}>
+                Mein Bonus öffnen
+              </a>
+            ) : (
+              <PrimaryButton onClick={retryPersistAccess}>Zugang erneut speichern</PrimaryButton>
+            )}
           </PremiumCard>
         ) : (
           <>

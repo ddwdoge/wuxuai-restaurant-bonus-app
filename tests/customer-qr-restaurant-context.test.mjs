@@ -9,6 +9,7 @@ import {
 const app = readFileSync(new URL("../src/app/App.tsx", import.meta.url), "utf8");
 const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const storage = readFileSync(new URL("../src/modules/customer/customerTokenStorage.ts", import.meta.url), "utf8");
+const accessStorage = readFileSync(new URL("../src/modules/customer/customerAccessStorage.mjs", import.meta.url), "utf8");
 const loyalty = readFileSync(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
 const pointsMigration = readFileSync(new URL("../supabase/migrations/20260720002000_persist_pin_and_points_failures.sql", import.meta.url), "utf8");
 
@@ -57,13 +58,15 @@ test("Reload und Browser-History verwenden ausschließlich den aktuellen URL-Kon
   assert.match(app, /if \(event\.persisted\) setHistoryRevision/);
 });
 
-test("ein URL-Token gewinnt vor Registrierung und lokalem Cache", () => {
-  assert.match(portal, /const activeToken = customerToken \?\? registration\?\.customer\.customer_qr_token \?\? storedCustomerToken;/);
+test("ein URL-Token gewinnt vor dem restaurantbezogenen lokalen Zugang", () => {
+  assert.match(portal, /const activeToken = customerToken \?\? storedCustomerToken;/);
+  assert.doesNotMatch(portal, /const activeToken =[^;]*registration/);
 });
 
 test("lokal gespeicherte Kundentokens sind nach Restaurant-Slug getrennt", () => {
-  assert.match(storage, /storedTokens\[restaurantSlug\]\?\.customer_token/);
-  assert.match(storage, /wuxuai-customer-token:\$\{restaurantSlug\}/);
+  assert.match(accessStorage, /wuxuai_customer_access/);
+  assert.match(accessStorage, /restaurant_slug:\s*slug/);
+  assert.match(storage, /readCustomerAccess\(window\.localStorage, restaurantSlug\)/);
   assert.doesNotMatch(storage, /lastRestaurant|activeRestaurant|currentRestaurant/);
 });
 

@@ -11,6 +11,7 @@ import { loadPortalForRestaurant } from "../src/modules/customer/customerRedempt
 const publicEntrySource = await readFile(new URL("../src/modules/public/PublicHome.tsx", import.meta.url), "utf8");
 const serviceWorkerSource = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
 const tokenStorageSource = await readFile(new URL("../src/modules/customer/customerTokenStorage.ts", import.meta.url), "utf8");
+const accessStorageSource = await readFile(new URL("../src/modules/customer/customerAccessStorage.mjs", import.meta.url), "utf8");
 
 test("Restaurant A wird beim Scan von Restaurant B vollständig als aktiver Kontext ersetzt", () => {
   const contextA = readCustomerScanContext("/w/restaurant-a");
@@ -31,8 +32,8 @@ test("ein gespeicherter Kundenzugang erzeugt ohne QR-Pfad keinen Restaurantkonte
 });
 
 test("Kundenzugänge bleiben pro Restaurant getrennt, ohne einen aktiven Restaurantkontext zu speichern", () => {
-  assert.match(tokenStorageSource, /storedTokens\[restaurantSlug\]/);
-  assert.match(tokenStorageSource, /wuxuai-customer-token:\$\{restaurantSlug\}/);
+  assert.match(accessStorageSource, /wuxuai_customer_access/);
+  assert.match(accessStorageSource, /encodeURIComponent\(normalizeSlug\(restaurantSlug\)\)/);
   assert.doesNotMatch(tokenStorageSource, /restaurantSlug\s*:\s*localStorage\.getItem/);
 });
 
