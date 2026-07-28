@@ -478,8 +478,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
-  const referralBoostMultiplier = 2;
-  const referralBoostDurationDays = 30;
+  const referralBoostMultiplier = Number(settings?.referral_boost_multiplier) || 2;
+  const referralBoostDurationDays = Number(settings?.referral_boost_duration_days) || 30;
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
   const activePointMultiplier = activeBoost?.multiplier ?? 1;

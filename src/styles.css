@@ -421,6 +421,40 @@ a {
   min-height: 0;
 }
 
+.referral-bonus-settings {
+  display: grid;
+  gap: 18px;
+  max-width: 920px;
+}
+
+.referral-bonus-settings .form {
+  max-width: 720px;
+}
+
+.referral-bonus-preview {
+  background: #f8f5ef;
+  border: 1px solid rgba(149, 104, 32, 0.18);
+  border-radius: 8px;
+  color: #4b4234;
+  line-height: 1.5;
+  padding: 14px;
+}
+
+.referral-bonus-custom-duration small {
+  color: #607080;
+}
+
+@media (max-width: 699px) {
+  .referral-bonus-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .referral-bonus-settings .button {
+    min-height: 48px;
+    width: 100%;
+  }
+}
+
 .settings-nav-card {
   color: inherit;
   cursor: pointer;

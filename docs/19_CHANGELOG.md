@@ -2238,3 +2238,12 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Bestehender Export-RPC bleibt kompatibel und liest aus dem Journal.
 - Sichtbare Kassen-/Steuerbezeichnungen wurden durch klare Bonusprogramm-Begriffe ersetzt.
 - Keine RKSV-, Kassen-, Steuer- oder Buchhaltungsfunktion eingeführt.
+
+## 2026-07-28 - Dauer des Freundschaftsbonus konfigurierbar
+
+- Owner-Bereich `Bonusprogramm` um eine eigene Einstellung für den Freundschaftsbonus ergänzt.
+- Standard bleibt 2× für 30 Tage; Dauer-Presets 7/14/30/60/90 sowie eigene Werte von 1 bis 365 Tagen ergänzt.
+- Owner/Admin-RPC ist restaurantbezogen und auditiert Änderungen als `REFERRAL_BONUS_SETTINGS_UPDATED`.
+- Manager, Mitarbeiter, Kunden, anonyme Aufrufe und fremde Restaurants können die Einstellung nicht ändern.
+- Neue Empfehlungen verwenden die aktuell gespeicherte Dauer; laufende Bonuszeiträume bleiben unverändert.
+- Keine Änderung an Reward-, Tages-PIN-, Einlösecode-, Customer-Identity- oder Legal-Logik.

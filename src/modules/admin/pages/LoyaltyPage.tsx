@@ -10,9 +10,15 @@ import {
   rulesForMode,
   saveLoyaltyRule,
   saveLoyaltySettings,
+  saveReferralBonusSettings,
   setLoyaltyRuleActive,
+  validateReferralBonusDuration,
 } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
+import {
+  isReferralBonusDurationPreset,
+  referralBonusDurationPresets,
+} from "../../loyalty/referralBonusSettings.mjs";
 
 type RuleForm = {
   id?: string;
@@ -53,6 +59,7 @@ export function LoyaltyPage() {
   const [ruleForm, setRuleForm] = useState<RuleForm>(() => formForMode("menu_points"));
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savingReferralBonus, setSavingReferralBonus] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -127,6 +134,33 @@ export function LoyaltyPage() {
     setStatus("Regel gespeichert.");
   }
 
+  async function handleSaveReferralBonus(event: FormEvent) {
+    event.preventDefault();
+    if (!restaurantId) return;
+
+    const durationDays = Number(settings.referral_boost_duration_days ?? 30);
+    if (!validateReferralBonusDuration(durationDays)) {
+      setStatus("Die Dauer muss zwischen 1 und 365 ganzen Tagen liegen.");
+      return;
+    }
+
+    setStatus(null);
+    setSavingReferralBonus(true);
+    try {
+      const saved = await saveReferralBonusSettings({
+        restaurantId,
+        enabled: settings.referral_boost_enabled ?? true,
+        durationDays,
+      });
+      setSettings((current) => ({ ...current, ...saved }));
+      setStatus("Freundschaftsbonus gespeichert.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Freundschaftsbonus konnte nicht gespeichert werden.");
+    } finally {
+      setSavingReferralBonus(false);
+    }
+  }
+
   async function handleToggleRule(rule: LoyaltyRule) {
     const updatedRule = await setLoyaltyRuleActive(rule, !rule.active);
     setRules((currentRules) => currentRules.map((item) => (item.id === updatedRule.id ? updatedRule : item)));
@@ -148,8 +182,8 @@ export function LoyaltyPage() {
     <>
       <header className="page-header">
         <div>
-          <h1>Loyalty Settings</h1>
-          <p className="muted">Ein aktiver Modus pro Restaurant. Regeln bleiben tenant-gebunden.</p>
+          <h1>Bonusprogramm</h1>
+          <p className="muted">Ein aktiver Modus pro Restaurant. Alle Regeln bleiben dem Restaurant zugeordnet.</p>
         </div>
         <span className="pill">Aktiv: {loyaltyModeLabels[settings.loyalty_mode]}</span>
       </header>
@@ -175,9 +209,9 @@ export function LoyaltyPage() {
                   setRuleForm(formForMode(nextMode));
                 }}
               >
-                <option value="amount_based">amount_based</option>
-                <option value="stamp_based">stamp_based</option>
-                <option value="menu_points">menu_points</option>
+                <option value="amount_based">Betragsbasiert</option>
+                <option value="stamp_based">Stempelkarte</option>
+                <option value="menu_points">Punkte nach Bonstufe</option>
               </select>
             </div>
 
@@ -215,32 +249,6 @@ export function LoyaltyPage() {
                   }
                 />
               </div>
-            </div>
-
-            <div className="card subtle-card">
-              <h2>Bonus Boost</h2>
-              <p className="muted">Aktiviert sich erst nach einem echten Besuch des eingeladenen Gasts.</p>
-              <label className="toggle-row" htmlFor="referral-boost-enabled">
-                <input
-                  checked={settings.referral_boost_enabled ?? true}
-                  id="referral-boost-enabled"
-                  type="checkbox"
-                  onChange={(event) =>
-                    setSettings((current) => ({
-                      ...current,
-                      referral_boost_enabled: event.target.checked,
-                    }))
-                  }
-                />
-                Aktiv
-              </label>
-              <div className="grid two">
-                <div className="field"><span>Multiplikator</span><strong>2× Punkte</strong></div>
-                <div className="field"><span>Dauer</span><strong>30 Tage</strong></div>
-              </div>
-              <p className="muted">
-                Beide Gäste erhalten 30 Tage lang 2× Punkte, sobald der eingeladene Gast erstmals Punkte sammelt.
-              </p>
             </div>
 
             <button className="button" disabled={loading} type="submit">
@@ -312,9 +320,101 @@ export function LoyaltyPage() {
         </article>
       </section>
 
+      <section className="card referral-bonus-settings" style={{ marginTop: 16 }}>
+        <div>
+          <p className="premium-owner-kicker">Bonusprogramm</p>
+          <h2>Freundschaftsbonus</h2>
+          <p className="muted">
+            Nach einer erfolgreichen Einladung erhalten beide Gäste für die gewählte Dauer den 2× Bonus.
+          </p>
+        </div>
+        <form className="form" onSubmit={handleSaveReferralBonus}>
+          <label className="toggle-row" htmlFor="referral-boost-enabled">
+            <input
+              checked={settings.referral_boost_enabled ?? true}
+              id="referral-boost-enabled"
+              type="checkbox"
+              onChange={(event) =>
+                setSettings((current) => ({ ...current, referral_boost_enabled: event.target.checked }))
+              }
+            />
+            Freundschaftsbonus aktiv
+          </label>
+
+          <div className="grid two referral-bonus-fields">
+            <div className="field">
+              <label htmlFor="referral-boost-multiplier">Multiplikator</label>
+              <input className="input" disabled id="referral-boost-multiplier" value="2,0× Punkte" />
+            </div>
+            <div className="field">
+              <label htmlFor="referral-boost-duration">Dauer pro erfolgreicher Einladung</label>
+              <select
+                className="select"
+                id="referral-boost-duration"
+                value={isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30)
+                  ? String(settings.referral_boost_duration_days ?? 30)
+                  : "custom"}
+                onChange={(event) => {
+                  if (event.target.value === "custom") {
+                    setSettings((current) => ({ ...current, referral_boost_duration_days: 1 }));
+                    return;
+                  }
+                  setSettings((current) => ({
+                    ...current,
+                    referral_boost_duration_days: Number(event.target.value),
+                  }));
+                }}
+              >
+                {referralBonusDurationPresets.map((durationDays) => (
+                  <option key={durationDays} value={durationDays}>{durationDays} Tage</option>
+                ))}
+                <option value="custom">Eigener Wert</option>
+              </select>
+            </div>
+          </div>
+
+          {!isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30) ? (
+            <div className="field referral-bonus-custom-duration">
+              <label htmlFor="referral-boost-custom-duration">Eigener Wert in Tagen</label>
+              <input
+                className="input"
+                id="referral-boost-custom-duration"
+                inputMode="numeric"
+                max="365"
+                min="1"
+                step="1"
+                type="number"
+                value={settings.referral_boost_duration_days ?? 30}
+                onChange={(event) =>
+                  setSettings((current) => ({
+                    ...current,
+                    referral_boost_duration_days: Number(event.target.value),
+                  }))
+                }
+              />
+              <small>Erlaubt sind 1 bis 365 ganze Tage.</small>
+            </div>
+          ) : null}
+
+          <div className="referral-bonus-preview" aria-live="polite">
+            Bei {settings.referral_boost_duration_days ?? 30} Tagen erhält jede weitere erfolgreiche Einladung weitere{" "}
+            {settings.referral_boost_duration_days ?? 30} Bonustage.
+          </div>
+
+          <button
+            className="button"
+            disabled={savingReferralBonus || !validateReferralBonusDuration(Number(settings.referral_boost_duration_days))}
+            type="submit"
+          >
+            <Save size={18} />
+            {savingReferralBonus ? "Wird gespeichert …" : "Freundschaftsbonus speichern"}
+          </button>
+        </form>
+      </section>
+
       {settings.loyalty_mode === "menu_points" ? (
         <section className="card" style={{ marginTop: 16 }}>
-          <h2>Menu Points Presets</h2>
+          <h2>Vorlagen für Bonstufen</h2>
           <div className="tablet-actions" style={{ marginTop: 12 }}>
             {menuPointPresets.map((preset) => (
               <button className="large-action compact" key={preset.title} onClick={() => handleAddPreset(preset)} type="button">

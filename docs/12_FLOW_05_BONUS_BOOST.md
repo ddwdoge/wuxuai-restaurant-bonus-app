@@ -138,14 +138,16 @@ Beispiel:
 
 ### 4.4 Konfigurierbarkeit
 
-Restaurant kann später einstellen:
+🟢 **FIX / V1 seit 2026-07-28**
 
-- Multiplikator: 1,25× / 1,5× / 2× / 3×
-- Dauer: 14 / 30 / 60 Tage
-- Verlängerung pro Freund: 14 / 30 / 60 Tage
-
-V1 darf diese Werte einfach halten.  
-Architektur muss sie vorbereiten.
+- Der Multiplikator bleibt exakt 2×.
+- Die restaurantbezogene Dauer ist durch Owner/Admin konfigurierbar.
+- Standard sind 30 Tage.
+- Presets: 7, 14, 30, 60 und 90 Tage.
+- Eigene Werte: 1 bis 365 ganze Tage.
+- Änderungen gelten ausschließlich für neue erfolgreiche Empfehlungen.
+- Bereits aktive Bonuszeiträume werden weder verkürzt noch verlängert.
+- Jede weitere erfolgreiche Einladung verlängert ab dem bestehenden Enddatum um die dann gespeicherte Dauer.
 
 ---
 

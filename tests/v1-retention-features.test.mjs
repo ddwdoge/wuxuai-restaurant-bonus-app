@@ -50,15 +50,14 @@ test("legacy birthday cron is disabled in favor of explicit customer draw", () =
   assert.match(migration, /'mode', 'customer_draw'/);
 });
 
-test("referral boost is fixed to 2x for both customers and extends by 30 days", () => {
+test("retention baseline keeps the 2x default and atomic referral qualification", () => {
   assert.match(migration, /set referral_boost_multiplier = 2, referral_boost_duration_days = 30/);
   assert.match(migration, /now\(\) \+ interval '30 days'/);
   assert.match(migration, /extension_base \+ interval '30 days'/);
   assert.match(migration, /pg_advisory_xact_lock/);
   assert.match(migration, /BONUS_BOOST_ACTIVATED/);
   assert.match(migration, /BONUS_BOOST_EXTENDED/);
-  assert.match(portal, /const referralBoostMultiplier = 2/);
-  assert.match(portal, /const referralBoostDurationDays = 30/);
+  assert.match(portal, /Number\(settings\?\.referral_boost_multiplier\) \|\| 2/);
   assert.match(migration, /and not c\.is_test_customer/);
   assert.match(migration, /and not is_test_event/);
 });

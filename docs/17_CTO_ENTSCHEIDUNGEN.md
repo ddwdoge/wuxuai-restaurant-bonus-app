@@ -1926,3 +1926,15 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Der bestehende RPC `get_reward_accounting_export` bleibt als technischer Kompatibilitätsvertrag erhalten, wird aber nicht als Steuer- oder Kassenexport bezeichnet.
 - Referral-, Werbe- und Kompensationsarten werden im Journal klassifizierbar, ohne dadurch neue V1-Ausgabe- oder Einlöseflows einzuführen.
 - Alle rechtlichen Hinweise tragen bis zur externen Prüfung den Status `LEGAL_REVIEW_REQUIRED` beziehungsweise `DRAFT_LEGAL_REVIEW_REQUIRED`.
+
+## CTO-Entscheidung 2026-07-28: Restaurantbezogene Dauer des Freundschaftsbonus
+
+🟢 **FIX / V1**
+
+- Der Freundschaftsbonus bleibt exakt 2×; Standarddauer bleibt 30 Tage.
+- Owner/Admin dürfen pro Restaurant 1 bis 365 ganze Tage konfigurieren.
+- Manager, Mitarbeiter und Kunden dürfen diese Einstellung nicht ändern.
+- Die gespeicherte Dauer wird erst bei einer neuen erfolgreichen Empfehlungsqualifizierung verwendet.
+- Laufende Bonuszeiträume bleiben bei Einstellungsänderungen unverändert.
+- Weitere erfolgreiche Empfehlungen verlängern einen aktiven Zeitraum um die zum Qualifizierungszeitpunkt gespeicherte Dauer.
+- Diese Entscheidung ersetzt für die Dauer die feste 30-Tage-Regel aus der Retention-Entscheidung vom 22.07.2026; der 2×-Multiplikator bleibt unverändert.

@@ -1,6 +1,7 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { normalizeCustomerPhone } from "../customer/customerIdentity.mjs";
+import { isValidReferralBonusDuration } from "./referralBonusSettings.mjs";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
   amount_based: "Betragsbasiert",
@@ -137,9 +138,6 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
         bonus_boost_multiplier: settings.bonus_boost_multiplier ?? 1,
         smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
         smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
-        referral_boost_enabled: settings.referral_boost_enabled ?? true,
-        referral_boost_multiplier: 2,
-        referral_boost_duration_days: 30,
         active: settings.active,
       },
       { onConflict: "restaurant_id" },
@@ -159,9 +157,6 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
           bonus_boost_multiplier: settings.bonus_boost_multiplier ?? 1,
           smart_upsell_enabled: settings.smart_upsell_enabled ?? true,
           smart_upsell_threshold: settings.smart_upsell_threshold ?? 5,
-          referral_boost_enabled: settings.referral_boost_enabled ?? true,
-          referral_boost_multiplier: 2,
-          referral_boost_duration_days: 30,
           active: settings.active,
         },
         { onConflict: "restaurant_id" },
@@ -175,6 +170,48 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
 
   if (error) throw error;
   return normalizeLoyaltySettings(data as LoyaltySettings);
+}
+
+export type ReferralBonusSettingsInput = {
+  restaurantId: string;
+  enabled: boolean;
+  durationDays: number;
+};
+
+export function validateReferralBonusDuration(durationDays: number) {
+  return isValidReferralBonusDuration(durationDays);
+}
+
+export async function saveReferralBonusSettings(
+  input: ReferralBonusSettingsInput,
+): Promise<Pick<LoyaltySettings, "referral_boost_enabled" | "referral_boost_multiplier" | "referral_boost_duration_days">> {
+  if (!supabase) {
+    throw new Error(liveDataUnavailableMessage);
+  }
+  if (!validateReferralBonusDuration(input.durationDays)) {
+    throw new Error("Die Dauer muss zwischen 1 und 365 ganzen Tagen liegen.");
+  }
+
+  const { data, error } = await supabase.rpc("update_referral_bonus_settings", {
+    input_restaurant_id: input.restaurantId,
+    input_enabled: input.enabled,
+    input_multiplier: 2,
+    input_duration_days: input.durationDays,
+  });
+
+  if (error) throw error;
+
+  const result = data as {
+    referral_boost_enabled?: boolean;
+    referral_boost_multiplier?: number;
+    referral_boost_duration_days?: number;
+  } | null;
+
+  return {
+    referral_boost_enabled: result?.referral_boost_enabled ?? input.enabled,
+    referral_boost_multiplier: Number(result?.referral_boost_multiplier) || 2,
+    referral_boost_duration_days: Number(result?.referral_boost_duration_days) || input.durationDays,
+  };
 }
 
 export async function loadLoyaltyRules(restaurantId: string): Promise<LoyaltyRule[]> {
