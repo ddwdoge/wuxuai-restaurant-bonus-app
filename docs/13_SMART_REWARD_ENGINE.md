@@ -305,18 +305,21 @@ mehr verwendet.
 Die Engine kennt:
 
 - Produktpreis
-- gespeicherte Einlösequote des Restaurants
+- bewusst ausgewählte Einlösequote von 1 % bis 10 %
 - Punkte-pro-Euro-Regel über `amount_per_point`
 
 Sie berechnet:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
-Wenn das Restaurant später mehr Punkte pro Euro vergibt, wird die benötigte
-Punktzahl entsprechend höher, während der Euro-Gegenwert gleich bleibt.
+Der Standardwert der Einlösequote ist 3 %. Die Auswahl enthält ausschließlich
+ganze Prozentwerte von 1 bis 10. Ein Legacy-Wert außerhalb dieses Bereichs wird
+nicht automatisch ersetzt; der Owner muss für eine Änderung aktiv einen
+gültigen Wert wählen. Historische Einlösungen und deren Punktesnapshots bleiben
+unverändert.
 
 ### 8.5 Anzeige
 

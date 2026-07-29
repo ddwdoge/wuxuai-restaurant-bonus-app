@@ -206,18 +206,25 @@ WUXUAI berechnet: - Einlösequote - geschätzte Konsumation bis zur
 Einlösung - benötigte Punkte - Wirtschaftlichkeit - fehlende Punkte -
 geschätzten fehlenden Umsatz
 
-Die Einlösequote kommt aus dem Onboarding-Schritt **Punkteeinlösung**:
+Die Einlösequote startet im Onboarding-Schritt **Punkteeinlösung** mit einer
+der vier Empfehlungen:
 
 - Sparsam: 3 %
 - Normal: 5 %
 - Großzügig: 8 %
 - Premium: 10 %
 
+In den Restaurant-Einstellungen und beim Erstellen oder Bearbeiten einer
+Punkteeinlösung wird sie als feste Auswahl von **1 % bis 10 %** angeboten.
+Der Standardwert für neue Einstellungen ist **3 %**. Freie Eingaben und
+Dezimalwerte sind nicht zulässig. Historische Altwerte außerhalb dieses
+Bereichs bleiben sichtbar und werden erst nach einer bewussten Auswahl ersetzt.
+
 Formel:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
 Beispiel:

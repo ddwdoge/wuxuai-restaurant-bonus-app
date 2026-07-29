@@ -29,7 +29,7 @@ const legacyLoyaltySettingsSelect =
 function normalizeLoyaltySettings(settings: LoyaltySettings): LoyaltySettings {
   return {
     ...settings,
-    redemption_return_rate: Number(settings.redemption_return_rate) || 0.05,
+    redemption_return_rate: Number(settings.redemption_return_rate) || 0.03,
   };
 }
 
@@ -75,7 +75,7 @@ export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode):
     restaurant_id: restaurantId,
     loyalty_mode: mode,
     amount_per_point: 1,
-    redemption_return_rate: 0.05,
+    redemption_return_rate: 0.03,
     stamps_required: 10,
     bonus_amount_tiers: defaultBonusAmountTiers,
     bonus_boost_multiplier: 1,
@@ -138,7 +138,7 @@ export async function saveLoyaltySettings(settings: LoyaltySettings): Promise<Lo
         restaurant_id: settings.restaurant_id,
         loyalty_mode: settings.loyalty_mode,
         amount_per_point: settings.amount_per_point,
-        redemption_return_rate: settings.redemption_return_rate ?? 0.05,
+        redemption_return_rate: settings.redemption_return_rate ?? 0.03,
         stamps_required: settings.stamps_required,
         bonus_boost_multiplier: settings.bonus_boost_multiplier ?? 1,
         smart_upsell_enabled: settings.smart_upsell_enabled ?? true,

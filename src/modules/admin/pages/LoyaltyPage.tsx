@@ -19,6 +19,11 @@ import {
   isReferralBonusDurationPreset,
   referralBonusDurationPresets,
 } from "../../loyalty/referralBonusSettings.mjs";
+import {
+  isAllowedRedemptionRatePercent,
+  redemptionRateToPercent,
+} from "../../loyalty/redemptionRate.mjs";
+import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
 
 type RuleForm = {
   id?: string;
@@ -99,10 +104,19 @@ export function LoyaltyPage() {
     () => rulesForMode(rules, settings.loyalty_mode),
     [rules, settings.loyalty_mode],
   );
+  const redemptionRatePercent = redemptionRateToPercent(settings.redemption_return_rate);
+  const validRedemptionRatePercent = redemptionRatePercent !== null
+    && isAllowedRedemptionRatePercent(redemptionRatePercent)
+    ? redemptionRatePercent
+    : null;
 
   async function handleSaveSettings(event: FormEvent) {
     event.preventDefault();
     if (!restaurantId) return;
+    if (validRedemptionRatePercent === null) {
+      setStatus("Bitte wähle eine Einlösequote zwischen 1 und 10 Prozent.");
+      return;
+    }
 
     setStatus(null);
     const saved = await saveLoyaltySettings({ ...settings, restaurant_id: restaurantId });
@@ -233,6 +247,15 @@ export function LoyaltyPage() {
                   }
                 />
               </div>
+              <RedemptionRateSelect
+                id="loyalty-redemption-rate"
+                legacyValue={redemptionRatePercent}
+                onChange={(percent) => setSettings((current) => ({
+                  ...current,
+                  redemption_return_rate: percent / 100,
+                }))}
+                value={validRedemptionRatePercent}
+              />
               <div className="field">
                 <label htmlFor="stamps-required">Stempel bis Punkteeinlösung</label>
                 <input
@@ -251,7 +274,7 @@ export function LoyaltyPage() {
               </div>
             </div>
 
-            <button className="button" disabled={loading} type="submit">
+            <button className="button" disabled={loading || validRedemptionRatePercent === null} type="submit">
               <Save size={18} />
               Einstellungen speichern
             </button>

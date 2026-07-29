@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { useLocation } from "react-router-dom";
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { PlatformRole, RestaurantUserRole, UserRole } from "../../shared/types/domain";
+import { requiresAuthenticatedSession } from "./authRoutePolicy.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -82,37 +84,78 @@ async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const authSessionRequired = requiresAuthenticatedSession(location.pathname);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(Boolean(supabase));
-  const [roleLoading, setRoleLoading] = useState(Boolean(supabase));
+  const [authLoading, setAuthLoading] = useState(Boolean(supabase && authSessionRequired));
+  const [roleLoading, setRoleLoading] = useState(Boolean(supabase && authSessionRequired));
   const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
 
   useEffect(() => {
     if (!supabase) {
+      setAuthLoading(false);
+      setRoleLoading(false);
       return;
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      const nextUser = data.session?.user ?? null;
-      setRoleLoading(Boolean(nextUser));
-      setSession(data.session);
-      setUser(nextUser);
+    const authClient = supabase.auth;
+    let cancelled = false;
+
+    if (!authSessionRequired) {
+      authClient.stopAutoRefresh();
       setAuthLoading(false);
-    });
+      setRoleLoading(false);
+    } else {
+      setAuthLoading(true);
+      authClient.startAutoRefresh();
+      authClient.getSession()
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (error) {
+            setSession(null);
+            setUser(null);
+            setRestaurantRole(null);
+            setPlatformRole(null);
+            setRoleLoading(false);
+            return;
+          }
+          const nextUser = data.session?.user ?? null;
+          setRoleLoading(Boolean(nextUser));
+          setSession(data.session);
+          setUser(nextUser);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setSession(null);
+          setUser(null);
+          setRestaurantRole(null);
+          setPlatformRole(null);
+          setRoleLoading(false);
+        })
+        .finally(() => {
+          if (!cancelled) setAuthLoading(false);
+        });
+    }
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = authClient.onAuthStateChange((event, nextSession) => {
+      if (!authSessionRequired && event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
       const nextUser = nextSession?.user ?? null;
       setRoleLoading(Boolean(nextUser));
       setSession(nextSession);
       setUser(nextUser);
+      setAuthLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      if (authSessionRequired) authClient.stopAutoRefresh();
+    };
+  }, [authSessionRequired]);
 
   useEffect(() => {
     let cancelled = false;

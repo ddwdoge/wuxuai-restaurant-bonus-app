@@ -1,6 +1,29 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-29 – Öffentliche Seiten ohne vorschnellen Auth-Refresh
+
+- Öffentliche Routen initialisieren keine persistierte Supabase-Session mehr
+  und lösen deshalb keinen unnötigen Refresh-Request aus.
+- Automatische Token-Aktualisierung startet ausschließlich auf geschützten
+  Owner-, Staff- und Plattform-Routen.
+- Fehler beim Laden einer geschützten Session werden kontrolliert als
+  ausgeloggter Zustand behandelt, ohne technische Fehlermeldung in der UI.
+- Anmeldung und dauerhaft gespeicherte Sessions bleiben für geschützte Routen
+  erhalten; Datenbank, RLS und Auth-Verträge wurden nicht geändert.
+
+## 2026-07-29 – Einlösequote als feste Auswahl
+
+- Restaurant-Einstellungen und Reward-Dialog verwenden eine native Auswahl mit
+  exakt 1 % bis 10 % statt einer freien Zahleneingabe.
+- Der Standardwert für neue Einstellungen ist 3 %.
+- Konsumation, benötigte Punkte und wirtschaftliche Einordnung reagieren sofort
+  auf die Auswahl.
+- Legacy-Werte außerhalb des gültigen Bereichs bleiben sichtbar und müssen vom
+  Owner bewusst ersetzt werden; historische Einlösungen bleiben unverändert.
+- Die Datenbankmigration erweitert den zulässigen Bereich ohne Backfill oder
+  Überschreiben bestehender Werte.
+
 # WUXUAI Bonus V1 – Changelog
 
 Status: **LOCK**

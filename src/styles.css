@@ -2990,6 +2990,21 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.redemption-rate-field {
+  min-width: 0;
+  width: 100%;
+}
+
+.redemption-rate-select {
+  min-height: 44px;
+  width: 100%;
+}
+
+.redemption-rate-legacy {
+  color: #8a5a13;
+  line-height: 1.45;
+}
+
 .reward-engine-summary article {
   background: #f7f9fb;
   border: 1px solid #dde3ea;

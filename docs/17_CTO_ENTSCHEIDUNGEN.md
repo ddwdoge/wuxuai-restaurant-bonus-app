@@ -1777,13 +1777,15 @@ Tages-PIN-Logik, keine neue Reward-Einlösung und keine neue Bonus-Boost-Logik
 wird daraus abgeleitet.
 
 Die gewählte Quote wird pro Restaurant gespeichert und ist die zentrale
-Berechnungsgrundlage für normale Punkteeinlösungen.
+Berechnungsgrundlage für normale Punkteeinlösungen. Nach dem Onboarding kann
+der Owner ausschließlich ganze Werte von 1 % bis 10 % wählen. Der Standard ist
+3 %. Historische Altwerte werden nicht stillschweigend überschrieben.
 
 Formel:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
 Beispiel Normal:
