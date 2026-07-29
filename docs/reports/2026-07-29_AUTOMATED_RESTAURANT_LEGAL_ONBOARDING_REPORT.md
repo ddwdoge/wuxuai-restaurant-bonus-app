@@ -200,19 +200,29 @@ Ergebnis:
 
 ## Migration und Staging
 
-`supabase migration list` und `supabase db push --dry-run --include-all` wurden
-gegen das bestätigte verknüpfte Staging-Projekt ausgeführt. Der Dry-Run war
-erfolgreich und hat keine Daten verändert.
+Am 29.07.2026 um 22:34 CEST wurden die drei offenen Migrationen einzeln und in
+der vorgesehenen Reihenfolge auf das bestätigte Projekt
+`wuxuai-bonus-staging` (`bwh...qaya`) angewendet:
 
-Noch ausstehend sind in dieser Reihenfolge:
+1. `20260729004000_redemption_rate_dropdown.sql`: erfolgreich
+2. `20260729005000_legal_readiness_effective_date_guard.sql`: erfolgreich
+3. `20260729006000_automated_restaurant_legal_onboarding.sql`: erfolgreich
 
-1. `20260729004000_redemption_rate_dropdown.sql`
-2. `20260729005000_legal_readiness_effective_date_guard.sql`
-3. `20260729006000_automated_restaurant_legal_onboarding.sql`
+Vor jedem einzelnen Lauf bestätigte ein isolierter Dry-Run, dass ausschließlich
+die jeweilige Migration geplant war. Nach jedem Lauf wurde die Remote-Historie
+kontrolliert. Der abschließende globale Dry-Run meldet `Remote database is up to
+date`.
 
-Keine Migration wurde in diesem Auftrag angewendet. Vor einem Staging-Push muss
-insbesondere die bereits vorher vorhandene Migration `20260729004000` als Teil
-derselben Reihenfolge bewusst freigegeben werden.
+Die Staging-Tabelleninspektion bestätigt unter anderem
+`legal_master_templates`, `restaurant_legal_profiles`, `legal_documents`,
+`legal_document_versions`, `customer_legal_acceptances` und
+`program_terminations`. Direkter anonymer Zugriff auf Mastertemplates sowie die
+geschützten Setup- und Publish-RPCs wird live mit `401 / 42501` abgewiesen.
+
+Für das Staging-Projekt sind WAL-basierte Sicherungen grundsätzlich aktiviert,
+es waren über die CLI jedoch keine physischen Backups verfügbar und PITR ist
+nicht aktiviert. Die Migrationen wurden daher besonders strikt einzeln
+angewendet; es gab keine SQL-Warnungen oder Fehler.
 
 ## Responsive und Accessibility
 
@@ -240,11 +250,14 @@ vorgegeben und bleiben offen.
 
 - Alle Mastertexte benötigen vor Production eine unabhängige rechtliche
   Freigabe.
-- Die neuen Migrationen `20260729005000` und `20260729006000` sind lokal
-  erstellt und wurden in diesem Auftrag nicht auf Staging angewendet.
-- Ein echter Owner-Onboarding- und Customer-Registration-Flow kann deshalb
-  erst nach kontrolliertem Staging-Dry-Run und Migrationstest final geprüft
-  werden.
+- Eine authentifizierte Owner-Sitzung und ein freigegebenes Staging-
+  Testrestaurant standen nicht zur Verfügung. Owner-A/B-, Staff-,
+  Veröffentlichungs- und Customer-Registration-E2E bleiben deshalb offen.
+- Der öffentliche Partnerrestaurant-Endpunkt lieferte keine freigegebenen
+  Staging-Standorte. Es wurden keine Testdaten oder Rollen improvisiert.
+- Der read-only Schema-Dump war ohne Docker Desktop nicht verfügbar. Tabellen,
+  RPC-Sichtbarkeit und Migrationshistorie wurden stattdessen über CLI-
+  Inspektion und sichere REST-Negativtests geprüft.
 - Physische Mobile-Safari- und Screenreader-Tests bleiben Teil der visuellen
   Abnahme.
 
@@ -253,9 +266,9 @@ vorgegeben und bleiben offen.
 Code und UX sind für die visuelle und rechtliche Prüfung vorbereitet. Kein
 Production-Deployment, Push oder Merge wurde durchgeführt.
 
-Abschlussstatus: `READY_FOR_VISUAL_REVIEW`
+Abschlussstatus: `READY_FOR_STAGING_VALIDATION`
 
-Der Codex-Selbstkontrollstatus bleibt `NOT READY`, bis die drei ausstehenden
-Migrationen kontrolliert auf Staging angewendet und der authentifizierte
-Owner-Onboarding-, Veröffentlichungs- und Customer-Registration-Flow dort
-end-to-end geprüft wurden.
+Der Codex-Selbstkontrollstatus bleibt `NOT READY`, bis der authentifizierte
+Owner-Onboarding-, Veröffentlichungs-, Tenant-/Rollen- und Customer-
+Registration-Flow mit einem isolierten Staging-Testrestaurant end-to-end
+geprüft wurde.
