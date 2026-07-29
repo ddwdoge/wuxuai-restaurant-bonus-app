@@ -50,7 +50,7 @@ import {
 } from "../loyalty/loyaltyService";
 import {
   emitCustomerAccessDiagnostic,
-  isInvalidCustomerTokenError,
+  isPermanentCustomerAccessError,
   readStoredCustomerToken,
   removeStoredCustomerToken,
   saveStoredCustomerToken,
@@ -318,7 +318,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         shouldRetry: (error: unknown) => {
           const message = error instanceof Error ? error.message.toLowerCase() : "";
           return !message.includes("restaurant wurde nicht gefunden")
-            && !message.includes("customer token not valid");
+            && !isPermanentCustomerAccessError(error);
         },
       });
       if (portalResult.status === "cancelled") return;
@@ -379,7 +379,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setRedeemOffer(null);
         setRedemptionOutcome(null);
         setRedemptionDrawerOpen(false);
-        if (activeToken && isInvalidCustomerTokenError(error)) {
+        if (activeToken && isPermanentCustomerAccessError(error)) {
           emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_INVALID", restaurantSlug);
           if (activeTokenSource !== "url" || storedCustomerToken === activeToken) {
             removeStoredCustomerToken(restaurantSlug);
@@ -391,7 +391,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             restaurantSlug,
             customerToken: activeToken,
           });
-          setMessage("Dein gespeicherter Zugang ist nicht mehr gültig. Bitte registriere dich erneut oder wende dich an das Restaurant.");
+          setMessage(error instanceof Error
+            ? error.message
+            : "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Restaurant.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");

@@ -4,6 +4,7 @@ import {
   removeCustomerAccess,
   type StoredCustomerAccess,
 } from "./customerAccessStorage.mjs";
+export { isPermanentCustomerAccessError } from "./customerAccessErrors.mjs";
 
 type StoredCustomerTokenEntry = {
   customer_token: string;
@@ -90,8 +91,4 @@ export function removeStoredCustomerToken(restaurantSlug: string) {
   } catch {
     return false;
   }
-}
-
-export function isInvalidCustomerTokenError(error: unknown) {
-  return error instanceof Error && error.message.toLowerCase().includes("customer token not valid");
 }

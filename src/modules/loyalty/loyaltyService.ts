@@ -1,6 +1,11 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { normalizeCustomerPhone } from "../customer/customerIdentity.mjs";
+import {
+  CustomerAccessError,
+  CUSTOMER_ACCESS_FAILURE_REASONS,
+  customerAccessFailureReason,
+} from "../customer/customerAccessErrors.mjs";
 import { isValidReferralBonusDuration } from "./referralBonusSettings.mjs";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
@@ -533,6 +538,20 @@ function publicPortalErrorMessage(error: { message?: string; details?: string; h
   return "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.";
 }
 
+function publicPortalRequestError(error: { message?: string; details?: string; hint?: string; code?: string }) {
+  const reason = customerAccessFailureReason(error);
+  if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.inactiveMembership) {
+    return new CustomerAccessError(reason, "Deine Mitgliedschaft ist derzeit nicht aktiv. Bitte wende dich an das Restaurant.");
+  }
+  if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.revoked) {
+    return new CustomerAccessError(reason, "Dein gespeicherter Zugang wurde widerrufen. Bitte wende dich an das Restaurant, um ihn sicher wiederherzustellen.");
+  }
+  if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.invalid) {
+    return new CustomerAccessError(reason, "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Restaurant, um ihn sicher wiederherzustellen.");
+  }
+  return new Error(publicPortalErrorMessage(error));
+}
+
 function isMissingGiftMetadataRpc(error: { message?: string; details?: string; hint?: string; code?: string }) {
   const technicalText = [error.message, error.details, error.hint].filter(Boolean).join(" ").toLowerCase();
   return error.code === "PGRST202" && technicalText.includes("get_customer_gift_metadata");
@@ -628,7 +647,7 @@ export async function loadCustomerPortalData(
     input_customer_token: customerToken ?? null,
   });
 
-  if (error) throw new Error(publicPortalErrorMessage(error));
+  if (error) throw publicPortalRequestError(error);
 
   const portalData = data as CustomerPortalData;
   if (!customerToken || !portalData.customer) return portalData;
@@ -638,7 +657,7 @@ export async function loadCustomerPortalData(
   });
   if (giftMetadataError) {
     if (isMissingGiftMetadataRpc(giftMetadataError)) return portalData;
-    throw new Error(publicPortalErrorMessage(giftMetadataError));
+    throw publicPortalRequestError(giftMetadataError);
   }
 
   const availableMetadata = (giftMetadata ?? []) as Array<{
