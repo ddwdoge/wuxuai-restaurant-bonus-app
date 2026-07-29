@@ -151,7 +151,8 @@ test("UI does not call the activity report a tax or cash report", () => {
 
 test("legal settings link to bonus activity reports", () => {
   assert.match(legalPage, /Bonus-Aktivitätsberichte öffnen/);
-  assert.match(legalPage, /DRAFT_LEGAL_REVIEW_REQUIRED/);
+  assert.doesNotMatch(legalPage, /DRAFT_LEGAL_REVIEW_REQUIRED/);
+  assert.match(legalPage, /rechtliche Prüfung empfohlen/);
 });
 
 test("printing is available without a new PDF dependency", () => {

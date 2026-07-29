@@ -1,5 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 import { accountingRowsToCsv } from "./legalCompliance";
+import { isLegalBundleReady } from "./legalReadiness.mjs";
 
 export type ConsentType = "marketing_push" | "marketing_sms" | "marketing_email" | "personalized_recommendations" | "birthday_processing";
 export type ConsentStatus = "granted" | "withdrawn" | "denied";
@@ -14,8 +15,23 @@ export type LegalDocumentView = {
   content: Record<string, unknown>;
   rendered_text: string;
   document_hash: string;
+  status: "draft" | "published" | "archived";
   reacceptance_required: boolean;
   accepted: boolean | null;
+  created_at?: string | null;
+  published_at?: string | null;
+  last_updated_at?: string | null;
+  acceptance_count?: number;
+  active_state?: "active" | "archived" | "missing";
+  responsible_owner?: string | null;
+  master_template_version?: string | null;
+  draft_version_id?: string | null;
+  draft_version?: string | null;
+  draft_created_at?: string | null;
+  draft_effective_date?: string | null;
+  draft_rendered_text?: string | null;
+  draft_content?: Record<string, unknown> | null;
+  draft_master_template_version?: string | null;
 };
 
 export type PublicLegalCenter = {
@@ -39,7 +55,10 @@ export type LegalCenterState =
   | { status: "error"; message: string };
 
 export function legalCenterStateFromResponse(data: PublicLegalCenter): LegalCenterState {
-  return data.legal_ready && !data.missing_configuration
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return data.legal_ready
+    && !data.missing_configuration
+    && isLegalBundleReady(data.documents, todayIso)
     ? { status: "ready", data }
     : { status: "not_configured" };
 }
@@ -56,7 +75,25 @@ export type RegistrationLegalChoices = {
 export type RestaurantLegalSetup = {
   profile: Record<string, string | null>;
   documents: Array<LegalDocumentView & { status: string; reacceptance_required: boolean }>;
-  readiness: { operational_ready: boolean; legal_ready: boolean; security_ready: boolean; transition_exempt: boolean };
+  readiness: {
+    operational_ready: boolean;
+    legal_ready: boolean;
+    security_ready: boolean;
+    transition_exempt: boolean;
+    registration?: {
+      status: "green" | "yellow" | "red";
+      label: string;
+      reason: string;
+      registration_allowed: boolean;
+      last_updated_at: string | null;
+      missing_profile_fields: string[];
+      active_required_documents: number;
+      draft_documents: number;
+      program_active: boolean;
+      legal_update_required: boolean;
+    };
+  };
+  legal_update_required?: boolean;
   termination: null | {
     id: string;
     planned_end_at: string;
@@ -64,6 +101,11 @@ export type RestaurantLegalSetup = {
     final_redemption_at: string;
     customer_notice: string;
     status: string;
+    created_at?: string;
+    read_only_at?: string | null;
+    closed_at?: string | null;
+    archived_at?: string | null;
+    completion_report?: Record<string, unknown> | null;
   };
   privacy_requests: Array<{
     id: string;
@@ -174,6 +216,39 @@ export async function saveRestaurantLegalSetup(input: {
     input_privacy_text: input.privacyText,
     input_effective_date: input.effectiveDate,
     input_reacceptance_required: input.reacceptanceRequired,
+  });
+  if (error) throw error;
+  return data as RestaurantLegalSetup;
+}
+
+export async function generateRestaurantLegalPackage(input: {
+  restaurantId: string;
+  profile: Record<string, string | null>;
+  reacceptanceRequired?: boolean;
+}) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("generate_restaurant_legal_package", {
+    input_restaurant_id: input.restaurantId,
+    input_profile: input.profile,
+    input_reacceptance_required: input.reacceptanceRequired ?? false,
+  });
+  if (error) throw error;
+  return data as RestaurantLegalSetup;
+}
+
+export async function publishRestaurantLegalDrafts(input: {
+  restaurantId: string;
+  effectiveDate: string;
+  reacceptanceRequired: boolean;
+  confirmed: boolean;
+}) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("publish_restaurant_legal_drafts", {
+    input_restaurant_id: input.restaurantId,
+    input_effective_date: input.effectiveDate,
+    input_reacceptance_required: input.reacceptanceRequired,
+    input_confirmed: input.confirmed,
+    input_request_id: crypto.randomUUID(),
   });
   if (error) throw error;
   return data as RestaurantLegalSetup;

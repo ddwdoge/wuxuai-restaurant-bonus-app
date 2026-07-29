@@ -68,8 +68,9 @@ export function legalReadiness(
   terms: ParticipationTerms | null | undefined,
   privacyText: string,
 ): LegalReadinessResult {
-  const imprintComplete = ["company_name", "street", "postal_code", "city", "email", "complaint_contact"]
-    .every((field) => String(profile?.[field] ?? "").trim().length > 0);
+  const imprintComplete = ["company_name", "legal_form", "street", "postal_code", "city", "country", "email"]
+    .every((field) => String(profile?.[field] ?? "").trim().length > 0)
+    && String(profile?.complaint_contact ?? profile?.email ?? "").trim().length > 0;
   return {
     imprintComplete,
     termsComplete: termsAreComplete(terms),

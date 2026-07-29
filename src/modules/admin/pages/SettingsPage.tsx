@@ -816,6 +816,13 @@ export function SettingsPage() {
             title="Willkommensgeschenke"
             to="/admin/welcome-gifts"
           />
+          <SettingsLinkCard
+            description="Plane letzte Punktevergabe, Kundenhinweis und Einlösefrist."
+            icon={Scale}
+            label="Programmende sicher planen"
+            title="Bonusprogramm beenden"
+            to="/admin/settings/program-end"
+          />
         </section>
       </>
     );

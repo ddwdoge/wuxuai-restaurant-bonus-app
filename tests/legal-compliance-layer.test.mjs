@@ -59,7 +59,7 @@ test("notwendige und Programmnachrichten sind nicht als Marketing gekoppelt", ()
 });
 
 test("Legal Readiness verlangt Impressum, Bedingungen und Datenschutztext", () => {
-  const profile = { company_name: "Test", street: "Straße 1", postal_code: "1010", city: "Wien", email: "legal@example.invalid", complaint_contact: "Kontakt" };
+  const profile = { company_name: "Test", legal_form: "Einzelunternehmen", street: "Straße 1", postal_code: "1010", city: "Wien", country: "Österreich", email: "legal@example.invalid", complaint_contact: "Kontakt" };
   assert.deepEqual(legalReadiness(profile, completeTerms, "x".repeat(120)), { imprintComplete: true, termsComplete: true, privacyComplete: true });
   assert.equal(legalReadiness({ ...profile, email: "" }, completeTerms, "x".repeat(120)).imprintComplete, false);
 });

@@ -158,7 +158,35 @@ Der Besitzer gibt die wichtigsten Basisdaten seines Betriebs an.
 
 ### Inhalt
 
-Erlaubt: - Restaurantname - Betriebsart - Sprache
+Erlaubt:
+
+- Restaurantname
+- Betriebsart
+- Sprache
+- kompakter Unterbereich „Rechtliche Angaben“
+- Unternehmensname
+- Rechtsform
+- Straße und Hausnummer
+- Postleitzahl
+- Ort
+- Land
+- Kontakt-E-Mail
+
+Die rechtlichen Stammdaten dienen ausschließlich der automatischen Erzeugung
+des restaurantbezogenen Legal-Pakets. Der Owner schreibt im Onboarding keine
+juristischen Freitexte.
+
+Optional:
+
+- Telefonnummer
+- Firmenbuchnummer und Firmenbuchgericht
+- UID-Nummer
+- Kammerzugehörigkeit
+- Aufsichtsbehörde
+- Barrierefreiheitskontakt
+- abweichender Beschwerdekontakt
+
+Ist kein Beschwerdekontakt angegeben, wird die Kontakt-E-Mail verwendet.
 
 V1 Sprache: - Deutsch
 
@@ -170,9 +198,28 @@ lokale Betriebe
 ### Nicht fragen
 
 Nicht fragen: - technischer Slug - Datenbank-ID - Organisation-ID -
-Filial-ID - detaillierte Steuerdaten - Rechnungsdaten
+Filial-ID - Rechnungsdaten - juristische Freitexte
 
 Diese Dinge werden später oder automatisch behandelt.
+
+### Automatisches Legal-Paket
+
+Nach dem erfolgreichen Abschluss erzeugt das System aus zentral versionierten
+Mastervorlagen automatisch:
+
+- Impressum
+- Teilnahmebedingungen
+- Datenschutzerklärung
+- Bonusregeln
+- Kassenabgrenzung
+
+Das Paket wird als prüfbarer Entwurf vorbereitet. Vor der Veröffentlichung
+sieht der Owner Vorschau, Änderungen, Versionsnummer, Gültigkeitsdatum und die
+Auswirkungen auf neue sowie bestehende Gäste. Erst die ausdrückliche
+Bestätigung veröffentlicht die Version. Im Pilotmodus dürfen dafür als
+„rechtliche Prüfung empfohlen“ gekennzeichnete Mastervorlagen verwendet
+werden. Im Productionmodus dürfen ausschließlich zentral freigegebene
+Mastervorlagen veröffentlicht werden.
 
 ------------------------------------------------------------------------
 

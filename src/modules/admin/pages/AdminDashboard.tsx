@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Activity, ArrowRight, Gift, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
+import { Activity, AlertCircle, ArrowRight, CheckCircle2, Clock3, Gift, QrCode, RefreshCw, ShieldCheck, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { loadRestaurantLegalSetup, type RestaurantLegalSetup } from "../../legal/legalService";
 
 const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
@@ -23,6 +24,8 @@ export function AdminDashboard() {
   const [boostKpis, setBoostKpis] = useState<BonusBoostKpis>(emptyBoostKpis);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [legalSetup, setLegalSetup] = useState<RestaurantLegalSetup | null>(null);
+  const [legalLoading, setLegalLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
 
   const reloadDashboard = useCallback(() => {
@@ -63,6 +66,28 @@ export function AdminDashboard() {
     };
   }, [activeRestaurant?.id, reloadKey]);
 
+  useEffect(() => {
+    if (!activeRestaurant?.id) {
+      setLegalSetup(null);
+      setLegalLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLegalSetup(null);
+    setLegalLoading(true);
+    loadRestaurantLegalSetup(activeRestaurant.id)
+      .then((next) => {
+        if (!cancelled) setLegalSetup(next);
+      })
+      .catch(() => {
+        if (!cancelled) setLegalSetup(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLegalLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeRestaurant?.id, reloadKey]);
+
   const staffPath = activeRestaurant ? `/staff/${activeRestaurant.slug}` : "/admin";
   const dashboardKpis = [
     { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers) },
@@ -79,6 +104,8 @@ export function AdminDashboard() {
     { label: "Mitarbeiter", to: staffPath, icon: Smartphone },
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
+  const legalRegistration = legalSetup?.readiness.registration;
+  const LegalStatusIcon = legalRegistration?.status === "green" ? CheckCircle2 : legalRegistration?.status === "yellow" ? Clock3 : AlertCircle;
 
   return (
     <div className="premium-dashboard">
@@ -89,6 +116,17 @@ export function AdminDashboard() {
           <p className="muted">Dein Bonusprogramm auf einen Blick.</p>
         </div>
       </header>
+
+      <section className={`card dashboard-legal-status ${legalRegistration?.status ?? "red"}`} aria-labelledby="dashboard-legal-title" aria-live="polite">
+        <span className="dashboard-legal-icon"><LegalStatusIcon aria-hidden="true" size={23} /></span>
+        <div>
+          <span className="premium-dashboard-kicker">Rechtlicher Status</span>
+          <h2 id="dashboard-legal-title">{legalLoading ? "Status wird geprüft" : legalRegistration?.label ?? "Status derzeit nicht verfügbar"}</h2>
+          <p>{legalLoading ? "Unternehmensdaten und aktive Dokumentversionen werden serverseitig geprüft." : legalRegistration?.reason ?? "Öffne das Legal Center und versuche die Prüfung erneut."}</p>
+          <small>Letzte Aktualisierung: {legalRegistration?.last_updated_at ? new Intl.DateTimeFormat("de-AT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(legalRegistration.last_updated_at)) : "–"}</small>
+        </div>
+        <Link className="button secondary" to="/admin/legal"><ShieldCheck aria-hidden="true" size={18} /> Legal Center öffnen</Link>
+      </section>
 
       {loading ? (
         <section className="dashboard-kpi-grid" aria-label="Dashboard wird geladen" aria-busy="true">

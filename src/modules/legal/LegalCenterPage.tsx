@@ -125,7 +125,7 @@ export function LegalCenterPage() {
       setData(await loadPublicLegalCenter(slug, token));
     } catch {
       setData(null);
-      setError("Rechtliche Informationen konnten gerade nicht geladen werden.");
+      setError("Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut.");
     } finally {
       setLoading(false);
     }

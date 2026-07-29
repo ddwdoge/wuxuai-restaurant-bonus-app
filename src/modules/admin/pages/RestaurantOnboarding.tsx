@@ -76,6 +76,13 @@ type OnboardingForm = {
   restaurantName: string;
   restaurantType: string;
   language: string;
+  legalForm: string;
+  legalStreet: string;
+  legalPostalCode: string;
+  legalCity: string;
+  legalCountry: string;
+  legalEmail: string;
+  legalComplaintContact: string;
   logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
@@ -221,6 +228,13 @@ function createDefaultForm(): OnboardingForm {
     restaurantName: "",
     restaurantType: "Restaurant",
     language: "Deutsch",
+    legalForm: "",
+    legalStreet: "",
+    legalPostalCode: "",
+    legalCity: "",
+    legalCountry: "Österreich",
+    legalEmail: "",
+    legalComplaintContact: "",
     logoUrl: "",
     primaryColor: "#0f766e",
     secondaryColor: "#f4a261",
@@ -528,7 +542,7 @@ function drawRestaurantBrand(
     y: number;
   },
 ) {
-  const { accentColor, height, logoImage, name, primaryColor, width, x, y } = options;
+  const { accentColor, height, logoImage, primaryColor, width, x, y } = options;
   context.save();
   roundedRect(context, x, y, width, height, Math.min(width, height) * 0.14);
   context.fillStyle = "#ffffff";
@@ -1055,7 +1069,17 @@ function missingChecklistItems(checklist: Record<keyof typeof checklistLabels, b
 
 function buildChecklist(form: OnboardingForm, step: number) {
   return {
-    restaurantDataCompleted: Boolean(form.restaurantName.trim() && form.restaurantType && form.language),
+    restaurantDataCompleted: Boolean(
+      form.restaurantName.trim()
+      && form.restaurantType
+      && form.language
+      && form.legalForm.trim()
+      && form.legalStreet.trim()
+      && form.legalPostalCode.trim()
+      && form.legalCity.trim()
+      && form.legalCountry.trim()
+      && form.legalEmail.trim(),
+    ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
     openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
     bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
@@ -1070,8 +1094,8 @@ function getStepBlocker(
   form: OnboardingForm,
   checklist: Record<keyof typeof checklistLabels, boolean>,
 ) {
-  if (step === 0 && !form.restaurantName.trim()) {
-    return "Bitte gib den Namen deines Restaurants ein.";
+  if (step === 0 && !checklist.restaurantDataCompleted) {
+    return "Bitte fülle die Pflichtfelder zu deinem Restaurant und Unternehmen aus.";
   }
 
   if (step === 2 && !checklist.openingHoursCompleted) {
@@ -1494,6 +1518,16 @@ export function RestaurantOnboarding() {
         })),
         staffName: form.staffName,
         staffPin: form.staffPin,
+        legalProfile: {
+          company_name: form.restaurantName.trim(),
+          legal_form: form.legalForm.trim(),
+          street: form.legalStreet.trim(),
+          postal_code: form.legalPostalCode.trim(),
+          city: form.legalCity.trim(),
+          country: form.legalCountry.trim(),
+          email: form.legalEmail.trim(),
+          complaint_contact: form.legalComplaintContact.trim() || form.legalEmail.trim(),
+        },
       });
       if (activeRestaurant?.id) {
         await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
@@ -1590,6 +1624,47 @@ export function RestaurantOnboarding() {
                     <option>Englisch</option>
                   </select>
                 </div>
+              </div>
+              <div className="onboarding-legal-fields">
+                <div>
+                  <span className="premium-dashboard-kicker">Rechtliche Angaben</span>
+                  <h3>Damit dein Bonusprogramm direkt starten kann</h3>
+                  <p className="muted">Aus diesen Stammdaten erstellt WUXUAI automatisch deine rechtlichen Dokumente. Eigene Rechtstexte musst du hier nicht schreiben.</p>
+                </div>
+                <div className="grid two">
+                  <div className="field">
+                    <label htmlFor="legal-form">Rechtsform</label>
+                    <input className="input" id="legal-form" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" value={form.legalForm} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="legal-email">Kontakt-E-Mail</label>
+                    <input className="input" id="legal-email" onChange={(event) => setForm((current) => ({ ...current, legalEmail: event.target.value }))} type="email" value={form.legalEmail} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="legal-street">Straße und Hausnummer</label>
+                    <input className="input" id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} value={form.legalStreet} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="legal-postal-code">Postleitzahl</label>
+                    <input className="input" id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} value={form.legalPostalCode} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="legal-city">Ort</label>
+                    <input className="input" id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} value={form.legalCity} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="legal-country">Land</label>
+                    <input className="input" id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} value={form.legalCountry} />
+                  </div>
+                </div>
+                <details className="advanced-panel">
+                  <summary>Beschwerdekontakt optional anpassen</summary>
+                  <div className="field">
+                    <label htmlFor="legal-complaint-contact">Beschwerdekontakt</label>
+                    <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />
+                    <p className="muted">Wenn du nichts einträgst, verwenden wir deine Kontakt-E-Mail.</p>
+                  </div>
+                </details>
               </div>
             </section>
           ) : null}
@@ -2021,6 +2096,9 @@ export function RestaurantOnboarding() {
                 <ChecklistRow done={checklist.firstRewardCreated} label={checklistLabels.firstRewardCreated} />
                 <ChecklistRow done={checklist.guestTestReady} label={checklistLabels.guestTestReady} />
                 <ChecklistRow done={checklist.qrReady} label={checklistLabels.qrReady} />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Rechtliche Stammdaten gespeichert" />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Teilnahmebedingungen vorbereitet" />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Datenschutzerklärung vorbereitet" />
               </div>
               {!allReady ? (
                 <div className="status-message">

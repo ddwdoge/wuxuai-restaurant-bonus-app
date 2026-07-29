@@ -269,7 +269,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
       setLegalCenterState(legalCenterStateFromResponse(legalData));
     } catch {
-      setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+      setLegalCenterState({ status: "error", message: "Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut." });
     }
   }, [activeToken, restaurantSlug]);
   useEffect(() => {

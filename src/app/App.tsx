@@ -62,6 +62,9 @@ const LegalCenterPage = lazy(() =>
 const OwnerLegalSettingsPage = lazy(() =>
   import("../modules/legal/OwnerLegalSettingsPage").then((module) => ({ default: module.OwnerLegalSettingsPage })),
 );
+const ProgramTerminationPage = lazy(() =>
+  import("../modules/legal/ProgramTerminationPage").then((module) => ({ default: module.ProgramTerminationPage })),
+);
 const BonusActivityReportsPage = lazy(() =>
   import("../modules/reports/BonusActivityReportsPage").then((module) => ({ default: module.BonusActivityReportsPage })),
 );
@@ -157,6 +160,7 @@ export function App() {
         <Route index element={withFallback(<AdminDashboard />, <AdminLoading />)} />
         <Route path="onboarding" element={withFallback(<RestaurantOnboarding />, <AdminLoading />)} />
         <Route path="settings" element={withFallback(<SettingsPage />, <AdminLoading />)} />
+        <Route path="settings/program-end" element={withFallback(<ProgramTerminationPage />, <AdminLoading />)} />
         <Route path="settings/:section" element={withFallback(<SettingsPage />, <AdminLoading />)} />
         <Route path="branding" element={withFallback(<BrandingPage />, <AdminLoading />)} />
         <Route path="customers" element={withFallback(<CustomersPage />, <AdminLoading />)} />

@@ -1,6 +1,39 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-29 – Automatisiertes Legal-Paket im Restaurant-Onboarding
+
+- Das siebenstufige Onboarding bleibt erhalten und ergänzt Schritt 1 um
+  kompakte rechtliche Unternehmensstammdaten ohne juristische Freitexte.
+- Zentrale versionierte Mastervorlagen erzeugen tenantgebunden Impressum,
+  Teilnahmebedingungen, Datenschutz, Bonusregeln und Kassenabgrenzung.
+- Pilotrestaurants dürfen gekennzeichnete Testvorlagen automatisch als
+  Entwurf erzeugen; die Veröffentlichung verlangt eine ausdrückliche
+  Owner-Bestätigung. Production verlangt zentral geprüfte Mastervorlagen.
+- Das Owner Legal Center zeigt eine kompakte Dokumentübersicht mit
+  verständlichen Statusbezeichnungen und progressiver Detailbearbeitung.
+- Das Dashboard zeigt einen serverseitig berechneten grünen, gelben oder roten
+  Legal-Status mit Ursache, Aktualisierungszeitpunkt und direktem Zugang.
+- Dokumentdetails enthalten Version, Erstellungs- und Veröffentlichungszeit,
+  Gültigkeit, Acceptance-Anzahl, verantwortlichen Owner und Mastertemplate.
+- Bestehende Kundenbestätigungen bleiben historisch unverändert; eine erneute
+  Zustimmung wird niemals still aktiviert.
+- Programmende ist ein eigener bestätigter Owner-Flow.
+- Änderungen relevanter Bonuskonfigurationen markieren eine neue
+  Dokumentversion als erforderlich, ohne veröffentlichte Altversionen zu
+  überschreiben.
+
+## 2026-07-29 – Legal Readiness für Kundenregistrierung
+
+- Teilnahmebedingungen und Datenschutzerklärung gelten öffentlich nur, wenn
+  beide Versionen veröffentlicht und am aktuellen Datum bereits gültig sind.
+- Der interne Legal-Template-Helper ist nicht mehr anonym oder über normale
+  Browserrollen ausführbar.
+- Das Owner Legal Center zeigt Version, Veröffentlichungsstatus, Gültigkeitsdatum
+  und die tatsächliche Bereitschaft der Kundenregistrierung je Pflichtdokument.
+- Staging-Testtexte bleiben ausdrücklich als `DRAFT_LEGAL_REVIEW_REQUIRED`
+  gekennzeichnet und sind keine anwaltlich freigegebenen Production-Texte.
+
 ## 2026-07-29 – Öffentliche Seiten ohne vorschnellen Auth-Refresh
 
 - Öffentliche Routen initialisieren keine persistierte Supabase-Session mehr

@@ -29,6 +29,7 @@ export type PilotOnboardingInput = {
   starterRewards: StarterRewardInput[];
   staffName: string;
   staffPin: string;
+  legalProfile: Record<string, string | null>;
 };
 
 export type StarterRewardInput = {
@@ -205,6 +206,14 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
   });
 
   if (staffError) throw staffError;
+
+  const { error: legalError } = await supabase.rpc("generate_restaurant_legal_package", {
+    input_restaurant_id: restaurantId,
+    input_profile: input.legalProfile,
+    input_reacceptance_required: false,
+  });
+
+  if (legalError) throw legalError;
 
   return { restaurant, offer: rewards?.[0] ?? null, campaign: null };
 }
