@@ -1636,19 +1636,46 @@ a {
 .setup-steps {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .setup-step {
+  align-items: center;
   background: #eef4f8;
   border: 1px solid #d5dee8;
   border-radius: 8px;
   color: #465463;
+  display: grid;
   font-size: 13px;
   font-weight: 800;
-  min-height: 42px;
-  padding: 0 10px;
+  height: 58px;
+  justify-items: center;
+  min-width: 0;
+  padding: 6px 10px;
   text-align: center;
+  width: 100%;
+}
+
+.setup-step > span {
+  display: -webkit-box;
+  line-height: 1.25;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (min-width: 700px) {
+  .setup-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .setup-steps {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
 }
 
 .setup-step.active {

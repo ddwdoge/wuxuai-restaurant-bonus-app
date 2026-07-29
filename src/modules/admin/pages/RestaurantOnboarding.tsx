@@ -1578,7 +1578,7 @@ export function RestaurantOnboarding() {
                 key={label}
                 type="button"
               >
-                {index + 1}. {label}
+                <span>{index + 1}. {label}</span>
               </button>
             ))}
           </div>
