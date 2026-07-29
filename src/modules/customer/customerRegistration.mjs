@@ -1,5 +1,8 @@
+import { normalizeCustomerPhoneParts } from "./customerIdentity.mjs";
+
 export const emptyCustomerRegistrationForm = Object.freeze({
   firstName: "",
+  phoneCountryCode: "+43",
   phone: "",
   birthday: "",
   termsAccepted: false,
@@ -15,18 +18,15 @@ export function isValidCustomerFirstName(value) {
   return normalized.length <= 80 && /^[\p{L}][\p{L}\p{M}' -]*$/u.test(normalized);
 }
 
-export function isValidCustomerPhone(value) {
-  const normalized = typeof value === "string" ? value.trim() : "";
-  if (!/^[+\d][\d\s()/.-]*$/.test(normalized)) return false;
-  const digitCount = normalized.replace(/\D/g, "").length;
-  return digitCount >= 7 && digitCount <= 15;
+export function isValidCustomerPhone(countryCode, localNumber) {
+  return Boolean(normalizeCustomerPhoneParts(countryCode, localNumber));
 }
 
 export function customerRegistrationCanSubmit(form, legalReady) {
   return Boolean(
     legalReady
     && isValidCustomerFirstName(form.firstName)
-    && isValidCustomerPhone(form.phone)
+    && isValidCustomerPhone(form.phoneCountryCode, form.phone)
     && form.termsAccepted
     && form.privacyAcknowledged,
   );

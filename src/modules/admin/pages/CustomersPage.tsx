@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Search, ShieldCheck, Users } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { CustomerPhoneField } from "../../../shared/components/CustomerPhoneField";
 import type { Customer } from "../../../shared/types/domain";
 import {
   canManageCustomerIdentity,
@@ -11,6 +12,7 @@ import {
   type CustomerIdentitySupportDetail,
 } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { customerPhoneValidation, splitCustomerPhone } from "../../customer/customerIdentity.mjs";
 
 function customerStatus(customer: Customer) {
   if (customer.points_balance > 0 || customer.stamp_balance > 0) return "Aktiv";
@@ -39,6 +41,7 @@ export function CustomersPage() {
   const [supportMessage, setSupportMessage] = useState<string | null>(null);
   const [changeType, setChangeType] = useState<"phone" | "birthday">("phone");
   const [newPhone, setNewPhone] = useState("");
+  const [newPhoneCountryCode, setNewPhoneCountryCode] = useState("+43");
   const [birthdayDay, setBirthdayDay] = useState("");
   const [birthdayMonth, setBirthdayMonth] = useState("");
   const [verificationMethod, setVerificationMethod] = useState("");
@@ -86,7 +89,9 @@ export function CustomersPage() {
     try {
       const detail = await loadCustomerIdentitySupportDetail(restaurantId, customer.id);
       setSupportDetail(detail);
-      setNewPhone(detail.phone);
+      const phoneParts = splitCustomerPhone(detail.phone);
+      setNewPhoneCountryCode(phoneParts.countryCode);
+      setNewPhone(phoneParts.localNumber);
       setBirthdayDay(detail.birthday_day ? String(detail.birthday_day) : "");
       setBirthdayMonth(detail.birthday_month ? String(detail.birthday_month) : "");
     } catch {
@@ -109,6 +114,11 @@ export function CustomersPage() {
 
   async function saveIdentityChange() {
     if (!supportCustomer || !supportDetail || !activeRestaurant) return;
+    const phoneValidation = customerPhoneValidation(newPhoneCountryCode, newPhone);
+    if (changeType === "phone" && !phoneValidation.e164) {
+      setSupportMessage(phoneValidation.error ?? "Bitte gib eine gültige Telefonnummer ein.");
+      return;
+    }
     setSupportSaving(true);
     setSupportMessage(null);
     try {
@@ -116,7 +126,7 @@ export function CustomersPage() {
         restaurantId,
         customerId: supportCustomer.id,
         changeType,
-        newPhone: changeType === "phone" ? newPhone : null,
+        newPhone: changeType === "phone" ? phoneValidation.e164 : null,
         birthdayDay: changeType === "birthday" ? Number(birthdayDay) : null,
         birthdayMonth: changeType === "birthday" ? Number(birthdayMonth) : null,
         identityVerified,
@@ -135,7 +145,9 @@ export function CustomersPage() {
       setCustomers(nextCustomers);
       const detail = await loadCustomerIdentitySupportDetail(restaurantId, supportCustomer.id);
       setSupportDetail(detail);
-      setNewPhone(detail.phone);
+      const phoneParts = splitCustomerPhone(detail.phone);
+      setNewPhoneCountryCode(phoneParts.countryCode);
+      setNewPhone(phoneParts.localNumber);
       setBirthdayDay(detail.birthday_day ? String(detail.birthday_day) : "");
       setBirthdayMonth(detail.birthday_month ? String(detail.birthday_month) : "");
       setIdentityVerified(false);
@@ -246,7 +258,15 @@ export function CustomersPage() {
             </div>
 
             {changeType === "phone" ? (
-              <label className="field"><span>Neue Telefonnummer</span><input className="input" inputMode="tel" onChange={(event) => setNewPhone(event.target.value)} value={newPhone} /></label>
+              <CustomerPhoneField
+                countryCode={newPhoneCountryCode}
+                idPrefix="support-phone"
+                label="Neue Telefonnummer"
+                localNumber={newPhone}
+                onCountryCodeChange={setNewPhoneCountryCode}
+                onLocalNumberChange={setNewPhone}
+                showError={Boolean(newPhone)}
+              />
             ) : (
               <div className="premium-birthday-fields">
                 <label><span>Tag</span><input className="input" inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayDay(event.target.value.replace(/\D/g, "").slice(0, 2))} value={birthdayDay} /></label>

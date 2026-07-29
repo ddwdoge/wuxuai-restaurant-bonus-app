@@ -91,3 +91,7 @@ Da die Migration nicht angewendet wurde, wurden die migrationsabhängigen Prüfu
 `20260727001000_customer_identity_v1_no_sms.sql` ist lokal vorhanden und remote weiterhin ausstehend. Production wurde nicht angesprochen.
 
 Status: `BLOCKED_BY_DATA_CLEANUP`
+
+## Wiederholter Staging-Lauf am 2026-07-29
+
+Der isolierte Dry-Run plante ausschließlich `20260727001000_customer_identity_v1_no_sms.sql` und `20260729001000_customer_repeat_qr_access_hardening.sql` in der vorgeschriebenen Reihenfolge. Die Anwendung wurde erneut innerhalb der Identity-Datenprüfung mit `CUSTOMER_IDENTITY_MIGRATION_INVALID_PHONE` abgebrochen. Die bereits dokumentierten fünf ungültigen Staging-Telefonnummern sind damit weiterhin der aktive Blocker. Die Access-Hardening-Migration wurde nicht begonnen. Remote-Migrationshistorie und Kundendaten blieben unverändert.

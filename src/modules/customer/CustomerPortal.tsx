@@ -28,6 +28,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
 import {
@@ -102,8 +103,8 @@ import {
   customerRegistrationCanSubmit,
   emptyCustomerRegistrationForm,
   isValidCustomerFirstName,
-  isValidCustomerPhone,
 } from "./customerRegistration.mjs";
+import { customerPhoneValidation } from "./customerIdentity.mjs";
 
 type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -681,8 +682,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setMessage("Bitte gib einen gültigen Vornamen ein.");
       return;
     }
-    if (!isValidCustomerPhone(form.phone)) {
-      setMessage("Bitte gib eine gültige Telefonnummer ein.");
+    const phoneValidation = customerPhoneValidation(form.phoneCountryCode, form.phone);
+    if (!phoneValidation.e164) {
+      setMessage(phoneValidation.error ?? "Bitte gib eine gültige Telefonnummer ein.");
       return;
     }
     if (legalCenterState.status !== "ready") {
@@ -700,7 +702,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       const result = await registerRestaurantGuest({
         restaurantSlug,
         firstName: form.firstName.trim(),
-        phone: form.phone.trim(),
+        phone: phoneValidation.e164,
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
         legal: {
@@ -1214,16 +1216,14 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                 />
               </div>
-              <div className="field">
-                <label htmlFor="guest-phone">Telefonnummer</label>
-                <input
-                  className="input input-large"
-                  id="guest-phone"
-                  inputMode="tel"
-                  value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                />
-              </div>
+              <CustomerPhoneField
+                countryCode={form.phoneCountryCode}
+                idPrefix="guest-phone"
+                localNumber={form.phone}
+                onCountryCodeChange={(phoneCountryCode) => setForm((current) => ({ ...current, phoneCountryCode }))}
+                onLocalNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
+                showError={Boolean(form.phone)}
+              />
               <div className="field">
                 <label htmlFor="guest-birthday">Geburtstag optional</label>
                 <input

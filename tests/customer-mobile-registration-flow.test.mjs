@@ -88,7 +88,8 @@ test("Fertig verlangt nur gültige Pflichtfelder und Pflichtzustimmungen", () =>
   const validRequired = {
     ...emptyCustomerRegistrationForm,
     firstName: "Mira",
-    phone: "+43 660 1234567",
+    phoneCountryCode: "+43",
+    phone: "660 1234567",
     termsAccepted: true,
     privacyAcknowledged: true,
   };

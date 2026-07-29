@@ -754,11 +754,17 @@ export async function updateCustomerIdentityBySupport(
   input: CustomerIdentitySupportUpdate,
 ): Promise<CustomerIdentitySupportUpdateResult> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const normalizedPhone = input.changeType === "phone"
+    ? normalizeCustomerPhone(input.newPhone)
+    : null;
+  if (input.changeType === "phone" && !normalizedPhone) {
+    throw new Error("Bitte gib eine gültige Telefonnummer ein.");
+  }
   const { data, error } = await supabase.rpc("support_update_customer_identity", {
     input_restaurant_id: input.restaurantId,
     input_customer_id: input.customerId,
     input_change_type: input.changeType,
-    input_new_phone: input.newPhone ?? null,
+    input_new_phone: normalizedPhone,
     input_birthday_day: input.birthdayDay ?? null,
     input_birthday_month: input.birthdayMonth ?? null,
     input_identity_verified: input.identityVerified,

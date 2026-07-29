@@ -21,6 +21,7 @@ const identityMigration = await readFile(new URL("../supabase/migrations/2026072
 const deviceMigration = await readFile(new URL("../supabase/migrations/20260704242000_flow_05_device_referral_abuse_protection.sql", import.meta.url), "utf8");
 const portalMigration = await readFile(new URL("../supabase/migrations/20260726002000_reward_image_crop_metadata.sql", import.meta.url), "utf8");
 const accessHardeningMigration = await readFile(new URL("../supabase/migrations/20260729001000_customer_repeat_qr_access_hardening.sql", import.meta.url), "utf8");
+const securityVerificationFix = await readFile(new URL("../supabase/migrations/20260729003000_customer_identity_security_verification_fix.sql", import.meta.url), "utf8");
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -214,4 +215,16 @@ test("Backend liefert nur die freigegebenen strukturierten dauerhaften Zugangsgr
   assert.match(accessHardeningMigration, /message = 'CUSTOMER_MEMBERSHIP_INACTIVE'/);
   assert.match(accessHardeningMigration, /revoke execute on function public\.get_public_customer_portal_unchecked\(text, text\)[\s\S]*from public, anon, authenticated/);
   assert.match(accessHardeningMigration, /grant execute on function public\.get_public_customer_portal\(text, text\) to anon, authenticated/);
+});
+
+test("fremder Restauranttoken wird vor Membership-Prüfung als ungültig abgelehnt", () => {
+  const notFoundGuard = securityVerificationFix.indexOf("if not found then");
+  const membershipGuard = securityVerificationFix.indexOf("membership_status_value is distinct from 'active'");
+
+  assert.ok(notFoundGuard >= 0);
+  assert.ok(membershipGuard > notFoundGuard);
+  assert.match(
+    securityVerificationFix.slice(notFoundGuard, membershipGuard),
+    /message = 'CUSTOMER_ACCESS_TOKEN_INVALID'/,
+  );
 });

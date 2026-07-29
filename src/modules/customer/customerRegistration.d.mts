@@ -1,5 +1,6 @@
 export type CustomerRegistrationForm = {
   firstName: string;
+  phoneCountryCode: string;
   phone: string;
   birthday: string;
   termsAccepted: boolean;
@@ -12,5 +13,5 @@ export type CustomerRegistrationForm = {
 
 export const emptyCustomerRegistrationForm: Readonly<CustomerRegistrationForm>;
 export function isValidCustomerFirstName(value: unknown): boolean;
-export function isValidCustomerPhone(value: unknown): boolean;
+export function isValidCustomerPhone(countryCode: unknown, localNumber: unknown): boolean;
 export function customerRegistrationCanSubmit(form: CustomerRegistrationForm, legalReady: boolean): boolean;

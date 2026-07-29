@@ -4092,3 +4092,38 @@ a {
     break-inside: avoid;
   }
 }
+.customer-phone-field {
+  border: 0;
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.customer-phone-field legend {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 7px;
+  padding: 0;
+}
+
+.customer-phone-field-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(132px, 0.9fr) minmax(0, 1.5fr);
+  min-width: 0;
+}
+
+.customer-phone-field-grid label { display: grid; gap: 6px; min-width: 0; }
+.customer-phone-field-grid label > span { color: inherit; font-size: 12px; }
+.customer-phone-field .input { min-height: 48px; min-width: 0; width: 100%; }
+.customer-phone-field small { color: #706b63; font-size: 12px; line-height: 1.4; }
+.customer-phone-error { color: #9f2f29; font-size: 13px; margin: 0; }
+
+@media (max-width: 430px) {
+  .customer-phone-field-grid { grid-template-columns: minmax(118px, 0.8fr) minmax(0, 1.4fr); }
+  .customer-phone-country { padding-left: 10px; padding-right: 8px; }
+}

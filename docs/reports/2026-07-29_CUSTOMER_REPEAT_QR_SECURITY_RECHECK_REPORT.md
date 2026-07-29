@@ -68,3 +68,11 @@ Eine Safari-Registrierung wird deshalb nicht als automatisch in einer installier
 - Physischer Safari- und PWA-Test fehlt.
 
 Status: CHANGES_REQUIRED
+
+## Staging-Migrationsversuch
+
+Am 2026-07-29 wurde ein isolierter Staging-Dry-Run mit ausschließlich Identity und QR-Access-Hardening durchgeführt. Der anschließende transaktionale Lauf stoppte in `20260727001000_customer_identity_v1_no_sms.sql` mit `CUSTOMER_IDENTITY_MIGRATION_INVALID_PHONE`. Deshalb wurde `20260729001000_customer_repeat_qr_access_hardening.sql` nicht angewendet. Es gab keine Tokenrotation, keine Datenbereinigung und keine Änderung der Remote-Migrationshistorie.
+
+Staging bleibt bis zur kontrollierten Bereinigung der fünf bereits anonymisiert dokumentierten ungültigen Telefonnummern und einer erneuten Dublettenprüfung blockiert.
+
+Status: BLOCKED_BY_DATA_CLEANUP

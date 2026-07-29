@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link, useParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -20,8 +21,8 @@ import {
   customerRegistrationCanSubmit,
   emptyCustomerRegistrationForm,
   isValidCustomerFirstName,
-  isValidCustomerPhone,
 } from "./customerRegistration.mjs";
+import { customerPhoneValidation } from "./customerIdentity.mjs";
 import {
   AppShell,
   CustomerHeader,
@@ -84,8 +85,9 @@ export function ReferralLanding() {
       setMessage("Bitte gib einen gültigen Vornamen ein.");
       return;
     }
-    if (!isValidCustomerPhone(form.phone)) {
-      setMessage("Bitte gib eine gültige Telefonnummer ein.");
+    const phoneValidation = customerPhoneValidation(form.phoneCountryCode, form.phone);
+    if (!phoneValidation.e164) {
+      setMessage(phoneValidation.error ?? "Bitte gib eine gültige Telefonnummer ein.");
       return;
     }
     if (legalCenterState.status !== "ready") {
@@ -104,7 +106,7 @@ export function ReferralLanding() {
         restaurantSlug,
         referralToken,
         firstName: form.firstName.trim(),
-        phone: form.phone.trim(),
+        phone: phoneValidation.e164,
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
         legal: {
@@ -238,16 +240,14 @@ export function ReferralLanding() {
                   onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                 />
               </div>
-              <div className="field">
-                <label htmlFor="referral-phone">Telefonnummer</label>
-                <input
-                  className="input input-large"
-                  id="referral-phone"
-                  inputMode="tel"
-                  value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                />
-              </div>
+              <CustomerPhoneField
+                countryCode={form.phoneCountryCode}
+                idPrefix="referral-phone"
+                localNumber={form.phone}
+                onCountryCodeChange={(phoneCountryCode) => setForm((current) => ({ ...current, phoneCountryCode }))}
+                onLocalNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
+                showError={Boolean(form.phone)}
+              />
               <div className="field">
                 <label htmlFor="referral-birthday">Geburtstag optional</label>
                 <input

@@ -5,6 +5,16 @@
 
 Status: **LOCK**
 
+## 29.07.2026 - Customer Identity Security-Verifikation auf Staging
+
+- Fremde Restauranttokens werden nach einem leeren Token-Lookup unmittelbar
+  als ungültig abgelehnt, bevor Membership-Status geprüft werden.
+- Der kontrollierte Owner-Supportpfad verwendet den bestehenden erlaubten
+  Audit-Akteurtyp `admin` und bleibt tenantgebunden.
+- Keine RPC-Signatur und keine RLS-Policy wurde gelockert.
+- Beide Fehler wurden durch rollback-sichere Live-Verhaltenstests auf Staging
+  nachgewiesen und nach der additiven Migration erneut erfolgreich geprüft.
+
 ## 28.07.2026 - Wiedererkennung nach erneutem Restaurant-QR
 
 - Kundenzugänge werden vor dem ersten Portal-Request synchron und getrennt je

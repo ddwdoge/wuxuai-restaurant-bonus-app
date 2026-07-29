@@ -5,6 +5,7 @@ import test from "node:test";
 import { normalizeCustomerPhone } from "../src/modules/customer/customerIdentity.mjs";
 
 const migration = await readFile(new URL("../supabase/migrations/20260727001000_customer_identity_v1_no_sms.sql", import.meta.url), "utf8");
+const securityVerificationFix = await readFile(new URL("../supabase/migrations/20260729003000_customer_identity_security_verification_fix.sql", import.meta.url), "utf8");
 const loyaltySource = await readFile(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
 const portalSource = await readFile(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const customersPage = await readFile(new URL("../src/modules/admin/pages/CustomersPage.tsx", import.meta.url), "utf8");
@@ -72,6 +73,11 @@ test("Owner-Support verlangt Identitätsprüfung und rotiert nach Telefonänderu
   assert.match(migration, /update public\.customer_qr_tokens set active = false/);
   assert.match(migration, /delete from public\.customer_devices/);
   assert.match(migration, /CUSTOMER_TOKEN_ROTATED/);
+});
+
+test("Owner-Support verwendet einen vom Auditvertrag erlaubten Akteurtyp", () => {
+  assert.match(securityVerificationFix, /input_customer_id, 'admin', auth\.uid\(\)/);
+  assert.doesNotMatch(securityVerificationFix, /'restaurant_user'/);
 });
 
 test("Owner-Liste und Staff-Pfade verwenden nur minimierte Kundendaten", () => {
