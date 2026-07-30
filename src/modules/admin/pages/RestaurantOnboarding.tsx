@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Coffee,
@@ -13,8 +13,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   completePilotOnboarding,
   loadOnboardingDraft,
@@ -48,6 +47,11 @@ type BonusCalculation = {
     family: number;
   };
   recommendedRewardThresholds: number[];
+};
+
+type OnboardingOutletContext = {
+  onboardingAccountAction: ReactNode;
+  onboardingRestaurantAction: ReactNode;
 };
 
 type LogoColors = {
@@ -345,16 +349,6 @@ function formatEuro(value: number, fixedCents = false) {
     minimumFractionDigits: fixedCents || hasCents ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function slugifyRestaurant(value: string) {
-  const slug = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-  return slug || "restaurant";
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -1121,10 +1115,12 @@ function getStepBlocker(
 }
 
 export function RestaurantOnboarding() {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
   const { activeRestaurant, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const activeStepRef = useRef<HTMLLIElement | null>(null);
+  const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
   const [form, setForm] = useState<OnboardingForm>(() => createDefaultForm());
@@ -1141,7 +1137,7 @@ export function RestaurantOnboarding() {
     [form.averageBill, form.firstRewardVisits, form.generosity],
   );
 
-  const restaurantSlug = slugifyRestaurant(form.restaurantName || "restaurant");
+  const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
   const bonusQrUrl = `${publicBaseUrl}/w/${restaurantSlug}`;
@@ -1149,6 +1145,7 @@ export function RestaurantOnboarding() {
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 
   const checklist = useMemo(() => buildChecklist(form, step), [form, step]);
+  const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
   const allReady = Object.values(checklist).every(Boolean);
   const stepBlocker = getStepBlocker(step, form, checklist);
@@ -1217,6 +1214,18 @@ export function RestaurantOnboarding() {
       cancelled = true;
     };
   }, [activeRestaurant?.id, navigate, tenantLoading]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const activeStep = activeStepRef.current;
+      const stepList = activeStep?.parentElement;
+      if (activeStep && stepList && stepList.scrollWidth > stepList.clientWidth) {
+        activeStep.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [step]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1430,10 +1439,6 @@ export function RestaurantOnboarding() {
     });
   }
 
-  function openGuestPreview() {
-    window.open(`/customer/${restaurantSlug}`, "_blank", "noopener,noreferrer");
-  }
-
   function closeHowItWorks() {
     if (explanationDismissedKey) {
       window.localStorage.setItem(explanationDismissedKey, "true");
@@ -1479,21 +1484,30 @@ export function RestaurantOnboarding() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (submissionInFlightRef.current) {
+      return;
+    }
+
     if (!allReady) {
       setStatus("Bitte die offenen Punkte in der Checkliste abschließen.");
       return;
     }
 
+    if (!activeRestaurant?.id) {
+      setStatus("Das bestehende Restaurant konnte nicht aktiviert werden.");
+      return;
+    }
+
+    submissionInFlightRef.current = true;
+    setSaving(true);
     setStatus(null);
 
     try {
       const result = await completePilotOnboarding({
-        restaurantId: activeRestaurant?.id ?? null,
-        ownerId: user?.id ?? null,
+        restaurantId: activeRestaurant.id,
         restaurantName: form.restaurantName.trim(),
         restaurantType: form.restaurantType,
         language: form.language,
-        slug: restaurantSlug,
         logoUrl: form.logoUrl || null,
         primaryColor: form.primaryColor,
         secondaryColor: form.secondaryColor,
@@ -1502,7 +1516,6 @@ export function RestaurantOnboarding() {
         specialDays: linesToList(form.specialDays),
         holidays: linesToList(form.holidays),
         smartOpenEnabled: form.smartOpenEnabled,
-        onboardingStatus: "ready",
         onboardingChecklist: checklist,
         loyaltyMode: "amount_based",
         amountPerPoint: bonus.amountPerPoint,
@@ -1529,15 +1542,16 @@ export function RestaurantOnboarding() {
           complaint_contact: form.legalComplaintContact.trim() || form.legalEmail.trim(),
         },
       });
-      if (activeRestaurant?.id) {
-        await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
-      }
+      await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
       await refreshTenants();
       setStatus(`${result.restaurant.name} ist startklar.`);
       setStep(steps.length - 1);
       navigate("/admin", { replace: true });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Restaurant konnte nicht eröffnet werden.");
+    } finally {
+      submissionInFlightRef.current = false;
+      setSaving(false);
     }
   }
 
@@ -1551,38 +1565,61 @@ export function RestaurantOnboarding() {
 
   return (
     <>
-      <header className="page-header installation-header">
-        <div>
-          <span className="pill">Restaurant einrichten</span>
+      <header className="installation-header">
+        <div className="installation-header-copy">
+          <span className="installation-eyebrow">Restaurant einrichten</span>
           <h1>Willkommen! In wenigen Minuten startet dein digitales Bonusprogramm.</h1>
-          <p className="muted">Gleich bereit für Gäste.</p>
+          <p>Gleich bereit für deine Gäste.</p>
         </div>
-        <div className="row-actions">
-          {saving ? <span className="pill">Speichert...</span> : null}
-          <span className="pill">Schritt {step + 1} von {steps.length}</span>
-          <button className="button secondary compact-button" onClick={() => setHowItWorksOpen(true)} type="button">
+        <div className="installation-header-actions">
+          {onboardingRestaurantAction}
+          <button className="button secondary installation-help-action" onClick={() => setHowItWorksOpen(true)} type="button">
             <Info size={17} />
             So funktioniert's
           </button>
+          {onboardingAccountAction}
         </div>
       </header>
 
+      <section className="onboarding-progress" aria-labelledby="onboarding-progress-title">
+        <div className="onboarding-progress-copy">
+          <div>
+            <span id="onboarding-progress-title">Schritt {step + 1} von {steps.length}</span>
+            <strong>{steps[step]}</strong>
+          </div>
+          <span>{progressPercent} % abgeschlossen</span>
+        </div>
+        <div
+          aria-label={`${progressPercent} Prozent abgeschlossen`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={progressPercent}
+          className="onboarding-progress-track"
+          role="progressbar"
+        >
+          <span style={{ width: `${progressPercent}%` }} />
+        </div>
+        {saving ? <span className="onboarding-saving-status" role="status">Änderungen werden gespeichert...</span> : null}
+      </section>
+
+      <ol className="setup-steps" aria-label="Einrichtungsschritte">
+        {steps.map((label, index) => (
+          <li
+            aria-current={index === step ? "step" : undefined}
+            className={`setup-step${index === step ? " active" : ""}${index < step ? " done" : ""}`}
+            key={label}
+            ref={index === step ? activeStepRef : undefined}
+          >
+            <span aria-hidden="true" className="setup-step-marker">
+              {index < step ? <Check size={14} strokeWidth={2.5} /> : index + 1}
+            </span>
+            <span className="setup-step-label">{label}</span>
+          </li>
+        ))}
+      </ol>
+
       <section className="onboarding-layout">
         <form className="card onboarding-card installation-card form" onSubmit={handleSubmit}>
-          <div className="setup-steps" aria-label="Einrichtungsschritte">
-            {steps.map((label, index) => (
-              <button
-                className={`setup-step${index === step ? " active" : ""}${index < step ? " done" : ""}`}
-                aria-current={index === step ? "step" : undefined}
-                disabled
-                key={label}
-                type="button"
-              >
-                <span>{index + 1}. {label}</span>
-              </button>
-            ))}
-          </div>
-
           {step === 0 ? (
             <section className="wizard-screen">
               <h2>{stepTitles[0]}</h2>
@@ -1794,26 +1831,12 @@ export function RestaurantOnboarding() {
                     <strong style={{ color: form.primaryColor }}>0 Punkte</strong>
                     <p>Punkteeinlösungen sammeln und beim nächsten Besuch einlösen.</p>
                   </div>
-                  <button className="button customer-primary-button" style={{ background: form.primaryColor }} type="button">
+                  <span
+                    className="button customer-primary-button onboarding-preview-button"
+                    style={{ background: form.primaryColor }}
+                  >
                     Bonus öffnen
-                  </button>
-                </article>
-
-                <article className="qr-preview-panel">
-                  <h3>So testest du es als Gast</h3>
-                  <div className="mini-qr-grid">
-                    <div>
-                      <QRCodeSVG value={restaurantQrUrl} size={96} level="M" />
-                      <span>Restaurant</span>
-                    </div>
-                    <div>
-                      <QRCodeSVG value={bonusQrUrl} size={96} level="M" />
-                      <span>Mein Bonus</span>
-                    </div>
-                  </div>
-                  <button className="button secondary" onClick={openGuestPreview} type="button">
-                    Als Gast ansehen
-                  </button>
+                  </span>
                 </article>
               </section>
             </section>
@@ -2086,7 +2109,7 @@ export function RestaurantOnboarding() {
           ) : null}
 
           {step === 6 ? (
-            <section className="wizard-screen">
+            <section className="wizard-screen onboarding-completion-screen">
               <h2>{stepTitles[6]}</h2>
               <div className="rule-list">
                 <ChecklistRow done={checklist.restaurantDataCompleted} label={checklistLabels.restaurantDataCompleted} />

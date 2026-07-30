@@ -358,17 +358,6 @@ a {
   padding-top: 8px;
 }
 
-.setup-session-actions {
-  align-items: center;
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 24px 0;
-}
-
-.setup-mobile-logout {
-  display: none;
-}
-
 .page-header {
   display: flex;
   gap: 16px;
@@ -1614,79 +1603,236 @@ a {
 }
 
 .setup-shell {
-  background: #f6f7f9;
+  --owner-background: #f7f4ee;
+  --owner-surface: #ffffff;
+  --owner-surface-muted: #f3efe7;
+  --owner-ink: #171714;
+  --owner-muted: #706d65;
+  --owner-border: rgba(34, 31, 26, 0.1);
+  --owner-gold: #bf8f36;
+  --owner-gold-dark: #956820;
+  --owner-gold-soft: #f3e6cc;
+  background: var(--owner-background);
+  color: var(--owner-ink);
   min-height: 100vh;
-  padding: 28px;
+  padding: 32px;
 }
 
 .setup-shell > * {
   margin-left: auto;
   margin-right: auto;
-  max-width: 1040px;
+  max-width: 1280px;
 }
 
 .installation-header {
-  align-items: flex-start;
+  align-items: end;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: 26px;
 }
 
-.installation-header .row-actions {
+.installation-header-copy {
+  min-width: 0;
+}
+
+.installation-eyebrow {
+  color: var(--owner-gold-dark);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.installation-header h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.08;
+  margin: 0;
+  max-width: 760px;
+}
+
+.installation-header-copy > p {
+  color: var(--owner-muted);
+  font-size: 16px;
+  margin: 10px 0 0;
+}
+
+.installation-header-actions {
   align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.installation-header-actions .tenant-switcher {
+  margin-left: 0;
+}
+
+.installation-help-action {
+  flex: 0 0 auto;
+  min-height: 56px;
+  white-space: nowrap;
+}
+
+.setup-shell .profile-menu-trigger,
+.setup-shell .tenant-switcher-field {
+  border-color: var(--owner-border);
+}
+
+.setup-shell .tenant-switcher-field .select {
+  max-width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.setup-shell .profile-menu-trigger,
+.setup-shell .installation-help-action,
+.setup-shell .wizard-footer .button {
+  min-height: 44px;
+}
+
+.setup-shell .profile-menu-avatar {
+  background: #1d1c19;
+}
+
+.onboarding-progress {
+  border-bottom: 1px solid var(--owner-border);
+  border-top: 1px solid var(--owner-border);
+  padding: 18px 0;
+  position: relative;
+}
+
+.onboarding-progress-copy {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.onboarding-progress-copy > div {
+  display: grid;
+  gap: 3px;
+}
+
+.onboarding-progress-copy span {
+  color: var(--owner-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.onboarding-progress-copy strong {
+  color: var(--owner-ink);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.onboarding-progress-track {
+  background: #e8e2d8;
+  border-radius: 999px;
+  height: 5px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.onboarding-progress-track > span {
+  background: var(--owner-gold);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.onboarding-saving-status {
+  color: var(--owner-muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 7px;
 }
 
 .setup-steps {
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  list-style: none;
+  margin-bottom: 28px;
+  margin-top: 22px;
+  padding: 0;
 }
 
 .setup-step {
   align-items: center;
-  background: #eef4f8;
-  border: 1px solid #d5dee8;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid transparent;
   border-radius: 8px;
-  color: #465463;
+  color: var(--owner-muted);
   display: grid;
   font-size: 13px;
-  font-weight: 800;
-  height: 58px;
+  font-weight: 600;
+  gap: 5px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 22px minmax(0, 1fr);
+  height: 72px;
   justify-items: center;
   min-width: 0;
-  padding: 6px 10px;
+  padding: 8px 4px;
   text-align: center;
   width: 100%;
 }
 
-.setup-step > span {
+.setup-step-marker {
+  align-items: center;
+  background: #ebe6dc;
+  border-radius: 50%;
+  color: #777168;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.setup-step-label {
   display: -webkit-box;
   line-height: 1.25;
   max-width: 100%;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-@media (min-width: 700px) {
-  .setup-steps {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1200px) {
-  .setup-steps {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-  }
-}
-
 .setup-step.active {
-  background: #eaf5f3;
-  border-color: var(--tenant-primary, #0f766e);
-  color: var(--tenant-primary, #0f766e);
+  background: #ffffff;
+  border-color: rgba(191, 143, 54, 0.42);
+  box-shadow: 0 8px 24px rgba(76, 57, 25, 0.08);
+  color: var(--owner-gold-dark);
+}
+
+.setup-step.active .setup-step-marker {
+  background: var(--owner-gold);
+  color: #ffffff;
 }
 
 .setup-step.done {
-  background: #f4f8f6;
-  color: #2f6f65;
+  background: #f7f2e8;
+  color: #675433;
+}
+
+.setup-step.done .setup-step-marker {
+  background: var(--owner-gold-soft);
+  color: var(--owner-gold-dark);
 }
 
 .onboarding-layout {
@@ -1700,7 +1846,8 @@ a {
 }
 
 .installation-card {
-  box-shadow: 0 18px 45px rgba(23, 32, 42, 0.08);
+  border-color: var(--owner-border);
+  box-shadow: 0 18px 45px rgba(52, 43, 29, 0.07);
 }
 
 .wizard-screen {
@@ -1715,6 +1862,10 @@ a {
   font-size: 22px;
   letter-spacing: 0;
   margin: 0;
+}
+
+.onboarding-completion-screen {
+  padding-top: 18px;
 }
 
 .wizard-footer {
@@ -1840,17 +1991,19 @@ a {
 .brand-live-preview {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+  grid-template-columns: minmax(0, 680px);
+  justify-content: center;
 }
 
-.customer-app-preview,
-.qr-preview-panel {
+.customer-app-preview {
   background: #ffffff;
   border: 2px solid #dde3ea;
   border-radius: 8px;
+  box-sizing: border-box;
   display: grid;
   gap: 14px;
   padding: 16px;
+  width: 100%;
 }
 
 .customer-logo-placeholder {
@@ -1883,29 +2036,6 @@ a {
 .bonus-preview-card strong {
   font-size: 30px;
   line-height: 1;
-}
-
-.mini-qr-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.mini-qr-grid div {
-  align-items: center;
-  background: #f7f9fb;
-  border: 1px solid #dde3ea;
-  border-radius: 8px;
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-  padding: 12px;
-}
-
-.mini-qr-grid span {
-  color: #465463;
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .schedule-grid {
@@ -3373,6 +3503,14 @@ a {
   width: 100%;
 }
 
+.onboarding-preview-button {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+}
+
 .compact-customer-form {
   max-width: none;
 }
@@ -3891,7 +4029,34 @@ a {
   }
 }
 
+@media (min-width: 1181px) and (max-width: 1320px) {
+  .setup-shell .profile-menu-trigger {
+    height: 56px;
+    min-width: 56px;
+    padding: 0 10px;
+  }
+
+  .setup-shell .profile-menu-copy,
+  .setup-shell .profile-menu-chevron {
+    display: none;
+  }
+}
+
 @media (max-width: 1180px) {
+  .installation-header {
+    align-items: start;
+    gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .installation-header-actions {
+    width: 100%;
+  }
+
+  .setup-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .grid.four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3906,6 +4071,64 @@ a {
 }
 
 @media (max-width: 1023px) {
+  .setup-shell {
+    padding: 24px;
+  }
+
+  .installation-header {
+    align-items: start;
+    gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .installation-header h1 {
+    font-size: 38px;
+  }
+
+  .installation-header-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .installation-header-actions .tenant-switcher {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .setup-shell .desktop-profile-menu {
+    display: block;
+  }
+
+  .setup-shell .profile-menu-trigger {
+    height: 56px;
+    min-width: 56px;
+    padding: 0 10px;
+  }
+
+  .setup-shell .profile-menu-avatar {
+    align-items: center;
+    background: #1d1c19;
+    border-radius: 50%;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 800;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+  }
+
+  .setup-shell .profile-menu-copy,
+  .setup-shell .profile-menu-chevron {
+    display: none;
+  }
+
+  .setup-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .topbar {
     align-items: flex-start;
     display: grid;
@@ -4073,6 +4296,95 @@ a {
 
 }
 
+@media (max-width: 699px) {
+  .setup-shell {
+    overflow-x: hidden;
+    padding: 18px 16px 28px;
+  }
+
+  .installation-header {
+    gap: 18px;
+    padding-bottom: 20px;
+  }
+
+  .installation-header h1 {
+    font-size: 32px;
+    line-height: 1.12;
+  }
+
+  .installation-header-copy > p {
+    font-size: 15px;
+  }
+
+  .installation-header-actions {
+    grid-template-columns: minmax(0, 1fr) 56px;
+  }
+
+  .installation-header-actions .tenant-switcher {
+    grid-column: 1 / -1;
+  }
+
+  .installation-help-action {
+    justify-self: stretch;
+    min-height: 48px;
+  }
+
+  .setup-shell .profile-menu-trigger {
+    height: 48px;
+    min-height: 48px;
+    min-width: 56px;
+  }
+
+  .onboarding-progress {
+    padding: 15px 0;
+  }
+
+  .onboarding-progress-copy {
+    align-items: start;
+    gap: 12px;
+  }
+
+  .onboarding-progress-copy > span {
+    max-width: 120px;
+    text-align: right;
+  }
+
+  .setup-steps {
+    grid-template-columns: repeat(7, 176px);
+    margin-bottom: 24px;
+    margin-right: -16px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 8px;
+    padding-right: 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .setup-step {
+    scroll-snap-align: start;
+  }
+
+  .onboarding-card.form {
+    padding: 18px;
+  }
+
+  .wizard-footer {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wizard-footer .button {
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .onboarding-completion-screen {
+    padding-top: 14px;
+  }
+}
+
 @media (max-width: 520px) {
   .staff-home-actions {
     grid-template-columns: 1fr;
@@ -4083,10 +4395,6 @@ a {
   }
 
   .logo-dropzone {
-    grid-template-columns: 1fr;
-  }
-
-  .mini-qr-grid {
     grid-template-columns: 1fr;
   }
 

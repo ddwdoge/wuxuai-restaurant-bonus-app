@@ -211,14 +211,12 @@ export function AdminLayout() {
   if (isOnboardingRoute) {
     return (
       <div className="setup-shell">
-        <div className="setup-session-actions">
-          {profileMenu}
-          <button className="button secondary setup-mobile-logout" disabled={loggingOut} onClick={handleLogout} type="button">
-            <LogOut size={18} />
-            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
-          </button>
-        </div>
-        <Outlet />
+        <Outlet
+          context={{
+            onboardingAccountAction: profileMenu,
+            onboardingRestaurantAction: <TenantSwitcher />,
+          }}
+        />
       </div>
     );
   }
