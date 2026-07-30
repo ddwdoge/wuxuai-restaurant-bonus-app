@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-30 – Restaurantfokussierte V1 wiederhergestellt
+
+- Die validierte restaurantfokussierte Baseline `b9b2647` ist der offizielle
+  V1-Ausgangspunkt auf `release/v1-restaurant-bonus`.
+- Die branchenneutrale Phase 1/2 ist auf `future/v2-business-neutral` und mit
+  dem Tag `v2-business-neutral-snapshot-2026-07-30` vollstaendig archiviert.
+- V1 wird als `WUXUAI Restaurant Bonus` fertiggestellt; Branchenprofile,
+  neutrale Produktsprache und Bonusprogramm-Assistent bleiben V2.
+- Alle vorhandenen Sicherheits-, Legal-, Identity-, QR-, Audit- und
+  Onboarding-Migrationen bleiben erhalten; es gibt keinen Schema-Rollback.
+- Decision Record:
+  `docs/product/DECISION_2026-07-30_V1_RESTAURANT_FIRST_V2_DEFERRED.md`
+
 ## 2026-07-29 – Automatisiertes Legal-Paket im Restaurant-Onboarding
 
 - Das siebenstufige Onboarding bleibt erhalten und ergänzt Schritt 1 um

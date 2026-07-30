@@ -260,23 +260,30 @@ V2 erweitert über Business-Type-Templates.
 
 ---
 
-## 6. Produktname langfristig: WUXUAI Bonus
+## 6. Produktname V1: WUXUAI Restaurant Bonus
 
-🟢 **FIX / Strategie**
+🟢 **LOCK / ERSETZT LANGFRISTIGE DACHMARKENREGEL AM 30.07.2026**
 
-Das Produkt soll nicht dauerhaft nur „Restaurant Bonus“ heißen.
+V1 wird unter folgender Produktpositionierung fertiggestellt:
 
-Langfristige Marke:
+```text
+WUXUAI Restaurant Bonus
+```
+
+Die branchenneutrale Marke bleibt fuer V2 archiviert:
 
 ```text
 WUXUAI Bonus
 ```
 
-V1 kann in Kommunikation Restaurants/Cafés fokussieren.
+V2 wird erst nach ersten zahlenden V1-Restaurants, echtem Marktfeedback und
+ausdruecklicher Product-Owner-Freigabe fortgesetzt.
 
 ### Warum?
 
-Das gleiche Bonusmodell funktioniert auch für andere lokale Betriebe.
+Restaurantfokus reduziert Onboarding-Komplexitaet und beschleunigt den
+V1-Verkauf. Die technische Erweiterbarkeit bleibt erhalten, aktiviert aber
+keine Branchenprofile in V1.
 
 ### Domain
 

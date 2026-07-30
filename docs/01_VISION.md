@@ -270,9 +270,10 @@ Deshalb muss die Architektur langfristig geschäftsneutral bleiben, auch wenn V1
 
 ---
 
-## 9. Warum „Bonusprogramm“ statt „Restaurant Bonus“
+## 9. Produktname in V1 und V2
 
-Der Begriff „Restaurant Bonus“ ist für V1 verständlich, aber langfristig zu eng.
+V1 wird bewusst als **WUXUAI Restaurant Bonus** verkauft und fuer Restaurants
+und Cafes fertiggestellt.
 
 Der Produktkern ist nicht Restaurant.
 
@@ -280,13 +281,14 @@ Der Produktkern ist:
 
 > **Bonusprogramm für lokale Unternehmen.**
 
-Deshalb wird als Produktidentität verwendet:
+Die spaetere branchenneutrale Produktidentitaet bleibt als V2 archiviert:
 
 > **WUXUAI Bonus**
 
-V1 darf im Marketing Restaurants und Cafés ansprechen.
+V1 spricht in Produkt, Marketing und Onboarding Restaurants und Cafes an.
 
-Die Plattform selbst soll aber nicht dauerhaft auf Restaurants beschränkt sein.
+Eine spaetere Oeffnung fuer andere lokale Unternehmen benoetigt eine neue
+ausdrueckliche Product-Owner-Freigabe.
 
 ---
 
@@ -958,4 +960,3 @@ Diese Vision ist LOCK, wenn:
 Status dieser Datei:
 
 > 🟢 LOCK
-

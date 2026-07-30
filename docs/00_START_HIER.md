@@ -25,11 +25,14 @@ Wenn Codex, ein Entwickler oder ein späteres Teammitglied eine Entscheidung tre
 
 ## 2. Projektname und Produktidentität
 
-### 2.1 Offizieller Produktname für V1
+### 2.1 Offizieller Produktname fuer V1
 
-**WUXUAI Bonus**
+**WUXUAI Restaurant Bonus**
 
-Frühere Bezeichnungen wie „Restaurant Bonus“, „Restaurant Growth OS“ oder „Restaurant Bonus OS“ dürfen im Code oder in internen technischen Dateinamen vorkommen, sind aber nicht die langfristige Produktpositionierung.
+`WUXUAI Bonus` bleibt als archivierte branchenneutrale V2-Richtung erhalten.
+Bezeichnungen wie `Restaurant Growth OS` oder `Restaurant Bonus OS` duerfen in
+internen technischen Legacy-Namen vorkommen, sind aber nicht die sichtbare
+V1-Produktpositionierung.
 
 ### 2.2 V1 Marktfokus
 
@@ -55,7 +58,10 @@ V2 soll die Plattform auf weitere lokale Betriebe erweitern:
 - Vinotheken
 - weitere lokale Geschäfte
 
-Die Architektur soll deshalb langfristig geschäftsneutral bleiben. Die V1-UX bleibt aber Restaurant-fokussiert.
+Die Architektur darf langfristig geschaeftsneutral bleiben. Die
+branchenneutrale Produktsprache, Branchenprofile und der Bonusprogramm-Assistent
+sind jedoch V2 und duerfen nicht in die restaurantfokussierte V1 gemischt
+werden.
 
 ---
 

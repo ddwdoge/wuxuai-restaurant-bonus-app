@@ -1,6 +1,6 @@
 # AGENTS.md
 
-# WUXUAI Bonus V1 – Codex Arbeitsanweisung
+# WUXUAI Restaurant Bonus V1 – Codex Arbeitsanweisung
 
 Status: **AKTIV / PFLICHT**
 
@@ -52,7 +52,7 @@ Nicht eigenmächtig gegen die Bible arbeiten.
 
 ## 3. Projektziel V1
 
-WUXUAI Bonus V1 soll zuerst fertig gebaut und pilotfähig werden.
+WUXUAI Restaurant Bonus V1 soll zuerst fertig gebaut und pilotfähig werden.
 
 Fokus:
 
