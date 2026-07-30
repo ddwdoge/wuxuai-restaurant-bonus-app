@@ -10,6 +10,13 @@ export type OpeningDay = {
 };
 
 export declare const openingDayKeys: readonly string[];
+export type LunchBreakSuggestion = {
+  firstBlockEnd: string;
+  breakStart: string;
+  breakEnd: string;
+  secondBlockStart: string;
+};
 export declare function normalizeOpeningDay(value: unknown, fallback: Pick<OpeningDay, "enabled" | "open" | "close">): OpeningDay;
+export declare function suggestLunchBreak(openingStart: string, openingEnd: string, standardBreak?: { start: string; end: string } | null): LunchBreakSuggestion | null;
 export declare function validateOpeningDay(day: OpeningDay): string | null;
 export declare function todayOpeningHours(value: unknown, date?: Date): string | null;

@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import type { OpeningDay } from "../openingHours.mjs";
-import { validateOpeningDay } from "../openingHours.mjs";
+import { suggestLunchBreak, validateOpeningDay } from "../openingHours.mjs";
 import { FormLabel } from "./FormLabel";
 
 type OpeningHoursEditorProps = {
@@ -26,6 +27,37 @@ function TimeField({ id, label, onChange, value }: {
 
 export function OpeningHoursEditor({ dayLabel, idPrefix, onChange, value }: OpeningHoursEditorProps) {
   const error = validateOpeningDay(value);
+  const [suggestionMessage, setSuggestionMessage] = useState<string | null>(null);
+  const [suggestedBoundaries, setSuggestedBoundaries] = useState<{ open: string; close: string } | null>(null);
+  const mainHoursChanged = suggestedBoundaries
+    ? value.open !== suggestedBoundaries.open || value.secondClose !== suggestedBoundaries.close
+    : false;
+
+  function toggleLunchBreak() {
+    if (value.lunchBreakEnabled) {
+      onChange({ close: value.secondClose || value.close, lunchBreakEnabled: false });
+      setSuggestionMessage(null);
+      setSuggestedBoundaries(null);
+      return;
+    }
+
+    const suggestion = suggestLunchBreak(value.open, value.close);
+    if (!suggestion) {
+      setSuggestionMessage("Für diese Öffnungszeit ist keine sinnvolle Mittagspause verfügbar.");
+      return;
+    }
+
+    onChange({
+      close: suggestion.firstBlockEnd,
+      lunchBreakEnabled: true,
+      lunchBreakStart: suggestion.breakStart,
+      lunchBreakEnd: suggestion.breakEnd,
+      secondOpen: suggestion.secondBlockStart,
+      secondClose: value.close,
+    });
+    setSuggestedBoundaries({ open: value.open, close: value.close });
+    setSuggestionMessage("Wir haben eine passende Mittagspause vorgeschlagen. Du kannst die Zeiten jederzeit anpassen.");
+  }
 
   return (
     <article className={`opening-hours-day${value.enabled ? " is-open" : ""}`}>
@@ -66,10 +98,12 @@ export function OpeningHoursEditor({ dayLabel, idPrefix, onChange, value }: Open
             </>
           ) : null}
 
-          <button className="opening-hours-break-button" onClick={() => onChange({ lunchBreakEnabled: !value.lunchBreakEnabled })} type="button">
+          <button className="opening-hours-break-button" onClick={toggleLunchBreak} type="button">
             {value.lunchBreakEnabled ? <Minus aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
             {value.lunchBreakEnabled ? "Mittagspause entfernen" : "Mittagspause hinzufügen"}
           </button>
+          {suggestionMessage ? <p className="opening-hours-suggestion" role="status">{suggestionMessage}</p> : null}
+          {mainHoursChanged && error ? <p className="opening-hours-warning" role="alert">Die Öffnungszeit wurde geändert. Bitte prüfe die Mittagspause.</p> : null}
           {error ? <p className="opening-hours-error" id={`${idPrefix}-error`} role="alert">{error}</p> : null}
         </>
       ) : null}

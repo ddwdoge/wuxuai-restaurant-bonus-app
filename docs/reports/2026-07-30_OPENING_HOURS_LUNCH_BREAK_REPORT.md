@@ -15,12 +15,16 @@ jedoch flexibel genug für additive Felder. Deshalb war keine Migration nötig.
 - Gemeinsamer Öffnungszeiten-Editor für Onboarding und Einstellungen.
 - Standardmäßig ein Öffnungsblock `von`/`bis`.
 - Optionaler Button `Mittagspause hinzufügen`.
-- Nach Aktivierung: Öffnungszeit 1, Mittagspause und Öffnungszeit 2.
+- Nach Aktivierung: automatisch vorgeschlagene Öffnungszeit 1, Mittagspause und Öffnungszeit 2.
 - Maximal zwei Öffnungsblöcke pro Tag.
 - Serverseitig gespeicherte Altwerte ohne Pausenfelder werden beim Lesen
   normalisiert und unverändert als ein Block behandelt.
 - Validierung blockiert leere Zeiten, umgekehrte Zeiträume, Überlappungen und
   einen zweiten Block vor Ende der Pause.
+- Ein zentraler Helper berechnet Vorschläge nur für Tagesöffnungen ab acht
+  Stunden und erhält mindestens 90 Minuten Öffnung vor und nach der Pause.
+- Bereits gespeicherte Pausen werden nicht neu berechnet. Beim Entfernen wird
+  der zweite Block wieder korrekt mit dem ersten zu einer Tagesöffnung verbunden.
 - Die Kundenansicht im Partnerrestaurant-Finder zeigt beide Blöcke. Während
   einer Pause erscheint `Momentan Mittagspause – wieder geöffnet ab HH:MM`.
 - Die Tagesauswertung verwendet `Europe/Vienna`.

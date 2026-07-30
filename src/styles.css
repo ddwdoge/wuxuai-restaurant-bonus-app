@@ -655,7 +655,13 @@ a {
 .opening-hours-break-button { align-items: center; align-self: start; background: transparent; border: 0; border-radius: 8px; color: #76571e; display: inline-flex; font-weight: 600; gap: 7px; justify-self: start; min-height: 44px; padding: 0 8px; }
 .opening-hours-break-button:hover { background: #f3e6cc; }
 .opening-hours-break-button:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.35); outline-offset: 2px; }
+.opening-hours-suggestion { color: #52606d; font-size: 13px; line-height: 1.45; margin: 0; }
+.opening-hours-warning { background: #fff4dd; border-radius: 7px; color: #775513; font-size: 13px; line-height: 1.45; margin: 0; padding: 10px; }
 .opening-hours-error { color: #a1372b; font-size: 13px; line-height: 1.4; margin: 0; }
+
+@media (max-width: 520px) {
+  .opening-hours-time-grid { grid-template-columns: 1fr; }
+}
 .button[aria-disabled="true"] { cursor: not-allowed; opacity: 0.62; }
 
 .inline-check {

@@ -32,4 +32,7 @@ test("Öffnungszeiten verwenden Pflichtlabels nur an geöffneten Zeitblöcken", 
   assert.match(source, /required type="time"/);
   assert.match(source, /value\.enabled \?/);
   assert.match(source, /Mittagspause hinzufügen/);
+  assert.match(source, /Wir haben eine passende Mittagspause vorgeschlagen/);
+  assert.match(source, /Die Öffnungszeit wurde geändert\. Bitte prüfe die Mittagspause\./);
+  assert.match(source, /close: value\.secondClose \|\| value\.close/);
 });

@@ -2362,3 +2362,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Eine gemeinsame Formularbeschriftung kennzeichnet Pflichtfelder sichtbar mit `*`, ergänzt Screenreader-Text und vereinheitlicht optionale Felder.
 - Zentrale V1-Formulare enthalten einen einheitlichen Pflichtfeldhinweis sowie `required` und `aria-required`, wo das Feld fachlich verpflichtend ist.
 - Keine Migration, RLS-, Auth-, Punkte-, Reward-, PIN- oder Tenant-Logik geändert.
+
+## 2026-07-30 - Automatischer Mittagspausenvorschlag
+
+- `Mittagspause hinzufügen` berechnet aus einer mindestens achtstündigen Tagesöffnung automatisch zwei sinnvolle Öffnungsblöcke.
+- Restauranttypische Zeiten wie 11:00–22:00 ergeben 14:00–17:00 Pause; 10:00–20:00 ergibt 14:00–16:30.
+- Vor und nach der Pause bleiben mindestens 90 Minuten Öffnungszeit; Blockgrenzen und Pausengrenzen müssen exakt zusammenpassen.
+- Kurze Öffnungstage bleiben unverändert und zeigen einen verständlichen Hinweis statt ungültiger Zeitfelder.
+- Gespeicherte oder manuell angepasste Pausen werden nicht still neu berechnet.
+- Beim Entfernen der Pause wird das Ende des zweiten Blocks wieder als Ende der durchgehenden Tagesöffnung verwendet.
+- Mobile Zeitfelder stehen bei 390 und 430 px untereinander; keine Migration oder Businesslogik außerhalb der Öffnungszeiten geändert.

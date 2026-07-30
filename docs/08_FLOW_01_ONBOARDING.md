@@ -284,6 +284,13 @@ optional eine Mittagspause mit genau zwei Öffnungsblöcken. Die beiden Blöcke
 dürfen sich nicht überschneiden; die Pause liegt vollständig zwischen ihnen.
 Bestehende Restaurants ohne Pause verwenden weiterhin unverändert `open` und
 `close`.
+
+Beim erstmaligen Hinzufügen einer Mittagspause schlägt das System aus der
+eingetragenen Tagesöffnung automatisch passende Zeiten vor. Tage unter acht
+Stunden erhalten keinen automatischen Vorschlag. Vor und nach der Pause bleiben
+mindestens 90 Minuten Öffnungszeit. Der Owner kann die vorgeschlagenen Werte
+anschließend anpassen; bestehende gespeicherte Pausen werden niemals automatisch
+neu berechnet oder überschrieben.
 später
 
 ### Nicht bauen in V1
