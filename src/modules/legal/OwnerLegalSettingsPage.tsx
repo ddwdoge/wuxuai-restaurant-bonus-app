@@ -15,6 +15,7 @@ import {
 import { Link } from "react-router-dom";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useTenant } from "../tenant/TenantProvider";
+import { getLegalDocumentContent, getPointsValidityState, ownerLegalLoadErrorMessage } from "./legalDocumentState.mjs";
 import { requiredLegalDocumentStatus } from "./legalReadiness.mjs";
 import {
   generateRestaurantLegalPackage,
@@ -95,10 +96,18 @@ export function OwnerLegalSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryRevision, setRetryRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    if (!activeRestaurant?.id) return;
+    if (!activeRestaurant?.id) {
+      setSetup(null);
+      setProfile({});
+      setOriginalProfile({});
+      setError("Restaurantdaten fehlen.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     loadRestaurantLegalSetup(activeRestaurant.id)
@@ -108,8 +117,13 @@ export function OwnerLegalSettingsPage() {
         setProfile(next.profile);
         setOriginalProfile(next.profile);
       })
-      .catch(() => {
-        if (!cancelled) setError("Rechtliche Angaben konnten nicht geladen werden.");
+      .catch((loadError: unknown) => {
+        if (!cancelled) {
+          setSetup(null);
+          setProfile({});
+          setOriginalProfile({});
+          setError(ownerLegalLoadErrorMessage(loadError));
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -117,9 +131,11 @@ export function OwnerLegalSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant?.id]);
+  }, [activeRestaurant?.id, retryRevision]);
 
   const terms = document(setup, "participation_terms");
+  const termsContent = getLegalDocumentContent(terms);
+  const pointsValidity = getPointsValidityState(terms);
   const privacy = document(setup, "privacy");
   const imprint = document(setup, "imprint");
   const documentReadiness = useMemo(
@@ -129,6 +145,7 @@ export function OwnerLegalSettingsPage() {
   const missingProfileFields = requiredProfileFields.filter(([key]) => !profile[key]?.trim());
   const registration = setup?.readiness.registration;
   const registrationReady = registration?.registration_allowed ?? false;
+  const bonusProgramIncomplete = registration?.program_active === false;
   const complaintUsesFallback = !profile.complaint_contact?.trim() && Boolean(profile.email?.trim());
   const publicLegalPath = activeRestaurant?.slug ? `/legal/${activeRestaurant.slug}` : "/admin/legal";
 
@@ -197,7 +214,16 @@ export function OwnerLegalSettingsPage() {
   }
 
   if (!activeRestaurant || !setup) {
-    return <section className="card settings-detail-card"><h1>Rechtliches & Datenschutz</h1><p className="status-message error">{error ?? "Restaurantdaten fehlen."}</p></section>;
+    return (
+      <section className="card settings-detail-card">
+        <h1>Rechtliches & Datenschutz</h1>
+        <p className="status-message error" role="alert">{error ?? "Restaurantdaten fehlen."}</p>
+        <div className="owner-legal-actions">
+          {activeRestaurant ? <button className="button" onClick={() => setRetryRevision((current) => current + 1)} type="button">Erneut versuchen</button> : null}
+          <Link className="button secondary" to="/admin">Zum Dashboard</Link>
+        </div>
+      </section>
+    );
   }
 
   const cards = [
@@ -228,6 +254,22 @@ export function OwnerLegalSettingsPage() {
         </div>
         <span className={`owner-legal-readable-status ${registration?.status ?? "red"}`}>{registration?.status === "green" ? "Bereit" : registration?.status === "yellow" ? "Prüfung erforderlich" : "Blockiert"}</span>
       </section>
+
+      {bonusProgramIncomplete ? (
+        <section className="owner-legal-update-note" role="status">
+          <AlertCircle aria-hidden="true" size={20} />
+          <div><strong>Bonusprogramm noch nicht vollständig eingerichtet</strong><p>Schließe die Einrichtung ab, bevor rechtlich verbindliche Bonusregeln veröffentlicht werden.</p></div>
+          <Link className="button secondary" to="/admin/onboarding">Zum Onboarding</Link>
+        </section>
+      ) : null}
+
+      {terms && !termsContent ? (
+        <section className="owner-legal-update-note" role="status">
+          <Clock3 aria-hidden="true" size={20} />
+          <div><strong>Bonusregeln noch nicht veröffentlicht</strong><p>Eine vorbereitete Dokumenthülle ist vorhanden, aber es gibt noch keine aktive Teilnahmebedingungen-Version. Es wird kein rechtlicher Standardwert angezeigt.</p></div>
+          {hasDrafts ? <a className="button secondary" href="#legal-publication">Dokumente prüfen</a> : <button className="button secondary" onClick={() => setEditing(true)} type="button">Dokumente vorbereiten</button>}
+        </section>
+      ) : null}
 
       <section className="owner-legal-automation-note" aria-labelledby="legal-automation-title">
         <Info aria-hidden="true" size={21} />
@@ -270,15 +312,15 @@ export function OwnerLegalSettingsPage() {
           <div className="owner-legal-document-icon"><Landmark aria-hidden="true" size={21} /></div>
           <div><h2>Bonusregeln</h2><p>{terms ? "Automatisch aus deiner Konfiguration" : "Noch nicht vorbereitet"}</p></div>
           <dl>
-            <div><dt>Punktegültigkeit</dt><dd>{terms?.content.points_validity_months ? `${terms.content.points_validity_months} Monate` : "–"}</dd></div>
-            <div><dt>Tägliches Limit</dt><dd>{terms?.content.daily_booking_limit ? "2 Buchungen" : "–"}</dd></div>
+            <div><dt>Punktegültigkeit</dt><dd>{pointsValidity.status === "available" ? `${pointsValidity.months} Monate` : "Noch nicht veröffentlicht"}</dd></div>
+            <div><dt>Tägliches Limit</dt><dd>{termsContent?.daily_booking_limit ? "2 Buchungen" : "Noch nicht veröffentlicht"}</dd></div>
           </dl>
           <Link className="owner-legal-card-link" to={`${publicLegalPath}#points-validity`}>Ansehen <ChevronRight aria-hidden="true" size={18} /></Link>
         </article>
 
         <article className="card owner-legal-document-card">
           <div className="owner-legal-document-icon"><ReceiptText aria-hidden="true" size={21} /></div>
-          <div><h2>Kassenabgrenzung</h2><p>{terms?.content.cash_register_boundary ? "Bestätigt" : "Noch nicht vorbereitet"}</p></div>
+          <div><h2>Kassenabgrenzung</h2><p>{termsContent?.cash_register_boundary ? "Bestätigt" : "Noch nicht veröffentlicht"}</p></div>
           <p>WUXUAI dokumentiert Bonuspunkte und Einlösungen. Das Restaurant erfasst relevante Vorgänge im eigenen Kassensystem.</p>
           <Link className="owner-legal-card-link" to="/admin/reports">Bonus-Aktivitätsberichte öffnen <ChevronRight aria-hidden="true" size={18} /></Link>
         </article>
@@ -325,7 +367,7 @@ export function OwnerLegalSettingsPage() {
       ) : null}
 
       {hasDrafts ? (
-        <section className="card owner-legal-publication" aria-labelledby="legal-publication-title">
+        <section className="card owner-legal-publication" id="legal-publication" aria-labelledby="legal-publication-title">
           <div><span className="premium-dashboard-kicker">Prüfung vor Veröffentlichung</span><h2 id="legal-publication-title">Neue Dokumentversionen veröffentlichen</h2><p className="muted">Aktive Versionen und historische Kundenbestätigungen bleiben bis zur Veröffentlichung unverändert.</p></div>
           <div className="owner-legal-publication-grid">
             <div><strong>Geänderte Angaben</strong><p>{preparedChanges.length ? preparedChanges.join(", ") : "Bonusregeln oder automatisch erzeugte Dokumentinhalte"}</p></div>

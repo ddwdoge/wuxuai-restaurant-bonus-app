@@ -2372,3 +2372,12 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Gespeicherte oder manuell angepasste Pausen werden nicht still neu berechnet.
 - Beim Entfernen der Pause wird das Ende des zweiten Blocks wieder als Ende der durchgehenden Tagesöffnung verwendet.
 - Mobile Zeitfelder stehen bei 390 und 430 px untereinander; keine Migration oder Businesslogik außerhalb der Öffnungszeiten geändert.
+
+## 2026-07-30 - Legal Center gegen fehlende aktive Dokumentinhalte gehärtet
+
+- Der Owner-Legal-Datenvertrag erlaubt bei vorbereiteten Dokumenthüllen ausdrücklich `content = null`, solange keine veröffentlichte Version existiert.
+- Punktegültigkeit wird nur aus dem Inhalt einer aktiven Teilnahmebedingungen-Version angezeigt; Entwürfe und fehlende Werte erzeugen keinen erfundenen Standard.
+- Neue Restaurants sehen verständliche Einrichtungs- beziehungsweise Veröffentlichungszustände statt eines White Screens.
+- Loader-Fehler und fehlende Berechtigung werden neutral behandelt und können kontrolliert erneut geladen werden.
+- Eine lokale Error Boundary schützt die geschützte Owner-Legal-Route vor unerwarteten Renderfehlern.
+- Keine Migration, RLS-, Legal-Template-, Onboarding-, Bonus- oder Tenant-Logik geändert.

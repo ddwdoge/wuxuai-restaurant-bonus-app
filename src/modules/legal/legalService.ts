@@ -12,7 +12,7 @@ export type LegalDocumentView = {
   version: string;
   language: string;
   effective_date: string;
-  content: Record<string, unknown>;
+  content: Record<string, unknown> | null;
   rendered_text: string;
   document_hash: string;
   status: "draft" | "published" | "archived";
@@ -197,6 +197,9 @@ export async function loadRestaurantLegalSetup(restaurantId: string) {
   const client = requireSupabase();
   const { data, error } = await client.rpc("get_restaurant_legal_setup", { input_restaurant_id: restaurantId });
   if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Restaurant legal setup is unavailable.");
+  }
   return data as RestaurantLegalSetup;
 }
 

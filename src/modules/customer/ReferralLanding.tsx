@@ -161,7 +161,7 @@ export function ReferralLanding() {
   }
 
   const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
-  const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
+  const pointsValidityMonths = Number(legalTerms?.content?.points_validity_months);
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
     ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
     : "Die Punktegültigkeit ist in den Teilnahmebedingungen beschrieben.";

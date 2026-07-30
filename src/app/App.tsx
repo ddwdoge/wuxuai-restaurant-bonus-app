@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-rou
 import { ProtectedRoute } from "../modules/auth/ProtectedRoute";
 import { LoginPage } from "../modules/auth/LoginPage";
 import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
+import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundary";
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
 import {
@@ -170,7 +171,7 @@ export function App() {
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
         <Route path="reports" element={withFallback(<BonusActivityReportsPage />, <AdminLoading />)} />
-        <Route path="legal" element={withFallback(<OwnerLegalSettingsPage />, <AdminLoading />)} />
+        <Route path="legal" element={withFallback(<OwnerLegalErrorBoundary><OwnerLegalSettingsPage /></OwnerLegalErrorBoundary>, <AdminLoading />)} />
       </Route>
       <Route
         path="/admin/platform"

@@ -497,7 +497,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     ? `${customer?.stamp_balance ?? 0}/${settings.stamps_required}`
     : String(customer?.points_balance ?? 0);
   const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
-  const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
+  const pointsValidityMonths = Number(legalTerms?.content?.points_validity_months);
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
     ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
     : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
