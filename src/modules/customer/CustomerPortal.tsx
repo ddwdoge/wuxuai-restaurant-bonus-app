@@ -261,7 +261,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
   const reloadLegalCenter = useCallback(async () => {
     if (!isUsableRestaurantSlug(restaurantSlug)) {
-      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Unternehmens-Link nicht verfügbar." });
       return;
     }
     setLegalCenterState({ status: "loading" });
@@ -269,7 +269,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
       setLegalCenterState(legalCenterStateFromResponse(legalData));
     } catch {
-      setLegalCenterState({ status: "error", message: "Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut." });
+      setLegalCenterState({ status: "error", message: "Die rechtlichen Informationen dieses Unternehmens konnten gerade nicht geladen werden. Bitte versuche es erneut." });
     }
   }, [activeToken, restaurantSlug]);
   useEffect(() => {
@@ -299,12 +299,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setCustomer(null);
       setRewards([]);
       setRetention(null);
-      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Unternehmens-Link nicht verfügbar." });
       setActiveRedemptionCode(null);
       setRedeemOffer(null);
       setRedemptionOutcome(null);
       setRedemptionDrawerOpen(false);
-      setMessage("Restaurant wurde nicht gefunden.");
+      setMessage("Unternehmen wurde nicht gefunden.");
       return undefined;
     }
 
@@ -324,7 +324,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       });
       if (portalResult.status === "cancelled") return;
       if (portalResult.status !== "loaded") {
-        throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
+        throw portalResult.error ?? new Error("Unternehmen wurde nicht gefunden.");
       }
       const data = portalResult.data;
       if (!cancelled) {
@@ -394,7 +394,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           });
           setMessage(error instanceof Error
             ? error.message
-            : "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Restaurant.");
+            : "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Unternehmen.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
@@ -499,7 +499,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
     ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
-    : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
+    : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Unternehmens beschrieben.";
   const bonusTiers = settings?.bonus_amount_tiers?.length ? settings.bonus_amount_tiers : defaultBonusAmountTiers;
   const sortedBonusTiers = [...bonusTiers].sort((left, right) => left.min - right.min);
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
@@ -521,14 +521,14 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const previewPoints = selectedTier && settings
     ? calculateBonusTierPoints(selectedTier, settings.amount_per_point, activePointMultiplier)
     : 0;
-  const reasonToJoin = `${restaurant?.name ?? "Dieses Restaurant"} belohnt treue Gäste.`;
+  const reasonToJoin = `${restaurant?.name ?? "Dieses Unternehmen"} belohnt treue Gäste.`;
   const explanation = [
-    `${restaurant?.name ?? "Das Restaurant"} wurde über deinen QR automatisch erkannt.`,
+    `${restaurant?.name ?? "Das Unternehmen"} wurde über deinen QR automatisch erkannt.`,
     isBonusCollection
       ? `Wähle nach dem Bezahlen die passende Bon-Stufe aus.`
       : "Du bekommst deinen persönlichen Bonus-QR.",
     isBonusCollection
-      ? `Dieses Restaurant belohnt höhere Rechnungsstufen mit mehr Bonuspunkten.`
+      ? `Dieses Unternehmen belohnt höhere Rechnungsstufen mit mehr Bonuspunkten.`
       : settings?.loyalty_mode === "stamp_based"
         ? `Sammle Stempel bis zur nächsten Punkteeinlösung.`
         : `Sammle Punkte bei jedem Besuch.`,
@@ -543,13 +543,13 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       ? `Du siehst oben, wie lange dein Boost noch gültig ist.`
       : `Dein Bonus Boost startet erst nach der ersten Punktebuchung deines Freundes.`,
     isBonusCollection
-      ? `Bitte Mitarbeiter um die Tages-PIN. Pro Rechnung ist eine Punktebuchung möglich.`
+      ? `Bitte ein Teammitglied um die Tages-PIN. Pro Rechnung ist eine Punktebuchung möglich.`
       : activeBoost
         ? `Bonus Boost ist aktiv: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Lade Freunde ein und verlängere um ${referralBoostDurationDays} Tage.`
       : referralBoostEnabled
         ? `Bonus Boost startet erst, wenn dein eingeladener Freund erstmals Punkte sammelt: ${referralBoostMultiplier}× Punkte für ${referralBoostDurationDays} Tage.`
       : pointRedemptions.some((offer) => offer.status === "unlocked")
-        ? `Zeige eine einlösbare Punkteeinlösung im Restaurant. Das Team bestätigt die Einlösung.`
+        ? `Zeige eine einlösbare Punkteeinlösung im Geschäft. Das Team bestätigt die Einlösung.`
         : "Punkteeinlösungen erscheinen automatisch, sobald sie bereit sind.",
   ];
   const collectionBasePoints = collectionResult?.base_points ?? collectionResult?.points_added ?? 0;
@@ -1185,7 +1185,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             </p>
             <button className="button customer-primary-button" onClick={() => setGuestStep("register")} type="button">
               <UserPlus size={22} />
-              Restaurant-QR scannen oder neu beitreten
+              Unternehmens-QR scannen oder neu beitreten
             </button>
           </article>
         ) : null}
@@ -1236,7 +1236,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
               </div>
               <section className="customer-registration-legal" aria-labelledby="registration-legal-title">
                 <h3 id="registration-legal-title">Deine Teilnahme bei {restaurant.name}</h3>
-                <p>Das Restaurant betreibt dieses Bonusprogramm. WUXUAI stellt die technische Plattform bereit.</p>
+                <p>Das Unternehmen betreibt dieses Bonusprogramm. WUXUAI stellt die technische Plattform bereit.</p>
                 <ul>
                   <li>Maximal zwei erfolgreiche Punktebuchungen pro Tag.</li>
                   <li>{pointsValidityText}</li>
@@ -1247,7 +1247,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="customer-legal-load-warning" role="alert">
-                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
+                  <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Unternehmen hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
                     <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
                   </div>
                 ) : null}
@@ -1293,7 +1293,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             <span className="pill">Fertig</span>
             <h2>Dein Bonuskonto ist gespeichert</h2>
             <p className="muted">Du kannst deine Punkte jederzeit auf diesem Handy ansehen.</p>
-            <p className="muted">Wenn du diesen Restaurant-QR später wieder scannst, wirst du automatisch erkannt.</p>
+            <p className="muted">Wenn du diesen Unternehmens-QR später wieder scannst, wirst du automatisch erkannt.</p>
             {registration.welcome_reward ? (
               <article className="welcome-reward-preview">
                 <div className="customer-reward-image">
@@ -1423,12 +1423,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     </div>
                     <div className="premium-collect-entry-copy">
                       <h1>Punkte sammeln</h1>
-                      <p>Dein Restaurant wurde bereits über den QR-Code erkannt.</p>
+                      <p>Dein Unternehmen wurde bereits über den QR-Code erkannt.</p>
                     </div>
                     <div className="premium-restaurant-recognized">
                       <span><Store aria-hidden="true" size={20} /></span>
                       <div>
-                        <small>Restaurant erkannt</small>
+                        <small>Unternehmen erkannt</small>
                         <strong>{restaurant.name}</strong>
                       </div>
                       <CheckCircle2 aria-hidden="true" size={20} />
@@ -1438,13 +1438,13 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       setMessage(null);
                     }}>Bon-Stufe auswählen</PrimaryButton>
                     <button
-                      aria-label="Anderes Restaurant scannen"
+                      aria-label="Anderes Unternehmen scannen"
                       className="premium-collect-text-button premium-restaurant-rescan-button"
                       onClick={openRestaurantScanner}
                       type="button"
                     >
                       <QrCode aria-hidden="true" size={18} />
-                      Anderes Restaurant scannen
+                      Anderes Unternehmen scannen
                     </button>
                     <p className="premium-collect-security"><ShieldCheck aria-hidden="true" size={16} /> Sicher mit deinem Bonuskonto verbunden</p>
                   </article>
@@ -1455,7 +1455,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <div className="premium-collect-step-heading">
                       <span>Schritt 1 von 2</span>
                       <h1>Welche Bon-Stufe passt?</h1>
-                      <p>Wähle gemeinsam mit dem Mitarbeiter den Bereich deiner Rechnung.</p>
+                      <p>Wähle gemeinsam mit einem Teammitglied den Bereich deiner Rechnung.</p>
                     </div>
                     <div className="premium-tier-grid" role="group" aria-label="Bon-Stufe auswählen">
                       {sortedBonusTiers.map((tier) => {
@@ -1498,7 +1498,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <div className="premium-collect-step-heading">
                       <span>Schritt 2 von 2</span>
                       <h1>Tages-PIN eingeben</h1>
-                      <p>Bitte den Mitarbeiter um die heutige vierstellige Tages-PIN.</p>
+                      <p>Bitte ein Teammitglied um die heutige vierstellige Tages-PIN.</p>
                     </div>
                     <div className="premium-selected-tier">
                       <div>
@@ -1564,7 +1564,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
                 />
-                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Unternehmens. {pointsValidityText}</p>
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="premium-legal-load-warning" role="status">
                     <span>Rechtliche Informationen sind vorübergehend nicht verfügbar. Dein Bonuskonto bleibt nutzbar.</span>
@@ -1614,7 +1614,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
                 <Link className="premium-restaurant-finder-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}>
                   <span><MapPinned aria-hidden="true" size={22} /></span>
-                  <div><strong>Restaurants entdecken</strong><small>WUXUAI Partner in deiner Nähe finden</small></div>
+                  <div><strong>Unternehmen entdecken</strong><small>WUXUAI Partner in deiner Nähe finden</small></div>
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 
@@ -1626,7 +1626,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       <Gift aria-hidden="true" size={19} />
                       {drawingBirthdayGift ? "Geschenk wird ausgewählt …" : "Geschenk abholen"}
                     </PrimaryButton>
-                    <p className="premium-legal-note-small">Die Geburtstagsangabe ist freiwillig. Pro Restaurant und Jahr ist höchstens ein Geburtstagsgeschenk vorgesehen.</p>
+                    <p className="premium-legal-note-small">Die Geburtstagsangabe ist freiwillig. Pro Unternehmen und Jahr ist höchstens ein Geburtstagsgeschenk vorgesehen.</p>
                     {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
                   </PremiumCard>
                 ) : null}
@@ -1654,7 +1654,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       ))}
                     </div>
                   ) : (
-                    <EmptyState description="Sobald das Restaurant eine Punkteeinlösung aktiviert, erscheint sie hier." title="Noch keine Punkteeinlösungen" />
+                    <EmptyState description="Sobald das Unternehmen eine Punkteeinlösung aktiviert, erscheint sie hier." title="Noch keine Punkteeinlösungen" />
                   )}
                 </section>
 
@@ -1716,7 +1716,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       Freund einladen
                     </PrimaryButton>
                   ) : null}
-                  <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
+                  <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Unternehmen und ist nicht übertragbar.</p>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
@@ -1758,10 +1758,10 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 <div className="premium-redemption-summary">
                   <div><span>{pointsTitle}</span><strong>{pointsValue}</strong></div>
                   <p>{rewardFilter === "all"
-                    ? `${redemptionCatalog.length} ${redemptionCatalog.length === 1 ? "Belohnung" : "Belohnungen"} im Restaurant`
+                    ? `${redemptionCatalog.length} ${redemptionCatalog.length === 1 ? "Belohnung" : "Belohnungen"} im Unternehmen`
                     : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
                 </div>
-                <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
+                <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Unternehmen angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Unternehmens.</p>
                 {filteredRedemptions.length ? (
                   <div
                     aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
@@ -1791,7 +1791,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 ) : (
                   <EmptyState
                     description={rewardFilter === "all"
-                      ? "Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet."
+                      ? "Aktuell hat das Unternehmen keine Punkteeinlösung freigeschaltet."
                       : "Sobald etwas für dich bereitsteht, erscheint es hier."}
                     title={rewardFilter === "all" ? "Noch nichts zum Einlösen" : "Noch keine persönlichen Belohnungen"}
                   />
@@ -1839,16 +1839,16 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   </div>
                 </section>
 
-                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Unternehmens. {pointsValidityText}</p>
 
                 <section className="premium-content-section" aria-labelledby="account-more-title">
                   <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
-                    <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
+                    <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Unternehmen entdecken</strong><span>WUXUAI Partner</span></Link>
                     <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
                     <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
-                    <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>
+                    <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Unternehmen</strong><span>{restaurant.name}</span></button>
                   </div>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
@@ -1896,7 +1896,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
             <AppDrawer
               description={activeRedemptionCode
-                ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
+                ? "Zeige den aktiven Code jetzt einem Teammitglied."
                 : "Alle Details zu deiner Auswahl."}
               footer={redemptionDrawerFooter}
               onClose={closeRedemptionDrawer}
@@ -1941,7 +1941,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     </StatusBadge>
                     <div className="premium-code-heading">
                       <span><Sparkles aria-hidden="true" size={22} /></span>
-                      <div><h2>{activeRedemptionCode.title}</h2><p>Zeige diesen Code jetzt dem Mitarbeiter.</p></div>
+                      <div><h2>{activeRedemptionCode.title}</h2><p>Zeige diesen Code jetzt einem Teammitglied.</p></div>
                     </div>
                     <strong aria-label={`Einlösecode ${activeRedemptionCode.code}`} className="redemption-code-value">
                       {activeRedemptionCode.code.replace(/^(\d{3})(\d{3})$/, "$1 $2")}
@@ -1992,7 +1992,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <span className="premium-confirm-icon"><LockKeyhole aria-hidden="true" size={26} /></span>
                     <StatusBadge tone="warning">Verbindliche Bestätigung</StatusBadge>
                     <h2>{redeemOffer.is_starter_reward ? "Geschenk wirklich einlösen?" : "Punkte wirklich einlösen?"}</h2>
-                    <p><strong>Bitte erst direkt vor dem Mitarbeiter bestätigen.</strong></p>
+                    <p><strong>Bitte erst direkt vor einem Teammitglied bestätigen.</strong></p>
                     <p>
                       {redeemOffer.is_starter_reward
                         ? "Nach deiner Bestätigung wird ein einmaliger Einlösecode erzeugt."
@@ -2029,7 +2029,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     : accountSheet === "save"
                       ? "Bonuskonto speichern"
                       : accountSheet === "restaurant"
-                        ? "Restaurantinformationen"
+                        ? "Unternehmensinformationen"
                         : accountSheet === "help"
                           ? "Hilfe & Kontakt"
                           : "Wirklich abmelden?"}
@@ -2046,7 +2046,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <section>
                       <div>
                         <h3>Identitätsdaten geschützt</h3>
-                        <p>Telefonnummer oder Geburtsdatum ändern? Bitte wende dich direkt an das Restaurant.</p>
+                        <p>Telefonnummer oder Geburtsdatum ändern? Bitte wende dich direkt an das Unternehmen.</p>
                       </div>
                     </section>
                   </div>
@@ -2086,7 +2086,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     </span>
                     <h3>{restaurant.name}</h3>
                     <StatusBadge tone="success">Bonusprogramm aktiv</StatusBadge>
-                    <p>Du bist in diesem Restaurant als Bonus-Mitglied gespeichert.</p>
+                    <p>Du bist bei diesem Unternehmen als Bonus-Mitglied gespeichert.</p>
                   </div>
                 ) : null}
                 {accountSheet === "help" ? (

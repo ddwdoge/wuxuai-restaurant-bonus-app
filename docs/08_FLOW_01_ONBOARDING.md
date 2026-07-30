@@ -1,14 +1,14 @@
 # 08_FLOW_01_ONBOARDING.md
 
-# WUXUAI Bonus V1 -- Flow 01: Restaurant eröffnen
+# WUXUAI Bonus V1 -- Flow 01: Unternehmen einrichten
 
 Status: **LOCK**
 
 Dieses Dokument beschreibt den vollständigen Flow 01 des WUXUAI Bonus
 Systems.
 
-Flow 01 ist der Einrichtungsfluss für Restaurantbesitzer.\
-Er entscheidet darüber, ob ein Restaurant die Plattform versteht,
+Flow 01 ist der Einrichtungsfluss für Betreiber.\
+Er entscheidet darüber, ob ein Unternehmen die Plattform versteht,
 vertraut und in wenigen Minuten starten kann.
 
 Flow 01 ist kein Formular.\
@@ -23,13 +23,13 @@ Flow 01 ist ein geführter Installationsassistent.
 
 Das Ziel von Flow 01 lautet:
 
-> Ein Restaurant soll sein Bonusprogramm in wenigen Minuten starten
+> Ein lokales Unternehmen soll sein Bonusprogramm in wenigen Minuten starten
 > können, ohne Schulung, ohne technische Begriffe und ohne Rechnen.
 
-Nach Flow 01 muss das Restaurant sofort bereit sein, echte Gäste zu
+Nach Flow 01 muss das Unternehmen sofort bereit sein, echte Kunden zu
 registrieren und das Bonusprogramm im Betrieb zu testen.
 
-Flow 01 ist erfolgreich, wenn der Restaurantbesitzer denkt:
+Flow 01 ist erfolgreich, wenn der Betreiber denkt:
 
 > „Mein Bonusprogramm ist jetzt bereit."
 
@@ -43,8 +43,8 @@ Nicht:
 
 Flow 01 dient direkt dem Cashflow-Ziel der Plattform.
 
-Ein Restaurant soll die Software schnell testen können.\
-Je schneller ein Restaurant starten kann, desto höher ist die
+Ein Unternehmen soll die Software schnell testen können.\
+Je schneller ein Unternehmen starten kann, desto höher ist die
 Wahrscheinlichkeit, dass es die 30 Tage Testphase aktiv nutzt und später
 bezahlt.
 
@@ -57,9 +57,9 @@ Deshalb gilt:
 -   Onboarding darf keine technischen Begriffe enthalten.
 -   Onboarding darf keine Perfektion verlangen.
 
-Das Restaurant soll nicht perfekt starten.
+Das Unternehmen soll nicht perfekt starten.
 
-Das Restaurant soll starten.
+Das Unternehmen soll starten.
 
 ------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ Die WUXUAI Grundphilosophie lautet:
 
 Für Flow 01 bedeutet das:
 
-Restaurantbesitzer konzentriert sich auf: - Name - Aussehen -
+Betreiber konzentrieren sich auf: - Name - Branche - Aussehen -
 Öffnungszeiten - grobe Bonuslogik - Willkommens-Belohnungen - Starter
 Kit
 
@@ -95,7 +95,7 @@ permanenter Einstellungsbereich - mehrere primäre Buttons - manuelle
 Speicherknöpfe - technische Begriffe - unnötige Detailfragen
 
 Erlaubt: - Zurück - Weiter - ein klarer Fortschritt - Autosave - ein
-Schritt pro Entscheidung - Schritt 7: Restaurant starten
+Schritt pro Entscheidung - Schritt 7: Unternehmen aktivieren
 
 ------------------------------------------------------------------------
 
@@ -103,7 +103,7 @@ Schritt pro Entscheidung - Schritt 7: Restaurant starten
 
 🟢 **FIX**
 
-Das Restaurant Portal bleibt gesperrt, solange Flow 01 nicht
+Das Betreiber-Portal bleibt gesperrt, solange Flow 01 nicht
 abgeschlossen ist.
 
 Wenn `onboarding_status` nicht completed ist:
@@ -120,7 +120,7 @@ sind erreichbar.
 
 Grund:
 
-Ein halbfertig eingerichtetes Restaurant darf nicht in den Betrieb
+Ein halbfertig eingerichtetes Unternehmen darf nicht in den Betrieb
 starten.
 
 ------------------------------------------------------------------------
@@ -131,12 +131,12 @@ starten.
 
 Flow 01 besitzt nach aktueller V1-Entscheidung **7 Schritte**.
 
-1.  Restaurant
+1.  Unternehmen
 2.  Aussehen
 3.  Geöffnet
 4.  Punkteeinlösung
-5.  Willkommens-Belohnungen
-6.  Restaurant Starter Kit
+5.  Willkommensgeschenke
+6.  Rechtliches
 7.  Startklar
 
 Der ehemalige Schritt „Angebot" wurde vollständig entfernt.
@@ -150,7 +150,7 @@ Onboarding.
 
 ------------------------------------------------------------------------
 
-## 7. Schritt 1 -- Restaurant
+## 7. Schritt 1 -- Unternehmen
 
 ### Ziel
 
@@ -160,8 +160,8 @@ Der Besitzer gibt die wichtigsten Basisdaten seines Betriebs an.
 
 Erlaubt:
 
-- Restaurantname
-- Betriebsart
+- Unternehmensname
+- Branche
 - Sprache
 - kompakter Unterbereich „Rechtliche Angaben“
 - Unternehmensname
@@ -173,7 +173,7 @@ Erlaubt:
 - Kontakt-E-Mail
 
 Die rechtlichen Stammdaten dienen ausschließlich der automatischen Erzeugung
-des restaurantbezogenen Legal-Pakets. Der Owner schreibt im Onboarding keine
+des unternehmensbezogenen Legal-Pakets. Der Betreiber schreibt im Onboarding keine
 juristischen Freitexte.
 
 Optional:
@@ -190,10 +190,27 @@ Ist kein Beschwerdekontakt angegeben, wird die Kontakt-E-Mail verwendet.
 
 V1 Sprache: - Deutsch
 
-Betriebsart in V1: - Restaurant - Café - ähnliche Gastronomie
+Zentrale Branchenprofile in V1:
 
-V2 vorbereitet: - Bäckerei - Bubble Tea - Friseur - Einzelhandel -
-lokale Betriebe
+- Restaurant
+- Café
+- Bäckerei
+- Bubble Tea
+- Eisdiele
+- Einzelhandel
+- Friseursalon
+- Kosmetikstudio
+- Fitnessstudio
+- Dienstleistung
+- Sonstiges
+
+Die Branche wird als barrierefreies Dropdown mit der leeren Auswahl
+„Branche auswählen“ dargestellt. Abhängige Geschenk- und
+Belohnungsauswahlen werden zentral nach Branchenprofil konfiguriert.
+
+Wenn die Branche geändert wird, bleiben gültige Werte erhalten. Nicht mehr
+passende Werte werden kontrolliert zurückgesetzt; bestehende individuelle
+Werte bleiben lesbar und werden nicht automatisch gelöscht.
 
 ### Nicht fragen
 
@@ -293,27 +310,29 @@ V2 vorbereitet.
 
 ### Ziel
 
-Der Besitzer definiert die spätere Punkte-Einlösung, ohne Punkte zu berechnen.
+Der Betreiber definiert die spätere Punkteeinlösung über verständliche
+Auswahlen, ohne selbst eine Punkteformel zu berechnen.
 
 ### Bonus Designer
 
 🟢 **FIX**
 
-Restaurantbesitzer soll nicht mit Punktformeln arbeiten.
+Betreiber sollen nicht mit Punktformeln arbeiten.
 
 Er beantwortet einfache Fragen:
 
 -   Wie hoch ist der durchschnittliche Rechnungsbetrag?
--   Nach wie vielen Besuchen soll die erste Einlösung ungefähr
-    erreichbar sein?
--   Welche Rückgabequote passt zum Restaurant?
+-   Welche Branche wurde gewählt?
+-   Wie großzügig soll das Bonusprogramm sein?
 -   Welche Einlöseart ist typisch?
+-   Welche Einlösequote von 1 bis 10 Prozent passt?
 
 Die Software berechnet daraus:
 
 - erwartete Konsumation bis zur Einlösung
 - empfohlenen Einlösewert
-- spätere interne Punkte-Einlösung
+- passende Belohnungskategorie
+- spätere interne Punkteeinlösung
 
 ### Verboten
 
@@ -325,34 +344,34 @@ verlangen - technische Modusnamen wie `amount_based` -
 
 🟢 **FIX**
 
-Schritt 4 verwendet Restaurant-Sprache statt abstrakter Faktoren.
+Schritt 4 verwendet Geschäftssprache statt abstrakter Faktoren.
 
 V1-Rückgabequoten:
 
-- Sparsam: 3 %
-- Normal: 5 %
+- Sparsam: 3 % und zurückhaltender Belohnungswert
+- Standard: 3 % als empfohlener Ausgangspunkt
 - Großzügig: 8 %
 - Premium: 10 %
 
 Berechnung:
 
 ```text
-Konsumation = Durchschnittsbon × Besuche
-Einlösewert = Konsumation × Rückgabequote
+Konsumation = Produktwert / Einlösequote
+Benötigte Punkte = ceil(Konsumation × Punkte pro Euro)
 ```
 
 Beispiel:
 
 ```text
-18 € × 5 Besuche = 90 €
-Normal: 5 % von 90 € = 4,50 €
+Produktwert 4 € / 3 % = ca. 133,33 € Konsumation
+ca. 133,33 € × 10 Punkte pro Euro = 1.334 Punkte
 ```
 
 ### Restaurant arbeitet mit Euro
 
 🟢 **FIX**
 
-Das Restaurant denkt in Euro und Produkten.
+Das Unternehmen denkt in Euro, Produkten oder Leistungen.
 
 WUXUAI rechnet im Hintergrund Punkte.
 
@@ -364,12 +383,12 @@ WUXUAI rechnet im Hintergrund Punkte.
 
 🟢 **FIX**
 
-Schritt 5 dient nur zur Auswahl von Willkommens-Belohnungskategorien.
+Schritt 5 dient zur Auswahl eines passenden Willkommensgeschenks aus dem
+zentralen Branchenprofil.
 
-Keine Bearbeitung.\
-Keine Bilder.\
-Keine Produkte.\
-Keine Formulare.
+Die Auswahl erfolgt über ein Dropdown. „Eigene Auswahl“ öffnet ein kompaktes
+Formular für Bezeichnung, kurze Beschreibung, optionalen Wert und optionales
+Bild über den bestehenden Owner-Upload.
 
 ### Ziel
 
@@ -389,12 +408,10 @@ Der Besitzer wählt aus:
 
 ### Verhalten
 
--   Karten sind große Auswahlkarten.
 -   Standard: nichts ausgewählt.
--   Klick = ausgewählt.
--   erneuter Klick = abgewählt.
--   ausgewählte Karten sind grün.
--   nicht ausgewählte Karten sind grau.
+-   Das Dropdown zeigt nur Optionen der gewählten Branche.
+-   Bestehende individuelle Werte bleiben erhalten.
+-   Ein Branchenwechsel setzt nur ungültige Profilwerte zurück.
 -   Texte dürfen nicht überlaufen.
 -   Mobile First.
 
@@ -476,7 +493,7 @@ Bonus Boost als eingeladener Freund
 
 ------------------------------------------------------------------------
 
-## 13. Schritt 6 -- Restaurant Starter Kit
+## 13. Schritt 6 -- Rechtliches
 
 ### Grundentscheidung
 
@@ -484,78 +501,39 @@ Bonus Boost als eingeladener Freund
 
 Schritt 6 heißt:
 
-**Restaurant Starter Kit**
+**Rechtliches**
 
-Nicht: - Gästetest - QR Test - Download Center
+Nicht: - juristische Freitextseite - QR Test - Download Center
 
 ### Ziel
 
-Restaurant bekommt ein druckfertiges Startpaket.
+Der Betreiber prüft die automatisch aus Unternehmensdaten, Bonusregeln und
+zentralen Mastertemplates vorbereiteten Pflichtdokumente.
 
 ### Onboarding UI
 
-Im Onboarding gibt es nur einen Hauptbutton:
+Die Seite zeigt kompakt:
 
-**📦 Restaurant Starter Kit herunterladen**
+- Unternehmensdaten vollständig oder konkret fehlend
+- Teilnahmebedingungen vorbereitet
+- Datenschutzerklärung vorbereitet
+- Bonusregeln vorbereitet
+- Kassenabgrenzung vorbereitet
+- Status der Kundenregistrierung
 
-Keine PNG-Buttons.\
-Keine SVG-Buttons.\
-Keine erweiterten Optionen.\
-Keine einzelnen QR-Downloads.
+Der Betreiber schreibt keine juristischen Freitexte. Pflichtdokumente werden
+nicht umgangen. Rechtliche Mastertemplates bleiben `LEGAL_REVIEW_REQUIRED`.
 
 ### Warum?
 
-Restaurantbesitzer soll nicht entscheiden müssen, welche Datei er
-braucht.
-
-Er lädt das Starter Kit herunter.
-
-### Starter Kit PDF
-
-Das PDF enthält:
-
--   Infoseite für Restaurantbesitzer
--   Restaurant QR
--   Mein Bonus QR
--   Kassen-Aufsteller
--   Eingangs-Aufsteller
-
-### PDF Regeln
-
-Jede Druckseite: - Logo oben - Restaurantname - große Überschrift - QR
-zentriert - kurzer Hinweis - Footer
-
-Footer: `Powered by WUXUAI Bonus • www.wuxuaisbi.com`
-
-### Logo-Regeln im PDF
-
-Logo: - proportional - nicht verzerrt - nicht beschnitten -
-contain-scaling - Querformat, Hochformat, Quadrat funktionieren
-
-### QR-Regeln
-
-QR: - schwarz - groß - zentriert - gleiche Größe - gut scanbar
-
-### KPI-Infobox
-
-🟢 **FIX**
-
-In der freien Fläche darf eine KPI-Box für Bonus Boost erscheinen.
-
-Titel: **💡 Freunde einladen**
-
-Karten: - 🔥 Du 2× Punkte - 👥 Freund 2× Punkte - 📅 +30 Tage Bonus
-Boost
-
-Keine Fließtexte.
-
-Ziel: Gast versteht Bonus Boost in 1 Sekunde.
+Pflichtdaten und Pflichtdokumente müssen vor der Aktivierung vollständig sein.
+Optionale Unternehmensangaben blockieren den Abschluss nicht.
 
 ### Nach Onboarding
 
-Einzel-Downloads gehören ins QR Center.
-
-Dort später: - PNG - SVG - Sticker - Flyer - Aufsteller - Tischkarten
+Das Starter Kit und echte Unternehmens-QRs werden erst nach erfolgreicher
+Aktivierung im QR Center bereitgestellt. Im Onboarding gibt es keinen echten
+Kunden-QR und keinen öffentlichen Kundentest.
 
 ------------------------------------------------------------------------
 
@@ -563,19 +541,19 @@ Dort später: - PNG - SVG - Sticker - Flyer - Aufsteller - Tischkarten
 
 ### Ziel
 
-Restaurant bestätigt, dass alles bereit ist.
+Der Betreiber bestätigt, dass alles bereit ist.
 
 ### Checkliste
 
 Die Checkliste enthält:
 
--   Restaurantdaten fertig
+-   Unternehmensdaten fertig
 -   Aussehen fertig
 -   Öffnungszeiten fertig
 -   Bonusprogramm fertig
 -   Willkommens-Belohnungen fertig
--   Restaurant Starter Kit bereit
--   QR-Codes bereit
+-   Rechtliche Pflichtdokumente vorbereitet
+-   Kundenregistrierung bereit
 
 Entfernt: - Angebot erstellt - Angebot veröffentlicht
 
@@ -583,7 +561,7 @@ Grund: Angebote wurden aus Onboarding entfernt.
 
 ### Button
 
-Button: **Restaurant starten**
+Button: **Unternehmen aktivieren**
 
 Dieser Button erscheint nur auf Schritt 7.
 
@@ -702,7 +680,7 @@ Logo-Upload nutzt: `restaurant-media/{restaurant_id}/branding/...`
 
 Bucket: - public read - owner/admin write - max 5 MB - PNG/JPG/JPEG/SVG
 
-### Restaurant Starter Kit
+### Starter Kit
 
 PDF-Generierung darf keine SVG als Hauptdownload erzwingen.
 
@@ -724,12 +702,12 @@ Verboten:
 -   Dashboard vor abgeschlossenem Onboarding freigeben
 -   manuelles Speichern verlangen
 -   „Speichern und später fortsetzen"
--   Restaurant starten vor letztem Schritt
+-   Unternehmen aktivieren vor letztem Schritt
 -   Angebote-Schritt wieder einbauen
 -   Bilduploads für Belohnungen im Onboarding verlangen
 -   Produktdetails im Onboarding verlangen
 -   Punkte im Onboarding manuell eingeben
--   mehrere Downloadbuttons im Starter Kit Schritt
+-   echte Kunden-QRs vor erfolgreicher Aktivierung anzeigen
 -   englische UI-Texte
 -   technische Labels
 -   SVG als Hauptdownload
@@ -740,24 +718,24 @@ Verboten:
 
 ## 21. V2 Hinweise
 
-V2 vorbereitet: - weitere Branchen - Filialen - Wochenplan für
+V2 vorbereitet: - tiefgreifende Branchen-Speziallogik - Filialen - Wochenplan für
 Belohnungen - dynamische Starter Kit Botschaften - QR Center mit
 Sticker/Flyer/Tischkarten - erweiterte Smart Reward Engine - Enterprise
 Branding Entfernung - mehrsprachige UI nach deutscher V1
 
 ------------------------------------------------------------------------
 
-## 22. Restaurant Reality Check
+## 22. Betreiber Reality Check
 
 Flow 01 ist nur gut, wenn:
 
-1.  Restaurantbesitzer versteht jeden Schritt ohne Schulung.
+1.  Betreiber versteht jeden Schritt ohne Schulung.
 2.  Einrichtung dauert ca. 10 Minuten oder weniger.
 3.  Es gibt keine unnötigen Entscheidungen.
 4.  Kein technischer Begriff erscheint.
 5.  Nach Abschluss kann ein echter Gast registriert werden.
 6.  Starter Kit ist druckbar und verständlich.
-7.  Restaurantbesitzer fühlt sich startklar.
+7.  Betreiber fühlt sich startklar.
 
 ------------------------------------------------------------------------
 
@@ -772,9 +750,9 @@ Flow 01 ist LOCK, wenn:
 -   Logo Upload funktioniert
 -   Bonus Designer ohne Punkteformeln funktioniert
 -   Willkommens-Belohnungen nur Kategorien wählen
--   Restaurant Starter Kit nur einen Hauptdownload zeigt
--   PDF professionell aussieht
--   Restaurant starten erst Schritt 7 möglich
+-   Rechtsschritt Pflichtdaten und Pflichtdokumente verständlich zeigt
+-   keine echten Kunden-QRs vor Aktivierung sichtbar sind
+-   Unternehmen aktivieren erst in Schritt 7 möglich ist
 -   Abschluss zu `/admin` leitet
 -   Dashboard danach freigeschaltet
 -   alle Texte Deutsch

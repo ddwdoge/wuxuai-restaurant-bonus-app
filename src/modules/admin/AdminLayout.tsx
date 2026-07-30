@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { productTerminology } from "../../config/productTerminology";
 import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
@@ -21,11 +22,11 @@ import { isSetupAllowedPath } from "./setupAllowedPath";
 import "./admin-premium.css";
 
 const restaurantRoleLabels = {
-  owner: "Owner",
+  owner: "Betreiber",
   admin: "Administrator",
   manager: "Manager",
-  staff: "Mitarbeiter",
-  supervisor: "Mitarbeiter",
+  staff: "Teammitglied",
+  supervisor: "Teammitglied",
   customer: "Gast",
 } as const;
 
@@ -35,7 +36,7 @@ function readProfileName(user: ReturnType<typeof useAuth>["user"]) {
     return metadataName.trim();
   }
 
-  return user?.email?.split("@")[0] || "Restaurantkonto";
+  return user?.email?.split("@")[0] || "Betreiberkonto";
 }
 
 export function AdminLayout() {
@@ -54,7 +55,7 @@ export function AdminLayout() {
     restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Entwurf" : "Gesperrt";
   const profileName = readProfileName(user);
   const profileInitial = profileName.charAt(0).toLocaleUpperCase("de-AT") || "R";
-  const profileRoleLabel = restaurantRole ? restaurantRoleLabels[restaurantRole] : "Restaurantkonto";
+  const profileRoleLabel = restaurantRole ? restaurantRoleLabels[restaurantRole] : "Betreiberkonto";
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
@@ -65,7 +66,7 @@ export function AdminLayout() {
     { to: "/admin/welcome-gifts", label: "Willkommensgeschenke", icon: Gift },
     { to: "/admin/customers", label: "Gäste", icon: Users },
     { to: "/admin/qr", label: "QR Center", icon: QrCode },
-    { to: "/admin/staff", label: "Mitarbeiter", icon: Smartphone },
+    { to: "/admin/staff", label: "Team", icon: Smartphone },
     { to: "/admin/reports", label: "Berichte", icon: ScrollText },
     { to: "/admin/settings", label: "Einstellungen", icon: Settings },
   ];
@@ -162,7 +163,7 @@ export function AdminLayout() {
   );
 
   const renderNavigation = (variant: "sidebar" | "drawer") => (
-    <nav aria-label={variant === "drawer" ? "Restaurant Menü" : "Restaurant Portal Navigation"}>
+    <nav aria-label={variant === "drawer" ? "Unternehmensmenü" : "Betreiber-Portal Navigation"}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const locked = setupIncomplete && !isSetupAllowedPath(item.to);
@@ -201,7 +202,7 @@ export function AdminLayout() {
   );
 
   if (loading) {
-    return <div className="auth-shell">Restaurant Portal wird geladen...</div>;
+    return <div className="auth-shell">Betreiber-Portal wird geladen...</div>;
   }
 
   if (setupIncomplete && !isSetupAllowedRoute) {
@@ -228,7 +229,7 @@ export function AdminLayout() {
           <span className="restaurant-logo-frame">
             {branding?.logo_url ? (
               <img
-                alt={`${activeRestaurant?.name ?? "Restaurant"} Logo`}
+                alt={`${activeRestaurant?.name ?? productTerminology.business} Logo`}
                 className="restaurant-logo-image"
                 src={branding.logo_url}
               />
@@ -240,8 +241,8 @@ export function AdminLayout() {
           </span>
           <div className="restaurant-brand-copy">
             <span className="admin-brand-kicker">WUXUAI Bonus</span>
-            <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant Portal"}</span>
-            <span className="restaurant-brand-subtitle">Restaurant Portal</span>
+            <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Betreiber-Portal"}</span>
+            <span className="restaurant-brand-subtitle">Betreiber-Portal</span>
           </div>
         </div>
         <div className="topbar-actions">
@@ -255,7 +256,7 @@ export function AdminLayout() {
         </div>
         <button
           aria-expanded={mobileMenuOpen}
-          aria-label="Restaurant Menü öffnen"
+          aria-label="Unternehmensmenü öffnen"
           className="button secondary mobile-menu-button"
           onClick={() => setMobileMenuOpen(true)}
           type="button"
@@ -268,12 +269,12 @@ export function AdminLayout() {
         <aside className="sidebar premium-owner-sidebar">
           <div className="premium-sidebar-heading">
             <span>Arbeitsbereich</span>
-            <strong>Restaurant Portal</strong>
+            <strong>Betreiber-Portal</strong>
           </div>
           {renderNavigation("sidebar")}
           {setupIncomplete ? (
             <p className="sidebar-lock-message">
-              Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
+              Bitte beende zuerst die Einrichtung. Danach wird dein Unternehmensbereich freigeschaltet.
             </p>
           ) : null}
         </aside>
@@ -282,7 +283,7 @@ export function AdminLayout() {
         </main>
       </div>
       <AppDrawer
-        description="Navigation im Restaurant Portal"
+        description="Navigation im Betreiber-Portal"
         footer={(
           <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
             <LogOut aria-hidden="true" size={18} />
@@ -292,13 +293,13 @@ export function AdminLayout() {
         onClose={() => setMobileMenuOpen(false)}
         open={mobileMenuOpen}
         size="standard"
-        title="Restaurant Menü"
+        title="Unternehmensmenü"
       >
         <div className="mobile-menu-navigation">
           {renderNavigation("drawer")}
           {setupIncomplete ? (
             <p className="sidebar-lock-message">
-              Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
+              Bitte beende zuerst die Einrichtung. Danach wird dein Unternehmensbereich freigeschaltet.
             </p>
           ) : null}
         </div>

@@ -72,6 +72,6 @@ test("double click is synchronously blocked and the existing slug is used", asyn
   assert.match(source, /if \(submissionInFlightRef\.current\) \{\s*return;\s*\}/);
   assert.match(source, /submissionInFlightRef\.current = true;[\s\S]*setSaving\(true\)/);
   assert.match(source, /finally \{\s*submissionInFlightRef\.current = false;\s*setSaving\(false\)/);
-  assert.match(source, /const restaurantSlug = activeRestaurant\?\.slug \?\? ""/);
+  assert.match(source, /restaurantId: activeRestaurant\.id/);
   assert.doesNotMatch(source, /slugifyRestaurant/);
 });

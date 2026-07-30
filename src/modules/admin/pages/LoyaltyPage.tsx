@@ -197,7 +197,7 @@ export function LoyaltyPage() {
       <header className="page-header">
         <div>
           <h1>Bonusprogramm</h1>
-          <p className="muted">Ein aktiver Modus pro Restaurant. Alle Regeln bleiben dem Restaurant zugeordnet.</p>
+          <p className="muted">Ein aktiver Modus pro Unternehmen. Alle Regeln bleiben dem Unternehmen zugeordnet.</p>
         </div>
         <span className="pill">Aktiv: {loyaltyModeLabels[settings.loyalty_mode]}</span>
       </header>

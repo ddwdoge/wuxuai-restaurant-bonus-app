@@ -160,7 +160,7 @@ export function StaffTablet() {
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
-    setMessage("Restaurant konnte nicht geladen werden.");
+    setMessage("Unternehmen konnte nicht geladen werden.");
   }, [restaurantId, slug, tenantLoading]);
 
   useEffect(() => {
@@ -185,9 +185,9 @@ export function StaffTablet() {
           setSelectedCustomerId((current) => current || nextCustomers[0]?.id || "");
         }
       } catch (error) {
-        console.error("Mitarbeiterdaten konnten nicht geladen werden.", error);
+        console.error("Teamdaten konnten nicht geladen werden.", error);
         if (!cancelled) {
-          setStaffError("Mitarbeiterdaten konnten nicht geladen werden.");
+          setStaffError("Teamdaten konnten nicht geladen werden.");
         }
       } finally {
         if (!cancelled) {
@@ -560,7 +560,7 @@ export function StaffTablet() {
       title: payload.title,
       detail: selectedCustomer.name,
       pinLabel: "Tages-PIN",
-      pinHelp: "Bitte prüfe die heutige Tages-PIN in der Mitarbeiteransicht.",
+      pinHelp: "Bitte prüfe die heutige Tages-PIN im Teambereich.",
       run: async (dailyPin) => {
         const result = await applyStaffLoyaltyAction({
           restaurantId,
@@ -740,7 +740,7 @@ export function StaffTablet() {
           <span className="restaurant-logo-frame">
             {staffBranding?.logo_url ? (
               <img
-                alt={`${staffRestaurant?.name ?? "Restaurant"} Logo`}
+                alt={`${staffRestaurant?.name ?? "Unternehmen"} Logo`}
                 className="restaurant-logo-image"
                 src={staffBranding.logo_url}
               />
@@ -752,12 +752,12 @@ export function StaffTablet() {
           </span>
           <div className="restaurant-brand-copy">
             <span className="staff-premium-kicker">WUXUAI Bonus</span>
-            <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"}</h1>
+            <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Unternehmen"}</h1>
           </div>
         </div>
         <button
           aria-expanded={moreOpen}
-          aria-label="Mitarbeitermenü öffnen"
+          aria-label="Teammenü öffnen"
           className="staff-premium-menu-button"
           onClick={() => setMoreOpen(true)}
           type="button"
@@ -766,7 +766,7 @@ export function StaffTablet() {
           <span>Menü</span>
         </button>
         <div className="staff-premium-header-meta">
-          <span><ShieldCheck aria-hidden="true" size={16} />Mitarbeiterbereich</span>
+          <span><ShieldCheck aria-hidden="true" size={16} />Teambereich</span>
           <time dateTime={new Date().toISOString().slice(0, 10)}><CalendarDays aria-hidden="true" size={16} />{currentDateLabel}</time>
         </div>
       </header>
@@ -919,7 +919,7 @@ export function StaffTablet() {
                   </form>
                 </section>
               ) : null}
-              {staffLoading ? <p className="muted">Mitarbeiterdaten werden geladen...</p> : null}
+              {staffLoading ? <p className="muted">Teamdaten werden geladen...</p> : null}
               {!staffLoading && staffError ? <p className="status-message">{staffError}</p> : null}
               {filteredCustomers.map((customer) => (
                 <button
@@ -1123,14 +1123,14 @@ export function StaffTablet() {
                 <div><span>Kategorie</span><strong>{redemptionPreview.category ?? (redemptionPreview.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk")}</strong></div>
                 {redemptionPreview.product_price !== null ? <div><span>Produktwert</span><strong>Wert bis {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(redemptionPreview.product_price)}</strong></div> : null}
                 {redemptionPreview.description ? <div><span>Bedingung</span><strong>{redemptionPreview.description}</strong></div> : null}
-                <div><span>Restaurant</span><strong>{redemptionPreview.restaurant_name}</strong></div>
+                <div><span>Unternehmen</span><strong>{redemptionPreview.restaurant_name}</strong></div>
                 <div><span>Status</span><strong className="staff-redemption-valid-status">Code gültig</strong></div>
                 <div><span>Gültig bis</span><strong>{new Intl.DateTimeFormat("de-AT", { dateStyle: "short", timeStyle: "short" }).format(new Date(redemptionPreview.expires_at))} Uhr</strong></div>
               </div>
 
               <aside className="staff-redemption-notice">
                 <Clock3 aria-hidden="true" size={20} />
-                <p>Der Server prüft Status, Ablauf und Restaurant bei der finalen Bestätigung erneut.</p>
+                <p>Der Server prüft Status, Ablauf und Unternehmen bei der finalen Bestätigung erneut.</p>
               </aside>
 
               {message ? <p className="staff-redemption-inline-error" role="alert">{message}</p> : null}
@@ -1157,7 +1157,7 @@ export function StaffTablet() {
                 <span className="staff-redemption-reward-visual"><Gift aria-hidden="true" size={30} /></span>
                 <div><span>{redemptionResult.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk"}</span><h3>{redemptionResult.title}</h3></div>
                 <dl>
-                  <div><dt>Restaurant</dt><dd>{staffRestaurant?.name ?? "Restaurant"}</dd></div>
+                  <div><dt>Unternehmen</dt><dd>{staffRestaurant?.name ?? "Unternehmen"}</dd></div>
                   <div><dt>Status</dt><dd>Bestätigt</dd></div>
                   <div><dt>Zeitpunkt</dt><dd>{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(new Date(redemptionResult.redeemed_at))} Uhr</dd></div>
                 </dl>
@@ -1213,7 +1213,7 @@ export function StaffTablet() {
 
       </div>
 
-      <nav aria-label="Mitarbeiter-Navigation" className="staff-premium-bottom-nav">
+      <nav aria-label="Team-Navigation" className="staff-premium-bottom-nav">
         <button
           aria-current={view === "home" ? "page" : undefined}
           className={view === "home" ? "active" : ""}
@@ -1299,11 +1299,11 @@ export function StaffTablet() {
 
           <aside className="staff-premium-help-card">
             <HelpCircle aria-hidden="true" size={22} />
-            <div><strong>Hilfe im Service</strong><p>Bei Fragen zu einem Vorgang wende dich an die Restaurantleitung.</p></div>
+            <div><strong>Hilfe im Service</strong><p>Bei Fragen zu einem Vorgang wende dich an den Betreiber.</p></div>
           </aside>
 
           <div className="staff-premium-session-card">
-            <span>{user?.email ?? "Angemeldeter Mitarbeiter"}</span>
+            <span>{user?.email ?? "Angemeldetes Teammitglied"}</span>
             {logoutError ? <p role="alert">{logoutError}</p> : null}
             <button disabled={loggingOut} onClick={() => void handleStaffLogout()} type="button">
               <LogOut aria-hidden="true" size={19} />

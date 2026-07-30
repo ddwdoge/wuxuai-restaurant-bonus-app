@@ -2230,6 +2230,146 @@ a {
   padding: 14px;
 }
 
+.premium-business-select,
+.business-assistant-controls .select,
+.business-assistant-controls .input,
+.welcome-gift-selector .select {
+  min-height: 48px;
+  width: 100%;
+}
+
+.business-assistant-card {
+  background: #fffdf9;
+  border: 1px solid #dfd5c5;
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(52, 43, 29, 0.07);
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.business-assistant-card.confirmed {
+  border-color: rgba(191, 143, 54, 0.7);
+  box-shadow: 0 16px 38px rgba(149, 104, 32, 0.1);
+}
+
+.business-assistant-heading,
+.business-assistant-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.business-assistant-heading h3 {
+  font-size: 20px;
+  margin: 3px 0 0;
+}
+
+.business-assistant-status {
+  align-items: center;
+  background: #edf8f0;
+  border-radius: 999px;
+  color: #26713c;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 8px 11px;
+  white-space: nowrap;
+}
+
+.business-assistant-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.business-assistant-summary > div {
+  background: #f7f3ec;
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.business-assistant-summary dt {
+  color: var(--owner-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.business-assistant-summary dd {
+  color: var(--owner-ink);
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.business-assistant-actions {
+  justify-content: flex-start;
+}
+
+.business-assistant-adjustments,
+.custom-welcome-gift {
+  background: #f8f5ef;
+  border-radius: 15px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 18px;
+}
+
+.business-assistant-adjustments .field.full,
+.business-assistant-adjustments .business-assistant-confirm,
+.custom-welcome-gift > div:first-child,
+.custom-welcome-gift > .grid,
+.custom-welcome-gift > .owner-reward-image-uploader,
+.custom-welcome-gift > .button {
+  grid-column: 1 / -1;
+}
+
+.business-assistant-confirm {
+  justify-self: start;
+}
+
+.welcome-gift-selector {
+  display: grid;
+  gap: 18px;
+}
+
+.custom-welcome-gift h3 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.selected-welcome-gifts {
+  display: grid;
+  gap: 9px;
+}
+
+.selected-welcome-gifts > div {
+  align-items: center;
+  background: #fffdf9;
+  border: 1px solid #e4ddd2;
+  border-radius: 12px;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.selected-welcome-gifts svg {
+  color: var(--owner-gold-dark);
+}
+
+.selected-welcome-gifts small {
+  color: var(--owner-muted);
+}
+
 .welcome-reward-preview {
   background: #f7f9fb;
   border: 1px solid #dde3ea;
@@ -4294,6 +4434,37 @@ a {
 
   .onboarding-completion-screen {
     padding-top: 14px;
+  }
+
+  .business-assistant-summary,
+  .business-assistant-adjustments,
+  .custom-welcome-gift {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .business-assistant-heading,
+  .business-assistant-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .business-assistant-status {
+    align-self: flex-start;
+  }
+
+  .business-assistant-actions .button,
+  .business-assistant-confirm,
+  .custom-welcome-gift > .button {
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .selected-welcome-gifts > div {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .selected-welcome-gifts small {
+    grid-column: 2;
   }
 }
 

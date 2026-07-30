@@ -36,7 +36,7 @@ type LazyPartnerRestaurantMapProps = PartnerRestaurantMapProps & {
 };
 
 export function LazyPartnerRestaurantMap({
-  errorFallback = <p className="muted" role="status">Die Karte konnte nicht geladen werden. Die Restaurantliste bleibt verfügbar.</p>,
+  errorFallback = <p className="muted" role="status">Die Karte konnte nicht geladen werden. Die Unternehmensliste bleibt verfügbar.</p>,
   loadingFallback = <p className="muted" role="status">Karte wird geladen …</p>,
   ...props
 }: LazyPartnerRestaurantMapProps) {

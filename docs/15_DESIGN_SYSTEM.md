@@ -14,7 +14,7 @@ Es ist die visuelle Umsetzung der WUXUAI-Philosophie:
 
 Für WUXUAI Bonus bedeutet das:
 
-- Restaurantbesitzer sollen ohne Schulung verstehen, was zu tun ist.
+- Betreiber sollen ohne Schulung verstehen, was zu tun ist.
 - Gäste sollen in Sekunden erkennen, was sie bekommen.
 - Mitarbeiter sollen im Stress nicht nachdenken müssen.
 - Codex darf keine uneinheitlichen Seiten erzeugen.
@@ -71,7 +71,7 @@ Warum?
 WUXUAI Bonus wird häufig genutzt auf:
 
 - Smartphone des Gastes
-- Smartphone des Restaurantbesitzers
+- Smartphone des Betreibers
 - Tablet an der Kassa
 - Laptop im Büro
 
@@ -98,9 +98,10 @@ Verboten:
 - technische Optionen im Onboarding
 - mehrere primäre Aktionen
 
-### 2.3 Restaurant-Sprache statt Technik
+### 2.3 Branchenneutrale Geschäftssprache statt Technik
 
-Alle sichtbaren Begriffe müssen aus Sicht eines Restaurantbesitzers verständlich sein.
+Allgemeine sichtbare Begriffe müssen aus Sicht eines Betreibers verständlich
+und branchenneutral sein.
 
 Verwenden:
 
@@ -110,10 +111,40 @@ Verwenden:
 - Punkte
 - Bonus Boost
 - QR Center
-- Restaurant Starter Kit
-- Mitarbeiter
+- Starter Kit
+- Teammitglieder
 - Einstellungen
-- Heute im Restaurant
+- Heute
+
+Verbindliche allgemeine Terminologie:
+
+- Restaurant -> Unternehmen oder Geschäft
+- Restaurantbesitzer -> Betreiber
+- Restaurantname -> Unternehmensname
+- Restaurantdaten -> Unternehmensdaten
+- Restauranttyp -> Branche
+- Restaurant starten -> Unternehmen aktivieren
+- Restaurant auswählen -> Unternehmen auswählen
+- Restaurant wechseln -> Unternehmen wechseln
+- Restaurant-QR -> Unternehmens-QR
+- Restaurantstatus -> Unternehmensstatus
+- Restaurantprofil -> Unternehmensprofil
+- Restaurant-Einstellungen -> Unternehmenseinstellungen
+- Restaurant-Mitarbeiter -> Teammitglied
+- Restaurant Login -> Betreiber-Login
+
+Keine blinde globale Wortersetzung. Restaurant, Dessert, Kaffee, Haarschnitt,
+Produkt oder Behandlung bleiben erlaubt, wenn sie echte branchenspezifische
+Inhalte bezeichnen.
+
+### 2.3.1 Dropdown-Standard
+
+Definierte Optionslisten im Onboarding werden als Dropdown oder Combobox
+dargestellt. Das gilt insbesondere für Branche, Willkommensgeschenk, Art der
+Punkteeinlösung und Belohnungskategorie. Optionen werden zentral konfiguriert,
+sind barrierefrei und tastaturbedienbar, funktionieren in Mobile Safari und
+besitzen mindestens 44 px hohe Touchflächen. „Eigene Auswahl“ erlaubt eine
+kontrollierte Individualisierung ohne neue technische Reward-Art.
 
 Verboten:
 

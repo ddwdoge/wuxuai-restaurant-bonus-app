@@ -9,6 +9,7 @@ import {
   PublicPageShell,
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
+import { productTerminology } from "../../config/productTerminology";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export function RegisterPage() {
 
   if (authLoading || user) {
     return (
-      <PublicPageShell description="Dein Restaurantbereich wird vorbereitet." eyebrow="WUXUAI Bonus" title="Restaurant Portal wird geöffnet …">
+      <PublicPageShell description="Dein Unternehmensbereich wird vorbereitet." eyebrow={productTerminology.productName} title="Betreiber-Portal wird geöffnet …">
         <PublicContentCard><p className="public-premium-alert" role="status">Bitte einen Moment warten.</p></PublicContentCard>
       </PublicPageShell>
     );
@@ -72,20 +73,20 @@ export function RegisterPage() {
     <PublicPageShell
       description="Richte dein Bonusprogramm in wenigen Minuten ein. Kein Zahlungsmittel erforderlich."
       eyebrow="30 Tage kostenlos"
-      title="Restaurant starten"
+      title="Unternehmen registrieren"
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
           <PublicFormField autoComplete="name" disabled={loading} id="owner-name" label="Dein Name" onChange={(event) => setOwnerName(event.target.value)} required value={ownerName} />
           <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
           <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-          <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
+          <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label={productTerminology.businessName} onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
           <PublicFormField autoComplete="tel" disabled={loading} id="phone" label="Telefon" onChange={(event) => setPhone(event.target.value)} optional type="tel" value={phone} />
 
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
-          <PublicPrimaryButton icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
+          <PublicPrimaryButton icon={<Sparkles size={18} />} loading={loading} loadingLabel="Unternehmen wird eingerichtet …" type="submit">
             30 Tage kostenlos starten
           </PublicPrimaryButton>
           <p className="public-premium-trust-note">Kein Zahlungsmittel erforderlich.</p>

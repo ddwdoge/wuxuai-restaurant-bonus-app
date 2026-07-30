@@ -35,7 +35,7 @@ export function calculateRewardEconomics({ productPrice, redemptionRatePercent, 
   }
 
   const estimatedConsumption = price / (ratePercent / 100);
-  const requiredPoints = Math.max(0, Math.ceil(estimatedConsumption - pointRate));
+  const requiredPoints = Math.max(0, Math.ceil(estimatedConsumption * pointRate));
   const consumptionRatio = estimatedConsumption / price;
 
   if (consumptionRatio >= 10) {

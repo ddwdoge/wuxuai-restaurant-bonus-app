@@ -16,13 +16,12 @@ const platform = readFileSync(new URL("../src/modules/platform/PlatformAuditPage
 const finder = readFileSync(new URL("../src/modules/customer/PartnerRestaurantFinderPage.tsx", import.meta.url), "utf8");
 const finderStyles = readFileSync(new URL("../src/modules/customer/partner-restaurant-finder.css", import.meta.url), "utf8");
 
-test("öffentliche Startseite behält drei echte Hauptwege auf Route /", () => {
+test("öffentliche Startseite zeigt zwei klare Hauptwege auf Route /", () => {
   assert.match(app, /<Route path="\/" element=\{<PublicHome \/>\}/);
-  assert.equal((publicHome.match(/<PublicEntryCard/g) ?? []).length, 3);
-  assert.match(publicHome, /title="Restaurant Login" to="\/login"/);
-  assert.match(publicHome, /title="Restaurant registrieren" to="\/register"/);
-  assert.match(publicHome, /title="Gast-Bonus öffnen" to="\/customer"/);
-  assert.match(publicHome, /title="Restaurant Bonus einfach starten\."/);
+  assert.equal((publicHome.match(/<PublicEntryCard/g) ?? []).length, 2);
+  assert.match(publicHome, /title="Betreiber-Login" to="\/login"/);
+  assert.match(publicHome, /title="Kunden-Bonus öffnen" to="\/customer"/);
+  assert.match(publicHome, /productTerminology\.productTagline/);
 });
 
 test("Startseite verwendet zentrale Premium-Tokens und kompakte Mobile-Karten", () => {
@@ -85,7 +84,7 @@ test("kritische Formulare schließen nicht über einen versehentlichen Overlay-K
 });
 
 test("mobiles Finder-Detail nutzt Premium-Sheet-Tokens und einen echten Schließen-Button", () => {
-  assert.match(finder, /aria-label="Restaurantdetails schließen"/);
+  assert.match(finder, /aria-label="Unternehmensdetails schließen"/);
   assert.match(finder, /onClose=\{\(\) => setSelectedId\(null\)\}/);
   assert.match(finderStyles, /partner-detail-close[\s\S]*height: 44px[\s\S]*width: 44px/);
   assert.match(finderStyles, /--wux-radius-sheet/);

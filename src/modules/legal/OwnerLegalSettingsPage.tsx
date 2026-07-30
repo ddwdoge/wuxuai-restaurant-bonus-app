@@ -43,7 +43,7 @@ const optionalProfileFields = [
   ["accessibility_contact", "Barrierefreiheitskontakt"],
   ["complaint_contact", "Beschwerdekontakt"],
   ["responsible_person", "Verantwortliche Person"],
-  ["restaurant_operator", "Restaurantbetreiber"],
+  ["restaurant_operator", "Betreiber"],
 ] as const;
 
 const allProfileFields = [...requiredProfileFields, ...optionalProfileFields] as const;
@@ -196,7 +196,7 @@ export function OwnerLegalSettingsPage() {
   }
 
   if (!activeRestaurant || !setup) {
-    return <section className="card settings-detail-card"><h1>Rechtliches & Datenschutz</h1><p className="status-message error">{error ?? "Restaurantdaten fehlen."}</p></section>;
+    return <section className="card settings-detail-card"><h1>Rechtliches & Datenschutz</h1><p className="status-message error">{error ?? "Unternehmensdaten fehlen."}</p></section>;
   }
 
   const cards = [
@@ -278,13 +278,13 @@ export function OwnerLegalSettingsPage() {
         <article className="card owner-legal-document-card">
           <div className="owner-legal-document-icon"><ReceiptText aria-hidden="true" size={21} /></div>
           <div><h2>Kassenabgrenzung</h2><p>{terms?.content.cash_register_boundary ? "Bestätigt" : "Noch nicht vorbereitet"}</p></div>
-          <p>WUXUAI dokumentiert Bonuspunkte und Einlösungen. Das Restaurant erfasst relevante Vorgänge im eigenen Kassensystem.</p>
+          <p>WUXUAI dokumentiert Bonuspunkte und Einlösungen. Das Unternehmen erfasst relevante Vorgänge im eigenen Kassensystem.</p>
           <Link className="owner-legal-card-link" to="/admin/reports">Bonus-Aktivitätsberichte öffnen <ChevronRight aria-hidden="true" size={18} /></Link>
         </article>
       </section>
 
       <section className="card owner-legal-readiness" aria-labelledby="legal-checklist-title">
-        <div><FileCheck2 aria-hidden="true" size={23} /><div><h2 id="legal-checklist-title">Legal Readiness</h2><p>Der Status wird serverseitig aus Restaurant, Pflichtangaben, aktiven Versionen und Programmstatus berechnet.</p></div></div>
+        <div><FileCheck2 aria-hidden="true" size={23} /><div><h2 id="legal-checklist-title">Rechtliche Bereitschaft</h2><p>Der Status wird serverseitig aus Unternehmen, Pflichtangaben, aktiven Versionen und Programmstatus berechnet.</p></div></div>
         <div className="owner-legal-checklist">
           <p className={missingProfileFields.length === 0 ? "complete" : "missing"}>{missingProfileFields.length === 0 ? <CheckCircle2 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />} Unternehmensdaten: {missingProfileFields.length === 0 ? "Erledigt" : "Offen"}</p>
           <p className={documentReadiness.every((item) => item.ready) ? "complete" : "missing"}>{documentReadiness.every((item) => item.ready) ? <CheckCircle2 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />} Pflichtdokumente: {documentReadiness.every((item) => item.ready) ? "Aktiv" : "Offen"}</p>
@@ -341,7 +341,7 @@ export function OwnerLegalSettingsPage() {
             <label className="field"><span>Gültig ab</span><input className="input" min={new Date().toISOString().slice(0, 10)} onChange={(event) => setEffectiveDate(event.target.value)} type="date" value={effectiveDate} /></label>
           </div>
           <label className="owner-legal-toggle"><input checked={reacceptanceRequired} onChange={(event) => setReacceptanceRequired(event.target.checked)} type="checkbox" /><span><strong>Erneute Zustimmung bestehender Gäste erforderlich</strong><small>Nicht automatisch aktiv. Nur auswählen, wenn dies rechtlich oder produktseitig ausdrücklich notwendig ist.</small></span></label>
-          <label className="owner-legal-toggle"><input checked={publicationConfirmed} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><span><strong>Ich habe die Angaben geprüft und möchte diese Version veröffentlichen.</strong><small>Veröffentlichung, Vorlage, Dokument-Hash, Owner, Restaurant, Zeitpunkt und Request-ID werden protokolliert.</small></span></label>
+          <label className="owner-legal-toggle"><input checked={publicationConfirmed} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><span><strong>Ich habe die Angaben geprüft und möchte diese Version veröffentlichen.</strong><small>Veröffentlichung, Vorlage, Dokument-Hash, Betreiber, Unternehmen, Zeitpunkt und Request-ID werden protokolliert.</small></span></label>
           <button className="button" disabled={!publicationConfirmed || saving} onClick={() => void handleConfirmedPublication()} type="button">{saving ? "Veröffentlichung läuft …" : "Geprüfte Version veröffentlichen"}</button>
         </section>
       ) : null}

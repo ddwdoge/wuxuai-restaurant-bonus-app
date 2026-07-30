@@ -48,7 +48,7 @@ export function ProgramTerminationPage() {
   return (
     <div className="owner-legal-page">
       <header className="page-header">
-        <div><span className="premium-dashboard-kicker">Nur für Owner</span><h1>Bonusprogramm beenden</h1><p className="muted">Plane das Ende mit klaren Fristen. Es erfolgt keine sofortige Abschaltung.</p></div>
+        <div><span className="premium-dashboard-kicker">Nur für Betreiber</span><h1>Bonusprogramm beenden</h1><p className="muted">Plane das Ende mit klaren Fristen. Es erfolgt keine sofortige Abschaltung.</p></div>
         <Link className="button secondary" to="/admin/legal"><ArrowLeft aria-hidden="true" size={18} /> Zurück</Link>
       </header>
       <section className="card owner-legal-termination">

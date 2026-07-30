@@ -1213,7 +1213,7 @@ V2 Datenbank vorbereitet für:
 - signierte Rechnungsbeträge
 - Zahlungsintegration Stripe
 - mehrsprachige Inhalte
-- weitere Branchen
+- tiefgreifende branchenspezifische Datenmodelle
 
 ---
 

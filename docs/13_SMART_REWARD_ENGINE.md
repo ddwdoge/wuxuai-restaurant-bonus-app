@@ -278,8 +278,8 @@ Einlösequote.
 V1-Quoten:
 
 ```text
-Sparsam = 3 %
-Normal = 5 %
+Sparsam = 3 % und zurückhaltender Belohnungswert
+Standard = 3 % als empfohlener Ausgangspunkt
 Großzügig = 8 %
 Premium = 10 %
 ```
@@ -312,7 +312,7 @@ Sie berechnet:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
+Benötigte Punkte = ceil(Geschätzte Konsumation × Punkte pro Euro)
 ```
 
 Der Standardwert der Einlösequote ist 3 %. Die Auswahl enthält ausschließlich
@@ -1063,26 +1063,23 @@ V1-Rückgabequoten:
 
 | Einstellung | Rückgabe |
 |-------------|----------|
-| Sparsam | 3 % |
-| Normal | 5 % |
+| Sparsam | 3 % und zurückhaltender Belohnungswert |
+| Standard | 3 % als empfohlener Ausgangspunkt |
 | Großzügig | 8 % |
 | Premium | 10 % |
 
 Berechnung:
 
 ```text
-Konsumation = Durchschnittsbon × Besuche
-Einlösewert = Konsumation × Rückgabequote
+Konsumation = Produktwert / Einlösequote
+Benötigte Punkte = ceil(Konsumation × Punkte pro Euro)
 ```
 
 Beispiel:
 
 ```text
-18 € × 5 Besuche = 90 €
-Sparsam: 3 % von 90 € = 2,70 €
-Normal: 5 % von 90 € = 4,50 €
-Großzügig: 8 % von 90 € = 7,20 €
-Premium: 10 % von 90 € = 9,00 €
+Produktwert 4 € / 3 % = ca. 133,33 € Konsumation
+ca. 133,33 € × 10 Punkte pro Euro = 1.334 Punkte
 ```
 
 Diese Rückgabequoten betreffen den Onboarding-Bonus-Designer. Bestehende

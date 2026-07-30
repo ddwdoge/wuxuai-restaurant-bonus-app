@@ -140,7 +140,8 @@ V2 wird vorbereitet, aber nicht gebaut, außer ausdrücklich beauftragt.
 
 V1 enthält:
 
-- Restaurant Portal
+- branchenneutrale Produktpositionierung
+- Betreiber-Portal mit Restaurant als Referenzbranche
 - Kundenportal
 - Staff Portal
 - Flow 01–05
@@ -152,6 +153,9 @@ V1 enthält:
 - 30 Tage Trial
 - Deutsch
 - Mobile First
+- zentrale Branchenprofile
+- Branchenauswahl im Onboarding
+- zentral konfigurierte Dropdown-Optionen und Vorlagen
 
 ### V2
 
@@ -165,7 +169,8 @@ V2 enthält später:
 - Mehrsprachigkeit
 - Smart Recommendation Engine
 - dynamische Promotionflächen
-- Branchen-Erweiterung
+- tiefgreifende branchenspezifische Geschäftslogik
+- individuelle Termin-, Buchungs- und Warenwirtschaftsabläufe je Branche
 - Enterprise-Funktionen
 
 Codex darf V2-Ideen nicht ohne ausdrücklichen Auftrag in V1 einbauen.
@@ -259,9 +264,9 @@ UX-Konflikt: Mehrere Hauptentscheidungen auf einer Seite.
 
 ---
 
-## 10. Keine technischen Begriffe im Restaurant Portal
+## 10. Branchenneutrale Geschäftssprache ohne technische Begriffe
 
-Codex muss UI-Texte immer aus Sicht des Restaurantbesitzers formulieren.
+Codex muss allgemeine UI-Texte aus Sicht eines Betreibers formulieren.
 
 Verwenden:
 
@@ -271,10 +276,26 @@ Verwenden:
 - Punkte
 - Bonus Boost
 - QR Center
-- Restaurant Starter Kit
-- Mitarbeiter
+- Starter Kit
+- Teammitglieder
 - Einstellungen
-- Heute im Restaurant
+- Heute
+
+Allgemeine sichtbare Begriffe verwenden Unternehmen, Geschäft, Betreiber,
+Teammitglied und Kunde. Branchenspezifische Begriffe bleiben erlaubt, wenn sie
+echte Inhalte darstellen. Keine blinde globale Wortersetzung.
+
+Interne Legacy-Namen wie `restaurants`, `restaurant_id`, bestehende RPCs,
+RLS-Policies, Storage-Pfade und URL-Slugs bleiben zulässig und dürfen nicht
+allein aus sprachlichen Gründen migriert werden.
+
+Kennzeichnung: `INTERNAL_LEGACY_NAMING_ACCEPTED`
+
+Rechtliche Mastertemplates und veröffentlichte Rechtstexte werden nicht
+automatisch neutralisiert. Inhaltliche Änderungen benötigen eine gesonderte
+rechtliche Prüfung.
+
+Kennzeichnung: `LEGAL_REVIEW_REQUIRED`
 
 Nicht verwenden:
 

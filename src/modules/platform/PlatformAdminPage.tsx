@@ -181,9 +181,9 @@ export function PlatformAdminPage() {
       setDetail(nextDetail);
       setStatusDraft(nextDetail.restaurant.status);
     } catch (error) {
-      console.error("Restaurantdetails konnten nicht geladen werden.", error);
+      console.error("Unternehmensdetails konnten nicht geladen werden.", error);
       setDetail(null);
-      setErrorMessage("Restaurantdetails konnten gerade nicht geladen werden.");
+      setErrorMessage("Unternehmensdetails konnten gerade nicht geladen werden.");
     } finally {
       setDetailLoading(false);
     }
@@ -261,19 +261,19 @@ export function PlatformAdminPage() {
 
   async function saveRestaurantStatus() {
     if (!selectedRestaurant) return;
-    await runSubscriptionAction(selectedRestaurant, "Restaurantstatus", {
+    await runSubscriptionAction(selectedRestaurant, "Unternehmensstatus", {
       restaurantStatus: statusDraft,
-      reason: `Restaurantstatus im WUXUAI Admin auf ${restaurantStatusLabels[statusDraft]} gesetzt`,
+      reason: `Unternehmensstatus im WUXUAI Admin auf ${restaurantStatusLabels[statusDraft]} gesetzt`,
     });
   }
 
   const summaryCards = [
-    { label: "Restaurants gesamt", value: summary.restaurants_total, icon: Building2 },
-    { label: "Aktive Restaurants", value: summary.active_restaurants ?? 0, icon: CheckCircle2 },
+    { label: "Unternehmen gesamt", value: summary.restaurants_total, icon: Building2 },
+    { label: "Aktive Unternehmen", value: summary.active_restaurants ?? 0, icon: CheckCircle2 },
     { label: "Testphasen aktiv", value: summary.active_trials, icon: Clock },
     { label: "Testphasen bald ablaufend", value: summary.expiring_trials ?? 0, icon: AlertCircle },
-    { label: "Gesperrte Restaurants", value: summary.suspended_restaurants ?? 0, icon: Lock },
-    { label: "Neue Restaurants heute", value: summary.new_restaurants_today ?? 0, icon: RefreshCw },
+    { label: "Gesperrte Unternehmen", value: summary.suspended_restaurants ?? 0, icon: Lock },
+    { label: "Neue Unternehmen heute", value: summary.new_restaurants_today ?? 0, icon: RefreshCw },
   ];
 
   const filterOptions: { key: FilterKey; label: string }[] = [
@@ -293,7 +293,7 @@ export function PlatformAdminPage() {
         <div>
           <span className="admin-brand-kicker">WUXUAI Admin</span>
           <h1>WUXUAI Admin</h1>
-          <p>Restaurants, Testphasen und Plattformstatus verwalten.</p>
+          <p>Unternehmen, Testphasen und Plattformstatus verwalten.</p>
         </div>
         <div className="platform-admin-header-actions">
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
@@ -330,7 +330,7 @@ export function PlatformAdminPage() {
       <section className="platform-admin-grid">
         <div className="card platform-restaurant-list-card">
           <div className="section-heading">
-            <h2>Restaurantliste</h2>
+            <h2>Unternehmensliste</h2>
             <p className="muted">Nur interne Plattformrollen sehen diese Daten.</p>
           </div>
 
@@ -340,12 +340,12 @@ export function PlatformAdminPage() {
               <input
                 id="platform-restaurant-search"
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Restaurant suchen"
+                placeholder="Unternehmen suchen"
                 type="search"
                 value={searchTerm}
               />
             </label>
-            <div className="platform-filter-row" aria-label="Restaurantfilter">
+            <div className="platform-filter-row" aria-label="Unternehmensfilter">
               {filterOptions.map((option) => (
                 <button
                   className={`chip-button${filter === option.key ? " active" : ""}`}
@@ -359,12 +359,12 @@ export function PlatformAdminPage() {
             </div>
           </div>
 
-          {loading ? <p className="muted">Restaurants werden geladen...</p> : null}
+          {loading ? <p className="muted">Unternehmen werden geladen...</p> : null}
           {!loading && filteredRestaurants.length === 0 ? (
             <div className="empty-state-card">
               <Building2 size={32} />
-              <h3>Keine Restaurants gefunden</h3>
-              <p>Ändere Suche oder Filter, um weitere Restaurants zu sehen.</p>
+              <h3>Keine Unternehmen gefunden</h3>
+              <p>Ändere Suche oder Filter, um weitere Unternehmen zu sehen.</p>
             </div>
           ) : null}
 
@@ -408,7 +408,7 @@ export function PlatformAdminPage() {
                 </div>
               </div>
 
-              {detailLoading ? <p className="muted">Restaurantdetails werden geladen...</p> : null}
+              {detailLoading ? <p className="muted">Unternehmensdetails werden geladen...</p> : null}
 
               <dl className="platform-detail-list">
                 <div>
@@ -453,7 +453,7 @@ export function PlatformAdminPage() {
                 </div>
               </dl>
 
-              <section className="platform-metric-grid" aria-label="Restaurant Kennzahlen">
+              <section className="platform-metric-grid" aria-label="Unternehmenskennzahlen">
                 <article>
                   <strong>{detail?.metrics.customer_count ?? selectedRestaurant.customer_count}</strong>
                   <span>Gäste</span>
@@ -476,10 +476,10 @@ export function PlatformAdminPage() {
                 </article>
               </section>
 
-              <section className="platform-link-grid" aria-label="Restaurant Links">
+              <section className="platform-link-grid" aria-label="Unternehmenslinks">
                 <a className="button secondary" href={`${portalOrigin}/admin`} rel="noreferrer" target="_blank">
                   <ExternalLink size={18} />
-                  Restaurant Portal öffnen
+                  Betreiber-Portal öffnen
                 </a>
                 <a className="button secondary" href={`${portalOrigin}/customer/${selectedRestaurant.slug}`} rel="noreferrer" target="_blank">
                   <ExternalLink size={18} />
@@ -501,7 +501,7 @@ export function PlatformAdminPage() {
                   <p className="muted">Keine Löschung in V1. Daten bleiben erhalten.</p>
                 </div>
                 <label className="field" htmlFor="platform-status">
-                  <span>Restaurantstatus</span>
+                  <span>Unternehmensstatus</span>
                   <select
                     className="input"
                     disabled={!canWrite || savingId === selectedRestaurant.id}
@@ -588,7 +588,7 @@ export function PlatformAdminPage() {
               <section className="platform-audit-panel">
                 <div className="section-heading">
                   <h3>Letzte Aktivitäten</h3>
-                  <p className="muted">Audit-Auszug für dieses Restaurant.</p>
+                  <p className="muted">Audit-Auszug für dieses Unternehmen.</p>
                 </div>
                 {detail?.audit?.length ? (
                   <div className="platform-audit-list">
@@ -608,8 +608,8 @@ export function PlatformAdminPage() {
           ) : (
             <div className="empty-state-card">
               <Building2 size={32} />
-              <h3>Kein Restaurant ausgewählt</h3>
-              <p>Wähle ein Restaurant aus der Liste, um Details zu sehen.</p>
+              <h3>Kein Unternehmen ausgewählt</h3>
+              <p>Wähle ein Unternehmen aus der Liste, um Details zu sehen.</p>
             </div>
           )}
         </aside>

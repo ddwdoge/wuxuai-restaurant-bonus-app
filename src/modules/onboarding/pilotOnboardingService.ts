@@ -38,8 +38,10 @@ export type PilotOnboardingInput = {
 export type StarterRewardInput = {
   key: string;
   title: string;
+  description: string;
   category: string;
   products: string[];
+  estimatedValue: number | null;
   imageUrl: string | null;
   active: boolean;
 };
@@ -185,12 +187,13 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     .map((reward, index) => ({
       restaurant_id: restaurantId,
       title: reward.title.trim(),
-      description: "Willkommensgeschenk für neue Gäste.",
+      description: reward.description.trim() || "Willkommensgeschenk für neue Gäste.",
       reward_type: "reward" as RewardType,
       required_points: 0,
       required_stamps: 0,
       active: reward.active,
       image_url: reward.imageUrl,
+      product_price: reward.estimatedValue,
       category: reward.category.trim() || null,
       available_products: reward.products,
       is_starter_reward: true,

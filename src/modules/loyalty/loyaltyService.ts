@@ -472,7 +472,7 @@ function collectBonusPointsErrorMessage(error: { message?: string; details?: str
   }
 
   if (technicalText.includes("zu viele falsche versuche")) {
-    return "Zu viele falsche Versuche. Bitte wende dich an das Restaurant.";
+    return "Zu viele falsche Versuche. Bitte wende dich an das Unternehmen.";
   }
 
   if (technicalText.includes("heute bereits punkte gesammelt")) {
@@ -510,11 +510,11 @@ function staffDailyPinActionErrorMessage(error: { message?: string; details?: st
   }
 
   if (technicalText.includes("zu viele falsche versuche")) {
-    return "Zu viele falsche Versuche. Bitte wende dich an das Restaurant.";
+    return "Zu viele falsche Versuche. Bitte wende dich an das Unternehmen.";
   }
 
   if (technicalText.includes("heute bereits punkte gesammelt")) {
-    return "Du hast heute bereits Punkte gesammelt. Wenn das nicht stimmt, wende dich bitte an das Restaurant.";
+    return "Du hast heute bereits Punkte gesammelt. Wenn das nicht stimmt, wende dich bitte an das Unternehmen.";
   }
 
   if (technicalText.includes("gerade schon erfasst")) {
@@ -528,7 +528,7 @@ function publicPortalErrorMessage(error: { message?: string; details?: string; h
   const technicalText = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" ").toLowerCase();
 
   if (technicalText.includes("restaurant not found")) {
-    return "Restaurant wurde nicht gefunden.";
+    return "Unternehmen wurde nicht gefunden.";
   }
 
   if (technicalText.includes("customer token not valid")) {
@@ -541,13 +541,13 @@ function publicPortalErrorMessage(error: { message?: string; details?: string; h
 function publicPortalRequestError(error: { message?: string; details?: string; hint?: string; code?: string }) {
   const reason = customerAccessFailureReason(error);
   if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.inactiveMembership) {
-    return new CustomerAccessError(reason, "Deine Mitgliedschaft ist derzeit nicht aktiv. Bitte wende dich an das Restaurant.");
+    return new CustomerAccessError(reason, "Deine Mitgliedschaft ist derzeit nicht aktiv. Bitte wende dich an das Unternehmen.");
   }
   if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.revoked) {
-    return new CustomerAccessError(reason, "Dein gespeicherter Zugang wurde widerrufen. Bitte wende dich an das Restaurant, um ihn sicher wiederherzustellen.");
+    return new CustomerAccessError(reason, "Dein gespeicherter Zugang wurde widerrufen. Bitte wende dich an das Unternehmen, um ihn sicher wiederherzustellen.");
   }
   if (reason === CUSTOMER_ACCESS_FAILURE_REASONS.invalid) {
-    return new CustomerAccessError(reason, "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Restaurant, um ihn sicher wiederherzustellen.");
+    return new CustomerAccessError(reason, "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Unternehmen, um ihn sicher wiederherzustellen.");
   }
   return new Error(publicPortalErrorMessage(error));
 }
@@ -635,7 +635,7 @@ export async function loadCustomerPortalData(
   customerToken?: string | null,
 ): Promise<CustomerPortalData> {
   if (!restaurantSlug) {
-    throw new Error("Restaurant fehlt.");
+    throw new Error("Unternehmen fehlt.");
   }
 
   if (!supabase) {
@@ -723,7 +723,7 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
   if (error) throw error;
   const payload = data as GuestRegistrationResult;
   if (payload.success === false) {
-    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");
+    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Unternehmen bereits ein Bonuskonto.");
   }
   return payload;
 }
@@ -890,7 +890,7 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
   if (error) throw error;
   const payload = data as ReferralRegistrationResult & { success?: boolean; error_message?: string };
   if (payload.success === false) {
-    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");
+    throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Unternehmen bereits ein Bonuskonto.");
   }
   return payload;
 }

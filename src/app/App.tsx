@@ -81,7 +81,7 @@ function CustomerLoading() {
 }
 
 function AdminLoading() {
-  return <div className="auth-shell">Restaurant Portal wird geladen...</div>;
+  return <div className="auth-shell">Betreiber-Portal wird geladen...</div>;
 }
 
 function StaffLoading() {

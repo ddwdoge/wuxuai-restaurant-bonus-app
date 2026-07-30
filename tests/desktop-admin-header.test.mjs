@@ -19,9 +19,9 @@ test("Desktop-Header zeigt Status, Restaurant und Profil als gemeinsame Gruppe",
 test("Status und Restaurantrolle stammen aus vorhandenen Laufzeitdaten", () => {
   assert.match(adminLayout, /activeRestaurant\?\.status/);
   assert.match(adminLayout, /restaurantRoleLabels\[restaurantRole\]/);
-  assert.match(adminLayout, /owner: "Owner"/);
+  assert.match(adminLayout, /owner: "Betreiber"/);
   assert.match(adminLayout, /manager: "Manager"/);
-  assert.match(adminLayout, /staff: "Mitarbeiter"/);
+  assert.match(adminLayout, /staff: "Teammitglied"/);
   assert.match(adminLayout, /user\?\.user_metadata\?\.full_name/);
 });
 

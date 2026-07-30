@@ -50,7 +50,7 @@ export function ReferralLanding() {
 
   const reloadLegalCenter = useCallback(async () => {
     if (!restaurantSlug) {
-      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
+      setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Unternehmens-Link nicht verfügbar." });
       return;
     }
     setLegalCenterState({ status: "loading" });
@@ -190,7 +190,7 @@ export function ReferralLanding() {
         >
           <div className="rule-list customer-info-rules">
             <p className="muted">{data.restaurant.name} wurde über deinen Einladungslink automatisch erkannt.</p>
-            <p className="muted">Der Bonus Boost startet erst, wenn du im Restaurant erstmals Punkte sammelst.</p>
+            <p className="muted">Der Bonus Boost startet erst, wenn du im Geschäft erstmals Punkte sammelst.</p>
             <p className="muted">
               Danach sammelt ihr beide {data.settings.referral_boost_multiplier}× Punkte für {data.settings.referral_boost_duration_days} Tage.
             </p>
@@ -260,14 +260,14 @@ export function ReferralLanding() {
               </div>
               <section className="customer-registration-legal">
                 <h3>Teilnahme bei {data.restaurant.name}</h3>
-                <p>Das Bonusprogramm wird vom Restaurant angeboten und technisch durch WUXUAI bereitgestellt. Punkte sind nicht auszahlbar und gelten nur bei diesem Restaurant.</p>
+                <p>Das Bonusprogramm wird vom Unternehmen angeboten und technisch durch WUXUAI bereitgestellt. Punkte sind nicht auszahlbar und gelten nur bei diesem Unternehmen.</p>
                 <p>{pointsValidityText}</p>
-                <p>Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
+                <p>Der Bonus Boost gilt ausschließlich für das angezeigte Unternehmen und ist nicht übertragbar.</p>
                 <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
                 {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="customer-legal-load-warning" role="alert">
-                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
+                    <p>{legalCenterState.status === "error" ? legalCenterState.message : "Dieses Unternehmen hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet."}</p>
                     <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
                   </div>
                 ) : null}

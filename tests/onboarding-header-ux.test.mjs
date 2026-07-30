@@ -15,7 +15,7 @@ const styles = await readFile(new URL("../src/styles.css", import.meta.url), "ut
 test("Onboarding bündelt Restaurantauswahl, Hilfe und Account in einem ruhigen Hauptheader", () => {
   assert.match(adminLayout, /onboardingRestaurantAction: <TenantSwitcher \/>/);
   assert.match(adminLayout, /onboardingAccountAction: profileMenu/);
-  assert.match(onboarding, /className="installation-header"[\s\S]*Restaurant einrichten[\s\S]*Willkommen![\s\S]*Gleich bereit für deine Gäste\./);
+  assert.match(onboarding, /className="installation-header"[\s\S]*productTerminology\.business[\s\S]*Willkommen![\s\S]*Gleich bereit für deine Gäste\./);
 
   const actions = onboarding.slice(
     onboarding.indexOf('className="installation-header-actions"'),
@@ -57,7 +57,7 @@ test("Tablet und Desktop behalten sichere Touchflächen", () => {
 });
 
 test("Abschlussinhalt beginnt direkt nach dem kompakten Fortschrittsbereich", () => {
-  assert.match(onboarding, /"Herzlichen Glückwunsch! Dein Restaurant ist startklar\."/);
+  assert.match(onboarding, /"Herzlichen Glückwunsch! Dein Unternehmen ist startklar\."/);
   assert.match(onboarding, /step === 6[\s\S]*className="wizard-screen onboarding-completion-screen"/);
   assert.match(styles, /\.onboarding-layout \{[\s\S]*margin-top: 20px/);
   assert.match(styles, /\.onboarding-completion-screen \{[\s\S]*padding-top: 18px/);

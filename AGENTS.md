@@ -57,10 +57,10 @@ WUXUAI Bonus V1 soll zuerst fertig gebaut und pilotfähig werden.
 Fokus:
 
 ```text
-Restaurant Portal V1 fertigstellen
+Betreiber-Portal V1 fertigstellen
 Kundenportal V1 stabilisieren
 Staff Portal V1 stabilisieren
-Pilotrestaurant vorbereiten
+Restaurant als erste Referenzbranche pilotieren
 ```
 
 Nicht V2 bauen.
@@ -77,7 +77,9 @@ V2-Ideen dürfen nicht automatisch umgesetzt werden.
 
 V1 bleibt fokussiert:
 
-- Restaurant/Café
+- branchenneutrale Produktsprache
+- zentral konfigurierte Branchenprofile
+- Restaurant als erste vollständig getestete Referenzbranche
 - ein Standort
 - 30 Tage kostenlos
 - keine SMS
@@ -87,6 +89,24 @@ V1 bleibt fokussiert:
 - keine Filial-UI
 - keine Aktionen
 - Deutsch als UI-Sprache
+
+Erlaubt in V1:
+
+- Restaurant
+- Café
+- Bäckerei
+- Bubble Tea
+- Eisdiele
+- Einzelhandel
+- Friseursalon
+- Kosmetikstudio
+- Fitnessstudio
+- Dienstleistung
+- Sonstiges
+
+Die Auswahl weiterer Branchen darf ausschließlich die bestehende generische
+Reward- und Bonuslogik verwenden. Tiefgreifende branchenspezifische Workflows
+bleiben V2.
 
 ---
 

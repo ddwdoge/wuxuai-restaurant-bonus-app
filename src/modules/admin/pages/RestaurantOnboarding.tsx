@@ -1,16 +1,9 @@
 import { ChangeEvent, DragEvent, FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
-  Coffee,
-  CupSoda,
   Gift,
-  IceCreamBowl,
   ImagePlus,
   Info,
-  Printer,
-  Soup,
-  Utensils,
-  UtensilsCrossed,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useNavigate, useOutletContext } from "react-router-dom";
@@ -20,13 +13,28 @@ import {
   saveOnboardingDraft,
 } from "../../onboarding/pilotOnboardingService";
 import { useTenant } from "../../tenant/TenantProvider";
-import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { productTerminology } from "../../../config/productTerminology";
+import {
+  BUSINESS_TYPE_OPTIONS,
+  DEFAULT_POINTS_PER_EURO,
+  GENEROSITY_OPTIONS,
+  REDEMPTION_TYPE_OPTIONS,
+  createBonusProgramSuggestion,
+  getBusinessProfile,
+  getWelcomeGiftOption,
+  isKnownBusinessType,
+  isProfileWelcomeGiftKey,
+  reconcileBusinessProfileSelections,
+  type GenerosityKey,
+} from "../../../config/businessProfiles";
+import { calculateRewardEconomics, isAllowedRedemptionRatePercent } from "../../loyalty/redemptionRate.mjs";
+import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
+import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
+import { uploadOwnerRewardImage } from "../services/ownerRewardImageService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
-type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
-
 type OpeningDay = {
   enabled: boolean;
   open: string;
@@ -62,18 +70,12 @@ type LogoColors = {
 type StarterRewardDraft = {
   key: string;
   title: string;
+  description?: string;
   category: string;
   availableProducts: string;
+  estimatedValue?: number;
+  imageUrl?: string | null;
   active: boolean;
-};
-
-type StarterRewardTemplate = {
-  key: string;
-  title: string;
-  description: string;
-  category: string;
-  availableProducts: string;
-  asset: "drink" | "coffee" | "dessert" | "appetizer" | "main" | "menu" | "custom";
 };
 
 type OnboardingForm = {
@@ -98,40 +100,51 @@ type OnboardingForm = {
   averageBill: number;
   firstRewardVisits: number;
   firstRewardType: string;
-  generosity: Generosity;
+  rewardCategory: string;
+  firstRewardTitle: string;
+  firstRewardDescription: string;
+  firstRewardValue: number;
+  pointsPerEuro: number;
+  redemptionRatePercent: number;
+  generosity: GenerosityKey;
+  assistantConfirmed: boolean;
+  welcomeGiftKey: string;
+  customWelcomeTitle: string;
+  customWelcomeDescription: string;
+  customWelcomeValue: number;
   starterRewards: StarterRewardDraft[];
   staffName: string;
   staffPin: string;
 };
 
 const steps = [
-  "Restaurant",
+  "Unternehmen",
   "Aussehen",
   "Geöffnet",
   "Punkteeinlösung",
   "Willkommensgeschenke",
-  "Restaurant Starter Kit",
+  "Rechtliches",
   "Startklar",
 ];
 
 const stepTitles = [
-  "Erzähl uns etwas über dein Restaurant.",
-  "Wie soll dein Restaurant aussehen?",
+  "Erzähl uns etwas über dein Unternehmen.",
+  "Wie soll dein Unternehmen aussehen?",
   "Wann hast du geöffnet?",
   "Wie sollen Gäste Punkte einlösen?",
   "Welche Willkommensgeschenke möchtest du anbieten?",
-  "Restaurant Starter Kit",
-  "Herzlichen Glückwunsch! Dein Restaurant ist startklar.",
+  "Rechtliches",
+  "Herzlichen Glückwunsch! Dein Unternehmen ist startklar.",
 ];
 
 const checklistLabels = {
-  restaurantDataCompleted: "Restaurantdaten fertig",
+  restaurantDataCompleted: "Unternehmensdaten fertig",
   brandingCompleted: "Aussehen fertig",
   openingHoursCompleted: "Öffnungszeiten fertig",
   bonusProgramCompleted: "Bonusprogramm fertig",
   firstRewardCreated: "Willkommensgeschenke fertig",
-  guestTestReady: "Restaurant Starter Kit bereit",
-  qrReady: "QR-Codes bereit",
+  guestTestReady: "Rechtliche Angaben bereit",
+  qrReady: "Bonusprogramm bereit",
 };
 
 const weekdays: { key: Weekday; label: string }[] = [
@@ -144,6 +157,10 @@ const weekdays: { key: Weekday; label: string }[] = [
   { key: "sun", label: "So" },
 ];
 
+const generosityLabels = Object.fromEntries(
+  GENEROSITY_OPTIONS.map((option) => [option.key, option.label]),
+) as Record<GenerosityKey, string>;
+
 const defaultOpeningHours: Record<Weekday, OpeningDay> = {
   mon: { enabled: true, open: "11:00", close: "22:00" },
   tue: { enabled: true, open: "11:00", close: "22:00" },
@@ -154,83 +171,10 @@ const defaultOpeningHours: Record<Weekday, OpeningDay> = {
   sun: { enabled: false, open: "12:00", close: "21:00" },
 };
 
-const generosityReturnRates: Record<Generosity, number> = {
-  Sparsam: 0.03,
-  Normal: 0.05,
-  Großzügig: 0.08,
-  Premium: 0.1,
-};
-
-const generosityHelpText: Record<Generosity, string> = {
-  Sparsam: "Vorsichtig kalkuliert.",
-  Normal: "Ausgewogen für die meisten Restaurants.",
-  Großzügig: "Stärkerer Anreiz für Gäste.",
-  Premium: "Sehr attraktiver Stammgäste-Anreiz.",
-};
-
-const starterRewardTemplates: StarterRewardTemplate[] = [
-  {
-    key: "gratis-getraenk",
-    title: "Gratis Getränk",
-    description: "Erfrischung für den ersten Besuch.",
-    category: "Getränk",
-    availableProducts: "Hauslimonade\nEistee\nSoftdrink",
-    asset: "drink",
-  },
-  {
-    key: "gratis-kaffee",
-    title: "Gratis Kaffee",
-    description: "Ein kleiner Kaffee-Moment.",
-    category: "Kaffee",
-    availableProducts: "Espresso\nCappuccino\nAmericano",
-    asset: "coffee",
-  },
-  {
-    key: "gratis-dessert",
-    title: "Gratis Dessert",
-    description: "Süßer Abschluss als Überraschung.",
-    category: "Dessert",
-    availableProducts: "Tiramisu\nKuchen\nMousse",
-    asset: "dessert",
-  },
-  {
-    key: "gratis-vorspeise",
-    title: "Gratis Vorspeise",
-    description: "Ein guter Start ins Essen.",
-    category: "Vorspeise",
-    availableProducts: "Edamame\nBruschetta\nSuppe",
-    asset: "appetizer",
-  },
-  {
-    key: "gratis-hauptspeise",
-    title: "Gratis Hauptspeise",
-    description: "Große Freude für treue Gäste.",
-    category: "Hauptspeise",
-    availableProducts: "Tagesgericht\nBowl\nPasta",
-    asset: "main",
-  },
-  {
-    key: "gratis-menue",
-    title: "Gratis Menü",
-    description: "Ein komplettes Dankeschön.",
-    category: "Menü",
-    availableProducts: "Mittagsmenü\nAbendmenü\nFamilienmenü",
-    asset: "menu",
-  },
-  {
-    key: "eigene-belohnung",
-    title: "Eigene Überraschung",
-    description: "Deine eigene Willkommens-Idee.",
-    category: "Eigene Überraschung",
-    availableProducts: "",
-    asset: "custom",
-  },
-];
-
 function createDefaultForm(): OnboardingForm {
   return {
     restaurantName: "",
-    restaurantType: "Restaurant",
+    restaurantType: "",
     language: "Deutsch",
     legalForm: "",
     legalStreet: "",
@@ -257,8 +201,19 @@ function createDefaultForm(): OnboardingForm {
     smartOpenEnabled: true,
     averageBill: 18,
     firstRewardVisits: 5,
-    firstRewardType: "Gratis Produkt",
-    generosity: "Normal",
+    firstRewardType: "free_item",
+    rewardCategory: "",
+    firstRewardTitle: "",
+    firstRewardDescription: "",
+    firstRewardValue: 5,
+    pointsPerEuro: DEFAULT_POINTS_PER_EURO,
+    redemptionRatePercent: 3,
+    generosity: "standard",
+    assistantConfirmed: false,
+    welcomeGiftKey: "",
+    customWelcomeTitle: "",
+    customWelcomeDescription: "",
+    customWelcomeValue: 0,
     starterRewards: [],
     staffName: "Team",
     staffPin: "1234",
@@ -287,15 +242,43 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
           },
         ]
       : defaults.starterRewards;
+  const restoredBusinessType = String(draftData?.restaurantType ?? "");
+  const profile = getBusinessProfile(restoredBusinessType);
+  const firstStarterReward = starterRewards[0];
+  const matchingWelcomeGift = firstStarterReward
+    ? profile.welcomeGiftOptions.find((option) => option.key === firstStarterReward.key || option.label === firstStarterReward.title)
+    : null;
+  const legacyGenerosity = String(draftData?.generosity ?? "");
+  const mappedGenerosity: GenerosityKey | string = legacyGenerosity === "Sparsam"
+    ? "economical"
+    : legacyGenerosity === "Großzügig"
+      ? "generous"
+      : legacyGenerosity === "Premium"
+        ? "premium"
+        : legacyGenerosity === "Normal"
+          ? "standard"
+          : legacyGenerosity || "standard";
+  const generosity: GenerosityKey = GENEROSITY_OPTIONS.some((option) => option.key === mappedGenerosity)
+    ? mappedGenerosity as GenerosityKey
+    : "standard";
 
   return {
     ...defaults,
     ...draftData,
+    restaurantType: restoredBusinessType,
+    generosity,
+    firstRewardType: REDEMPTION_TYPE_OPTIONS.some((option) => option.key === draftData?.firstRewardType)
+      ? String(draftData?.firstRewardType)
+      : defaults.firstRewardType,
+    welcomeGiftKey: draftData?.welcomeGiftKey || matchingWelcomeGift?.key || (firstStarterReward ? "custom" : ""),
     starterRewards: starterRewards.filter((reward) => reward.active !== false).map((reward, index) => ({
       key: reward.key || `starter-reward-${index + 1}`,
       title: reward.title || "Eigene Überraschung",
+      description: reward.description || "Willkommensgeschenk für neue Gäste.",
       category: reward.category || "Eigene Überraschung",
       availableProducts: reward.availableProducts || "",
+      estimatedValue: Number(reward.estimatedValue) || 0,
+      imageUrl: reward.imageUrl || null,
       active: true,
     })),
     openingHours: {
@@ -310,15 +293,19 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
   };
 }
 
-function calculateBonus(averageBill: number, firstRewardVisits: number, generosity: Generosity): BonusCalculation {
-  const cleanAverageBill = Math.max(1, averageBill || 1);
-  const cleanVisits = Math.max(1, firstRewardVisits || 1);
-  const returnRate = generosityReturnRates[generosity];
-  const expectedConsumptionEuro = Number((cleanAverageBill * cleanVisits).toFixed(2));
-  const pointsPerEuro = 1;
+function calculateBonus(form: OnboardingForm): BonusCalculation {
+  const cleanAverageBill = Math.max(1, form.averageBill || 1);
+  const pointsPerEuro = Math.max(1, Math.round(form.pointsPerEuro || DEFAULT_POINTS_PER_EURO));
+  const economics = calculateRewardEconomics({
+    productPrice: Math.max(1, form.firstRewardValue || 1),
+    redemptionRatePercent: form.redemptionRatePercent,
+    pointsPerEuro,
+  });
+  const returnRate = form.redemptionRatePercent / 100;
+  const expectedConsumptionEuro = Number(economics.estimatedConsumption.toFixed(2));
   const amountPerPoint = Number((1 / pointsPerEuro).toFixed(4));
-  const firstRewardPoints = Math.max(10, Math.round(cleanAverageBill * cleanVisits * pointsPerEuro));
-  const rewardValueEuro = Number((expectedConsumptionEuro * returnRate).toFixed(2));
+  const firstRewardPoints = economics.requiredPoints;
+  const rewardValueEuro = Math.max(1, form.firstRewardValue || 1);
 
   return {
     pointsPerEuro,
@@ -327,7 +314,7 @@ function calculateBonus(averageBill: number, firstRewardVisits: number, generosi
     rewardValueEuro,
     expectedConsumptionEuro,
     returnRate,
-    returnRatePercent: `${Math.round(returnRate * 100)} %`,
+    returnRatePercent: `${form.redemptionRatePercent} %`,
     amountTierPoints: {
       visit: Math.round(cleanAverageBill * pointsPerEuro),
       menu: Math.round(cleanAverageBill * 1.5 * pointsPerEuro),
@@ -721,7 +708,7 @@ function drawStarterKitPage(
   context.textBaseline = "top";
   drawWrappedText(
     context,
-    branding.name || "Dein Restaurant",
+    branding.name || "Dein Unternehmen",
     canvas.width / 2,
     nameY,
     canvas.width - margin * 2 - cardPadding,
@@ -827,11 +814,11 @@ function drawStarterKitInfoPage(
   context.font = "800 66px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
-  drawWrappedText(context, branding.name || "Dein Restaurant", canvas.width / 2, nameY, canvas.width - margin * 2 - 104, 76);
+  drawWrappedText(context, branding.name || "Dein Unternehmen", canvas.width / 2, nameY, canvas.width - margin * 2 - 104, 76);
 
   context.fillStyle = branding.primaryColor;
   context.font = "900 122px Inter, Arial, sans-serif";
-  drawWrappedText(context, "Restaurant Starter Kit", canvas.width / 2, titleY, canvas.width - margin * 2 - 104, 140);
+  drawWrappedText(context, "Starter Kit", canvas.width / 2, titleY, canvas.width - margin * 2 - 104, 140);
 
   context.fillStyle = "#344251";
   context.font = "800 58px Inter, Arial, sans-serif";
@@ -888,7 +875,7 @@ async function downloadRestaurantStarterKit(input: {
   ]);
   const branding = {
     logoImage,
-    name: input.restaurantName || "Dein Restaurant",
+    name: input.restaurantName || "Dein Unternehmen",
     primaryColor: input.primaryColor,
     secondaryColor: input.secondaryColor,
   };
@@ -927,6 +914,13 @@ function linesToList(value: string) {
     .split("\n")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function isIndividualStarterReward(reward: StarterRewardDraft) {
+  return reward.key.startsWith("custom-")
+    || reward.key.startsWith("legacy-")
+    || reward.category.startsWith("Eigene")
+    || !isProfileWelcomeGiftKey(reward.key);
 }
 
 function rgbToHex(r: number, g: number, b: number) {
@@ -1076,7 +1070,14 @@ function buildChecklist(form: OnboardingForm, step: number) {
     ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
     openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
-    bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
+    bonusProgramCompleted: Boolean(
+      form.averageBill > 0
+      && form.firstRewardType
+      && form.rewardCategory
+      && form.firstRewardTitle.trim()
+      && form.assistantConfirmed
+      && isAllowedRedemptionRatePercent(form.redemptionRatePercent),
+    ),
     firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
     qrReady: true,
     guestTestReady: step >= 5,
@@ -1089,19 +1090,23 @@ function getStepBlocker(
   checklist: Record<keyof typeof checklistLabels, boolean>,
 ) {
   if (step === 0 && !checklist.restaurantDataCompleted) {
-    return "Bitte fülle die Pflichtfelder zu deinem Restaurant und Unternehmen aus.";
+    if (!form.restaurantType) return "Bitte wähle zuerst eine Branche aus.";
+    return "Bitte fülle die Pflichtfelder zu deinem Unternehmen aus.";
   }
 
   if (step === 2 && !checklist.openingHoursCompleted) {
     return "Bitte wähle mindestens einen Öffnungstag.";
   }
 
-  if (step === 3 && (!form.averageBill || !form.firstRewardVisits)) {
-    return "Bitte fülle die zwei Werte für dein Bonusprogramm aus.";
+  if (step === 3) {
+    if (!form.restaurantType) return "Bitte wähle zuerst eine Branche aus.";
+    if (!form.firstRewardType) return "Bitte wähle eine Art der Punkteeinlösung aus.";
+    if (!form.rewardCategory) return "Bitte wähle eine Belohnungskategorie aus.";
+    if (!form.assistantConfirmed) return "Bitte prüfe die empfohlenen Einstellungen.";
   }
 
   if (step === 4 && form.starterRewards.filter((reward) => reward.title.trim()).length === 0) {
-    return "Bitte wähle mindestens ein Willkommensgeschenk.";
+    return "Bitte wähle ein Willkommensgeschenk aus.";
   }
 
   if (step === 6) {
@@ -1119,6 +1124,7 @@ export function RestaurantOnboarding() {
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
   const { activeRestaurant, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const assistantControlsRef = useRef<HTMLDivElement | null>(null);
   const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -1130,16 +1136,26 @@ export function RestaurantOnboarding() {
   const [colorStatus, setColorStatus] = useState<string | null>(null);
   const [draggingLogo, setDraggingLogo] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const [customGiftFile, setCustomGiftFile] = useState<File | null>(null);
+  const [customGiftPreviewUrl, setCustomGiftPreviewUrl] = useState("");
+  const [businessProfileNotice, setBusinessProfileNotice] = useState<string | null>(null);
 
   const bonus = useMemo(
-    () => calculateBonus(form.averageBill, form.firstRewardVisits, form.generosity),
-    [form.averageBill, form.firstRewardVisits, form.generosity],
+    () => calculateBonus(form),
+    [form],
+  );
+  const businessProfile = useMemo(() => getBusinessProfile(form.restaurantType), [form.restaurantType]);
+  const assistantSuggestion = useMemo(
+    () => createBonusProgramSuggestion({
+      businessType: form.restaurantType,
+      generosity: form.generosity,
+      averagePurchase: form.averageBill,
+      pointsPerEuro: form.pointsPerEuro,
+      redemptionType: form.firstRewardType,
+    }),
+    [form.averageBill, form.firstRewardType, form.generosity, form.pointsPerEuro, form.restaurantType],
   );
 
-  const restaurantSlug = activeRestaurant?.slug ?? "";
-  const publicBaseUrl = getPublicAppBaseUrl();
-  const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
-  const bonusQrUrl = `${publicBaseUrl}/w/${restaurantSlug}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 
@@ -1149,21 +1165,15 @@ export function RestaurantOnboarding() {
   const allReady = Object.values(checklist).every(Boolean);
   const stepBlocker = getStepBlocker(step, form, checklist);
   const missingItems = missingChecklistItems(checklist);
-  const selectedStarterRewardCount = form.starterRewards.length;
-  const starterRewardCounterTone = selectedStarterRewardCount === 0
-    ? "gray"
-    : selectedStarterRewardCount >= 3 && selectedStarterRewardCount <= 5
-      ? "green"
-      : "orange";
   const starterRewardConfirmationOpen = step === 4 && form.starterRewards.length > 0 && form.starterRewardConfirmed;
   const explanationDismissedKey = activeRestaurant?.id
     ? `wuxuai:onboarding-how-it-works-dismissed:${activeRestaurant.id}`
     : null;
 
   const explanation = [
-    `${form.restaurantName || "Dein Restaurant"} bekommt ein eigenes digitales Bonusprogramm.`,
+    `${form.restaurantName || "Dein Unternehmen"} bekommt ein eigenes digitales Bonusprogramm.`,
     `Gäste sehen deine Öffnungszeiten: ${openDaysSummary(form.openingHours)}.`,
-    `Du planst ${bonus.returnRatePercent} Rückgabe nach ca. ${form.firstRewardVisits} Besuchen.`,
+    `Du planst ${bonus.returnRatePercent} Rückgabe mit ${bonus.pointsPerEuro} Punkten pro Euro.`,
     `${form.starterRewards.length || 1} Willkommensgeschenk wartet später zufällig auf neue Gäste.`,
     "Willkommensgeschenke sind ein fester Teil deines Bonusprogramms.",
   ];
@@ -1194,7 +1204,11 @@ export function RestaurantOnboarding() {
           return;
         }
 
-        setForm(restoreForm(draft.draftData));
+        const restoredForm = restoreForm(draft.draftData);
+        setForm({
+          ...restoredForm,
+          restaurantType: restoredForm.restaurantType || activeRestaurant.restaurant_type || "",
+        });
         setStep(draft.currentStep);
       } catch (error) {
         if (!cancelled) {
@@ -1212,7 +1226,7 @@ export function RestaurantOnboarding() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant?.id, navigate, tenantLoading]);
+  }, [activeRestaurant?.id, activeRestaurant?.restaurant_type, navigate, tenantLoading]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1230,6 +1244,12 @@ export function RestaurantOnboarding() {
     setLogoUploadStatus(null);
     setColorStatus(null);
   }, [activeRestaurant?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (customGiftPreviewUrl) URL.revokeObjectURL(customGiftPreviewUrl);
+    };
+  }, [customGiftPreviewUrl]);
 
   useEffect(() => {
     if (draftLoading || tenantLoading || !activeRestaurant?.id) {
@@ -1399,31 +1419,131 @@ export function RestaurantOnboarding() {
     }
   }
 
-  function toggleStarterRewardTemplate(template: StarterRewardTemplate) {
+  function handleBusinessTypeChange(nextBusinessType: string) {
     setForm((current) => {
-      if (current.starterRewards.some((reward) => reward.key === template.key)) {
-        return {
-          ...current,
-          starterRewardConfirmed: false,
-          starterRewards: current.starterRewards.filter((reward) => reward.key !== template.key),
-        };
-      }
-
+      const reconciled = reconcileBusinessProfileSelections({
+        businessType: nextBusinessType,
+        welcomeGiftKey: current.welcomeGiftKey,
+        rewardCategory: current.rewardCategory,
+      });
+      const nextProfile = getBusinessProfile(nextBusinessType);
+      const validGiftKeys = new Set(nextProfile.welcomeGiftOptions.map((option) => option.key));
+      const retainedRewards = current.starterRewards.filter((reward) =>
+        isIndividualStarterReward(reward)
+        || validGiftKeys.has(reward.key),
+      );
       return {
         ...current,
+        restaurantType: nextBusinessType,
+        welcomeGiftKey: reconciled.welcomeGiftKey,
+        rewardCategory: reconciled.rewardCategory,
+        assistantConfirmed: false,
         starterRewardConfirmed: false,
-        starterRewards: [
-          ...current.starterRewards,
-          {
-            key: template.key,
-            title: template.title,
-            category: template.category,
-            availableProducts: template.availableProducts,
-            active: true,
-          },
-        ],
+        starterRewards: retainedRewards,
       };
     });
+    setBusinessProfileNotice("Die Branche wurde geändert. Bitte prüfe deine Willkommensgeschenke und Belohnungen.");
+  }
+
+  function updateAssistantField(patch: Partial<OnboardingForm>) {
+    setForm((current) => ({ ...current, ...patch, assistantConfirmed: false }));
+  }
+
+  function applyAssistantSuggestion() {
+    const suggestedGift = assistantSuggestion.welcomeGift;
+    setForm((current) => {
+      const preservedIndividualRewards = current.starterRewards.filter(isIndividualStarterReward);
+      const suggestedRewards = suggestedGift
+        ? [{
+            key: suggestedGift.key,
+            title: suggestedGift.label,
+            description: suggestedGift.description,
+            category: suggestedGift.category,
+            availableProducts: "",
+            estimatedValue: suggestedGift.estimatedValue,
+            imageUrl: null,
+            active: true,
+          }]
+        : [];
+      return {
+        ...current,
+        welcomeGiftKey: suggestedGift?.key ?? current.welcomeGiftKey,
+        redemptionRatePercent: assistantSuggestion.redemptionRatePercent,
+        pointsPerEuro: assistantSuggestion.pointsPerEuro,
+        rewardCategory: assistantSuggestion.rewardCategory,
+        firstRewardTitle: assistantSuggestion.rewardTitle,
+        firstRewardDescription: assistantSuggestion.description,
+        firstRewardValue: assistantSuggestion.estimatedValue,
+        assistantConfirmed: true,
+        starterRewardConfirmed: false,
+        starterRewards: [...preservedIndividualRewards, ...suggestedRewards],
+      };
+    });
+    setStatus("Empfohlene Einstellungen übernommen.");
+  }
+
+  function handleWelcomeGiftSelection(key: string) {
+    const selected = getWelcomeGiftOption(businessProfile, key);
+    setForm((current) => {
+      const preservedIndividualRewards = current.starterRewards.filter(isIndividualStarterReward);
+      return {
+        ...current,
+        welcomeGiftKey: key,
+        starterRewardConfirmed: false,
+        starterRewards: selected && selected.key !== "custom"
+          ? [...preservedIndividualRewards, {
+              key: selected.key,
+              title: selected.label,
+              description: selected.description,
+              category: selected.category,
+              availableProducts: "",
+              estimatedValue: selected.estimatedValue,
+              imageUrl: null,
+              active: true,
+            }]
+          : preservedIndividualRewards,
+      };
+    });
+  }
+
+  function handleCustomGiftFile(file: File) {
+    const previewUrl = URL.createObjectURL(file);
+    setCustomGiftPreviewUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return previewUrl;
+    });
+    setCustomGiftFile(file);
+  }
+
+  function addCustomWelcomeGift() {
+    const title = form.customWelcomeTitle.trim();
+    if (!title) {
+      setStatus("Bitte gib eine Bezeichnung für deine eigene Auswahl ein.");
+      return;
+    }
+    if (title.length > 80) {
+      setStatus("Die Bezeichnung darf maximal 80 Zeichen lang sein.");
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      welcomeGiftKey: "custom",
+      starterRewardConfirmed: false,
+      starterRewards: [
+        ...current.starterRewards.filter((reward) => reward.key !== "custom-welcome-gift"),
+        {
+          key: "custom-welcome-gift",
+          title,
+          description: current.customWelcomeDescription.trim() || "Persönliches Willkommensgeschenk für neue Gäste.",
+          category: "Eigene Auswahl",
+          availableProducts: title,
+          estimatedValue: Math.max(0, current.customWelcomeValue || 0),
+          imageUrl: current.starterRewards.find((reward) => reward.key === "custom-welcome-gift")?.imageUrl ?? null,
+          active: true,
+        },
+      ],
+    }));
+    setStatus("Eigene Auswahl übernommen.");
   }
 
   function closeHowItWorks() {
@@ -1481,7 +1601,7 @@ export function RestaurantOnboarding() {
     }
 
     if (!activeRestaurant?.id) {
-      setStatus("Das bestehende Restaurant konnte nicht aktiviert werden.");
+      setStatus("Das bestehende Unternehmen konnte nicht aktiviert werden.");
       return;
     }
 
@@ -1490,30 +1610,47 @@ export function RestaurantOnboarding() {
     setStatus(null);
 
     try {
+      let completedForm = form;
+      if (customGiftFile) {
+        const uploaded = await uploadOwnerRewardImage({
+          restaurantId: activeRestaurant.id,
+          folder: "starter-rewards",
+          entityId: "onboarding-custom-welcome",
+          file: customGiftFile,
+        });
+        completedForm = {
+          ...form,
+          starterRewards: form.starterRewards.map((reward) => reward.key === "custom-welcome-gift"
+            ? { ...reward, imageUrl: uploaded.publicUrl }
+            : reward),
+        };
+      }
       const result = await completePilotOnboarding({
         restaurantId: activeRestaurant.id,
-        restaurantName: form.restaurantName.trim(),
-        restaurantType: form.restaurantType,
-        language: form.language,
-        logoUrl: form.logoUrl || null,
-        primaryColor: form.primaryColor,
-        secondaryColor: form.secondaryColor,
-        buttonColor: form.primaryColor,
-        openingHours: form.openingHours,
-        specialDays: linesToList(form.specialDays),
-        holidays: linesToList(form.holidays),
-        smartOpenEnabled: form.smartOpenEnabled,
+        restaurantName: completedForm.restaurantName.trim(),
+        restaurantType: completedForm.restaurantType,
+        language: completedForm.language,
+        logoUrl: completedForm.logoUrl || null,
+        primaryColor: completedForm.primaryColor,
+        secondaryColor: completedForm.secondaryColor,
+        buttonColor: completedForm.primaryColor,
+        openingHours: completedForm.openingHours,
+        specialDays: linesToList(completedForm.specialDays),
+        holidays: linesToList(completedForm.holidays),
+        smartOpenEnabled: completedForm.smartOpenEnabled,
         onboardingChecklist: checklist,
         loyaltyMode: "amount_based",
         amountPerPoint: bonus.amountPerPoint,
         redemptionReturnRate: bonus.returnRate,
         amountTierPoints: bonus.amountTierPoints,
-        starterRewards: form.starterRewards.map((reward) => ({
+        starterRewards: completedForm.starterRewards.map((reward) => ({
           key: reward.key,
           title: reward.title.trim(),
+          description: reward.description?.trim() || "Willkommensgeschenk für neue Gäste.",
           category: reward.category,
           products: linesToList(reward.availableProducts),
-          imageUrl: null,
+          estimatedValue: reward.estimatedValue ?? null,
+          imageUrl: reward.imageUrl ?? null,
           active: true,
         })),
         staffName: form.staffName,
@@ -1529,13 +1666,14 @@ export function RestaurantOnboarding() {
           complaint_contact: form.legalComplaintContact.trim() || form.legalEmail.trim(),
         },
       });
-      await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
+      setForm(completedForm);
+      await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, completedForm, checklist);
       await refreshTenants();
       setStatus(`${result.restaurant.name} ist startklar.`);
       setStep(steps.length - 1);
       navigate("/admin", { replace: true });
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Restaurant konnte nicht eröffnet werden.");
+      setStatus(error instanceof Error ? error.message : "Unternehmen konnte nicht aktiviert werden.");
     } finally {
       submissionInFlightRef.current = false;
       setSaving(false);
@@ -1547,14 +1685,14 @@ export function RestaurantOnboarding() {
   }
 
   if (!activeRestaurant) {
-    return <div className="auth-shell">Kein Restaurant gefunden.</div>;
+    return <div className="auth-shell">Kein Unternehmen gefunden.</div>;
   }
 
   return (
     <>
       <header className="installation-header">
         <div className="installation-header-copy">
-          <span className="installation-eyebrow">Restaurant einrichten</span>
+          <span className="installation-eyebrow">{productTerminology.business} einrichten</span>
           <h1>Willkommen! In wenigen Minuten startet dein digitales Bonusprogramm.</h1>
           <p>Gleich bereit für deine Gäste.</p>
         </div>
@@ -1599,7 +1737,7 @@ export function RestaurantOnboarding() {
           {step === 0 ? (
             <section className="wizard-screen">
               <div className="field">
-                <label htmlFor="restaurant-name">Wie heißt dein Restaurant?</label>
+                <label htmlFor="restaurant-name">Wie heißt dein Unternehmen?</label>
                 <input
                   className="input input-large"
                   id="restaurant-name"
@@ -1610,19 +1748,24 @@ export function RestaurantOnboarding() {
               </div>
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="restaurant-type">Was passt am besten zu dir?</label>
+                  <label htmlFor="restaurant-type">{productTerminology.businessType}</label>
                   <select
-                    className="select input-large"
+                    aria-describedby={businessProfileNotice ? "business-profile-notice" : undefined}
+                    className="select input-large premium-business-select"
                     id="restaurant-type"
+                    required
                     value={form.restaurantType}
-                    onChange={(event) => setForm((current) => ({ ...current, restaurantType: event.target.value }))}
+                    onChange={(event) => handleBusinessTypeChange(event.target.value)}
                   >
-                    <option>Restaurant</option>
-                    <option>Café</option>
-                    <option>Bar</option>
-                    <option>Bistro</option>
-                    <option>Food Truck</option>
+                    <option value="">Branche auswählen</option>
+                    {!isKnownBusinessType(form.restaurantType) && form.restaurantType ? (
+                      <option value={form.restaurantType}>Bestehende Branche: {form.restaurantType}</option>
+                    ) : null}
+                    {BUSINESS_TYPE_OPTIONS.map((option) => (
+                      <option key={option.key} value={option.label}>{option.label}</option>
+                    ))}
                   </select>
+                  {businessProfileNotice ? <p className="field-note" id="business-profile-notice" role="status">{businessProfileNotice}</p> : null}
                 </div>
                 <div className="field">
                   <label htmlFor="language">Welche Sprache sollen deine Gäste sehen?</label>
@@ -1703,7 +1846,7 @@ export function RestaurantOnboarding() {
                 />
                 <div className="logo-preview-box">
                   {visibleLogoUrl ? (
-                    <img alt={`${form.restaurantName || "Restaurant"} Logo`} src={visibleLogoUrl} />
+                    <img alt={`${form.restaurantName || "Unternehmen"} Logo`} src={visibleLogoUrl} />
                   ) : (
                     <ImagePlus size={36} />
                   )}
@@ -1786,7 +1929,7 @@ export function RestaurantOnboarding() {
                       {visibleLogoUrl ? (
                         <img
                           className="customer-logo restaurant-logo-image"
-                          alt={`${form.restaurantName || "Restaurant"} Logo`}
+                          alt={`${form.restaurantName || "Unternehmen"} Logo`}
                           src={visibleLogoUrl}
                         />
                       ) : (
@@ -1796,7 +1939,7 @@ export function RestaurantOnboarding() {
                       )}
                     </span>
                     <div className="restaurant-brand-copy">
-                      <h3 className="restaurant-brand-title">{form.restaurantName || "Dein Restaurant"}</h3>
+                      <h3 className="restaurant-brand-title">{form.restaurantName || "Dein Unternehmen"}</h3>
                       <p className="restaurant-brand-subtitle">Mein Bonus</p>
                     </div>
                   </div>
@@ -1881,75 +2024,95 @@ export function RestaurantOnboarding() {
 
           {step === 3 ? (
             <section className="wizard-screen">
-              <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
-              <div className="grid two">
+              <p className="muted">Wähle die wichtigsten Eckpunkte. WUXUAI erstellt daraus einen Vorschlag, den du vor dem Weitergehen bestätigst.</p>
+              <div className="grid two business-assistant-controls" ref={assistantControlsRef}>
                 <div className="field">
                   <label htmlFor="average-bill">Was gibt ein Gast durchschnittlich aus?</label>
                   <input
                     className="input input-large"
                     id="average-bill"
                     min="1"
+                    step="0.5"
                     type="number"
                     value={form.averageBill}
-                    onChange={(event) => setForm((current) => ({ ...current, averageBill: Number(event.target.value) || 1 }))}
+                    onChange={(event) => updateAssistantField({ averageBill: Number(event.target.value) || 1 })}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="first-reward-visits">Nach wie vielen Besuchen soll die erste Freude kommen?</label>
-                  <input
-                    className="input input-large"
-                    id="first-reward-visits"
-                    min="1"
-                    type="number"
-                    value={form.firstRewardVisits}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, firstRewardVisits: Number(event.target.value) || 1 }))
-                    }
-                  />
+                  <label htmlFor="generosity">Wie großzügig soll dein Bonusprogramm sein?</label>
+                  <select className="select input-large" id="generosity" value={form.generosity} onChange={(event) => updateAssistantField({ generosity: event.target.value as GenerosityKey })}>
+                    {GENEROSITY_OPTIONS.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
+                  </select>
                 </div>
+                <div className="field">
+                  <label htmlFor="first-reward-type">Wie sollen Punkte eingelöst werden?</label>
+                  <select className="select input-large" id="first-reward-type" value={form.firstRewardType} onChange={(event) => updateAssistantField({ firstRewardType: event.target.value })}>
+                    <option value="">Art der Punkteeinlösung auswählen</option>
+                    {REDEMPTION_TYPE_OPTIONS.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="reward-category">Belohnungskategorie</label>
+                  <select className="select input-large" id="reward-category" value={form.rewardCategory} onChange={(event) => updateAssistantField({ rewardCategory: event.target.value })}>
+                    <option value="">Kategorie auswählen</option>
+                    {businessProfile.redemptionCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="points-per-euro">Punkte pro Euro</label>
+                  <input className="input input-large" id="points-per-euro" inputMode="numeric" min="1" max="100" type="number" value={form.pointsPerEuro} onChange={(event) => updateAssistantField({ pointsPerEuro: Math.max(1, Number(event.target.value) || DEFAULT_POINTS_PER_EURO) })} />
+                  <small>Standard: 1 € = 10 Punkte</small>
+                </div>
+                <RedemptionRateSelect id="onboarding-redemption-rate" value={form.redemptionRatePercent} onChange={(value) => updateAssistantField({ redemptionRatePercent: value })} />
               </div>
-              <div className="field">
-                <label htmlFor="first-reward-type">Was möchtest du gerne geben?</label>
-                <select
-                  className="select input-large"
-                  id="first-reward-type"
-                  value={form.firstRewardType}
-                  onChange={(event) => setForm((current) => ({ ...current, firstRewardType: event.target.value }))}
-                >
-                  <option>Gratis Produkt</option>
-                  <option>Rabatt</option>
-                  <option>Upgrade</option>
-                  <option>Überraschung</option>
-                </select>
-              </div>
-              <div className="choice-grid">
-                {(["Sparsam", "Normal", "Großzügig", "Premium"] as Generosity[]).map((option) => (
+
+              <article className={`business-assistant-card${form.assistantConfirmed ? " confirmed" : ""}`} aria-live="polite">
+                <div className="business-assistant-heading">
+                  <div><span className="premium-dashboard-kicker">Empfohlene Einrichtung</span><h3>{assistantSuggestion.businessType} · {generosityLabels[form.generosity]}</h3></div>
+                  {form.assistantConfirmed ? <span className="business-assistant-status"><Check aria-hidden="true" size={16} /> Bestätigt</span> : null}
+                </div>
+                <dl className="business-assistant-summary">
+                  <div><dt>Willkommensgeschenk</dt><dd>{assistantSuggestion.welcomeGift?.label ?? "Eigene Auswahl"}</dd></div>
+                  <div><dt>Erste Belohnung</dt><dd>{assistantSuggestion.rewardTitle}</dd></div>
+                  <div><dt>Einlösequote</dt><dd>{assistantSuggestion.redemptionRatePercent} %</dd></div>
+                  <div><dt>Punkte pro Euro</dt><dd>{assistantSuggestion.pointsPerEuro}</dd></div>
+                  <div><dt>Benötigte Punkte</dt><dd>{assistantSuggestion.requiredPoints}</dd></div>
+                  <div><dt>Einordnung</dt><dd>{assistantSuggestion.economicsStatus}</dd></div>
+                </dl>
+                <div className="business-assistant-actions">
+                  <button className="button primary" onClick={applyAssistantSuggestion} type="button">Vorschlag übernehmen</button>
+                  <button className="button secondary" onClick={() => { setForm((current) => ({ ...current, assistantConfirmed: false })); assistantControlsRef.current?.querySelector<HTMLElement>("input, select")?.focus(); }} type="button">Anpassen</button>
+                </div>
+              </article>
+
+              <div className="business-assistant-adjustments">
+                <div className="field">
+                  <label htmlFor="first-reward-title">Erste Belohnung</label>
+                  <input className="input" id="first-reward-title" maxLength={80} value={form.firstRewardTitle} onChange={(event) => updateAssistantField({ firstRewardTitle: event.target.value })} />
+                </div>
+                <div className="field">
+                  <label htmlFor="first-reward-value">Geschätzter Produktwert</label>
+                  <input className="input" id="first-reward-value" min="1" step="0.5" type="number" value={form.firstRewardValue} onChange={(event) => updateAssistantField({ firstRewardValue: Math.max(1, Number(event.target.value) || 1) })} />
+                </div>
+                <div className="field full">
+                  <label htmlFor="first-reward-description">Kurze Beschreibung</label>
+                  <textarea className="textarea" id="first-reward-description" maxLength={180} value={form.firstRewardDescription} onChange={(event) => updateAssistantField({ firstRewardDescription: event.target.value })} />
+                </div>
+                {!form.assistantConfirmed ? (
                   <button
-                    className={`choice-card${form.generosity === option ? " active" : ""}`}
-                    key={option}
-                    onClick={() => setForm((current) => ({ ...current, generosity: option }))}
+                    className="button secondary business-assistant-confirm"
+                    disabled={!form.firstRewardType || !form.rewardCategory || !form.firstRewardTitle.trim()}
+                    onClick={() => { setForm((current) => ({ ...current, assistantConfirmed: true })); setStatus("Einstellungen bestätigt."); }}
                     type="button"
                   >
-                      {option}
-                      <span>{Math.round(generosityReturnRates[option] * 100)} % Rückgabe</span>
-                      <small>{generosityHelpText[option]}</small>
+                    Einstellungen bestätigen
                   </button>
-                ))}
+                ) : null}
               </div>
               <article className="calculation-card">
-                <strong>Unsere Empfehlung für dich</strong>
-                <p className="muted">
-                  {form.generosity} gewählt: {bonus.returnRatePercent} Rückgabe.
-                </p>
-                <p className="muted">
-                  Erwartete Konsumation bis zur Einlösung: {formatEuro(form.averageBill)} × {form.firstRewardVisits} Besuche = {formatEuro(bonus.expectedConsumptionEuro)}
-                </p>
-                <p className="muted">
-                  Empfohlener Einlösewert: {bonus.returnRatePercent} von {formatEuro(bonus.expectedConsumptionEuro)} = {formatEuro(bonus.rewardValueEuro, true)}
-                </p>
-                <p className="muted">
-                  WUXUAI berechnet daraus später automatisch die passende Punkte-Einlösung.
-                </p>
+                <strong>Wirtschaftliche Einordnung</strong>
+                <p className="muted">Für {formatEuro(bonus.rewardValueEuro, true)} Gegenwert werden bei {bonus.returnRatePercent} ungefähr {formatEuro(bonus.expectedConsumptionEuro, true)} Konsumation und {bonus.firstRewardPoints} Punkte benötigt.</p>
+                <p className="muted">Die Werte sind ein Vorschlag. Alte Belohnungen werden nicht neu berechnet.</p>
               </article>
             </section>
           ) : null}
@@ -1957,44 +2120,47 @@ export function RestaurantOnboarding() {
           {step === 4 ? (
             <section className="wizard-screen">
               <article className="calculation-card">
-                <strong>Welche Willkommensgeschenke möchtest du anbieten?</strong>
-                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Jeder neue Gast erhält zufällig eines davon.</p>
+                <strong>Welches Willkommensgeschenk passt zu deinem Unternehmen?</strong>
+                <p className="muted">Du siehst nur Vorschläge für {businessProfile.label}. Bestehende individuelle Geschenke bleiben erhalten.</p>
               </article>
 
               {!starterRewardConfirmationOpen ? (
-                <>
-                  <div className={`starter-reward-counter ${starterRewardCounterTone}`}>
-                    <div>
-                      <strong>Willkommensgeschenke</strong>
-                      <p className="muted">{selectedStarterRewardCount} / 5 ausgewählt</p>
-                    </div>
-                    {selectedStarterRewardCount > 0 && selectedStarterRewardCount < 3 ? (
-                      <p className="muted">💡 Wir empfehlen 3–5 Willkommensgeschenke für mehr Abwechslung.</p>
-                    ) : null}
+                <div className="welcome-gift-selector">
+                  <div className="field">
+                    <label htmlFor="welcome-gift">Willkommensgeschenk auswählen</label>
+                    <select className="select input-large" id="welcome-gift" value={form.welcomeGiftKey} onChange={(event) => handleWelcomeGiftSelection(event.target.value)}>
+                      <option value="">Willkommensgeschenk auswählen</option>
+                      {businessProfile.welcomeGiftOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
+                    </select>
                   </div>
 
-                  <div className="template-selection-grid">
-                    {starterRewardTemplates.map((template) => (
-                      <button
-                        className={`template-selection-card${
-                          form.starterRewards.some((reward) => reward.key === template.key) ? " selected" : ""
-                        }`}
-                        key={template.key}
-                        onClick={() => toggleStarterRewardTemplate(template)}
-                        type="button"
-                      >
-                        <span className="template-check">
-                          {form.starterRewards.some((reward) => reward.key === template.key) ? <Check size={18} /> : null}
-                        </span>
-                        <span className={`standard-asset mini ${template.asset}`}>
-                          <StandardRewardIcon asset={template.asset} size={24} />
-                        </span>
-                        <strong>{template.title}</strong>
-                        <small>{template.description}</small>
-                      </button>
-                    ))}
-                  </div>
-                </>
+                  {form.welcomeGiftKey === "custom" ? (
+                    <section className="custom-welcome-gift" aria-labelledby="custom-welcome-title">
+                      <div><h3 id="custom-welcome-title">Eigene Auswahl</h3><p className="muted">Die Bezeichnung ist erforderlich. Beschreibung, Wert und Bild sind optional.</p></div>
+                      <div className="grid two">
+                        <div className="field"><label htmlFor="custom-welcome-name">Bezeichnung</label><input className="input" id="custom-welcome-name" maxLength={80} value={form.customWelcomeTitle} onChange={(event) => setForm((current) => ({ ...current, customWelcomeTitle: event.target.value, starterRewardConfirmed: false }))} /></div>
+                        <div className="field"><label htmlFor="custom-welcome-value">Geschätzter Wert</label><input className="input" id="custom-welcome-value" min="0" step="0.5" type="number" value={form.customWelcomeValue || ""} onChange={(event) => setForm((current) => ({ ...current, customWelcomeValue: Math.max(0, Number(event.target.value) || 0), starterRewardConfirmed: false }))} /></div>
+                        <div className="field full"><label htmlFor="custom-welcome-description">Kurze Beschreibung</label><textarea className="textarea" id="custom-welcome-description" maxLength={180} value={form.customWelcomeDescription} onChange={(event) => setForm((current) => ({ ...current, customWelcomeDescription: event.target.value, starterRewardConfirmed: false }))} /></div>
+                      </div>
+                      <OwnerRewardImageUploader
+                        categoryIcon={<Gift aria-hidden="true" size={42} />}
+                        imageUrl={form.starterRewards.find((reward) => reward.key === "custom-welcome-gift")?.imageUrl}
+                        label={form.customWelcomeTitle || "eigene Auswahl"}
+                        onFileSelected={handleCustomGiftFile}
+                        onRemove={() => { setCustomGiftFile(null); setCustomGiftPreviewUrl(""); }}
+                        previewUrl={customGiftPreviewUrl || null}
+                      />
+                      <button className="button secondary" onClick={addCustomWelcomeGift} type="button">Eigene Auswahl übernehmen</button>
+                    </section>
+                  ) : null}
+
+                  {form.starterRewards.length ? (
+                    <div className="selected-welcome-gifts" aria-live="polite">
+                      <strong>Ausgewählt</strong>
+                      {form.starterRewards.map((reward) => <div key={reward.key}><Check aria-hidden="true" size={17} /><span>{reward.title}</span><small>{reward.category}</small></div>)}
+                    </div>
+                  ) : null}
+                </div>
               ) : (
                 <article className="starter-confirmation-card">
                   <h3>Du hast ausgewählt:</h3>
@@ -2004,13 +2170,7 @@ export function RestaurantOnboarding() {
                     ))}
                   </div>
                   <p className="muted">
-                    Jeder neue Gast erhält zufällig eines dieser Willkommensgeschenke.
-                  </p>
-                  <p className="muted">
-                    Welches konkrete Produkt du verschenkst, entscheidest du später im Bereich Willkommensgeschenke.
-                  </p>
-                  <p className="muted">
-                    Du kannst Bilder, Produkte und Details jederzeit später bearbeiten.
+                    Diese Auswahl wird beim Abschluss als Willkommensgeschenk eingerichtet. Details kannst du später weiterhin bearbeiten.
                   </p>
                 </article>
               )}
@@ -2027,54 +2187,18 @@ export function RestaurantOnboarding() {
           {step === 5 ? (
             <section className="wizard-screen">
               <article className="calculation-card">
-                <strong>Restaurant Starter Kit</strong>
+                <strong>Rechtliche Angaben</strong>
                 <p className="muted">
-                  Lade dein druckfertiges Paket herunter. Es enthält alles für Eingang und Kassa.
+                  Aus deinen Unternehmensdaten werden Teilnahmebedingungen, Datenschutzhinweise und Bonusregeln vorbereitet.
                 </p>
               </article>
-              <div className="qr-launch-grid">
-                <QrLaunchCard
-                  description="Neue Gäste scannen diesen QR-Code. Sie werden Mitglied und erhalten ihr erstes Willkommensgeschenk."
-                  icon="👤"
-                  id="restaurant-qr"
-                  logoUrl={visibleLogoUrl}
-                  restaurantName={form.restaurantName}
-                  subtitle="Mitglied werden"
-                  title="Neue Gäste"
-                  url={restaurantQrUrl}
-                />
-                <QrLaunchCard
-                  description="Bestandsgäste scannen diesen QR-Code nach dem Bezahlen und sammeln Bonuspunkte."
-                  icon="🎁"
-                  id="bonus-qr"
-                  logoUrl={visibleLogoUrl}
-                  restaurantName={form.restaurantName}
-                  subtitle="Mein Bonus"
-                  title="Bonuspunkte sammeln"
-                  url={bonusQrUrl}
-                />
+              <div className="rule-list">
+                <ChecklistRow done={Boolean(form.restaurantName.trim())} label="Unternehmensname gespeichert" />
+                <ChecklistRow done={Boolean(form.legalForm.trim())} label="Rechtsform gespeichert" />
+                <ChecklistRow done={Boolean(form.legalStreet.trim() && form.legalPostalCode.trim() && form.legalCity.trim())} label="Unternehmensadresse gespeichert" />
+                <ChecklistRow done={Boolean(form.legalEmail.trim())} label="Kontakt-E-Mail gespeichert" />
               </div>
-              <div className="starter-kit-action">
-                <button
-                  className="button starter-kit-button"
-                  onClick={() => {
-                    downloadRestaurantStarterKit({
-                      bonusQrId: "bonus-qr",
-                      logoUrl: visibleLogoUrl,
-                      primaryColor: form.primaryColor,
-                      restaurantName: form.restaurantName,
-                      restaurantQrId: "restaurant-qr",
-                      secondaryColor: form.secondaryColor,
-                    }).catch((error) => {
-                      window.alert(error instanceof Error ? error.message : "Restaurant Starter Kit konnte nicht gespeichert werden.");
-                    });
-                  }}
-                  type="button"
-                >
-                  <Printer size={22} />
-                  📦 Restaurant Starter Kit herunterladen
-                </button>
-              </div>
+              <p className="muted">Vorlage – rechtliche Prüfung empfohlen. Die Veröffentlichung erfolgt erst über den bestehenden Freigabeprozess.</p>
             </section>
           ) : null}
 
@@ -2121,7 +2245,7 @@ export function RestaurantOnboarding() {
               </button>
             ) : (
               <button className="button" disabled={saving || !allReady} type="submit">
-                Restaurant starten
+                Unternehmen aktivieren
               </button>
             )}
           </div>
@@ -2147,7 +2271,7 @@ export function RestaurantOnboarding() {
         <article className="calculation-card">
           <strong>Deine Gäste sollen schnell verstehen, warum sie wiederkommen.</strong>
           <p className="muted">
-            Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.
+            Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Geschäft sofort erklärbar ist.
           </p>
         </article>
       </AppDrawer>
@@ -2160,16 +2284,6 @@ function openDaysSummary(openingHours: Record<Weekday, OpeningDay>) {
   if (activeDays.length === 0) return "Keine Öffnungszeiten";
   if (activeDays.length === 7) return "Alle Wochentage";
   return activeDays.map((day) => day.label).join(", ");
-}
-
-function StandardRewardIcon({ asset, size }: { asset: StarterRewardTemplate["asset"]; size: number }) {
-  if (asset === "drink") return <CupSoda size={size} />;
-  if (asset === "coffee") return <Coffee size={size} />;
-  if (asset === "dessert") return <IceCreamBowl size={size} />;
-  if (asset === "appetizer") return <Soup size={size} />;
-  if (asset === "main") return <Utensils size={size} />;
-  if (asset === "menu") return <UtensilsCrossed size={size} />;
-  return <Gift size={size} />;
 }
 
 function ChecklistRow({ done, label }: { done: boolean; label: string }) {
@@ -2204,7 +2318,7 @@ function QrLaunchCard({
     <article className="card qr-box-large starter-qr-card">
       <div className="starter-qr-logo">
         {logoUrl ? (
-          <img alt={`${restaurantName || "Restaurant"} Logo`} src={logoUrl} />
+          <img alt={`${restaurantName || "Unternehmen"} Logo`} src={logoUrl} />
         ) : (
           <span>
             WUXUAI
@@ -2224,3 +2338,8 @@ function QrLaunchCard({
     </article>
   );
 }
+
+// Die Druckerzeugung bleibt bis zur vollständigen Konsolidierung im QR Center verfügbar,
+// wird im Onboarding aber bewusst nicht mehr angeboten.
+void downloadRestaurantStarterKit;
+void QrLaunchCard;

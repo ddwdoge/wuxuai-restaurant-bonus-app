@@ -58,7 +58,7 @@ test("Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten gültig", 
 });
 
 test("Customer- und Staff-Portal verwenden den Bestätigungs-Code ohne Einlöse-PIN", () => {
-  assert.match(customerPortal, /Bitte erst direkt vor dem Mitarbeiter bestätigen/);
+  assert.match(customerPortal, /Bitte erst direkt vor einem Teammitglied bestätigen/);
   assert.match(customerPortal, /Jetzt verbindlich einlösen/);
   assert.match(customerPortal, /redemption-code-value/);
   assert.match(customerPortal, /customerRewardId: redeemOffer\.assignment_id/);

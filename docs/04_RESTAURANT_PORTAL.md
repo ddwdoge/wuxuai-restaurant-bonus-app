@@ -609,7 +609,7 @@ an einer anderen Position derselben Seite erscheinen.
 V2 vorbereitet: - Filialen - Wochenplan für Punkteeinlösungen - automatische
 Tagesaktivierung - dynamische „Heute für dich"-Empfehlungen - WUXUAI
 Admin Portal - Enterprise-Funktionen - Branding entfernen für höhere
-Tarife - weitere Branchen neben Restaurants/Cafés
+Tarife - tiefgreifende branchenspezifische Spezialabläufe
 
 ------------------------------------------------------------------------
 

@@ -10,7 +10,7 @@ export function StaffPage() {
     <>
       <header className="page-header">
         <div>
-          <h1>Mitarbeiter</h1>
+          <h1>Team</h1>
           <p className="muted">Team-Zugänge, Tages-PIN und heutige Aktivität.</p>
         </div>
         <Link className="button secondary" to={staffTabletPath}>
@@ -24,7 +24,7 @@ export function StaffPage() {
           <UserCheck size={28} />
           <h2>Team</h2>
           <p className="muted">Für V1 ist das Team Tablet bereits nutzbar.</p>
-          <span className="staff-admin-card-badge">Mitarbeiterverwaltung folgt</span>
+          <span className="staff-admin-card-badge">Teamverwaltung folgt</span>
         </article>
         <Link
           aria-label="Team Tablet öffnen und Tages-PIN anzeigen"
@@ -48,7 +48,7 @@ export function StaffPage() {
       </section>
 
       <section className="card empty-state-card staff-admin-empty">
-        <h2>Mitarbeiterverwaltung folgt</h2>
+        <h2>Teamverwaltung folgt</h2>
         <p className="muted">
           Für V1 ist das Team Tablet bereits nutzbar. Die Verwaltung von Teammitgliedern wird hier sauber angeschlossen.
         </p>

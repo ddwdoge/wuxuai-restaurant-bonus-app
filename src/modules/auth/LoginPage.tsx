@@ -11,6 +11,7 @@ import {
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
 import { Link } from "react-router-dom";
+import { productTerminology } from "../../config/productTerminology";
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -48,8 +49,8 @@ export function LoginPage() {
   return (
     <PublicPageShell
       description="Willkommen zurück. Verwalte dein Bonusprogramm, deine Gäste und deine Punkteeinlösungen."
-      eyebrow="WUXUAI Bonus"
-      title="Restaurant Login"
+      eyebrow={productTerminology.productName}
+      title="Betreiber-Login"
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>

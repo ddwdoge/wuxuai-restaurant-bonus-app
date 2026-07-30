@@ -22,7 +22,7 @@ test("Premium-Startseite zeigt Tages-PIN, Hauptaktion und echte Tagesübersicht"
 });
 
 test("Mitarbeiter-Navigation bleibt auf vier klare Ziele begrenzt", () => {
-  assert.match(staffPortal, /aria-label="Mitarbeiter-Navigation"/);
+  assert.match(staffPortal, /aria-label="Team-Navigation"/);
   assert.match(staffPortal, />Start</);
   assert.match(staffPortal, />Code prüfen</);
   assert.match(staffPortal, />Tages-PIN</);

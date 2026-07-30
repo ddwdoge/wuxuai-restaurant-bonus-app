@@ -221,7 +221,7 @@ test("Kartenbibliothek wird lazy geladen und besitzt einen isolierten Fallback",
   assert.doesNotMatch(finder, /from "\.\/PartnerRestaurantMap"/);
   assert.match(lazyMap, /lazy\(\(\) =>\s*\n?\s*import\("\.\/PartnerRestaurantMap"\)/);
   assert.match(lazyMap, /class MapErrorBoundary/);
-  assert.match(lazyMap, /Die Restaurantliste bleibt verfügbar/);
+  assert.match(lazyMap, /Die Unternehmensliste bleibt verfügbar/);
   assert.match(viteConfig, /return "vendor-maps"/);
   assert.match(viteConfig, /node_modules\/leaflet/);
 });
@@ -250,7 +250,7 @@ test("Marketing-Servergate ist nicht für Browserrollen ausführbar", () => {
 });
 
 test("Restaurantsuche behält barrierefreie Listenalternative", () => {
-  assert.match(finder, /aria-label="Liste der Partnerrestaurants"/);
+  assert.match(finder, /aria-label="Liste der Partnerunternehmen"/);
   assert.match(finder, /Karte \/ Liste|Darstellung wählen/);
 });
 

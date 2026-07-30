@@ -447,7 +447,7 @@ export function WelcomeGiftsPage() {
             <section className="premium-owner-editor-section">
               <div><p className="premium-owner-kicker">Bedingung</p><h3>Wie wird das Geschenk beschrieben?</h3></div>
               <div className="gift-mode-grid">
-                <button className={`gift-mode-card${editing.mode === "value_limit" ? " selected" : ""}`} onClick={() => setEditing({ ...editing, mode: "value_limit" })} type="button"><strong>Wertgrenze</strong><span>Gast wählt im Restaurant bis zur Grenze.</span></button>
+                <button className={`gift-mode-card${editing.mode === "value_limit" ? " selected" : ""}`} onClick={() => setEditing({ ...editing, mode: "value_limit" })} type="button"><strong>Wertgrenze</strong><span>Gast wählt im Geschäft bis zur Grenze.</span></button>
                 <button className={`gift-mode-card${editing.mode === "fixed_product" ? " selected" : ""}`} onClick={() => setEditing({ ...editing, mode: "fixed_product" })} type="button"><strong>Festes Produkt</strong><span>Gast sieht genau dieses Produkt.</span></button>
               </div>
               {editing.mode === "fixed_product" ? <label className="field" htmlFor="fixed-product"><span>Produktname</span><input className="input" id="fixed-product" value={editing.fixedProductName} onChange={(event) => setEditing({ ...editing, fixedProductName: event.target.value })} /></label> : null}

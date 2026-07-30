@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-30 – WUXUAI Bonus: neutrales Branding und sichtbare Terminologie
+
+- Der sichtbare Produktname lautet zentral `WUXUAI Bonus` mit dem Leitsatz
+  `Kundenbindung für lokale Unternehmen`.
+- Öffentliche Einstiege, Authentifizierung, Onboarding sowie Betreiber-,
+  Kunden- und Teambereich verwenden branchenneutrale Begriffe.
+- Die öffentliche Startseite bietet zwei klare Wege: Betreiber-Login und
+  Kunden-Bonus über den QR-Code eines Unternehmens.
+- Gemeinsame sichtbare Begriffe werden in
+  `src/config/productTerminology.ts` gepflegt.
+- Technische Tabellen-, RPC-, RLS-, URL-, Typ- und Variablennamen bleiben
+  unverändert. Rechtliche Mastertexte wurden nicht mechanisch umgeschrieben
+  und benötigen weiterhin eine gesonderte rechtliche Prüfung.
+
 ## 2026-07-29 – Automatisiertes Legal-Paket im Restaurant-Onboarding
 
 - Das siebenstufige Onboarding bleibt erhalten und ergänzt Schritt 1 um
@@ -60,6 +74,25 @@
 # WUXUAI Bonus V1 – Changelog
 
 Status: **LOCK**
+
+## 30.07.2026 - WUXUAI Bonus ab V1 branchenneutral
+
+- Product Owner ersetzt die bisherige Restaurant-only-Wording-Regel.
+- WUXUAI Bonus wird als Kundenbindungsplattform für lokale Unternehmen
+  positioniert.
+- Allgemeine sichtbare Produktsprache ist ab V1 branchenneutral.
+- Restaurant bleibt die erste vollständig unterstützte und getestete
+  Referenzbranche.
+- V1 erlaubt zentrale Branchenprofile, Dropdowns, Geschenk- und
+  Belohnungsvorlagen auf Basis der bestehenden generischen Reward-Engine.
+- Tiefgreifende branchenspezifische Geschäftslogik bleibt V2.
+- Technische Legacy-Namen bleiben zulässig; keine Sprachmigration der
+  Datenbank ist vorgesehen.
+- Rechtliche Mastertemplates bleiben von automatischer Neutralisierung
+  ausgenommen und benötigen gesonderte rechtliche Prüfung.
+
+Decision Record:
+`docs/product/DECISION_2026-07-30_WUXUAI_BONUS_BUSINESS_NEUTRAL.md`
 
 ## 29.07.2026 - Customer Identity Security-Verifikation auf Staging
 
@@ -2328,3 +2361,21 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Manager, Mitarbeiter, Kunden, anonyme Aufrufe und fremde Restaurants können die Einstellung nicht ändern.
 - Neue Empfehlungen verwenden die aktuell gespeicherte Dauer; laufende Bonuszeiträume bleiben unverändert.
 - Keine Änderung an Reward-, Tages-PIN-, Einlösecode-, Customer-Identity- oder Legal-Logik.
+
+## 2026-07-30 – Branchenprofile und Bonusprogramm-Assistent
+
+- elf zentrale V1-Branchenprofile für Onboarding, Willkommensgeschenke und
+  Punkteeinlösung ergänzt
+- Branche im ersten Onboarding-Schritt als Pflichtauswahl umgesetzt
+- Willkommensgeschenke und Belohnungskategorien werden passend zur Branche als
+  barrierefreie Dropdowns angeboten
+- eigene Auswahl mit Bezeichnung, Beschreibung, optionalem Wert und bestehendem
+  sicherem Owner-Bildupload ergänzt
+- Bonusprogramm-Assistent schlägt auf Basis von Branche, Großzügigkeit,
+  Einkaufswert, Punktefaktor und Einlöseart kontrollierbare Werte vor
+- gemeinsame Punkteformel auf
+  `ceil(Produktwert / (Einlösequote / 100) × Punkte pro Euro)` konsolidiert
+- Branchenwechsel behält gültige und individuelle Werte, setzt nur ungültige
+  Profilwerte zurück und zeigt einen Prüfhinweis
+- `restaurant_type` bleibt als bestehendes freies Textfeld erhalten; keine
+  Migration und keine RLS-Änderung

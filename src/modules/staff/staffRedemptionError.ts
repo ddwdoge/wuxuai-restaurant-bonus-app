@@ -146,7 +146,7 @@ export const staffRedemptionErrorContent: Record<StaffRedemptionErrorKind, Staff
   generic_error: {
     eyebrow: "Vorgang unterbrochen",
     title: "Etwas ist schiefgegangen",
-    text: "Bitte versuche es erneut oder wende dich an den Restaurantbesitzer.",
+    text: "Bitte versuche es erneut oder wende dich an den Betreiber.",
     primaryAction: "Code erneut eingeben",
     secondaryAction: "Zur Startseite",
     tone: "neutral",

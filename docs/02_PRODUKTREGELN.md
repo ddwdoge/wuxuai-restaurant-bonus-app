@@ -12,7 +12,10 @@ Bonus V1.
 -   Mobile First.
 -   Deutsch als Standardsprache in V1.
 -   Autosave statt manueller Speicherung.
--   Restaurant arbeitet mit Euro, WUXUAI rechnet Punkte.
+-   Betreiber arbeiten mit Euro, WUXUAI rechnet Punkte.
+-   Allgemeine sichtbare Produktsprache ist branchenneutral.
+-   Restaurant ist die erste vollständig getestete Referenzbranche.
+-   Branchenprofile und ihre Auswahloptionen werden zentral konfiguriert.
 
 ## Flow-Regeln
 
@@ -26,6 +29,11 @@ Bonus V1.
 -   Logo optional personalisieren.
 -   Standard-Assets verwenden.
 -   Personalisierung später im Arbeitsbereich.
+-   Branche wird vor abhängigen Geschenk- und Belohnungsauswahlen festgelegt.
+-   Definierte Optionslisten werden als barrierefreie Dropdowns oder
+    Comboboxen mit mindestens 44 px Touchfläche dargestellt.
+-   Ein Branchenwechsel validiert abhängige Werte und löscht bestehende
+    individuelle Werte nicht automatisch.
 
 ## Belohnungen
 
@@ -53,5 +61,7 @@ Bonus V1.
 -   Wochenplan
 -   Dynamische Belohnungen
 -   Erweiterte Smart Engines
+-   Tiefgreifende branchenspezifische Workflows
+-   Branchenbezogene Termin-, Buchungs-, Warenwirtschafts- und Kassenlogik
 
 Status: LOCK

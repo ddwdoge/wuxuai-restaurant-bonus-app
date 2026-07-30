@@ -101,7 +101,7 @@ export function AdminDashboard() {
     { label: "QR Center", to: "/admin/qr", icon: QrCode },
     { label: "Punkteeinlösung", to: "/admin/rewards", icon: Gift },
     { label: "Gäste", to: "/admin/customers", icon: Users },
-    { label: "Mitarbeiter", to: staffPath, icon: Smartphone },
+    { label: "Team", to: staffPath, icon: Smartphone },
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
   const legalRegistration = legalSetup?.readiness.registration;
@@ -112,7 +112,7 @@ export function AdminDashboard() {
       <header className="page-header dashboard-page-header">
         <div>
           <span className="premium-dashboard-kicker">Dashboard</span>
-          <h1>Heute im Restaurant</h1>
+          <h1>Heute in deinem Unternehmen</h1>
           <p className="muted">Dein Bonusprogramm auf einen Blick.</p>
         </div>
       </header>

@@ -16,6 +16,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { productTerminology } from "../../../config/productTerminology";
 import { supabase } from "../../../shared/lib/supabase";
 import type { BranchSubscription, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
@@ -265,7 +266,7 @@ export function SettingsPage() {
             .maybeSingle();
 
           if (error) throw error;
-          if (!data) throw new Error("Restaurantdaten konnten nicht gefunden werden.");
+          if (!data) throw new Error("Unternehmensdaten konnten nicht gefunden werden.");
           nextDetails = data as RestaurantDetails;
         } else {
           nextDetails = activeRestaurant as RestaurantDetails;
@@ -367,10 +368,10 @@ export function SettingsPage() {
           : current,
       );
       await refreshTenants();
-      setStatus("Restaurantdaten gespeichert.");
+      setStatus("Unternehmensdaten gespeichert.");
     } catch (error) {
-      console.error("Restaurantdaten konnten nicht gespeichert werden.", error);
-      setErrorMessage("Restaurantdaten konnten nicht gespeichert werden.");
+      console.error("Unternehmensdaten konnten nicht gespeichert werden.", error);
+      setErrorMessage("Unternehmensdaten konnten nicht gespeichert werden.");
     } finally {
       setSaving(false);
     }
@@ -420,7 +421,7 @@ export function SettingsPage() {
       return;
     }
     if (partnerLocation.isDiscoverable && (!publicDetailsComplete || details.status !== "active")) {
-      setErrorMessage("Für die Sichtbarkeit müssen Adresse, PLZ und Ort vollständig sein und das Restaurant aktiv sein.");
+      setErrorMessage("Für die Sichtbarkeit müssen Adresse, PLZ und Ort vollständig sein und das Unternehmen aktiv sein.");
       return;
     }
 
@@ -445,7 +446,7 @@ export function SettingsPage() {
         .eq("id", partnerLocation.id)
         .eq("restaurant_id", details.id);
       if (error) throw error;
-      setStatus("Standort für die Restaurantsuche gespeichert.");
+      setStatus("Standort für die Unternehmenssuche gespeichert.");
     } catch (error) {
       console.error("Standort konnte nicht gespeichert werden.", error);
       setErrorMessage("Standort konnte gerade nicht gespeichert werden.");
@@ -590,7 +591,7 @@ export function SettingsPage() {
     return (
       <section className="card settings-detail-card">
         <h1>Einstellungen</h1>
-        <p className="status-message error">{errorMessage ?? "Restaurantdaten konnten nicht geladen werden."}</p>
+        <p className="status-message error">{errorMessage ?? "Unternehmensdaten konnten nicht geladen werden."}</p>
       </section>
     );
   }
@@ -598,11 +599,11 @@ export function SettingsPage() {
   if (section === "restaurantdaten") {
     return (
       <>
-        <SettingsHeader title="Restaurantdaten" description="Passe die wichtigsten Angaben deines Restaurants an." />
+        <SettingsHeader title={productTerminology.businessData} description="Passe die wichtigsten Angaben deines Unternehmens an." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveRestaurantData}>
             <div className="field">
-              <label htmlFor="restaurant-name">Restaurantname</label>
+              <label htmlFor="restaurant-name">{productTerminology.businessName}</label>
               <input
                 className="input"
                 id="restaurant-name"
@@ -621,7 +622,7 @@ export function SettingsPage() {
               />
             </div>
             <div className="settings-meta-grid">
-              <InfoValue label="Restaurant-Link" value={details.slug} />
+              <InfoValue label="Unternehmens-Link" value={details.slug} />
               <InfoValue label="Status" value={details.status === "active" ? "Aktiv" : details.status === "draft" ? "Entwurf" : "Pausiert"} />
               <InfoValue label="Sprache" value={details.language === "de" ? "Deutsch" : details.language ?? "Deutsch"} />
             </div>
@@ -703,7 +704,7 @@ export function SettingsPage() {
   if (section === "oeffnungszeiten") {
     return (
       <>
-        <SettingsHeader title="Öffnungszeiten" description="Lege fest, wann dein Restaurant geöffnet ist." />
+        <SettingsHeader title="Öffnungszeiten" description="Lege fest, wann dein Geschäft geöffnet ist." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveOpeningHours}>
             <div className="settings-hours-grid">
@@ -770,7 +771,7 @@ export function SettingsPage() {
 
     return (
       <>
-        <SettingsHeader title="Standort & Restaurantsuche" description="Lege fest, wie dein Restaurant für Gäste auf der Partnerkarte erscheint." />
+        <SettingsHeader title="Standort & Unternehmenssuche" description="Lege fest, wie dein Unternehmen für Gäste auf der Partnerkarte erscheint." />
         <section className="card settings-detail-card">
           {partnerLocation ? (
             <form className="form" onSubmit={savePartnerLocation}>
@@ -784,13 +785,13 @@ export function SettingsPage() {
               </div>
               <div className="field"><label htmlFor="location-description">Öffentliche Kurzbeschreibung</label><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
               <div className="field"><label htmlFor="location-cover">Öffentliches Bild (HTTPS-Adresse)</label><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
-              <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
+              <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Unternehmenssuche sichtbar</strong><small>Nur aktive Unternehmen mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
               ) : <p className="muted">Gib gültige Koordinaten ein, um die Kartenposition zu prüfen.</p>}
               <FormActions saving={saving} submitLabel="Standort speichern" />
             </form>
-          ) : <p className="status-message error">Für dieses Restaurant wurde kein primärer Standort gefunden.</p>}
+          ) : <p className="status-message error">Für dieses Unternehmen wurde kein primärer Standort gefunden.</p>}
         </section>
         <StatusMessages errorMessage={errorMessage} status={status} />
       </>
@@ -831,7 +832,7 @@ export function SettingsPage() {
   if (section === "konto-testphase") {
     return (
       <>
-        <SettingsHeader title="Abo & Testphase" description="Aktueller Status deines Restaurantkontos." />
+        <SettingsHeader title="Abo & Testphase" description="Aktueller Status deines Betreiberkontos." />
         <section className="card settings-detail-card">
           {subscriptionError ? (
             <p className="status-message error">{subscriptionError}</p>
@@ -843,7 +844,7 @@ export function SettingsPage() {
                 </span>
                 <h2>
                   {subscriptionActive
-                    ? "Dein Restaurant-Bonusprogramm ist aktiv."
+                    ? "Dein Bonusprogramm ist aktiv."
                     : trialExpired
                       ? "Deine kostenlose Testphase ist abgelaufen."
                       : "Du nutzt WUXUAI Bonus kostenlos."}
@@ -853,7 +854,7 @@ export function SettingsPage() {
                 ) : trialExpired ? (
                   <p>Nach der Testphase kannst du dein Monatsabo aktivieren.</p>
                 ) : (
-                  <p>Plan: Restaurant Bonus</p>
+                  <p>Plan: WUXUAI Bonus</p>
                 )}
               </div>
               <div className="settings-meta-grid">
@@ -880,7 +881,7 @@ export function SettingsPage() {
           ) : (
             <div className="settings-info-card">
               <h2>Kein Abo eingerichtet</h2>
-              <p className="muted">Die Testphase wird automatisch eingerichtet, sobald dein Restaurantkonto bereit ist.</p>
+              <p className="muted">Die Testphase wird automatisch eingerichtet, sobald dein Betreiberkonto bereit ist.</p>
               <p className="muted">Zahlung wird bald aktiviert.</p>
             </div>
           )}
@@ -907,10 +908,10 @@ export function SettingsPage() {
           to="/admin/legal"
         />
         <SettingsLinkCard
-          description="Passe die wichtigsten Angaben deines Restaurants an."
+          description="Passe die wichtigsten Angaben deines Unternehmens an."
           icon={Building2}
-          label="Restaurantdaten bearbeiten"
-          title="Restaurantdaten"
+          label="Unternehmensdaten bearbeiten"
+          title="Unternehmensdaten"
           to="/admin/settings/restaurantdaten"
         />
         <SettingsLinkCard
@@ -921,7 +922,7 @@ export function SettingsPage() {
           to="/admin/settings/aussehen"
         />
         <SettingsLinkCard
-          description="Lege fest, wann dein Restaurant geöffnet ist."
+          description="Lege fest, wann dein Geschäft geöffnet ist."
           icon={Clock}
           label="Öffnungszeiten bearbeiten"
           title="Öffnungszeiten"
@@ -931,7 +932,7 @@ export function SettingsPage() {
           description="Adresse, Kartenposition und Sichtbarkeit für die Partnersuche."
           icon={MapPinned}
           label="Standort bearbeiten"
-          title="Standort & Restaurantsuche"
+          title="Standort & Unternehmenssuche"
           to="/admin/settings/standort"
         />
         <SettingsLinkCard
@@ -949,14 +950,14 @@ export function SettingsPage() {
           to="/admin/welcome-gifts"
         />
         <SettingsLinkCard
-          description="Öffne den Mitarbeiterbereich und sieh die heutige Tages-PIN."
+          description="Öffne den Teambereich und sieh die heutige Tages-PIN."
           icon={KeyRound}
-          label="Mitarbeiterbereich öffnen"
-          title="Mitarbeiter & Tages-PIN"
+          label="Teambereich öffnen"
+          title="Team & Tages-PIN"
           to="/admin/staff"
         />
         <SettingsLinkCard
-          description="Drucke QR-Codes und Starter Kit für dein Restaurant."
+          description="Drucke QR-Codes und Starter Kit für dein Unternehmen."
           icon={QrCode}
           label="QR Center öffnen"
           title="QR & Starter Kit"

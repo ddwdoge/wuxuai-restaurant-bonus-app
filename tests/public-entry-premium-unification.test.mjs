@@ -12,7 +12,7 @@ test("alle vier öffentlichen Einstiegsseiten verwenden dieselbe Premium-Shell",
   assert.equal((home.match(/<PublicPageShell/g) ?? []).length, 2);
   assert.match(login, /<PublicPageShell/);
   assert.match(register, /<PublicPageShell/);
-  assert.match(home, /title="Bonus für Gäste"/);
+  assert.match(home, /title="Dein Bonus"/);
   assert.match(styles, /\.public-premium-page-entry \{ max-width: 680px; \}/);
   assert.match(styles, /\.public-premium-page-form \{ max-width: 560px; \}/);
 });
@@ -40,7 +40,7 @@ test("bestehende Login- und Registrierungslogik bleibt an nativen Formularen", (
 });
 
 test("Einstiegskarten sind vollständig und per Leertaste bedienbar", () => {
-  assert.equal((home.match(/<PublicEntryCard/g) ?? []).length, 3);
+  assert.equal((home.match(/<PublicEntryCard/g) ?? []).length, 2);
   assert.match(components, /event\.key === " "/);
   assert.match(components, /event\.currentTarget\.click\(\)/);
   assert.match(components, /aria-label=\{`\$\{title\}: \$\{action\}`\}/);
@@ -63,5 +63,5 @@ test("Fehler- und Ladezustände werden verständlich angekündigt", () => {
   assert.match(register, /role="status" aria-live="polite"/);
   assert.match(components, /aria-busy=\{loading\}/);
   assert.match(login, /Anmeldung läuft …/);
-  assert.match(register, /Restaurant wird gestartet …/);
+  assert.match(register, /Unternehmen wird eingerichtet …/);
 });

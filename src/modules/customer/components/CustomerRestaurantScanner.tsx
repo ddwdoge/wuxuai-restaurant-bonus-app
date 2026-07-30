@@ -62,7 +62,7 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
     if (!navigator.mediaDevices?.getUserMedia) {
       setStarting(false);
       setStatus(null);
-      setError("Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte öffne den Restaurant-QR mit der Kamera-App.");
+      setError("Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte öffne den Unternehmens-QR mit der Kamera-App.");
       return;
     }
 
@@ -83,11 +83,11 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
           if (!target) {
             setStarting(false);
             setStatus(null);
-            setError("Dieser QR-Code konnte keinem Restaurant zugeordnet werden.");
+            setError("Dieser QR-Code konnte keinem Unternehmen zugeordnet werden.");
             return;
           }
 
-          setStatus("Restaurant erkannt. Bonusprogramm wird geöffnet …");
+          setStatus("Unternehmen erkannt. Bonusprogramm wird geöffnet …");
           onRestaurantDetectedRef.current(target.restaurantSlug, target.targetPath);
         },
       );
@@ -97,7 +97,7 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
       }
       controlsRef.current = controls;
       setStarting(false);
-      setStatus("Restaurant-QR vor die Kamera halten.");
+      setStatus("Unternehmens-QR vor die Kamera halten.");
     } catch (scannerError) {
       stopScanner();
       setStarting(false);
@@ -114,7 +114,7 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
 
   return (
     <AppDrawer
-      description="Scanne den QR-Code des Restaurants, in dem du gerade bist."
+      description="Scanne den QR-Code des Unternehmens, bei dem du gerade bist."
       dismissOnOverlay={false}
       footer={(
         <button className="button secondary customer-restaurant-scanner-cancel" onClick={onCancel} type="button">
@@ -124,11 +124,11 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
       onClose={onCancel}
       open={open}
       size="large"
-      title="Restaurant wechseln"
+      title="Unternehmen wechseln"
     >
       <section className="customer-restaurant-scanner" aria-live="polite">
         <div className="customer-restaurant-scanner-frame">
-          <video aria-label="Kamera-Vorschau für Restaurant-QR" autoPlay muted playsInline ref={videoRef} />
+          <video aria-label="Kamera-Vorschau für Unternehmens-QR" autoPlay muted playsInline ref={videoRef} />
           <span aria-hidden="true" className="customer-restaurant-scanner-reticle"><ScanLine size={46} /></span>
           {starting ? <span className="customer-restaurant-scanner-loading"><Camera aria-hidden="true" size={20} />Kamera wird geöffnet …</span> : null}
         </div>
@@ -136,13 +136,13 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
         {error ? (
           <div className="customer-restaurant-scanner-error" role="alert">
             <p>{error}</p>
-            <button aria-label="Anderes Restaurant erneut scannen" onClick={() => void startScanner()} type="button">
+            <button aria-label="Anderes Unternehmen erneut scannen" onClick={() => void startScanner()} type="button">
               <RefreshCw aria-hidden="true" size={18} />
               Erneut scannen
             </button>
           </div>
         ) : null}
-        <p className="customer-restaurant-scanner-security"><ShieldCheck aria-hidden="true" size={17} />Nur der neu gescannte Restaurant-QR wird verwendet.</p>
+        <p className="customer-restaurant-scanner-security"><ShieldCheck aria-hidden="true" size={17} />Nur der neu gescannte Unternehmens-QR wird verwendet.</p>
       </section>
     </AppDrawer>
   );

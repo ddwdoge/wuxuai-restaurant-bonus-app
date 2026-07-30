@@ -38,7 +38,7 @@ const rewardTypes: BonusActivityType[] = [
   "MANUAL_COMPENSATION",
 ];
 
-const legalNotice = "Dieser Bericht dokumentiert ausschließlich Aktivitäten des WUXUAI Bonusprogramms. Er ist kein Kassenbeleg, keine Registrierkasse und keine steuerliche oder buchhalterische Aufzeichnung. Die ordnungsgemäße Erfassung steuerlich, buchhalterisch oder kassentechnisch relevanter Vorgänge im eigenen Kassensystem obliegt dem Restaurantbetreiber.";
+const legalNotice = "Dieser Bericht dokumentiert ausschließlich Aktivitäten des WUXUAI Bonusprogramms. Er ist kein Kassenbeleg, keine Registrierkasse und keine steuerliche oder buchhalterische Aufzeichnung. Die ordnungsgemäße Erfassung steuerlich, buchhalterisch oder kassentechnisch relevanter Vorgänge im eigenen Kassensystem obliegt dem Betreiber.";
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("de-AT", {
@@ -66,7 +66,7 @@ function ActivityCard({ row, onCancel }: { row: BonusActivityRow; onCancel: (row
         <div><dt>Punkte</dt><dd>{row.points_spent.toLocaleString("de-AT")}</dd></div>
         <div><dt>Menge</dt><dd>{row.quantity}</dd></div>
         <div><dt>Filiale</dt><dd>{row.branch_name ?? "Hauptstandort"}</dd></div>
-        <div><dt>Ausgeführt durch</dt><dd>{row.actor_role === "staff" ? "Mitarbeiter" : "Restaurantadmin"}</dd></div>
+        <div><dt>Ausgeführt durch</dt><dd>{row.actor_role === "staff" ? "Teammitglied" : "Administrator"}</dd></div>
       </dl>
       <footer>
         <span className={`snapshot-pill ${row.snapshot_completeness}`}>{snapshotLabel(row.snapshot_completeness)}</span>
@@ -162,7 +162,7 @@ export function BonusActivityReportsPage() {
       <section className="card bonus-report-access-denied">
         <ShieldAlert aria-hidden="true" size={28} />
         <h1>Berichte sind nicht verfügbar</h1>
-        <p>Nur Restaurant-Owner und Administratoren dürfen vollständige Bonus-Aktivitätsberichte öffnen.</p>
+        <p>Nur Betreiber und Administratoren dürfen vollständige Bonus-Aktivitätsberichte öffnen.</p>
       </section>
     );
   }
@@ -173,7 +173,7 @@ export function BonusActivityReportsPage() {
         <div>
           <span className="premium-dashboard-kicker">Internes Bonusprogramm</span>
           <h1>Berichte</h1>
-          <p>Überblicke Einlösungen und Punkteaktivitäten deines Restaurants.</p>
+          <p>Überblicke Einlösungen und Punkteaktivitäten deines Unternehmens.</p>
         </div>
         <div className="bonus-report-actions">
           <button className="button secondary" disabled={!report?.rows.length} onClick={() => report && downloadBonusActivityCsv(report, year, reportMonth)} type="button">
@@ -232,7 +232,7 @@ export function BonusActivityReportsPage() {
 
       <section className="card bonus-cash-responsibility">
         <h2>Kassenerfassung und Verantwortung</h2>
-        <p>WUXUAI verwaltet Bonuspunkte und Einlösungsaktivitäten und stellt keinen Kassenbeleg aus. Das Restaurant klärt mit seiner Steuerberatung, wie Rabatte, Gratisprodukte, Gutscheine und Bonusleistungen im eigenen Kassensystem erfasst werden.</p>
+        <p>WUXUAI verwaltet Bonuspunkte und Einlösungsaktivitäten und stellt keinen Kassenbeleg aus. Das Unternehmen klärt mit seiner Steuerberatung, wie Rabatte, Gratisprodukte, Gutscheine und Bonusleistungen im eigenen Kassensystem erfasst werden.</p>
         <p className="muted">DRAFT_LEGAL_REVIEW_REQUIRED</p>
       </section>
 

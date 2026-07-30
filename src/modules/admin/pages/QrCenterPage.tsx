@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { productTerminology } from "../../../config/productTerminology";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { useTenant } from "../../tenant/TenantProvider";
 
@@ -375,7 +376,7 @@ function drawQrPrintPage(
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
   context.font = "900 42px Inter, Arial, sans-serif";
-  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 230, contentWidth, 48);
+  drawWrappedText(context, branding.restaurantName || "Dein Unternehmen", canvas.width / 2, 230, contentWidth, 48);
 
   context.fillStyle = branding.primaryColor;
   context.font = "900 24px Inter, Arial, sans-serif";
@@ -452,7 +453,7 @@ async function buildQrCenterStarterKitPdf(input: {
     accentColor: safeColor(input.secondaryColor, "#f4a261"),
     logoImage: loadedLogoImage,
     primaryColor: safeColor(input.primaryColor, "#0f766e"),
-    restaurantName: input.restaurantName || "Dein Restaurant",
+    restaurantName: input.restaurantName || "Dein Unternehmen",
   };
   const pageSpecs: QrPrintPage[] = [
     {
@@ -465,7 +466,7 @@ async function buildQrCenterStarterKitPdf(input: {
     {
       boostHint: true,
       headline: "Punkte sammeln",
-      note: "Bitte Mitarbeiter um die Tages-PIN.",
+      note: "Bitte ein Teammitglied um die Tages-PIN.",
       qrCanvas: bonusQr,
       subheadline: "Nach dem Bezahlen scannen und Bonuspunkte sichern.",
       usage: "Für die Kassa",
@@ -473,16 +474,16 @@ async function buildQrCenterStarterKitPdf(input: {
     {
       boostHint: true,
       headline: "Nach dem Bezahlen scannen",
-      note: "Tages-PIN beim Mitarbeiter erfragen.",
+      note: "Tages-PIN beim Team erfragen.",
       qrCanvas: counterQr,
       subheadline: "Punkte sammeln und Punkteeinlösungen freischalten.",
       usage: "Für die Kassa",
     },
     {
-      headline: "Mitarbeiterbereich",
+      headline: "Teambereich",
       note: "Nicht für Gäste bestimmt.",
       qrCanvas: staffQr,
-      subheadline: "Für Tages-PIN, Gästeprüfung und Restaurant-Service.",
+      subheadline: "Für Tages-PIN, Gästeprüfung und Service.",
       usage: "Für dein Team",
     },
   ];
@@ -536,7 +537,7 @@ export function QrCenterPage() {
   const [downloadError, setDownloadError] = useState("");
   const [starterKitLoading, setStarterKitLoading] = useState(false);
   const restaurantSlug = activeRestaurant?.slug ?? "";
-  const restaurantName = activeRestaurant?.name ?? "Restaurant";
+  const restaurantName = activeRestaurant?.name ?? productTerminology.business;
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = restaurantSlug ? `${publicBaseUrl}/customer/${restaurantSlug}` : publicBaseUrl;
   const bonusQrUrl = restaurantSlug ? `${publicBaseUrl}/w/${restaurantSlug}` : publicBaseUrl;
@@ -560,7 +561,7 @@ export function QrCenterPage() {
       });
       openPdfBlob(pdf, "restaurant-starter-kit-a6.pdf");
     } catch (error) {
-      setDownloadError(error instanceof Error ? error.message : "Restaurant Starter Kit konnte nicht erstellt werden.");
+      setDownloadError(error instanceof Error ? error.message : "Starter Kit konnte nicht erstellt werden.");
     } finally {
       setStarterKitLoading(false);
     }
@@ -593,8 +594,8 @@ export function QrCenterPage() {
 
       <section className="card qr-starter-card qr-center-starter-card">
         <div>
-          <h2>Restaurant Starter Kit</h2>
-          <p className="muted">Vier A6-Druckseiten: neue Gäste, Kassa, Kassa-Aufsteller und Mitarbeiterbereich.</p>
+          <h2>Starter Kit</h2>
+          <p className="muted">Vier A6-Druckseiten: neue Gäste, Kassa, Kassa-Aufsteller und Teambereich.</p>
         </div>
         <button className="button" disabled={starterKitLoading} onClick={downloadStarterKit} type="button">
           <FileText size={18} />
@@ -642,13 +643,13 @@ export function QrCenterPage() {
 
         <article className="card qr-box-large">
           {renderQrBrandBlock()}
-          <h2>Mitarbeiter QR</h2>
+          <h2>Team-QR</h2>
           <p className="muted">Nur für dein Team.</p>
           <QRCodeSVG id="qr-staff" value={staffTabletUrl} size={180} level="M" />
-          <p className="muted">Mitarbeiterbereich für Tages-PIN und Service.</p>
+          <p className="muted">Teambereich für Tages-PIN und Service.</p>
           <a className="button secondary" href={staffTabletUrl}>
             <QrCode size={18} />
-            Mitarbeiterbereich öffnen
+            Teambereich öffnen
           </a>
         </article>
       </section>

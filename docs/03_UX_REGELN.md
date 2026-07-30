@@ -30,7 +30,7 @@ Icons und klare Begriffe statt langer Erklärungen.
 
 ### Keine technischen Begriffe
 
-Restaurantbesitzer sollen keine Entwicklerbegriffe sehen.
+Betreiber sollen keine Entwicklerbegriffe sehen.
 
 ### Dashboard
 
@@ -39,7 +39,21 @@ passiert? - Was soll ich als Nächstes tun?
 
 ### Starter Kit
 
-Im Onboarding gibt es nur einen Hauptdownload: Restaurant Starter Kit.
+Im Onboarding gibt es nur einen Hauptdownload: Starter Kit.
+
+### Branchenneutrale Sprache
+
+Allgemeine sichtbare Produkttexte verwenden Unternehmen, Geschäft, Betreiber,
+Teammitglied und Kunde. Branchenspezifische Begriffe bleiben erlaubt, wenn sie
+echte Inhalte oder Beispiele bezeichnen.
+
+### Auswahlfelder
+
+Definierte Optionslisten werden als verständliche, barrierefreie Dropdowns
+oder Comboboxen dargestellt. Sie sind tastaturbedienbar, Mobile-Safari-tauglich
+und besitzen mindestens 44 px hohe Touchflächen. Branchenabhängige Optionen
+werden zentral konfiguriert und zeigen keine ungeeigneten Optionen anderer
+Branchen.
 
 ### Konsistenz
 

@@ -212,7 +212,7 @@ export function CustomersPage() {
           <article className="card empty-state-card">
             <Users size={34} />
             <h2>Keine Gäste gefunden</h2>
-            <p className="muted">Prüfe die Suche oder registriere neue Gäste über deinen Restaurant-QR.</p>
+            <p className="muted">Prüfe die Suche oder registriere neue Gäste über deinen Unternehmens-QR.</p>
           </article>
         ) : null}
       </section>
@@ -220,7 +220,7 @@ export function CustomersPage() {
       {status ? <p className="status-message">{status}</p> : null}
 
       <AppDrawer
-        description="Nur Owner und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
+        description="Nur Betreiber und ausdrücklich berechtigte Administratoren dürfen Identitätsdaten korrigieren."
         dismissOnOverlay={!supportSaving}
         footer={supportDetail ? (
           <>
@@ -274,7 +274,7 @@ export function CustomersPage() {
               </div>
             )}
 
-            <label className="field"><span>Prüfart</span><input className="input" onChange={(event) => setVerificationMethod(event.target.value)} placeholder="Zum Beispiel persönlich im Restaurant" value={verificationMethod} /></label>
+            <label className="field"><span>Prüfart</span><input className="input" onChange={(event) => setVerificationMethod(event.target.value)} placeholder="Zum Beispiel persönlich im Geschäft" value={verificationMethod} /></label>
             <label className="field"><span>Änderungsgrund</span><textarea className="input" onChange={(event) => setReason(event.target.value)} placeholder="Kurze sachliche Begründung" value={reason} /></label>
             <label className="checkbox-row">
               <input checked={identityVerified} onChange={(event) => setIdentityVerified(event.target.checked)} type="checkbox" />

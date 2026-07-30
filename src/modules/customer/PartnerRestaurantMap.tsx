@@ -26,11 +26,11 @@ function markerIcon(location: PartnerRestaurant, selected: boolean, current: boo
       ? "Punkte vorhanden"
       : status === "registered"
         ? "Registriert"
-        : "Partnerrestaurant";
+        : "Partnerunternehmen";
 
   return L.divIcon({
     className: "partner-map-marker-shell",
-    html: `<span class="partner-map-marker ${status}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? `Aktueller Restaurantkontext. ${statusLabel}` : statusLabel}"><span></span></span>`,
+    html: `<span class="partner-map-marker ${status}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? `Aktueller Unternehmenskontext. ${statusLabel}` : statusLabel}"><span></span></span>`,
     iconAnchor: [20, 40],
     iconSize: [40, 40],
   });

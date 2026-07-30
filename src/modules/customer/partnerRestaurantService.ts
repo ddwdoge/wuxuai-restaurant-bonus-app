@@ -54,7 +54,7 @@ function safeMembership(value: unknown): PartnerMembership | null {
 }
 
 export async function loadPartnerRestaurants(): Promise<PartnerRestaurant[]> {
-  if (!supabase) throw new Error("Partnerrestaurants konnten nicht geladen werden.");
+  if (!supabase) throw new Error("Partnerunternehmen konnten nicht geladen werden.");
   const client = supabase;
 
   const { data, error } = await client.rpc("get_public_partner_restaurants");

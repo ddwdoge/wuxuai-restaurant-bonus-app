@@ -640,44 +640,42 @@ Nicht mit Restaurantrollen vermischen.
 
 ---
 
-## 17. Branchen-Erweiterung
+## 17. Branchenspezifische Vertiefung
 
-### 17.1 V1 Fokus
+### 17.1 V1 Basis
 
-V1 fokussiert Restaurants und Cafés.
+WUXUAI Bonus ist ab V1 branchenneutral positioniert. V1 darf zentrale
+Branchenprofile und Vorlagen für lokale Unternehmen anbieten:
 
-### 17.2 V2 Strategie
-
-WUXUAI Bonus kann später für lokale Unternehmen erweitert werden:
-
-- Restaurants
-- Cafés
-- Bäckereien
+- Restaurant
+- Café
+- Bäckerei
 - Bubble Tea
-- Friseure
-- Kosmetik
+- Eisdiele
 - Einzelhandel
-- Blumenläden
-- Hofläden
-- Vinotheken
+- Friseursalon
+- Kosmetikstudio
+- Fitnessstudio
+- Dienstleistung
+- Sonstiges
 
-### 17.3 Produktname
+### 17.2 Produktname
 
-Langfristig nicht nur „Restaurant Bonus“.
-
-Strategie:
+Der allgemeine Produktname lautet bereits in V1:
 
 ```text
 WUXUAI Bonus
 ```
 
-als allgemeines Bonusprogramm.
+als Kundenbindungsplattform für lokale Unternehmen.
 
-### 17.4 V1
+### 17.3 V2 Strategie
 
-V1 Marketing bleibt fokussiert auf Restaurants/Cafés.
+V2 vertieft Branchenprofile mit individuellen Geschäftsabläufen, Termin- und
+Buchungssystemen, Warenwirtschaft, komplexen Kassenintegrationen,
+branchenspezifischen Analytics-Engines und vollständigen Branchenpaketen.
 
-Architektur bleibt business-neutral vorbereitet.
+Restaurant bleibt in V1 die erste vollständig getestete Referenzbranche.
 
 ---
 

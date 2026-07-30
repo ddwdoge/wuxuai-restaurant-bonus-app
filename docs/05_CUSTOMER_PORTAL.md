@@ -675,7 +675,7 @@ V2 vorbereitet:
 - Push/Email/SMS optional
 - dynamische Nachrichten
 - Multibranch Punkte
-- weitere Branchen
+- tiefgreifende branchenspezifische Kundenflows
 - Premium-Login
 - App/PWA Erweiterung
 

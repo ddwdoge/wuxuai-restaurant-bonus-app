@@ -230,49 +230,71 @@ V1 dient dazu, erste zahlende Restaurants zu gewinnen.
 
 ---
 
-## 5. V1 fokussiert Restaurants und Cafés
+## 5. V1 ist branchenneutral, Restaurant ist Referenzbranche
 
-🟢 **FIX**
+🟢 **LOCK / ERSETZT RESTAURANT-ONLY-REGEL AM 30.07.2026**
 
-V1 fokussiert Restaurants und Cafés.
+WUXUAI Bonus wird ab V1 als Kundenbindungsplattform für lokale Unternehmen
+positioniert. Die allgemeine sichtbare Produktsprache ist branchenneutral.
+Restaurant bleibt die erste vollständig unterstützte und getestete
+Referenzbranche.
 
-Langfristig ist WUXUAI Bonus allgemeiner:
+Zentrale Startprofile:
 
 - Restaurants
 - Cafés
 - Bäckereien
 - Bubble Tea
-- Friseure
+- Eisdiele
+- Friseursalon
+- Kosmetikstudio
+- Fitnessstudio
 - Einzelhandel
-- lokale Betriebe
+- Dienstleistung
+- Sonstiges
 
-Aber V1-Marketing und V1-UX bleiben auf Restaurants/Cafés fokussiert.
-
-### Warum?
-
-Fokus bringt schnelleren Cashflow.
-
-Eine zu breite Zielgruppe verwässert Sprache, Vorlagen und Verkauf.
+V1 darf Branchenauswahl, zentral konfigurierte Dropdowns, passende Geschenk-
+und Belohnungsvorlagen sowie Beispiele je Branche verwenden. Die bestehende
+generische Reward-Engine bleibt unverändert.
 
 ### V2
 
-V2 erweitert über Business-Type-Templates.
+Tiefgreifende branchenspezifische Geschäftslogik, individuelle Termin-,
+Buchungs-, Warenwirtschafts- und Kassenabläufe, automatische
+Branchenkampagnen, eigene Analytics-Engines und vollständige Spezialpakete
+bleiben V2.
 
 ---
 
-## 6. Produktname langfristig: WUXUAI Bonus
+## 6. Produktname: WUXUAI Bonus
 
 🟢 **FIX / Strategie**
 
-Das Produkt soll nicht dauerhaft nur „Restaurant Bonus“ heißen.
+„WUXUAI Restaurant Bonus“ ist nicht mehr der allgemeine Produktname.
 
-Langfristige Marke:
+Verbindliche Marke ab V1:
 
 ```text
 WUXUAI Bonus
 ```
 
-V1 kann in Kommunikation Restaurants/Cafés fokussieren.
+Pilot- und Branchenkommunikation darf Restaurants/Cafés gezielt ansprechen,
+ohne die allgemeine Produktidentität umzubenennen.
+
+Verbindliche Positionierung:
+
+```text
+Die Kundenbindungsplattform für lokale Unternehmen.
+```
+
+### Legal-Ausnahme
+
+Rechtliche Mastertemplates und veröffentlichte Rechtstexte werden nicht
+automatisch neutralisiert. Inhaltliche Änderungen benötigen eine gesonderte
+rechtliche Prüfung und dürfen keine unbelegte Rechtssicherheitsbehauptung
+enthalten.
+
+Kennzeichnung: `LEGAL_REVIEW_REQUIRED`
 
 ### Warum?
 
@@ -1431,13 +1453,25 @@ Logikregeln:
 
 ---
 
-## 67. Branchen-Erweiterung V2
+## 67. Branchenprofile V1, branchenspezifische Speziallogik V2
 
-🟡 **V2**
+🟢 **LOCK / V1-BASIS – 30.07.2026**
 
-Restaurants/Cafés zuerst.
+- Allgemeine sichtbare Produktsprache ist branchenneutral.
+- Restaurant ist die erste vollständig getestete Referenzbranche.
+- Branche wird im Onboarding zuerst gewählt.
+- Willkommensgeschenke, Punkteeinlösung, Belohnungskategorien und Beispiele
+  werden zentral je Branchenprofil konfiguriert.
+- Branchenwechsel validieren abhängige Werte. Ungültige Kombinationen werden
+  nicht still weiterverwendet; gespeicherte individuelle Werte werden nicht
+  automatisch gelöscht.
+- Tiefgreifende branchenspezifische Geschäftslogik bleibt V2.
 
-Später lokale Betriebe.
+Interne Begriffe wie `restaurants`, `restaurant_id`, bestehende RPC-Namen,
+RLS-Policies, Datenbanktypen, Storage-Pfade, URL-Slugs und risikoreiche interne
+TypeScript-Namen dürfen unverändert bleiben.
+
+Kennzeichnung: `INTERNAL_LEGACY_NAMING_ACCEPTED`
 
 ---
 

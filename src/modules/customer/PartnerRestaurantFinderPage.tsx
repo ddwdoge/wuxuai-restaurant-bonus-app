@@ -89,13 +89,13 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
 
   return (
     <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
-      <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
+      <button aria-label="Unternehmensdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
       {location.cover_image_url ? <img alt={`${location.name} Titelbild`} className="partner-detail-cover" src={location.cover_image_url} /> : null}
       <div className="partner-detail-heading">
         <span className="partner-detail-logo">
           {location.logo_url ? <img alt={`${location.name} Logo`} src={location.logo_url} /> : <Store aria-hidden="true" size={25} />}
         </span>
-        <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : membership?.registered ? "Dein Restaurant" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p></div>
+        <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : membership?.registered ? "Dein Unternehmen" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p></div>
       </div>
       {location.short_description ? <p className="partner-detail-description">{location.short_description}</p> : null}
       {todayOpeningHours(location.opening_hours) ? <p className="partner-detail-hours">{todayOpeningHours(location.opening_hours)}</p> : null}
@@ -114,9 +114,9 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           {membership.available_rewards.slice(0, 3).map((reward) => <strong key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
-      {!membership ? <p className="partner-detail-note">Besuche das Restaurant und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
+      {!membership ? <p className="partner-detail-note">Besuche das Geschäft und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
       <div className="partner-detail-actions">
-        <Link className="premium-button premium-button-primary" to={portalUrl}>Restaurant ansehen</Link>
+        <Link className="premium-button premium-button-primary" to={portalUrl}>Unternehmen ansehen</Link>
         <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} rel="noreferrer" target="_blank">
           <ExternalLink aria-hidden="true" size={18} /> In Google Maps öffnen
         </a>
@@ -147,7 +147,7 @@ export function PartnerRestaurantFinderPage() {
     } catch {
       setLocations([]);
       setSelectedId(null);
-      setError("Partnerrestaurants konnten gerade nicht geladen werden.");
+      setError("Partnerunternehmen konnten gerade nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export function PartnerRestaurantFinderPage() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-        setLocationMessage("Restaurants werden nach deiner Nähe sortiert.");
+        setLocationMessage("Unternehmen werden nach deiner Nähe sortiert.");
       },
       () => setLocationMessage("Standort nicht freigegeben. Die Ortssuche bleibt verfügbar."),
       { enableHighAccuracy: false, maximumAge: 300_000, timeout: 10_000 },
@@ -190,39 +190,39 @@ export function PartnerRestaurantFinderPage() {
       <main className="partner-finder-shell">
         <header className="partner-finder-header">
           <Link aria-label="Zurück" className="partner-finder-back" to="/"><ArrowLeft aria-hidden="true" size={21} /></Link>
-          <div><span>WUXUAI Bonus</span><h1>Restaurants entdecken</h1></div>
+          <div><span>WUXUAI Bonus</span><h1>Unternehmen entdecken</h1></div>
           <MapPin aria-hidden="true" size={24} />
         </header>
-        <p className="partner-finder-legal-note">Punkte und Punkteeinlösungen werden für jedes Restaurant getrennt geführt.</p>
+        <p className="partner-finder-legal-note">Punkte und Punkteeinlösungen werden für jedes Unternehmen getrennt geführt.</p>
 
-        <section className="partner-finder-controls" aria-label="Restaurantsuche">
+        <section className="partner-finder-controls" aria-label="Unternehmenssuche">
           <label className="partner-search-field">
             <Search aria-hidden="true" size={20} />
-            <span className="visually-hidden">Restaurant, Ort, Postleitzahl oder Adresse suchen</span>
-            <input onChange={(event) => setQuery(event.target.value)} placeholder="Restaurant, Ort oder PLZ" type="search" value={query} />
+            <span className="visually-hidden">Unternehmen, Ort, Postleitzahl oder Adresse suchen</span>
+            <input onChange={(event) => setQuery(event.target.value)} placeholder="Unternehmen, Ort oder PLZ" type="search" value={query} />
           </label>
           <button className="partner-location-button" onClick={requestLocation} type="button"><LocateFixed aria-hidden="true" size={19} /> In meiner Nähe</button>
           <div className="partner-view-toggle" aria-label="Darstellung wählen">
             <button aria-pressed={view === "map"} onClick={() => setView("map")} type="button"><MapIcon aria-hidden="true" size={18} /> Karte</button>
             <button aria-pressed={view === "list"} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={18} /> Liste</button>
           </div>
-          <p aria-live="polite">{locationMessage ?? `${filteredLocations.length} Partnerrestaurant${filteredLocations.length === 1 ? "" : "s"} gefunden`}</p>
+          <p aria-live="polite">{locationMessage ?? `${filteredLocations.length} Partnerunternehmen gefunden`}</p>
         </section>
 
-        {loading ? <LoadingState description="Partnerrestaurants werden geladen …" /> : null}
-        {!loading && error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Restaurantsuche nicht verfügbar" /> : null}
+        {loading ? <LoadingState description="Partnerunternehmen werden geladen …" /> : null}
+        {!loading && error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Unternehmenssuche nicht verfügbar" /> : null}
         {!loading && !error && filteredLocations.length === 0 ? (
-          <EmptyState description="In diesem Gebiet gibt es derzeit noch keine teilnehmenden Restaurants." title="Keine Partnerrestaurants gefunden" />
+          <EmptyState description="In diesem Gebiet gibt es derzeit noch keine teilnehmenden Unternehmen." title="Keine Partnerunternehmen gefunden" />
         ) : null}
 
         {!loading && !error && filteredLocations.length ? (
           <div className={`partner-finder-content view-${view}`}>
-            <section className="partner-map-panel" aria-label="Karte der Partnerrestaurants">
+            <section className="partner-map-panel" aria-label="Karte der Partnerunternehmen">
               <LazyPartnerRestaurantMap
                 currentSlug={currentSlug}
                 errorFallback={(
                   <div className="partner-map-fallback" role="status">
-                    <p>Die Karte konnte nicht geladen werden. Alle Partnerrestaurants bleiben in der Liste verfügbar.</p>
+                    <p>Die Karte konnte nicht geladen werden. Alle Partnerunternehmen bleiben in der Liste verfügbar.</p>
                     <button className="premium-button premium-button-secondary" onClick={() => setView("list")} type="button">Liste anzeigen</button>
                   </div>
                 )}
@@ -232,7 +232,7 @@ export function PartnerRestaurantFinderPage() {
                 userLocation={userLocation}
               />
             </section>
-            <section className="partner-list-panel" aria-label="Liste der Partnerrestaurants">
+            <section className="partner-list-panel" aria-label="Liste der Partnerunternehmen">
               <div className="partner-results-list">
                 {filteredLocations.map((location) => (
                   <PartnerResultCard key={location.branch_id} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />

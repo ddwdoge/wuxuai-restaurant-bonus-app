@@ -920,7 +920,7 @@ Nach erstem Production Go-Live täglich prüfen:
 Nicht sofort:
 
 - V2 starten,
-- weitere Branchen starten,
+- weitere Branchenprofile mit der bestehenden generischen Logik aktivieren,
 - POS integrieren,
 - SMS/WhatsApp einbauen,
 - alle Featurewünsche bauen,

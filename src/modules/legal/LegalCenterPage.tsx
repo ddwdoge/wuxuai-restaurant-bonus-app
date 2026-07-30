@@ -115,7 +115,7 @@ export function LegalCenterPage() {
 
   const reload = useCallback(async () => {
     if (!slug) {
-      setError("Restaurant wurde nicht gefunden.");
+      setError("Unternehmen wurde nicht gefunden.");
       setLoading(false);
       return;
     }
@@ -125,7 +125,7 @@ export function LegalCenterPage() {
       setData(await loadPublicLegalCenter(slug, token));
     } catch {
       setData(null);
-      setError("Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut.");
+      setError("Die rechtlichen Informationen dieses Unternehmens konnten gerade nicht geladen werden. Bitte versuche es erneut.");
     } finally {
       setLoading(false);
     }
@@ -157,8 +157,8 @@ export function LegalCenterPage() {
     try {
       await createCustomerPrivacyRequest(slug, token, type);
       setMessage(type === "deletion" || type === "membership_termination"
-        ? "Deine Anfrage wurde sicher an das Restaurant übermittelt. Punkte werden nicht ungeprüft gelöscht."
-        : "Deine Anfrage wurde an das Restaurant übermittelt.");
+        ? "Deine Anfrage wurde sicher an das Unternehmen übermittelt. Punkte werden nicht ungeprüft gelöscht."
+        : "Deine Anfrage wurde an das Unternehmen übermittelt.");
     } catch {
       setMessage("Deine Anfrage konnte gerade nicht übermittelt werden.");
     } finally {
@@ -172,7 +172,7 @@ export function LegalCenterPage() {
     setMessage(null);
     try {
       await downloadCustomerData(slug, token);
-      setMessage("Deine restaurantbezogenen Daten wurden bereitgestellt.");
+      setMessage("Deine unternehmensbezogenen Daten wurden bereitgestellt.");
     } catch {
       setMessage("Deine Daten konnten gerade nicht bereitgestellt werden.");
     } finally {
@@ -197,7 +197,7 @@ export function LegalCenterPage() {
 
   if (loading) return <AppShell><main className="legal-center-shell"><LoadingState description="Rechtliche Informationen werden geladen …" /></main></AppShell>;
   if (error || !data) return <AppShell><main className="legal-center-shell"><ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error ?? "Keine Daten verfügbar."} title="Rechtliches nicht verfügbar" /></main></AppShell>;
-  if (!data.legal_ready || data.missing_configuration) return <AppShell><main className="legal-center-shell"><ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description="Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet." title="Rechtliches noch nicht verfügbar" /></main></AppShell>;
+  if (!data.legal_ready || data.missing_configuration) return <AppShell><main className="legal-center-shell"><ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description="Dieses Unternehmen hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet." title="Rechtliches noch nicht verfügbar" /></main></AppShell>;
 
   const terms = documentByType(data, "participation_terms");
   const privacy = documentByType(data, "privacy");
@@ -230,7 +230,7 @@ export function LegalCenterPage() {
 
         {terms ? <DocumentSection document={terms} /> : null}
         <article className="legal-document-card" id="points-validity">
-          <header><Clock3 aria-hidden="true" size={21} /><div><h2>Punktegültigkeit und Programmlaufzeit</h2><p>Aktuelle Angaben dieses Restaurants</p></div></header>
+          <header><Clock3 aria-hidden="true" size={21} /><div><h2>Punktegültigkeit und Programmlaufzeit</h2><p>Aktuelle Angaben dieses Unternehmens</p></div></header>
           <p>{data.points_validity.months ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${data.points_validity.months} Monate gültig.` : "Die Punktegültigkeit ist in den Teilnahmebedingungen beschrieben."}</p>
           {data.points_validity.oldest_expiry_at ? <p>Dein ältestes berechenbares Ablaufdatum: <strong>{formatDate(data.points_validity.oldest_expiry_at)}</strong>.</p> : <p>{data.points_validity.notice}</p>}
           {data.program.status === "scheduled" ? <div className="legal-program-end"><strong>Programmende geplant</strong><p>{data.program.customer_notice}</p><p>Letzte Punktevergabe: {formatDate(data.program.last_points_earning_at!)} · letzte Einlösung: {formatDate(data.program.final_redemption_at!)}</p></div> : <p>Das Bonusprogramm ist derzeit aktiv. Ein geplantes Ende wird hier mit den maßgeblichen Fristen angezeigt.</p>}
@@ -241,13 +241,13 @@ export function LegalCenterPage() {
         <article className="legal-document-card" id="imprint">
           <header><Building2 aria-hidden="true" size={21} /><div><h2>Impressum des Bonusprogramms</h2><p>Betreiber: {data.roles.program_operator}</p></div></header>
           <dl>{Object.entries(data.imprint).filter(([, value]) => value).map(([key, value]) => <div key={key}><dt>{legalFieldLabel(key)}</dt><dd>{value}</dd></div>)}</dl>
-          <p className="legal-platform-note"><strong>Technischer Plattformanbieter:</strong> WUXUAI. WUXUAI ist nicht Schuldner der vom Restaurant angebotenen Punkteeinlösungen.</p>
+          <p className="legal-platform-note"><strong>Technischer Plattformanbieter:</strong> WUXUAI. WUXUAI ist nicht Schuldner der vom Unternehmen angebotenen Punkteeinlösungen.</p>
         </article>
 
         {accessibility ? <DocumentSection document={accessibility} /> : null}
 
         <article className="legal-document-card" id="contact">
-          <header><MessageCircleQuestion aria-hidden="true" size={21} /><div><h2>Kontakt und Beschwerde</h2><p>Fragen zu Punkten, Restaurantzuordnung oder Punkteeinlösungen</p></div></header>
+          <header><MessageCircleQuestion aria-hidden="true" size={21} /><div><h2>Kontakt und Beschwerde</h2><p>Fragen zu Punkten, Unternehmenszuordnung oder Punkteeinlösungen</p></div></header>
           <p>Beschwerden zum Bonusprogramm richtest du an: <strong>{data.imprint.complaint_contact || data.imprint.email || data.restaurant.name}</strong>.</p>
           {token ? <button className="legal-secondary-action" disabled={requesting} onClick={() => void handleRequest("complaint")} type="button">Beschwerde übermitteln <ChevronRight aria-hidden="true" size={18} /></button> : null}
         </article>
@@ -267,10 +267,10 @@ export function LegalCenterPage() {
             <section className="legal-personal-section" aria-labelledby="privacy-actions-title">
               <div><span>Deine Datenschutzrechte</span><h2 id="privacy-actions-title">Daten & Mitgliedschaft</h2><p>Anfragen werden restaurantbezogen und nachvollziehbar bearbeitet. Gesetzlich oder sicherheitsbedingt erforderliche Nachweise werden nicht ungeprüft gelöscht.</p></div>
               <div className="legal-action-list">
-                <button disabled={requesting} onClick={() => void handleDownload()} type="button"><Download aria-hidden="true" size={20} /><span><strong>Meine Daten herunterladen</strong><small>Restaurantbezogene JSON-Datei</small></span><ChevronRight aria-hidden="true" size={18} /></button>
-                <button disabled={requesting} onClick={() => void handleRequest("rectification")} type="button"><FileText aria-hidden="true" size={20} /><span><strong>Daten berichtigen lassen</strong><small>Korrekturanfrage an das Restaurant</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                <button disabled={requesting} onClick={() => void handleDownload()} type="button"><Download aria-hidden="true" size={20} /><span><strong>Meine Daten herunterladen</strong><small>Unternehmensbezogene JSON-Datei</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                <button disabled={requesting} onClick={() => void handleRequest("rectification")} type="button"><FileText aria-hidden="true" size={20} /><span><strong>Daten berichtigen lassen</strong><small>Korrekturanfrage an das Unternehmen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
                 <button disabled={requesting} onClick={() => void handleRequest("restriction")} type="button"><Accessibility aria-hidden="true" size={20} /><span><strong>Verarbeitung einschränken</strong><small>Prüfung beantragen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
-                <button className="danger" disabled={requesting} onClick={() => void handleRequest("deletion")} type="button"><Trash2 aria-hidden="true" size={20} /><span><strong>Löschung beantragen</strong><small>Konto oder Restaurantmitgliedschaft prüfen lassen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                <button className="danger" disabled={requesting} onClick={() => void handleRequest("deletion")} type="button"><Trash2 aria-hidden="true" size={20} /><span><strong>Löschung beantragen</strong><small>Konto oder Mitgliedschaft prüfen lassen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
               </div>
             </section>
           </>

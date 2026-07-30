@@ -38,7 +38,7 @@ test("ungültige oder fremde QR-Codes aktivieren kein altes Restaurant", () => {
   assert.equal(restaurantTargetFromQrValue("https://example.com/w/restaurant-b", allowedOrigins), null);
   assert.equal(restaurantTargetFromQrValue("https://bonus.wuxuaisbi.com/customer", allowedOrigins), null);
   assert.equal(restaurantTargetFromQrValue("https://bonus.wuxuaisbi.com/customer/restaurants", allowedOrigins), null);
-  assert.match(scannerSource, /Dieser QR-Code konnte keinem Restaurant zugeordnet werden\./);
+  assert.match(scannerSource, /Dieser QR-Code konnte keinem Unternehmen zugeordnet werden\./);
   assert.match(portalSource, /window\.location\.assign\("\/customer"\)/);
 });
 
@@ -49,8 +49,8 @@ test("Customer-Scanner nutzt echte Kamera, ZXing und zugängliche Aktionen", () 
   assert.match(scannerSource, /await import\("@zxing\/browser"\)/);
   assert.match(scannerSource, /decodeFromConstraints/);
   assert.match(scannerSource, /facingMode:\s*\{ ideal: "environment" \}/);
-  assert.match(scannerSource, /aria-label="Anderes Restaurant erneut scannen"/);
-  assert.match(portalSource, /aria-label="Anderes Restaurant scannen"/);
+  assert.match(scannerSource, /aria-label="Anderes Unternehmen erneut scannen"/);
+  assert.match(portalSource, /aria-label="Anderes Unternehmen scannen"/);
   assert.match(scannerSource, /playsInline/);
 });
 

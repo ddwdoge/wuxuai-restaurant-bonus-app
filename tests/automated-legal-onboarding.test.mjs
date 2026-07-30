@@ -229,8 +229,8 @@ test("Owner A kann B nicht lesen oder veröffentlichen und Staff besitzt kein Ve
 });
 
 test("fehlende Konfiguration und temporärer Netzwerkfehler bleiben getrennte Zustände", () => {
-  assert.match(customerPortal, /Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden\. Bitte versuche es erneut\./);
-  assert.match(publicLegalCenter, /Dieses Restaurant hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet\./);
+  assert.match(customerPortal, /Die rechtlichen Informationen dieses Unternehmens konnten gerade nicht geladen werden\. Bitte versuche es erneut\./);
+  assert.match(publicLegalCenter, /Dieses Unternehmen hat die erforderlichen rechtlichen Informationen noch nicht vollständig eingerichtet\./);
   assert.match(publicLegalCenter, /Erneut versuchen/);
 });
 
@@ -240,7 +240,7 @@ test("Legal-Fehler löschen weder Kundentoken noch Sitzung", () => {
 });
 
 test("Legal Center zeigt Readiness-Checkliste und automatisierten Hinweis", () => {
-  assert.match(ownerLegal, /Legal Readiness/);
+  assert.match(ownerLegal, /Rechtliche Bereitschaft/);
   assert.match(ownerLegal, /Automatisch erstellt von WUXUAI/);
   assert.match(ownerLegal, /ersetzen keine individuelle Rechtsberatung/);
 });

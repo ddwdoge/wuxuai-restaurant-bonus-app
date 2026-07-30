@@ -7,6 +7,7 @@ const onboarding = await readFile(
   "utf8",
 );
 const styles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+const qrCenter = await readFile(new URL("../src/modules/admin/pages/QrCenterPage.tsx", import.meta.url), "utf8");
 
 const appearanceStart = onboarding.indexOf('<section className="brand-live-preview">');
 const appearanceEnd = onboarding.indexOf("{step === 2 ?", appearanceStart);
@@ -33,10 +34,11 @@ test("Bonuskarten-Vorschau nutzt eine zentrierte responsive Einzelspalte", () =>
   assert.match(styles, /\.customer-app-preview\s*\{[\s\S]*box-sizing:\s*border-box[\s\S]*width:\s*100%/);
 });
 
-test("echte QR-Codes bleiben ausschließlich im Starter-Kit verfügbar", () => {
+test("Rechtsschritt enthält keine Kunden-QRs und das QR Center behält das Starter Kit", () => {
   assert.ok(starterKitStart >= 0 && starterKitEnd > starterKitStart);
-  assert.match(starterKit, /id="restaurant-qr"/);
-  assert.match(starterKit, /id="bonus-qr"/);
-  assert.match(starterKit, /downloadRestaurantStarterKit/);
-  assert.match(onboarding, /<QRCodeSVG[\s\S]*value=\{url\}/);
+  assert.match(starterKit, /Rechtliche Angaben/);
+  assert.doesNotMatch(starterKit, /id="restaurant-qr"|id="bonus-qr"|<QRCodeSVG/);
+  assert.match(qrCenter, /<h2>Starter Kit<\/h2>/);
+  assert.match(qrCenter, /id="qr-restaurant"/);
+  assert.match(qrCenter, /id="qr-bonus"/);
 });

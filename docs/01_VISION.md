@@ -33,7 +33,7 @@ WUXUAI Bonus soll genau dieses Problem lösen.
 
 Die Mission lautet:
 
-> **WUXUAI Bonus macht aus einmaligen Gästen wiederkehrende Stammkunden – ohne dass Restaurantbesitzer Punkte, Technik oder Marketing lernen müssen.**
+> **WUXUAI Bonus macht aus einmaligen Kunden wiederkehrende Stammkunden – ohne dass Betreiber Punkte, Technik oder Marketing lernen müssen.**
 
 ---
 
@@ -179,26 +179,27 @@ Der Restaurantbesitzer kann später im Arbeitsbereich eigene Bilder, Produkte un
 
 ---
 
-## 6. Restaurant First
+## 6. Betreiber First
 
 WUXUAI Bonus wird nicht aus Entwicklersicht gebaut.
 
 WUXUAI Bonus wird aus Sicht von vier Rollen gedacht:
 
-1. Restaurantbesitzer
-2. Mitarbeiter/Kellner
-3. Gast/Kunde
+1. Betreiber
+2. Teammitglied
+3. Kunde
 4. WUXUAI Betreiber
 
-Für V1 ist der Restaurantbesitzer besonders wichtig.
+Für V1 ist der Betreiber besonders wichtig. Restaurantbetreiber bilden die
+erste vollständig getestete Referenzpersona.
 
 Die Frage lautet immer:
 
-> **Versteht ein Restaurantbesitzer diese Seite morgens um 9 Uhr ohne Erklärung?**
+> **Versteht ein Betreiber diese Seite morgens um 9 Uhr ohne Erklärung?**
 
 Wenn nicht, ist die Seite nicht fertig.
 
-Der Restaurantbesitzer will nicht:
+Der Betreiber will nicht:
 
 - Tabellen lesen
 - technische Begriffe verstehen
@@ -220,24 +221,20 @@ Er will wissen:
 
 ## 7. V1 Fokus
 
-V1 konzentriert sich auf Restaurants und Cafés.
+WUXUAI Bonus wird ab V1 branchenneutral positioniert. Allgemeine sichtbare
+Produktsprache verwendet Unternehmen, Geschäft, Betreiber, Teammitglied und
+Kunde. Restaurant bleibt die erste vollständig unterstützte und getestete
+Referenzbranche.
 
-Das bedeutet:
-
-- UI-Sprache darf Restaurantlogik verwenden.
-- Standard-Belohnungen dürfen Gastro-Beispiele nutzen.
-- QR-Starter-Kit darf für Eingang und Kassa ausgelegt sein.
-- Staff-Tablet darf für Kellner und Restaurantbetrieb gedacht sein.
-
-V1 soll nicht gleichzeitig alle Branchen perfekt bedienen.
-
-Trotzdem muss die Architektur so gedacht werden, dass V2 andere Betriebe unterstützen kann.
+V1 erlaubt zentrale Branchenprofile und passende Vorlagen, solange sie die
+bestehende generische Reward- und Bonuslogik verwenden. V1 muss nicht jede
+Branche mit tiefen Spezialfunktionen unterstützen.
 
 ---
 
-## 8. V2 Erweiterung auf lokale Betriebe
+## 8. Branchenprofile und V2-Abgrenzung
 
-Langfristig ist WUXUAI Bonus nicht nur für Restaurants geeignet.
+WUXUAI Bonus unterstützt ab V1 kontrollierte Profile für lokale Unternehmen.
 
 Die gleiche Kernlogik funktioniert auch für:
 
@@ -266,13 +263,15 @@ Was sich ändert, sind nur:
 - Bilder
 - Beispiele
 
-Deshalb muss die Architektur langfristig geschäftsneutral bleiben, auch wenn V1 restaurantfokussiert ist.
+Branche, Vorlagen, Begriffe und Beispiele werden zentral konfiguriert.
+Tiefgreifende branchenspezifische Workflows, Buchungs-, Warenwirtschafts- und
+Kassenlogik sowie eigene Branchen-Analytics bleiben V2.
 
 ---
 
 ## 9. Warum „Bonusprogramm“ statt „Restaurant Bonus“
 
-Der Begriff „Restaurant Bonus“ ist für V1 verständlich, aber langfristig zu eng.
+Der Begriff „Restaurant Bonus“ ist als allgemeiner Produktname zu eng.
 
 Der Produktkern ist nicht Restaurant.
 
@@ -284,7 +283,8 @@ Deshalb wird als Produktidentität verwendet:
 
 > **WUXUAI Bonus**
 
-V1 darf im Marketing Restaurants und Cafés ansprechen.
+Kampagnen und Pilotkommunikation dürfen Restaurants und Cafés gezielt
+ansprechen, ohne die allgemeine Produktidentität umzubenennen.
 
 Die Plattform selbst soll aber nicht dauerhaft auf Restaurants beschränkt sein.
 
@@ -928,11 +928,11 @@ Diese Datei verhindert, dass WUXUAI Bonus in Richtung eines komplizierten Admin-
 
 Jede neue Funktion muss gegen diese Fragen geprüft werden:
 
-- Macht sie das Restaurant schneller startklar?
+- Macht sie das Unternehmen schneller startklar?
 - Macht sie Gäste wahrscheinlicher zu Stammkunden?
 - Reduziert sie Denken oder erzeugt sie mehr Komplexität?
 - Passt sie zu Cashflow First?
-- Passt sie zu Restaurant First?
+- Passt sie zu Betreiber First?
 - Ist sie V1 oder V2?
 
 Wenn eine Funktion diese Fragen nicht besteht, wird sie nicht gebaut.
@@ -944,11 +944,12 @@ Wenn eine Funktion diese Fragen nicht besteht, wird sie nicht gebaut.
 Diese Vision ist LOCK, wenn:
 
 - Produktname WUXUAI Bonus klar ist.
-- V1-Fokus Restaurants/Cafés klar ist.
-- V2-Erweiterung auf lokale Betriebe dokumentiert ist.
+- branchenneutrale V1-Positionierung klar ist.
+- Restaurant als erste Referenzbranche dokumentiert ist.
+- V1-Branchenprofile und V2-Speziallogik klar getrennt sind.
 - WU-Philosophie vollständig erklärt ist.
 - Cashflow First dokumentiert ist.
-- Restaurant First dokumentiert ist.
+- Betreiber First dokumentiert ist.
 - One Screen = One Decision dokumentiert ist.
 - Onboarding als Installation definiert ist.
 - Smart Reward Engine als Kerninnovation definiert ist.
@@ -958,4 +959,3 @@ Diese Vision ist LOCK, wenn:
 Status dieser Datei:
 
 > 🟢 LOCK
-

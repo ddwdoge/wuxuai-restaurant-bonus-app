@@ -133,7 +133,7 @@ function registrationErrorMessage(error: unknown): string {
   }
 
   if (message.includes("start_restaurant_owner_trial") || message.includes("404") || message.includes("not found")) {
-    return "Restaurant-Registrierung ist noch nicht bereit. Bitte versuche es gleich erneut.";
+    return "Unternehmensregistrierung ist noch nicht bereit. Bitte versuche es gleich erneut.";
   }
 
   if (message.includes("not authenticated") || message.includes("session") || message.includes("jwt")) {

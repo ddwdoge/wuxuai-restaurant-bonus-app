@@ -29,33 +29,39 @@ Wenn Codex, ein Entwickler oder ein späteres Teammitglied eine Entscheidung tre
 
 **WUXUAI Bonus**
 
-Frühere Bezeichnungen wie „Restaurant Bonus“, „Restaurant Growth OS“ oder „Restaurant Bonus OS“ dürfen im Code oder in internen technischen Dateinamen vorkommen, sind aber nicht die langfristige Produktpositionierung.
+Frühere Bezeichnungen wie „Restaurant Bonus“, „Restaurant Growth OS“ oder „Restaurant Bonus OS“ dürfen im Code oder in internen technischen Dateinamen vorkommen, sind aber nicht mehr die allgemeine Produktpositionierung.
 
-### 2.2 V1 Marktfokus
+### 2.2 Verbindliche Positionierung ab V1
 
-V1 fokussiert bewusst auf:
+**WUXUAI Bonus ist die Kundenbindungsplattform für lokale Unternehmen.**
 
-- Restaurants
-- Cafés
-- kleine Gastro-Betriebe
+Die sichtbare allgemeine Produktsprache ist ab V1 branchenneutral. Restaurant
+bleibt die erste vollständig unterstützte, getestete und pilotierte
+Referenzbranche, ist aber nicht mehr die Dachbezeichnung des Produkts.
 
-Das Ziel ist nicht, sofort alle Branchen zu bedienen. V1 soll Cashflow, echte Pilotkunden und ein funktionierendes Restaurant-Portal erzeugen.
+Zentrale Startprofile in V1:
 
-### 2.3 V2 Erweiterung
-
-V2 soll die Plattform auf weitere lokale Betriebe erweitern:
-
-- Bäckereien
-- Bubble-Tea-Läden
-- Friseure
-- Kosmetikstudios
+- Restaurant
+- Café
+- Bäckerei
+- Bubble Tea
+- Eisdiele
 - Einzelhandel
-- Blumenläden
-- Hofläden
-- Vinotheken
-- weitere lokale Geschäfte
+- Friseursalon
+- Kosmetikstudio
+- Fitnessstudio
+- Dienstleistung
+- Sonstiges
 
-Die Architektur soll deshalb langfristig geschäftsneutral bleiben. Die V1-UX bleibt aber Restaurant-fokussiert.
+### 2.3 V1- und V2-Grenze
+
+V1 erlaubt neutrale Terminologie, Branchenauswahl, zentral konfigurierte
+Dropdown-Optionen, passende Vorlagen und die bestehende generische Reward-
+Engine. V1 muss nicht jede Branche mit tiefen Spezialfunktionen unterstützen.
+
+V2 umfasst tiefgreifende branchenspezifische Geschäftslogik, individuelle
+Termin-, Buchungs-, Warenwirtschafts- oder Kassenabläufe, eigene Analytics-
+Engines und vollständige Branchenpakete mit Spezialfunktionen.
 
 ---
 
@@ -67,7 +73,7 @@ Die Mission lautet:
 
 > Das einfachste Bonusprogramm für lokale Unternehmen, das aus einmaligen Kunden wiederkehrende Stammkunden macht.
 
-Das System soll Restaurantbesitzern helfen:
+Das System soll Betreibern lokaler Unternehmen helfen:
 
 - neue Gäste zu Mitgliedern zu machen,
 - Gäste zum Wiederkommen zu motivieren,
@@ -75,7 +81,7 @@ Das System soll Restaurantbesitzern helfen:
 - Empfehlungen über Bonus Boost zu fördern,
 - ohne Schulung und ohne technische Kenntnisse zu starten.
 
-Der Restaurantbesitzer soll nicht lernen müssen, wie ein Bonuspunkte-System funktioniert. Die Software übernimmt die Logik.
+Der Betreiber soll nicht lernen müssen, wie ein Bonuspunkte-System funktioniert. Die Software übernimmt die Logik.
 
 ---
 
@@ -87,7 +93,7 @@ Die zentrale WUXUAI-Philosophie lautet:
 
 Für WUXUAI Bonus bedeutet das konkret:
 
-- Restaurantbesitzer arbeiten mit Produkten, Preisen, Gästen und Öffnungszeiten.
+- Betreiber arbeiten mit Produkten oder Leistungen, Preisen, Kunden und Öffnungszeiten.
 - WUXUAI arbeitet im Hintergrund mit Punkten, Wahrscheinlichkeiten, Rentabilität, RLS, RPCs, Tokens und Datenbanklogik.
 - Gäste sehen Belohnungen, Vorteile und ihren Fortschritt.
 - Gäste sehen keine technische Bonuslogik.
@@ -95,7 +101,7 @@ Für WUXUAI Bonus bedeutet das konkret:
 
 Diese Philosophie ist nicht dekorativ. Sie entscheidet jede Produkt- und UX-Frage.
 
-Wenn eine Funktion den Restaurantbesitzer zwingt, Punkte, Formeln oder technische Regeln zu verstehen, ist die Funktion falsch gestaltet.
+Wenn eine Funktion den Betreiber zwingt, Punkte, Formeln oder technische Regeln zu verstehen, ist die Funktion falsch gestaltet.
 
 ---
 
@@ -106,10 +112,10 @@ WUXUAI Bonus V1 wird nach dem Prinzip **Cashflow First** gebaut.
 Das bedeutet:
 
 - V1 muss schnell pilotfähig werden.
-- V1 muss Restaurants echten Nutzen zeigen.
+- V1 muss lokalen Unternehmen echten Nutzen zeigen.
 - V1 darf nicht durch perfekte, aber unnötige Konfigurationen verzögert werden.
 - Alles, was später bearbeitet werden kann, gehört nicht ins Onboarding.
-- Alles, was Restaurantbesitzer nicht sofort brauchen, wird in V2 oder spätere Versionen verschoben.
+- Alles, was Betreiber nicht sofort brauchen, wird in V2 oder spätere Versionen verschoben.
 
 Beispiele:
 
@@ -118,7 +124,7 @@ Beispiele:
 - Onboarding fragt nicht nach Filialstrukturen.
 - Onboarding fragt nicht nach manuellen Punkteschwellen.
 
-V1 muss ein Restaurant in wenigen Minuten startfähig machen.
+V1 muss ein lokales Unternehmen in wenigen Minuten startfähig machen.
 
 ---
 
@@ -391,7 +397,7 @@ Nicht:
 
 Sondern:
 
-> Restaurant einrichten → Startpaket herunterladen → Restaurant starten.
+> Unternehmen einrichten → Starter Kit vorbereiten → Unternehmen aktivieren.
 
 Während Onboarding nicht abgeschlossen ist:
 
@@ -413,12 +419,12 @@ Onboarding fragt nur nach dem, was für den Start wirklich notwendig ist.
 
 Im Onboarding bleiben:
 
-- Restaurantdaten
+- Unternehmensdaten
 - Logo
 - Öffnungszeiten
 - Bonus Designer
 - Willkommens-Belohnungen als Kategorien
-- Restaurant Starter Kit
+- Starter Kit
 - Startklar
 
 Aus dem Onboarding entfernt:
@@ -435,13 +441,13 @@ Alles, was später bearbeitet werden kann, gehört in den Arbeitsbereich.
 
 ---
 
-## 13. Restaurant Starter Kit
+## 13. Starter Kit
 
-Das Restaurant Starter Kit ist der druckfertige Startpunkt nach dem Onboarding.
+Das Starter Kit ist der druckfertige Startpunkt nach dem Onboarding.
 
 Im Onboarding gibt es nur einen Hauptbutton:
 
-> 📦 Restaurant Starter Kit herunterladen
+> Starter Kit herunterladen
 
 Keine SVG-Downloads.
 Keine einzelnen PNG-Downloads.

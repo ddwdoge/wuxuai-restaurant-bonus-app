@@ -39,7 +39,7 @@ test("jeder Dropdownwert verwendet die verbindliche Punkteformel", () => {
       pointsPerEuro: 2,
     });
     assert.equal(result.estimatedConsumption, 18 / (redemptionRatePercent / 100));
-    assert.equal(result.requiredPoints, Math.ceil(18 / (redemptionRatePercent / 100) - 2));
+    assert.equal(result.requiredPoints, Math.ceil(18 / (redemptionRatePercent / 100) * 2));
   }
 });
 

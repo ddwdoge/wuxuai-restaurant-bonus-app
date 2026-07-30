@@ -12,7 +12,8 @@ Ab jetzt gilt:
 
 - Keine weiteren Bible-Dateien erstellen, solange nicht eine echte neue V1-Entscheidung getroffen wird.
 - Keine V2-Funktionen bauen.
-- Fokus: Restaurant Portal V1 fertigstellen, testen, Pilot vorbereiten.
+- Fokus: branchenneutrales WUXUAI Bonus V1 fertigstellen; Restaurant als erste
+  Referenzbranche testen und pilotieren.
 - Codex muss zuerst `/docs/00_START_HIER.md` und `/docs/18_CODEX_REGELN.md` lesen.
 - Für jeden Arbeitsbereich muss Codex zusätzlich die passende Fachdatei lesen.
 
@@ -21,7 +22,7 @@ Ab jetzt gilt:
 - Vision
 - Produktregeln
 - UX-Regeln
-- Restaurant Portal
+- Betreiber-Portal
 - Customer Portal
 - Staff Portal
 - WUXUAI Admin Konzept
@@ -45,7 +46,7 @@ Nicht weiter dokumentieren.
 
 Jetzt bauen und testen:
 
-1. Restaurant Dashboard finalisieren.
+1. Betreiber-Dashboard finalisieren.
 2. Belohnungen finalisieren.
 3. Willkommensgeschenke finalisieren.
 4. QR Center prüfen.
