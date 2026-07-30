@@ -1,9 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { useLocation } from "react-router-dom";
-import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { useLocation, useNavigate } from "react-router-dom";
+import { liveDataUnavailableMessage, supabase, supabaseAuthStorageKey } from "../../shared/lib/supabase";
 import type { PlatformRole, RestaurantUserRole, UserRole } from "../../shared/types/domain";
 import { requiresAuthenticatedSession } from "./authRoutePolicy.mjs";
+import {
+  clearSupabaseAuthStorage,
+  createAuthRefreshController,
+  createInvalidRefreshSessionHandler,
+} from "./authSessionGuard.mjs";
+import { classifyOwnerAuthError, isOwnerEmailConfirmed, ownerAuthErrorMessage } from "./ownerAuthFlow.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -12,6 +18,7 @@ type AuthContextValue = {
   restaurantRole: RestaurantUserRole | null;
   platformRole: PlatformRole | null;
   loading: boolean;
+  lastAuthEvent: AuthChangeEvent | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -85,6 +92,7 @@ async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const authSessionRequired = requiresAuthenticatedSession(location.pathname);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -92,6 +100,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [roleLoading, setRoleLoading] = useState(Boolean(supabase && authSessionRequired));
   const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
+  const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | null>(null);
+
+  function clearAuthState() {
+    setSession(null);
+    setUser(null);
+    setRestaurantRole(null);
+    setPlatformRole(null);
+    setLastAuthEvent("SIGNED_OUT");
+    setAuthLoading(false);
+    setRoleLoading(false);
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -102,37 +121,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const authClient = supabase.auth;
     let cancelled = false;
+    const invalidSessionHandler = createInvalidRefreshSessionHandler({
+      clearStorage: () => clearSupabaseAuthStorage(window.localStorage, supabaseAuthStorageKey),
+      localSignOut: async () => {
+        const { error } = await authClient.signOut({ scope: "local" });
+        if (error && error.name !== "AuthSessionMissingError") throw error;
+      },
+      onInvalidSession: () => {
+        if (cancelled) return;
+        clearAuthState();
+        navigate("/restaurant/login", { replace: true });
+      },
+    });
+    const refreshController = createAuthRefreshController({
+      cancelInterval: (interval) => window.clearInterval(interval),
+      handleRefreshError: async (error) => invalidSessionHandler.handle(error),
+      onSession: (nextSession) => {
+        if (cancelled) return;
+        const nextUser = nextSession?.user ?? null;
+        setRoleLoading(Boolean(nextUser));
+        setSession(nextSession);
+        setUser(nextUser);
+        setAuthLoading(false);
+      },
+      refreshSession: async () => authClient.refreshSession(),
+      scheduleInterval: (callback, delay) => window.setInterval(callback, delay),
+    });
+
+    function clearStateAfterSessionError() {
+      setSession(null);
+      setUser(null);
+      setRestaurantRole(null);
+      setPlatformRole(null);
+      setRoleLoading(false);
+    }
 
     if (!authSessionRequired) {
-      authClient.stopAutoRefresh();
+      refreshController.stop();
       setAuthLoading(false);
       setRoleLoading(false);
     } else {
       setAuthLoading(true);
-      authClient.startAutoRefresh();
       authClient.getSession()
-        .then(({ data, error }) => {
+        .then(async ({ data, error }) => {
           if (cancelled) return;
           if (error) {
-            setSession(null);
-            setUser(null);
-            setRestaurantRole(null);
-            setPlatformRole(null);
-            setRoleLoading(false);
+            const invalid = await invalidSessionHandler.handle(error);
+            if (!invalid && !cancelled) clearStateAfterSessionError();
             return;
           }
           const nextUser = data.session?.user ?? null;
           setRoleLoading(Boolean(nextUser));
           setSession(data.session);
           setUser(nextUser);
+          refreshController.start(data.session);
         })
-        .catch(() => {
+        .catch(async (error) => {
           if (cancelled) return;
-          setSession(null);
-          setUser(null);
-          setRestaurantRole(null);
-          setPlatformRole(null);
-          setRoleLoading(false);
+          const invalid = await invalidSessionHandler.handle(error);
+          if (!invalid && !cancelled) clearStateAfterSessionError();
         })
         .finally(() => {
           if (!cancelled) setAuthLoading(false);
@@ -143,19 +190,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = authClient.onAuthStateChange((event, nextSession) => {
       if (!authSessionRequired && event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
+      if (event === "SIGNED_IN") invalidSessionHandler.reset();
+      if (nextSession) {
+        refreshController.start(nextSession);
+        refreshController.update(nextSession);
+      } else {
+        refreshController.stop();
+      }
       const nextUser = nextSession?.user ?? null;
       setRoleLoading(Boolean(nextUser));
       setSession(nextSession);
       setUser(nextUser);
+      setLastAuthEvent(event);
       setAuthLoading(false);
     });
 
+    function handleVisibilityChange() {
+      if (authSessionRequired && document.visibilityState === "visible") {
+        void refreshController.refreshIfNeeded();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       subscription.unsubscribe();
-      if (authSessionRequired) authClient.stopAutoRefresh();
+      refreshController.stop();
     };
-  }, [authSessionRequired]);
+  }, [authSessionRequired, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -201,6 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       session,
+      lastAuthEvent,
       role: restaurantRole,
       restaurantRole,
       platformRole,
@@ -209,8 +273,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!supabase) {
           throw new Error(liveDataUnavailableMessage);
         }
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          const mappedError = new Error(ownerAuthErrorMessage(error));
+          mappedError.name = classifyOwnerAuthError(error) === "email_unconfirmed"
+            ? "EmailConfirmationRequiredError"
+            : "OwnerSignInError";
+          throw mappedError;
+        }
+        if (!isOwnerEmailConfirmed(data.user)) {
+          await supabase.auth.signOut({ scope: "local" });
+          const confirmationError = new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+          confirmationError.name = "EmailConfirmationRequiredError";
+          throw confirmationError;
+        }
       },
       async signOut() {
         let logoutFailed = false;
@@ -227,12 +303,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {
           logoutFailed = true;
         } finally {
-          setSession(null);
-          setUser(null);
-          setRestaurantRole(null);
-          setPlatformRole(null);
-          setAuthLoading(false);
-          setRoleLoading(false);
+          clearSupabaseAuthStorage(window.localStorage, supabaseAuthStorageKey);
+          clearAuthState();
         }
 
         if (logoutFailed) {
@@ -240,7 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [authLoading, platformRole, restaurantRole, roleLoading, session, user],
+    [authLoading, lastAuthEvent, platformRole, restaurantRole, roleLoading, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

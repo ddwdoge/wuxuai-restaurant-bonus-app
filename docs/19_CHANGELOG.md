@@ -1,6 +1,34 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-30 – Ungültige Supabase-Refresh-Tokens kontrolliert bereinigen
+
+- Strukturierte Fehler für fehlende, bereits verwendete, widerrufene,
+  abgelaufene oder anderweitig ungültige Refresh-Tokens beenden die lokale
+  Auth-Sitzung genau einmal.
+- Der projektbezogene Supabase-Auth-Storage wird nach lokalem Sign-out gezielt
+  entfernt und geschützte Ansichten leiten kontrolliert zum Restaurant-Login.
+- Temporäre Netzwerk-, Timeout- und Serverfehler löschen keine gültige lokale
+  Sitzung.
+- Ein Single-Flight-Controller verhindert parallele Refresh-Anfragen und
+  wiederholte 400-Schleifen; öffentliche Seiten starten keinen Refresh.
+- React Strict Mode erzeugt durch Effekt-Cleanup weder doppelte Listener noch
+  parallele Refresh-Intervalle.
+- Der normale App-Client bleibt ein Singleton. Der getrennte Recovery-Client
+  bleibt absichtlich tabgebunden, besitzt eigenen Storage und keinen
+  Auto-Refresh.
+
+## 2026-07-30 – Initiales Legal-Paket transaktional mit Onboarding veröffentlichen
+
+- Schritt 7 verlangt nun die ausdrückliche Owner-Bestätigung zur Veröffentlichung der automatisch vorbereiteten Dokumente.
+- Der neue owner- und tenantgeschützte RPC `complete_restaurant_onboarding` veröffentlicht das vollständige Legal-Paket und aktiviert erst danach das bestehende Restaurant.
+- Fehlende Pflichtdokumente, ungültige Drafts oder fehlende Registration-Readiness rollen den Abschluss vollständig zurück.
+- Der bestehende Restaurant-Slug bleibt unverändert; es gibt keinen Restaurant-Insert und keine Fallback-Aktivierung.
+- Gültigkeitsdaten verwenden das lokale Kalenderdatum in `Europe/Vienna`.
+- Initiale Veröffentlichung räumt den Dirty-State auf; spätere echte Änderungen erzeugen weiterhin neue unveränderliche Drafts.
+- Migration `20260730002000_onboarding_initial_legal_package_publication.sql` wurde nach erfolgreichem Dry-Run auf `wuxuai-bonus-staging` angewendet.
+- RLS blieb unverändert; der neue RPC ist für `anon` gesperrt.
+
 ## 2026-07-30 – Kontextbezogene Hilfe im Restaurant-Onboarding
 
 - Der Onboarding-Hilfedrawer zeigt fuer jeden der sieben Schritte einen
