@@ -1119,7 +1119,6 @@ export function RestaurantOnboarding() {
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
   const { activeRestaurant, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
-  const activeStepRef = useRef<HTMLLIElement | null>(null);
   const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -1214,18 +1213,6 @@ export function RestaurantOnboarding() {
       cancelled = true;
     };
   }, [activeRestaurant?.id, navigate, tenantLoading]);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      const activeStep = activeStepRef.current;
-      const stepList = activeStep?.parentElement;
-      if (activeStep && stepList && stepList.scrollWidth > stepList.clientWidth) {
-        activeStep.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [step]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1573,9 +1560,14 @@ export function RestaurantOnboarding() {
         </div>
         <div className="installation-header-actions">
           {onboardingRestaurantAction}
-          <button className="button secondary installation-help-action" onClick={() => setHowItWorksOpen(true)} type="button">
+          <button
+            aria-label="So funktioniert die Einrichtung"
+            className="button secondary installation-help-action"
+            onClick={() => setHowItWorksOpen(true)}
+            type="button"
+          >
             <Info size={17} />
-            So funktioniert's
+            <span className="installation-help-label">So funktioniert's</span>
           </button>
           {onboardingAccountAction}
         </div>
@@ -1584,8 +1576,8 @@ export function RestaurantOnboarding() {
       <section className="onboarding-progress" aria-labelledby="onboarding-progress-title">
         <div className="onboarding-progress-copy">
           <div>
-            <span id="onboarding-progress-title">Schritt {step + 1} von {steps.length}</span>
-            <strong>{steps[step]}</strong>
+            <span>Schritt {step + 1} von {steps.length}</span>
+            <h2 id="onboarding-progress-title">{stepTitles[step]}</h2>
           </div>
           <span>{progressPercent} % abgeschlossen</span>
         </div>
@@ -1602,27 +1594,10 @@ export function RestaurantOnboarding() {
         {saving ? <span className="onboarding-saving-status" role="status">Änderungen werden gespeichert...</span> : null}
       </section>
 
-      <ol className="setup-steps" aria-label="Einrichtungsschritte">
-        {steps.map((label, index) => (
-          <li
-            aria-current={index === step ? "step" : undefined}
-            className={`setup-step${index === step ? " active" : ""}${index < step ? " done" : ""}`}
-            key={label}
-            ref={index === step ? activeStepRef : undefined}
-          >
-            <span aria-hidden="true" className="setup-step-marker">
-              {index < step ? <Check size={14} strokeWidth={2.5} /> : index + 1}
-            </span>
-            <span className="setup-step-label">{label}</span>
-          </li>
-        ))}
-      </ol>
-
       <section className="onboarding-layout">
         <form className="card onboarding-card installation-card form" onSubmit={handleSubmit}>
           {step === 0 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[0]}</h2>
               <div className="field">
                 <label htmlFor="restaurant-name">Wie heißt dein Restaurant?</label>
                 <input
@@ -1708,7 +1683,6 @@ export function RestaurantOnboarding() {
 
           {step === 1 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[1]}</h2>
               <div
                 className={`logo-dropzone${draggingLogo ? " active" : ""}`}
                 onDragEnter={(event) => {
@@ -1844,7 +1818,6 @@ export function RestaurantOnboarding() {
 
           {step === 2 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[2]}</h2>
               <div className="schedule-grid">
                 {weekdays.map(({ key, label }) => (
                   <article className="schedule-row" key={key}>
@@ -1908,7 +1881,6 @@ export function RestaurantOnboarding() {
 
           {step === 3 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[3]}</h2>
               <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
               <div className="grid two">
                 <div className="field">
@@ -1984,7 +1956,6 @@ export function RestaurantOnboarding() {
 
           {step === 4 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[4]}</h2>
               <article className="calculation-card">
                 <strong>Welche Willkommensgeschenke möchtest du anbieten?</strong>
                 <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Jeder neue Gast erhält zufällig eines davon.</p>
@@ -2055,7 +2026,6 @@ export function RestaurantOnboarding() {
 
           {step === 5 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[5]}</h2>
               <article className="calculation-card">
                 <strong>Restaurant Starter Kit</strong>
                 <p className="muted">
@@ -2110,7 +2080,6 @@ export function RestaurantOnboarding() {
 
           {step === 6 ? (
             <section className="wizard-screen onboarding-completion-screen">
-              <h2>{stepTitles[6]}</h2>
               <div className="rule-list">
                 <ChecklistRow done={checklist.restaurantDataCompleted} label={checklistLabels.restaurantDataCompleted} />
                 <ChecklistRow done={checklist.brandingCompleted} label={checklistLabels.brandingCompleted} />

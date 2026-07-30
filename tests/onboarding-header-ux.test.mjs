@@ -27,46 +27,38 @@ test("Onboarding bündelt Restaurantauswahl, Hilfe und Account in einem ruhigen 
 
 test("Fortschritt besitzt klare Texte und eine zugängliche Prozentanzeige", () => {
   assert.match(onboarding, /Schritt \{step \+ 1\} von \{steps\.length\}/);
-  assert.match(onboarding, /\{steps\[step\]\}/);
+  assert.match(onboarding, /<h2 id="onboarding-progress-title">\{stepTitles\[step\]\}<\/h2>/);
+  assert.doesNotMatch(onboarding, /<h2>\{stepTitles\[\d\]\}<\/h2>/);
   assert.match(onboarding, /\{progressPercent\} % abgeschlossen/);
   assert.match(onboarding, /role="progressbar"/);
   assert.match(onboarding, /aria-valuenow=\{progressPercent\}/);
 });
 
-test("Step-Navigation zeigt sieben gleichmäßige Zustände mit Haken", () => {
-  assert.match(onboarding, /<ol className="setup-steps"/);
-  assert.match(onboarding, /index < step \? <Check size=\{14\}/);
-  assert.match(styles, /\.setup-steps \{[\s\S]*grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
-  assert.match(styles, /\.setup-step \{[\s\S]*height: 72px/);
-  assert.match(styles, /\.setup-step-label \{[\s\S]*-webkit-line-clamp: 2/);
-  assert.match(styles, /\.setup-step-label \{[\s\S]*hyphens: none/);
-  assert.doesNotMatch(styles, /\.setup-step-label \{[\s\S]{0,240}overflow-wrap: anywhere/);
+test("Fortschritt ist die einzige Step-Navigation", () => {
+  assert.doesNotMatch(onboarding, /className="setup-steps"/);
+  assert.doesNotMatch(onboarding, /activeStepRef/);
+  assert.doesNotMatch(styles, /\.setup-steps|\.setup-step(?:[\s.{:#]|$)/);
+  assert.match(onboarding, /<section className="onboarding-progress"[\s\S]*<section className="onboarding-layout">/);
 });
 
-test("Mobile Header bleibt gestapelt und die Step-Leiste scrollt nur intern", () => {
+test("Mobile Header bleibt kompakt und ohne zweite Navigationsleiste", () => {
   const mobile = styles.slice(styles.indexOf("@media (max-width: 699px)"));
-  assert.match(onboarding, /activeStepRef\.current/);
-  assert.match(onboarding, /scrollIntoView\(\{ behavior: "smooth", block: "nearest", inline: "center" \}\)/);
   assert.match(mobile, /\.setup-shell \{[\s\S]*overflow-x: hidden/);
-  assert.match(mobile, /\.installation-header-actions \{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 56px/);
-  assert.match(mobile, /\.installation-header-actions \.tenant-switcher \{[\s\S]*grid-column: 1 \/ -1/);
-  assert.match(mobile, /\.setup-steps \{[\s\S]*overflow-x: auto/);
+  assert.match(mobile, /\.installation-header-actions \{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 48px 48px/);
+  assert.match(mobile, /\.installation-help-label \{[\s\S]*display: none/);
+  assert.match(mobile, /\.onboarding-progress \{[\s\S]*padding: 12px 0/);
+  assert.match(mobile, /\.onboarding-layout \{[\s\S]*margin-top: 14px/);
   assert.match(mobile, /\.wizard-footer \.button \{[\s\S]*min-height: 48px/);
 });
 
-test("Tablet zeigt lange Step-Titel ohne kleinere Schrift und mit sicheren Touchflächen", () => {
-  const tablet = styles.slice(
-    styles.indexOf("@media (max-width: 1023px)"),
-    styles.indexOf("@media (max-width: 820px)"),
-  );
-  assert.match(tablet, /\.setup-steps \{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+test("Tablet und Desktop behalten sichere Touchflächen", () => {
   assert.match(styles, /\.setup-shell \.tenant-switcher-field \.select \{[\s\S]*min-height: 44px/);
   assert.match(styles, /\.setup-shell \.wizard-footer \.button \{[\s\S]*min-height: 44px/);
 });
 
-test("Abschlussinhalt bleibt klar von der Navigation getrennt", () => {
+test("Abschlussinhalt beginnt direkt nach dem kompakten Fortschrittsbereich", () => {
   assert.match(onboarding, /"Herzlichen Glückwunsch! Dein Restaurant ist startklar\."/);
-  assert.match(onboarding, /step === 6[\s\S]*className="wizard-screen onboarding-completion-screen"[\s\S]*stepTitles\[6\]/);
-  assert.match(styles, /\.setup-steps \{[\s\S]*margin-bottom: 28px/);
+  assert.match(onboarding, /step === 6[\s\S]*className="wizard-screen onboarding-completion-screen"/);
+  assert.match(styles, /\.onboarding-layout \{[\s\S]*margin-top: 20px/);
   assert.match(styles, /\.onboarding-completion-screen \{[\s\S]*padding-top: 18px/);
 });

@@ -674,8 +674,7 @@ a {
   color: #22303d;
 }
 
-.button:disabled,
-.setup-step:disabled {
+.button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -1627,9 +1626,9 @@ a {
 .installation-header {
   align-items: end;
   display: grid;
-  gap: 28px;
+  gap: 20px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding-bottom: 26px;
+  padding-bottom: 18px;
 }
 
 .installation-header-copy {
@@ -1642,13 +1641,13 @@ a {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   text-transform: uppercase;
 }
 
 .installation-header h1 {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 46px;
+  font-size: 40px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.08;
@@ -1659,7 +1658,7 @@ a {
 .installation-header-copy > p {
   color: var(--owner-muted);
   font-size: 16px;
-  margin: 10px 0 0;
+  margin: 6px 0 0;
 }
 
 .installation-header-actions {
@@ -1707,7 +1706,7 @@ a {
 .onboarding-progress {
   border-bottom: 1px solid var(--owner-border);
   border-top: 1px solid var(--owner-border);
-  padding: 18px 0;
+  padding: 14px 0;
   position: relative;
 }
 
@@ -1729,17 +1728,19 @@ a {
   font-weight: 600;
 }
 
-.onboarding-progress-copy strong {
+.onboarding-progress-copy h2 {
   color: var(--owner-ink);
   font-size: 17px;
   font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
 }
 
 .onboarding-progress-track {
   background: #e8e2d8;
   border-radius: 999px;
   height: 5px;
-  margin-top: 12px;
+  margin-top: 10px;
   overflow: hidden;
 }
 
@@ -1758,87 +1759,11 @@ a {
   margin-top: 7px;
 }
 
-.setup-steps {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  list-style: none;
-  margin-bottom: 28px;
-  margin-top: 22px;
-  padding: 0;
-}
-
-.setup-step {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--owner-muted);
-  display: grid;
-  font-size: 13px;
-  font-weight: 600;
-  gap: 5px;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 22px minmax(0, 1fr);
-  height: 72px;
-  justify-items: center;
-  min-width: 0;
-  padding: 8px 4px;
-  text-align: center;
-  width: 100%;
-}
-
-.setup-step-marker {
-  align-items: center;
-  background: #ebe6dc;
-  border-radius: 50%;
-  color: #777168;
-  display: inline-flex;
-  font-size: 11px;
-  font-weight: 700;
-  height: 22px;
-  justify-content: center;
-  width: 22px;
-}
-
-.setup-step-label {
-  display: -webkit-box;
-  line-height: 1.25;
-  max-width: 100%;
-  overflow: hidden;
-  overflow-wrap: normal;
-  word-break: normal;
-  hyphens: none;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.setup-step.active {
-  background: #ffffff;
-  border-color: rgba(191, 143, 54, 0.42);
-  box-shadow: 0 8px 24px rgba(76, 57, 25, 0.08);
-  color: var(--owner-gold-dark);
-}
-
-.setup-step.active .setup-step-marker {
-  background: var(--owner-gold);
-  color: #ffffff;
-}
-
-.setup-step.done {
-  background: #f7f2e8;
-  color: #675433;
-}
-
-.setup-step.done .setup-step-marker {
-  background: var(--owner-gold-soft);
-  color: var(--owner-gold-dark);
-}
-
 .onboarding-layout {
   align-items: start;
   display: block;
   gap: 18px;
+  margin-top: 20px;
 }
 
 .onboarding-card.form {
@@ -4053,10 +3978,6 @@ a {
     width: 100%;
   }
 
-  .setup-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .grid.four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4123,10 +4044,6 @@ a {
   .setup-shell .profile-menu-copy,
   .setup-shell .profile-menu-chevron {
     display: none;
-  }
-
-  .setup-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .topbar {
@@ -4303,40 +4220,47 @@ a {
   }
 
   .installation-header {
-    gap: 18px;
-    padding-bottom: 20px;
+    gap: 10px;
+    padding-bottom: 14px;
   }
 
   .installation-header h1 {
-    font-size: 32px;
+    font-size: 28px;
     line-height: 1.12;
   }
 
   .installation-header-copy > p {
     font-size: 15px;
+    margin-top: 4px;
   }
 
   .installation-header-actions {
-    grid-template-columns: minmax(0, 1fr) 56px;
+    grid-template-columns: minmax(0, 1fr) 48px 48px;
   }
 
   .installation-header-actions .tenant-switcher {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .installation-help-action {
-    justify-self: stretch;
+    justify-self: end;
     min-height: 48px;
+    min-width: 48px;
+    padding: 0;
+  }
+
+  .installation-help-label {
+    display: none;
   }
 
   .setup-shell .profile-menu-trigger {
     height: 48px;
     min-height: 48px;
-    min-width: 56px;
+    min-width: 48px;
   }
 
   .onboarding-progress {
-    padding: 15px 0;
+    padding: 12px 0;
   }
 
   .onboarding-progress-copy {
@@ -4349,24 +4273,12 @@ a {
     text-align: right;
   }
 
-  .setup-steps {
-    grid-template-columns: repeat(7, 176px);
-    margin-bottom: 24px;
-    margin-right: -16px;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    padding-bottom: 8px;
-    padding-right: 16px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: thin;
-  }
-
-  .setup-step {
-    scroll-snap-align: start;
-  }
-
   .onboarding-card.form {
     padding: 18px;
+  }
+
+  .onboarding-layout {
+    margin-top: 14px;
   }
 
   .wizard-footer {
