@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -230,12 +231,15 @@ export function ReferralLanding() {
             </PremiumCard>
 
             <form className="form compact-customer-form premium-card" onSubmit={handleSubmit}>
+              <RequiredFieldsNote />
               <div className="field">
-                <label htmlFor="referral-first-name">Vorname</label>
+                <FormLabel htmlFor="referral-first-name" required>Vorname</FormLabel>
                 <input
+                  aria-required="true"
                   autoFocus
                   className="input input-large"
                   id="referral-first-name"
+                  required
                   value={form.firstName}
                   onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                 />
@@ -247,9 +251,10 @@ export function ReferralLanding() {
                 onCountryCodeChange={(phoneCountryCode) => setForm((current) => ({ ...current, phoneCountryCode }))}
                 onLocalNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
                 showError={Boolean(form.phone)}
+                required
               />
               <div className="field">
-                <label htmlFor="referral-birthday">Geburtstag optional</label>
+                <FormLabel htmlFor="referral-birthday" optional>Geburtstag</FormLabel>
                 <input
                   className="input input-large"
                   id="referral-birthday"
@@ -271,8 +276,8 @@ export function ReferralLanding() {
                     <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
                   </div>
                 ) : null}
-                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
-                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+                <label><input aria-required="true" checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} required type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
+                <label><input aria-required="true" checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} required type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
               </section>
               <section className="customer-registration-consents">
                 <h3>Freiwillige Einwilligungen</h3>

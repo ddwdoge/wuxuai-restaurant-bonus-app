@@ -278,6 +278,12 @@ Beispiel: - geöffnet bis 22:00 - geschlossen, öffnet morgen um 10:00
 ### Inhalt
 
 Erlaubt: - Wochentage - Öffnungszeiten - Pausen optional - Sondertage
+
+V1 unterstützt pro geöffnetem Wochentag einen durchgehenden Öffnungsblock oder
+optional eine Mittagspause mit genau zwei Öffnungsblöcken. Die beiden Blöcke
+dürfen sich nicht überschneiden; die Pause liegt vollständig zwischen ihnen.
+Bestehende Restaurants ohne Pause verwenden weiterhin unverändert `open` und
+`close`.
 später
 
 ### Nicht bauen in V1
@@ -632,18 +638,18 @@ oder zu `/admin` leiten - kein Reset - keine Duplikat-Restaurants
 
 ------------------------------------------------------------------------
 
-## 16. So funktioniert's
+## 16. Hilfe zu diesem Schritt
 
 ### Grundregel
 
 🟢 **FIX**
 
-„So funktioniert's" ist kein permanenter Seitenbereich.
+„Hilfe zu diesem Schritt" ist kein permanenter Seitenbereich.
 
 Es erscheint: - beim ersten Besuch automatisch einmal - danach nur über
 Icon
 
-Icon: **ⓘ So funktioniert's**
+Icon: **ⓘ Hilfe**
 
 ### Verhalten
 
@@ -653,10 +659,16 @@ Icon: **ⓘ So funktioniert's**
 
 ### Text
 
-Text muss dynamisch sein: - aktueller Restaurantname - aktuelle
-Einstellungen - aktuelle Bonuslogik - aktuelle Willkommens-Belohnungen
+Jeder der sieben Schritte besitzt einen eigenen kurzen Hilfetext. Die Hilfe:
 
-Keine harten Standardtexte mit falschen Werten.
+- bezieht sich ausschließlich auf den aktuell geöffneten Schritt,
+- besteht aus vier bis sechs kurzen Sätzen,
+- nimmt keine Informationen späterer Schritte vorweg,
+- kann eine kurze Zeitangabe oder einen Änderungshinweis enthalten.
+
+Beim Wechsel des Schritts zeigt ein erneut geöffneter Drawer sofort die
+passende Hilfe. Allgemeine Zusammenfassungen des gesamten Bonusprogramms sind
+im Onboarding-Hilfedialog nicht erlaubt.
 
 ------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import { supabase } from "../../../shared/lib/supabase";
 import { useTenant } from "../../tenant/TenantProvider";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 
 export function BrandingPage() {
   const { activeRestaurant, branding } = useTenant();
@@ -61,26 +62,31 @@ export function BrandingPage() {
       </header>
       <section className="card">
         <form className="form" onSubmit={handleSave}>
+          <RequiredFieldsNote />
           <div className="field">
-            <label htmlFor="portal-name">Name in der Gäste-App</label>
-            <input className="input" id="portal-name" defaultValue={`${activeRestaurant?.name} Club`} />
+            <FormLabel htmlFor="portal-name" required>Name in der Gäste-App</FormLabel>
+            <input aria-required="true" className="input" id="portal-name" defaultValue={`${activeRestaurant?.name} Club`} required />
           </div>
           <div className="grid two">
             <div className="field">
-              <label htmlFor="primary-color">Primärfarbe</label>
+              <FormLabel htmlFor="primary-color" required>Primärfarbe</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="primary-color"
+                required
                 type="color"
                 value={form.primaryColor}
                 onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))}
               />
             </div>
             <div className="field">
-              <label htmlFor="button-color">Buttonfarbe</label>
+              <FormLabel htmlFor="button-color" required>Buttonfarbe</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="button-color"
+                required
                 type="color"
                 value={form.buttonColor}
                 onChange={(event) => setForm((current) => ({ ...current, buttonColor: event.target.value }))}
@@ -88,7 +94,7 @@ export function BrandingPage() {
             </div>
           </div>
           <div className="field">
-            <label htmlFor="logo-url">Logo-Adresse</label>
+            <FormLabel htmlFor="logo-url" optional>Logo-Adresse</FormLabel>
             <input
               className="input"
               id="logo-url"

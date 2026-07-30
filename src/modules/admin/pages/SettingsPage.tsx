@@ -21,14 +21,11 @@ import type { BranchSubscription, Restaurant } from "../../../shared/types/domai
 import { useTenant } from "../../tenant/TenantProvider";
 import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
+import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
+import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
-
-type OpeningDay = {
-  enabled: boolean;
-  open: string;
-  close: string;
-};
 
 type RestaurantDetails = Pick<
   Restaurant,
@@ -69,13 +66,13 @@ const weekdays: { key: Weekday; label: string }[] = [
 ];
 
 const defaultOpeningHours: Record<Weekday, OpeningDay> = {
-  mon: { enabled: false, open: "11:00", close: "22:00" },
-  tue: { enabled: false, open: "11:00", close: "22:00" },
-  wed: { enabled: false, open: "11:00", close: "22:00" },
-  thu: { enabled: false, open: "11:00", close: "22:00" },
-  fri: { enabled: false, open: "11:00", close: "22:00" },
-  sat: { enabled: false, open: "12:00", close: "22:00" },
-  sun: { enabled: false, open: "12:00", close: "21:00" },
+  mon: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  tue: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  wed: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  thu: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  fri: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  sat: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "22:00" }),
+  sun: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "21:00" }),
 };
 
 const subscriptionLabels: Record<string, string> = {
@@ -96,13 +93,9 @@ const paymentLabels: Record<string, string> = {
 };
 
 function normalizeOpeningHours(value: unknown): Record<Weekday, OpeningDay> {
-  const input = (value && typeof value === "object" ? value : {}) as Partial<Record<Weekday, Partial<OpeningDay>>>;
+  const input = (value && typeof value === "object" ? value : {}) as Partial<Record<Weekday, unknown>>;
   return weekdays.reduce((result, { key }) => {
-    result[key] = {
-      ...defaultOpeningHours[key],
-      ...input[key],
-      enabled: Boolean(input[key]?.enabled),
-    };
+    result[key] = normalizeOpeningDay(input[key], defaultOpeningHours[key]);
     return result;
   }, {} as Record<Weekday, OpeningDay>);
 }
@@ -380,6 +373,13 @@ export function SettingsPage() {
     event.preventDefault();
     if (!details?.id) return;
 
+    const invalidDay = weekdays.find(({ key }) => validateOpeningDay(openingHours[key]));
+    if (invalidDay) {
+      setErrorMessage(`${invalidDay.label}: ${validateOpeningDay(openingHours[invalidDay.key])}`);
+      document.getElementById(`settings-${invalidDay.key}-open`)?.focus();
+      return;
+    }
+
     setSaving(true);
     setStatus(null);
     setErrorMessage(null);
@@ -601,17 +601,20 @@ export function SettingsPage() {
         <SettingsHeader title="Restaurantdaten" description="Passe die wichtigsten Angaben deines Restaurants an." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveRestaurantData}>
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="restaurant-name">Restaurantname</label>
+              <FormLabel htmlFor="restaurant-name" required>Restaurantname</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="restaurant-name"
+                required
                 value={restaurantForm.name}
                 onChange={(event) => setRestaurantForm((current) => ({ ...current, name: event.target.value }))}
               />
             </div>
             <div className="field">
-              <label htmlFor="restaurant-phone">Telefon</label>
+              <FormLabel htmlFor="restaurant-phone" optional>Telefon</FormLabel>
               <input
                 className="input"
                 id="restaurant-phone"
@@ -639,6 +642,7 @@ export function SettingsPage() {
         <SettingsHeader title="Branding" description="Logo und Darstellung deines Bonusprogramms." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveBranding}>
+            <RequiredFieldsNote />
             <div className="settings-logo-row">
               <div
                 className={`logo-dropzone${draggingLogo ? " active" : ""}`}
@@ -672,20 +676,24 @@ export function SettingsPage() {
             </div>
             <div className="grid two">
               <div className="field">
-                <label htmlFor="primary-color">Markenfarbe</label>
+                <FormLabel htmlFor="primary-color" required>Markenfarbe</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="primary-color"
+                  required
                   type="color"
                   value={brandingForm.primaryColor}
                   onChange={(event) => setBrandingForm((current) => ({ ...current, primaryColor: event.target.value }))}
                 />
               </div>
               <div className="field">
-                <label htmlFor="button-color">Buttonfarbe</label>
+                <FormLabel htmlFor="button-color" required>Buttonfarbe</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="button-color"
+                  required
                   type="color"
                   value={brandingForm.buttonColor}
                   onChange={(event) => setBrandingForm((current) => ({ ...current, buttonColor: event.target.value }))}
@@ -706,32 +714,10 @@ export function SettingsPage() {
         <SettingsHeader title="Öffnungszeiten" description="Lege fest, wann dein Restaurant geöffnet ist." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveOpeningHours}>
+            <RequiredFieldsNote />
             <div className="settings-hours-grid">
               {weekdays.map(({ key, label }) => (
-                <article className="settings-hours-row" key={key}>
-                  <label className="inline-check">
-                    <input
-                      checked={openingHours[key].enabled}
-                      onChange={(event) => updateOpeningDay(key, { enabled: event.target.checked })}
-                      type="checkbox"
-                    />
-                    {label}
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!openingHours[key].enabled}
-                    type="time"
-                    value={openingHours[key].open}
-                    onChange={(event) => updateOpeningDay(key, { open: event.target.value })}
-                  />
-                  <input
-                    className="input"
-                    disabled={!openingHours[key].enabled}
-                    type="time"
-                    value={openingHours[key].close}
-                    onChange={(event) => updateOpeningDay(key, { close: event.target.value })}
-                  />
-                </article>
+                <OpeningHoursEditor dayLabel={label} idPrefix={`settings-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={openingHours[key]} />
               ))}
             </div>
             <FormActions saving={saving} submitLabel="Öffnungszeiten speichern" />
@@ -774,16 +760,17 @@ export function SettingsPage() {
         <section className="card settings-detail-card">
           {partnerLocation ? (
             <form className="form" onSubmit={savePartnerLocation}>
+              {partnerLocation.isDiscoverable ? <RequiredFieldsNote /> : null}
               <div className="grid two">
-                <div className="field"><label htmlFor="location-address">Adresse</label><input className="input" id="location-address" onChange={(event) => setPartnerLocation((current) => current ? { ...current, address: event.target.value } : current)} value={partnerLocation.address} /></div>
-                <div className="field"><label htmlFor="location-postal-code">Postleitzahl</label><input className="input" id="location-postal-code" inputMode="numeric" onChange={(event) => setPartnerLocation((current) => current ? { ...current, postalCode: event.target.value } : current)} value={partnerLocation.postalCode} /></div>
-                <div className="field"><label htmlFor="location-city">Ort</label><input className="input" id="location-city" onChange={(event) => setPartnerLocation((current) => current ? { ...current, city: event.target.value } : current)} value={partnerLocation.city} /></div>
-                <div className="field"><label htmlFor="location-country">Land</label><input className="input" id="location-country" maxLength={2} onChange={(event) => setPartnerLocation((current) => current ? { ...current, country: event.target.value } : current)} value={partnerLocation.country} /></div>
-                <div className="field"><label htmlFor="location-latitude">Breitengrad</label><input className="input" id="location-latitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, latitude: event.target.value } : current)} placeholder="48.208174" value={partnerLocation.latitude} /></div>
-                <div className="field"><label htmlFor="location-longitude">Längengrad</label><input className="input" id="location-longitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, longitude: event.target.value } : current)} placeholder="16.373819" value={partnerLocation.longitude} /></div>
+                <div className="field"><FormLabel htmlFor="location-address" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Adresse</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-address" onChange={(event) => setPartnerLocation((current) => current ? { ...current, address: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.address} /></div>
+                <div className="field"><FormLabel htmlFor="location-postal-code" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Postleitzahl</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-postal-code" inputMode="numeric" onChange={(event) => setPartnerLocation((current) => current ? { ...current, postalCode: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.postalCode} /></div>
+                <div className="field"><FormLabel htmlFor="location-city" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Ort</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-city" onChange={(event) => setPartnerLocation((current) => current ? { ...current, city: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.city} /></div>
+                <div className="field"><FormLabel htmlFor="location-country" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Land</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-country" maxLength={2} onChange={(event) => setPartnerLocation((current) => current ? { ...current, country: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.country} /></div>
+                <div className="field"><FormLabel htmlFor="location-latitude" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Breitengrad</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-latitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, latitude: event.target.value } : current)} placeholder="48.208174" required={partnerLocation.isDiscoverable} value={partnerLocation.latitude} /></div>
+                <div className="field"><FormLabel htmlFor="location-longitude" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Längengrad</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-longitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, longitude: event.target.value } : current)} placeholder="16.373819" required={partnerLocation.isDiscoverable} value={partnerLocation.longitude} /></div>
               </div>
-              <div className="field"><label htmlFor="location-description">Öffentliche Kurzbeschreibung</label><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
-              <div className="field"><label htmlFor="location-cover">Öffentliches Bild (HTTPS-Adresse)</label><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
+              <div className="field"><FormLabel htmlFor="location-description" optional>Öffentliche Kurzbeschreibung</FormLabel><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
+              <div className="field"><FormLabel htmlFor="location-cover" optional>Öffentliches Bild (HTTPS-Adresse)</FormLabel><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>

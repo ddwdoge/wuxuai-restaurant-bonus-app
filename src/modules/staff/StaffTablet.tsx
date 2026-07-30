@@ -27,6 +27,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useAuth } from "../auth/AuthProvider";
 import {
   applyStaffLoyaltyAction,
@@ -853,12 +854,15 @@ export function StaffTablet() {
       {view !== "home" && view !== "redeem" ? <section className="grid two staff-premium-existing-grid">
         <article className="card">
           <form className="form" onSubmit={handleSearch}>
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="customer-search">Schnellsuche</label>
+              <FormLabel htmlFor="customer-search" required>Schnellsuche</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="customer-search"
                 placeholder="QR, Telefon, Name oder Gästecode"
+                required
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -902,12 +906,14 @@ export function StaffTablet() {
                       void handleScannerValue(scannerManualValue);
                     }}
                   >
-                    <label htmlFor="scanner-manual-input">QR-Code manuell eingeben</label>
+                    <FormLabel htmlFor="scanner-manual-input" required>QR-Code manuell eingeben</FormLabel>
                     <div className="row-actions">
                       <input
+                        aria-required="true"
                         className="input"
                         id="scanner-manual-input"
                         placeholder="QR-Code, Telefon, Name oder Gästecode"
+                        required
                         value={scannerManualValue}
                         onChange={(event) => setScannerManualValue(event.target.value)}
                       />
@@ -961,11 +967,13 @@ export function StaffTablet() {
           {settings.loyalty_mode === "amount_based" ? (
             <div className="grid two">
               <div className="field">
-                <label htmlFor="bill-amount">Rechnungsbetrag</label>
+                <FormLabel htmlFor="bill-amount" required>Rechnungsbetrag</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="bill-amount"
                   min="0"
+                  required
                   step="0.01"
                   type="number"
                   value={billAmount}
@@ -999,10 +1007,12 @@ export function StaffTablet() {
           {settings.loyalty_mode === "stamp_based" ? (
             <div className="grid two">
               <div className="field">
-                <label htmlFor="stamp-rule">Stempel-Regel</label>
+                <FormLabel htmlFor="stamp-rule" required>Stempel-Regel</FormLabel>
                 <select
+                  aria-required="true"
                   className="select"
                   id="stamp-rule"
+                  required
                   value={selectedStampRuleId}
                   onChange={(event) => setSelectedStampRuleId(event.target.value)}
                 >
@@ -1076,11 +1086,12 @@ export function StaffTablet() {
               </div>
 
               <fieldset className="staff-code-fieldset">
-                <legend>Sechsstelliger Einlösecode</legend>
+                <legend>Sechsstelliger Einlösecode<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></legend>
                 <div className="staff-code-inputs" onPaste={handleRedemptionPaste}>
                   {redemptionDigits.map((digit, index) => (
                     <input
                       aria-label={`Ziffer ${index + 1} des Einlösecodes`}
+                      aria-required="true"
                       autoComplete="one-time-code"
                       autoFocus={index === 0}
                       inputMode="numeric"
@@ -1089,6 +1100,7 @@ export function StaffTablet() {
                       onChange={(event) => updateRedemptionDigits(index, event.target.value)}
                       onKeyDown={(event) => handleRedemptionKeyDown(index, event)}
                       ref={(element) => { redemptionInputRefs.current[index] = element; }}
+                      required
                       type="text"
                       value={digit}
                     />
@@ -1338,9 +1350,11 @@ export function StaffTablet() {
               void executePinAction(pendingPinAction, pinDraft);
             }}
           >
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="staff-pin-modal">{pendingPinAction.pinLabel}</label>
+              <FormLabel htmlFor="staff-pin-modal" required>{pendingPinAction.pinLabel}</FormLabel>
               <input
+                aria-required="true"
                 autoFocus
                 className="input"
                 data-drawer-autofocus="true"
@@ -1348,6 +1362,7 @@ export function StaffTablet() {
                 inputMode="numeric"
                 maxLength={4}
                 placeholder="Tages-PIN eingeben"
+                required
                 type="password"
                 value={pinDraft}
                 onChange={(event) => setPinDraft(event.target.value.replace(/\D/g, "").slice(0, 4))}

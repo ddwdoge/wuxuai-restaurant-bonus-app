@@ -20,7 +20,7 @@ test("alle vier öffentlichen Einstiegsseiten verwenden dieselbe Premium-Shell",
 test("Login und Registrierung verwenden gemeinsame zugängliche Formularfelder", () => {
   assert.match(login, /<PublicFormField/);
   assert.match(register, /<PublicFormField/);
-  assert.match(components, /<label htmlFor=\{inputId\}>/);
+  assert.match(components, /<FormLabel htmlFor=\{inputId\}/);
   assert.match(components, /aria-describedby=\{describedBy\}/);
   assert.match(components, /aria-invalid=\{error \? true : undefined\}/);
   assert.match(login, /autoComplete="email"/);

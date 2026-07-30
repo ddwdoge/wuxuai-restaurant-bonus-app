@@ -2,6 +2,7 @@ import {
   REDEMPTION_RATE_PERCENT_OPTIONS,
   isAllowedRedemptionRatePercent,
 } from "../../loyalty/redemptionRate.mjs";
+import { FormLabel } from "../../../shared/components/FormLabel";
 
 type RedemptionRateSelectProps = {
   id: string;
@@ -23,12 +24,14 @@ export function RedemptionRateSelect({
 
   return (
     <div className="field redemption-rate-field">
-      <label htmlFor={id}>Einlösequote</label>
+      <FormLabel htmlFor={id} required>Einlösequote</FormLabel>
       <select
+        aria-required="true"
         className="select redemption-rate-select"
         disabled={disabled}
         id={id}
         onChange={(event) => onChange(Number(event.target.value))}
+        required
         value={hasValidValue ? String(value) : "legacy"}
       >
         {!hasValidValue ? <option disabled value="legacy">{legacyLabel}</option> : null}

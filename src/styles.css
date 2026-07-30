@@ -636,6 +636,28 @@ a {
   font-weight: 700;
 }
 
+.required-field-marker { color: #9f2d20; font-weight: 800; }
+.optional-field-marker { color: #6b7280; font-size: 0.78em; font-weight: 500; margin-left: 6px; }
+.required-fields-note { color: #5f6770; font-size: 13px; line-height: 1.45; margin: 0; }
+.required-fields-note > span { color: #9f2d20; font-weight: 800; }
+.sr-only { border: 0; clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px; }
+
+.opening-hours-day { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: grid; gap: 12px; min-width: 0; padding: 12px; }
+.opening-hours-day.is-open { background: #fffdf8; border-color: #dfd3bb; }
+.opening-hours-day-header { align-items: center; display: flex; gap: 12px; justify-content: space-between; min-width: 0; }
+.opening-hours-day-header > span { color: #66717d; font-size: 12px; }
+.opening-hours-block { display: grid; gap: 7px; min-width: 0; }
+.opening-hours-block > strong { color: #344251; font-size: 13px; font-weight: 600; }
+.opening-hours-break-block { background: #f5efe3; border-radius: 7px; padding: 10px; }
+.opening-hours-time-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opening-hours-time-field { display: grid; gap: 5px; min-width: 0; }
+.opening-hours-time-field label { color: #52606d; font-size: 12px; font-weight: 600; }
+.opening-hours-break-button { align-items: center; align-self: start; background: transparent; border: 0; border-radius: 8px; color: #76571e; display: inline-flex; font-weight: 600; gap: 7px; justify-self: start; min-height: 44px; padding: 0 8px; }
+.opening-hours-break-button:hover { background: #f3e6cc; }
+.opening-hours-break-button:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.35); outline-offset: 2px; }
+.opening-hours-error { color: #a1372b; font-size: 13px; line-height: 1.4; margin: 0; }
+.button[aria-disabled="true"] { cursor: not-allowed; opacity: 0.62; }
+
 .inline-check {
   align-items: center;
   color: #344251;
@@ -4380,6 +4402,7 @@ a {
 }
 
 .customer-phone-field-grid label { display: grid; gap: 6px; min-width: 0; }
+.customer-phone-field-part { display: grid; gap: 6px; min-width: 0; }
 .customer-phone-field-grid label > span { color: inherit; font-size: 12px; }
 .customer-phone-field .input { min-height: 48px; min-width: 0; width: 100%; }
 .customer-phone-field small { color: #706b63; font-size: 12px; line-height: 1.4; }

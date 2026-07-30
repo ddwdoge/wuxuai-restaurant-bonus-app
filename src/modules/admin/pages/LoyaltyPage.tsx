@@ -24,6 +24,7 @@ import {
   redemptionRateToPercent,
 } from "../../loyalty/redemptionRate.mjs";
 import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 
 type RuleForm = {
   id?: string;
@@ -206,11 +207,14 @@ export function LoyaltyPage() {
         <article className="card">
           <h2>Modus</h2>
           <form className="form" onSubmit={handleSaveSettings}>
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="loyalty-mode">Loyalty-Modus</label>
+              <FormLabel htmlFor="loyalty-mode" required>Bonusmodus</FormLabel>
               <select
+                aria-required="true"
                 className="select"
                 id="loyalty-mode"
+                required
                 value={settings.loyalty_mode}
                 onChange={(event) => {
                   const nextMode = event.target.value as LoyaltyMode;
@@ -231,11 +235,13 @@ export function LoyaltyPage() {
 
             <div className="grid two">
               <div className="field">
-                <label htmlFor="amount-per-point">Euro pro Punkt</label>
+                <FormLabel htmlFor="amount-per-point" required>Euro pro Punkt</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="amount-per-point"
                   min="0.01"
+                  required
                   step="0.01"
                   type="number"
                   value={settings.amount_per_point}
@@ -257,11 +263,13 @@ export function LoyaltyPage() {
                 value={validRedemptionRatePercent}
               />
               <div className="field">
-                <label htmlFor="stamps-required">Stempel bis Punkteeinlösung</label>
+                <FormLabel htmlFor="stamps-required" required>Stempel bis Punkteeinlösung</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="stamps-required"
                   min="1"
+                  required
                   type="number"
                   value={settings.stamps_required}
                   onChange={(event) =>
@@ -284,22 +292,27 @@ export function LoyaltyPage() {
         <article className="card">
           <h2>Regel speichern</h2>
           <form className="form" onSubmit={handleSaveRule}>
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="rule-title">Titel</label>
+              <FormLabel htmlFor="rule-title" required>Titel</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="rule-title"
+                required
                 value={ruleForm.title}
                 onChange={(event) => setRuleForm((current) => ({ ...current, title: event.target.value }))}
               />
             </div>
             <div className="grid three">
               <div className="field">
-                <label htmlFor="rule-points">Punkte</label>
+                <FormLabel htmlFor="rule-points" required>Punkte</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="rule-points"
                   min="0"
+                  required
                   type="number"
                   value={ruleForm.points}
                   onChange={(event) =>
@@ -308,11 +321,13 @@ export function LoyaltyPage() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="rule-stamps">Stempel</label>
+                <FormLabel htmlFor="rule-stamps" required>Stempel</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="rule-stamps"
                   min="0"
+                  required
                   type="number"
                   value={ruleForm.stamps}
                   onChange={(event) =>
@@ -321,11 +336,13 @@ export function LoyaltyPage() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="rule-min-amount">Mindestbetrag</label>
+                <FormLabel htmlFor="rule-min-amount" required>Mindestbetrag</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="rule-min-amount"
                   min="0"
+                  required
                   step="0.01"
                   type="number"
                   value={ruleForm.min_amount}
@@ -352,6 +369,7 @@ export function LoyaltyPage() {
           </p>
         </div>
         <form className="form" onSubmit={handleSaveReferralBonus}>
+          <RequiredFieldsNote />
           <label className="toggle-row" htmlFor="referral-boost-enabled">
             <input
               checked={settings.referral_boost_enabled ?? true}
@@ -370,10 +388,12 @@ export function LoyaltyPage() {
               <input className="input" disabled id="referral-boost-multiplier" value="2,0× Punkte" />
             </div>
             <div className="field">
-              <label htmlFor="referral-boost-duration">Dauer pro erfolgreicher Einladung</label>
+              <FormLabel htmlFor="referral-boost-duration" required>Dauer pro erfolgreicher Einladung</FormLabel>
               <select
+                aria-required="true"
                 className="select"
                 id="referral-boost-duration"
+                required
                 value={isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30)
                   ? String(settings.referral_boost_duration_days ?? 30)
                   : "custom"}
@@ -398,13 +418,15 @@ export function LoyaltyPage() {
 
           {!isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30) ? (
             <div className="field referral-bonus-custom-duration">
-              <label htmlFor="referral-boost-custom-duration">Eigener Wert in Tagen</label>
+              <FormLabel htmlFor="referral-boost-custom-duration" required>Eigener Wert in Tagen</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="referral-boost-custom-duration"
                 inputMode="numeric"
                 max="365"
                 min="1"
+                required
                 step="1"
                 type="number"
                 value={settings.referral_boost_duration_days ?? 30}

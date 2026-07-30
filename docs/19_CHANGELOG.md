@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-07-30 – Kontextbezogene Hilfe im Restaurant-Onboarding
+
+- Der Onboarding-Hilfedrawer zeigt fuer jeden der sieben Schritte einen
+  eigenen kurzen Hilfetext.
+- Titel und Hilfebutton verwenden die klare Bezeichnung
+  `Hilfe zu diesem Schritt` beziehungsweise `Hilfe`.
+- Jede Hilfe beschraenkt sich auf die aktuelle Entscheidung und enthaelt eine
+  kleine Zeit- oder Tippzeile.
+- Die allgemeine Zusammenfassung spaeterer Onboarding-Inhalte wurde entfernt;
+  Businesslogik, Navigation und Datenbank bleiben unveraendert.
+
 ## 2026-07-30 – Restaurantfokussierte V1 wiederhergestellt
 
 - Die validierte restaurantfokussierte Baseline `b9b2647` ist der offizielle
@@ -2341,3 +2352,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Manager, Mitarbeiter, Kunden, anonyme Aufrufe und fremde Restaurants können die Einstellung nicht ändern.
 - Neue Empfehlungen verwenden die aktuell gespeicherte Dauer; laufende Bonuszeiträume bleiben unverändert.
 - Keine Änderung an Reward-, Tages-PIN-, Einlösecode-, Customer-Identity- oder Legal-Logik.
+
+## 2026-07-30 - Mittagspause und einheitliche Pflichtfelder
+
+- Öffnungszeiten im Onboarding und in den Restaurant-Einstellungen unterstützen optional zwei Öffnungsblöcke mit einer Mittagspause.
+- Die bestehende `opening_hours`-JSON-Struktur wurde rückwärtskompatibel erweitert; eine Datenbankmigration war nicht erforderlich.
+- Überlappende oder unvollständige Zeitfenster werden vor dem Fortfahren beziehungsweise Speichern blockiert.
+- Das Kundenportal zeigt beide Öffnungsblöcke und während der Pause den Zeitpunkt der Wiederöffnung in `Europe/Vienna` an.
+- Eine gemeinsame Formularbeschriftung kennzeichnet Pflichtfelder sichtbar mit `*`, ergänzt Screenreader-Text und vereinheitlicht optionale Felder.
+- Zentrale V1-Formulare enthalten einen einheitlichen Pflichtfeldhinweis sowie `required` und `aria-required`, wo das Feld fachlich verpflichtend ist.
+- Keine Migration, RLS-, Auth-, Punkte-, Reward-, PIN- oder Tenant-Logik geändert.

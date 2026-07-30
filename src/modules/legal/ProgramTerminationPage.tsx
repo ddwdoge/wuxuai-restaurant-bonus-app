@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTenant } from "../tenant/TenantProvider";
 import { scheduleProgramTermination } from "./legalService";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 
 export function ProgramTerminationPage() {
   const { activeRestaurant } = useTenant();
@@ -52,6 +53,7 @@ export function ProgramTerminationPage() {
         <Link className="button secondary" to="/admin/legal"><ArrowLeft aria-hidden="true" size={18} /> Zurück</Link>
       </header>
       <section className="card owner-legal-termination">
+        <RequiredFieldsNote />
         <div className="owner-legal-warning"><AlertTriangle aria-hidden="true" size={22} /><p>Gäste müssen rechtzeitig über das Ende und ihre letzte Einlösemöglichkeit informiert werden.</p></div>
         <div className="owner-legal-termination-steps" aria-label="Ablauf der Programmbeendigung">
           <p><strong>1. Start der Beendigung</strong><span>Beginnt mit der verbindlichen Planung und wird protokolliert.</span></p>
@@ -60,12 +62,12 @@ export function ProgramTerminationPage() {
           <p><strong>4. Abschluss und Archivierung</strong><span>Aktivitäten werden berichtet; Legal-Versionen und historische Bestätigungen bleiben erhalten.</span></p>
         </div>
         <div className="owner-legal-grid">
-          <label className="field"><span>Letzte Punktevergabe</span><input className="input" onChange={(event) => setValues((current) => ({ ...current, lastPointsAt: event.target.value }))} type="datetime-local" value={values.lastPointsAt} /></label>
-          <label className="field"><span>Geplantes Programmende</span><input className="input" onChange={(event) => setValues((current) => ({ ...current, plannedEndAt: event.target.value }))} type="datetime-local" value={values.plannedEndAt} /></label>
-          <label className="field"><span>Letzte Einlösung</span><input className="input" onChange={(event) => setValues((current) => ({ ...current, finalRedemptionAt: event.target.value }))} type="datetime-local" value={values.finalRedemptionAt} /></label>
-          <label className="field full"><span>Hinweis an Kunden</span><textarea className="input" onChange={(event) => setValues((current) => ({ ...current, notice: event.target.value }))} rows={5} value={values.notice} /></label>
+          <div className="field"><FormLabel htmlFor="termination-last-points" required>Letzte Punktevergabe</FormLabel><input aria-required="true" className="input" id="termination-last-points" onChange={(event) => setValues((current) => ({ ...current, lastPointsAt: event.target.value }))} required type="datetime-local" value={values.lastPointsAt} /></div>
+          <div className="field"><FormLabel htmlFor="termination-planned-end" required>Geplantes Programmende</FormLabel><input aria-required="true" className="input" id="termination-planned-end" onChange={(event) => setValues((current) => ({ ...current, plannedEndAt: event.target.value }))} required type="datetime-local" value={values.plannedEndAt} /></div>
+          <div className="field"><FormLabel htmlFor="termination-final-redemption" required>Letzte Einlösung</FormLabel><input aria-required="true" className="input" id="termination-final-redemption" onChange={(event) => setValues((current) => ({ ...current, finalRedemptionAt: event.target.value }))} required type="datetime-local" value={values.finalRedemptionAt} /></div>
+          <div className="field full"><FormLabel htmlFor="termination-notice" required>Hinweis an Kunden</FormLabel><textarea aria-required="true" className="input" id="termination-notice" minLength={40} onChange={(event) => setValues((current) => ({ ...current, notice: event.target.value }))} required rows={5} value={values.notice} /></div>
         </div>
-        <label className="owner-legal-toggle"><input checked={values.confirmed} onChange={(event) => setValues((current) => ({ ...current, confirmed: event.target.checked }))} type="checkbox" /><span><strong>Fristen und Kundenhinweis geprüft</strong><small>Die Planung wird protokolliert und kann nicht als sofortige Deaktivierung verwendet werden.</small></span></label>
+        <label className="owner-legal-toggle"><input aria-required="true" checked={values.confirmed} onChange={(event) => setValues((current) => ({ ...current, confirmed: event.target.checked }))} required type="checkbox" /><span><strong>Fristen und Kundenhinweis geprüft<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></strong><small>Die Planung wird protokolliert und kann nicht als sofortige Deaktivierung verwendet werden.</small></span></label>
         <button className="button" disabled={!complete || saving} onClick={() => void handleSubmit()} type="button">{saving ? "Planung wird gespeichert …" : "Programmende verbindlich planen"}</button>
       </section>
       <section className="card owner-legal-export"><h2>Abschlussbericht</h2><p className="muted">Der Bonus-Aktivitätsbericht unterstützt den nachvollziehbaren Abschluss. Es werden weder Punkte still gelöscht noch historische Kundenbestätigungen verändert.</p><Link className="button secondary" to="/admin/reports">Bonus-Aktivitätsbericht öffnen</Link></section>

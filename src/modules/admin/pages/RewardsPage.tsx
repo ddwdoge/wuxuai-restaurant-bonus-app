@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import {
   RewardImageFrame,
 } from "../../../shared/components/RewardImageFrame";
@@ -421,6 +422,7 @@ export function RewardsPage() {
   const SelectedIcon = selectedTemplate?.Icon ?? Gift;
   const wizardContent = (
     <div className="premium-owner-editor">
+      <RequiredFieldsNote />
       <div className="premium-owner-editor-progress">
         <span>Schritt {step} von 5</span>
         <div><span style={{ width: `${step * 20}%` }} /></div>
@@ -449,7 +451,7 @@ export function RewardsPage() {
       {step === 2 ? (
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Produktwert</p><h3>Wie viel kostet das Produkt normalerweise?</h3><p>Die benötigten Punkte werden automatisch berechnet.</p></div>
-          <label className="field" htmlFor="reward-price"><span>Preis in €</span><input className="input reward-price-input" data-drawer-autofocus="true" id="reward-price" inputMode="decimal" onChange={(event) => setPriceInput(event.target.value)} placeholder="Beispiel: 5,50 €" value={priceInput} /></label>
+          <div className="field"><FormLabel htmlFor="reward-price" required>Preis in €</FormLabel><input aria-required="true" className="input reward-price-input" data-drawer-autofocus="true" id="reward-price" inputMode="decimal" onChange={(event) => setPriceInput(event.target.value)} placeholder="Beispiel: 5,50 €" required value={priceInput} /></div>
         </section>
       ) : null}
       {step === 3 ? (
@@ -505,8 +507,8 @@ export function RewardsPage() {
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Vorschau</p><h3>Letzte Angaben prüfen</h3></div>
           <div className="grid two">
-            <label className="field" htmlFor="reward-name"><span>Name</span><input className="input" id="reward-name" onChange={(event) => setRewardName(event.target.value)} value={rewardName} /></label>
-            <label className="field" htmlFor="reward-category"><span>Kategorie</span><input className="input" id="reward-category" onChange={(event) => setRewardCategory(event.target.value)} value={rewardCategory} /></label>
+            <div className="field"><FormLabel htmlFor="reward-name" required>Name</FormLabel><input aria-required="true" className="input" id="reward-name" onChange={(event) => setRewardName(event.target.value)} required value={rewardName} /></div>
+            <div className="field"><FormLabel htmlFor="reward-category" required>Kategorie</FormLabel><input aria-required="true" className="input" id="reward-category" onChange={(event) => setRewardCategory(event.target.value)} required value={rewardCategory} /></div>
           </div>
           <article className="premium-customer-reward-preview large">
             <div>{photoPreview ? <RewardImageFrame alt={rewardTitle} crop={photoCrop} imageUrl={photoPreview} /> : <SelectedIcon aria-hidden="true" size={48} />}</div>

@@ -23,15 +23,12 @@ import { useTenant } from "../../tenant/TenantProvider";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
+import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
-
-type OpeningDay = {
-  enabled: boolean;
-  open: string;
-  close: string;
-};
 
 type BonusCalculation = {
   pointsPerEuro: number;
@@ -124,6 +121,72 @@ const stepTitles = [
   "Herzlichen Glückwunsch! Dein Restaurant ist startklar.",
 ];
 
+const stepHelp = [
+  {
+    sentences: [
+      "Trage den Namen und die Art deines Restaurants ein.",
+      "Ergänze die rechtlichen Pflichtangaben vollständig.",
+      "Die Kontakt-E-Mail wird auch als Beschwerdekontakt verwendet, wenn du keinen eigenen angibst.",
+      "Prüfe besonders Adresse und Rechtsform, bevor du weitergehst.",
+    ],
+    note: "Dauer: ca. 2 Minuten",
+  },
+  {
+    sentences: [
+      "Lade dein Restaurantlogo hoch und wähle deine Markenfarben.",
+      "Die Vorschau zeigt sofort, wie dein Bonusprogramm für Gäste wirkt.",
+      "Achte darauf, dass Logo und Texte gut lesbar bleiben.",
+      "Der Beispielbutton dient nur der Vorschau und öffnet kein Kundenkonto.",
+    ],
+    note: "Tipp: Du kannst das Aussehen später jederzeit ändern.",
+  },
+  {
+    sentences: [
+      "Aktiviere alle Tage, an denen dein Restaurant geöffnet ist.",
+      "Trage für jeden aktiven Tag Öffnungs- und Schließzeit ein.",
+      "Urlaub oder einzelne Schließtage kannst du als Hinweis ergänzen.",
+      "Der sichtbare Geöffnet-Status richtet sich nach diesen Angaben.",
+    ],
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    sentences: [
+      "Gib deinen durchschnittlichen Bon und die gewünschte Zahl der Besuche an.",
+      "Wähle, welche Art von Punkteeinlösung zu deinem Restaurant passt.",
+      "Mit der Großzügigkeit legst du den ungefähren Gegenwert fest.",
+      "WUXUAI berechnet die Punkte und die wirtschaftliche Empfehlung automatisch.",
+    ],
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    sentences: [
+      "Wähle mindestens ein Willkommensgeschenk aus.",
+      "Empfohlen sind drei bis fünf verschiedene Geschenke.",
+      "Ein erneuter Klick entfernt eine Auswahl wieder.",
+      "Neue Gäste erhalten später zufällig eines der ausgewählten Geschenke.",
+    ],
+    note: "Tipp: Produkte und Bilder kannst du später bearbeiten.",
+  },
+  {
+    sentences: [
+      "Hier findest du die fertigen QR-Codes für dein Restaurant.",
+      "Nutze den Restaurant-QR für die Anmeldung neuer Gäste.",
+      "Der Bonus-QR öffnet das persönliche Bonusprogramm vor Ort.",
+      "Lade das Starter Kit herunter und platziere es gut sichtbar.",
+    ],
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    sentences: [
+      "Prüfe, ob alle Punkte der Checkliste abgeschlossen sind.",
+      "Offene Angaben werden direkt in der Checkliste angezeigt.",
+      "Mit „Restaurant starten“ aktivierst du das bestehende Restaurant.",
+      "Ein erneuter Klick legt kein zweites Restaurant an.",
+    ],
+    note: "Dauer: weniger als 1 Minute",
+  },
+] as const;
+
 const checklistLabels = {
   restaurantDataCompleted: "Restaurantdaten fertig",
   brandingCompleted: "Aussehen fertig",
@@ -145,13 +208,13 @@ const weekdays: { key: Weekday; label: string }[] = [
 ];
 
 const defaultOpeningHours: Record<Weekday, OpeningDay> = {
-  mon: { enabled: true, open: "11:00", close: "22:00" },
-  tue: { enabled: true, open: "11:00", close: "22:00" },
-  wed: { enabled: true, open: "11:00", close: "22:00" },
-  thu: { enabled: true, open: "11:00", close: "22:00" },
-  fri: { enabled: true, open: "11:00", close: "23:00" },
-  sat: { enabled: true, open: "12:00", close: "23:00" },
-  sun: { enabled: false, open: "12:00", close: "21:00" },
+  mon: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  tue: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  wed: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  thu: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  fri: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "23:00" }),
+  sat: normalizeOpeningDay(null, { enabled: true, open: "12:00", close: "23:00" }),
+  sun: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "21:00" }),
 };
 
 const generosityReturnRates: Record<Generosity, number> = {
@@ -267,7 +330,7 @@ function createDefaultForm(): OnboardingForm {
 
 function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm {
   const defaults = createDefaultForm();
-  const draftOpeningHours = (draftData?.openingHours ?? {}) as Partial<Record<Weekday, Partial<OpeningDay>>>;
+  const draftOpeningHours = (draftData?.openingHours ?? {}) as Partial<Record<Weekday, unknown>>;
   const legacyDraft = (draftData ?? {}) as Partial<OnboardingForm> & {
     rewardImageUrl?: string;
     rewardTitle?: string;
@@ -298,15 +361,7 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
       availableProducts: reward.availableProducts || "",
       active: true,
     })),
-    openingHours: {
-      mon: { ...defaults.openingHours.mon, ...draftOpeningHours.mon },
-      tue: { ...defaults.openingHours.tue, ...draftOpeningHours.tue },
-      wed: { ...defaults.openingHours.wed, ...draftOpeningHours.wed },
-      thu: { ...defaults.openingHours.thu, ...draftOpeningHours.thu },
-      fri: { ...defaults.openingHours.fri, ...draftOpeningHours.fri },
-      sat: { ...defaults.openingHours.sat, ...draftOpeningHours.sat },
-      sun: { ...defaults.openingHours.sun, ...draftOpeningHours.sun },
-    },
+    openingHours: Object.fromEntries(weekdays.map(({ key }) => [key, normalizeOpeningDay(draftOpeningHours[key], defaults.openingHours[key])])) as Record<Weekday, OpeningDay>,
   };
 }
 
@@ -1075,7 +1130,8 @@ function buildChecklist(form: OnboardingForm, step: number) {
       && form.legalEmail.trim(),
     ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
-    openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
+    openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled)
+      && weekdays.every(({ key }) => validateOpeningDay(form.openingHours[key]) === null),
     bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
     firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
     qrReady: true,
@@ -1093,7 +1149,10 @@ function getStepBlocker(
   }
 
   if (step === 2 && !checklist.openingHoursCompleted) {
-    return "Bitte wähle mindestens einen Öffnungstag.";
+    const invalidDay = weekdays.find(({ key }) => validateOpeningDay(form.openingHours[key]));
+    return invalidDay
+      ? `${invalidDay.label}: ${validateOpeningDay(form.openingHours[invalidDay.key])}`
+      : "Bitte wähle mindestens einen Öffnungstag.";
   }
 
   if (step === 3 && (!form.averageBill || !form.firstRewardVisits)) {
@@ -1160,13 +1219,7 @@ export function RestaurantOnboarding() {
     ? `wuxuai:onboarding-how-it-works-dismissed:${activeRestaurant.id}`
     : null;
 
-  const explanation = [
-    `${form.restaurantName || "Dein Restaurant"} bekommt ein eigenes digitales Bonusprogramm.`,
-    `Gäste sehen deine Öffnungszeiten: ${openDaysSummary(form.openingHours)}.`,
-    `Du planst ${bonus.returnRatePercent} Rückgabe nach ca. ${form.firstRewardVisits} Besuchen.`,
-    `${form.starterRewards.length || 1} Willkommensgeschenk wartet später zufällig auf neue Gäste.`,
-    "Willkommensgeschenke sind ein fester Teil deines Bonusprogramms.",
-  ];
+  const currentStepHelp = stepHelp[step] ?? stepHelp[0];
 
   useEffect(() => {
     let cancelled = false;
@@ -1451,6 +1504,24 @@ export function RestaurantOnboarding() {
 
   async function goToNextStep() {
     if (stepBlocker) {
+      setStatus(stepBlocker);
+      const firstInvalidId = step === 0
+        ? ["restaurant-name", "restaurant-type", "language", "legal-form", "legal-email", "legal-street", "legal-postal-code", "legal-city", "legal-country"].find((id) => {
+            const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+            return field && !field.checkValidity();
+          })
+        : step === 2
+          ? (() => {
+              const invalidDay = weekdays.find(({ key }) => validateOpeningDay(form.openingHours[key]));
+              return invalidDay ? `onboarding-${invalidDay.key}-open` : null;
+            })()
+          : step === 3
+            ? ["average-bill", "first-reward-visits", "first-reward-type"].find((id) => {
+                const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+                return field && !field.checkValidity();
+              })
+            : null;
+      if (firstInvalidId) document.getElementById(firstInvalidId)?.focus();
       return;
     }
 
@@ -1561,13 +1632,13 @@ export function RestaurantOnboarding() {
         <div className="installation-header-actions">
           {onboardingRestaurantAction}
           <button
-            aria-label="So funktioniert die Einrichtung"
+            aria-label={`Hilfe zu Schritt ${step + 1}: ${steps[step]}`}
             className="button secondary installation-help-action"
             onClick={() => setHowItWorksOpen(true)}
             type="button"
           >
             <Info size={17} />
-            <span className="installation-help-label">So funktioniert's</span>
+            <span className="installation-help-label">Hilfe</span>
           </button>
           {onboardingAccountAction}
         </div>
@@ -1598,22 +1669,27 @@ export function RestaurantOnboarding() {
         <form className="card onboarding-card installation-card form" onSubmit={handleSubmit}>
           {step === 0 ? (
             <section className="wizard-screen">
+              <RequiredFieldsNote />
               <div className="field">
-                <label htmlFor="restaurant-name">Wie heißt dein Restaurant?</label>
+                <FormLabel htmlFor="restaurant-name" required>Wie heißt dein Restaurant?</FormLabel>
                 <input
+                  aria-required="true"
                   className="input input-large"
                   id="restaurant-name"
                   placeholder="z. B. Café am Markt"
+                  required
                   value={form.restaurantName}
                   onChange={(event) => setForm((current) => ({ ...current, restaurantName: event.target.value }))}
                 />
               </div>
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="restaurant-type">Was passt am besten zu dir?</label>
+                  <FormLabel htmlFor="restaurant-type" required>Was passt am besten zu dir?</FormLabel>
                   <select
+                    aria-required="true"
                     className="select input-large"
                     id="restaurant-type"
+                    required
                     value={form.restaurantType}
                     onChange={(event) => setForm((current) => ({ ...current, restaurantType: event.target.value }))}
                   >
@@ -1625,10 +1701,12 @@ export function RestaurantOnboarding() {
                   </select>
                 </div>
                 <div className="field">
-                  <label htmlFor="language">Welche Sprache sollen deine Gäste sehen?</label>
+                  <FormLabel htmlFor="language" required>Welche Sprache sollen deine Gäste sehen?</FormLabel>
                   <select
+                    aria-required="true"
                     className="select input-large"
                     id="language"
+                    required
                     value={form.language}
                     onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}
                   >
@@ -1645,34 +1723,34 @@ export function RestaurantOnboarding() {
                 </div>
                 <div className="grid two">
                   <div className="field">
-                    <label htmlFor="legal-form">Rechtsform</label>
-                    <input className="input" id="legal-form" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" value={form.legalForm} />
+                    <FormLabel htmlFor="legal-form" required>Rechtsform</FormLabel>
+                    <input aria-required="true" className="input" id="legal-form" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" required value={form.legalForm} />
                   </div>
                   <div className="field">
-                    <label htmlFor="legal-email">Kontakt-E-Mail</label>
-                    <input className="input" id="legal-email" onChange={(event) => setForm((current) => ({ ...current, legalEmail: event.target.value }))} type="email" value={form.legalEmail} />
+                    <FormLabel htmlFor="legal-email" required>Kontakt-E-Mail</FormLabel>
+                    <input aria-required="true" className="input" id="legal-email" onChange={(event) => setForm((current) => ({ ...current, legalEmail: event.target.value }))} required type="email" value={form.legalEmail} />
                   </div>
                   <div className="field">
-                    <label htmlFor="legal-street">Straße und Hausnummer</label>
-                    <input className="input" id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} value={form.legalStreet} />
+                    <FormLabel htmlFor="legal-street" required>Straße und Hausnummer</FormLabel>
+                    <input aria-required="true" className="input" id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required value={form.legalStreet} />
                   </div>
                   <div className="field">
-                    <label htmlFor="legal-postal-code">Postleitzahl</label>
-                    <input className="input" id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} value={form.legalPostalCode} />
+                    <FormLabel htmlFor="legal-postal-code" required>Postleitzahl</FormLabel>
+                    <input aria-required="true" className="input" id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required value={form.legalPostalCode} />
                   </div>
                   <div className="field">
-                    <label htmlFor="legal-city">Ort</label>
-                    <input className="input" id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} value={form.legalCity} />
+                    <FormLabel htmlFor="legal-city" required>Ort</FormLabel>
+                    <input aria-required="true" className="input" id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required value={form.legalCity} />
                   </div>
                   <div className="field">
-                    <label htmlFor="legal-country">Land</label>
-                    <input className="input" id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} value={form.legalCountry} />
+                    <FormLabel htmlFor="legal-country" required>Land</FormLabel>
+                    <input aria-required="true" className="input" id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required value={form.legalCountry} />
                   </div>
                 </div>
                 <details className="advanced-panel">
                   <summary>Beschwerdekontakt optional anpassen</summary>
                   <div className="field">
-                    <label htmlFor="legal-complaint-contact">Beschwerdekontakt</label>
+                    <FormLabel htmlFor="legal-complaint-contact" optional>Beschwerdekontakt</FormLabel>
                     <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />
                     <p className="muted">Wenn du nichts einträgst, verwenden wir deine Kontakt-E-Mail.</p>
                   </div>
@@ -1683,6 +1761,7 @@ export function RestaurantOnboarding() {
 
           {step === 1 ? (
             <section className="wizard-screen">
+              <RequiredFieldsNote />
               <div
                 className={`logo-dropzone${draggingLogo ? " active" : ""}`}
                 onDragEnter={(event) => {
@@ -1729,7 +1808,7 @@ export function RestaurantOnboarding() {
               <details className="advanced-panel">
                 <summary>Erweitert</summary>
                 <div className="field">
-                  <label htmlFor="logo-url">Logo-Link manuell einfügen</label>
+                  <FormLabel htmlFor="logo-url" optional>Logo-Link manuell einfügen</FormLabel>
                   <input
                     className="input"
                     id="logo-url"
@@ -1742,21 +1821,25 @@ export function RestaurantOnboarding() {
 
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="primary-color">Deine Markenfarbe</label>
+                  <FormLabel htmlFor="primary-color" required>Deine Markenfarbe</FormLabel>
                   <p className="muted">Diese Farbe wird für Buttons, Bonuskarten und Highlights verwendet.</p>
                   <input
+                    aria-required="true"
                     className="input color-input"
                     id="primary-color"
+                    required
                     type="color"
                     value={form.primaryColor}
                     onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="secondary-color">Deine Akzentfarbe</label>
+                  <FormLabel htmlFor="secondary-color" required>Deine Akzentfarbe</FormLabel>
                   <input
+                    aria-required="true"
                     className="input color-input"
                     id="secondary-color"
+                    required
                     type="color"
                     value={form.secondaryColor}
                     onChange={(event) => setForm((current) => ({ ...current, secondaryColor: event.target.value }))}
@@ -1818,32 +1901,10 @@ export function RestaurantOnboarding() {
 
           {step === 2 ? (
             <section className="wizard-screen">
+              <RequiredFieldsNote />
               <div className="schedule-grid">
                 {weekdays.map(({ key, label }) => (
-                  <article className="schedule-row" key={key}>
-                    <label className="inline-check">
-                      <input
-                        checked={form.openingHours[key].enabled}
-                        onChange={(event) => updateOpeningDay(key, { enabled: event.target.checked })}
-                        type="checkbox"
-                      />
-                      {label}
-                    </label>
-                    <input
-                      className="input"
-                      disabled={!form.openingHours[key].enabled}
-                      type="time"
-                      value={form.openingHours[key].open}
-                      onChange={(event) => updateOpeningDay(key, { open: event.target.value })}
-                    />
-                    <input
-                      className="input"
-                      disabled={!form.openingHours[key].enabled}
-                      type="time"
-                      value={form.openingHours[key].close}
-                      onChange={(event) => updateOpeningDay(key, { close: event.target.value })}
-                    />
-                  </article>
+                  <OpeningHoursEditor dayLabel={label} idPrefix={`onboarding-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={form.openingHours[key]} />
                 ))}
               </div>
               <div className="grid two">
@@ -1881,25 +1942,30 @@ export function RestaurantOnboarding() {
 
           {step === 3 ? (
             <section className="wizard-screen">
+              <RequiredFieldsNote />
               <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="average-bill">Was gibt ein Gast durchschnittlich aus?</label>
+                  <FormLabel htmlFor="average-bill" required>Was gibt ein Gast durchschnittlich aus?</FormLabel>
                   <input
+                    aria-required="true"
                     className="input input-large"
                     id="average-bill"
                     min="1"
+                    required
                     type="number"
                     value={form.averageBill}
                     onChange={(event) => setForm((current) => ({ ...current, averageBill: Number(event.target.value) || 1 }))}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="first-reward-visits">Nach wie vielen Besuchen soll die erste Freude kommen?</label>
+                  <FormLabel htmlFor="first-reward-visits" required>Nach wie vielen Besuchen soll die erste Freude kommen?</FormLabel>
                   <input
+                    aria-required="true"
                     className="input input-large"
                     id="first-reward-visits"
                     min="1"
+                    required
                     type="number"
                     value={form.firstRewardVisits}
                     onChange={(event) =>
@@ -1909,10 +1975,12 @@ export function RestaurantOnboarding() {
                 </div>
               </div>
               <div className="field">
-                <label htmlFor="first-reward-type">Was möchtest du gerne geben?</label>
+                <FormLabel htmlFor="first-reward-type" required>Was möchtest du gerne geben?</FormLabel>
                 <select
+                  aria-required="true"
                   className="select input-large"
                   id="first-reward-type"
+                  required
                   value={form.firstRewardType}
                   onChange={(event) => setForm((current) => ({ ...current, firstRewardType: event.target.value }))}
                 >
@@ -2112,8 +2180,9 @@ export function RestaurantOnboarding() {
             </button>
             {step < steps.length - 1 ? (
               <button
+                aria-disabled={saving || Boolean(stepBlocker)}
                 className="button"
-                disabled={saving || Boolean(stepBlocker)}
+                disabled={saving}
                 onClick={goToNextStep}
                 type="button"
               >
@@ -2132,34 +2201,24 @@ export function RestaurantOnboarding() {
       </section>
 
       <AppDrawer
-        description="Die wichtigsten Schritte deines Bonusprogramms."
+        description={`Schritt ${step + 1}: ${steps[step]}`}
         footer={<button className="button" onClick={closeHowItWorks} type="button">Verstanden</button>}
         onClose={closeHowItWorks}
         open={howItWorksOpen}
         size="compact"
-        title="So funktioniert's"
+        title="Hilfe zu diesem Schritt"
       >
         <div className="rule-list">
-          {explanation.map((line) => (
+          {currentStepHelp.sentences.map((line) => (
             <p className="muted" key={line}>{line}</p>
           ))}
         </div>
         <article className="calculation-card">
-          <strong>Deine Gäste sollen schnell verstehen, warum sie wiederkommen.</strong>
-          <p className="muted">
-            Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.
-          </p>
+          <strong>{currentStepHelp.note}</strong>
         </article>
       </AppDrawer>
     </>
   );
-}
-
-function openDaysSummary(openingHours: Record<Weekday, OpeningDay>) {
-  const activeDays = weekdays.filter(({ key }) => openingHours[key].enabled);
-  if (activeDays.length === 0) return "Keine Öffnungszeiten";
-  if (activeDays.length === 7) return "Alle Wochentage";
-  return activeDays.map((day) => day.label).join(", ");
 }
 
 function StandardRewardIcon({ asset, size }: { asset: StarterRewardTemplate["asset"]; size: number }) {

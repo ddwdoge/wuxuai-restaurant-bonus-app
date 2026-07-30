@@ -24,6 +24,7 @@ import {
 } from "./partnerRestaurantFinder.mjs";
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
 import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
+import { todayOpeningHours } from "../../shared/openingHours.mjs";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
@@ -36,17 +37,6 @@ function formatDistance(value: number | null) {
 function formatVisit(value: string | null | undefined) {
   if (!value) return "Noch kein Besuch gespeichert";
   return `Zuletzt am ${new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value))}`;
-}
-
-const openingDayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
-function todayOpeningHours(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const hours = value as Record<string, { enabled?: boolean; open?: string; close?: string }>;
-  const day = hours[openingDayKeys[new Date().getDay()]];
-  if (!day?.enabled) return "Heute geschlossen";
-  if (!day.open || !day.close) return null;
-  return `Heute ${day.open}–${day.close} Uhr`;
 }
 
 function locationAddress(location: PartnerRestaurant) {

@@ -7,6 +7,7 @@ import { useId } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FormLabel } from "../../shared/components/FormLabel";
 import "./public-entry-premium.css";
 
 type PublicPageShellProps = {
@@ -76,14 +77,12 @@ export function PublicFormField({
 
   return (
     <div className="public-premium-field">
-      <label htmlFor={inputId}>
-        <span>{label}</span>
-        {optional ? <small>Optional</small> : null}
-      </label>
+      <FormLabel htmlFor={inputId} optional={optional} required={Boolean(inputProps.required)}>{label}</FormLabel>
       <input
         {...inputProps}
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
+        aria-required={inputProps.required ? true : undefined}
         id={inputId}
       />
       {hint ? <small className="public-premium-field-hint" id={hintId}>{hint}</small> : null}

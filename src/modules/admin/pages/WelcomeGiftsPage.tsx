@@ -16,6 +16,7 @@ import {
   Wine,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import {
   RewardImageFrame,
 } from "../../../shared/components/RewardImageFrame";
@@ -435,9 +436,10 @@ export function WelcomeGiftsPage() {
       <AppDrawer description="Name, Wert, Foto und Status des Geschenks." dismissOnOverlay={false} footer={editing ? <><button className="button secondary" disabled={saving} onClick={closeEditor} type="button">Abbrechen</button><button className="button" disabled={saving || !editing.title.trim()} form="welcome-gift-editor-form" type="submit"><Save size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editing.id ? "Änderungen speichern" : "Willkommensgeschenk erstellen"}</button></> : null} onClose={closeEditor} open={Boolean(editing)} size="large" title={editing?.id ? "Willkommensgeschenk bearbeiten" : "Willkommensgeschenk erstellen"}>
         {editing ? (
           <form className="form premium-owner-editor welcome-gift-drawer-form" id="welcome-gift-editor-form" onSubmit={saveGift}>
+            <RequiredFieldsNote />
             <section className="premium-owner-editor-section">
               <div><p className="premium-owner-kicker">Grundlagen</p><h3>Geschenk beschreiben</h3><p>Diese Angaben sehen Gäste im Kundenportal.</p></div>
-              <label className="field" htmlFor="gift-title"><span>Name</span><input className="input" data-drawer-autofocus="true" id="gift-title" required value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></label>
+              <div className="field"><FormLabel htmlFor="gift-title" required>Name</FormLabel><input aria-required="true" className="input" data-drawer-autofocus="true" id="gift-title" required value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></div>
               <div className="grid two">
                 <label className="field" htmlFor="gift-category"><span>Kategorie</span><select className="input" id="gift-category" value={editing.category} onChange={(event) => { const category = event.target.value; setEditing({ ...editing, category, productPrice: editing.productPrice || priceInput(defaultGiftValue(category)) }); }}>{giftCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                 <label className="field" htmlFor="gift-value"><span>Preisgrenze / Wert bis €</span><input className="input" id="gift-value" inputMode="decimal" value={editing.productPrice} onChange={(event) => setEditing({ ...editing, productPrice: event.target.value })} /></label>

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useTenant } from "../tenant/TenantProvider";
 import { requiredLegalDocumentStatus } from "./legalReadiness.mjs";
 import {
@@ -301,16 +302,17 @@ export function OwnerLegalSettingsPage() {
       {editing ? (
         <form className="owner-legal-company-form card" onSubmit={handlePrepare}>
           <div><h2>Unternehmensdaten</h2><p className="muted">Änderungen erzeugen eine neue Version. Die bisher veröffentlichte Version bleibt erhalten.</p></div>
+          <RequiredFieldsNote />
           <div className="owner-legal-grid">
             {requiredProfileFields.map(([key, label]) => (
-              <label className="field" key={key}><span>{label}</span><input className="input" onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required value={profile[key] ?? ""} /></label>
+              <div className="field" key={key}><FormLabel htmlFor={`legal-profile-${key}`} required>{label}</FormLabel><input aria-required="true" className="input" id={`legal-profile-${key}`} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required value={profile[key] ?? ""} /></div>
             ))}
           </div>
           <details className="owner-legal-advanced">
             <summary>Weitere Unternehmensangaben</summary>
             <div className="owner-legal-grid">
               {optionalProfileFields.map(([key, label]) => (
-                <label className="field" key={key}><span>{label}</span><input className="input" onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} placeholder={key === "complaint_contact" ? "Kontakt-E-Mail wird verwendet" : undefined} value={profile[key] ?? ""} /></label>
+                <div className="field" key={key}><FormLabel htmlFor={`legal-profile-${key}`} optional>{label}</FormLabel><input className="input" id={`legal-profile-${key}`} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} placeholder={key === "complaint_contact" ? "Kontakt-E-Mail wird verwendet" : undefined} value={profile[key] ?? ""} /></div>
               ))}
             </div>
             {complaintUsesFallback ? <p className="muted">Für Beschwerden wird derzeit die Kontakt-E-Mail verwendet.</p> : null}

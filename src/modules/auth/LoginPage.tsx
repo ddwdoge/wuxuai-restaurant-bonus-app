@@ -10,6 +10,7 @@ import {
   PublicPageShell,
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
+import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { Link } from "react-router-dom";
 
 export function LoginPage() {
@@ -53,6 +54,7 @@ export function LoginPage() {
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
+          <RequiredFieldsNote />
           {logoutMessage ? <p className="public-premium-alert public-premium-alert-success" role="status">{logoutMessage}</p> : null}
           {liveDataMissing ? <p className="public-premium-alert public-premium-alert-error" role="alert">{liveDataUnavailableMessage}</p> : null}
           <PublicFormField

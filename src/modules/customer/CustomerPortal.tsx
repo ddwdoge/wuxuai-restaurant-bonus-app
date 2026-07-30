@@ -29,6 +29,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
 import {
@@ -1206,12 +1207,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           <article className="customer-hero-card customer-registration-card">
             <h2>Mitglied werden</h2>
             <form className="form compact-customer-form" onSubmit={handleRegister}>
+              <RequiredFieldsNote />
               <div className="field">
-                <label htmlFor="guest-first-name">Vorname</label>
+                <FormLabel htmlFor="guest-first-name" required>Vorname</FormLabel>
                 <input
+                  aria-required="true"
                   autoFocus
                   className="input input-large"
                   id="guest-first-name"
+                  required
                   value={form.firstName}
                   onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                 />
@@ -1223,9 +1227,10 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 onCountryCodeChange={(phoneCountryCode) => setForm((current) => ({ ...current, phoneCountryCode }))}
                 onLocalNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
                 showError={Boolean(form.phone)}
+                required
               />
               <div className="field">
-                <label htmlFor="guest-birthday">Geburtstag optional</label>
+                <FormLabel htmlFor="guest-birthday" optional>Geburtstag</FormLabel>
                 <input
                   className="input input-large"
                   id="guest-birthday"
@@ -1251,8 +1256,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
                   </div>
                 ) : null}
-                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
-                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+                <label><input aria-required="true" checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} required type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
+                <label><input aria-required="true" checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} required type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
               </section>
               <details className="customer-registration-consents">
                 <summary id="registration-consents-title">Freiwillige Einwilligungen <span>Optional</span></summary>

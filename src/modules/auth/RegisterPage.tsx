@@ -9,6 +9,7 @@ import {
   PublicPageShell,
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
+import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export function RegisterPage() {
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
+          <RequiredFieldsNote />
           <PublicFormField autoComplete="name" disabled={loading} id="owner-name" label="Dein Name" onChange={(event) => setOwnerName(event.target.value)} required value={ownerName} />
           <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
           <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />

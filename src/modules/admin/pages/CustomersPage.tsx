@@ -3,6 +3,7 @@ import { Copy, Search, ShieldCheck, Users } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { CustomerPhoneField } from "../../../shared/components/CustomerPhoneField";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import type { Customer } from "../../../shared/types/domain";
 import {
   canManageCustomerIdentity,
@@ -243,6 +244,7 @@ export function CustomersPage() {
         {supportLoading ? <p>Identitätsdaten werden sicher geladen …</p> : null}
         {supportDetail ? (
           <div className="customer-identity-support">
+            <RequiredFieldsNote />
             <div className="premium-account-detail-list">
               <div><span>Gast</span><strong>{supportDetail.name}</strong></div>
               <div><span>Telefon</span><strong>{supportDetail.phone}</strong></div>
@@ -266,19 +268,20 @@ export function CustomersPage() {
                 onCountryCodeChange={setNewPhoneCountryCode}
                 onLocalNumberChange={setNewPhone}
                 showError={Boolean(newPhone)}
+                required
               />
             ) : (
               <div className="premium-birthday-fields">
-                <label><span>Tag</span><input className="input" inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayDay(event.target.value.replace(/\D/g, "").slice(0, 2))} value={birthdayDay} /></label>
-                <label><span>Monat</span><input className="input" inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayMonth(event.target.value.replace(/\D/g, "").slice(0, 2))} value={birthdayMonth} /></label>
+                <div><FormLabel htmlFor="support-birthday-day" required>Tag</FormLabel><input aria-required="true" className="input" id="support-birthday-day" inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayDay(event.target.value.replace(/\D/g, "").slice(0, 2))} required value={birthdayDay} /></div>
+                <div><FormLabel htmlFor="support-birthday-month" required>Monat</FormLabel><input aria-required="true" className="input" id="support-birthday-month" inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayMonth(event.target.value.replace(/\D/g, "").slice(0, 2))} required value={birthdayMonth} /></div>
               </div>
             )}
 
-            <label className="field"><span>Prüfart</span><input className="input" onChange={(event) => setVerificationMethod(event.target.value)} placeholder="Zum Beispiel persönlich im Restaurant" value={verificationMethod} /></label>
-            <label className="field"><span>Änderungsgrund</span><textarea className="input" onChange={(event) => setReason(event.target.value)} placeholder="Kurze sachliche Begründung" value={reason} /></label>
+            <div className="field"><FormLabel htmlFor="support-verification-method" required>Prüfart</FormLabel><input aria-required="true" className="input" id="support-verification-method" onChange={(event) => setVerificationMethod(event.target.value)} placeholder="Zum Beispiel persönlich im Restaurant" required value={verificationMethod} /></div>
+            <div className="field"><FormLabel htmlFor="support-change-reason" required>Änderungsgrund</FormLabel><textarea aria-required="true" className="input" id="support-change-reason" onChange={(event) => setReason(event.target.value)} placeholder="Kurze sachliche Begründung" required value={reason} /></div>
             <label className="checkbox-row">
-              <input checked={identityVerified} onChange={(event) => setIdentityVerified(event.target.checked)} type="checkbox" />
-              <span>Die Identität des Kunden wurde geprüft.</span>
+              <input aria-required="true" checked={identityVerified} onChange={(event) => setIdentityVerified(event.target.checked)} required type="checkbox" />
+              <span>Die Identität des Kunden wurde geprüft.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span>
             </label>
             <p className="muted">Diese Änderung betrifft die Identität des Kunden. Bitte bestätige, dass die Identität geprüft wurde.</p>
 
