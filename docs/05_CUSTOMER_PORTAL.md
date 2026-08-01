@@ -1,5 +1,9 @@
 # 05_CUSTOMER_PORTAL.md
 
+## Persönlicher Punkte-QR
+
+Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.
+
 # WUXUAI Bonus V1 – Customer Portal / „Mein Bonus“
 
 Status: **LOCK**

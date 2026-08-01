@@ -3,6 +3,16 @@
 
 # WUXUAI Bonus V1 – Sicherheit & Datenschutz
 
+## Punkte-QR
+
+Der persönliche Punkte-QR ist kein Kundenzugang. Er enthält ausschließlich einen kryptografisch zufälligen, kurzlebigen Wert; gespeichert wird nur dessen Hash. Fremdrestaurant, Ablauf, Widerruf, Wiederverwendung und inaktive Mitgliedschaft werden serverseitig abgelehnt. Token, Tages-PIN und Auth-Daten dürfen nicht in Audit, Analytics oder Logs erscheinen.
+
+Punkteberechnung und Boost-Auswahl werden unter einem restaurant- und
+kundenbezogenen Transaktions-Lock ausgeführt. Ein paralleler Confirm prüft nach
+dem QR-Row-Lock den Idempotenzschlüssel erneut. Dadurch wird derselbe Request als
+derselbe Erfolg beantwortet und nicht als zweite Buchung oder Replay behandelt.
+Öffentliche Antworten enthalten keine Referral-Beziehung oder Referral-Tokens.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt die verbindlichen Sicherheits- und Datenschutzregeln für WUXUAI Bonus V1.

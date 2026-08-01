@@ -1,0 +1,103 @@
+# Staging-Plan: restaurantgesteuerte Punktevergabe
+
+## Ziel und Umgebung
+
+Zielprojekt: `wuxuai-bonus-staging`, Project Ref im Bericht nur maskiert.
+Production, Production-Domain und Production-Datenbank sind ausgeschlossen.
+
+## Kontrollierter Preflight am 1. August 2026
+
+- Verknüpftes Projekt: `wuxuai-bonus-staging`
+- Project Ref: `bwhv...qaya`
+- Branch: `codex/restaurant-controlled-points-flow`
+- Ausgangscommit: `470fd2d9ef720ec9ae326f618c80eda89b64b789`
+- Remote-Migrationen sind bis einschließlich `20260730002000` synchron.
+- Ausschließlich `20260731001000` und `20260801001000` fehlen remote.
+- Der erneute Remote-Dry-Run listet genau diese beiden Migrationen in der
+  freigegebenen Reihenfolge.
+- Ein Katalogabgleich fand keine teilweise manuell angelegten Tabellen,
+  Spalten oder Engine-Funktionen aus den beiden offenen Migrationen.
+
+Anonymisierter Ausgangsbestand:
+
+| Objekt | Zeilen |
+| --- | ---: |
+| Restaurants | 3 |
+| Restaurant-Memberships | 3 |
+| Kunden | 0 |
+| Punktetransaktionen | 0 |
+
+Punktesnapshot vor einem möglichen Write: 0 Transaktionen, Nettosumme 0,
+keine positiven und keine negativen Transaktionen. Es wurden keine Namen,
+E-Mail-Adressen, Token, PINs oder sonstigen personenbezogenen Daten exportiert.
+
+Grant-Baseline: Die zwei alten `collect_bonus_points`-Signaturen sind weder für
+`public`, `anon` noch `authenticated` ausführbar. `collect_bonus_points_v1` ist
+für `anon` und `authenticated` freigegeben. Alle drei vorhandenen Funktionen
+sind `SECURITY DEFINER` und besitzen derzeit `search_path=public`.
+
+## Abbruch vor dem ersten Write
+
+`supabase backups list --project-ref <staging-ref>` meldet keine verfügbaren
+physischen Backups (`backups: null`) und kein Point-in-Time-Recovery
+(`pitr_enabled: false`). `walg_enabled: true` allein weist keinen auswählbaren
+oder verifizierbaren Restorepunkt nach. Damit ist die im Auftrag verlangte
+Backup-/Restore-Möglichkeit nicht geklärt.
+
+Gemäß dem verbindlichen Abbruchkriterium wurden deshalb:
+
+- keine Migration angewendet,
+- keine Migration History verändert,
+- keine Testdaten erstellt,
+- keine Grants, RLS-Policies oder Funktionen verändert,
+- keine Parallel- oder E2E-Tests gegen das neue Schema gestartet.
+
+Nächster sicherer Schritt: Im Supabase-Dashboard beziehungsweise über einen
+berechtigten Staging-Backup-Prozess einen aktuellen, tatsächlich
+wiederherstellbaren Restorepunkt bestätigen. Danach den unveränderten Preflight
+erneut ausführen und erst dann Migration 1 einzeln anwenden.
+
+## Ablauf
+
+1. Im Supabase-Dashboard einen aktuellen Wiederherstellungspunkt bestätigen und
+   Zeitpunkt sowie verantwortliche Person intern notieren.
+2. `supabase migration list` prüfen. Vor Beginn müssen alle Migrationen bis
+   `20260730002000` synchron sein; offen dürfen ausschließlich
+   `20260731001000` und `20260801001000` sein.
+3. SQL-Diff und Dry-Run erneut prüfen. Anschließend beide Migrationen in dieser
+   Reihenfolge ausschließlich auf Staging anwenden.
+4. Direkt danach Funktionen, `prosecdef`, `proconfig`, Grants, Tabellen-RLS,
+   Constraints, Indizes und Defaults per Katalogabfrage verifizieren.
+5. Ein isoliertes Testrestaurant, zwei Testkunden, einen Staff-Zugang und eine
+   eindeutige Testsession anlegen. Keine Zugangsdaten dokumentieren.
+6. `customer_initiated_only`, `restaurant_controlled_only` und `both` testen;
+   bei identischem Engine-Betrag müssen Basis-, Boost- und Endpunkte identisch sein.
+7. Rollback auslösen bei Tenant-Leak, doppelter Buchung, falschem Boost,
+   fehlerhaftem Bestands-Backfill, ungesichertem RPC oder inkonsistenter Balance.
+8. Während des Tests PostgREST-/RPC-Fehler, Lock-Wartezeiten, Rate-Limits und
+   Constraint-Verletzungen überwachen, ohne Token oder PIN zu protokollieren.
+9. Paralleltests mit demselben QR und Idempotenzschlüssel sowie mit zwei
+   unterschiedlichen Schlüsseln ausführen; exakt eine Gutschrift erwarten.
+10. Auditfolge für Einstellungen, Limitblock, PIN-Ablehnung, Punktebuchung,
+    Referral-Qualifizierung, Reward-Freischaltung und Gegenbuchung prüfen.
+
+## Sichere Deaktivierung und Rollback
+
+- Zuerst alle Testrestaurants auf `customer_initiated_only` zurücksetzen.
+- EXECUTE auf die drei öffentlichen restaurantgesteuerten RPCs entziehen.
+- Keine Punkte-, Referral- oder Audit-Historie löschen.
+- Neue Snapshot-Spalten nicht ungeprüft entfernen; sie sind nullable und
+  beeinträchtigen den Legacy-Flow nicht.
+- Funktionsdefinitionen nur über eine neue additive Rollback-Migration ersetzen.
+- Bereits gebuchte Punkte ausschließlich über die idempotente Gegenbuchung
+  korrigieren, nie per direktem Datenbank-Update.
+
+## Offene manuelle Gates
+
+- bestätigter, wiederherstellbarer Staging-Backup-/Restorepunkt
+- Docker/Podman für einen vollständigen lokalen `supabase db reset`
+- echter Staging-Datenbanklauf
+- physisches iPhone Safari und installierte PWA
+- Staff-Tablet-Kamera im Querformat und unter schlechtem Netz
+
+Status: **NOT READY**

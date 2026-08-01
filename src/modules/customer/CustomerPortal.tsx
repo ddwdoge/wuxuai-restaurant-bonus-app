@@ -40,15 +40,18 @@ import {
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
+  createCustomerPointsQr,
   createReferralLink,
   defaultBonusAmountTiers,
   loadCustomerPortalData,
+  loadPublicPointsCollectionMode,
   registerRestaurantGuest,
   type BonusPointCollectionResult,
   type GuestRegistrationResult,
   type PublicCustomerOfferView,
   type PublicLoyaltySettings,
   type PublicPortalCustomer,
+  type CustomerPointsQr,
 } from "../loyalty/loyaltyService";
 import {
   emitCustomerAccessDiagnostic,
@@ -247,6 +250,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [restaurantScannerOpen, setRestaurantScannerOpen] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
+  const [pointsQr, setPointsQr] = useState<CustomerPointsQr | null>(null);
+  const [pointsQrLoading, setPointsQrLoading] = useState(false);
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
@@ -328,6 +333,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
       }
       const data = portalResult.data;
+      const pointsCollectionMode = await loadPublicPointsCollectionMode(restaurantSlug).catch(() => "customer_initiated_only" as const);
+      data.settings.points_collection_mode = pointsCollectionMode;
       if (!cancelled) {
         setRestaurant(data.restaurant);
         setBranding(data.branding);
@@ -406,6 +413,26 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       cancelled = true;
     };
   }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken]);
+
+  const restaurantControlledEnabled = settings?.points_collection_mode === "restaurant_controlled_only"
+    || settings?.points_collection_mode === "both";
+  const refreshPersonalPointsQr = useCallback(async () => {
+    if (!activeToken || !restaurantSlug || !restaurantControlledEnabled) return;
+    setPointsQrLoading(true); setMessage(null);
+    try { setPointsQr(await createCustomerPointsQr(restaurantSlug, activeToken)); }
+    catch { setMessage("Dein Punkte-QR konnte gerade nicht erstellt werden."); }
+    finally { setPointsQrLoading(false); }
+  }, [activeToken, restaurantControlledEnabled, restaurantSlug]);
+
+  useEffect(() => {
+    if (accountSheet !== "qr" || !restaurantControlledEnabled || pointsQr || pointsQrLoading) return;
+    void refreshPersonalPointsQr();
+  }, [accountSheet, pointsQr, pointsQrLoading, refreshPersonalPointsQr, restaurantControlledEnabled]);
+
+  useEffect(() => {
+    if (!pointsQr || new Date(pointsQr.expires_at).getTime() > nowMs) return;
+    setPointsQr(null);
+  }, [nowMs, pointsQr]);
 
   useEffect(() => {
     if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
@@ -934,6 +961,10 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
   function handleCustomerViewChange(view: CustomerView) {
     if (view === "collect") {
+      if (settings?.points_collection_mode === "restaurant_controlled_only") {
+        setAccountSheet("qr");
+        return;
+      }
       const tokenQuery = activeToken ? `?token=${encodeURIComponent(activeToken)}` : "";
       window.location.assign(`/w/${restaurantSlug}${tokenQuery}`);
       return;
@@ -2069,9 +2100,21 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 ) : null}
                 {accountSheet === "qr" ? (
                   <div className="premium-account-qr">
-                    <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
-                    <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
-                    <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                    {restaurantControlledEnabled ? <>
+                      <p>Zeige diesen QR dem Team. Er gilt fünf Minuten und kann nur einmal für eine Punktebuchung verwendet werden.</p>
+                      {pointsQrLoading ? <LoadingState description="Punkte-QR wird erstellt." /> : null}
+                      {pointsQr ? <>
+                        <div className="premium-qr-frame"><QRCodeSVG value={JSON.stringify({ type: "wuxuai_points_credit", token: pointsQr.qr_token })} size={196} level="M" /></div>
+                        <StatusBadge><Clock3 aria-hidden="true" size={15} /> 5 Minuten gültig</StatusBadge>
+                        <p className="premium-manual-code">Ersatzcode: <strong>{pointsQr.manual_code.replace(/(\d{4})(\d{4})/, "$1 $2")}</strong></p>
+                        <SecondaryButton disabled={pointsQrLoading} onClick={() => void refreshPersonalPointsQr()}><QrCode aria-hidden="true" size={18} /> Neuen QR erstellen</SecondaryButton>
+                      </> : null}
+                    </> : <>
+                      <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
+                      <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
+                      <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                    </>}
+                    {settings?.points_collection_mode === "both" ? <a className="premium-button premium-button-secondary" href={`/w/${restaurantSlug}?token=${encodeURIComponent(activeToken ?? "")}`}>Stattdessen Restaurant-QR scannen</a> : null}
                   </div>
                 ) : null}
                 {accountSheet === "save" ? (

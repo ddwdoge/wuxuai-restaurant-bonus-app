@@ -31,14 +31,17 @@ import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel
 import { useAuth } from "../auth/AuthProvider";
 import {
   applyStaffLoyaltyAction,
+  confirmRestaurantControlledPoints,
   defaultSettingsForMode,
   loadTodayRestaurantPin,
   loadCustomers,
   loadLoyaltyRules,
   loadLoyaltySettings,
   resolveCustomerQrToken,
+  previewRestaurantControlledPoints,
   rulesForMode,
   type TodayRestaurantPin,
+  type RestaurantControlledPointsPreview,
 } from "../loyalty/loyaltyService";
 import {
   consumeRedemptionCode,
@@ -101,6 +104,17 @@ function extractCustomerToken(value: string) {
   }
 }
 
+function extractPointsCreditReference(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = JSON.parse(trimmed) as { type?: string; token?: string };
+    return parsed.type === "wuxuai_points_credit" && parsed.token ? parsed.token : null;
+  } catch {
+    return /^\d{8}$/.test(trimmed.replace(/\s/g, "")) ? trimmed.replace(/\s/g, "") : null;
+  }
+}
+
 export function StaffTablet() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
@@ -124,6 +138,9 @@ export function StaffTablet() {
   const [query, setQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [billAmount, setBillAmount] = useState(0);
+  const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
+  const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
+  const [receiptNumber, setReceiptNumber] = useState("");
   const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
   const [pinDraft, setPinDraft] = useState("");
@@ -317,6 +334,9 @@ export function StaffTablet() {
     [customers, query],
   );
   const calculatedPoints = Math.max(0, Math.floor(billAmount / settings.amount_per_point));
+  const restaurantControlledEnabled = settings.points_collection_mode === "restaurant_controlled_only"
+    || settings.points_collection_mode === "both";
+  const customerInitiatedStaffToolsEnabled = settings.points_collection_mode !== "restaurant_controlled_only";
   const stampRules = activeRules.filter((rule) => rule.stamps > 0);
   const unlockedRewards = staffRewards.filter((offer) => offer.status === "unlocked");
   const redemptionCode = redemptionDigits.join("");
@@ -402,6 +422,15 @@ export function StaffTablet() {
 
   async function findCustomerFromSearch(searchValue: string) {
     const nextQuery = searchValue.trim();
+    const pointsReference = extractPointsCreditReference(nextQuery);
+    if (pointsReference && restaurantId && restaurantControlledEnabled) {
+      setPointsQrReference(pointsReference);
+      setPointsPreview(null);
+      setBillAmount(0);
+      setView("earn");
+      setMessage("Kunden-QR erkannt. Gib jetzt den bonusberechtigten Betrag ein.");
+      return;
+    }
     const token = extractCustomerToken(nextQuery);
 
     if (token && restaurantId) {
@@ -439,6 +468,10 @@ export function StaffTablet() {
   }
 
   async function startQrScanner() {
+    if (!restaurantControlledEnabled) {
+      setMessage("Der Kunden-QR-Scanner ist für dieses Restaurant nicht aktiviert.");
+      return;
+    }
     setView("search");
     setScannerOpen(true);
     setScannerStarting(true);
@@ -579,6 +612,36 @@ export function StaffTablet() {
         replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
         setBillAmount(0);
         setMessage("Vorgang gespeichert und protokolliert.");
+      },
+    });
+  }
+
+  async function handleRestaurantControlledPreview() {
+    if (!restaurantId || !pointsQrReference) return;
+    const amountCents = Math.round(billAmount * 100);
+    setSaving(true); setMessage(null);
+    try {
+      setPointsPreview(await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents));
+    } catch (error) {
+      setPointsPreview(null);
+      setMessage(error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.");
+    } finally { setSaving(false); }
+  }
+
+  function confirmRestaurantControlledPreview() {
+    if (!restaurantId || !pointsQrReference || !pointsPreview) return;
+    const idempotencyKey = crypto.randomUUID();
+    requestPin({
+      title: "Punkte gutschreiben",
+      detail: `${pointsPreview.customer_label} · ${pointsPreview.expected_points} Punkte`,
+      pinLabel: "Tages-PIN",
+      pinHelp: "Bestätige den tatsächlich direkt im Restaurant bezahlten Betrag.",
+      run: async (dailyPin) => {
+        const result = await confirmRestaurantControlledPoints({ restaurantId, qrReference: pointsQrReference,
+          amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey, receiptNumber });
+        setPointsQrReference(null); setPointsPreview(null); setReceiptNumber(""); setBillAmount(0);
+        setMessage(`${result.points_added} Punkte wurden gutgeschrieben.`);
+        setView("home");
       },
     });
   }
@@ -841,9 +904,9 @@ export function StaffTablet() {
             <section className="staff-premium-quick-section" aria-labelledby="staff-quick-title">
               <div className="staff-premium-section-heading"><div><span className="staff-premium-kicker">Weitere Aufgaben</span><h2 id="staff-quick-title">Schnell starten</h2></div></div>
               <div className="staff-premium-quick-grid">
-                <button onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={22} /><span><strong>QR scannen</strong><small>Kamera öffnen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                {restaurantControlledEnabled ? <button onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={22} /><span><strong>Kunden-QR scannen</strong><small>Punkte sicher gutschreiben</small></span><ChevronRight aria-hidden="true" size={18} /></button> : null}
                 <button onClick={() => openStaffView("search")} type="button"><UserSearch aria-hidden="true" size={22} /><span><strong>Gast suchen</strong><small>Name oder Code</small></span><ChevronRight aria-hidden="true" size={18} /></button>
-                <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                {customerInitiatedStaffToolsEnabled ? <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button> : null}
               </div>
             </section>
           </>
@@ -963,8 +1026,22 @@ export function StaffTablet() {
 
       {view === "earn" ? (
         <section className="card" style={{ marginTop: 16 }}>
-          <h2>Punkte/Stempel geben</h2>
-          {settings.loyalty_mode === "amount_based" ? (
+          <h2>{pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
+          {pointsQrReference ? <div className="restaurant-controlled-credit">
+            <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
+            <div className="grid two">
+              <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
+              <div className="field"><FormLabel htmlFor="controlled-receipt" optional>Bonnummer</FormLabel><input className="input" id="controlled-receipt" onChange={(event) => setReceiptNumber(event.target.value)} value={receiptNumber} /></div>
+            </div>
+            {!pointsPreview ? <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
+              <span>{pointsPreview.customer_label} · aktuell {pointsPreview.points_balance} Punkte</span>
+              <strong>+{pointsPreview.expected_points} Punkte</strong>
+              {pointsPreview.boost_multiplier > 1 ? <p className="muted">{pointsPreview.base_points} Basispunkte · {pointsPreview.boost_multiplier}× Freundschaftsbonus</p> : null}
+              {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte Rechnung und Bonnummer sorgfältig prüfen.</p> : null}
+              <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
+            </div>}
+          </div> : null}
+          {!pointsQrReference && settings.loyalty_mode === "amount_based" ? (
             <div className="grid two">
               <div className="field">
                 <FormLabel htmlFor="bill-amount" required>Rechnungsbetrag</FormLabel>
@@ -1004,7 +1081,7 @@ export function StaffTablet() {
             </div>
           ) : null}
 
-          {settings.loyalty_mode === "stamp_based" ? (
+          {!pointsQrReference && settings.loyalty_mode === "stamp_based" ? (
             <div className="grid two">
               <div className="field">
                 <FormLabel htmlFor="stamp-rule" required>Stempel-Regel</FormLabel>
@@ -1046,7 +1123,7 @@ export function StaffTablet() {
             </div>
           ) : null}
 
-          {settings.loyalty_mode === "menu_points" ? (
+          {!pointsQrReference && settings.loyalty_mode === "menu_points" ? (
             <div className="tablet-actions" style={{ marginTop: 16 }}>
               {activeRules.map((rule) => (
                 <button

@@ -12,6 +12,7 @@ export type RestaurantUserRole = "owner" | "admin" | "manager" | "staff" | "supe
 export type UserRole = RestaurantUserRole | PlatformRole;
 
 export type LoyaltyMode = "amount_based" | "stamp_based" | "menu_points";
+export type PointsCollectionMode = "restaurant_controlled_only" | "customer_initiated_only" | "both";
 export type RewardType = "reward" | "coupon";
 
 export type Restaurant = {
@@ -117,6 +118,8 @@ export type LoyaltySettings = {
   referral_boost_enabled?: boolean;
   referral_boost_multiplier?: number;
   referral_boost_duration_days?: number;
+  points_collection_mode?: PointsCollectionMode;
+  points_collection_max_amount_cents?: number;
   active: boolean;
   created_at: string;
 };

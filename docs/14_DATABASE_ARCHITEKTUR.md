@@ -3,6 +3,16 @@
 
 # WUXUAI Bonus V1 – Datenbank-Architektur
 
+## Restaurantgesteuerte Punktevergabe
+
+`loyalty_settings.points_collection_mode` trennt die drei erlaubten Modi. Kurzlebige Referenzen liegen mit Token- und Ersatzcode-Hash in `customer_points_qr_references`; direkte Tabellenrechte sind entzogen und RLS bleibt aktiv. `points_transactions` speichert Centbetrag, Regelversion, angewendete Rate, Quelle, Staff-Kontext und optionale Bonnummer.
+
+Seit 2026-08-01 speichert jede neue Punktebuchung zusätzlich `base_points`,
+`boost_multiplier`, `boost_source`, `boost_expires_at` und
+`bonus_rule_version`. `calculate_points_award_v1` ist die gemeinsame lesende
+Engine, `award_points_v1` die gemeinsame atomare Schreibfunktion. Beide sind
+interne `SECURITY DEFINER`-Funktionen ohne Ausführungsrecht für Browserrollen.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt die verbindliche Datenbank-Architektur von WUXUAI Bonus V1.

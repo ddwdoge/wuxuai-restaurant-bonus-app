@@ -3,6 +3,21 @@
 
 # WUXUAI Bonus V1 – Flow 04: Punkte sammeln
 
+## Gemeinsame Punkteberechnung seit 2026-08-01
+
+Kundeninitiierte und restaurantgesteuerte Buchungen verwenden ausschließlich
+`calculate_points_award_v1` und `award_points_v1`. Bei identischem Restaurant,
+Gast, Betrag und Buchungszeitpunkt sind Basispunkte, aktiver Boost,
+Rundungsregel und Endpunkte identisch. Preview ist unverbindlich und verändert
+weder Referral-Status noch Willkommensgeschenke. Die Confirmation berechnet
+unter Sperre erneut und speichert den vollständigen Regelsnapshot.
+
+## Verbindliche Modusentscheidung (31.07.2026)
+
+Frühere Festlegungen auf ausschließlich kundeninitiierte Bonstufen sind **partially superseded**. Restaurants wählen serverseitig zwischen `restaurant_controlled_only`, `customer_initiated_only` und `both`. Bestandsrestaurants bleiben zunächst kundeninitiiert; neue Restaurants starten restaurantgesteuert.
+
+Im restaurantgesteuerten Ablauf zeigt der Gast einen fünf Minuten gültigen, einmalig verwendbaren persönlichen QR. Das Team scannt ihn, erfasst den direkt im Restaurant bezahlten bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Betrag, Rate und Punkte werden serverseitig geprüft und atomar gebucht. Trinkgeld, Gutscheinkäufe und externe Lieferplattformen sind ausgeschlossen.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt den vollständigen Flow 04 des WUXUAI Bonus Systems.

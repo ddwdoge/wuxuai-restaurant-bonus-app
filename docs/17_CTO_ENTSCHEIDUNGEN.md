@@ -3,6 +3,22 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-01 – Eine Punkte-Engine für beide Sammelmodi
+
+- `customer_initiated` und `restaurant_controlled` dürfen nur unterschiedliche
+  Quellen, nicht unterschiedliche Punkteergebnisse erzeugen.
+- Der höchste aktuell aktive restaurantgebundene Boost wird genau einmal auf
+  gerundete Basispunkte angewendet.
+- Referral-Erstqualifizierung folgt erst nach einer erfolgreichen positiven
+  Buchung und wird durch Preview, Fehler, Retry oder Storno nicht erneut ausgelöst.
+- Interne Engine-RPCs bleiben für `public`, `anon` und `authenticated` gesperrt.
+
+## 31.07.2026 – Zwei Punkte-Sammel-Modi
+
+Die bisherige FIX-Entscheidung für einen ausschließlich kundeninitiierten Restaurant-QR ist **partially superseded**. Owner wählen restaurantgesteuert, kundeninitiiert oder beide. Neue Restaurants starten restaurantgesteuert, Bestandsrestaurants bleiben zunächst kundeninitiiert. Die Tages-PIN bleibt unverändert; es wird keine persönliche Mitarbeiter-PIN eingeführt.
+
+Restaurantgesteuerte QR-Referenzen sind opaque, fünf Minuten gültig, serverseitig nur gehasht gespeichert und nach erfolgreicher Gutschrift atomar verbraucht. Standardlimit sind 300 EUR, technisch und konfigurierbar maximal 1.000 EUR.
+
 Status: **LOCK**
 
 Dieses Dokument sammelt die wichtigsten CTO-Entscheidungen des WUXUAI Bonus Projekts.

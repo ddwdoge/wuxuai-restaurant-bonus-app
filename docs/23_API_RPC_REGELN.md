@@ -3,6 +3,17 @@
 
 # WUXUAI Bonus V1 – API- und RPC-Regeln
 
+## Restaurantgesteuerte Punkte-RPCs
+
+Erzeugung, Vorschau und Bestätigung sind getrennte RPCs. Alle `SECURITY DEFINER`-Funktionen besitzen einen festen `search_path`, prüfen Tenant und Rolle serverseitig und geben weder PIN noch Kundenzugang zurück. Die Bestätigung sperrt die QR-Zeile mit `FOR UPDATE`; ein restaurantgebundener Idempotency-Key verhindert Doppelbuchungen.
+
+Die öffentlichen Einstiegspunkte dürfen keine eigene Formel enthalten. Preview,
+Customer-Confirmation und Staff-Confirmation verwenden die interne Funktion
+`calculate_points_award_v1`; erfolgreiche Buchungen laufen über
+`award_points_v1`. Vor der finalen Berechnung wird derselbe kundenbezogene
+Advisory Lock verwendet wie bei Referral-Boost-Änderungen. Legacy-Signaturen
+von `collect_bonus_points` sind für Browserrollen entzogen.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt die verbindlichen API- und RPC-Regeln für WUXUAI Bonus V1.

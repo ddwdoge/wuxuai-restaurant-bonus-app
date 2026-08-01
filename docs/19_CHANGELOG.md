@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-01 – Gemeinsame serverseitige Punkte-Engine
+
+- Customer- und restaurantgesteuerte Buchungen auf eine gemeinsame Berechnung umgestellt.
+- Aktiven Referral-Boost einschließlich Snapshot und Ablauf serverseitig integriert.
+- Erstbuchungsqualifizierung atomar und genau einmal nach erfolgreicher Buchung umgesetzt.
+- Preview bleibt zustandslos; Confirmation rechnet unter Lock erneut.
+- Legacy-Direktfunktionen für Browserrollen gesperrt und Parallel-Retry nach QR-Lock abgesichert.
+
+## 2026-07-31 – Owner-konfigurierbare Punkte-Sammel-Modi
+
+- Kurzlebigen Single-Use-Kunden-QR und atomare restaurantgesteuerte Punktebuchung ergänzt.
+- Bestandsrestaurants rückwärtskompatibel auf den bisherigen Sammelweg gesetzt.
+- Owner-Einstellung für Modus und Maximalbetrag ergänzt.
+
 ## 2026-07-30 – Ungültige Supabase-Refresh-Tokens kontrolliert bereinigen
 
 - Strukturierte Fehler für fehlende, bereits verwendete, widerrufene,

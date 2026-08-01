@@ -437,6 +437,9 @@
   display: grid;
   gap: 10px;
 }
+.restaurant-controlled-credit { display: grid; gap: 16px; min-width: 0; }
+.restaurant-controlled-credit .settings-info-card { display: grid; gap: 10px; }
+.restaurant-controlled-credit .settings-info-card > strong { color: #956820; font-size: 28px; }
 
 .staff-premium-quick-grid button,
 .staff-premium-more-menu section > button {

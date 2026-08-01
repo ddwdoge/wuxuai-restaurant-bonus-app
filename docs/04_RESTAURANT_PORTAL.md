@@ -1,5 +1,9 @@
 # 04_RESTAURANT_PORTAL.md
 
+## Punkte sammeln konfigurieren
+
+Unter Bonusprogramm legt der Owner den erlaubten Sammelweg und den Maximalbetrag pro Buchung fest. Änderungen sind tenantgebunden und auditpflichtig. Der Standard für neue Restaurants ist „Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
+
 # WUXUAI Bonus V1 -- Restaurant Portal
 
 Status: **LOCK**

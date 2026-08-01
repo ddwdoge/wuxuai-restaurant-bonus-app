@@ -170,6 +170,15 @@ Einladender Gast erhält Bonus Boost
 Eingeladener Gast erhält Bonus Boost
 ```
 
+### 5.1 Verbindliche Erstbuchungsdefinition
+
+Die Referral-Qualifizierung erfolgt bei der ersten erfolgreichen positiven
+`earn`-Transaktion der Restaurant-Membership. Historische oder migrierte
+positive Buchungen zählen mit. Preview, abgelehnte Buchungen und
+Idempotenzwiederholungen zählen nicht. Eine spätere Gegenbuchung reaktiviert die
+Qualifizierung nicht. Prüfung, Referral-Aktivierung und Boost-Erzeugung erfolgen
+atomar mit kundenbezogenem Advisory Lock.
+
 ### Warum?
 
 Registrierung allein erzeugt noch keinen Umsatz.

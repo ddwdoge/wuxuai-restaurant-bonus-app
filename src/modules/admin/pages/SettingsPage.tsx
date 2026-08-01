@@ -12,18 +12,20 @@ import {
   Scale,
   Palette,
   QrCode,
+  ScanLine,
   Save,
   ShoppingBag,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
-import type { BranchSubscription, Restaurant } from "../../../shared/types/domain";
+import type { BranchSubscription, PointsCollectionMode, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
 import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { loadLoyaltySettings, updatePointsCollectionSettings } from "../../loyalty/loyaltyService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -230,6 +232,8 @@ export function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+  const [pointsCollectionMode, setPointsCollectionMode] = useState<PointsCollectionMode>("customer_initiated_only");
+  const [pointsCollectionLimit, setPointsCollectionLimit] = useState("300");
 
   useEffect(() => {
     let cancelled = false;
@@ -271,6 +275,9 @@ export function SettingsPage() {
           ownerPhone: nextDetails.owner_phone ?? "",
         });
         setOpeningHours(normalizeOpeningHours(nextDetails.opening_hours));
+        const collectionSettings = await loadLoyaltySettings(nextDetails.id);
+        setPointsCollectionMode(collectionSettings.points_collection_mode ?? "customer_initiated_only");
+        setPointsCollectionLimit(String((collectionSettings.points_collection_max_amount_cents ?? 30000) / 100));
 
         if (supabase) {
           const { data: locationData, error: locationError } = await supabase
@@ -367,6 +374,23 @@ export function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function savePointsCollection(event: FormEvent) {
+    event.preventDefault();
+    if (!details?.id) return;
+    const maxAmountCents = Math.round(Number(pointsCollectionLimit) * 100);
+    if (!Number.isInteger(maxAmountCents) || maxAmountCents < 100 || maxAmountCents > 100000) {
+      setErrorMessage("Bitte wähle einen Maximalbetrag zwischen 1 und 1.000 Euro.");
+      return;
+    }
+    setSaving(true); setStatus(null); setErrorMessage(null);
+    try {
+      await updatePointsCollectionSettings({ restaurantId: details.id, mode: pointsCollectionMode, maxAmountCents });
+      setStatus("Punktevergabe gespeichert.");
+    } catch {
+      setErrorMessage("Punktevergabe konnte nicht gespeichert werden.");
+    } finally { setSaving(false); }
   }
 
   async function saveOpeningHours(event: FormEvent) {
@@ -790,6 +814,13 @@ export function SettingsPage() {
         <SettingsHeader title="Bonusprogramm" description="Verwalte die echten Bereiche deines Bonusprogramms." />
         <section className="grid two">
           <SettingsLinkCard
+            description="Lege fest, ob dein Team den Kunden-QR scannt oder Gäste den Vorgang starten."
+            icon={ScanLine}
+            label="Punktevergabe einstellen"
+            title="Punkte sammeln"
+            to="/admin/settings/punkte-sammeln"
+          />
+          <SettingsLinkCard
             description="Lege Produkte fest, die Gäste mit Punkten einlösen können."
             icon={ShoppingBag}
             label="Punkteeinlösung verwalten"
@@ -813,6 +844,39 @@ export function SettingsPage() {
         </section>
       </>
     );
+  }
+
+  if (section === "punkte-sammeln") {
+    const options: Array<{ value: PointsCollectionMode; title: string; description: string; recommended?: boolean }> = [
+      { value: "restaurant_controlled_only", title: "Restaurant scannt Kunden-QR", description: "Das Restaurant kontrolliert den Vorgang. Der Gast zeigt nur seinen persönlichen Bonus-QR.", recommended: true },
+      { value: "customer_initiated_only", title: "Gast scannt Restaurant-QR", description: "Der Gast startet den Sammelvorgang. Das Restaurant bestätigt anschließend." },
+      { value: "both", title: "Beide Möglichkeiten", description: "Je nach Situation können beide Abläufe verwendet werden." },
+    ];
+    return <>
+      <SettingsHeader title="Punkte sammeln" description="Lege fest, wie Gäste in deinem Restaurant Punkte sammeln." />
+      <section className="card settings-detail-card">
+        <form className="form" onSubmit={savePointsCollection}>
+          <fieldset className="points-mode-fieldset">
+            <legend>Wie können Gäste Punkte sammeln?</legend>
+            <div className="choice-grid points-mode-grid">
+              {options.map((option) => <label className={`choice-card${pointsCollectionMode === option.value ? " active" : ""}`} key={option.value}>
+                <input checked={pointsCollectionMode === option.value} name="points-mode" onChange={() => setPointsCollectionMode(option.value)} type="radio" />
+                <span><strong>{option.title}</strong>{option.recommended ? <small>Empfohlen</small> : null}</span>
+                <small>{option.description}</small>
+              </label>)}
+            </div>
+          </fieldset>
+          <div className="field">
+            <FormLabel htmlFor="points-collection-limit" required>Maximal bonusberechtigter Betrag pro Buchung</FormLabel>
+            <div className="points-limit-input"><input aria-required="true" className="input" id="points-collection-limit" inputMode="decimal" max="1000" min="1" onChange={(event) => setPointsCollectionLimit(event.target.value)} required step="1" type="number" value={pointsCollectionLimit} /><span>EUR</span></div>
+            <p className="muted">Standard 300 EUR. Erlaubt sind 1 bis 1.000 EUR. Höhere Beträge werden serverseitig abgelehnt.</p>
+          </div>
+          <div className="settings-info-card"><strong>Nicht bonusberechtigt</strong><p className="muted">Trinkgeld, Gutscheinkäufe und Bestellungen über externe Lieferplattformen zählen nicht zum bonusberechtigten Betrag.</p></div>
+          <FormActions saving={saving} submitLabel="Punktevergabe speichern" />
+        </form>
+      </section>
+      <StatusMessages errorMessage={errorMessage} status={status} />
+    </>;
   }
 
   if (section === "konto-testphase") {

@@ -1,5 +1,5 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
-import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, Restaurant, RestaurantBranding } from "../../shared/types/domain";
+import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, PointsCollectionMode, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { normalizeCustomerPhone } from "../customer/customerIdentity.mjs";
 import {
   CustomerAccessError,
@@ -21,7 +21,7 @@ export const menuPointPresets = [
 ];
 
 const loyaltySettingsSelect =
-  "id, restaurant_id, loyalty_mode, amount_per_point, redemption_return_rate, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at";
+  "id, restaurant_id, loyalty_mode, amount_per_point, redemption_return_rate, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, points_collection_mode, points_collection_max_amount_cents, active, created_at";
 
 const legacyLoyaltySettingsSelect =
   "id, restaurant_id, loyalty_mode, amount_per_point, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at";
@@ -30,13 +30,15 @@ function normalizeLoyaltySettings(settings: LoyaltySettings): LoyaltySettings {
   return {
     ...settings,
     redemption_return_rate: Number(settings.redemption_return_rate) || 0.03,
+    points_collection_mode: settings.points_collection_mode ?? "customer_initiated_only",
+    points_collection_max_amount_cents: Number(settings.points_collection_max_amount_cents) || 30000,
   };
 }
 
 function isMissingRedemptionReturnRate(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };
-  return maybeError.code === "42703" || /redemption_return_rate/i.test(maybeError.message ?? "");
+  return maybeError.code === "42703" || /redemption_return_rate|points_collection_/i.test(maybeError.message ?? "");
 }
 
 export type LoyaltyRuleInput = {
@@ -84,6 +86,8 @@ export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode):
     referral_boost_enabled: true,
     referral_boost_multiplier: 2,
     referral_boost_duration_days: 30,
+    points_collection_mode: "restaurant_controlled_only",
+    points_collection_max_amount_cents: 30000,
     active: true,
     created_at: new Date().toISOString(),
   };
@@ -313,6 +317,23 @@ export type PublicLoyaltySettings = Pick<LoyaltySettings, "loyalty_mode" | "amou
   referral_boost_enabled?: boolean;
   referral_boost_multiplier?: number;
   referral_boost_duration_days?: number;
+  points_collection_mode?: PointsCollectionMode;
+};
+
+export type CustomerPointsQr = { qr_token: string; manual_code: string; expires_at: string };
+export type RestaurantControlledPointsPreview = {
+  customer_label: string; points_balance: number; last_visit_at: string | null;
+  amount_cents: number; expected_points: number; high_amount_warning: boolean; expires_at: string;
+  base_points: number; boost_multiplier: number; final_points: number;
+  bonus_rule_version: string; boost_source?: string | null; boost_expires_at?: string | null;
+  success?: boolean; error_code?: string; error_message?: string;
+};
+export type RestaurantControlledPointsResult = {
+  transaction_id: string; points_added: number; points_balance: number;
+  amount_cents: number; already_completed: boolean; success?: boolean;
+  base_points: number; boost_multiplier: number; final_points: number;
+  bonus_rule_version: string; boost_source?: string | null; boost_expires_at?: string | null;
+  error_code?: string; error_message?: string;
 };
 
 export type PublicPortalCustomer = Pick<
@@ -787,6 +808,59 @@ export async function resolveCustomerQrToken(restaurantId: string, customerToken
 
   if (error) throw error;
   return data as StaffQrCustomer;
+}
+
+export async function loadPublicPointsCollectionMode(restaurantSlug: string): Promise<PointsCollectionMode> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("get_public_points_collection_mode", { input_restaurant_slug: restaurantSlug });
+  if (error) throw error;
+  return (data ?? "customer_initiated_only") as PointsCollectionMode;
+}
+
+export async function updatePointsCollectionSettings(input: { restaurantId: string; mode: PointsCollectionMode; maxAmountCents: number }) {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("update_points_collection_settings", {
+    input_restaurant_id: input.restaurantId, input_mode: input.mode,
+    input_max_amount_cents: input.maxAmountCents,
+  });
+  if (error) throw error;
+  return data as { points_collection_mode: PointsCollectionMode; points_collection_max_amount_cents: number };
+}
+
+export async function createCustomerPointsQr(restaurantSlug: string, customerToken: string): Promise<CustomerPointsQr> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("create_customer_points_credit_qr", {
+    input_restaurant_slug: restaurantSlug, input_customer_token: customerToken,
+  });
+  if (error) throw error;
+  return data as CustomerPointsQr;
+}
+
+export async function previewRestaurantControlledPoints(restaurantId: string, qrReference: string, amountCents: number): Promise<RestaurantControlledPointsPreview> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("preview_restaurant_controlled_points", {
+    input_restaurant_id: restaurantId, input_qr_reference: qrReference, input_amount_cents: amountCents,
+  });
+  if (error) throw error;
+  const result = data as RestaurantControlledPointsPreview;
+  if (result.success === false) throw new Error(result.error_message ?? "Punkte konnten nicht berechnet werden.");
+  return result;
+}
+
+export async function confirmRestaurantControlledPoints(input: {
+  restaurantId: string; qrReference: string; amountCents: number; dailyPin: string;
+  idempotencyKey: string; receiptNumber?: string | null;
+}): Promise<RestaurantControlledPointsResult> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("confirm_restaurant_controlled_points", {
+    input_restaurant_id: input.restaurantId, input_qr_reference: input.qrReference,
+    input_amount_cents: input.amountCents, input_daily_pin: input.dailyPin,
+    input_idempotency_key: input.idempotencyKey, input_receipt_number: input.receiptNumber ?? null,
+  });
+  if (error) throw error;
+  const result = data as RestaurantControlledPointsResult;
+  if (result.success === false) throw new Error(result.error_message ?? "Punkte konnten nicht gebucht werden.");
+  return result;
 }
 
 export async function collectBonusPoints(input: BonusPointCollectionInput): Promise<BonusPointCollectionResult> {
