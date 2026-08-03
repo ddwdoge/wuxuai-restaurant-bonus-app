@@ -1,5 +1,16 @@
 # 04_RESTAURANT_PORTAL.md
 
+## Dynamischer Dashboard-Schritt
+
+Das Dashboard zeigt oberhalb der Kennzahlen maximal einen priorisierten
+`Nächster Schritt`-Hinweis. Echte Legal- oder Systemblocker haben Vorrang vor
+Einrichtungsaufgaben; danach folgen Punkte-Einlösung, Punktevergabe,
+Willkommensgeschenk und QR-Bereitschaft. Optionale Optimierungen dürfen
+benutzer- und restaurantbezogen geschlossen werden. Die einmalige
+Startklar-Meldung wird persistent als gesehen gespeichert. Wenn keine relevante
+Aufgabe vorhanden ist, wird kein Hinweiscontainer gerendert und die KPIs folgen
+direkt auf die Dashboard-Überschrift.
+
 ## Punkte sammeln konfigurieren
 
 Unter Bonusprogramm legt der Owner den erlaubten Sammelweg und den Maximalbetrag pro Buchung fest. Änderungen sind tenantgebunden und auditpflichtig. Der Standard für neue Restaurants ist „Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
@@ -102,9 +113,10 @@ V1 Navigation:
 2.  Gäste
 3.  Punkteeinlösung
 4.  Willkommensgeschenke
-5.  QR Center
-6.  Mitarbeiter
-7.  Einstellungen
+5.  Aktuelles & Angebote
+6.  QR Center
+7.  Mitarbeiter
+8.  Einstellungen
 
 ### 4.1 Sitzung beenden
 
@@ -117,7 +129,8 @@ beenden.
 - Geschützte Restaurant-Routen führen danach zum Restaurant-Login.
 - Eine bereits abgelaufene Sitzung verhindert die lokale Abmeldung nicht.
 
-Das Modul **Aktionen** existiert in V1 nicht.
+Das generische Modul **Aktionen** existiert in V1 nicht. Das davon fachlich
+getrennte Informationsmodul **Aktuelles & Angebote** ist Bestandteil von V1.
 
 ### 4.2 Warum Aktionen entfernt wurden
 
@@ -131,7 +144,36 @@ Diese Unklarheit widerspricht der WUXUAI-Philosophie.
 
 Alle relevanten Mechanismen gehören in eindeutige Bereiche: -
 Punkteprodukte → Punkteeinlösung - Anmeldungsgeschenke →
-Willkommensgeschenke - Empfehlungen → Bonus Boost - Druck/QR → QR Center
+Willkommensgeschenke - Restaurantinformationen → Aktuelles & Angebote -
+Empfehlungen → Bonus Boost - Druck/QR → QR Center
+
+### 4.3 Aktuelles & Angebote
+
+Owner und berechtigte Restaurant-Administratoren dürfen höchstens fünf Beiträge
+gleichzeitig veröffentlichen. Zulässig sind Wochenangebot, Monatsangebot,
+Mittagsmenü, neues Gericht, Saisonangebot, Veranstaltung und allgemeine
+Neuigkeit.
+
+Das Modul ist eine reine Informationsfläche. Es hat keine Pflichtbeziehung zu
+Rewards, Coupons oder historischen Campaign-Tabellen und darf keine Punkte,
+Geschenke, Codes, Einlösungen oder Marketingnachrichten erzeugen. Mitarbeiter
+dürfen Beiträge weder erstellen noch veröffentlichen oder löschen.
+
+Ein Beitrag darf Titel, Bild, Kurz- und Langbeschreibung, Angebotsart,
+optionalen aktuellen und vorherigen Preis, Gültigkeitszeitraum, optionale
+Wochentage und Uhrzeiten sowie den V1-Restaurantstandort enthalten. Der
+Arbeitsablauf umfasst Entwurf, geplante Veröffentlichung, Veröffentlichung,
+automatische öffentliche Ausblendung nach Ablauf und Deaktivierung.
+
+Das Modul schafft einen direkten Restaurantnutzen: Bestehende Bonusgäste können
+beim Öffnen des Kundenportals auf aktuelle Informationen aufmerksam werden.
+Eine konkrete Umsatzsteigerung oder Rückkehrquote wird nicht versprochen.
+
+Im Owner-Bereich muss folgender Hinweis sichtbar sein:
+
+> Das Restaurant ist für die Richtigkeit, Aktualität, Verfügbarkeit und
+> rechtliche Zulässigkeit seiner Angebots-, Preis-, Produkt- und Bildangaben
+> verantwortlich.
 
 ------------------------------------------------------------------------
 
@@ -163,9 +205,11 @@ Diagramme - leere Teamkarten - Debug-Daten - Entwicklerbegriffe
 
 ### 5.4 Hauptaktion
 
-Der Button **„Neue Aktion starten"** wird entfernt.
+Der Button **„Neue Aktion starten"** bleibt entfernt.
 
-Grund: Aktionen existieren nicht in V1.
+Grund: Generische Aktionen und Kampagnen existieren nicht in V1. Der klar
+benannte Arbeitsbereich `Aktuelles & Angebote` besitzt ausschließlich auf seiner
+eigenen Seite die Hauptaktion `Neues Angebot erstellen`.
 
 Das Dashboard besitzt keinen künstlichen Hauptbutton, wenn dieser nicht
 klar zum aktuellen Produktziel gehört.
@@ -600,7 +644,10 @@ an einer anderen Position derselben Seite erscheinen.
 
 ## 14. Was ausdrücklich verboten ist
 
--   Aktionen in V1 wieder einführen
+-   generische Aktionen, Coupons oder Kampagnen in V1 wieder einführen
+-   `Aktuelles & Angebote` mit Rewards, Punkten, Geschenken oder Einlösungen verbinden
+-   mehr als fünf Beiträge je Restaurant gleichzeitig veröffentlichen
+-   Push, Segmentierung, Marketingautomation oder Umsatzattribution ergänzen
 -   Dashboard mit technischen Warnungen überladen
 -   Restaurantbesitzer Punkte berechnen lassen
 -   Willkommensgeschenke mit Punkteeinlösungen vermischen
@@ -626,7 +673,8 @@ Tarife - weitere Branchen neben Restaurants/Cafés
 Restaurant Portal gilt als LOCK, wenn:
 
 -   Dashboard in 5 Sekunden verständlich ist
--   Aktionen vollständig aus UI entfernt sind
+-   generische Aktionen vollständig aus der UI entfernt sind
+-   `Aktuelles & Angebote` strikt informativ und von Rewards getrennt bleibt
 -   Punkteeinlösungen ohne manuelle Punkte funktionieren
 -   Willkommensgeschenke eigenständig sind
 -   QR Center klar vom Onboarding getrennt ist
@@ -674,3 +722,11 @@ standardmäßig ausgeschlossen; alle Zeiträume werden serverseitig nach
 
 Historische Einlösungsdaten werden niemals aus später geänderten Rewardwerten
 rekonstruiert. Fehlende Altdaten müssen sichtbar gekennzeichnet bleiben.
+
+## Punkte-Präsentationsfenster
+
+Normale Punktebelohnungen werden vom Kunden selbst verbindlich aktiviert. Das
+Restaurantpersonal kontrolliert den 15 Minuten aktiven Bildschirm nur visuell.
+Owner können eine fehlerhafte Aktivierung im Bonus-Aktivitätsbericht mit einer
+Begründung stornieren; Punkte, Journalstatus und Audit werden dabei atomar
+korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.

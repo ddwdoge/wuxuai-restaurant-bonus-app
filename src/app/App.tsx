@@ -39,6 +39,9 @@ const RewardsPage = lazy(() =>
 const WelcomeGiftsPage = lazy(() =>
   import("../modules/admin/pages/WelcomeGiftsPage").then((module) => ({ default: module.WelcomeGiftsPage })),
 );
+const RestaurantOffersPage = lazy(() =>
+  import("../modules/admin/pages/RestaurantOffersPage").then((module) => ({ default: module.RestaurantOffersPage })),
+);
 const StaffPage = lazy(() =>
   import("../modules/admin/pages/StaffPage").then((module) => ({ default: module.StaffPage })),
 );
@@ -60,6 +63,9 @@ const CustomerPortal = lazy(() =>
 );
 const PartnerRestaurantFinderPage = lazy(() =>
   import("../modules/customer/PartnerRestaurantFinderPage").then((module) => ({ default: module.PartnerRestaurantFinderPage })),
+);
+const CustomerOffersPage = lazy(() =>
+  import("../modules/customer/CustomerOffersPage").then((module) => ({ default: module.CustomerOffersPage })),
 );
 const LegalCenterPage = lazy(() =>
   import("../modules/legal/LegalCenterPage").then((module) => ({ default: module.LegalCenterPage })),
@@ -178,6 +184,7 @@ export function App() {
         <Route path="rewards" element={withFallback(<RewardsPage />, <AdminLoading />)} />
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
+        <Route path="offers" element={withFallback(<RestaurantOffersPage />, <AdminLoading />)} />
         <Route path="reports" element={withFallback(<BonusActivityReportsPage />, <AdminLoading />)} />
         <Route path="legal" element={withFallback(<OwnerLegalErrorBoundary><OwnerLegalSettingsPage /></OwnerLegalErrorBoundary>, <AdminLoading />)} />
       </Route>
@@ -287,6 +294,7 @@ export function App() {
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
       <Route path="/customer" element={<GuestBonusInfoPage />} />
       <Route path="/customer/restaurants" element={withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)} />
+      <Route path="/customer/offers" element={withFallback(<CustomerOffersPage />, <CustomerLoading />)} />
       <Route path="/legal/:slug" element={withFallback(<LegalCenterPage />, <CustomerLoading />)} />
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />

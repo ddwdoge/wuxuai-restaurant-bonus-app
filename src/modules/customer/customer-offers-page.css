@@ -1,0 +1,9 @@
+.customer-offers-shell { background: #f7f1e7; min-height: 100dvh; }
+.customer-offers-page { box-sizing: border-box; margin: 0 auto; max-width: 1180px; padding: 24px 20px 48px; width: 100%; }
+.customer-offers-header { align-items: flex-start; display: flex; gap: 14px; margin-bottom: 24px; }
+.customer-offers-header > a { align-items: center; background: #fff; border: 1px solid #e4dac9; border-radius: 50%; color: #30291f; display: inline-flex; flex: 0 0 44px; height: 44px; justify-content: center; }
+.customer-offers-header span { color: #9a731d; font-size: .76rem; font-weight: 800; text-transform: uppercase; }
+.customer-offers-header h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: 0; margin: 2px 0 5px; }
+.customer-offers-header p { color: #675f54; margin: 0; }
+@media (max-width: 560px) { .customer-offers-page { padding: 16px 15px 36px; } .customer-offers-header { margin-bottom: 18px; } }
+

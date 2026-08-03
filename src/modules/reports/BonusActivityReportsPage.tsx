@@ -237,7 +237,7 @@ export function BonusActivityReportsPage() {
       </section>
 
       <AppDrawer
-        description="Der ursprüngliche Datensatz bleibt erhalten. Das Protokollstorno erzeugt keine automatische Punkte-, Kassen- oder Steuerbuchung."
+        description="Der ursprüngliche Datensatz bleibt erhalten. Bei Punkte-Präsentationen werden belastete Punkte serverseitig zurückgebucht; historische Codevorgänge bleiben ein reines Protokollstorno. Es entsteht keine Kassen- oder Steuerbuchung."
         footer={<><button className="button secondary" disabled={cancelling} onClick={() => setCancelTarget(null)} type="button">Abbrechen</button><button className="button" disabled={cancelling || cancelReason.trim().length < 10} onClick={() => void confirmCancellation()} type="button">{cancelling ? "Storno läuft …" : "Protokoll stornieren"}</button></>}
         onClose={() => { if (!cancelling) setCancelTarget(null); }}
         open={Boolean(cancelTarget)}

@@ -799,3 +799,18 @@ Aktiver V1-Ablauf:
 Ein abgelaufener Geschenkcode bleibt verbraucht. Bei einer normalen Punkteeinlösung ist ein neuer Versuch nur durch eine neue ausdrückliche Kundenbestätigung mit neuer Idempotency-ID möglich; der Punktestand wird erneut geprüft und Punkte werden erneut abgezogen. Screenshots alter Codes funktionieren nicht.
 
 Die Tages-PIN wird weiterhin niemals für Einlösungen verwendet. Aussagen in älteren Abschnitten, wonach die Einlösung unmittelbar nach dem Kundenbutton vollständig abgeschlossen ist oder eine reine Bestätigungsansicht ausreicht, sind durch diese Entscheidung ersetzt.
+
+## CTO-Entscheidung 2026-08-03: Präsentationsfenster für Punktebelohnungen
+
+🟢 **LOCKED / V1 / VORRANG FÜR NORMALE PUNKTEBELOHNUNGEN**
+
+Für normale Punktebelohnungen ersetzt diese Entscheidung den sechsstelligen
+Mitarbeitercode. Der Kunde bestätigt verbindlich; der Server zieht Punkte
+atomar und endgültig ab, schreibt Journal und Audit und startet exakt ein
+15-minütiges Präsentationsfenster. Das Team kontrolliert nur den aktiven
+Bildschirm. Serverzeit und `expires_at` sind maßgeblich.
+
+Nach Ablauf wechselt der Status idempotent von `REDEEMED_ACTIVE` zu
+`REDEEMED_COMPLETED`. Eine Korrektur ist nur als atomarer Owner-/Support-Storno
+mit Begründung und Punkterückbuchung zulässig. Geschenk-Einlösungen bleiben im
+sechsstelligen Code-Flow.

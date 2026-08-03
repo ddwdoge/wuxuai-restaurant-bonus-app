@@ -1196,3 +1196,11 @@ V1 besitzt keinen separaten Geburtstagsgeschenk-Editor. Ein täglicher idempoten
 Die Entscheidung vom 22.07.2026 ersetzt den beschriebenen 14-Tage-Autojob. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag löst der Gast die Auslosung mit „Geschenk abholen“ aus. Der Server wählt genau eine aktive, für den Geburtstag freigegebene Vorlage aus dem vorhandenen Willkommensgeschenk-Pool. Die Auswahl wird mit der bestehenden Eindeutigkeitsregel pro Gast, Restaurant/Filiale und Kalenderjahr dauerhaft gespeichert und über den vorhandenen sicheren Einlösecode-Flow verwendet.
 
 Ablauf-Erinnerungen werden serverseitig anhand der Restaurant-Zeitzone erzeugt. Die Redemption-RPC bleibt für Gültigkeit und Einlösbarkeit die letzte Autorität; Clientzeit und Push-Nachricht können keine Einlösung freigeben.
+
+## CTO-Ergänzung 2026-08-03: Abschluss normaler Punktebelohnungen
+
+Normale Punktebelohnungen werden mit der Kundenbestätigung wirtschaftlich und
+technisch endgültig gebucht. Die Engine prüft den Punktestand, zieht die Punkte
+genau einmal ab und schreibt den unveränderbaren Snapshot beim Start des
+Präsentationsfensters. Der spätere Zeitablauf verändert keine Punkte mehr.
+Willkommens- und Geburtstagsgeschenke bleiben davon getrennt.

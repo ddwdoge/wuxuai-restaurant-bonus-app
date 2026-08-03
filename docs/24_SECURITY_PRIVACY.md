@@ -1,6 +1,15 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## Aktuelles & Angebote
+
+Angebote sind oeffentliche Restaurantinformationen, keine Bonus- oder
+Kundenobjekte. Der Public-Payload enthaelt keine Kundendaten oder Tokens.
+Aufrufe und Klicks werden nur als PII-freie Tagesaggregate gespeichert.
+Angebotsinteraktionen duerfen weder QR-Kontext noch Kundenzugang, Punkte,
+Rewards, Geschenke oder Einloesungen veraendern.
+
+
 # WUXUAI Bonus V1 – Sicherheit & Datenschutz
 
 ## Punkte-QR

@@ -1,7 +1,24 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## V1 Aktuelles & Angebote
+
+`restaurant_offers` ist ein eigenstaendiges restaurantbezogenes
+Informationsobjekt. Es besitzt keine Foreign Keys zu Rewards, Punkten, Coupons,
+Campaigns oder Einloesungen. `restaurant_offer_metrics` speichert nur
+PII-freie Tagesaggregate. Direkte Browser-Schreibrechte sind entzogen;
+Veroeffentlichung und Fuenfergrenze werden serverseitig erzwungen.
+
+
 # WUXUAI Bonus V1 – Datenbank-Architektur
+
+## Owner-Dashboard-Hinweise
+
+`owner_dashboard_notice_views` speichert ausschließlich benutzer- und
+restaurantbezogene Gesehen-Schlüssel für optionale oder einmalige
+Dashboard-Hinweise. Die Tabelle besitzt RLS; authentifizierte Owner, Admins und
+Manager dürfen nur eigene Gesehen-Einträge im eigenen Restaurant lesen und
+anlegen. Kritische Zustände werden nicht über diese Tabelle unterdrückt.
 
 ## Restaurantgesteuerte Punktevergabe
 

@@ -774,6 +774,7 @@ export function SettingsPage() {
       opening_hours: details.opening_hours,
       welcome_reward_available: false,
       active_reward_count: 0,
+      offers: [],
       membership: null,
       distance_km: null,
     } : null;

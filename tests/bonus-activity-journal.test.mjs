@@ -174,8 +174,10 @@ test("report displays excluded test transaction count", () => {
   assert.match(migration, /excluded_test_count/);
 });
 
-test("report cancellation does not claim to reverse points or create cash entries", () => {
-  assert.match(page, /keine automatische Punkte-, Kassen- oder Steuerbuchung/);
+test("report distinguishes presentation refunds from historical protocol cancellations", () => {
+  assert.match(page, /Bei Punkte-Präsentationen werden belastete Punkte serverseitig zurückgebucht/);
+  assert.match(page, /historische Codevorgänge bleiben ein reines Protokollstorno/);
+  assert.match(page, /keine Kassen- oder Steuerbuchung/);
   assert.match(migration, /no_points_reversal/);
 });
 

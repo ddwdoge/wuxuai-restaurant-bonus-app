@@ -1,6 +1,62 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-04 – Aktuelles & Angebote technisch umgesetzt
+
+- eigenstaendiges, tenantgebundenes Angebotsmodell ohne Reward- oder
+  Punktebeziehung ergaenzt
+- serverseitige Fuenfergrenze mit Schutz gegen parallele Veroeffentlichung
+  vorbereitet
+- Owner-Verwaltung mit Entwurf, Vorschau, Veroeffentlichung, Deaktivierung,
+  Duplizierung und Archivierung ergaenzt
+- sicherer bestehender Owner-Bildupload wiederverwendet
+- CustomerPortal, zentrale Aktuelles-Seite und Partnerlokal-Finder angebunden
+- Analytics auf PII-freie Tagesaggregate begrenzt
+- Migration nur im Staging-Dry-Run geprueft und nicht angewendet
+
+## 2026-08-04 – V1-Modul Aktuelles & Angebote freigegeben
+
+- `Aktuelles & Angebote` als eng begrenztes Informationsmodul fuer Restaurants
+  in V1 dokumentiert.
+- Wochen-, Monats- und Mittagsangebote, neue Gerichte, Saisonhinweise,
+  Veranstaltungen und Neuigkeiten als zulaessige Beitragstypen festgelegt.
+- Maximal fuenf gleichzeitig veroeffentlichte Beitraege pro Restaurant
+  verbindlich festgelegt.
+- Strikte Trennung von Rewards, Punkten, Geschenken, Coupons, Codes und
+  Einloesungen dokumentiert.
+- Kundenportal und Partnerlokal-Finder als reine Anzeigeflaechen vorgesehen;
+  QR- und Kundenkontext bleiben unveraendert.
+- V1-Auswertung auf personenbezugsfreie aggregierte Kennzahlen begrenzt.
+- Automatisierung, Push, Segmentierung, Personalisierung, Attribution und
+  A/B-Tests bleiben V2.
+- Rechtliche Pruefung von Preisangaben, Verfuegbarkeit, Bildrechten,
+  Produktinformationen, Allergenen und Veranstaltungsangaben vor Production
+  festgehalten.
+- Nur Dokumentation aktualisiert; keine Produkt-, Datenbank-, RLS- oder
+  Laufzeitaenderung vorgenommen.
+
+## 2026-08-03 – Punkte-Präsentationsfenster
+
+- Normale Punktebelohnungen auf verbindliche Kundenbestätigung mit sofortigem,
+  atomarem Punkteabzug umgestellt.
+- Serverzeitgebundenes 15-Minuten-Fenster mit Live-Anzeige und idempotentem
+  Abschluss ergänzt.
+- Journal und Audit werden bereits bei Aktivierung geschrieben.
+- Owner-/Support-Storno bucht Punkte atomar zurück; Geschenk-Codeflow bleibt
+  unverändert.
+- Neue Legal-Vorlage bleibt `DRAFT_LEGAL_REVIEW_REQUIRED`.
+
+## 2026-08-03 – Dynamischer nächster Schritt im Owner-Dashboard
+
+- Dauerhafte grüne Legal-Statuskarte durch einen zentral priorisierten
+  `Nächster Schritt`-Resolver ersetzt.
+- Echte Legal-Warnungen bleiben nicht schließbar und haben höchste Priorität.
+- Kernschritte für Punkte-Einlösung, Punktevergabe, Willkommensgeschenk und QR
+  werden aus bestehenden tenantgebundenen Statusdaten abgeleitet.
+- Optionale Hinweise und die einmalige Startklar-Meldung werden pro Restaurant
+  und Admin-Benutzer persistent mit RLS gespeichert.
+- Ohne offene Aufgabe wird kein Hinweiscontainer und kein Leerraum gerendert.
+
 ## 2026-08-03 – Partnerlokal-Finder mit eigenen Bonusständen
 
 - Kundenseite als `Lokale entdecken` mit Karte, Liste und sechs V1-Filtern

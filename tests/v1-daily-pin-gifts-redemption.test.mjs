@@ -46,7 +46,7 @@ test("Willkommens- und Geburtstagsgeschenke haben harte Eindeutigkeitsregeln", (
   assert.match(migration, /wuxuai-v1-birthday-gifts-daily/);
 });
 
-test("Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten gültig", () => {
+test("Geschenk-Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten gültig", () => {
   assert.match(migration, /raw_code := public\.generate_numeric_code\(6\)/);
   assert.match(migration, /digest\(raw_code, 'sha256'\)/);
   assert.match(migration, /now\(\) \+ interval '15 minutes'/);
@@ -57,7 +57,9 @@ test("Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten gültig", 
   assert.match(migration, /revoke execute on function public\.redeem_reward_with_staff_session/);
 });
 
-test("Customer- und Staff-Portal verwenden den Bestätigungs-Code ohne Einlöse-PIN", () => {
+test("Customer-Portal trennt Punkte-Präsentation und Geschenk-Code, Staff bestätigt Geschenke ohne PIN", () => {
+  assert.match(customerPortal, /startCustomerPointsPresentation/);
+  assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)/);
   assert.match(customerPortal, /Bitte erst direkt vor dem Mitarbeiter bestätigen/);
   assert.match(customerPortal, /Jetzt verbindlich einlösen/);
   assert.match(customerPortal, /redemption-code-value/);

@@ -731,11 +731,13 @@ Einzeldateien kommen später ins QR Center.
 
 ---
 
-## 22. Aktionen-Modul aus V1 entfernt
+## 22. Generisches Aktionen-Modul aus V1 entfernt
 
 🟢 **FIX**
 
-Das Modul „Aktionen“ wird aus V1 entfernt.
+Das unklare generische Modul „Aktionen“ bleibt aus V1 entfernt. Seit der
+LOCKED-Entscheidung vom 04.08.2026 ist ausschließlich das klar begrenzte,
+rein informative Modul `Aktuelles & Angebote` zulässig.
 
 ### Warum?
 
@@ -754,9 +756,16 @@ Nicht „Aktionen“.
 
 ### Verboten
 
-- Aktionen in Sidebar
+- generischer Menüpunkt „Aktionen“ in der Sidebar
 - Neue Aktion starten Button
 - Aktionen als Pflichtbereich
+- Reward-, Coupon-, Punkte- oder Zielgruppenkampagnen
+
+### Eng begrenzte V1-Ausnahme
+
+`Aktuelles & Angebote` darf höchstens fünf gleichzeitig veröffentlichte
+Restaurantbeiträge zeigen. Das Modul erzeugt keine Rewards, Punkte, Geschenke,
+Codes, Einlösungen, Push-Nachrichten oder Kundensegmente.
 
 ---
 
@@ -1671,7 +1680,8 @@ npm run build
 Codex darf nicht:
 
 - V2 in V1 bauen
-- Aktionen wieder einführen
+- generische Aktionen oder Kampagnen wieder einführen; die einzige V1-Ausnahme
+  ist das LOCKED Informationsmodul `Aktuelles & Angebote`
 - Punkte manuell machen
 - Willkommensgeschenke sofort freischalten
 - Referral und Welcome Gift kombinieren
@@ -1985,3 +1995,47 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Laufende Bonuszeiträume bleiben bei Einstellungsänderungen unverändert.
 - Weitere erfolgreiche Empfehlungen verlängern einen aktiven Zeitraum um die zum Qualifizierungszeitpunkt gespeicherte Dauer.
 - Diese Entscheidung ersetzt für die Dauer die feste 30-Tage-Regel aus der Retention-Entscheidung vom 22.07.2026; der 2×-Multiplikator bleibt unverändert.
+
+## CTO-Entscheidung 2026-08-03: Punkte-Präsentationsfenster
+
+🟢 **LOCKED / V1**
+
+- Normale Punktebelohnungen benötigen keinen sechsstelligen Staff-Code mehr.
+- Die ausdrückliche Kundenbestätigung belastet die Punkte serverseitig sofort
+  und endgültig.
+- Danach gilt ein serverzeitgebundenes Präsentationsfenster von 15 Minuten.
+- Das Team kontrolliert nur den aktiven Bildschirm; keine elektronische
+  Mitarbeiterbestätigung, PIN oder QR-Prüfung.
+- Status: `REDEEMED_ACTIVE` zu `REDEEMED_COMPLETED`.
+- Reload, Browserwechsel und parallele Tabs verlängern das Fenster nicht.
+- Nur Owner oder Support dürfen mit Begründung, Audit, Journal und atomarer
+  Rückbuchung stornieren.
+- Willkommens- und Geburtstagsgeschenke behalten den sechsstelligen Code.
+
+Diese Entscheidung ersetzt die Code-Regel vom 14.07.2026 ausschließlich für
+normale Punktebelohnungen.
+
+## CTO-Entscheidung 2026-08-04: Aktuelles & Angebote
+
+🟢 **LOCKED / V1**
+
+- `Aktuelles & Angebote` ist ein kleines Informations- und Werbemodul für
+  Wochenangebote, Monatsangebote, Mittagsmenüs, neue Gerichte, Saisonangebote,
+  Veranstaltungen und allgemeine Neuigkeiten.
+- Pro Restaurant dürfen maximal fünf Beiträge gleichzeitig veröffentlicht sein.
+- Angebote und Rewards sind getrennte fachliche Objekte; es gibt keine
+  Pflichtbeziehung zu Reward-, Coupon- oder Campaign-Tabellen.
+- Beiträge dürfen keine Punktebewegung, Freischaltung, Geschenkvergabe,
+  Einlösung, Codes oder Einlösungsjournale erzeugen.
+- Kunden sehen Beiträge nur beim Öffnen der App, des Kundenportals oder des
+  Partnerlokal-Finders. V1 versendet keine automatische Benachrichtigung.
+- Analytics bleibt aggregiert und PII-frei: Aufrufe, CTA-, Route- und
+  Bonus-öffnen-Klicks. Keine Betrachterlisten, Profile oder Segmente.
+- Push, E-Mail, SMS, Zielgruppen, Personalisierung, Coupons, Rabattcodes,
+  Punkte-Multiplikator-Kampagnen, Marketingautomation, A/B-Tests und
+  Umsatzattribution bleiben V2.
+- Preiswerbung, Streichpreise, Verfügbarkeit, Bildrechte, Produktinformationen,
+  Allergene und Veranstaltungsangaben bleiben `LEGAL_REVIEW_REQUIRED`.
+
+Diese Entscheidung ersetzt frühere pauschale Verbote dynamischer
+Promotionflächen ausschließlich für dieses eng begrenzte Informationsmodul.

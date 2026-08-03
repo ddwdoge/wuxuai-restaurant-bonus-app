@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import { Activity, AlertCircle, ArrowRight, CheckCircle2, Clock3, Gift, QrCode, RefreshCw, ShieldCheck, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, AlertCircle, ArrowRight, CheckCircle2, CircleDot, Gift, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { loadRestaurantLegalSetup, type RestaurantLegalSetup } from "../../legal/legalService";
+import { useAuth } from "../../auth/AuthProvider";
+import {
+  loadDashboardSetupStatus,
+  loadSeenDashboardNotices,
+  markDashboardNoticeSeen,
+  type DashboardSetupStatus,
+} from "../dashboardNoticeService";
+import { resolveDashboardNextStep } from "../dashboardNextStep.mjs";
 
 const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
@@ -19,13 +27,20 @@ const emptyKpis: RewardKpis = {
 const emptyBoostKpis: BonusBoostKpis = { guestsCurrentlyBoosted: 0, guestsReturnedBecauseOfBoost: 0, successfulReferrals: 0, newCustomersFromReferrals: 0, boostExtraPoints: 0 };
 
 export function AdminDashboard() {
-  const { activeRestaurant } = useTenant();
+  const { user } = useAuth();
+  const { activeRestaurant, branding } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
   const [boostKpis, setBoostKpis] = useState<BonusBoostKpis>(emptyBoostKpis);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [legalSetup, setLegalSetup] = useState<RestaurantLegalSetup | null>(null);
-  const [legalLoading, setLegalLoading] = useState(true);
+  const [legalLoadFailed, setLegalLoadFailed] = useState(false);
+  const [setupStatus, setSetupStatus] = useState<DashboardSetupStatus | null>(null);
+  const [setupLoadFailed, setSetupLoadFailed] = useState(false);
+  const [seenNoticeIds, setSeenNoticeIds] = useState<Set<string>>(new Set());
+  const [noticePersistenceAvailable, setNoticePersistenceAvailable] = useState(false);
+  const [nextStepLoading, setNextStepLoading] = useState(true);
+  const markingNoticeIds = useRef(new Set<string>());
   const [reloadKey, setReloadKey] = useState(0);
 
   const reloadDashboard = useCallback(() => {
@@ -69,22 +84,38 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!activeRestaurant?.id) {
       setLegalSetup(null);
-      setLegalLoading(false);
+      setSetupStatus(null);
+      setSeenNoticeIds(new Set());
+      setNoticePersistenceAvailable(false);
+      setNextStepLoading(false);
       return;
     }
     let cancelled = false;
     setLegalSetup(null);
-    setLegalLoading(true);
-    loadRestaurantLegalSetup(activeRestaurant.id)
-      .then((next) => {
-        if (!cancelled) setLegalSetup(next);
-      })
-      .catch(() => {
-        if (!cancelled) setLegalSetup(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLegalLoading(false);
-      });
+    setLegalLoadFailed(false);
+    setSetupStatus(null);
+    setSetupLoadFailed(false);
+    setSeenNoticeIds(new Set());
+    setNoticePersistenceAvailable(false);
+    setNextStepLoading(true);
+    markingNoticeIds.current.clear();
+
+    Promise.allSettled([
+      loadRestaurantLegalSetup(activeRestaurant.id),
+      loadDashboardSetupStatus(activeRestaurant.id),
+      loadSeenDashboardNotices(activeRestaurant.id),
+    ]).then(([legalResult, setupResult, noticesResult]) => {
+      if (cancelled) return;
+      if (legalResult.status === "fulfilled") setLegalSetup(legalResult.value);
+      else setLegalLoadFailed(true);
+      if (setupResult.status === "fulfilled") setSetupStatus(setupResult.value);
+      else setSetupLoadFailed(true);
+      if (noticesResult.status === "fulfilled") {
+        setSeenNoticeIds(noticesResult.value);
+        setNoticePersistenceAvailable(true);
+      }
+      setNextStepLoading(false);
+    });
     return () => { cancelled = true; };
   }, [activeRestaurant?.id, reloadKey]);
 
@@ -105,7 +136,42 @@ export function AdminDashboard() {
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
   const legalRegistration = legalSetup?.readiness.registration;
-  const LegalStatusIcon = legalRegistration?.status === "green" ? CheckCircle2 : legalRegistration?.status === "yellow" ? Clock3 : AlertCircle;
+  const nextStep = useMemo(() => nextStepLoading ? null : resolveDashboardNextStep({
+    restaurantStatus: { active: activeRestaurant?.status === "active" },
+    onboardingStatus: activeRestaurant?.onboarding_status,
+    legalStatus: legalRegistration ?? null,
+    rewardStatus: {
+      pointsRedemptionReady: setupStatus?.pointsRedemptionReady ?? false,
+      welcomeGiftReady: setupStatus?.welcomeGiftReady ?? false,
+    },
+    qrStatus: { ready: Boolean(activeRestaurant?.slug) },
+    pointsFlowStatus: { ready: setupStatus?.pointsFlowReady ?? false },
+    emailStatus: { confirmed: Boolean(user?.email_confirmed_at) },
+    profileStatus: { logoAvailable: Boolean(branding?.logo_url) },
+    referralStatus: { enabled: setupStatus?.referralEnabled ?? false },
+    seenNoticeIds,
+    persistenceAvailable: noticePersistenceAvailable,
+    statusLoadFailed: legalLoadFailed || setupLoadFailed,
+  }), [activeRestaurant, branding?.logo_url, legalLoadFailed, legalRegistration, nextStepLoading, noticePersistenceAvailable, seenNoticeIds, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
+  const NextStepIcon = nextStep?.category === "success" ? CheckCircle2 : nextStep?.category === "critical" ? AlertCircle : nextStep?.category === "optimization" ? Sparkles : CircleDot;
+
+  useEffect(() => {
+    if (!activeRestaurant?.id || nextStep?.category !== "success" || markingNoticeIds.current.has(nextStep.id)) return;
+    markingNoticeIds.current.add(nextStep.id);
+    markDashboardNoticeSeen(activeRestaurant.id, nextStep.id).catch(() => {
+      markingNoticeIds.current.delete(nextStep.id);
+    });
+  }, [activeRestaurant?.id, nextStep]);
+
+  async function dismissNextStep() {
+    if (!activeRestaurant?.id || !nextStep?.dismissible) return;
+    try {
+      await markDashboardNoticeSeen(activeRestaurant.id, nextStep.id);
+      setSeenNoticeIds((current) => new Set([...current, nextStep.id]));
+    } catch {
+      // Der Hinweis bleibt sichtbar, wenn die persistente Speicherung fehlschlägt.
+    }
+  }
 
   return (
     <div className="premium-dashboard">
@@ -117,16 +183,21 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      <section className={`card dashboard-legal-status ${legalRegistration?.status ?? "red"}`} aria-labelledby="dashboard-legal-title" aria-live="polite">
-        <span className="dashboard-legal-icon"><LegalStatusIcon aria-hidden="true" size={23} /></span>
-        <div>
-          <span className="premium-dashboard-kicker">Rechtlicher Status</span>
-          <h2 id="dashboard-legal-title">{legalLoading ? "Status wird geprüft" : legalRegistration?.label ?? "Status derzeit nicht verfügbar"}</h2>
-          <p>{legalLoading ? "Unternehmensdaten und aktive Dokumentversionen werden serverseitig geprüft." : legalRegistration?.reason ?? "Öffne das Legal Center und versuche die Prüfung erneut."}</p>
-          <small>Letzte Aktualisierung: {legalRegistration?.last_updated_at ? new Intl.DateTimeFormat("de-AT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(legalRegistration.last_updated_at)) : "–"}</small>
-        </div>
-        <Link className="button secondary" to="/admin/legal"><ShieldCheck aria-hidden="true" size={18} /> Legal Center öffnen</Link>
-      </section>
+      {nextStep ? (
+        <section className={`card dashboard-next-step ${nextStep.category}`} aria-labelledby="dashboard-next-step-title" aria-live={nextStep.category === "critical" ? "assertive" : "polite"}>
+          <span className="dashboard-next-step-icon"><NextStepIcon aria-hidden="true" size={21} /></span>
+          <div className="dashboard-next-step-copy">
+            <span className="premium-dashboard-kicker">{nextStep.category === "critical" ? "Wichtiger Hinweis" : nextStep.category === "success" ? "Startklar" : "Nächster Schritt"}</span>
+            <h2 id="dashboard-next-step-title">{nextStep.title}</h2>
+            <p>{nextStep.description}</p>
+          </div>
+          {nextStep.ctaLabel ? (
+            nextStep.ctaHref ? <Link className="button secondary" to={nextStep.ctaHref}>{nextStep.ctaLabel}<ArrowRight aria-hidden="true" size={17} /></Link>
+              : <button className="button secondary" onClick={reloadDashboard} type="button">{nextStep.ctaLabel}<RefreshCw aria-hidden="true" size={17} /></button>
+          ) : null}
+          {nextStep.dismissible ? <button aria-label="Hinweis schließen" className="dashboard-next-step-dismiss" onClick={dismissNextStep} title="Hinweis schließen" type="button"><X aria-hidden="true" size={18} /></button> : null}
+        </section>
+      ) : null}
 
       {loading ? (
         <section className="dashboard-kpi-grid" aria-label="Dashboard wird geladen" aria-busy="true">

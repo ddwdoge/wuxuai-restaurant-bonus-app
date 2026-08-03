@@ -8,6 +8,7 @@ import {
   LocateFixed,
   Map as MapIcon,
   MapPin,
+  Newspaper,
   Search,
   Store,
   Trophy,
@@ -27,6 +28,7 @@ import {
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
 import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
+import { formatRestaurantOfferPrice, recordRestaurantOfferEvent } from "../offers/restaurantOfferService";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
@@ -88,6 +90,7 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
           <em>{visitLabel(location)}</em>
           <em className={location.opening_status?.isOpen ? "open" : "closed"}>{location.opening_status?.message}</em>
         </span>
+        {location.offers[0] ? <span className="partner-offer-badge"><Newspaper aria-hidden="true" size={14} />{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : location.offers[0].offer_type === "WEEKLY_OFFER" ? "Wochenangebot" : "Neues Angebot"}</span> : null}
         <span>{location.membership ? `${location.membership.points_balance} Punkte · ${recommendation(location)}` : recommendation(location)}</span>
       </span>
       <ChevronRight aria-hidden="true" size={19} />
@@ -127,10 +130,19 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           {membership.available_rewards.slice(0, 3).map((reward) => <strong key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
+      {location.offers[0] ? (
+        <div className="partner-current-offer">
+          <span>{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
+          <strong>{location.offers[0].title}</strong>
+          <p>{location.offers[0].short_description}</p>
+          <small>{location.offers[0].current_price != null ? `${formatRestaurantOfferPrice(location.offers[0].current_price)} · ` : ""}Gültig bis {new Date(location.offers[0].valid_to).toLocaleDateString("de-AT")}</small>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_CTA_CLICKED")} to={`/customer/offers?current=${encodeURIComponent(location.slug)}`}>Angebot ansehen</Link>
+        </div>
+      ) : null}
       {!membership ? <p className="partner-detail-note">Besuche das Restaurant und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
       <div className="partner-detail-actions">
-        <Link className="premium-button premium-button-primary" to={portalUrl}>Bonus öffnen</Link>
-        <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} rel="noreferrer" target="_blank">
+        <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>Bonus öffnen</Link>
+        <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_ROUTE_CLICKED"); }} rel="noreferrer" target="_blank">
           <ExternalLink aria-hidden="true" size={18} /> Route starten
         </a>
       </div>

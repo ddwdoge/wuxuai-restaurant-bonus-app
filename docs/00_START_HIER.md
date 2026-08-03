@@ -240,7 +240,8 @@ Beispiele:
 
 - Deutsch zuerst.
 - Mobile First.
-- Aktionen aus V1 entfernen.
+- Generische Aktionen und Kampagnen aus V1 entfernen; das eng begrenzte
+  Informationsmodul `Aktuelles & Angebote` ist die einzige Ausnahme.
 - Onboarding als Installationsassistent.
 - Willkommensgeschenke eigener Bereich.
 - Punkte werden automatisch aus Europreisen berechnet.
@@ -253,7 +254,7 @@ Beispiele:
 
 - Filialen zusammenführen.
 - Wochenplan für Belohnungen.
-- Dynamische Promotionflächen.
+- Dynamische, personalisierte oder automatisierte Promotionflächen.
 - Mehrsprachigkeit.
 - Enterprise-Regeln.
 
@@ -485,7 +486,10 @@ Es beantwortet in 5 Sekunden:
 
 Das Dashboard zeigt keine technischen Warnungen, keine leeren Diagramme und keine Entwicklerdaten.
 
-Das Modul „Aktionen“ wird aus V1 entfernt. Der Button „Neue Aktion starten“ darf nicht mehr erscheinen.
+Das generische Modul „Aktionen“ bleibt aus V1 entfernt. Der Button „Neue Aktion
+starten“ darf nicht erscheinen. Davon getrennt ist `Aktuelles & Angebote` als
+kleines Informationsmodul für höchstens fünf gleichzeitig veröffentlichte
+Restaurantbeiträge Bestandteil von V1.
 
 ---
 
@@ -631,7 +635,8 @@ Codex darf nicht:
 - englische UI-Texte erzeugen
 - technische Begriffe in UI schreiben
 - Onboarding verkomplizieren
-- Aktionen wieder einführen
+- generische Aktionen, Coupons oder Kampagnen wieder einführen; ausgenommen ist
+  nur das freigegebene Informationsmodul `Aktuelles & Angebote`
 - Punkte manuell vom Restaurant erfassen lassen
 - Willkommensgeschenke mit Punkte-Belohnungen vermischen
 - V2 Features in V1 aktivieren, wenn sie nur vorbereitet werden sollen

@@ -40,7 +40,8 @@ Bonus V1.
 
 ## Belohnungen
 
--   Aktionen existieren in V1 nicht.
+-   Generische Aktionen, Coupons und Kampagnen existieren in V1 nicht.
+-   `Aktuelles & Angebote` ist ein getrenntes, rein informatives V1-Modul.
 -   Punkte-Belohnungen und Willkommensgeschenke sind getrennt.
 -   Produktpreis eingeben, Punkte automatisch berechnen.
 -   Smart Reward Engine schützt die Wirtschaftlichkeit.
@@ -66,3 +67,32 @@ Bonus V1.
 -   Erweiterte Smart Engines
 
 Status: LOCK
+
+## LOCK-Ergänzung 2026-08-04: Aktuelles & Angebote
+
+- Restaurants dürfen Wochenangebote, Monatsangebote, Mittagsmenüs, neue
+  Gerichte, Saisonangebote, Veranstaltungen und allgemeine Neuigkeiten
+  veröffentlichen.
+- Pro Restaurant dürfen höchstens fünf Beiträge gleichzeitig veröffentlicht sein.
+- Beiträge informieren nur. Sie buchen keine Punkte, schalten keine Rewards frei,
+  erzeugen keine Geschenke, Codes, Einlösungen oder Journaleinträge.
+- Es gibt keine Pflichtbeziehung zu Reward-, Coupon- oder Campaign-Tabellen.
+- V1 erlaubt nur aggregierte Aufrufe und CTA-, Route- sowie Bonus-öffnen-Klicks
+  ohne personenbezogene Daten, Profilbildung oder Segmentierung.
+- Push, E-Mail, SMS, Zielgruppen, Personalisierung, Marketingautomation,
+  Rabattcodes, Multiplikator-Kampagnen und Umsatzattribution bleiben V2.
+- Preis-, Bild-, Produkt-, Allergen-, Verfügbarkeits- und Veranstaltungsangaben
+  bleiben `LEGAL_REVIEW_REQUIRED`.
+
+## LOCK-Ergänzung 2026-08-03: Punkte-Präsentationsfenster
+
+- Normale Punktebelohnungen werden nach ausdrücklicher Kundenbestätigung sofort
+  serverseitig belastet.
+- Danach gilt ein serverzeitgebundenes Präsentationsfenster von 15 Minuten.
+- Das Team kontrolliert ausschließlich den aktiven Kundenbildschirm; es gibt für
+  Punktebelohnungen keinen Staff-Code, keine PIN und keinen QR-Scan.
+- Reload, Browserwechsel und mehrere Tabs verlängern das Fenster nicht.
+- Willkommens- und Geburtstagsgeschenke behalten ihren bestehenden
+  sechsstelligen Einlösecode.
+- Storno einer Punktebelohnung ist nur für Owner oder Support mit Begründung,
+  Audit, Journal und atomarer Rückbuchung zulässig.

@@ -1,5 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 import { readStoredCustomerTokens } from "./customerTokenStorage";
+import { loadPublicRestaurantOffers, type RestaurantOffer } from "../offers/restaurantOfferService";
 
 export type PartnerRewardSummary = {
   id: string;
@@ -37,6 +38,7 @@ export type PartnerRestaurant = {
   holidays?: unknown;
   welcome_reward_available: boolean;
   active_reward_count: number;
+  offers: RestaurantOffer[];
   membership: PartnerMembership | null;
   distance_km: number | null;
   opening_status?: {
@@ -72,11 +74,14 @@ export async function loadPartnerRestaurants(): Promise<PartnerRestaurantFinderR
   const client = supabase;
   const customerTokens = readStoredCustomerTokens();
 
-  const { data, error } = await client.rpc("get_partner_local_finder", {
-    input_customer_tokens: customerTokens,
-    input_limit: 100,
-    input_offset: 0,
-  });
+  const [{ data, error }, publicOffers] = await Promise.all([
+    client.rpc("get_partner_local_finder", {
+      input_customer_tokens: customerTokens,
+      input_limit: 100,
+      input_offset: 0,
+    }),
+    loadPublicRestaurantOffers(null, 100).catch(() => []),
+  ]);
   if (error) throw error;
 
   const payload = data && typeof data === "object" && !Array.isArray(data)
@@ -85,7 +90,13 @@ export async function loadPartnerRestaurants(): Promise<PartnerRestaurantFinderR
   const items = Array.isArray(payload.items) ? payload.items : [];
   const locations = items.map((location) => {
     const item = location as Omit<PartnerRestaurant, "membership" | "distance_km"> & { membership?: unknown };
-    return { ...item, membership: safeMembership(item.membership), distance_km: null, opening_status: null };
+    return {
+      ...item,
+      membership: safeMembership(item.membership),
+      offers: publicOffers.filter((offer) => offer.branch_id === item.branch_id).slice(0, 3),
+      distance_km: null,
+      opening_status: null,
+    };
   });
   return {
     locations,

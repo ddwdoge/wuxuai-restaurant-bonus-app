@@ -158,11 +158,11 @@ test("Kassenabgrenzung wird automatisch erzeugt und verweist auf Aktivitätsberi
   assert.match(ownerLegal, /Bonus-Aktivitätsberichte öffnen/);
 });
 
-test("Dashboard zeigt den serverseitigen Legal-Status sofort nach dem Login", () => {
+test("Dashboard priorisiert serverseitige Legal-Warnungen im nächsten Schritt", () => {
   assert.match(dashboard, /loadRestaurantLegalSetup/);
-  assert.match(dashboard, /Rechtlicher Status/);
-  assert.match(dashboard, /Bereit für Kundenregistrierung|legalRegistration\?\.label/);
-  assert.match(dashboard, /Legal Center öffnen/);
+  assert.match(dashboard, /resolveDashboardNextStep/);
+  assert.match(dashboard, /legalStatus: legalRegistration \?\? null/);
+  assert.doesNotMatch(dashboard, /dashboard-legal-status/);
 });
 
 test("vollständiges Restaurant erhält grün und fehlende Pflichtdokumente rot", () => {

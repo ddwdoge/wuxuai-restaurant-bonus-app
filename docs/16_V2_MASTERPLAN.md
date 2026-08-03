@@ -115,7 +115,7 @@ V2 umfasst langfristig folgende Erweiterungsbereiche:
 3. Smart Reward Calendar
 4. Erweiterte Smart Reward Engine
 5. Smart Recommendation Engine
-6. Dynamische Promotionflächen
+6. Automatisierte und personalisierte Promotionflächen
 7. QR Center Erweiterung
 8. POS-QR / signierter Rechnungslink
 9. WUXUAI Admin Portal
@@ -460,7 +460,15 @@ V2 macht sie intelligent.
 
 ---
 
-## 12. Dynamische Promotionflächen
+## 12. Automatisierte und personalisierte Promotionflächen
+
+### 12.0 Abgrenzung zu V1
+
+V1 enthält ausschließlich das klar begrenzte Informationsmodul
+`Aktuelles & Angebote`: höchstens fünf veröffentlichte Beiträge je Restaurant,
+keine Rewards, Coupons, Punkteaktionen, Segmente, Push-Nachrichten oder
+Umsatzattribution. Diese Ausnahme ist keine Freigabe für eine allgemeine
+Kampagnenplattform.
 
 ### 12.1 Restaurant Starter Kit
 
@@ -478,7 +486,7 @@ Beispiel:
 
 ### 12.2 V2
 
-Die freie Fläche kann dynamisch werden.
+V2 kann Informationsflächen automatisch, personalisiert oder segmentiert steuern.
 
 Mögliche Inhalte:
 
@@ -489,6 +497,9 @@ Mögliche Inhalte:
 - Saisonaktion
 - Doppelte Punkte
 - Wochenbelohnung
+- Zielgruppen und automatisierte Ausspielung
+- Push-, E-Mail- oder SMS-Kampagnen
+- A/B-Tests und weitergehende Attribution
 
 ### 12.3 Wichtig
 

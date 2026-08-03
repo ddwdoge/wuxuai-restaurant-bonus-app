@@ -14,6 +14,7 @@ import {
   LockKeyhole,
   LogOut,
   MapPinned,
+  Newspaper,
   QrCode,
   ReceiptText,
   ScanLine,
@@ -31,7 +32,13 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
-import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
+import {
+  loadCustomerPointsPresentation,
+  loadCustomerRedemptionStatus,
+  startCustomerPointsPresentation,
+  startCustomerRedemption,
+  type CustomerPointsPresentation,
+} from "../rewards/rewardService";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -91,6 +98,12 @@ import {
 import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
 import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
 import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanner";
+import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
+import {
+  loadPublicRestaurantOffers,
+  recordRestaurantOfferEvent,
+  type RestaurantOffer,
+} from "../offers/restaurantOfferService";
 import {
   customerPushAvailable,
   disableCustomerPush,
@@ -119,6 +132,7 @@ type RedemptionOutcome = {
   kind: "redeemed" | "expired" | "error";
   pointsSpent: number;
   title: string;
+  presentation?: boolean;
 };
 
 type ActiveRedemptionCode = ScopedActiveRedemption;
@@ -135,17 +149,23 @@ function clampPercent(value: number) {
   return Math.min(100, Math.max(0, value));
 }
 
-function rewardState(reward: PublicCustomerOfferView, nowMs: number, activeCode: ActiveRedemptionCode | null): RewardCardState {
+function rewardState(
+  reward: PublicCustomerOfferView,
+  nowMs: number,
+  activeCode: ActiveRedemptionCode | null,
+  activePresentation: CustomerPointsPresentation | null,
+): RewardCardState {
   const expiresAt = reward.valid_until ?? reward.expires_at;
   if (expiresAt && new Date(expiresAt).getTime() <= nowMs) return "expired";
   if (reward.status === "redeemed") return "redeemed";
-  if (reward.status === "redemption_started" || activeCode?.rewardId === reward.id) return "redeeming";
+  if (reward.status === "redemption_started" || activeCode?.rewardId === reward.id
+    || (activePresentation?.active && activePresentation.reward_id === reward.id)) return "redeeming";
   return reward.status === "unlocked" ? "available" : "locked";
 }
 
 function rewardStatusText(reward: PublicCustomerOfferView, state: RewardCardState) {
   if (state === "available") return reward.is_starter_reward ? "Geschenk einlösbar" : "Jetzt einlösbar";
-  if (state === "redeeming") return "Einlösecode ist aktiv";
+  if (state === "redeeming") return reward.is_starter_reward ? "Einlösecode ist aktiv" : "Einlösung ist aktiv";
   if (state === "redeemed") return "Bereits eingelöst";
   if (state === "expired") return "Nicht mehr verfügbar";
   if (reward.is_starter_reward) return "Noch nicht freigeschaltet";
@@ -224,6 +244,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [redemptionOutcome, setRedemptionOutcome] = useState<RedemptionOutcome | null>(null);
   const [redemptionStatus, setRedemptionStatus] = useState<string | null>(null);
   const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
+  const [activePointsPresentation, setActivePointsPresentation] = useState<CustomerPointsPresentation | null>(null);
+  const [presentationClockOffsetMs, setPresentationClockOffsetMs] = useState(0);
   const [redeemingReward, setRedeemingReward] = useState(false);
   const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
   const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(() => (
@@ -252,6 +274,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [refreshToken, setRefreshToken] = useState(0);
   const [pointsQr, setPointsQr] = useState<CustomerPointsQr | null>(null);
   const [pointsQrLoading, setPointsQrLoading] = useState(false);
+  const [restaurantOffers, setRestaurantOffers] = useState<RestaurantOffer[]>([]);
+  const [selectedRestaurantOffer, setSelectedRestaurantOffer] = useState<RestaurantOffer | null>(null);
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
@@ -304,6 +328,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setSettings(null);
       setCustomer(null);
       setRewards([]);
+      setRestaurantOffers([]);
       setRetention(null);
       setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
       setActiveRedemptionCode(null);
@@ -381,6 +406,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setSettings(null);
         setCustomer(null);
         setRewards([]);
+        setRestaurantOffers([]);
         setRetention(null);
         setIdentitySummary(null);
         setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
@@ -413,6 +439,27 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       cancelled = true;
     };
   }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken]);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setRestaurantOffers([]);
+      return;
+    }
+    let cancelled = false;
+    loadPublicRestaurantOffers(restaurantSlug, 5)
+      .then((nextOffers) => {
+        if (cancelled) return;
+        setRestaurantOffers(nextOffers);
+        nextOffers.slice(0, 3).forEach((offer) => { void recordRestaurantOfferEvent(offer.id, "OFFER_VIEWED"); });
+      })
+      .catch(() => { if (!cancelled) setRestaurantOffers([]); });
+    return () => { cancelled = true; };
+  }, [restaurantSlug, refreshToken]);
+
+  function openRestaurantOffer(offer: RestaurantOffer) {
+    setSelectedRestaurantOffer(offer);
+    void recordRestaurantOfferEvent(offer.id, "OFFER_CTA_CLICKED");
+  }
 
   const restaurantControlledEnabled = settings?.points_collection_mode === "restaurant_controlled_only"
     || settings?.points_collection_mode === "both";
@@ -590,9 +637,16 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const redemptionSecondsRemaining = activeRedemptionCode
     ? Math.min(15 * 60, Math.max(0, Math.ceil((new Date(activeRedemptionCode.expiresAt).getTime() - nowMs) / 1_000)))
     : 0;
+  const presentationNowMs = nowMs + presentationClockOffsetMs;
+  const presentationSecondsRemaining = activePointsPresentation?.active
+    ? Math.min(15 * 60, Math.max(0, Math.ceil(
+      (new Date(activePointsPresentation.expires_at).getTime() - presentationNowMs) / 1_000,
+    )))
+    : 0;
 
   useEffect(() => {
     setActiveRedemptionCode(null);
+    setActivePointsPresentation(null);
     setRedeemOffer(null);
     setRedemptionOutcome(null);
     setRedemptionDrawerOpen(false);
@@ -703,6 +757,87 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     setRedemptionDrawerOpen(true);
     setMessage("Der Einlösecode ist abgelaufen.");
   }, [activeRedemptionCode, activeToken, redemptionSecondsRemaining, restaurantSlug]);
+
+  const applyPointsPresentation = useCallback((presentation: CustomerPointsPresentation) => {
+    setPresentationClockOffsetMs(new Date(presentation.server_now).getTime() - Date.now());
+    if (presentation.active && presentation.status === "REDEEMED_ACTIVE") {
+      setActivePointsPresentation(presentation);
+      setRedemptionOutcome(null);
+      setRedemptionDrawerOpen(true);
+      return;
+    }
+    setActivePointsPresentation(null);
+    if (presentation.status === "REDEEMED_COMPLETED") {
+      setRedemptionOutcome({
+        kind: "redeemed",
+        pointsSpent: presentation.points_spent,
+        title: presentation.reward_title,
+        presentation: true,
+      });
+      setRedemptionDrawerOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug) || !activeToken || !customer) return;
+    let cancelled = false;
+    loadCustomerPointsPresentation({ restaurantSlug, customerToken: activeToken })
+      .then((presentation) => {
+        if (!cancelled && presentation) applyPointsPresentation(presentation);
+      })
+      .catch((error) => {
+        console.error("Aktive Punkteeinlösung konnte nicht geprüft werden.", error);
+      });
+    return () => { cancelled = true; };
+  }, [activeToken, applyPointsPresentation, customer, restaurantSlug]);
+
+  useEffect(() => {
+    const presentationId = activePointsPresentation?.presentation_id;
+    if (!presentationId || !activeToken || !restaurantSlug) return;
+    let cancelled = false;
+    let requestRunning = false;
+    const refreshPresentation = () => {
+      if (requestRunning) return;
+      requestRunning = true;
+      loadCustomerPointsPresentation({
+        restaurantSlug,
+        customerToken: activeToken,
+        presentationId,
+      })
+        .then((presentation) => {
+          if (cancelled || !presentation) return;
+          applyPointsPresentation(presentation);
+          if (!presentation.active) setRefreshToken((current) => current + 1);
+        })
+        .catch((error) => {
+          console.error("Punkteeinlösungsstatus konnte nicht aktualisiert werden.", error);
+        })
+        .finally(() => { requestRunning = false; });
+    };
+    refreshPresentation();
+    const intervalId = window.setInterval(refreshPresentation, 4_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [activePointsPresentation?.presentation_id, activeToken, applyPointsPresentation, restaurantSlug]);
+
+  useEffect(() => {
+    if (!activePointsPresentation?.active || !("wakeLock" in navigator)) return;
+    let released = false;
+    let lock: { release: () => Promise<void> } | null = null;
+    (navigator as Navigator & { wakeLock: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> } })
+      .wakeLock.request("screen")
+      .then((nextLock) => {
+        if (released) void nextLock.release();
+        else lock = nextLock;
+      })
+      .catch(() => undefined);
+    return () => {
+      released = true;
+      if (lock) void lock.release();
+    };
+  }, [activePointsPresentation]);
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
@@ -1032,7 +1167,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     setRedemptionDrawerOpen(false);
     setRedemptionStatus(null);
     setRedemptionSheetStep("detail");
-    if (!activeRedemptionCode) {
+    if (!activeRedemptionCode && !activePointsPresentation) {
       setRedeemOffer(null);
       setRedemptionOutcome(null);
     }
@@ -1045,6 +1180,37 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     setRedemptionStatus(null);
 
     try {
+      if (!redeemOffer.is_starter_reward) {
+        const presentation = await startCustomerPointsPresentation({
+          customerToken: activeToken,
+          rewardId: redeemOffer.id,
+          idempotencyKey: crypto.randomUUID(),
+        });
+        applyPointsPresentation(presentation);
+        setActiveRedemptionCode(null);
+        setCustomer((current) => current && presentation.points_balance != null
+          ? {
+            ...current,
+            points_balance: presentation.points_balance,
+            stamp_balance: presentation.stamp_balance ?? current.stamp_balance,
+          }
+          : current);
+        setRewards((current) => current.map((reward) => {
+          if (reward.id !== redeemOffer.id || reward.is_starter_reward) return reward;
+          const pointsBalance = presentation.points_balance ?? customer?.points_balance ?? 0;
+          const stampBalance = presentation.stamp_balance ?? customer?.stamp_balance ?? 0;
+          return {
+            ...reward,
+            status: "redemption_started",
+            remaining_points: Math.max(0, reward.required_points - pointsBalance),
+            remaining_stamps: Math.max(0, reward.required_stamps - stampBalance),
+          };
+        }));
+        setRedemptionStatus("Die Punkte wurden endgültig eingelöst. Zeige diesen Bildschirm jetzt dem Team.");
+        setRefreshToken((current) => current + 1);
+        return;
+      }
+
       const result = await startCustomerRedemption({
         customerToken: activeToken,
         rewardId: redeemOffer.id,
@@ -1104,8 +1270,10 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     }
   }
 
-  const selectedRewardState = redeemOffer ? rewardState(redeemOffer, nowMs, activeRedemptionCode) : null;
-  const redemptionDrawerFooter = activeRedemptionCode || redemptionOutcome ? (
+  const selectedRewardState = redeemOffer
+    ? rewardState(redeemOffer, nowMs, activeRedemptionCode, activePointsPresentation)
+    : null;
+  const redemptionDrawerFooter = activeRedemptionCode || activePointsPresentation || redemptionOutcome ? (
     <PrimaryButton onClick={closeRedemptionDrawer}>Schließen</PrimaryButton>
   ) : redeemOffer && redemptionSheetStep === "confirm" ? (
     <>
@@ -1114,14 +1282,16 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setRedemptionStatus(null);
       }}>Zurück</SecondaryButton>
       <PrimaryButton disabled={redeemingReward} onClick={handleRedeemCustomerReward}>
-        {redeemingReward ? "Einlösung wird vorbereitet …" : "Jetzt verbindlich einlösen"}
+        {redeemingReward ? "Einlösung wird vorbereitet …" : redeemOffer.is_starter_reward ? "Jetzt verbindlich einlösen" : "Jetzt einlösen"}
       </PrimaryButton>
     </>
   ) : redeemOffer ? (
     <>
       <SecondaryButton onClick={closeRedemptionDrawer}>Schließen</SecondaryButton>
       {selectedRewardState === "available" ? (
-        <PrimaryButton onClick={() => setRedemptionSheetStep("confirm")}>Jetzt einlösen</PrimaryButton>
+        <PrimaryButton onClick={() => setRedemptionSheetStep("confirm")}>
+          {redeemOffer.is_starter_reward ? "Jetzt einlösen" : "Jetzt mit Punkten einlösen"}
+        </PrimaryButton>
       ) : null}
     </>
   ) : null;
@@ -1616,6 +1786,17 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   </button>
                 ) : null}
 
+                {restaurantOffers.length ? (
+                  <section className="premium-content-section" aria-label="Aktuelles und Angebote">
+                    <SectionHeader
+                      action={restaurantOffers.length > 3 ? <Link className="premium-text-button" to={`/customer/offers?current=${encodeURIComponent(restaurant.slug)}`}>Alle ansehen</Link> : null}
+                      subtitle="Neuigkeiten direkt von deinem Restaurant."
+                      title="Aktuelles & Angebote"
+                    />
+                    <div className="customer-offer-grid">{restaurantOffers.slice(0, 3).map((offer) => <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />)}</div>
+                  </section>
+                ) : null}
+
                 <section className="premium-content-section" aria-label="Deine Vorteile">
                   <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
                   <div className="premium-benefit-grid">
@@ -1654,6 +1835,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 
+                <Link className="premium-restaurant-finder-link" to={`/customer/offers?current=${encodeURIComponent(restaurant.slug)}`}>
+                  <span><Newspaper aria-hidden="true" size={22} /></span>
+                  <div><strong>Aktuelles entdecken</strong><small>Neuigkeiten der WUXUAI Partner ansehen</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
+
                 {retention?.birthday.eligible && !activeBirthdayGift && !retention.birthday.gift ? (
                   <PremiumCard className="premium-birthday-draw-card" variant="highlight">
                     <span className="premium-birthday-icon"><CakeSlice aria-hidden="true" size={25} /></span>
@@ -1683,7 +1870,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                           key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                           meta={`${reward.required_points} Punkte`}
                           onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
-                          state={rewardState(reward, nowMs, activeRedemptionCode)}
+                          state={rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation)}
                           status={reward.status === "unlocked" ? "Jetzt einlösbar" : `Noch ${reward.remaining_points} Punkte`}
                           title={reward.title}
                         />
@@ -1705,7 +1892,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                           imageCrop={rewardImageCropFromRecord(activeBirthdayGift)}
                           meta="Für deinen Geburtstag"
                           onOpen={() => openRewardRedemption(activeBirthdayGift)}
-                          state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode)}
+                          state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode, activePointsPresentation)}
                           status="Jetzt einlösbar"
                           title={activeBirthdayGift.title}
                         />
@@ -1716,7 +1903,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                           imageCrop={rewardImageCropFromRecord(activeWelcomeGift)}
                           meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
                           onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
-                          state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode)}
+                          state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode, activePointsPresentation)}
                           status={activeWelcomeGift.status === "unlocked" ? "Jetzt einlösbar" : "Nach der ersten Punktebuchung verfügbar"}
                           title={activeWelcomeGift.title}
                         />
@@ -1806,7 +1993,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     role="tabpanel"
                   >
                     {filteredRedemptions.map((reward) => {
-                      const state = rewardState(reward, nowMs, activeRedemptionCode);
+                      const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
                       return (
                       <RewardCard
                         category={reward.category ?? reward.product_group}
@@ -1924,20 +2111,32 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
             <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
 
-            {activeRedemptionCode && !redemptionDrawerOpen ? (
+            {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
               <button className="premium-active-code" onClick={() => setRedemptionDrawerOpen(true)} type="button">
-                <Sparkles aria-hidden="true" size={18} /> Aktiven Einlösecode anzeigen
+                <Sparkles aria-hidden="true" size={18} /> {activePointsPresentation ? "Aktive Einlösung anzeigen" : "Aktiven Einlösecode anzeigen"}
               </button>
             ) : null}
 
             <AppDrawer
-              description={activeRedemptionCode
-                ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
+              description="Information des Restaurants"
+              onClose={() => setSelectedRestaurantOffer(null)}
+              open={Boolean(selectedRestaurantOffer)}
+              size="standard"
+              title="Aktuelles & Angebote"
+            >
+              {selectedRestaurantOffer ? <RestaurantOfferDetail offer={selectedRestaurantOffer} /> : null}
+            </AppDrawer>
+
+            <AppDrawer
+              description={activePointsPresentation
+                ? "Zeige die aktive Einlösung jetzt dem Team."
+                : activeRedemptionCode
+                  ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
                 : "Alle Details zu deiner Auswahl."}
               footer={redemptionDrawerFooter}
               onClose={closeRedemptionDrawer}
-              open={redemptionDrawerOpen && Boolean(activeRedemptionCode || redeemOffer || redemptionOutcome)}
-              title={redemptionOutcome?.title ?? activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
+              open={redemptionDrawerOpen && Boolean(activePointsPresentation || activeRedemptionCode || redeemOffer || redemptionOutcome)}
+              title={redemptionOutcome?.title ?? activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
             >
               <div className="premium-redemption-sheet-content">
                 {redemptionOutcome ? (
@@ -1952,17 +2151,68 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <StatusBadge tone={redemptionOutcome.kind === "redeemed" ? "success" : "error"}>
                       {redemptionOutcome.kind === "redeemed" ? "Eingelöst" : redemptionOutcome.kind === "expired" ? "Abgelaufen" : "Nicht verfügbar"}
                     </StatusBadge>
-                    <h2>{redemptionOutcome.kind === "redeemed" ? "Erfolgreich eingelöst" : "Einlösung beendet"}</h2>
+                    <h2>{redemptionOutcome.presentation
+                      ? "Vielen Dank für deinen Besuch"
+                      : redemptionOutcome.kind === "redeemed" ? "Erfolgreich eingelöst" : "Einlösung beendet"}</h2>
                     <p>{redemptionOutcome.kind === "redeemed"
-                      ? redemptionOutcome.pointsSpent > 0
+                      ? redemptionOutcome.presentation
+                        ? "Wir freuen uns, dich bald wieder begrüßen zu dürfen."
+                        : redemptionOutcome.pointsSpent > 0
                         ? `${redemptionOutcome.pointsSpent} Punkte wurden eingelöst.`
                         : "Dein Geschenk wurde erfolgreich eingelöst."
                       : redemptionOutcome.kind === "expired"
                         ? "Der Einlösecode ist abgelaufen und kann nicht mehr verwendet werden."
                         : "Diese Einlösung ist nicht mehr verfügbar."}</p>
-                    {redemptionOutcome.kind === "redeemed" ? (
+                    {redemptionOutcome.kind === "redeemed" && !redemptionOutcome.presentation ? (
                       <p className="premium-redemption-outcome-note">Die Belohnung wurde erfolgreich als verwendet markiert.</p>
                     ) : null}
+                  </article>
+                ) : null}
+
+                {activePointsPresentation ? (
+                  <article className="premium-presentation-window" aria-live="polite">
+                    <div className="premium-presentation-shine" aria-hidden="true" />
+                    <header>
+                      <span className="premium-presentation-security-mark" aria-hidden="true"><ShieldCheck size={28} /></span>
+                      <StatusBadge tone="success">Aktive Einlösung</StatusBadge>
+                    </header>
+                    <div className="premium-presentation-image">
+                      <RewardImageFrame
+                        alt={activePointsPresentation.reward_title}
+                        crop={rewardImageCropFromRecord({
+                          image_zoom: activePointsPresentation.image_zoom,
+                          image_position_x: activePointsPresentation.image_position_x,
+                          image_position_y: activePointsPresentation.image_position_y,
+                        })}
+                        imageUrl={activePointsPresentation.reward_image_url}
+                      />
+                    </div>
+                    <div className="premium-presentation-heading">
+                      <span>{activePointsPresentation.restaurant_name}</span>
+                      <h2>{activePointsPresentation.reward_title}</h2>
+                      <p>{activePointsPresentation.points_spent.toLocaleString("de-AT")} Punkte eingelöst</p>
+                    </div>
+                    <div className="premium-presentation-countdown">
+                      <span>Verbleibende Zeit</span>
+                      <strong>{Math.floor(presentationSecondsRemaining / 60)}:{String(presentationSecondsRemaining % 60).padStart(2, "0")}</strong>
+                    </div>
+                    <div className="premium-presentation-live-grid">
+                      <div><span>Serverzeit</span><strong>{new Intl.DateTimeFormat("de-AT", {
+                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        timeZone: "Europe/Vienna",
+                      }).format(new Date(presentationNowMs))}</strong></div>
+                      <div><span>Gültig bis</span><strong>{new Intl.DateTimeFormat("de-AT", {
+                        hour: "2-digit", minute: "2-digit",
+                        timeZone: "Europe/Vienna",
+                      }).format(new Date(activePointsPresentation.expires_at))}</strong></div>
+                      <div className="premium-presentation-security-value"><span>Sicherheit</span><strong>{activePointsPresentation.visual_code}</strong></div>
+                    </div>
+                    <p className="premium-presentation-number">Einlösung {activePointsPresentation.redemption_number}</p>
+                    <div className="premium-presentation-thanks">
+                      <strong>Vielen Dank! Guten Appetit!</strong>
+                      <span>Das Team von {activePointsPresentation.restaurant_name} wünscht dir einen schönen Aufenthalt.</span>
+                    </div>
+                    <p className="premium-presentation-show"><Sparkles aria-hidden="true" size={18} /> Bitte zeige diesen Bildschirm jetzt dem Team.</p>
                   </article>
                 ) : null}
 
@@ -2028,12 +2278,21 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <span className="premium-confirm-icon"><LockKeyhole aria-hidden="true" size={26} /></span>
                     <StatusBadge tone="warning">Verbindliche Bestätigung</StatusBadge>
                     <h2>{redeemOffer.is_starter_reward ? "Geschenk wirklich einlösen?" : "Punkte wirklich einlösen?"}</h2>
-                    <p><strong>Bitte erst direkt vor dem Mitarbeiter bestätigen.</strong></p>
-                    <p>
-                      {redeemOffer.is_starter_reward
-                        ? "Nach deiner Bestätigung wird ein einmaliger Einlösecode erzeugt."
-                        : `Nach deiner Bestätigung werden ${redeemOffer.required_points} Punkte reserviert und ein einmaliger Einlösecode erzeugt.`}
-                    </p>
+                    {redeemOffer.is_starter_reward ? (
+                      <>
+                        <p><strong>Bitte erst direkt vor dem Mitarbeiter bestätigen.</strong></p>
+                        <p>Nach deiner Bestätigung wird ein einmaliger Einlösecode erzeugt.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>Möchtest du diese Belohnung jetzt wirklich einlösen?</strong></p>
+                        <ul className="premium-presentation-confirm-list">
+                          <li>Die benötigten Punkte werden sofort endgültig abgezogen.</li>
+                          <li>Danach hast du 15 Minuten Zeit, diese Einlösung dem Team zu zeigen.</li>
+                          <li>Diese Aktion kann nicht selbst rückgängig gemacht werden.</li>
+                        </ul>
+                      </>
+                    )}
                     <div className="premium-confirm-summary">
                       <span>{redeemOffer.title}</span>
                       <strong>{redeemOffer.is_starter_reward ? "Geschenk" : `${redeemOffer.required_points} Punkte`}</strong>

@@ -688,7 +688,7 @@ V2 vorbereitet:
 - Meine Restaurants Wallet
 - Wochenübersicht für Punkteeinlösungen
 - Push/Email/SMS optional
-- dynamische Nachrichten
+- automatische oder personalisierte Nachrichten
 - Multibranch Punkte
 - weitere Branchen
 - Premium-Login
@@ -706,6 +706,7 @@ Customer Portal ist LOCK, wenn:
 - Willkommensgeschenk gesperrt und später freigeschaltet wird
 - Freunde-Einladung kein Willkommensgeschenk gibt
 - Bonus Boost sichtbar und emotional ist
+- `Aktuelles & Angebote` rein informativ und vom Bonuskonto getrennt bleibt
 - Punkte sammeln über Bonus QR funktioniert
 - Punkteeinlösungen fehlende Punkte und Euro anzeigen
 - QR immer schnell erreichbar ist
@@ -781,6 +782,25 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   70 Prozent des erforderlichen Punktestands.
 - Öffnungsstatus und Mittagspause werden nach `Europe/Vienna` berechnet.
 
+## CTO-Ergänzung 2026-08-04: Aktuelles & Angebote
+
+- Ein restaurantbezogenes Kundenportal zeigt den Bereich `Aktuelles & Angebote`
+  nur, wenn mindestens ein aktuell veröffentlichter Beitrag vorhanden ist.
+- Beiträge zeigen Angebotsart, Titel, Bild, Kurzbeschreibung, optionalen Preis,
+  Gültigkeit und eine klar beschriftete Aktion.
+- Eine zentrale Ansicht `Aktuelles` darf Beiträge von bereits besuchten Lokalen
+  und Lokalen mit vorhandenem Punktestand priorisieren. Ohne Mitgliedschaft
+  werden keine persönlichen Werte erfunden.
+- Der Partnerlokal-Finder darf am Lokal ein neutrales Badge und den wichtigsten
+  aktuell gültigen Beitrag anzeigen.
+- Das Öffnen eines Beitrags setzt keinen Restaurant-QR-Kontext, registriert
+  keinen Kunden, verändert keine Punkte und startet keine Einlösung.
+- In V1 gibt es keine automatische Benachrichtigung, Personalisierung,
+  Segmentierung oder Marketingnachricht. Kunden sehen Beiträge nur beim Öffnen
+  der App beziehungsweise des Kundenportals.
+- Es werden höchstens aggregierte Aufrufe und Klickarten erfasst; keine
+  personenbezogene Betrachterliste und kein Kundenprofil.
+
 ## Legal Center V1
 
 - `Rechtliches & Datenschutz` bleibt ohne Anmeldung für öffentliche Inhalte erreichbar.
@@ -797,3 +817,16 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Korrekturen erfolgen ausschließlich über einen kontrollierten Owner/Admin-Supportpfad mit Identitätsprüfung, Prüfart, Grund und Audit.
 - Eine Telefonnummernkorrektur widerruft alte Tokens und bekannte Geräte. Es findet keine automatische Kontozusammenführung statt.
 - SMS-Verifizierung ist nur als standardmäßig deaktivierte spätere Konfiguration vorbereitet und hat keine V1-Runtime oder UI.
+
+## CTO-Ergänzung 2026-08-03: Punkte-Präsentationsfenster
+
+Diese LOCK-Entscheidung ersetzt den sechsstelligen Code ausschließlich für
+normale Punktebelohnungen. Nach ausdrücklicher Bestätigung werden die Punkte
+serverseitig sofort endgültig abgezogen. Der Kunde sieht 15 Minuten lang einen
+serverzeitgebundenen Live-Bildschirm mit Countdown, Serverzeit, wechselndem
+Sicherheitselement und Einlösungsnummer. Reload, mehrere Tabs und Browserwechsel
+starten kein neues Fenster.
+
+Willkommens- und Geburtstagsgeschenke behalten ihren bestehenden
+sechsstelligen Einlösecode. Der Kunde kann eine Punktebelohnung nicht selbst
+stornieren.

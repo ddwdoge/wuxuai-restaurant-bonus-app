@@ -1,6 +1,16 @@
 
 # 23_API_RPC_REGELN.md
 
+## RPC-Gruppe Aktuelles & Angebote
+
+Owner-RPCs pruefen `auth.uid()`, Adminrolle, `restaurant_id` und gegebenenfalls
+die Branch-Zuordnung. Public-RPCs liefern nur aktive, veroeffentlichte und
+zeitlich gueltige Beitraege. Analytics darf ausschliesslich aggregierte
+Ereigniszaehler ohne Kundenbezug erhoehen. Alle Funktionen verwenden einen
+festen `search_path`; direkte Schreibrechte auf Angebotstabellen bleiben
+entzogen.
+
+
 # WUXUAI Bonus V1 – API- und RPC-Regeln
 
 ## Restaurantgesteuerte Punkte-RPCs

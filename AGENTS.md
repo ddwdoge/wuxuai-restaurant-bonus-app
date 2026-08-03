@@ -85,7 +85,8 @@ V1 bleibt fokussiert:
 - keine Kassa-Integration
 - keine KI
 - keine Filial-UI
-- keine Aktionen
+- `Aktuelles & Angebote` nur als begrenztes Informationsmodul
+- keine komplexen Kampagnen- oder Promotionfunktionen
 - Deutsch als UI-Sprache
 
 ---
@@ -258,7 +259,8 @@ Nicht einfach weiterbauen.
 
 Codex darf in V1 nicht bauen:
 
-- Aktionen-Modul
+- komplexes Aktionen-/Kampagnenmodul; ausgenommen ist ausschließlich das
+  LOCKED V1-Informationsmodul `Aktuelles & Angebote`
 - Kassa-/POS-Integration
 - SMS-Verifizierung
 - WhatsApp-Verifizierung
@@ -371,8 +373,8 @@ Codex darf nicht einfach losbauen.
 
 Nicht einbauen:
 
-- Aktionen
-- Kampagnen
+- keine Reward-, Coupon-, Punkte- oder Zielgruppenkampagnen
+- keine Marketingautomation; `Aktuelles & Angebote` bleibt reine Information
 - KI
 - POS
 - SMS/WhatsApp

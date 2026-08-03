@@ -27,6 +27,29 @@ Diese technische Umsetzung ist keine Rechts- oder Steuerberatung und keine Produ
 - Aufbewahrungsdauer von Einlösungs- und Auditdaten
 - Anforderungen an CSV-Felder und Mitarbeiterbezug
 
+## Aktuelles & Angebote
+
+Das V1-Informationsmodul `Aktuelles & Angebote` benoetigt vor einer
+Production-Freigabe eine rechtliche Pruefung mindestens fuer:
+
+- Preisangaben und Streichpreise
+- zeitliche und mengenbezogene Verfuegbarkeit
+- Bild- und Nutzungsrechte
+- Produkt- und Leistungsinformationen
+- Allergene und sonstige Pflichtinformationen
+- Veranstaltungsangaben
+
+Im Owner-Portal muss folgender Hinweis sichtbar sein:
+
+> Das Restaurant ist für die Richtigkeit, Aktualität, Verfügbarkeit und
+> rechtliche Zulässigkeit seiner Angebots-, Preis-, Produkt- und Bildangaben
+> verantwortlich.
+
+Die Beitraege duerfen nicht als Rewards, Gutscheine, Coupons oder
+Einloesecodes behandelt werden. Die Rechtstexte und diese Pruefliste bleiben
+`DRAFT_LEGAL_REVIEW_REQUIRED`, bis eine ausdrueckliche juristische Freigabe
+vorliegt.
+
 ## Technische offene Punkte vor Production
 
 - Final geprüfte Texte statt Standardvorlage veröffentlichen

@@ -611,3 +611,11 @@ Endstatus: **LOCK**
 Die Tages-PIN bleibt ausschließlich für Punktebuchungen. Bei Punkteeinlösungen, Willkommensgeschenken und Geburtstagsgeschenken gibt der Mitarbeiter keine PIN ein.
 
 Nach der verbindlichen Kundenbestätigung zeigt der Gast einen sechsstelligen Code. Die Mitarbeiteransicht prüft diesen Code serverseitig. Der Code ist 15 Minuten gültig, nur einmal verwendbar und wird nach Verwendung oder Ablauf deaktiviert. Diese Regel ersetzt ältere Hinweise, nach denen eine reine Bestätigungsansicht ohne prüfbaren Code ausreicht.
+
+## CTO-Ergänzung 2026-08-03: Punktebelohnungen ohne Staff-Code
+
+Die vorherige Code-Regel bleibt für Willkommens- und Geburtstagsgeschenke aktiv.
+Für normale Punktebelohnungen wird sie ersetzt: Der Kunde bestätigt selbst, die
+Punkte werden sofort serverseitig abgezogen und das Team kontrolliert nur den
+15 Minuten aktiven Präsentationsbildschirm. Das Staff Portal führt für normale
+Punktebelohnungen weder Code-, PIN- noch QR-Bestätigung aus.

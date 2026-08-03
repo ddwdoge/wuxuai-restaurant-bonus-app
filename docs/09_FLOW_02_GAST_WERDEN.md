@@ -125,14 +125,18 @@ Zweck:
 - kein Willkommensgeschenk
 - Bonus Boost wird nach erster Konsumation aktiviert
 
-### 4.3 Kampagnen- oder Angebotsrouten
+### 4.3 Historische Kampagnenrouten und aktuelle Informationsbeiträge
 
 Historisch existierende Kampagnenrouten dürfen nicht die V1-Produktlogik dominieren.
 
 V1-Entscheidung:
 
-- Aktionen/Kampagnen sind aus V1-UI entfernt
+- historische reward- oder coupongebundene Kampagnen bleiben aus der V1-UI entfernt
+- `Aktuelles & Angebote` ist eine rein lesende Informationsfläche und kein
+  Registrierungs-, Reward- oder Punkteflow
 - Kunden-Einstieg erfolgt primär über Restaurant QR, Bonus QR oder Referral QR
+- das Öffnen eines Informationsbeitrags registriert keinen Gast und setzt keinen
+  aktiven Restaurantkontext
 
 ---
 
@@ -782,7 +786,7 @@ V2 kann enthalten:
 - Lieblingsbelohnungen
 - Wallet mit mehreren Restaurants
 - Multi-Branch Bonuskonten
-- dynamische Promotion-Flächen
+- personalisierte oder automatisierte Promotion-Flächen
 - Geburtstagsbonus
 - bessere Wiederherstellung bei Gerätewechsel
 
