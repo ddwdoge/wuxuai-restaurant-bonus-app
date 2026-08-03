@@ -93,6 +93,11 @@ Erlaubt:
 - „Meine Restaurants“ später als Wallet/Profilbereich
 - automatischer Wechsel über QR
 
+Die optionale Seite `Lokale entdecken` ist kein aktiver Restaurantkontext und
+keine manuelle Restaurantauswahl. Sie zeigt ausschließlich freigegebene Partner
+und persönliche, serverseitig tokengeprüfte Bonusstände. Erst ein gültiger
+Restaurant-QR setzt den aktiven Sammelkontext.
+
 ### 3.3 Slogan
 
 > Ein Scan. Sofort im richtigen Restaurant.
@@ -393,6 +398,12 @@ Bonus Boost startet erst, wenn der eingeladene Freund:
 ---
 
 ## 9. Punkte sammeln
+
+V1 fragt den Gast in keinem Sammelmodus nach einer Bonnummer. Im
+restaurantgesteuerten Modus zeigt der Gast nur seinen kurzlebigen persoenlichen
+QR; Betrag, Tages-PIN und Bestaetigung liegen beim Restaurant. Im
+kundeninitiierten Bestandsflow bleibt die bestehende Bonstufen-Auswahl erhalten,
+ebenfalls ohne Belegreferenz.
 
 ### 9.1 Smart Bonus QR
 
@@ -763,6 +774,12 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   stammen ausschließlich aus der WUXUAI Datenbank.
 - Externe Navigation darf über einen Google-Maps-Weblink ohne API-Key geöffnet
   werden; es wird keine Google Maps Platform API verwendet.
+- Der V1-Payload wird in einer begrenzten, aggregierten Abfrage geladen. Lokale
+  Kundenzugänge werden restaurantbezogen validiert; ohne gültigen Zugang werden
+  nur öffentliche Standortdaten ausgegeben.
+- Die zentrale Schwelle für `Belohnung bald erreichbar` beträgt mindestens
+  70 Prozent des erforderlichen Punktestands.
+- Öffnungsstatus und Mittagspause werden nach `Europe/Vienna` berechnet.
 
 ## Legal Center V1
 

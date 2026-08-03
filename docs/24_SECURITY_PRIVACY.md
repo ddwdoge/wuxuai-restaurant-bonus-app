@@ -13,6 +13,12 @@ dem QR-Row-Lock den Idempotenzschlüssel erneut. Dadurch wird derselbe Request a
 derselbe Erfolg beantwortet und nicht als zweite Buchung oder Replay behandelt.
 Öffentliche Antworten enthalten keine Referral-Beziehung oder Referral-Tokens.
 
+Bonnummern sind kein V1-Sicherheitsmerkmal und werden weder abgefragt noch in
+aktive Idempotenz-Fingerprints, Audit-Metadaten oder Browser-RPCs aufgenommen.
+Die nullable historische Datenbankspalte bleibt ungenutzt. Reverse-Idempotenz
+bindet stattdessen Tenant, Aktion, Originalbuchung, serverseitig aufgeloeste
+Owner-/Manager-Rolle und normalisierte Begruendung.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt die verbindlichen Sicherheits- und Datenschutzregeln für WUXUAI Bonus V1.
@@ -744,6 +750,19 @@ Nicht anzeigen:
 - Admininformationen,
 - Auditdaten,
 - technische Tokenhashes.
+
+### 23.1 Partnerlokal-Finder
+
+- Öffentliche Kartenmarker enthalten nur freigegebene Standort- und
+  Angebotsdaten aus der eigenen Datenbank.
+- Eigene Punkte, Besuche und Belohnungen erscheinen nur nach serverseitiger
+  Prüfung eines restaurantbezogen gespeicherten Kundenzugangs.
+- Der Aggregat-RPC liefert keine Namen, Telefonnummern, Geburtstage, Geräte-IDs,
+  Klartexttoken oder Tokenhashes aus.
+- Standortfreigabe bleibt optional und wird nur im Browser für Sortierung und
+  Kartenzentrum verwendet; Kundenkoordinaten werden nicht gespeichert.
+- Karten- und Listenauswahl verändern keinen QR-, Token- oder Sammelkontext und
+  lösen keine Registrierung, Punktebuchung oder Einlösung aus.
 
 ---
 

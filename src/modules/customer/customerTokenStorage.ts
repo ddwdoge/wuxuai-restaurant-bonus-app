@@ -58,6 +58,38 @@ export function readStoredCustomerToken(restaurantSlug: string) {
   return readStoredCustomerAccess(restaurantSlug)?.customer_token ?? null;
 }
 
+export function readStoredCustomerTokens(limit = 100): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const slugs = new Set<string>();
+
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith("wuxuai_customer_access:")) {
+        const encodedSlug = key.slice("wuxuai_customer_access:".length);
+        try { slugs.add(decodeURIComponent(encodedSlug)); } catch { /* Ignore malformed legacy keys. */ }
+      } else if (key?.startsWith("wuxuai-customer-token:")) {
+        slugs.add(key.slice("wuxuai-customer-token:".length));
+      }
+    }
+
+    const legacy = JSON.parse(window.localStorage.getItem("wuxuai_customer_tokens") ?? "{}");
+    if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+      Object.keys(legacy).forEach((slug) => slugs.add(slug));
+    }
+  } catch {
+    return {};
+  }
+
+  const tokens: Record<string, string> = {};
+  for (const slug of [...slugs].sort().slice(0, Math.max(0, Math.min(limit, 100)))) {
+    const normalizedSlug = slug.trim().toLowerCase();
+    const token = readStoredCustomerToken(normalizedSlug);
+    if (normalizedSlug && token) tokens[normalizedSlug] = token;
+  }
+  return tokens;
+}
+
 export function saveStoredCustomerToken(
   restaurantSlug: string,
   entry: StoredCustomerTokenEntry,

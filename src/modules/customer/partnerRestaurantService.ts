@@ -1,5 +1,5 @@
 import { supabase } from "../../shared/lib/supabase";
-import { readStoredCustomerToken } from "./customerTokenStorage";
+import { readStoredCustomerTokens } from "./customerTokenStorage";
 
 export type PartnerRewardSummary = {
   id: string;
@@ -33,10 +33,24 @@ export type PartnerRestaurant = {
   cover_image_url: string | null;
   short_description: string | null;
   opening_hours: unknown;
+  special_days?: unknown;
+  holidays?: unknown;
   welcome_reward_available: boolean;
   active_reward_count: number;
   membership: PartnerMembership | null;
   distance_km: number | null;
+  opening_status?: {
+    isOpen: boolean;
+    state: "open" | "closed" | "opens_later" | "lunch_break" | "unknown";
+    message: string;
+    todayHours: string | null;
+  } | null;
+};
+
+export type PartnerRestaurantFinderResult = {
+  locations: PartnerRestaurant[];
+  hasCustomerAccess: boolean;
+  total: number;
 };
 
 function safeMembership(value: unknown): PartnerMembership | null {
@@ -53,29 +67,29 @@ function safeMembership(value: unknown): PartnerMembership | null {
   };
 }
 
-export async function loadPartnerRestaurants(): Promise<PartnerRestaurant[]> {
+export async function loadPartnerRestaurants(): Promise<PartnerRestaurantFinderResult> {
   if (!supabase) throw new Error("Partnerrestaurants konnten nicht geladen werden.");
   const client = supabase;
+  const customerTokens = readStoredCustomerTokens();
 
-  const { data, error } = await client.rpc("get_public_partner_restaurants");
+  const { data, error } = await client.rpc("get_partner_local_finder", {
+    input_customer_tokens: customerTokens,
+    input_limit: 100,
+    input_offset: 0,
+  });
   if (error) throw error;
 
-  const locations = Array.isArray(data) ? data as Omit<PartnerRestaurant, "membership" | "distance_km">[] : [];
-  const enriched = await Promise.all(locations.map(async (location) => {
-    const token = readStoredCustomerToken(location.slug);
-    if (!token) return { ...location, membership: null, distance_km: null };
-
-    const { data: membership, error: membershipError } = await client.rpc("get_customer_partner_membership", {
-      input_restaurant_slug: location.slug,
-      input_customer_token: token,
-    });
-
-    return {
-      ...location,
-      membership: membershipError ? null : safeMembership(membership),
-      distance_km: null,
-    };
-  }));
-
-  return enriched;
+  const payload = data && typeof data === "object" && !Array.isArray(data)
+    ? data as { items?: unknown; total?: unknown }
+    : {};
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  const locations = items.map((location) => {
+    const item = location as Omit<PartnerRestaurant, "membership" | "distance_km"> & { membership?: unknown };
+    return { ...item, membership: safeMembership(item.membership), distance_km: null, opening_status: null };
+  });
+  return {
+    locations,
+    hasCustomerAccess: locations.some((location) => location.membership?.registered === true),
+    total: Number(payload.total) || items.length,
+  };
 }

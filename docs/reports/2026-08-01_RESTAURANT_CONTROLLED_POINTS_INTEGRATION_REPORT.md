@@ -75,17 +75,24 @@ Roh-QR, Kundenzugang und Tages-PIN werden weder gespeichert noch auditiert.
 - `20260731001000_restaurant_controlled_points_collection.sql`
 - `20260801001000_shared_points_bonus_engine.sql`
 - Remote-Dry-Run gegen eindeutig verknüpftes `wuxuai-bonus-staging`: erfolgreich;
-  beide Migrationen würden in dieser Reihenfolge angewendet.
-- Migration auf Staging angewendet: Nein.
-- Kontrollierter Staging-Preflight am 1. August 2026: Ziel, Remote-Stand,
-  Dry-Run, Teilzustand, anonymisierte Bestandszahlen und Grant-Baseline geprüft.
-- Restorestatus: blockiert. Die Supabase-Backupabfrage meldet keine verfügbaren
-  physischen Backups und kein PITR. Entsprechend wurde vor dem ersten Write
-  abgebrochen.
-- Lokaler `supabase db reset`: blockiert, weil Docker und Podman nicht installiert sind.
+  beide Migrationen wurden in dieser Reihenfolge angewendet.
+- Migration auf Staging angewendet: Ja, am 2. August 2026 einzeln und in der
+  freigegebenen Reihenfolge.
+- Lokale und Remote-Migration-History: synchron bis `20260801001000`.
+- Logischer Restorepunkt vor dem ersten Write: vollständig erstellt und über
+  Prüfsummen, Parser, Custom-Dump-Inhaltsliste und 53/53 Tabellen verifiziert.
+- Restorestatus:
+  `RESTORE FILES VERIFIED, FULL RESTORE EXECUTION NOT AVAILABLE`.
+- Lokaler physischer Restore: nicht verfügbar, weil Docker und Podman nicht
+  installiert sind.
 - Destruktive Datenänderungen: keine; neue Snapshot-Spalten sind nullable.
 - Bestandsrestaurants bleiben `customer_initiated_only`; neue Settings verwenden
   `restaurant_controlled_only`.
+- Kritischer E2E-Befund: Eine restaurantgesteuerte Buchung von 50 Cent wurde
+  akzeptiert und erzeugte mit aktivem 2x-Boost zwei Punkte. Engine, Preview und
+  Confirmation prüfen nur auf größer null statt auf mindestens 100 Cent.
+- Testfixture nach dem Befund vollständig entfernt; anonymisierter
+  Post-Test-Bestand entspricht exakt der Baseline.
 
 ## Tests
 
@@ -95,25 +102,34 @@ Roh-QR, Kundenzugang und Tages-PIN werden weder gespeichert noch auditiert.
 - Lint: 0 Fehler, 6 bestehende Warnungen
 - Build: erfolgreich
 - `git diff --check`: erfolgreich
-- Echter Datenbank-Paralleltest: offen
-- Echter Staging-Flow: offen
+- Echter Staging-Flow: gestartet und wegen kritischer Mindestbetragsverletzung
+  gemäß Stop-Regel abgebrochen
+- Echter Datenbank-Paralleltest: wegen des kritischen Befunds nicht gestartet
 - Physisches iPhone/PWA/Staff-Tablet: offen
 
 ## Risiken
 
-1. Ohne lokalen PostgreSQL-Container wurde die PL/pgSQL-Migration noch nicht
-   gegen eine frische Datenbank ausgeführt; der Remote-Dry-Run ist kein Ersatz.
+1. Werte zwischen 1 und 99 Cent können im restaurantgesteuerten Flow aktuell
+   serverseitig akzeptiert und bepunktet werden. Eine additive Reparaturmigration
+   ist vor jeder weiteren Freigabe erforderlich.
 2. Der kundeninitiierte Bonstufenflow verwendet bewusst den Stufen-Mindestbetrag,
    während der Staff-Flow den exakten Rechnungsbetrag verwendet. Die Engine ist
    identisch, die fachlichen Eingabebeträge können jedoch abweichen.
 3. Ausschlüsse wie Lieferplattformen können ohne Kassenintegration nur durch
    Staff-Anweisung und Audit, nicht technisch anhand einer Zahlungsquelle geprüft werden.
-4. Reale Parallelität, Kamera, Safari, PWA und schwaches Netz sind noch offen.
-5. Vor einer Staging-Anwendung muss ein tatsächlich wiederherstellbarer
-   Backup-/Restorepunkt bestätigt werden.
+4. Reale Parallelität, Idempotenz, Referral, Storno, Kamera, Safari, PWA und
+   schwaches Netz sind nach dem Abbruch noch offen.
+5. Ein physischer Test-Restore ist mangels Docker/Podman weiterhin offen; die
+   logischen Restoredateien sind vollständig verifiziert.
 
-Prüf-ZIP: `exports/2026-08-01_RESTAURANT_CONTROLLED_POINTS_INTEGRATION.zip`
+Prüf-ZIP: `exports/2026-08-02_RESTAURANT_CONTROLLED_POINTS_STAGING_EXECUTION.zip`
 (vollständiger aktueller Quellstand ohne Git-Metadaten, Abhängigkeiten,
 Umgebungsdateien, Buildausgaben oder ältere Archive).
 
-Status: **NOT READY**
+Ausführungsbericht:
+`docs/reports/2026-08-02_RESTAURANT_CONTROLLED_POINTS_STAGING_EXECUTION_REPORT.md`
+
+Reparaturbericht:
+`docs/reports/2026-08-02_MINIMUM_POINTS_AMOUNT_REPAIR_REPORT.md`
+
+Status: **REPAIR VERIFIED – CONTINUE STAGING TESTS**

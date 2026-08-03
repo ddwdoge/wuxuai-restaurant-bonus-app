@@ -140,7 +140,6 @@ export function StaffTablet() {
   const [billAmount, setBillAmount] = useState(0);
   const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
   const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
-  const [receiptNumber, setReceiptNumber] = useState("");
   const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
   const [pinDraft, setPinDraft] = useState("");
@@ -638,8 +637,8 @@ export function StaffTablet() {
       pinHelp: "Bestätige den tatsächlich direkt im Restaurant bezahlten Betrag.",
       run: async (dailyPin) => {
         const result = await confirmRestaurantControlledPoints({ restaurantId, qrReference: pointsQrReference,
-          amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey, receiptNumber });
-        setPointsQrReference(null); setPointsPreview(null); setReceiptNumber(""); setBillAmount(0);
+          amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey });
+        setPointsQrReference(null); setPointsPreview(null); setBillAmount(0);
         setMessage(`${result.points_added} Punkte wurden gutgeschrieben.`);
         setView("home");
       },
@@ -1029,15 +1028,12 @@ export function StaffTablet() {
           <h2>{pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
           {pointsQrReference ? <div className="restaurant-controlled-credit">
             <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
-            <div className="grid two">
-              <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
-              <div className="field"><FormLabel htmlFor="controlled-receipt" optional>Bonnummer</FormLabel><input className="input" id="controlled-receipt" onChange={(event) => setReceiptNumber(event.target.value)} value={receiptNumber} /></div>
-            </div>
+            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
             {!pointsPreview ? <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
               <span>{pointsPreview.customer_label} · aktuell {pointsPreview.points_balance} Punkte</span>
               <strong>+{pointsPreview.expected_points} Punkte</strong>
               {pointsPreview.boost_multiplier > 1 ? <p className="muted">{pointsPreview.base_points} Basispunkte · {pointsPreview.boost_multiplier}× Freundschaftsbonus</p> : null}
-              {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte Rechnung und Bonnummer sorgfältig prüfen.</p> : null}
+              {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte den bezahlten Betrag sorgfältig prüfen.</p> : null}
               <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
             </div>}
           </div> : null}

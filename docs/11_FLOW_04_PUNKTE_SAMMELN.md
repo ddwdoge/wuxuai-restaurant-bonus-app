@@ -3,6 +3,15 @@
 
 # WUXUAI Bonus V1 – Flow 04: Punkte sammeln
 
+## Verbindliche V1-Entscheidung vom 03.08.2026: keine Bonnummer
+
+V1 verarbeitet im Punkteflow keine Bonnummer und keine Belegreferenz. Das gilt
+fuer den restaurantgesteuerten und den kundeninitiierten Sammelweg. Der Gast
+uebermittelt keinen Betrag im restaurantgesteuerten Ablauf; das Team erfasst nur
+den tatsaechlich bezahlten bonusberechtigten Betrag und bestaetigt mit der
+Tages-PIN. Idempotenz, QR-Single-Use, Betragsschutz und Audit funktionieren ohne
+Bonnummer. Eine spaetere POS-Integration gehoert nicht zu V1.
+
 ## Gemeinsame Punkteberechnung seit 2026-08-01
 
 Kundeninitiierte und restaurantgesteuerte Buchungen verwenden ausschließlich
@@ -16,7 +25,7 @@ unter Sperre erneut und speichert den vollständigen Regelsnapshot.
 
 Frühere Festlegungen auf ausschließlich kundeninitiierte Bonstufen sind **partially superseded**. Restaurants wählen serverseitig zwischen `restaurant_controlled_only`, `customer_initiated_only` und `both`. Bestandsrestaurants bleiben zunächst kundeninitiiert; neue Restaurants starten restaurantgesteuert.
 
-Im restaurantgesteuerten Ablauf zeigt der Gast einen fünf Minuten gültigen, einmalig verwendbaren persönlichen QR. Das Team scannt ihn, erfasst den direkt im Restaurant bezahlten bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Betrag, Rate und Punkte werden serverseitig geprüft und atomar gebucht. Trinkgeld, Gutscheinkäufe und externe Lieferplattformen sind ausgeschlossen.
+Im restaurantgesteuerten Ablauf zeigt der Gast einen fünf Minuten gültigen, einmalig verwendbaren persönlichen QR. Das Team scannt ihn, erfasst den direkt im Restaurant bezahlten bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Eine Bonnummer wird nicht erfasst. Betrag, Rate und Punkte werden serverseitig geprüft und atomar gebucht. Trinkgeld, Gutscheinkäufe und externe Lieferplattformen sind ausgeschlossen.
 
 Status: **LOCK**
 

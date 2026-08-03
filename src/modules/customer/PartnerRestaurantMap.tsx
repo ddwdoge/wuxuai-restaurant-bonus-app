@@ -18,7 +18,9 @@ export type PartnerRestaurantMapProps = {
 
 function markerIcon(location: PartnerRestaurant, selected: boolean, current: boolean) {
   const status = markerStatus(location);
-  const statusLabel = status === "reward"
+  const statusLabel = status === "closed"
+    ? "Aktuell geschlossen"
+    : status === "reward"
     ? "Punkteeinlösung verfügbar"
     : status === "near"
       ? "Nächste Punkteeinlösung fast erreicht"
@@ -26,11 +28,13 @@ function markerIcon(location: PartnerRestaurant, selected: boolean, current: boo
       ? "Punkte vorhanden"
       : status === "registered"
         ? "Registriert"
-        : "Partnerrestaurant";
+        : "Partnerlokal";
+  const visitedLabel = (location.membership?.visits_count ?? 0) > 0 ? "Bereits besucht. " : "Noch nicht besucht. ";
+  const markerSymbol = status === "closed" ? "–" : status === "reward" ? "!" : status === "near" ? "+" : status === "member" ? "P" : status === "registered" ? "✓" : "·";
 
   return L.divIcon({
     className: "partner-map-marker-shell",
-    html: `<span class="partner-map-marker ${status}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? `Aktueller Restaurantkontext. ${statusLabel}` : statusLabel}"><span></span></span>`,
+    html: `<span class="partner-map-marker ${status}${(location.membership?.visits_count ?? 0) > 0 ? " visited" : ""}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? "Aktueller Restaurantkontext. " : ""}${visitedLabel}${statusLabel}"><span aria-hidden="true">${markerSymbol}</span></span>`,
     iconAnchor: [20, 40],
     iconSize: [40, 40],
   });

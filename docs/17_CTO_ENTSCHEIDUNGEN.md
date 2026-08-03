@@ -3,6 +3,21 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-03 – V1-Punkteflow ohne Bonnummer
+
+- V1 besitzt keine POS-/Kassenintegration und keine Bonnummer im Punkteflow.
+- Diese Entscheidung ersetzt die aktive Nutzung der am 03.08.2026 vorbereiteten
+  Receipt-Haertung; historische Migrationen und nullable Spalten bleiben aus
+  Nachvollziehbarkeits- und Kompatibilitaetsgruenden erhalten.
+- Der oeffentliche restaurantgesteuerte Confirm-RPC hat genau fuenf Parameter:
+  Restaurant, QR-Referenz, Centbetrag, Tages-PIN und Idempotenzschluessel.
+- Der historische sechsparametrige Vertrag ist fuer Browserrollen gesperrt und
+  erhaelt intern ausschliesslich `NULL` als Belegwert.
+- Earn-Idempotenz bindet Tenant, Gast, Quelle, Betrag, QR, Aktion und Kontext.
+  Reverse bindet Tenant, Aktion, Originaltransaktion, serverseitig autorisierte
+  Rolle und normalisierte Begruendung. Bonnummern gehoeren zu keinem aktiven
+  V1-Fingerprint.
+
 ## 2026-08-01 – Eine Punkte-Engine für beide Sammelmodi
 
 - `customer_initiated` und `restaurant_controlled` dürfen nur unterschiedliche
@@ -1413,6 +1428,13 @@ Nicht V1.
   Multi-Filialverwaltung bleibt V2.
 - Auswahl auf Karte oder Liste verändert keinen aktiven Kundentoken und startet
   weder Registrierung, Punktebuchung noch Einlösung.
+- Der Finder trägt sichtbar den Titel `Lokale entdecken` und bietet Karte und
+  barrierefreie Liste mit Besuchen, restaurantbezogenen Punkten und der
+  nächsten Einlösemöglichkeit.
+- Die Daten werden über genau einen begrenzten Aggregat-RPC geladen. Kundenzugänge
+  bleiben restaurantbezogen, werden nur gehasht geprüft und nie zurückgegeben.
+- `Belohnung bald erreichbar` gilt zentral ab 70 Prozent. Öffnungsstatus,
+  Mittagspause und Tagesgrenzen verwenden `Europe/Vienna`.
 
 ---
 

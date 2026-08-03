@@ -36,26 +36,24 @@ Grant-Baseline: Die zwei alten `collect_bonus_points`-Signaturen sind weder für
 für `anon` und `authenticated` freigegeben. Alle drei vorhandenen Funktionen
 sind `SECURITY DEFINER` und besitzen derzeit `search_path=public`.
 
-## Abbruch vor dem ersten Write
+## Ausführungsstand am 2. August 2026
 
-`supabase backups list --project-ref <staging-ref>` meldet keine verfügbaren
-physischen Backups (`backups: null`) und kein Point-in-Time-Recovery
-(`pitr_enabled: false`). `walg_enabled: true` allein weist keinen auswählbaren
-oder verifizierbaren Restorepunkt nach. Damit ist die im Auftrag verlangte
-Backup-/Restore-Möglichkeit nicht geklärt.
+Vor dem ersten Write wurde ein manueller logischer Restorepunkt außerhalb von
+Git erstellt. Schema, Daten, Migration-History, Funktionen, Grants, RLS und
+Zeilenzahlen wurden gesichert. Prüfsummen, 53/53 Tabellen und die syntaktische
+Lesbarkeit wurden verifiziert. Ein physischer Test-Restore war mangels
+Docker/Podman nicht verfügbar.
 
-Gemäß dem verbindlichen Abbruchkriterium wurden deshalb:
+`RESTORE FILES VERIFIED, FULL RESTORE EXECUTION NOT AVAILABLE`
 
-- keine Migration angewendet,
-- keine Migration History verändert,
-- keine Testdaten erstellt,
-- keine Grants, RLS-Policies oder Funktionen verändert,
-- keine Parallel- oder E2E-Tests gegen das neue Schema gestartet.
+Beide Migrationen wurden anschließend einzeln und erfolgreich auf Staging
+angewendet. Der erste echte E2E-Test zeigte jedoch, dass eine
+restaurantgesteuerte Buchung von 50 Cent serverseitig akzeptiert wird. Die
+Untergrenze von 100 Cent fehlt in Engine, Preview und Confirmation. Weitere
+Tests wurden gestoppt, die Fixture vollständig bereinigt und der Ausgangsbestand
+verifiziert.
 
-Nächster sicherer Schritt: Im Supabase-Dashboard beziehungsweise über einen
-berechtigten Staging-Backup-Prozess einen aktuellen, tatsächlich
-wiederherstellbaren Restorepunkt bestätigen. Danach den unveränderten Preflight
-erneut ausführen und erst dann Migration 1 einzeln anwenden.
+Details: `docs/reports/2026-08-02_RESTAURANT_CONTROLLED_POINTS_STAGING_EXECUTION_REPORT.md`
 
 ## Ablauf
 
@@ -92,12 +90,15 @@ erneut ausführen und erst dann Migration 1 einzeln anwenden.
 - Bereits gebuchte Punkte ausschließlich über die idempotente Gegenbuchung
   korrigieren, nie per direktem Datenbank-Update.
 
-## Offene manuelle Gates
+## Offene Gates
 
-- bestätigter, wiederherstellbarer Staging-Backup-/Restorepunkt
-- Docker/Podman für einen vollständigen lokalen `supabase db reset`
-- echter Staging-Datenbanklauf
+- additive Reparaturmigration für den Mindestbetrag von 100 Cent
+- erneuter vollständiger Staging-E2E- und Parallelitätslauf
+- Docker/Podman für einen vollständigen Test-Restore
 - physisches iPhone Safari und installierte PWA
 - Staff-Tablet-Kamera im Querformat und unter schlechtem Netz
 
-Status: **NOT READY**
+Reparaturbericht:
+`docs/reports/2026-08-02_MINIMUM_POINTS_AMOUNT_REPAIR_REPORT.md`
+
+Status: **REPAIR VERIFIED – CONTINUE STAGING TESTS**

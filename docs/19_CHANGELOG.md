@@ -1,6 +1,25 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-03 – Partnerlokal-Finder mit eigenen Bonusständen
+
+- Kundenseite als `Lokale entdecken` mit Karte, Liste und sechs V1-Filtern
+  vereinheitlicht.
+- Öffnungsstatus einschließlich Mittagspause nach Europe/Vienna ergänzt.
+- Restaurantbezogene Punkte, Besuche und Belohnungen in einem begrenzten,
+  tokengeprüften Aggregat-RPC zusammengeführt und N+1-Abfragen entfernt.
+- Karteninteraktion bleibt rein lesend und verändert keinen aktiven QR-Kontext.
+
+## 2026-08-03 – Bonnummer aus dem aktiven V1-Punkteflow entfernt
+
+- Bonnummer-Eingabe aus Staff UI und Servicevertrag entfernt.
+- Oeffentlichen restaurantgesteuerten Confirm-RPC auf fuenf Parameter reduziert.
+- Historischen sechsparametrigen Vertrag fuer Browserrollen gesperrt.
+- Bonnummer-Eindeutigkeitsindex entfernt, ohne historische Werte oder Spalten zu
+  loeschen.
+- Reverse-Fingerprint an Tenant, Operation, Originaltransaktion,
+  serverautorisierte Rolle und normalisierte Begruendung gebunden.
+
 ## 2026-08-01 – Gemeinsame serverseitige Punkte-Engine
 
 - Customer- und restaurantgesteuerte Buchungen auf eine gemeinsame Berechnung umgestellt.

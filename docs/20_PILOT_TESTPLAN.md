@@ -376,11 +376,23 @@ Gast zeigt einlösbare Belohnung
 Test:
 
 ```text
-Gast scannt Bonus QR
-→ Rechnungsbereich
+Restaurantgesteuert: Gast zeigt persoenlichen QR
+→ Team erfasst Betrag ohne Bonnummer
+→ Tages-PIN
+→ Punkte genau einmal erhalten
+→ Retry liefert dasselbe Ergebnis
+
+Kundeninitiiert: Gast scannt Restaurant-QR
+→ Rechnungsbereich ohne Bonnummer
+→ Tages-PIN
 → Punkte erhalten
 → Fortschritt sichtbar
 ```
+
+Zusaetzlich pruefen: geaenderter Betrag, Gast oder QR mit demselben
+Idempotenzschluessel wird abgelehnt; Earn und Reverse duerfen denselben
+Client-Schluessel als unterschiedliche Operationen verwenden; Storno-Retry
+erzeugt keine zweite Gegenbuchung.
 
 ### Flow 05 – Bonus Boost
 

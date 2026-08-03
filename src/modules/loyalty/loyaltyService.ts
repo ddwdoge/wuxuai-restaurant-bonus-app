@@ -849,13 +849,13 @@ export async function previewRestaurantControlledPoints(restaurantId: string, qr
 
 export async function confirmRestaurantControlledPoints(input: {
   restaurantId: string; qrReference: string; amountCents: number; dailyPin: string;
-  idempotencyKey: string; receiptNumber?: string | null;
+  idempotencyKey: string;
 }): Promise<RestaurantControlledPointsResult> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
   const { data, error } = await supabase.rpc("confirm_restaurant_controlled_points", {
     input_restaurant_id: input.restaurantId, input_qr_reference: input.qrReference,
     input_amount_cents: input.amountCents, input_daily_pin: input.dailyPin,
-    input_idempotency_key: input.idempotencyKey, input_receipt_number: input.receiptNumber ?? null,
+    input_idempotency_key: input.idempotencyKey,
   });
   if (error) throw error;
   const result = data as RestaurantControlledPointsResult;

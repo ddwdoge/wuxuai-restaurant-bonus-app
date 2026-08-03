@@ -20,3 +20,10 @@ export declare function normalizeOpeningDay(value: unknown, fallback: Pick<Openi
 export declare function suggestLunchBreak(openingStart: string, openingEnd: string, standardBreak?: { start: string; end: string } | null): LunchBreakSuggestion | null;
 export declare function validateOpeningDay(day: OpeningDay): string | null;
 export declare function todayOpeningHours(value: unknown, date?: Date): string | null;
+export type PartnerOpeningStatus = {
+  isOpen: boolean;
+  state: "open" | "closed" | "opens_later" | "lunch_break" | "unknown";
+  message: string;
+  todayHours: string | null;
+};
+export declare function partnerOpeningStatus(value: unknown, date?: Date, specialDays?: unknown, holidays?: unknown): PartnerOpeningStatus;

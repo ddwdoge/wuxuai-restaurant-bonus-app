@@ -4,6 +4,11 @@
 
 Die frühere Regel „keine Punktevergabe im Staff Portal“ ist **partially superseded**. Wenn der Owner `restaurant_controlled_only` oder `both` aktiviert, scannt das Team den kurzlebigen Kunden-QR, erfasst den bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Der Browser übermittelt keine vertrauenswürdige Punktezahl; Vorschau und Buchung kommen aus getrennten Server-RPCs.
 
+Seit 03.08.2026 ist fuer V1 verbindlich: Das Team erfasst keine Bonnummer und
+keine Belegreferenz. Die Staff-Oberflaeche zeigt dafuer kein Feld. Wiederholung,
+Missbrauchsschutz und Audit werden durch QR-Single-Use, Tages-PIN,
+serverseitige Betragsgrenzen, Idempotenz und Rate Limits abgesichert.
+
 # WUXUAI Bonus V1 – Restaurant Tablet / Mitarbeiter-Portal
 
 Status: **LOCK**

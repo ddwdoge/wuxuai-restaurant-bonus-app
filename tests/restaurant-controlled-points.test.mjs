@@ -4,6 +4,7 @@ import test from "node:test";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260731001000_restaurant_controlled_points_collection.sql", import.meta.url), "utf8");
 const sharedEngineMigration = readFileSync(new URL("../supabase/migrations/20260801001000_shared_points_bonus_engine.sql", import.meta.url), "utf8");
+const noReceiptMigration = readFileSync(new URL("../supabase/migrations/20260803003000_remove_receipts_from_v1_points_flow.sql", import.meta.url), "utf8");
 const service = readFileSync(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
 const staff = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", import.meta.url), "utf8");
 const customer = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
@@ -83,8 +84,9 @@ test("high amount and limit rejection are auditable", () => {
   assert.match(migration, /0\.8/);
 });
 
-test("receipt and rapid repeat checks reduce split attempts", () => {
-  assert.match(migration, /receipt_number = trim\(input_receipt_number\)/);
+test("V1 rapid repeat checks reduce split attempts without receipt numbers", () => {
+  assert.match(noReceiptMigration, /drop index if exists public\.points_transactions_unique_receipt_per_restaurant_idx/);
+  assert.match(noReceiptMigration, /confirm_restaurant_controlled_points\([\s\S]*input_idempotency_key uuid\n\)/);
   assert.match(migration, /interval '5 minutes'/);
   assert.match(migration, />= 3/);
 });

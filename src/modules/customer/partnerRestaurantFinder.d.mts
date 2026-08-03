@@ -8,6 +8,18 @@ export function filterPartnerRestaurants<T extends {
 }>(locations: T[], query: string): T[];
 
 export function distanceInKilometers(origin: Coordinates, destination: Coordinates): number;
+export const partnerFilterKeys: readonly ["all", "nearby", "visited", "points", "near_reward", "open"];
+export function rewardProgressPercent(location: {
+  membership?: { registered?: boolean; points_balance?: number; next_reward?: { required_points: number } | null } | null;
+}): number;
+export function isRewardNear(location: {
+  membership?: { registered?: boolean; points_balance?: number; available_rewards?: unknown[]; next_reward?: { required_points: number } | null } | null;
+}): boolean;
+export function filterPartnerRestaurantsByCategory<T extends {
+  distance_km?: number | null;
+  opening_status?: { isOpen: boolean } | null;
+  membership?: { visits_count?: number; points_balance?: number; registered?: boolean; available_rewards?: unknown[]; next_reward?: { required_points: number } | null } | null;
+}>(locations: T[], filter: typeof partnerFilterKeys[number]): T[];
 export function sortPartnerRestaurants<T extends {
   name: string;
   distance_km?: number | null;
@@ -25,4 +37,5 @@ export function markerStatus(location: {
     available_rewards?: unknown[];
     next_reward?: { missing_points: number } | null;
   } | null;
-}): "partner" | "registered" | "member" | "near" | "reward";
+  opening_status?: { isOpen: boolean } | null;
+}): "partner" | "registered" | "member" | "near" | "reward" | "closed";

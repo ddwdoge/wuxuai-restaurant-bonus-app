@@ -107,22 +107,75 @@ function viennaNowParts(date) {
   }).formatToParts(date);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const weekdayMap = { Sun: "sun", Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri", Sat: "sat" };
-  return { dayKey: weekdayMap[values.weekday], time: `${values.hour}:${values.minute}` };
+  const dateValue = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Vienna",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+  return { date: dateValue, dayKey: weekdayMap[values.weekday], time: `${values.hour}:${values.minute}` };
+}
+
+function dateMatches(entries, date) {
+  return Array.isArray(entries) && entries.some((entry) => {
+    if (typeof entry === "string") return entry.trim() === date;
+    return entry && typeof entry === "object" && (entry.date === date || entry.day === date);
+  });
+}
+
+function specialOpeningDay(entries, date) {
+  if (!Array.isArray(entries)) return null;
+  const entry = entries.find((candidate) => candidate && typeof candidate === "object" && (candidate.date === date || candidate.day === date));
+  return entry?.opening_hours ?? entry?.hours ?? null;
+}
+
+export function partnerOpeningStatus(value, date = new Date(), specialDays = [], holidays = []) {
+  const now = viennaNowParts(date);
+  if (dateMatches(holidays, now.date)) {
+    return { isOpen: false, state: "closed", message: "Heute geschlossen", todayHours: "Heute geschlossen" };
+  }
+
+  const override = specialOpeningDay(specialDays, now.date);
+  const schedule = override && typeof override === "object" ? { [now.dayKey]: override } : value;
+  if (!schedule || typeof schedule !== "object") {
+    return { isOpen: false, state: "unknown", message: "Öffnungszeiten nicht verfügbar", todayHours: null };
+  }
+
+  const day = schedule[now.dayKey];
+  if (!day?.enabled) return { isOpen: false, state: "closed", message: "Heute geschlossen", todayHours: "Heute geschlossen" };
+  if (!day.open || !day.close) return { isOpen: false, state: "unknown", message: "Öffnungszeiten nicht verfügbar", todayHours: null };
+
+  const twoBlocks = Boolean(day.lunchBreakEnabled && day.secondOpen && day.secondClose);
+  const todayHours = twoBlocks
+    ? `Heute ${day.open}–${day.close} und ${day.secondOpen}–${day.secondClose} Uhr`
+    : `Heute ${day.open}–${day.close} Uhr`;
+
+  if (now.time < day.open) {
+    return { isOpen: false, state: "opens_later", message: `Öffnet um ${day.open}`, todayHours };
+  }
+
+  if (twoBlocks) {
+    const breakStart = day.lunchBreakStart || day.close;
+    const breakEnd = day.lunchBreakEnd || day.secondOpen;
+    if (now.time >= day.open && now.time < day.close) {
+      return { isOpen: true, state: "open", message: `Jetzt geöffnet · Schließt um ${day.close}`, todayHours };
+    }
+    if (now.time >= breakStart && now.time < breakEnd) {
+      return { isOpen: false, state: "lunch_break", message: `Momentan Mittagspause – wieder geöffnet ab ${day.secondOpen}`, todayHours };
+    }
+    if (now.time >= day.secondOpen && now.time < day.secondClose) {
+      return { isOpen: true, state: "open", message: `Jetzt geöffnet · Schließt um ${day.secondClose}`, todayHours };
+    }
+    return { isOpen: false, state: "closed", message: "Heute geschlossen", todayHours };
+  }
+
+  if (now.time < day.close) {
+    return { isOpen: true, state: "open", message: `Jetzt geöffnet · Schließt um ${day.close}`, todayHours };
+  }
+  return { isOpen: false, state: "closed", message: "Heute geschlossen", todayHours };
 }
 
 export function todayOpeningHours(value, date = new Date()) {
-  if (!value || typeof value !== "object") return null;
-  const { dayKey, time } = viennaNowParts(date);
-  const day = value[dayKey];
-  if (!day?.enabled) return "Heute geschlossen";
-  if (!day.open || !day.close) return null;
-
-  if (day.lunchBreakEnabled && day.secondOpen && day.secondClose) {
-    if (day.lunchBreakStart && day.lunchBreakEnd && time >= day.lunchBreakStart && time < day.lunchBreakEnd) {
-      return `Momentan Mittagspause – wieder geöffnet ab ${day.secondOpen}`;
-    }
-    return `Heute ${day.open}–${day.close} und ${day.secondOpen}–${day.secondClose} Uhr`;
-  }
-
-  return `Heute ${day.open}–${day.close} Uhr`;
+  const status = partnerOpeningStatus(value, date);
+  return status.state === "lunch_break" ? status.message : status.todayHours;
 }

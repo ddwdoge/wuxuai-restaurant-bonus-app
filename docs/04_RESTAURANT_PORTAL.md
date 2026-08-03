@@ -4,6 +4,10 @@
 
 Unter Bonusprogramm legt der Owner den erlaubten Sammelweg und den Maximalbetrag pro Buchung fest. Änderungen sind tenantgebunden und auditpflichtig. Der Standard für neue Restaurants ist „Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
 
+V1 besitzt keine Owner-Einstellung fuer Bonnummern oder Kassenbelege. Historische
+Belegfelder sind nicht Teil der aktiven Konfiguration und duerfen nicht als
+Sicherheits- oder Idempotenzmerkmal verwendet werden.
+
 # WUXUAI Bonus V1 -- Restaurant Portal
 
 Status: **LOCK**

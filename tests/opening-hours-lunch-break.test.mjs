@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeOpeningDay, suggestLunchBreak, todayOpeningHours, validateOpeningDay } from "../src/shared/openingHours.mjs";
+import { normalizeOpeningDay, partnerOpeningStatus, suggestLunchBreak, todayOpeningHours, validateOpeningDay } from "../src/shared/openingHours.mjs";
 
 const fallback = { enabled: false, open: "11:00", close: "22:00" };
 
@@ -104,4 +104,23 @@ test("Kundenhinweis zeigt beide Öffnungsblöcke", () => {
 test("Kundenhinweis meldet die aktuelle Mittagspause in Europe/Vienna", () => {
   const hours = { thu: { enabled: true, open: "09:00", close: "12:00", lunchBreakEnabled: true, lunchBreakStart: "12:00", lunchBreakEnd: "14:00", secondOpen: "14:00", secondClose: "18:00" } };
   assert.equal(todayOpeningHours(hours, new Date("2026-07-30T11:00:00Z")), "Momentan Mittagspause – wieder geöffnet ab 14:00");
+});
+
+test("Finder unterscheidet geöffnet, Mittagspause und geschlossen in Europe/Vienna", () => {
+  const hours = { thu: { enabled: true, open: "09:00", close: "12:00", lunchBreakEnabled: true, lunchBreakStart: "12:00", lunchBreakEnd: "14:00", secondOpen: "14:00", secondClose: "18:00" } };
+  assert.deepEqual(partnerOpeningStatus(hours, new Date("2026-07-30T08:00:00Z")), {
+    isOpen: true,
+    state: "open",
+    message: "Jetzt geöffnet · Schließt um 12:00",
+    todayHours: "Heute 09:00–12:00 und 14:00–18:00 Uhr",
+  });
+  assert.equal(partnerOpeningStatus(hours, new Date("2026-07-30T11:00:00Z")).state, "lunch_break");
+  assert.equal(partnerOpeningStatus(hours, new Date("2026-07-30T17:30:00Z")).state, "closed");
+});
+
+test("strukturierter Feiertag schließt das Lokal", () => {
+  const hours = { thu: { enabled: true, open: "09:00", close: "18:00" } };
+  const status = partnerOpeningStatus(hours, new Date("2026-07-30T08:00:00Z"), [], ["2026-07-30"]);
+  assert.equal(status.isOpen, false);
+  assert.equal(status.message, "Heute geschlossen");
 });

@@ -507,13 +507,24 @@ RPCs müssen idempotent oder eindeutig geschützt sein.
 
 ### 10.1 Punkte sammeln
 
-V1 nutzt Wiederholungssperre.
+V1 nutzt einen serverseitig erzwungenen Idempotenzschluessel. Der aktive
+restaurantgesteuerte Vertrag lautet:
 
-Später:
+```text
+confirm_restaurant_controlled_points(
+  restaurant_id,
+  qr_reference,
+  amount_cents,
+  daily_pin,
+  idempotency_key
+)
+```
 
-- idempotency_key
-- bill_id
-- signed receipt
+Es gibt in V1 keine Bonnummer, keine `bill_id` und keinen signierten Beleg. Der
+historische sechsparametrige Vertrag ist fuer Browserrollen gesperrt. Earn-Retry
+bindet den Schluessel an den kanonischen fachlichen Payload; Reverse-Retry bindet
+Restaurant, Aktion, Originaltransaktion, serverseitig autorisierte Rolle und
+normalisierte Begruendung.
 
 ### 10.2 Belohnung einlösen
 
@@ -946,6 +957,13 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   nur `anon` und `authenticated`.
 - Es werden keine Owner-, Mitarbeiter-, Kundenkontakt- oder Umsatzdaten
   veröffentlicht.
+- `get_partner_local_finder(input_customer_tokens, input_limit, input_offset)`
+  ist der aktive gebündelte V1-Lesevertrag. Er ersetzt im Finder die N+1-Folge
+  aus öffentlicher Standortabfrage und einzelnen Mitgliedschaftsabfragen.
+- Der RPC begrenzt die Ergebnismenge auf 100, prüft jeden lokalen Kundenzugang
+  gegen Restaurant, aktive Mitgliedschaft, Hash und Ablauf und gibt weder
+  Klartexttoken noch personenbezogene Kontaktdaten zurück.
+- Die bisherigen beiden RPCs bleiben als Kompatibilitätsverträge bestehen.
 
 ## Ergänzung 2026-07-24: Public Legal Center und Datenexport
 

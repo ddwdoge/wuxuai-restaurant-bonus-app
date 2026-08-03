@@ -5,7 +5,7 @@
 
 ## Restaurantgesteuerte Punktevergabe
 
-`loyalty_settings.points_collection_mode` trennt die drei erlaubten Modi. Kurzlebige Referenzen liegen mit Token- und Ersatzcode-Hash in `customer_points_qr_references`; direkte Tabellenrechte sind entzogen und RLS bleibt aktiv. `points_transactions` speichert Centbetrag, Regelversion, angewendete Rate, Quelle, Staff-Kontext und optionale Bonnummer.
+`loyalty_settings.points_collection_mode` trennt die drei erlaubten Modi. Kurzlebige Referenzen liegen mit Token- und Ersatzcode-Hash in `customer_points_qr_references`; direkte Tabellenrechte sind entzogen und RLS bleibt aktiv. `points_transactions` speichert Centbetrag, Regelversion, angewendete Rate, Quelle und Staff-Kontext. Die nullable Spalte `receipt_number` ist nur ein historischer Platzhalter fuer eine moegliche V3/V4-POS-Integration und wird von keinem aktiven V1-RPC gelesen oder geschrieben.
 
 Seit 2026-08-01 speichert jede neue Punktebuchung zusätzlich `base_points`,
 `boost_multiplier`, `boost_source`, `boost_expires_at` und

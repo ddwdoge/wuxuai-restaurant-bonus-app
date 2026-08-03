@@ -14,6 +14,17 @@ Bonus V1.
 -   Autosave statt manueller Speicherung.
 -   Restaurant arbeitet mit Euro, WUXUAI rechnet Punkte.
 
+## Punktevergabe ohne Kassenintegration
+
+-   V1 besitzt keine POS- oder Kassenintegration.
+-   Im Punkteflow gibt es keine Bonnummer und keine Belegreferenz.
+-   Weder Gast noch Team oder Owner geben eine Bonnummer ein.
+-   Sicherheit entsteht durch Restaurant- und Kundenzuordnung, kurzlebigen
+    Single-Use-QR, Tages-PIN, serverseitige Betragsgrenzen, Idempotenz,
+    Rate Limits und Audit.
+-   Historische nullable Datenbankfelder bleiben ausschließlich als
+    Vorbereitung fuer eine spaetere V3/V4-Integration erhalten.
+
 ## Flow-Regeln
 
 -   Neuer Flow erst nach LOCK des vorherigen Flows.
