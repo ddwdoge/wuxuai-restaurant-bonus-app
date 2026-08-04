@@ -1326,3 +1326,28 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
 - Identitätsfelder werden durch einen Trigger gesperrt. Nur der kontrollierte Owner/Admin-Support-RPC darf sie ändern.
 - Telefonnummernänderungen widerrufen alle aktiven Kundentokens und bekannten Geräte und erzeugen genau einen neuen, nur einmal zurückgegebenen Zugang.
 - `restaurant_security_settings.sms_verification_enabled` ist standardmäßig `false`; es existiert keine SMS-Runtime-Abhängigkeit.
+
+## Ergänzung 2026-08-04: Zentraler Kundenaccount und Angebots-E-Mail-Consent
+
+- `customer_accounts` ist eine technische zentrale Zugangsidentität und ersetzt
+  nicht die restaurantbezogenen `customers`-Zeilen.
+- `customer_account_memberships` verknüpft ausschließlich bereits validierte
+  Memberships; ein Customer kann nur einem zentralen Account zugeordnet sein.
+- `customer_account_tokens` speichert ausschließlich Hashes.
+- E-Mail-Adresse, Consent, DOI-/Abmeldetokens und Delivery-Log liegen in
+  getrennten Tabellen mit aktivem RLS und ohne direkte Browserrechte.
+- Die eindeutige Delivery-Kombination `(consent_id, frequency, period_key)`
+  verhindert doppelte Wochen- und Monatszusammenfassungen.
+- Delivery ist standardmäßig deaktiviert und benötigt eine gesonderte
+  Providerfreigabe.
+
+### Supabase-Auth-Bindung
+
+- `customer_accounts.auth_user_id` bindet genau einen bestätigten Supabase
+  Auth User an die zentrale Identität.
+- `customer_account_memberships` bleibt die einzige Verbindung zu den
+  restaurantbezogenen `customers`-Zeilen.
+- Restauranttokens werden nicht als globales Login verwendet. Sie dürfen nur
+  eine bestehende Legacy-Membership nach positiver Serverprüfung verknüpfen.
+- Es findet keine automatische Zusammenführung über Telefonnummer, Geburtstag
+  oder Gerätekennung statt.

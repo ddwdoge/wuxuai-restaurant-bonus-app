@@ -279,7 +279,8 @@ Zweck:
 
 Pflichten:
 
-- keine Passwortlogik
+- keine eigene Passwortlogik im Restaurant-RPC; Authentifizierung und
+  Passwortverwaltung liegen ausschließlich bei Supabase Auth
 - keine SMS/WhatsApp
 - phone pro Restaurant prüfen
 - keine vollständigen Kundendaten bei bestehender Telefonnummer an anon zurückgeben
@@ -729,9 +730,14 @@ Operativer Zugriff über staff_members und staff_sessions.
 
 ### 17.3 Customer
 
-Kein Supabase Auth in V1.
+Kunden verwenden seit 04.08.2026 ein bestätigtes Supabase-Auth-Konto als
+zentrale Identität. Restaurantbezogene Tokens bleiben nach serverseitiger
+Membership-Prüfung ausschließlich Zugangsmittel für den lokalen Bonusbereich.
+Telefonnummer, Geburtstag und Gerätekennung sind keine Authentifizierung.
 
-Kunden nutzen tokenisiertes Kundenportal.
+`join_customer_account_restaurant` prüft Auth-User, aktives Restaurant, Legal
+Readiness und ausdrückliche Zustimmung. Ein bestehender Restaurantkunde darf
+nur über einen gültigen geheimen Restauranttoken verknüpft werden.
 
 ### 17.4 WUXUAI Admin
 
@@ -974,6 +980,22 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   gegen Restaurant, aktive Mitgliedschaft, Hash und Ablauf und gibt weder
   Klartexttoken noch personenbezogene Kontaktdaten zurück.
 - Die bisherigen beiden RPCs bleiben als Kompatibilitätsverträge bestehen.
+
+## Ergänzung 2026-08-04: Zentraler Kundenaccount und E-Mail-Digests
+
+- `bootstrap_customer_account` verknüpft nur einen gültigen aktiven
+  restaurantbezogenen Kundenzugang.
+- `get_customer_account` liefert ausschließlich Memberships des gehasht
+  validierten zentralen Accounts.
+- `open_customer_account_membership` prüft Account, Restaurant und aktive
+  Membership und gibt einen neuen restaurantbezogenen Token nur einmal zurück.
+- DOI-Anforderung und Digest-Jobverträge sind `service_role`-only; Bestätigung
+  und restaurantbezogene Abmeldung verwenden zweckgebundene Token-Hashes.
+- `list_due_customer_offer_email_consents`,
+  `reserve_customer_offer_email_delivery` und
+  `complete_customer_offer_email_delivery` bilden den begrenzten serverseitigen
+  Versandvertrag. Browserrollen erhalten kein EXECUTE.
+- Der Owner-RPC liefert nur restaurantbezogene Aggregate, keine E-Mail-Liste.
 
 ## Ergänzung 2026-07-24: Public Legal Center und Datenexport
 

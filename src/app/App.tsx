@@ -7,10 +7,11 @@ import { AuthCallbackPage } from "../modules/auth/AuthCallbackPage";
 import { ConfirmEmailPage } from "../modules/auth/ConfirmEmailPage";
 import { ForgotPasswordPage } from "../modules/auth/ForgotPasswordPage";
 import { UpdatePasswordPage } from "../modules/auth/UpdatePasswordPage";
-import { GuestBonusInfoPage, PublicHome } from "../modules/public/PublicHome";
+import { PublicHome } from "../modules/public/PublicHome";
 import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundary";
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
+import { useAuth } from "../modules/auth/AuthProvider";
 import {
   customerPortalInstanceKey,
   readCustomerScanContext,
@@ -58,14 +59,26 @@ const RestaurantOnboarding = lazy(() =>
   import("../modules/admin/pages/RestaurantOnboarding").then((module) => ({ default: module.RestaurantOnboarding })),
 );
 const StaffTablet = lazy(() => import("../modules/staff/StaffTablet").then((module) => ({ default: module.StaffTablet })));
-const CustomerPortal = lazy(() =>
-  import("../modules/customer/CustomerPortal").then((module) => ({ default: module.CustomerPortal })),
-);
 const PartnerRestaurantFinderPage = lazy(() =>
   import("../modules/customer/PartnerRestaurantFinderPage").then((module) => ({ default: module.PartnerRestaurantFinderPage })),
 );
 const CustomerOffersPage = lazy(() =>
   import("../modules/customer/CustomerOffersPage").then((module) => ({ default: module.CustomerOffersPage })),
+);
+const CentralCustomerPage = lazy(() =>
+  import("../modules/customer/CentralCustomerPage").then((module) => ({ default: module.CentralCustomerPage })),
+);
+const CustomerEmailActionPage = lazy(() =>
+  import("../modules/customer/CustomerEmailActionPage").then((module) => ({ default: module.CustomerEmailActionPage })),
+);
+const CustomerAuthPage = lazy(() =>
+  import("../modules/customer/CustomerAuthPage").then((module) => ({ default: module.CustomerAuthPage })),
+);
+const CustomerAuthCallbackPage = lazy(() =>
+  import("../modules/customer/CustomerAuthCallbackPage").then((module) => ({ default: module.CustomerAuthCallbackPage })),
+);
+const CustomerRestaurantAccess = lazy(() =>
+  import("../modules/customer/CustomerRestaurantAccess").then((module) => ({ default: module.CustomerRestaurantAccess })),
 );
 const LegalCenterPage = lazy(() =>
   import("../modules/legal/LegalCenterPage").then((module) => ({ default: module.LegalCenterPage })),
@@ -126,13 +139,21 @@ function CustomerPortalRoute() {
   if (!scanContext) return <Navigate to="/customer" replace />;
 
   return withFallback(
-    <CustomerPortal
+    <CustomerRestaurantAccess
       isBonusCollection={scanContext.routeKind === "collect"}
       key={customerPortalInstanceKey(scanContext, customerToken, historyRevision)}
       restaurantSlug={scanContext.restaurantSlug}
     />,
     <CustomerLoading />,
   );
+}
+
+function CustomerCentralRoute({ children }: { children: ReactNode }) {
+  const { loading, user } = useAuth();
+  const location = useLocation();
+  if (loading) return <CustomerLoading />;
+  if (!user) return <Navigate replace to={`/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  return <>{children}</>;
 }
 
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
@@ -292,9 +313,16 @@ export function App() {
         }
       />
       <Route path="/r/:restaurantSlug/:referralToken" element={withFallback(<ReferralLanding />, <CustomerLoading />)} />
-      <Route path="/customer" element={<GuestBonusInfoPage />} />
-      <Route path="/customer/restaurants" element={withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)} />
-      <Route path="/customer/offers" element={withFallback(<CustomerOffersPage />, <CustomerLoading />)} />
+      <Route path="/customer/login" element={withFallback(<CustomerAuthPage mode="login" />, <CustomerLoading />)} />
+      <Route path="/customer/register" element={withFallback(<CustomerAuthPage mode="register" />, <CustomerLoading />)} />
+      <Route path="/customer/auth/callback" element={withFallback(<CustomerAuthCallbackPage />, <CustomerLoading />)} />
+      <Route path="/customer" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="home" />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/locations" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="locations" />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/account" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="account" />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/email/confirm" element={withFallback(<CustomerEmailActionPage action="confirm" />, <CustomerLoading />)} />
+      <Route path="/customer/email/unsubscribe" element={withFallback(<CustomerEmailActionPage action="unsubscribe" />, <CustomerLoading />)} />
+      <Route path="/customer/restaurants" element={<CustomerCentralRoute>{withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/:slug/offers" element={<CustomerCentralRoute>{withFallback(<CustomerOffersPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/legal/:slug" element={withFallback(<LegalCenterPage />, <CustomerLoading />)} />
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />

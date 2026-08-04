@@ -319,6 +319,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     }
   }, [activeToken, customer, customerToken, restaurantSlug, searchParams, setSearchParams]);
 
+
   useEffect(() => {
     let cancelled = false;
 
@@ -1789,7 +1790,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 {restaurantOffers.length ? (
                   <section className="premium-content-section" aria-label="Aktuelles und Angebote">
                     <SectionHeader
-                      action={restaurantOffers.length > 3 ? <Link className="premium-text-button" to={`/customer/offers?current=${encodeURIComponent(restaurant.slug)}`}>Alle ansehen</Link> : null}
+                      action={restaurantOffers.length > 3 ? <Link className="premium-text-button" to={`/customer/${encodeURIComponent(restaurant.slug)}/offers`}>Alle ansehen</Link> : null}
                       subtitle="Neuigkeiten direkt von deinem Restaurant."
                       title="Aktuelles & Angebote"
                     />
@@ -1835,9 +1836,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 
-                <Link className="premium-restaurant-finder-link" to={`/customer/offers?current=${encodeURIComponent(restaurant.slug)}`}>
+                <Link className="premium-restaurant-finder-link" to={`/customer/${encodeURIComponent(restaurant.slug)}/offers`}>
                   <span><Newspaper aria-hidden="true" size={22} /></span>
                   <div><strong>Aktuelles entdecken</strong><small>Neuigkeiten der WUXUAI Partner ansehen</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
+
+                <Link className="premium-restaurant-finder-link" to="/customer">
+                  <span><UserRound aria-hidden="true" size={22} /></span>
+                  <div><strong>Mein WUXUAI</strong><small>Alle deine Lokale und Punkte getrennt im Überblick</small></div>
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 

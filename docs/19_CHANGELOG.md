@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-04 – Zentraler Kundenbereich und Angebots-E-Mail-Vertrag
+
+- `Mein WUXUAI` mit zentraler Route und fünfteiliger Navigation ergänzt.
+- bereits validierte restaurantbezogene Memberships serverseitig verknüpft;
+  Punkte bleiben getrennt und werden nicht summiert.
+- Finder und `Aktuelles` von Browser-Tokenaggregation auf zentralen Account-RPC
+  umgestellt.
+- freiwilliges, restaurantbezogenes E-Mail-Consent-/DOI-/Abmeldemodell und
+  idempotentes Digest-Delivery-Log additiv vorbereitet.
+- Marketingversand mangels freigegebenem Provider weiterhin deaktiviert.
+- Owner-Ansicht auf aggregierte E-Mail-Kennzahlen ohne Empfängerlisten begrenzt.
+- Migration nicht angewendet; kein Deployment durchgeführt.
+
 ## 2026-08-04 – Aktuelles & Angebote technisch umgesetzt
 
 - eigenstaendiges, tenantgebundenes Angebotsmodell ohne Reward- oder
@@ -2498,3 +2511,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Loader-Fehler und fehlende Berechtigung werden neutral behandelt und können kontrolliert erneut geladen werden.
 - Eine lokale Error Boundary schützt die geschützte Owner-Legal-Route vor unerwarteten Renderfehlern.
 - Keine Migration, RLS-, Legal-Template-, Onboarding-, Bonus- oder Tenant-Logik geändert.
+## 2026-08-04 – Zentraler Kundenlogin und Restaurantkontext vorbereitet
+
+- `customer_accounts` additiv an bestätigte Supabase-Auth-Nutzer gebunden
+- Kundenlogin, Kundenregistrierung und eigener Bestätigungs-Callback ergänzt
+- QR-Slug bleibt über Anmeldung und Bestätigung erhalten
+- Restaurantbeitritt mit Legal-Prüfung, ausdrücklicher Zustimmung, Tenant-Lock
+  und bestehender Willkommenslogik umgesetzt
+- zentrale Navigation auf Start, Meine Lokale, Entdecken und Konto reduziert
+- global gemischten Angebotsfeed entfernt; Angebote nur im Restaurantkontext
+- keine Migration angewendet und kein Versand aktiviert

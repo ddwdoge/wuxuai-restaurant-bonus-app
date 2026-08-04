@@ -96,3 +96,29 @@ Status: LOCK
   sechsstelligen Einlösecode.
 - Storno einer Punktebelohnung ist nur für Owner oder Support mit Begründung,
   Audit, Journal und atomarer Rückbuchung zulässig.
+
+## LOCK-Ergänzung 2026-08-04: Mein WUXUAI und Angebots-E-Mails
+
+- Nach einem serverseitig validierten ersten Restaurantbeitritt darf der Kunde
+  bestehende Memberships im zentralen Bereich `Mein WUXUAI` erneut öffnen.
+- Punkte, Rewards, Geschenke und Besuche bleiben strikt restaurantbezogen und
+  werden nicht summiert.
+- Der Restaurant-QR bleibt für ersten Beitritt und Vor-Ort-Kontext erhalten.
+- Restauranttokens dürfen nicht als globale Browseridentität aggregiert werden.
+- Angebots-E-Mails sind ausschließlich freiwillige, restaurantbezogene und per
+  Double-Opt-in bestätigte Wochen- oder Monatszusammenfassungen; Standard ist
+  `Nie`.
+- Diese begrenzte Entscheidung ersetzt das frühere pauschale V1-E-Mail-Verbot
+  im Modul `Aktuelles & Angebote`. Alle anderen Marketingautomationen bleiben
+  außerhalb von V1.
+- Ohne freigegebenen Marketingprovider bleibt der Versand deaktiviert.
+
+## LOCK-Ergänzung 2026-08-04: Zentraler Kundenlogin
+
+- Die zentrale Kundenidentität verwendet Supabase Auth mit bestätigter E-Mail
+  und Passwort. Diese Entscheidung ersetzt die frühere passwortlose Gastregel.
+- Ein QR setzt ausschließlich den Restaurantkontext. Der Beitritt benötigt eine
+  aktive Kundensitzung und ausdrückliche Zustimmung.
+- Die Navigation hat vier Ziele: `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
+- Vollständige Angebote erscheinen nur im ausgewählten Restaurantbereich; ein
+  global gemischter Angebotsfeed ist in V1 verboten.

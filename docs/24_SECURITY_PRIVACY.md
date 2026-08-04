@@ -292,13 +292,13 @@ Sie arbeiten über:
 
 ### 8.3 Gäste
 
-Gäste nutzen in V1 kein Supabase Auth Konto.
+Gäste nutzen ein bestätigtes Supabase-Auth-Konto. Die Auth-User-ID bindet genau
+eine zentrale `customer_accounts`-Identität. Darunter bleiben mehrere
+Memberships, Punkte und Rewards strikt restaurantbezogen.
 
-Sie nutzen:
-
-- Customer Token
-- QR-Link
-- restaurantspezifisches Kundenportal
+Restauranttokens werden erst nach Auth- und Membership-Prüfung ausgegeben und
+gelten nur für das konkrete Restaurant. E-Mail, Telefonnummer, Geburtstag und
+Gerätekennung dürfen niemals allein eine Membership verknüpfen.
 
 ### 8.4 WUXUAI Admin
 
@@ -1149,5 +1149,19 @@ Endstatus: **LOCK**
 - Optionale technische Kennungen müssen pseudonymisiert und Browserangaben auf
   eine nicht eindeutig identifizierende Klasse minimiert bleiben.
 - Browser-Push-Permission und Marketingeinwilligung sind getrennte Nachweise.
+
+## Ergänzung 2026-08-04: Zentraler Zugang und Angebots-E-Mail-Datenschutz
+
+- Ein zentraler Zugang wird nur aus einem gültigen geheimen Restauranttoken
+  aufgebaut; Telefonnummer, Geburtstag und `device_id` reichen niemals aus.
+- Klartexttokens erscheinen weder in Tabellen, Audit, Analytics noch Reports.
+- Restaurant A erhält keine Membership-, Punkte- oder E-Mail-Daten von B.
+- E-Mail-Einwilligungen sind restaurantbezogen, freiwillig, versioniert,
+  widerrufbar und standardmäßig nicht erteilt.
+- DOI- und Abmeldetokens sind gehasht, zweckgebunden, ablaufend, einmalig und
+  rate-limitiert.
+- V1 verwendet keine individuellen Öffnungsprofile oder Trackingpixel.
+- Auth-SMTP wird nicht automatisch für Marketing verwendet; Delivery bleibt
+  ohne freigegebenen Provider deaktiviert.
 - Der öffentliche Legal-Endpunkt besitzt keine Tabellen-Schreiboperation und
   keine direkte Public-Select-Policy auf Legal- oder Kundentabellen.

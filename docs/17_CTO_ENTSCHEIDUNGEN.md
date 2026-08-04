@@ -1082,9 +1082,9 @@ Nur noch 2,20 € bis zur nächsten Stufe.
 
 ---
 
-## 39. Kunden registrieren ohne Passwort
+## 39. Historische Regel: Kunden registrieren ohne Passwort
 
-🟢 **FIX**
+Status: **ERSETZT AM 2026-08-04**
 
 V1 Kundenregistrierung:
 
@@ -1102,6 +1102,9 @@ Keine:
 ### Warum?
 
 Schneller Einstieg, keine Kosten.
+
+Diese Regel wurde durch die spätere CTO-Entscheidung zum zentralen
+Supabase-Auth-Kundenkonto ersetzt.
 
 ---
 
@@ -2039,3 +2042,44 @@ normale Punktebelohnungen.
 
 Diese Entscheidung ersetzt frühere pauschale Verbote dynamischer
 Promotionflächen ausschließlich für dieses eng begrenzte Informationsmodul.
+
+## CTO-Entscheidung 2026-08-04: Zentraler Kundenbereich und Angebots-E-Mails
+
+🟢 **LOCKED / V1 / DRAFT_LEGAL_REVIEW_REQUIRED**
+
+- `Mein WUXUAI` verbindet serverseitig validierte restaurantbezogene
+  Memberships, ohne Punkte restaurantübergreifend zu summieren.
+- Der QR bleibt für Beitritt und Vor-Ort-Kontext; bestehende Memberships dürfen
+  ohne erneuten Scan geöffnet werden.
+- Telefonnummer, Geburtstag und Gerätekennung sind keine Zugangsnachweise.
+- Pro Restaurant sind freiwillig `Nie`, `Wöchentlich` und `Monatlich` erlaubt;
+  Standard ist `Nie`, Aktivierung erst nach Double-Opt-in.
+- Digest-Versand ist serverseitig und periodisch idempotent. Owner sehen nur
+  Aggregate.
+- Diese Entscheidung ersetzt die E-Mail-Sperre der unmittelbar vorherigen
+  `Aktuelles & Angebote`-Entscheidung nur für bestätigte Digests.
+- Ohne geeigneten Marketingprovider bleibt Versand technisch deaktiviert.
+
+Diese Entscheidung wird hinsichtlich Auth-Modell, Navigation und globaler
+Angebotsansicht durch die nachfolgende Entscheidung `Zentraler Kundenlogin und
+Restaurantkontext` präzisiert beziehungsweise ersetzt.
+
+## CTO-Entscheidung 2026-08-04: Zentraler Kundenlogin und Restaurantkontext
+
+🟢 **LOCKED / V1**
+
+- Eine bestätigte Supabase-Auth-Session ist die zentrale Kundenidentität.
+- Kunden registrieren sich mit E-Mail, Passwort, Vorname, Telefonnummer und
+  optionalem Geburtstag. Passwörter werden ausschließlich von Supabase Auth
+  verarbeitet.
+- Ein Restaurant-QR setzt nur den Restaurantkontext und enthält keine
+  Kundendaten oder globalen Kundentokens.
+- Memberships entstehen ausschließlich nach bewusster Zustimmung und bleiben
+  zusammen mit Punkten, Rewards, Geschenken und Angeboten restaurantbezogen.
+- Bestehende Restaurantkunden werden nur mit gültigem geheimem Restauranttoken
+  verknüpft; Telefonnummer, Geburtstag oder Gerätekennung reichen nicht.
+- Die zentrale Navigation lautet `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
+- Es gibt keinen global gemischten Angebotsfeed. Vollständige Angebote werden
+  nur im bewusst geöffneten Restaurantkontext gezeigt.
+- Angebots-E-Mails bleiben deaktiviert, bis die gesonderte Infrastruktur
+  freigegeben ist.

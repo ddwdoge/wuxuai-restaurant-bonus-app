@@ -122,14 +122,12 @@ Ein neuer Gast soll in unter 30 Sekunden Mitglied werden.
 8. Konto sofort aktiv
 9. Persönlicher QR erscheint
 
-### 4.3 Keine Hürden
+### 4.3 Zentraler Zugang
 
-In V1 gibt es:
-- kein Passwort
-- keine SMS
-- kein WhatsApp
-- keine E-Mail-Pflicht
-- keine App-Installation
+Seit der CTO-Entscheidung vom 04.08.2026 verwendet V1 ein zentrales
+Supabase-Auth-Kundenkonto mit E-Mail, Passwort und E-Mail-Bestätigung. Diese
+Regel ersetzt die frühere passwortlose restaurantbezogene Gastanmeldung.
+SMS, WhatsApp und App-Installation bleiben weiterhin ausgeschlossen.
 
 ### 4.4 Warum keine SMS
 
@@ -668,7 +666,7 @@ Nicht als harte Sperre.
 
 ## 18. Was ausdrücklich verboten ist
 
-- Passwortpflicht in V1
+- eigene Passwortspeicherung außerhalb von Supabase Auth
 - SMS/WhatsApp in V1
 - Kunde kann Punkte selbst eingeben
 - Kunde kann Punkteeinlösung ohne gültigen Serverstatus verwenden
@@ -702,7 +700,8 @@ Customer Portal ist LOCK, wenn:
 
 - QR-Kontext automatisch Restaurant setzt
 - Registrierung unter 30 Sekunden möglich ist
-- keine SMS/WhatsApp/Passwort nötig sind
+- keine SMS/WhatsApp nötig sind und das zentrale Konto ausschließlich Supabase
+  Auth für E-Mail, Passwort und E-Mail-Bestätigung verwendet
 - Willkommensgeschenk gesperrt und später freigeschaltet wird
 - Freunde-Einladung kein Willkommensgeschenk gibt
 - Bonus Boost sichtbar und emotional ist
@@ -788,9 +787,10 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   nur, wenn mindestens ein aktuell veröffentlichter Beitrag vorhanden ist.
 - Beiträge zeigen Angebotsart, Titel, Bild, Kurzbeschreibung, optionalen Preis,
   Gültigkeit und eine klar beschriftete Aktion.
-- Eine zentrale Ansicht `Aktuelles` darf Beiträge von bereits besuchten Lokalen
-  und Lokalen mit vorhandenem Punktestand priorisieren. Ohne Mitgliedschaft
-  werden keine persönlichen Werte erfunden.
+- Eine globale Ansicht `Aktuelles` ist durch die spätere zentrale
+  Kundenkonto-Entscheidung ersetzt. Vollständige Beiträge werden nur im
+  bewusst ausgewählten Restaurantkontext angezeigt; `Meine Lokale` darf
+  ausschließlich restaurantbezogene Angebotsbadges zeigen.
 - Der Partnerlokal-Finder darf am Lokal ein neutrales Badge und den wichtigsten
   aktuell gültigen Beitrag anzeigen.
 - Das Öffnen eines Beitrags setzt keinen Restaurant-QR-Kontext, registriert
@@ -830,3 +830,22 @@ starten kein neues Fenster.
 Willkommens- und Geburtstagsgeschenke behalten ihren bestehenden
 sechsstelligen Einlösecode. Der Kunde kann eine Punktebelohnung nicht selbst
 stornieren.
+
+## CTO-Ergänzung 2026-08-04: Zentraler Kundenbereich
+
+- `/customer` öffnet `Mein WUXUAI` ohne Restaurant-Slug.
+- Die Navigation lautet `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
+- Memberships werden nur nach einem gültigen restaurantbezogenen Kundenzugang
+  serverseitig mit dem zentralen Konto verknüpft.
+- `Meine Lokale` zeigt Punkte, Besuche, Rewards, Geschenke und Angebote für
+  jedes Restaurant getrennt. Es gibt keine Gesamtpunktesumme.
+- `Bonus öffnen` stellt serverseitig einen neuen restaurantgebundenen Zugang
+  aus und erzeugt keine Registrierung oder Membership.
+- Telefonnummer und Geburtstag bleiben maskiert und nur über den Support
+  änderbar.
+- Angebots-E-Mails bleiben optional, pro Lokal getrennt und standardmäßig aus.
+  Ohne bestätigtes Double-Opt-in findet kein Versand statt.
+- Der vorhandene QR-, Punkte-, Redemption- und Restaurantwechsel-Flow bleibt
+  unverändert maßgeblich für Vor-Ort-Aktionen.
+- Vollständige Angebote werden ausschließlich im bewusst geöffneten
+  Restaurantkontext gezeigt. Einen global gemischten Angebotsfeed gibt es nicht.

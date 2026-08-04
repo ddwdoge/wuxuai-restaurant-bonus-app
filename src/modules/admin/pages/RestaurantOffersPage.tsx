@@ -5,6 +5,7 @@ import {
   Edit3,
   Eye,
   Image as ImageIcon,
+  Mail,
   MousePointerClick,
   Newspaper,
   Plus,
@@ -27,6 +28,7 @@ import {
   duplicateRestaurantOffer,
   formatRestaurantOfferPrice,
   loadRestaurantOfferBranches,
+  loadRestaurantOfferEmailSummary,
   loadRestaurantOffers,
   restaurantOfferDisplayStatus,
   restaurantOfferTypeLabels,
@@ -34,6 +36,7 @@ import {
   saveRestaurantOffer,
   type RestaurantOffer,
   type RestaurantOfferBranch,
+  type RestaurantOfferEmailSummary,
   type RestaurantOfferType,
 } from "../../offers/restaurantOfferService";
 import "./restaurant-offers.css";
@@ -134,6 +137,7 @@ export function RestaurantOffersPage() {
   const restaurantId = activeRestaurant?.id ?? "";
   const [offers, setOffers] = useState<RestaurantOffer[]>([]);
   const [branches, setBranches] = useState<RestaurantOfferBranch[]>([]);
+  const [emailSummary, setEmailSummary] = useState<RestaurantOfferEmailSummary | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,15 +156,18 @@ export function RestaurantOffersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextOffers, nextBranches] = await Promise.all([
+      const [nextOffers, nextBranches, nextEmailSummary] = await Promise.all([
         loadRestaurantOffers(restaurantId),
         loadRestaurantOfferBranches(restaurantId),
+        loadRestaurantOfferEmailSummary(restaurantId).catch(() => null),
       ]);
       setOffers(nextOffers);
       setBranches(nextBranches);
+      setEmailSummary(nextEmailSummary);
     } catch (nextError) {
       setOffers([]);
       setBranches([]);
+      setEmailSummary(null);
       setError(nextError instanceof Error ? nextError.message : "Aktuelles konnte nicht geladen werden.");
     } finally {
       setLoading(false);
@@ -330,6 +337,26 @@ export function RestaurantOffersPage() {
       <section className="restaurant-offers-legal-note">
         <Newspaper aria-hidden="true" size={21} />
         <p><strong>Information statt Punkteeinlösung.</strong> Angebote verändern keine Punkte und erzeugen keine Einlösung. Das Restaurant ist für die Richtigkeit, Aktualität, Verfügbarkeit und rechtliche Zulässigkeit seiner Angebots-, Preis-, Produkt- und Bildangaben verantwortlich.</p>
+      </section>
+
+      <section className="restaurant-offer-email-summary" aria-labelledby="offer-email-summary-title">
+        <div className="restaurant-offer-email-summary-heading">
+          <Mail aria-hidden="true" size={21} />
+          <div><span>Freiwillige Einwilligung</span><h2 id="offer-email-summary-title">Angebots-E-Mails</h2></div>
+          <strong className={emailSummary?.available ? "available" : "unavailable"}>{emailSummary?.available ? "Verfügbar" : "Noch nicht verfügbar"}</strong>
+        </div>
+        {emailSummary?.available ? (
+          <div className="restaurant-offer-email-metrics">
+            <div><span>Bestätigt</span><strong>{emailSummary.confirmed_recipients}</strong></div>
+            <div><span>Wöchentlich</span><strong>{emailSummary.weekly_recipients}</strong></div>
+            <div><span>Monatlich</span><strong>{emailSummary.monthly_recipients}</strong></div>
+            <div><span>Zugestellt</span><strong>{emailSummary.delivered}</strong></div>
+            <div><span>Nächste Woche</span><strong>{emailSummary.next_weekly_period}</strong></div>
+            <div><span>Nächster Monat</span><strong>{emailSummary.next_monthly_period}</strong></div>
+          </div>
+        ) : (
+          <p>Der Versand bleibt deaktiviert, bis eine freigegebene Marketing-E-Mail-Infrastruktur mit Double-Opt-in eingerichtet ist. Es werden keine Empfängerlisten angezeigt und keine Angebots-E-Mails versendet.</p>
+        )}
       </section>
 
       <div className="restaurant-offers-toolbar">

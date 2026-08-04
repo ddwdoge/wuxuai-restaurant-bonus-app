@@ -461,17 +461,18 @@ Gast wird in unter 30 Sekunden Mitglied.
 2. Restaurant wird erkannt.
 3. Vorteil sehen.
 4. „Jetzt Mitglied werden“ klicken.
-5. Vorname eingeben.
-6. Telefonnummer eingeben.
-7. Optional Geburtstag.
-8. Registrierung abschließen.
-9. Mein Bonus öffnen.
-10. Persönlichen QR sehen.
+5. E-Mail-Adresse, Passwort, Vorname und Telefonnummer eingeben.
+6. Optional Geburtstag eingeben.
+7. E-Mail-Adresse bestätigen.
+8. Zum gescannten Restaurant zurückkehren.
+9. Beitritt ausdrücklich bestätigen.
+10. Mein Bonus und den persönlichen QR öffnen.
 
 ### 10.3 Erwartung
 
 - keine App-Installation,
-- kein Passwort,
+- Passwortverwaltung ausschließlich über Supabase Auth,
+- bestätigte E-Mail-Adresse,
 - keine SMS,
 - kein WhatsApp,
 - kein Restaurant-Suchen,

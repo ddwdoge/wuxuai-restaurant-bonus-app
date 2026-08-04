@@ -9,15 +9,15 @@ const supabaseClient = readFileSync(new URL("../src/shared/lib/supabase.ts", imp
 const authSessionGuard = readFileSync(new URL("../src/modules/auth/authSessionGuard.mjs", import.meta.url), "utf8");
 
 test("öffentliche Seiten initialisieren keine Supabase-Session", () => {
-  for (const path of ["/", "/customer", "/customer/restaurants", "/customer/cafe", "/w/cafe", "/legal/cafe", "/login", "/restaurant/login", "/register", "/r/cafe/referral"]) {
+  for (const path of ["/", "/customer/login", "/customer/register", "/customer/auth/callback", "/customer/email/confirm", "/customer/email/unsubscribe", "/w/cafe", "/legal/cafe", "/login", "/restaurant/login", "/register", "/r/cafe/referral"]) {
     assert.equal(requiresAuthenticatedSession(path), false, path);
   }
   assert.match(supabaseClient, /autoRefreshToken:\s*false/);
   assert.match(authProvider, /if \(!authSessionRequired\)[\s\S]*refreshController\.stop\(\)/);
 });
 
-test("geschützte Restaurant-, Staff- und Plattformrouten laden Sitzungen", () => {
-  for (const path of ["/admin", "/admin/rewards", "/admin/platform", "/staff/cafe", "/platform-admin", "/platform-admin/restaurants"]) {
+test("geschützte Kunden-, Restaurant-, Staff- und Plattformrouten laden Sitzungen", () => {
+  for (const path of ["/customer", "/customer/restaurants", "/customer/cafe", "/customer/cafe/offers", "/admin", "/admin/rewards", "/admin/platform", "/staff/cafe", "/platform-admin", "/platform-admin/restaurants"]) {
     assert.equal(requiresAuthenticatedSession(path), true, path);
   }
   assert.match(authProvider, /createAuthRefreshController/);

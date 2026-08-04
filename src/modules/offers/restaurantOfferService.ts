@@ -52,6 +52,21 @@ export type RestaurantOfferBranch = {
   status: string;
 };
 
+export type RestaurantOfferEmailSummary = {
+  available: boolean;
+  provider_status: "NOT_CONFIGURED" | "STAGING_ONLY" | "ACTIVE" | "PAUSED";
+  confirmed_recipients: number;
+  weekly_recipients: number;
+  monthly_recipients: number;
+  sent: number;
+  delivered: number;
+  bounces: number;
+  withdrawn: number;
+  last_sent_at: string | null;
+  next_weekly_period: string;
+  next_monthly_period: string;
+};
+
 export type RestaurantOfferInput = {
   id?: string | null;
   restaurantId: string;
@@ -112,6 +127,14 @@ export async function loadRestaurantOfferBranches(restaurantId: string): Promise
     .order("created_at", { ascending: true });
   if (error) throw offerError(error);
   return (data ?? []) as RestaurantOfferBranch[];
+}
+
+export async function loadRestaurantOfferEmailSummary(restaurantId: string): Promise<RestaurantOfferEmailSummary> {
+  const { data, error } = await requireClient().rpc("get_restaurant_offer_email_summary", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw new Error("Der E-Mail-Status konnte gerade nicht geladen werden.");
+  return data as RestaurantOfferEmailSummary;
 }
 
 export async function saveRestaurantOffer(input: RestaurantOfferInput): Promise<RestaurantOffer> {

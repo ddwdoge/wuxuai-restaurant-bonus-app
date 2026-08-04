@@ -9,14 +9,15 @@ export type CustomerView = "home" | "redemptions" | "collect" | "account";
 
 type CustomerAppShellProps = {
   children: ReactNode;
+  className?: string;
   fontFamily?: string | null;
   primaryColor?: string | null;
 };
 
-export function AppShell({ children, fontFamily, primaryColor }: CustomerAppShellProps) {
+export function AppShell({ children, className = "", fontFamily, primaryColor }: CustomerAppShellProps) {
   return (
     <main
-      className="customer-premium-shell"
+      className={`customer-premium-shell ${className}`.trim()}
       style={{
         "--customer-brand": primaryColor ?? "#b88a3b",
         fontFamily: fontFamily

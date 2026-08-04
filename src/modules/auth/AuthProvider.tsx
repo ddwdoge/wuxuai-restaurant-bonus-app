@@ -94,6 +94,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const authSessionRequired = requiresAuthenticatedSession(location.pathname);
+  const invalidSessionRedirect = location.pathname.startsWith("/customer")
+    ? `/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
+    : "/restaurant/login";
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(Boolean(supabase && authSessionRequired));
@@ -130,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       onInvalidSession: () => {
         if (cancelled) return;
         clearAuthState();
-        navigate("/restaurant/login", { replace: true });
+        navigate(invalidSessionRedirect, { replace: true });
       },
     });
     const refreshController = createAuthRefreshController({
@@ -218,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       refreshController.stop();
     };
-  }, [authSessionRequired, navigate]);
+  }, [authSessionRequired, invalidSessionRedirect, navigate]);
 
   useEffect(() => {
     let cancelled = false;

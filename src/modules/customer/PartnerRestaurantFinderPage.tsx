@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppShell, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
+import { CentralCustomerNavigation } from "./components/CentralCustomerNavigation";
 import { readStoredCustomerToken } from "./customerTokenStorage";
 import {
   distanceInKilometers,
@@ -136,7 +137,7 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           <strong>{location.offers[0].title}</strong>
           <p>{location.offers[0].short_description}</p>
           <small>{location.offers[0].current_price != null ? `${formatRestaurantOfferPrice(location.offers[0].current_price)} · ` : ""}Gültig bis {new Date(location.offers[0].valid_to).toLocaleDateString("de-AT")}</small>
-          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_CTA_CLICKED")} to={`/customer/offers?current=${encodeURIComponent(location.slug)}`}>Angebot ansehen</Link>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
         </div>
       ) : null}
       {!membership ? <p className="partner-detail-note">Besuche das Restaurant und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
@@ -226,7 +227,7 @@ export function PartnerRestaurantFinderPage() {
     <AppShell>
       <main className="partner-finder-shell">
         <header className="partner-finder-header">
-          <Link aria-label="Zurück" className="partner-finder-back" to="/"><ArrowLeft aria-hidden="true" size={21} /></Link>
+          <Link aria-label="Zurück" className="partner-finder-back" to="/customer"><ArrowLeft aria-hidden="true" size={21} /></Link>
           <div><span>WUXUAI Bonus</span><h1>Lokale entdecken</h1></div>
           <MapPin aria-hidden="true" size={24} />
         </header>
@@ -295,6 +296,7 @@ export function PartnerRestaurantFinderPage() {
           </div>
         ) : null}
       </main>
+      <CentralCustomerNavigation />
     </AppShell>
   );
 }

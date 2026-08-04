@@ -62,6 +62,18 @@ vorliegt.
 - Manuelle Punkte- und Rewardkorrekturen mit Grund, Bearbeiter, Vorher-/Nachher-Wert und Audit in einem gesondert freigegebenen V1-Flow klären; die aktuelle Bible verbietet allgemeine manuelle Punkteingabe
 - Physische Mobile-Safari-/Screenreader-Prüfung durchführen
 
+## Zentraler Kundenbereich und Angebots-E-Mails
+
+- zentrale technische Kundenidentität bei getrennten Restaurantprogrammen
+- restaurantbezogene Marketingeinwilligung und verständlicher Einwilligungstext
+- Double-Opt-in-Nachweis und Aufbewahrung
+- Rollen Restaurant/WUXUAI, AVV und Marketing-Subprozessoren
+- Abmeldung, Bounce, Suppression und Beschwerden
+- SPF, DKIM und DMARC
+- Cookie-/Trackinginformation; V1 plant keine individuellen Öffnungsprofile
+
+Alle zugehörigen Texte bleiben `DRAFT_LEGAL_REVIEW_REQUIRED`.
+
 ## Consent-Nachweis ohne vollständige IP-Adresse
 
 Die technische Nachweisführung bleibt datenminimiert. Eine vollständige

@@ -21,7 +21,6 @@ Das Ziel von Flow 02 lautet:
 
 Der Gast soll nicht suchen.  
 Der Gast soll nicht ein Restaurant auswählen.  
-Der Gast soll kein Passwort erstellen.  
 Der Gast soll keine App installieren.  
 Der Gast soll keine SMS abwarten.  
 Der Gast soll keine lange Erklärung lesen.
@@ -32,7 +31,9 @@ Der Gast soll:
 QR scannen
 → Restaurant erkannt
 → Vorteil sehen
-→ Vorname + Telefonnummer eingeben
+→ zentrales Kundenkonto anmelden oder erstellen
+→ E-Mail bestätigen
+→ Beitritt ausdrücklich bestätigen
 → Mitglied werden
 → persönlichen QR sehen
 → Mein Bonus öffnen
@@ -194,6 +195,8 @@ V1 Pflichtfelder:
 
 - Vorname
 - Telefonnummer
+- E-Mail-Adresse
+- Passwort über Supabase Auth
 
 ### 6.2 Optionale Felder
 
@@ -205,8 +208,6 @@ Optional:
 
 Nicht abfragen:
 
-- Passwort
-- E-Mail als Pflicht
 - Adresse
 - Nachname als Pflicht
 - Loginname
@@ -230,8 +231,8 @@ Verboten in V1:
 
 - SMS OTP
 - WhatsApp OTP
-- E-Mail-Bestätigung für Gäste
-- Passwortzwang
+- eigene Passwortspeicherung außerhalb von Supabase Auth
+- Anmeldung nur mit Telefonnummer, Geburtstag oder Gerätekennung
 
 ### 6.5 Telefonnummer als Identifikation
 
@@ -759,10 +760,8 @@ Beispiele:
 
 Verboten:
 
-- Passwortpflicht für Gäste
 - SMS OTP in V1
 - WhatsApp OTP in V1
-- E-Mail-Pflicht
 - lange Registrierung
 - Restaurantauswahl durch Gast
 - öffentliche Kundentabellen lesen
@@ -773,6 +772,11 @@ Verboten:
 - englische UI-Texte
 - technische Begriffe im Kundenportal
 - Admin-Funktionen im Kundenportal
+
+Die früheren Verbote von Kundenpasswort und E-Mail-Pflicht sind durch die
+LOCKED CTO-Entscheidung `V1 zentraler Kundenlogin und Restaurantkontext` vom
+04.08.2026 ersetzt. Passwort und E-Mail werden ausschließlich über Supabase
+Auth verarbeitet; WUXUAI speichert kein eigenes Passwort.
 
 ---
 
@@ -815,7 +819,8 @@ Flow 02 ist LOCK, wenn:
 
 - Smart Context funktioniert
 - `/customer/:slug` öffnet richtige Restaurantansicht
-- Registrierung ohne Passwort/SMS/WhatsApp funktioniert
+- zentrale Registrierung mit Supabase Auth, E-Mail-Bestätigung und Passwort
+  funktioniert ohne SMS/WhatsApp
 - sichere Kundentokens erstellt werden
 - keine Demo-Daten in Produktion erscheinen
 - Willkommensgeschenk korrekt gesperrt ist
