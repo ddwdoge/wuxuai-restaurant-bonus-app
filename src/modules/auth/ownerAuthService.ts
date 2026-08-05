@@ -1,5 +1,6 @@
-import type { Session } from "@supabase/supabase-js";
 import { liveDataUnavailableMessage, ownerRecoverySupabase, supabase } from "../../shared/lib/supabase";
+import { establishEmailConfirmationSession } from "./emailConfirmationService";
+import type { EmailConfirmationPayload } from "./emailConfirmationFlow.mjs";
 import {
   buildOwnerAuthRedirect,
   OWNER_AUTH_PATHS,
@@ -56,67 +57,14 @@ export async function requestOwnerPasswordReset(email: string) {
   if (error) throw new Error(ownerAuthErrorMessage(error, "recovery"));
 }
 
-async function readSessionWithRetry(auth = requireAuthClient(), retries = 4): Promise<Session | null> {
-
-  for (let attempt = 0; attempt < retries; attempt += 1) {
-    let timeoutId = 0;
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = window.setTimeout(() => reject(new Error("session_timeout")), 4000);
-    });
-    let result: Awaited<ReturnType<typeof auth.getSession>>;
-    try {
-      result = await Promise.race([auth.getSession(), timeout]);
-    } catch {
-      throw new Error("Die Verbindung konnte nicht hergestellt werden. Bitte versuche es erneut.");
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
-    const { data, error } = result;
-    if (error) throw new Error(ownerAuthErrorMessage(error));
-    if (data.session) return data.session;
-    if (attempt < retries - 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 350));
-    }
+export async function establishOwnerAuthSession(payload: EmailConfirmationPayload) {
+  try {
+    return await establishEmailConfirmationSession(payload);
+  } catch (error) {
+    const mappedError = new Error(ownerAuthErrorMessage(error)) as Error & { cause?: unknown };
+    mappedError.cause = error;
+    throw mappedError;
   }
-
-  return null;
-}
-
-export async function establishOwnerAuthSession(): Promise<Session | null> {
-  const auth = requireAuthClient();
-  const url = new URL(window.location.href);
-  const code = url.searchParams.get("code");
-  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const callbackError = url.searchParams.get("error_code")
-    ?? url.searchParams.get("error")
-    ?? hash.get("error_code")
-    ?? hash.get("error");
-
-  if (callbackError) {
-    throw new Error("Dieser Bestätigungslink ist ungültig oder abgelaufen.");
-  }
-
-  if (code) {
-    const { data, error } = await auth.exchangeCodeForSession(code);
-    if (!error && data.session) return data.session;
-    if (error) throw new Error(ownerAuthErrorMessage(error));
-  }
-
-  const accessToken = hash.get("access_token");
-  const refreshToken = hash.get("refresh_token");
-  if (accessToken || refreshToken) {
-    if (!accessToken || !refreshToken) {
-      throw new Error("Dieser Bestätigungslink ist ungültig oder abgelaufen.");
-    }
-    const { data, error } = await auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (error) throw new Error(ownerAuthErrorMessage(error));
-    if (data.session?.user) return data.session;
-  }
-
-  return readSessionWithRetry(auth);
 }
 
 export function acquireOwnerRecoveryLifecycle() {

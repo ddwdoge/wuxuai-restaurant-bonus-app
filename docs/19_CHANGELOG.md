@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-05 – Kunden-E-Mail-Bestätigung prefetch-sicher vorbereitet
+
+- konkreten Staging-Fehler als `One-time token not found` auf `GET /verify`
+  identifiziert.
+- Kunden- und Owner-Callback auf eine bewusste Zwei-Schritt-Bestätigung
+  vorbereitet; der erste Seitenaufruf verbraucht keinen Einmal-Link mehr.
+- `token_hash`, PKCE-Code und vollständiger Legacy-Hash werden zentral validiert;
+  parallele Verarbeitung wird per Single Flight zusammengeführt.
+- Kunden-Resend mit generischer Antwort, Cooldown und sicherem Rückkehrkontext
+  ergänzt.
+- Supabase-Template- und Redirect-Umstellung bewusst noch nicht aktiviert, da
+  dafür zuerst der kompatible App-Build auf Staging bereitstehen muss.
+
 ## 2026-08-04 – Zentraler Kundenbereich und Angebots-E-Mail-Vertrag
 
 - `Mein WUXUAI` mit zentraler Route und fünfteiliger Navigation ergänzt.

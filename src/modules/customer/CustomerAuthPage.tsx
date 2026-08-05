@@ -14,7 +14,10 @@ type CustomerAuthMode = "login" | "register";
 const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 
 export function safeCustomerReturnPath(value: string | null) {
-  if (!value || value.startsWith("//") || /[\\\u0000-\u001f]/.test(value)) return "/customer";
+  const containsControlCharacter = value
+    ? Array.from(value).some((character) => character.charCodeAt(0) <= 31)
+    : false;
+  if (!value || value.startsWith("//") || value.includes("\\") || containsControlCharacter) return "/customer";
   const isCustomerPath = value === "/customer" || value.startsWith("/customer/") || value.startsWith("/customer?");
   const isCollectPath = /^\/w\/[^/?#]+(?:[?#].*)?$/.test(value);
   return isCustomerPath || isCollectPath ? value : "/customer";
@@ -58,7 +61,6 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
       if (!registrationValid || !phoneResult.e164) throw new Error("Bitte fülle alle Pflichtfelder korrekt aus.");
       window.sessionStorage.setItem(RETURN_STORAGE_KEY, returnTo);
       const callbackUrl = new URL("/customer/auth/callback", window.location.origin);
-      callbackUrl.searchParams.set("returnTo", returnTo);
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
@@ -68,6 +70,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
             customer_first_name: firstName.trim(),
             customer_phone: phoneResult.e164,
             customer_birthday: birthday || null,
+            customer_return_to: returnTo,
           },
         },
       });

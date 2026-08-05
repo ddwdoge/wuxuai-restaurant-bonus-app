@@ -22,16 +22,26 @@ test("Registrierung nutzt Supabase Auth mit E-Mail Passwort und Bestätigungslin
   assert.match(page, /emailRedirectTo/);
   assert.match(page, /customer_first_name/);
   assert.match(page, /customer_phone/);
+  assert.match(page, /customer_return_to: returnTo/);
+  assert.match(page, /new URL\("\/customer\/auth\/callback", window\.location\.origin\)/);
+  assert.doesNotMatch(page, /callbackUrl\.searchParams\.set\("returnTo"/);
   assert.match(page, /minLength=\{8\}/);
   assert.doesNotMatch(page, /localStorage.*password|setItem\([^\n]*password/);
 });
 
 test("Bestätigungs-Callback stellt die Auth-Session her und kehrt zum QR-Kontext zurück", async () => {
-  const callback = await read("../src/modules/customer/CustomerAuthCallbackPage.tsx");
-  assert.match(callback, /exchangeCodeForSession/);
+  const [callback, service] = await Promise.all([
+    read("../src/modules/customer/CustomerAuthCallbackPage.tsx"),
+    read("../src/modules/auth/emailConfirmationService.ts"),
+  ]);
+  assert.match(service, /verifyOtp/);
+  assert.match(service, /exchangeCodeForSession/);
   assert.match(callback, /ensure_authenticated_customer_account/);
   assert.match(callback, /safeCustomerReturnPath/);
-  assert.match(callback, /replaceState/);
+  assert.match(callback, /E-Mail jetzt bestätigen/);
+  assert.match(callback, /customer_return_to/);
+  assert.match(callback, /Neue Bestätigungs-E-Mail senden/);
+  assert.doesNotMatch(callback, /useEffect\([\s\S]{0,260}establishEmailConfirmationSession/);
 });
 
 test("zentrale Identity nutzt eine bestehende Accounttabelle und keine zweite globale Kundentabelle", async () => {

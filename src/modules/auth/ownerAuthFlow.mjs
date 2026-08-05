@@ -126,10 +126,12 @@ export function hasAuthCallbackPayload(locationLike) {
   const search = new globalThis.URLSearchParams(locationLike?.search ?? "");
   const hash = new globalThis.URLSearchParams((locationLike?.hash ?? "").replace(/^#/, ""));
   return Boolean(
-    search.get("code")
+    search.get("token_hash")
+    || search.get("code")
     || search.get("error")
     || search.get("error_code")
     || hash.get("access_token")
+    || hash.get("token_hash")
     || hash.get("error")
     || hash.get("error_code")
   );

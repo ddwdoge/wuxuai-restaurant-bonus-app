@@ -104,6 +104,8 @@
 .central-auth-switch a, .central-join-consents a, .central-auth-status > a { color: #765418; font-weight: 800; }
 .central-auth-switch a { display: inline-flex; min-height: 44px; align-items: center; padding-inline: 4px; }
 .central-auth-status { justify-items: center; text-align: center; }
+.central-auth-status > .premium-button { width: 100%; justify-content: center; }
+.central-confirmation-resend { width: 100%; text-align: left; }
 .central-join-consents { display: grid; gap: 12px; padding: 14px; border: 1px solid #e5d7bf; border-radius: 7px; background: #fbf7ef; }
 .central-join-consents p { margin: 0; }
 .central-join-consents label { min-height: 44px; display: flex; align-items: flex-start; gap: 10px; color: #302a23; }

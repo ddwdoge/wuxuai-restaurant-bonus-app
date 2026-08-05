@@ -25,6 +25,7 @@ const protectedRoute = read("../src/modules/auth/ProtectedRoute.tsx");
 const registerService = read("../src/modules/auth/registerOwnerService.ts");
 const updatePassword = read("../src/modules/auth/UpdatePasswordPage.tsx");
 const ownerAuthService = read("../src/modules/auth/ownerAuthService.ts");
+const emailConfirmationService = read("../src/modules/auth/emailConfirmationService.ts");
 const ownerRecoveryFlow = read("../src/modules/auth/ownerRecoveryFlow.mjs");
 const supabaseClient = read("../src/shared/lib/supabase.ts");
 
@@ -93,11 +94,12 @@ test("Recovery-URL nutzt ausschließlich einen nicht sensitiven Flow-Marker", ()
 });
 
 test("Callback-Seite akzeptiert nur echte Supabase-Callbackdaten", () => {
+  assert.equal(hasAuthCallbackPayload({ hash: "#token_hash=opaque&type=email" }), true);
   assert.equal(hasAuthCallbackPayload({ search: "?code=pkce-code" }), true);
   assert.equal(hasAuthCallbackPayload({ hash: "#access_token=session-token&type=signup" }), true);
   assert.equal(hasAuthCallbackPayload({ search: "?error_code=otp_expired" }), true);
   assert.equal(hasAuthCallbackPayload({ search: "" }), false);
-  assert.match(callback, /hasAuthCallbackPayload\(window\.location\)/);
+  assert.match(callback, /readEmailConfirmationPayload\(window\.location\)/);
 });
 
 test("Passwortregeln blockieren kurze und triviale Passwörter", () => {
@@ -145,15 +147,23 @@ test("Recovery-Flow erzeugt weder Tenant noch Trial", () => {
 });
 
 test("Bestätigungs-Callback verarbeitet weiterhin PKCE und vollständigen Hash", () => {
-  assert.match(ownerAuthService, /exchangeCodeForSession\(code\)/);
-  assert.match(ownerAuthService, /auth\.setSession\(\{[\s\S]*access_token: accessToken,[\s\S]*refresh_token: refreshToken/);
+  assert.match(emailConfirmationService, /exchangeCodeForSession\(payload\.code\)/);
+  assert.match(emailConfirmationService, /auth\.setSession\(\{[\s\S]*access_token: payload\.accessToken,[\s\S]*refresh_token: payload\.refreshToken/);
+  assert.match(emailConfirmationService, /verifyOtp\(\{[\s\S]*token_hash: payload\.tokenHash,[\s\S]*type: "email"/);
   assert.match(callback, /completeConfirmedOwnerRegistration\(session\.user\)/);
+  assert.match(callback, /E-Mail jetzt bestätigen/);
 });
 
 test("sensitive Callback-Werte werden aus der URL entfernt", () => {
   assert.match(ownerAuthService, /history\.replaceState\(\{\}, document\.title, window\.location\.pathname\)/);
   assert.doesNotMatch(callback, /console\./);
   assert.doesNotMatch(updatePassword, /console\./);
+});
+
+test("Owner-Callback verifiziert nicht automatisch beim ersten GET", () => {
+  assert.match(callback, /onClick=\{completeCallback\}/);
+  assert.match(callback, /useEffect\(\(\) => \{\s*clearSensitiveAuthUrl\(\);\s*\}, \[\]\);/);
+  assert.match(callback, /async function completeCallback\(\)[\s\S]*establishOwnerAuthSession\(payload\)/);
 });
 
 test("Fehlerzustände werden ohne technische Supabase-Texte abgebildet", () => {
