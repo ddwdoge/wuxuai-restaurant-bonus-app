@@ -13,6 +13,7 @@ const dailyLimitMigration = readFileSync(
 const customerPortal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const staffPortal = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", import.meta.url), "utf8");
 const loyaltyService = readFileSync(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
+const releaseMigration = readFileSync(new URL("../supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", import.meta.url), "utf8");
 
 test("Tages-PIN ist vierstellig, lokal datiert und nicht öffentlich lesbar", () => {
   assert.match(migration, /ensure_today_restaurant_pin[\s\S]*timezone\(restaurant_record\.timezone_name, now\(\)\)::date/);
@@ -57,13 +58,16 @@ test("Geschenk-Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten g
   assert.match(migration, /revoke execute on function public\.redeem_reward_with_staff_session/);
 });
 
-test("Customer-Portal trennt Punkte-Präsentation und Geschenk-Code, Staff bestätigt Geschenke ohne PIN", () => {
+test("Customer-Portal verwendet das 15-Minuten-Präsentationsfenster auch für Geschenke", () => {
   assert.match(customerPortal, /startCustomerPointsPresentation/);
+  assert.match(customerPortal, /startCustomerGiftPresentation/);
   assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)/);
-  assert.match(customerPortal, /Bitte erst direkt vor dem Mitarbeiter bestätigen/);
-  assert.match(customerPortal, /Jetzt verbindlich einlösen/);
-  assert.match(customerPortal, /redemption-code-value/);
-  assert.match(customerPortal, /customerRewardId: redeemOffer\.assignment_id/);
+  assert.match(customerPortal, /Nach der Bestätigung hast du 15 Minuten Zeit/);
+  assert.match(customerPortal, /Jetzt dem Restaurantpersonal zeigen/);
+  assert.match(releaseMigration, /status = 'redemption_started'/);
+  assert.match(releaseMigration, /status = 'redeemed', redeemed_at = input_now/);
+  assert.match(releaseMigration, /grant execute on function public\.start_customer_gift_presentation/);
+  assert.doesNotMatch(customerPortal, /startCustomerRedemption\(/);
+  // Staff retains the historical code verifier for already-issued legacy codes.
   assert.match(staffPortal, /Sechsstelliger Einlösecode/);
-  assert.match(staffPortal, /Für die Einlösung ist keine Tages-PIN erforderlich/);
 });

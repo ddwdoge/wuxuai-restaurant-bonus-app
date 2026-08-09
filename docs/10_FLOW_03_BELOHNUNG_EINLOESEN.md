@@ -814,3 +814,17 @@ Nach Ablauf wechselt der Status idempotent von `REDEEMED_ACTIVE` zu
 `REDEEMED_COMPLETED`. Eine Korrektur ist nur als atomarer Owner-/Support-Storno
 mit Begründung und Punkterückbuchung zulässig. Geschenk-Einlösungen bleiben im
 sechsstelligen Code-Flow.
+
+## CTO-Entscheidung 2026-08-09: Präsentationsfenster auch für Geschenke
+
+🟢 **LOCKED / V1 / VORRANG VOR DEM SECHSSTELLIGEN GESCHENKCODE**
+
+Willkommens- und Geburtstagsgeschenke verwenden nach ausdrücklicher
+Kundenbestätigung das bestehende 15-Minuten-Präsentationsprinzip. Der Server
+prüft Kundenzugang, Restaurant, konkrete Zuteilung, Status, Reward-Aktivität und
+Gültigkeit atomar. Pro Zuteilung kann nur ein Vorgang entstehen. Der Ablauf
+markiert die Zuteilung serverseitig als eingelöst, schreibt Audit und Journal
+und löscht keine Historie. Das Restaurantpersonal kontrolliert nur den aktiven
+Live-Bildschirm; Mitarbeiter-PIN, QR-Scan, Bonnummer und Kassenschnittstelle
+sind nicht Teil dieses V1-Flows. Historische bereits erzeugte Codes bleiben als
+abwärtskompatibler Restore-Pfad erhalten.

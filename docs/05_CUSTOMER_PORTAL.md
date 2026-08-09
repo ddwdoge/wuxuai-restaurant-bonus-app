@@ -849,3 +849,20 @@ stornieren.
   unverändert maßgeblich für Vor-Ort-Aktionen.
 - Vollständige Angebote werden ausschließlich im bewusst geöffneten
   Restaurantkontext gezeigt. Einen global gemischten Angebotsfeed gibt es nicht.
+
+## CTO-Ergänzung 2026-08-09: Einheitliche Geschenk-Präsentation
+
+Diese Entscheidung ersetzt den sechsstelligen Geschenk-Code und die manuelle
+Geburtstagsauslosung als primären V1-Kundenflow:
+
+- Verfügbare Willkommens- und Geburtstagsgeschenke zeigen „Jetzt einlösen“.
+- Nach ausdrücklicher Bestätigung startet der Server genau ein 15-minütiges
+  Präsentationsfenster mit Countdown, Serverzeit und wechselndem visuellen
+  Sicherheitsmerkmal.
+- Reload und erneutes Öffnen laden ausschließlich den servervalidierten
+  Vorgang und verlängern ihn nicht.
+- Nach Ablauf erscheint das Geschenk nur noch als eingelöst in der Historie.
+- Geburtstagsgeschenke werden 14 Tage vor dem Geburtstag automatisch aus dem
+  aktiven Geburtstagspool zugeteilt und nicht vom Kunden neu ausgelost.
+- Der zentrale Kundenlogin verwendet Supabase Auth mit E-Mail, Passwort und
+  E-Mail-Bestätigung. Ältere passwortlose Identitätsabschnitte sind historisch.

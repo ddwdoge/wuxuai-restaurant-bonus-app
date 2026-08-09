@@ -14,7 +14,7 @@ function readyInput(overrides = {}) {
     restaurantStatus: { active: true },
     onboardingStatus: "completed",
     legalStatus: { status: "green", label: "Bereit", reason: "Alles vorhanden." },
-    rewardStatus: { pointsRedemptionReady: true, welcomeGiftReady: true },
+    rewardStatus: { pointsRedemptionReady: true, welcomeGiftReady: true, birthdayPoolReady: true },
     qrStatus: { ready: true },
     pointsFlowStatus: { ready: true },
     emailStatus: { confirmed: true },
@@ -30,7 +30,7 @@ function readyInput(overrides = {}) {
 test("Legal-Warnungen bleiben vor allen Einrichtungs- und Optimierungsschritten", () => {
   const result = resolveDashboardNextStep(readyInput({
     legalStatus: { status: "red", label: "Kundenregistrierung blockiert", reason: "Teilnahmebedingungen fehlen." },
-    rewardStatus: { pointsRedemptionReady: false, welcomeGiftReady: false },
+    rewardStatus: { pointsRedemptionReady: false, welcomeGiftReady: false, birthdayPoolReady: false },
   }));
   assert.equal(result?.id, "legal_readiness_blocked");
   assert.equal(result?.category, "critical");
@@ -40,7 +40,7 @@ test("Legal-Warnungen bleiben vor allen Einrichtungs- und Optimierungsschritten"
 
 test("fehlende Punkte-Einlösung ist der erste offene Kernschritt", () => {
   const result = resolveDashboardNextStep(readyInput({
-    rewardStatus: { pointsRedemptionReady: false, welcomeGiftReady: false },
+    rewardStatus: { pointsRedemptionReady: false, welcomeGiftReady: false, birthdayPoolReady: false },
   }));
   assert.equal(result?.title, "Punkte-Einlösung einrichten");
   assert.equal(result?.ctaHref, "/admin/rewards");
@@ -52,9 +52,17 @@ test("nach der Punkte-Einlösung folgt automatisch der nächste offene Schritt",
   assert.equal(pointsFlow?.id, "setup_points_collection");
 
   const welcomeGift = resolveDashboardNextStep(readyInput({
-    rewardStatus: { pointsRedemptionReady: true, welcomeGiftReady: false },
+    rewardStatus: { pointsRedemptionReady: true, welcomeGiftReady: false, birthdayPoolReady: false },
   }));
   assert.equal(welcomeGift?.id, "setup_welcome_gift");
+});
+
+test("nach QR-Bereitschaft folgt der Geburtstagspool als letzter Kernschritt", () => {
+  const result = resolveDashboardNextStep(readyInput({
+    rewardStatus: { pointsRedemptionReady: true, welcomeGiftReady: true, birthdayPoolReady: false },
+  }));
+  assert.equal(result?.title, "Geburtstagsgeschenk aktivieren");
+  assert.equal(result?.ctaHref, "/admin/welcome-gifts");
 });
 
 test("vollständige Einrichtung rendert nach gesehener Erfolgsmeldung keinen Bereich", () => {

@@ -13,6 +13,10 @@ const legalMigration = readFileSync(
 const customerPortal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const customerCss = readFileSync(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
 const rewardService = readFileSync(new URL("../src/modules/rewards/rewardService.ts", import.meta.url), "utf8");
+const releaseMigration = readFileSync(
+  new URL("../supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", import.meta.url),
+  "utf8",
+);
 const decision = readFileSync(
   new URL("../docs/product/DECISION_2026-08-03_V1_POINTS_PRESENTATION_WINDOW.md", import.meta.url),
   "utf8",
@@ -53,11 +57,12 @@ test("Punkteabzug, Journal und Präsentation entstehen in derselben RPC-Transakt
   assert.match(migration, /CUSTOMER_PRESENTATION_WINDOW/);
 });
 
-test("Geschenke bleiben ausdrücklich im bestehenden sechsstelligen Staff-Codeflow", () => {
+test("Punktevertrag bleibt getrennt, während Geschenke denselben Präsentationsstil additiv erhalten", () => {
   assert.match(migration, /not r\.is_starter_reward/);
   assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)[\s\S]*startCustomerPointsPresentation/);
-  assert.match(customerPortal, /customerRewardId: redeemOffer\.assignment_id/);
-  assert.match(decision, /Willkommens- und Geburtstagsgeschenke[\s\S]*sechsstelligen/);
+  assert.match(customerPortal, /startCustomerGiftPresentation/);
+  assert.match(releaseMigration, /customer_reward_id uuid not null unique/);
+  assert.match(releaseMigration, /CUSTOMER_PRESENTATION_WINDOW/);
 });
 
 test("Reload und weitere Tabs restaurieren ausschließlich einen servervalidierten Zustand", () => {
@@ -102,7 +107,7 @@ test("Browserrollen haben keinen direkten Tabellenzugriff und nur enge RPC-Recht
 });
 
 test("die Kundenoberfläche zeigt Bestätigung, Countdown und bewegte Sicherheitsmerkmale", () => {
-  assert.match(customerPortal, /Jetzt verbindlich einlösen/);
+  assert.match(customerPortal, /Jetzt einlösen/);
   assert.match(customerPortal, /Die benötigten Punkte werden sofort endgültig abgezogen/);
   assert.match(customerPortal, /Diese Aktion kann nicht selbst rückgängig gemacht werden/);
   assert.match(customerPortal, /Danach hast du 15 Minuten Zeit, diese Einlösung dem Team zu zeigen/);

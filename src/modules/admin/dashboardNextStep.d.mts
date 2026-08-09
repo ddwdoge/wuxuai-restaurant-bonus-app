@@ -13,7 +13,7 @@ export type DashboardNextStepInput = {
   restaurantStatus: { active: boolean };
   onboardingStatus?: "draft" | "ready" | "completed";
   legalStatus: { status: "green" | "yellow" | "red"; label?: string; reason?: string } | null;
-  rewardStatus: { pointsRedemptionReady: boolean; welcomeGiftReady: boolean };
+  rewardStatus: { pointsRedemptionReady: boolean; welcomeGiftReady: boolean; birthdayPoolReady: boolean };
   qrStatus: { ready: boolean };
   pointsFlowStatus: { ready: boolean };
   emailStatus: { confirmed: boolean };

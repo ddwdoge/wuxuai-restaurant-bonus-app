@@ -3,6 +3,7 @@ import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase"
 export type DashboardSetupStatus = {
   pointsRedemptionReady: boolean;
   welcomeGiftReady: boolean;
+  birthdayPoolReady: boolean;
   pointsFlowReady: boolean;
   referralEnabled: boolean;
 };
@@ -13,7 +14,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
   const [rewardsResult, couponsResult, settingsResult] = await Promise.all([
     supabase
       .from("rewards")
-      .select("id, active, is_starter_reward, required_points, required_stamps, expires_at")
+      .select("id, active, is_starter_reward, birthday_pool_enabled, required_points, required_stamps, expires_at")
       .eq("restaurant_id", restaurantId),
     supabase
       .from("coupons")
@@ -33,6 +34,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
   const rewards = (rewardsResult.data ?? []) as Array<{
     active: boolean;
     is_starter_reward: boolean | null;
+    birthday_pool_enabled: boolean | null;
     required_points: number | null;
     required_stamps: number | null;
     expires_at: string | null;
@@ -63,6 +65,10 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
         && (Number(coupon.required_points) > 0 || Number(coupon.required_stamps) > 0)),
     welcomeGiftReady: rewards.some((reward) => reward.active
       && Boolean(reward.is_starter_reward)
+      && isNotExpired(reward.expires_at)),
+    birthdayPoolReady: rewards.some((reward) => reward.active
+      && Boolean(reward.is_starter_reward)
+      && Boolean(reward.birthday_pool_enabled)
       && isNotExpired(reward.expires_at)),
     pointsFlowReady: Boolean(settings?.active
       && settings.points_collection_mode

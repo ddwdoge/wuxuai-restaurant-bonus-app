@@ -373,9 +373,10 @@ export type PublicCustomerOfferView = {
   valid_from?: string | null;
   valid_until?: string | null;
   birthday_year?: number | null;
+  redeemed_at?: string | null;
   active: boolean;
   expires_at: string | null;
-  status: "locked" | "unlocked" | "redemption_started" | "redeemed";
+  status: "locked" | "unlocked" | "redemption_started" | "redeemed" | "expired";
   remaining_points: number;
   remaining_stamps: number;
 };
@@ -685,10 +686,11 @@ export async function loadCustomerPortalData(
     reward_id: string;
     assignment_id: string;
     gift_type: "welcome" | "birthday";
-    status: "locked" | "active" | "redemption_started";
+    status: "locked" | "active" | "redemption_started" | "redeemed" | "expired";
     valid_from: string | null;
     valid_until: string | null;
     birthday_year: number | null;
+    redeemed_at: string | null;
   }>;
 
   const starterOffers = portalData.offers.filter((offer) => offer.is_starter_reward);
@@ -703,8 +705,13 @@ export async function loadCustomerPortalData(
       valid_from: metadata.valid_from,
       valid_until: metadata.valid_until,
       birthday_year: metadata.birthday_year,
+      redeemed_at: metadata.redeemed_at,
       status: metadata.status === "locked"
         ? "locked" as const
+        : metadata.status === "redeemed"
+          ? "redeemed" as const
+          : metadata.status === "expired"
+            ? "expired" as const
         : metadata.status === "redemption_started"
           ? "redemption_started" as const
           : "unlocked" as const,

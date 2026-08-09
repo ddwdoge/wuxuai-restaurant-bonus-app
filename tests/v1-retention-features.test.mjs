@@ -8,6 +8,7 @@ const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx"
 const retentionService = readFileSync(new URL("../src/modules/customer/retentionService.ts", import.meta.url), "utf8");
 const serviceWorker = readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
 const pushFunction = readFileSync(new URL("../supabase/functions/expiry-reminders/index.ts", import.meta.url), "utf8");
+const releaseMigration = readFileSync(new URL("../supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", import.meta.url), "utf8");
 
 test("expiry reminders are unique for the four V1 stages", () => {
   assert.match(migration, /reminder_stage in \(7, 3, 1, 0\)/);
@@ -33,21 +34,22 @@ test("push remains opt-in and opens only the customer reward route", () => {
   assert.match(portal, /setRedemptionDrawerOpen\(true\)/);
 });
 
-test("birthday gift draw is server-side, idempotent, and uses only active pool rewards", () => {
-  assert.match(migration, /draw_customer_birthday_gift/);
+test("birthday gifts are assigned automatically, idempotently and only from the active pool", () => {
+  assert.match(releaseMigration, /create or replace function public\.issue_birthday_gifts/);
   assert.match(giftMigration, /customer_rewards_one_birthday_gift_year_idx/);
-  assert.match(migration, /birthday_pool_enabled = true and active = true/);
-  assert.match(migration, /order by encode\(extensions\.gen_random_bytes\(16\), 'hex'\)/);
-  assert.match(migration, /exception when unique_violation/);
-  assert.match(migration, /BIRTHDAY_GIFT_DRAWN/);
-  assert.match(migration, /BIRTHDAY_GIFT_DRAW_BLOCKED/);
-  assert.match(portal, /Geschenk abholen/);
+  assert.match(releaseMigration, /birthday_pool_enabled = true and active = true/);
+  assert.match(releaseMigration, /order by encode\(extensions\.gen_random_bytes\(16\), 'hex'\)/);
+  assert.match(releaseMigration, /pg_advisory_xact_lock/);
+  assert.match(releaseMigration, /birthday_date_value - 14/);
+  assert.match(releaseMigration, /birthday_date_value \+ 15/);
+  assert.doesNotMatch(portal, /Geschenk abholen/);
 });
 
-test("legacy birthday cron is disabled in favor of explicit customer draw", () => {
-  assert.match(migration, /wuxuai-v1-birthday-gifts-daily/);
-  assert.match(migration, /cron\.unschedule\(existing_job\)/);
-  assert.match(migration, /'mode', 'customer_draw'/);
+test("automatic birthday cron replaces the historical explicit customer draw", () => {
+  assert.match(releaseMigration, /wuxuai-v1-birthday-gifts-daily/);
+  assert.match(releaseMigration, /select public\.issue_birthday_gifts\(now\(\)\)/);
+  assert.match(releaseMigration, /revoke execute on function public\.draw_customer_birthday_gift[\s\S]*anon, authenticated/);
+  assert.match(releaseMigration, /'mode', 'automatic_14_days'/);
 });
 
 test("retention baseline keeps the 2x default and atomic referral qualification", () => {

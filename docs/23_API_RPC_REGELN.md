@@ -997,6 +997,21 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   Versandvertrag. Browserrollen erhalten kein EXECUTE.
 - Der Owner-RPC liefert nur restaurantbezogene Aggregate, keine E-Mail-Liste.
 
+## Ergänzung 2026-08-09: Geschenk-Präsentation und Transaktions-E-Mail-Queue
+
+- `start_customer_gift_presentation` validiert Kundentoken, Restaurant,
+  Zuteilung, Gift-Typ, Status und Reward-Aktivität und startet idempotent ein
+  einziges 15-Minuten-Fenster.
+- `get_customer_gift_presentation` gibt einen Vorgang nur an denselben
+  servervalidierten Restaurantkunden zurück.
+- Präsentationstabellen besitzen RLS und keine direkten Browserrechte.
+- `issue_birthday_gifts`, Reminder-Queue und Abschlussjob sind nicht für
+  Browserrollen ausführbar.
+- `reserve_customer_transactional_emails` und
+  `complete_customer_transactional_email` sind ausschließlich für
+  `service_role` freigegeben. Klartexttokens, Passwörter und interne IDs werden
+  nicht Teil sichtbarer E-Mail-Inhalte.
+
 ## Ergänzung 2026-07-24: Public Legal Center und Datenexport
 
 - `get_public_legal_center(slug, token)` ist im normalen Public-Pfad read-only.

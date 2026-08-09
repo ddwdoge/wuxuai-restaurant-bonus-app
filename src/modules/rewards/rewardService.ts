@@ -163,6 +163,8 @@ export type CustomerPointsPresentation = {
   visual_code_valid_until: string;
   redemption_number: string;
   reward_id: string;
+  customer_reward_id?: string;
+  gift_type?: "welcome" | "birthday";
   reward_title: string;
   reward_description: string | null;
   reward_image_url: string | null;
@@ -635,6 +637,41 @@ export async function loadCustomerPointsPresentation(input: {
 }): Promise<CustomerPointsPresentation | null> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
   const { data, error } = await supabase.rpc("get_customer_points_presentation", {
+    input_restaurant_slug: input.restaurantSlug,
+    input_customer_token: input.customerToken,
+    input_presentation_id: input.presentationId ?? null,
+  });
+  if (error) throw error;
+  const payload = data as CustomerPointsPresentation;
+  return payload?.found ? payload : null;
+}
+
+export async function startCustomerGiftPresentation(input: {
+  customerToken: string;
+  customerRewardId: string;
+  idempotencyKey: string;
+}): Promise<CustomerPointsPresentation> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("start_customer_gift_presentation", {
+    input_customer_token: input.customerToken,
+    input_customer_reward_id: input.customerRewardId,
+    input_idempotency_key: input.idempotencyKey,
+  });
+  if (error) throw error;
+  const payload = data as CustomerPointsPresentation & { error_message?: string };
+  if (payload.success === false) {
+    throw new Error(payload.error_message || "Dieses Geschenk ist nicht mehr verfügbar.");
+  }
+  return payload;
+}
+
+export async function loadCustomerGiftPresentation(input: {
+  restaurantSlug: string;
+  customerToken: string;
+  presentationId?: string | null;
+}): Promise<CustomerPointsPresentation | null> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("get_customer_gift_presentation", {
     input_restaurant_slug: input.restaurantSlug,
     input_customer_token: input.customerToken,
     input_presentation_id: input.presentationId ?? null,

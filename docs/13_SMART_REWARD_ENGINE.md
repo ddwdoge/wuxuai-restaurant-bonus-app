@@ -1204,3 +1204,14 @@ technisch endgültig gebucht. Die Engine prüft den Punktestand, zieht die Punkt
 genau einmal ab und schreibt den unveränderbaren Snapshot beim Start des
 Präsentationsfensters. Der spätere Zeitablauf verändert keine Punkte mehr.
 Willkommens- und Geburtstagsgeschenke bleiben davon getrennt.
+
+## CTO-Ergänzung 2026-08-09: Automatischer Geburtstagspool
+
+Die automatische Zuteilung 14 Tage vor dem Geburtstag ist wieder der
+verbindliche V1-Flow und ersetzt den manuellen Draw vom 22.07. Ein täglicher,
+idempotenter Serverjob wählt zufällig genau eine aktive Vorlage mit
+`birthday_pool_enabled = true`. Pro Kunde, Restaurant und Geburtstagsjahr ist
+nur eine Zuteilung erlaubt. Das Geschenk ist vom Beginn des 14. Tages vor dem
+Geburtstag bis zum Beginn des 15. Tages danach gültig. Ein fehlender Pool
+erzeugt keine leere Zuteilung. Die Einlösung verwendet das einheitliche
+15-Minuten-Präsentationsfenster.

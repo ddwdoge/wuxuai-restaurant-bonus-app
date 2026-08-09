@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-09 – V1 Release-Finishing für Geschenke und Benachrichtigungen
+
+- Willkommens- und Geburtstagsgeschenke verwenden additiv das bestehende
+  15-Minuten-Präsentationsprinzip; historische Codes bleiben kompatibel.
+- Geburtstagsgeschenke werden 14 Tage vorher einmalig und serverseitig aus dem
+  freigegebenen Willkommensgeschenk-Pool zugeteilt.
+- Private idempotente Queues für Zuteilungs-, Ablauf- und
+  Punkte-Schwellen-E-Mails ergänzt; Versandfehler beeinflussen keine Buchung.
+- Dashboard-Resolver führt bei fehlendem Pool direkt zur bestehenden
+  Geschenkverwaltung.
+- Stripe wurde nicht implementiert und bleibt ein separater letzter Sprint.
+
 ## 2026-08-05 – Kunden-E-Mail-Bestätigung prefetch-sicher vorbereitet
 
 - konkreten Staging-Fehler als `One-time token not found` auf `GET /verify`

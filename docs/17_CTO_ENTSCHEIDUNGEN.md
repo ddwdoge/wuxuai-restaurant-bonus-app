@@ -2083,3 +2083,28 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   nur im bewusst geöffneten Restaurantkontext gezeigt.
 - Angebots-E-Mails bleiben deaktiviert, bis die gesonderte Infrastruktur
   freigegeben ist.
+
+## CTO-Entscheidung 2026-08-09: Einheitliches Präsentationsfenster und automatische Geburtstagszuteilung
+
+🟢 **LOCKED / V1 / VORRANG VOR DEN EINLÖSEENTSCHEIDUNGEN VOM 14.07., 22.07. UND 03.08.**
+
+- Punktebelohnungen, Willkommensgeschenke und Geburtstagsgeschenke verwenden
+  nach ausdrücklicher Kundenbestätigung dasselbe serverzeitgebundene
+  15-Minuten-Präsentationsfenster.
+- Ein neuer sechsstelliger Mitarbeitercode ist kein primärer V1-Geschenkflow.
+  Historische aktive Codes bleiben nur aus Kompatibilitätsgründen lesbar.
+- Geschenkzuteilung, Kunde, Restaurant, Status und Gültigkeit werden beim Start
+  serverseitig geprüft. Doppelklick, parallele Tabs und weitere Geräte erzeugen
+  kein zweites Fenster.
+- Nach Ablauf wird die Zuteilung unveränderbar als eingelöst markiert und im
+  Journal sowie Audit protokolliert; sie wird nicht gelöscht.
+- Ein täglicher Serverjob weist 14 Tage vor dem Geburtstag genau ein aktives,
+  für Geburtstage freigegebenes Willkommensgeschenk zu. Die Gültigkeit reicht
+  bis zum Beginn des 15. Tages nach dem Geburtstag.
+- Pro Kunde, Restaurant und Geburtstagsjahr existiert höchstens eine
+  Zuteilung. Der 29. Februar wird in Nicht-Schaltjahren am 28. Februar behandelt.
+- Geburtstags- und Punkte-Schwellen-E-Mails werden nur als private,
+  idempotente Transaktionsqueue erzeugt. Versandfehler rollen weder Punkte noch
+  Geschenke zurück. Ein freigegebener serverseitiger Versandprovider bleibt
+  Voraussetzung für tatsächliche Zustellung.
+- Stripe bleibt ausdrücklich außerhalb dieses Sprints.

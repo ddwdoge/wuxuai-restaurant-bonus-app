@@ -1165,3 +1165,17 @@ Endstatus: **LOCK**
   ohne freigegebenen Provider deaktiviert.
 - Der öffentliche Legal-Endpunkt besitzt keine Tabellen-Schreiboperation und
   keine direkte Public-Select-Policy auf Legal- oder Kundentabellen.
+
+## Ergänzung 2026-08-09: Aktuelles Kundenkonto und Geschenk-Präsentation
+
+- Die zentrale Kundenidentität ist die bestätigte Supabase-Auth-Session mit
+  E-Mail und Passwort. Ältere Aussagen, E-Mail und Passwort seien in V1 nicht
+  erforderlich, sind für den aktuellen zentralen Kundenbereich überholt.
+- Restaurantbezogene Kundentokens bleiben zusätzliche, geheime
+  Membership-Zugänge; Telefonnummer, Geburtstag und Gerätekennung reichen nie.
+- Geschenk-Präsentationen sind an Restaurant, Kunde und konkrete Zuteilung
+  gebunden. Browserzustand und Clientzeit sind keine Autorität.
+- Die private E-Mail-Queue ist per RLS und entzogenem DML geschützt. Nur ein
+  serverseitiger Dispatcher darf Empfänger reservieren und Ergebnisse melden.
+- Versandfehler werden ohne sensible Providerdetails gespeichert und dürfen
+  Punkte- oder Geschenktransaktionen niemals zurückrollen.

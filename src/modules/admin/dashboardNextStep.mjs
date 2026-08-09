@@ -140,6 +140,19 @@ export function resolveDashboardNextStep(input) {
     });
   }
 
+  if (!input.rewardStatus.birthdayPoolReady) {
+    return step({
+      id: "setup_birthday_gift_pool",
+      priority: 150,
+      category: "setup",
+      title: "Geburtstagsgeschenk aktivieren",
+      description: "Aktiviere eines deiner vorhandenen Geschenke zusätzlich für die jährliche Geburtstagsüberraschung.",
+      ctaLabel: "Geschenk auswählen",
+      ctaHref: "/admin/welcome-gifts",
+      dismissible: false,
+    });
+  }
+
   if (input.persistenceAvailable && !input.profileStatus.logoAvailable && !seen.has(DASHBOARD_NOTICE_KEYS.addLogo)) {
     return step({
       id: DASHBOARD_NOTICE_KEYS.addLogo,

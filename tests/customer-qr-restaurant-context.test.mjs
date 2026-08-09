@@ -93,7 +93,8 @@ test("ungültiger QR-Kontext kann nicht auf ein altes Restaurant zurückfallen",
 
 test("aktive Einlösungen verwenden den gescopten Restore-Service", () => {
   assert.match(portal, /restoreScopedActiveRedemption\(window\.sessionStorage/);
-  assert.match(portal, /persistScopedActiveRedemption\(window\.sessionStorage/);
   assert.match(portal, /removeScopedActiveRedemption\(window\.sessionStorage/);
+  assert.match(portal, /loadCustomerGiftPresentation\(/);
+  assert.match(portal, /loadCustomerPointsPresentation\(/);
   assert.doesNotMatch(portal, /wuxuai-active-redemption:\$\{restaurantSlug\}/);
 });

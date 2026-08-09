@@ -143,6 +143,7 @@ export function AdminDashboard() {
     rewardStatus: {
       pointsRedemptionReady: setupStatus?.pointsRedemptionReady ?? false,
       welcomeGiftReady: setupStatus?.welcomeGiftReady ?? false,
+      birthdayPoolReady: setupStatus?.birthdayPoolReady ?? false,
     },
     qrStatus: { ready: Boolean(activeRestaurant?.slug) },
     pointsFlowStatus: { ready: setupStatus?.pointsFlowReady ?? false },
