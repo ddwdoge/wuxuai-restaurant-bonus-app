@@ -124,7 +124,12 @@ export function CustomerAuthCallbackPage() {
               </PrimaryButton>
             </>
           )}
-          <Link to={`/customer/login?returnTo=${encodeURIComponent(safeCustomerReturnPath(legacyReturnTo))}`}>Zur Kundenanmeldung</Link>
+          <Link
+            className="premium-button premium-button-secondary"
+            to={`/customer/login?returnTo=${encodeURIComponent(safeCustomerReturnPath(legacyReturnTo))}`}
+          >
+            Zur Kundenanmeldung
+          </Link>
         </PremiumCard>
       </div>
     </AppShell>

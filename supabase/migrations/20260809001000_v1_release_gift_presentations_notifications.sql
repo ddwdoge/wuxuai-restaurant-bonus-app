@@ -52,9 +52,12 @@ create table if not exists public.customer_transactional_email_deliveries (
     check (status in ('PENDING', 'PROCESSING', 'SENT', 'FAILED', 'SKIPPED')),
   available_at timestamptz not null default now(),
   attempt_count integer not null default 0 check (attempt_count >= 0),
+  processing_started_at timestamptz,
   provider_message_id text,
   sent_at timestamptz,
+  failed_at timestamptz,
   last_error_code text,
+  last_error text,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -63,7 +66,7 @@ create table if not exists public.customer_transactional_email_deliveries (
 
 create index if not exists customer_transactional_email_queue_idx
   on public.customer_transactional_email_deliveries (status, available_at, created_at)
-  where status in ('PENDING', 'FAILED');
+  where status in ('PENDING', 'PROCESSING', 'FAILED');
 alter table public.customer_transactional_email_deliveries enable row level security;
 revoke all on public.customer_transactional_email_deliveries from public, anon, authenticated;
 
@@ -586,31 +589,65 @@ revoke execute on function public.sync_point_reward_notification_state() from pu
 create or replace function public.reserve_customer_transactional_emails(input_limit integer default 50)
 returns table (
   delivery_id uuid, event_type text, email text, restaurant_name text,
-  restaurant_slug text, payload jsonb
+  restaurant_slug text, payload jsonb, attempt_count integer
 )
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
 begin
+  -- A disabled account or missing confirmed address is terminal. Do not leave
+  -- a reserved row invisible in PROCESSING after the recipient disappears.
+  update public.customer_transactional_email_deliveries delivery
+  set status = 'SKIPPED', failed_at = now(), processing_started_at = null,
+      last_error_code = 'RECIPIENT_UNAVAILABLE', last_error = 'RECIPIENT_UNAVAILABLE',
+      updated_at = now()
+  where delivery.status in ('PENDING', 'FAILED')
+    and delivery.available_at <= now()
+    and not exists (
+      select 1
+      from public.customer_account_emails account_email
+      join public.customer_accounts account on account.id = account_email.account_id
+      where account_email.account_id = delivery.account_id
+        and account_email.status = 'CONFIRMED'
+        and account.disabled_at is null
+    );
+
+  -- A worker can stop after reserving a row. The lease makes such rows
+  -- retryable without allowing two active workers to reserve the same row.
+  update public.customer_transactional_email_deliveries delivery
+  set status = 'SKIPPED', failed_at = now(), processing_started_at = null,
+      last_error_code = 'DELIVERY_ATTEMPTS_EXHAUSTED',
+      last_error = 'DELIVERY_ATTEMPTS_EXHAUSTED', updated_at = now()
+  where delivery.status = 'PROCESSING'
+    and delivery.attempt_count >= 5
+    and delivery.processing_started_at <= now() - interval '10 minutes';
+
   return query
   with due as (
     select delivery.id from public.customer_transactional_email_deliveries delivery
-    where delivery.status in ('PENDING', 'FAILED') and delivery.available_at <= now()
+    where (
+        (delivery.status in ('PENDING', 'FAILED') and delivery.available_at <= now())
+        or (delivery.status = 'PROCESSING'
+          and delivery.processing_started_at <= now() - interval '10 minutes')
+      )
       and delivery.attempt_count < 5
     order by delivery.available_at, delivery.created_at
     for update skip locked limit least(greatest(input_limit, 1), 100)
   ), reserved as (
     update public.customer_transactional_email_deliveries delivery
-    set status = 'PROCESSING', attempt_count = attempt_count + 1, updated_at = now()
+    set status = 'PROCESSING', attempt_count = attempt_count + 1,
+        processing_started_at = now(), failed_at = null,
+        last_error_code = null, last_error = null, updated_at = now()
     from due where delivery.id = due.id
     returning delivery.*
   )
   select reserved.id, reserved.event_type, account_email.email, restaurant.name,
-    restaurant.slug, reserved.payload
+    restaurant.slug, reserved.payload, reserved.attempt_count
   from reserved
   join public.customer_account_emails account_email on account_email.account_id = reserved.account_id
     and account_email.status = 'CONFIRMED'
+  join public.customer_accounts account on account.id = reserved.account_id and account.disabled_at is null
   join public.restaurants restaurant on restaurant.id = reserved.restaurant_id;
 end;
 $$;
@@ -629,10 +666,24 @@ security definer
 set search_path = public, pg_temp
 as $$
   update public.customer_transactional_email_deliveries
-  set status = case when input_success then 'SENT' else 'FAILED' end,
+  set status = case
+        when input_success then 'SENT'
+        when attempt_count >= 5 then 'SKIPPED'
+        else 'FAILED'
+      end,
       provider_message_id = case when input_success then nullif(trim(input_provider_message_id), '') else provider_message_id end,
       sent_at = case when input_success then now() else sent_at end,
+      failed_at = case when input_success then null else now() end,
+      processing_started_at = null,
       last_error_code = case when input_success then null else left(coalesce(input_error_code, 'DELIVERY_FAILED'), 120) end,
+      last_error = case when input_success then null else left(coalesce(input_error_code, 'DELIVERY_FAILED'), 120) end,
+      available_at = case
+        when input_success or attempt_count >= 5 then available_at
+        when attempt_count = 1 then now() + interval '1 minute'
+        when attempt_count = 2 then now() + interval '5 minutes'
+        when attempt_count = 3 then now() + interval '15 minutes'
+        else now() + interval '1 hour'
+      end,
       updated_at = now()
   where id = input_delivery_id and status = 'PROCESSING';
 $$;

@@ -1179,3 +1179,12 @@ Endstatus: **LOCK**
   serverseitiger Dispatcher darf Empfänger reservieren und Ergebnisse melden.
 - Versandfehler werden ohne sensible Providerdetails gespeichert und dürfen
   Punkte- oder Geschenktransaktionen niemals zurückrollen.
+- SMTP-, Scheduler- und Service-Role-Secrets des Transaktionsmail-Dispatchers
+  bleiben ausschließlich in Edge-Function-Secrets und erscheinen weder im
+  Browserbundle noch in Logs.
+- Sichtbare Transaktionsmails enthalten keine Kundentokens, internen IDs,
+  Telefonnummern oder Geburtstage. Der HTTPS-Link bewahrt nur den öffentlichen
+  Restaurant-Slug als Rückkehrpfad nach der Kundenanmeldung.
+- Strukturierte Dispatcherlogs enthalten höchstens eine gekürzte
+  Delivery-Referenz, Template-Key, Versuchszahl und sicheren Fehlercode, aber
+  weder Empfängeradresse noch Queue-Payload.

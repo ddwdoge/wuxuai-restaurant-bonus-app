@@ -22,6 +22,7 @@ const confirmEmail = read("../src/modules/auth/ConfirmEmailPage.tsx");
 const forgotPassword = read("../src/modules/auth/ForgotPasswordPage.tsx");
 const login = read("../src/modules/auth/LoginPage.tsx");
 const protectedRoute = read("../src/modules/auth/ProtectedRoute.tsx");
+const register = read("../src/modules/auth/RegisterPage.tsx");
 const registerService = read("../src/modules/auth/registerOwnerService.ts");
 const updatePassword = read("../src/modules/auth/UpdatePasswordPage.tsx");
 const ownerAuthService = read("../src/modules/auth/ownerAuthService.ts");
@@ -113,6 +114,29 @@ test("Passwortwiederholung muss übereinstimmen", () => {
   assert.equal(validateOwnerPassword("Sicher!42", "Anders!42").valid, false);
   assert.equal(validateOwnerPassword("Sicher!42", "Sicher!42").valid, true);
   assert.match(updatePassword, /validateOwnerPassword\(password, confirmation\)/);
+});
+
+test("Owner-Registrierung verlangt eine passende Passwortbestätigung", () => {
+  assert.match(register, /label="Passwort bestätigen"/);
+  assert.match(register, /type="password"[\s\S]{0,100}value=\{confirmPassword\}/);
+  assert.match(register, /confirmPassword\.length > 0 && confirmPassword === password/);
+  assert.match(register, /disabled=\{!formValid\}/);
+  assert.match(register, /Passwörter stimmen nicht überein\./);
+  assert.match(register, /Bitte bestätige dein Passwort\./);
+});
+
+test("Bestätigungsfehler erscheint erst nach Feldnutzung oder Submit", () => {
+  assert.match(register, /confirmPasswordTouched \|\| submitAttempted/);
+  assert.match(register, /onBlur=\{\(\) => setConfirmPasswordTouched\(true\)\}/);
+  assert.match(register, /setSubmitAttempted\(true\)/);
+});
+
+test("Passwortbestätigung verlässt den Registrierungs-Client nicht", () => {
+  const registrationCall = register.match(/registerRestaurantOwner\(\{[\s\S]*?\}\)/)?.[0] ?? "";
+  assert.match(registrationCall, /password/);
+  assert.doesNotMatch(registrationCall, /confirmPassword/);
+  assert.doesNotMatch(registerService, /confirmPassword/);
+  assert.match(registerService, /auth\.signUp\(\{[\s\S]*password: input\.password/);
 });
 
 test("Passwort wird ausschließlich über Supabase Auth aktualisiert", () => {

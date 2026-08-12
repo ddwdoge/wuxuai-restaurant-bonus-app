@@ -1011,6 +1011,14 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   `complete_customer_transactional_email` sind ausschließlich für
   `service_role` freigegeben. Klartexttokens, Passwörter und interne IDs werden
   nicht Teil sichtbarer E-Mail-Inhalte.
+- Die Reservierung verwendet `FOR UPDATE SKIP LOCKED` und ein zehnminütiges
+  Verarbeitungs-Lease. Ein abgebrochener Worker kann einen Job danach erneut
+  reservieren; nach fünf Versuchen endet er dauerhaft als `SKIPPED`.
+- Der Abschluss speichert Versand- oder Fehlerzeit, einen gekürzten sicheren
+  Fehlercode und eine begrenzte exponentielle Retry-Zeit.
+- `transactional-mail-dispatcher` ist der einzige Anwendungstransport hinter
+  dieser Queue. Die Edge Function benötigt Scheduler-, SMTP- und
+  Absender-Secrets und ist kein Browser-Endpunkt.
 
 ## Ergänzung 2026-07-24: Public Legal Center und Datenexport
 

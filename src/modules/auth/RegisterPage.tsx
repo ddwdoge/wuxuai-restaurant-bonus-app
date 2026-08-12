@@ -22,11 +22,30 @@ export function RegisterPage() {
     : "";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [restaurantName, setRestaurantName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const passwordValidation = validateOwnerPassword(password);
+  const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
+  const confirmPasswordError = confirmPasswordTouched || submitAttempted
+    ? confirmPassword.length === 0
+      ? "Bitte bestätige dein Passwort."
+      : passwordsMatch
+        ? null
+        : "Passwörter stimmen nicht überein."
+    : null;
+  const formValid = Boolean(
+    ownerName.trim()
+    && /^\S+@\S+\.\S+$/.test(email.trim())
+    && restaurantName.trim()
+    && passwordValidation.valid
+    && passwordsMatch
+  );
 
   useEffect(() => {
     if (!authLoading && user && isOwnerEmailConfirmed(user)) {
@@ -36,20 +55,26 @@ export function RegisterPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    setSubmitAttempted(true);
     if (authLoading || user) {
       navigate("/admin", { replace: true });
       return;
     }
     setError(null);
     setMessage(null);
-    setLoading(true);
 
     try {
-      const passwordValidation = validateOwnerPassword(password);
       if (!passwordValidation.valid) {
         setError(passwordValidation.message);
         return;
       }
+      if (!confirmPassword) {
+        return;
+      }
+      if (!passwordsMatch) {
+        return;
+      }
+      setLoading(true);
       const result = await registerRestaurantOwner({
         ownerName,
         email,
@@ -91,13 +116,26 @@ export function RegisterPage() {
           <PublicFormField autoComplete="name" disabled={loading} id="owner-name" label="Dein Name" onChange={(event) => setOwnerName(event.target.value)} required value={ownerName} />
           <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
           <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+          <PublicFormField
+            autoComplete="new-password"
+            disabled={loading}
+            error={confirmPasswordError}
+            id="register-password-confirmation"
+            label="Passwort bestätigen"
+            minLength={8}
+            onBlur={() => setConfirmPasswordTouched(true)}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            type="password"
+            value={confirmPassword}
+          />
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
           <PublicFormField autoComplete="tel" disabled={loading} id="phone" label="Telefon" onChange={(event) => setPhone(event.target.value)} optional type="tel" value={phone} />
 
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
-          <PublicPrimaryButton icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
+          <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
             30 Tage kostenlos starten
           </PublicPrimaryButton>
           <p className="public-premium-trust-note">Kein Zahlungsmittel erforderlich.</p>

@@ -229,13 +229,15 @@ set search_path = public, extensions, pg_temp
 as $$
 declare
   account_id_value uuid := public.ensure_authenticated_customer_account();
-  membership_record public.customer_account_memberships%rowtype;
-  restaurant_slug text;
-  membership_status_value text;
+  membership_record record;
   raw_customer_token text;
 begin
-  select membership, restaurant.slug, customer.membership_status
-  into membership_record, restaurant_slug, membership_status_value
+  select membership.id,
+         membership.restaurant_id,
+         membership.customer_id,
+         restaurant.slug as restaurant_slug,
+         customer.membership_status
+  into membership_record
   from public.customer_account_memberships membership
   join public.restaurants restaurant on restaurant.id = membership.restaurant_id
   join public.customers customer on customer.id = membership.customer_id
@@ -244,7 +246,7 @@ begin
   if membership_record.id is null then
     raise exception using errcode = 'P0001', message = 'CUSTOMER_MEMBERSHIP_NOT_FOUND';
   end if;
-  if membership_status_value is distinct from 'active' then
+  if membership_record.membership_status is distinct from 'active' then
     raise exception using errcode = 'P0001', message = 'CUSTOMER_MEMBERSHIP_INACTIVE';
   end if;
   raw_customer_token := encode(extensions.gen_random_bytes(32), 'hex');
@@ -257,7 +259,10 @@ begin
     'CUSTOMER_MEMBERSHIP_OPENED', 'success', 'customer_account', 'customers', membership_record.customer_id,
     null, jsonb_build_object('central_account', true)
   );
-  return jsonb_build_object('restaurant_slug', restaurant_slug, 'customer_token', raw_customer_token);
+  return jsonb_build_object(
+    'restaurant_slug', membership_record.restaurant_slug,
+    'customer_token', raw_customer_token
+  );
 end;
 $$;
 

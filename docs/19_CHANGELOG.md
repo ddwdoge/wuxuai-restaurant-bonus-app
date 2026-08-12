@@ -2546,3 +2546,28 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - zentrale Navigation auf Start, Meine Lokale, Entdecken und Konto reduziert
 - global gemischten Angebotsfeed entfernt; Angebote nur im Restaurantkontext
 - keine Migration angewendet und kein Versand aktiviert
+
+## 2026-08-11 – V1-Transaktionsmail-Dispatcher technisch vorbereitet
+
+- bestehende private Geburtstag-/Reminder-/Punkteschwellen-Outbox um
+  Verarbeitungs-Lease, persistente Fehlerzeit und begrenzte exponentielle
+  Wiederholungen erweitert
+- serverseitige Edge Function für die drei vorhandenen V1-Transaktionsmails
+  ergänzt; kein paralleles Queue- oder Marketingsystem eingeführt
+- kontrollierte deutsche Templates mit HTTPS-Restaurant-Rückkehr und ohne
+  Kundentokens oder sichtbare interne IDs ergänzt
+- SMTP-, Scheduler- und Absenderwerte bleiben ausschließlich manuell zu
+  setzende Edge-Function-Secrets
+- zentrale Kundenkonto-, Restaurantkontext-, Geschenk-/Benachrichtigungs- und
+  Dispatcher-Reparaturmigration auf Staging angewendet; Remote-Stand synchron
+- Dispatcher mangels verfügbarer SMTP- und Scheduler-Secrets nicht deployt
+- Stripe weiterhin ausdrücklich zurückgestellt
+
+## 2026-08-11 – Passwortbestätigung in der Owner-Registrierung
+
+- `/register` um das Pflichtfeld „Passwort bestätigen“ ergänzt
+- Abweichung erst nach Feldnutzung oder Submit verständlich angezeigt
+- Submit bei fehlender, ungültiger oder abweichender Passwortbestätigung blockiert
+- Bestätigungswert bleibt ausschließlich lokaler Formularzustand und wird weder
+  gespeichert noch an Supabase oder den Owner-Registrierungsservice übergeben
+- Signup-, Trial-, Restaurant-, Onboarding-, E-Mail- und Legal-Flows unverändert
