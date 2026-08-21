@@ -9,7 +9,9 @@ import {
 } from "../src/modules/offers/restaurantOffers.mjs";
 
 const migrationUrl = new URL("../supabase/migrations/20260804001000_restaurant_offers_v1.sql", import.meta.url);
+const auditFixMigrationUrl = new URL("../supabase/migrations/20260819001000_fix_offers_audit_actor_type.sql", import.meta.url);
 const ownerPageUrl = new URL("../src/modules/admin/pages/RestaurantOffersPage.tsx", import.meta.url);
+const serviceUrl = new URL("../src/modules/offers/restaurantOfferService.ts", import.meta.url);
 const customerPortalUrl = new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url);
 const finderUrl = new URL("../src/modules/customer/PartnerRestaurantFinderPage.tsx", import.meta.url);
 
@@ -152,6 +154,29 @@ test("Audit wird bei Erstellung, Veröffentlichung, Deaktivierung und Archivieru
   const migration = await readFile(migrationUrl, "utf8");
   for (const event of ["OFFER_CREATED", "OFFER_UPDATED", "OFFER_PUBLISHED", "OFFER_DISABLED", "OFFER_ARCHIVED", "OFFER_DUPLICATED", "OFFER_DRAFT_DELETED"]) assert.match(migration, new RegExp(event));
   assert.match(migration, /public\.write_audit_event/);
+});
+
+test("Forward-Fix verwendet den gültigen Admin-Akteurstyp für alle Offers-Schreib-RPCs", async () => {
+  const migration = await readFile(auditFixMigrationUrl, "utf8");
+  for (const rpc of ["save_restaurant_offer", "change_restaurant_offer_status", "duplicate_restaurant_offer", "delete_restaurant_offer_draft"]) {
+    assert.match(migration, new RegExp(`create or replace function public\\.${rpc}`));
+  }
+  assert.doesNotMatch(migration, /'restaurant_user'/);
+  assert.equal((migration.match(/null, 'admin', auth\.uid\(\)/g) ?? []).length, 4);
+  assert.match(migration, /set search_path = public, pg_temp/g);
+  assert.match(migration, /OFFER_ACCESS_DENIED/);
+});
+
+test("Load-Fehler und Empty State bleiben sichtbar getrennt", async () => {
+  const [page, service] = await Promise.all([readFile(ownerPageUrl, "utf8"), readFile(serviceUrl, "utf8")]);
+  assert.match(page, /loading \? \(/);
+  assert.match(page, /error \? \(/);
+  assert.match(page, /visibleOffers\.length \? \(/);
+  assert.match(page, /Angebote konnten nicht geladen werden\./);
+  assert.match(page, /Erneut versuchen/);
+  assert.match(page, /Noch keine Angebote/);
+  assert.match(service, /function offerLoadError\(\)/);
+  assert.match(service, /new Error\("Angebote konnten nicht geladen werden\."\)/);
 });
 
 test("Owner-Seite bietet vollständige Aktionen und sicheren bestehenden Bildupload", async () => {

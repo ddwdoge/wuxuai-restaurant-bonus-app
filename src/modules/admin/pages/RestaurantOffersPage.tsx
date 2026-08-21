@@ -168,7 +168,7 @@ export function RestaurantOffersPage() {
       setOffers([]);
       setBranches([]);
       setEmailSummary(null);
-      setError(nextError instanceof Error ? nextError.message : "Aktuelles konnte nicht geladen werden.");
+      setError(nextError instanceof Error ? nextError.message : "Angebote konnten nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -372,7 +372,7 @@ export function RestaurantOffersPage() {
       {loading ? (
         <section aria-busy="true" className="restaurant-offers-grid">{[0, 1, 2].map((item) => <div className="restaurant-offer-skeleton" key={item} />)}</section>
       ) : error ? (
-        <section className="card premium-owner-management-state" role="alert"><RefreshCw aria-hidden="true" size={25} /><div><h2>Aktuelles konnte nicht geladen werden</h2><p>{error}</p></div><button className="button" onClick={() => void reload()} type="button">Erneut versuchen</button></section>
+        <section className="card premium-owner-management-state" role="alert"><RefreshCw aria-hidden="true" size={25} /><div><h2>Angebote konnten nicht geladen werden.</h2><p>{error}</p></div><button className="button" onClick={() => void reload()} type="button">Erneut versuchen</button></section>
       ) : visibleOffers.length ? (
         <section aria-label="Gespeicherte Angebote" className="restaurant-offers-grid">
           {visibleOffers.map((offer) => {

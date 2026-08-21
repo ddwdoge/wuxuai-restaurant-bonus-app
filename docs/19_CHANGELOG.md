@@ -238,6 +238,15 @@
 
 # WUXUAI Bonus V1 – Changelog
 
+## 2026-08-19 - Offers-Audit-400 auf Staging behoben
+
+- reproduzierbaren `save_restaurant_offer`-Fehler auf den unzulässigen Audit-Akteurstyp `restaurant_user` eingegrenzt
+- additive Forward-Migration stellt alle vier Offers-Schreib-RPCs auf den bestehenden Typ `admin` um
+- Offers-Schema, RLS, Grants, Fünfergrenze und Mandantentrennung unverändert beibehalten
+- Staging auf 92/92 Migrationen synchronisiert; DB-Linter 0 Fehler und CRUD-Smoke vollständig mit explizitem Rollback bestanden
+- Loading-, Empty- und Error-Zustand der Owner-Seite sprachlich eindeutig getrennt
+- keine Marketing-Mail-, Reward-, Punkte-, Production- oder Stripe-Änderung
+
 Status: **LOCK**
 
 ## 29.07.2026 - Customer Identity Security-Verifikation auf Staging

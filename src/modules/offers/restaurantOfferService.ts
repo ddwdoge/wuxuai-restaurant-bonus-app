@@ -112,9 +112,13 @@ function offerError(error: { message?: string } | null) {
   return new Error("Das Angebot konnte gerade nicht gespeichert werden. Bitte versuche es erneut.");
 }
 
+function offerLoadError() {
+  return new Error("Angebote konnten nicht geladen werden.");
+}
+
 export async function loadRestaurantOffers(restaurantId: string): Promise<RestaurantOffer[]> {
   const { data, error } = await requireClient().rpc("list_restaurant_offers", { input_restaurant_id: restaurantId });
-  if (error) throw offerError(error);
+  if (error) throw offerLoadError();
   return Array.isArray(data) ? data as RestaurantOffer[] : [];
 }
 
@@ -125,7 +129,7 @@ export async function loadRestaurantOfferBranches(restaurantId: string): Promise
     .eq("restaurant_id", restaurantId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
-  if (error) throw offerError(error);
+  if (error) throw offerLoadError();
   return (data ?? []) as RestaurantOfferBranch[];
 }
 
