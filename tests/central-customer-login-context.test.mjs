@@ -17,16 +17,19 @@ test("QR-Route prüft zuerst die zentrale Kundensitzung und behält den Restaura
 });
 
 test("Registrierung nutzt Supabase Auth mit E-Mail Passwort und Bestätigungslink", async () => {
-  const page = await read("../src/modules/customer/CustomerAuthPage.tsx");
-  assert.match(page, /supabase\.auth\.signUp/);
-  assert.match(page, /emailRedirectTo/);
-  assert.match(page, /customer_first_name/);
-  assert.match(page, /customer_phone/);
-  assert.match(page, /customer_return_to: returnTo/);
-  assert.match(page, /new URL\("\/customer\/auth\/callback", window\.location\.origin\)/);
-  assert.doesNotMatch(page, /callbackUrl\.searchParams\.set\("returnTo"/);
+  const [page, service] = await Promise.all([
+    read("../src/modules/customer/CustomerAuthPage.tsx"),
+    read("../src/modules/customer/customerAuthService.ts"),
+  ]);
+  assert.match(service, /auth\.signUp/);
+  assert.match(service, /emailRedirectTo/);
+  assert.match(service, /customer_first_name/);
+  assert.match(service, /customer_phone/);
+  assert.match(service, /customer_return_to: input\.returnTo/);
+  assert.match(service, /new URL\("\/customer\/auth\/callback", input\.origin\)/);
+  assert.doesNotMatch(service, /callbackUrl\.searchParams\.set\("returnTo"/);
   assert.match(page, /minLength=\{8\}/);
-  assert.doesNotMatch(page, /localStorage.*password|setItem\([^\n]*password/);
+  assert.doesNotMatch(`${page}\n${service}`, /localStorage.*password|setItem\([^\n]*password/);
 });
 
 test("Bestätigungs-Callback stellt die Auth-Session her und kehrt zum QR-Kontext zurück", async () => {

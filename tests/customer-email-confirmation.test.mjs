@@ -117,7 +117,7 @@ test("Bestätigungsservice nutzt verifyOtp und protokolliert keine Zugangsdaten"
 });
 
 test("Signup-Redirect ist exakt und Rückkehrkontext liegt in sicheren User-Metadaten", async () => {
-  const page = await read("../src/modules/customer/CustomerAuthPage.tsx");
-  assert.match(page, /customer_return_to: returnTo/);
-  assert.doesNotMatch(page, /callbackUrl\.searchParams\.set\("returnTo"/);
+  const service = await read("../src/modules/customer/customerAuthService.ts");
+  assert.match(service, /customer_return_to: input\.returnTo/);
+  assert.doesNotMatch(service, /callbackUrl\.searchParams\.set\("returnTo"/);
 });

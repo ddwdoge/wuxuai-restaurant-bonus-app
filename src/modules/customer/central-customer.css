@@ -79,6 +79,8 @@
 .central-account-list span { display: grid; gap: 3px; }
 .central-account-list small { color: #746b61; }
 .central-status-message { margin: 0; padding: 11px 13px; border-radius: 6px; background: #fff3df; color: #684a17; }
+.central-status-message.error { border-left: 3px solid #b85f51; background: #fff0ed; color: #74352c; }
+.central-status-message.success { border-left: 3px solid #3d8a62; background: #edf8f1; color: #285f44; }
 .central-email-action-page { min-height: 100dvh; display: grid; place-items: center; }
 .central-email-action-card { width: min(620px, 100%); display: grid; gap: 18px; text-align: center; justify-items: center; }
 .central-email-action-card > svg { color: #277a50; }
@@ -95,9 +97,12 @@
 .central-auth-card h2 { margin: 0; color: #211d18; font-size: 1.22rem; }
 .central-auth-card > p { margin: 0; color: #665f56; line-height: 1.55; }
 .central-auth-form { display: grid; gap: 15px; }
-.central-auth-form > label { display: grid; gap: 7px; }
+.central-auth-form > label,
+.central-auth-field { display: grid; gap: 7px; }
 .central-auth-form input:not([type="checkbox"]), .central-auth-form select { width: 100%; min-width: 0; min-height: 48px; padding: 0 13px; border: 1px solid #d9c9ad; border-radius: 7px; box-sizing: border-box; background: #fff; color: #211d18; font: inherit; }
 .central-auth-form small { color: #746b61; }
+.central-auth-form .central-auth-field-error { color: #9a3f34; }
+.central-auth-form input[aria-invalid="true"] { border-color: #b85f51; }
 .central-auth-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .central-auth-actions > * { width: 100%; min-height: 48px; justify-content: center; box-sizing: border-box; text-align: center; }
 .central-auth-switch { text-align: center; }

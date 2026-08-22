@@ -2580,3 +2580,17 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Bestätigungswert bleibt ausschließlich lokaler Formularzustand und wird weder
   gespeichert noch an Supabase oder den Owner-Registrierungsservice übergeben
 - Signup-, Trial-, Restaurant-, Onboarding-, E-Mail- und Legal-Flows unverändert
+
+## 2026-08-21 – Kundenregistrierung und E-Mail-Bestätigung gehärtet
+
+- Kundenregistrierung um die Pflichtangabe „Passwort bestätigen“ ergänzt; der
+  Bestätigungswert bleibt ausschließlich lokaler Formularzustand.
+- Signup-Antworten unterscheiden jetzt eine tatsächlich angeforderte
+  Bestätigungs-E-Mail von Supabase-Anti-Enumeration-Antworten für bestehende
+  Adressen.
+- Erfolg wird nur angezeigt, wenn Supabase einen neuen unbestätigten Nutzer mit
+  versendeter Bestätigung meldet.
+- Kontrolliertes erneutes Senden mit Rate-Limit-Rückmeldung und 60-Sekunden-
+  Sperre ergänzt.
+- Customer-Callback, Restaurant-Rückkehr, optionale Geburtstagsangabe und
+  bestehende Owner-Registrierung bleiben unverändert.
