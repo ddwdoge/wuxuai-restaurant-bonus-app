@@ -2692,3 +2692,16 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   kompakter Hinweis im normalen Seitenfluss erreichbar.
 - Einlöse-, Punkte-, Reporting-, Sicherheits- und Datenbanklogik bleiben
   unverändert.
+
+## 2026-08-23 – Kunden-QR als primäre Staff-Aktion
+
+- Die Staff-Startseite zeigt den bestehenden Kunden-QR-Scanner direkt nach der
+  Begrüßung als wichtigste Serviceaktion.
+- Die Tages-PIN bleibt vollständig erhalten, wird aber in einer kompakten
+  weißen Karte mit vier gleich großen Ziffernfeldern sekundär dargestellt.
+- Heute-KPIs und Gast-Suche folgen in klarer Reihenfolge; die bestehende
+  dreiteilige Bottom-Navigation bleibt ohne Routing-Umbau bestehen.
+- Ein synchroner UI-Guard verhindert mehrfaches Öffnen der Kamera durch schnelle
+  Mehrfachklicks.
+- Keine Scanner-, Punkte-, PIN-, Reporting-, Berechtigungs- oder Datenbanklogik
+  geändert.

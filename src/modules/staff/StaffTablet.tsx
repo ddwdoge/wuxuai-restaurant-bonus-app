@@ -150,6 +150,7 @@ export function StaffTablet() {
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerAnimationRef = useRef<number | null>(null);
   const scannerActiveRef = useRef(false);
+  const scannerLaunchPendingRef = useRef(false);
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
@@ -435,10 +436,12 @@ export function StaffTablet() {
   }
 
   async function startQrScanner() {
+    if (scannerLaunchPendingRef.current || scannerOpen) return;
     if (!restaurantControlledEnabled) {
       setMessage("Der Kunden-QR-Scanner ist für dieses Restaurant nicht aktiviert.");
       return;
     }
+    scannerLaunchPendingRef.current = true;
     setView("search");
     setScannerOpen(true);
     setScannerStarting(true);
@@ -448,6 +451,7 @@ export function StaffTablet() {
     stopScanner();
 
     if (!navigator.mediaDevices?.getUserMedia) {
+      scannerLaunchPendingRef.current = false;
       setScannerStarting(false);
       setScannerStatus(null);
       setScannerError("Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte suche den Gast manuell.");
@@ -469,6 +473,7 @@ export function StaffTablet() {
 
       const BarcodeDetector = (window as WindowWithBarcodeDetector).BarcodeDetector;
       if (!BarcodeDetector) {
+        scannerLaunchPendingRef.current = false;
         setScannerStarting(false);
         setScannerStatus("Kamera geöffnet. Automatisches QR-Lesen wird von diesem Browser nicht unterstützt.");
         return;
@@ -499,16 +504,19 @@ export function StaffTablet() {
       };
 
       scannerAnimationRef.current = requestAnimationFrame(scanFrame);
+      scannerLaunchPendingRef.current = false;
     } catch (error) {
       console.error("QR-Scanner konnte nicht geöffnet werden.", error);
       stopScanner();
       setScannerStarting(false);
       setScannerStatus(null);
       setScannerError(scannerErrorMessage(error));
+      scannerLaunchPendingRef.current = false;
     }
   }
 
   function closeScanner() {
+    scannerLaunchPendingRef.current = false;
     stopScanner();
     setScannerOpen(false);
     setScannerStarting(false);
@@ -667,30 +675,54 @@ export function StaffTablet() {
             <section className="staff-premium-intro">
               <span className="staff-premium-kicker">Heute im Service</span>
               <h2>Bereit für den nächsten Gast.</h2>
-              <p>Tages-PIN zeigen, Kundenpunkte sicher gutschreiben oder einen Gast schnell finden.</p>
+              <p>Kunden-QR scannen, Punkte sicher gutschreiben oder einen Gast schnell finden.</p>
             </section>
 
-            <button
-              aria-label="Details zur heutigen Tages-PIN öffnen"
-              className="staff-premium-pin-card"
-              onClick={() => setPinDetailOpen(true)}
-              type="button"
-            >
-              <span className="staff-premium-pin-head"><KeyRound aria-hidden="true" size={19} />Heutige Tages-PIN</span>
-              {todayPinLoading ? (
-                <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
+            <div className="staff-premium-priority-grid">
+              {restaurantControlledEnabled ? (
+                <section className="staff-premium-scan-hero" aria-labelledby="staff-scan-title">
+                  <span className="staff-premium-scan-icon"><QrCode aria-hidden="true" size={27} /></span>
+                  <div className="staff-premium-scan-copy">
+                    <span className="staff-premium-kicker">Wichtigste Aktion</span>
+                    <h2 id="staff-scan-title">Kunden-QR scannen</h2>
+                    <p>QR-Code des Gastes scannen und Punkte sicher gutschreiben.</p>
+                  </div>
+                  <button
+                    aria-label="Kunden-QR-Code scannen und Punkte gutschreiben"
+                    className="staff-premium-scan-button"
+                    disabled={scannerStarting || scannerOpen}
+                    onClick={() => void startQrScanner()}
+                    type="button"
+                  >
+                    <QrCode aria-hidden="true" size={21} />
+                    <span>{scannerStarting ? "Scanner wird geöffnet …" : "QR-Code scannen"}</span>
+                    <ChevronRight aria-hidden="true" size={19} />
+                  </button>
+                </section>
               ) : null}
-              {!todayPinLoading && todayPinError ? (
-                <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
-              ) : null}
-              {!todayPinLoading && !todayPinError && todayPin ? (
-                <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
-                  {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
-                </strong>
-              ) : null}
-              <span className="staff-premium-pin-copy">Nur für heutige Punktebuchungen.</span>
-              <span className="staff-premium-pin-valid"><Clock3 aria-hidden="true" size={16} />Gültig bis heute 23:59<ChevronRight aria-hidden="true" size={18} /></span>
-            </button>
+
+              <button
+                aria-label="Details zur heutigen Tages-PIN öffnen"
+                className="staff-premium-pin-card"
+                onClick={() => setPinDetailOpen(true)}
+                type="button"
+              >
+                <span className="staff-premium-pin-head"><KeyRound aria-hidden="true" size={19} />Heutige Tages-PIN</span>
+                {todayPinLoading ? (
+                  <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
+                ) : null}
+                {!todayPinLoading && todayPinError ? (
+                  <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
+                ) : null}
+                {!todayPinLoading && !todayPinError && todayPin ? (
+                  <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
+                    {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
+                  </strong>
+                ) : null}
+                <span className="staff-premium-pin-copy">Nur für heutige Punktebuchungen</span>
+                <span className="staff-premium-pin-valid"><Clock3 aria-hidden="true" size={16} />Gültig bis 23:59<ChevronRight aria-hidden="true" size={18} /></span>
+              </button>
+            </div>
 
             <section className="staff-premium-activity" aria-labelledby="staff-activity-title">
               <div className="staff-premium-section-heading">
@@ -723,7 +755,6 @@ export function StaffTablet() {
             <section className="staff-premium-quick-section" aria-labelledby="staff-quick-title">
               <div className="staff-premium-section-heading"><div><span className="staff-premium-kicker">Weitere Aufgaben</span><h2 id="staff-quick-title">Schnell starten</h2></div></div>
               <div className="staff-premium-quick-grid">
-                {restaurantControlledEnabled ? <button onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={22} /><span><strong>Kunden-QR scannen</strong><small>Punkte sicher gutschreiben</small></span><ChevronRight aria-hidden="true" size={18} /></button> : null}
                 <button onClick={() => openStaffView("search")} type="button"><UserSearch aria-hidden="true" size={22} /><span><strong>Gast suchen</strong><small>Name oder Code</small></span><ChevronRight aria-hidden="true" size={18} /></button>
                 {customerInitiatedStaffToolsEnabled ? <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button> : null}
               </div>
