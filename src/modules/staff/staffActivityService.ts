@@ -1,7 +1,7 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 
 export type StaffDailyActivity = {
-  staff_member_id: string;
+  staff_member_id: string | null;
   staff_name: string;
   points_issued: number;
   stamps_issued: number;

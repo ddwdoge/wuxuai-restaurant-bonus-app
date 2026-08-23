@@ -15,6 +15,10 @@ alter table public.redemption_activity_journal
     or (reference_value_cents >= 0 and reference_currency = 'EUR')
   );
 
+-- The immutable-journal trigger predates these reporting columns. Enable its
+-- transaction-local maintenance path only for the deterministic backfill.
+select set_config('wuxuai.allow_activity_cancellation', 'on', true);
+
 update public.redemption_activity_journal journal
 set redemption_started_at = coalesce(presentation.activated_at, journal.redeemed_at),
     finalized_at = presentation.completed_at
@@ -37,6 +41,8 @@ update public.redemption_activity_journal
 set redemption_started_at = coalesce(redemption_started_at, redeemed_at),
     finalized_at = coalesce(finalized_at, redeemed_at)
 where source_type not in ('points_presentation', 'gift_presentation');
+
+select set_config('wuxuai.allow_activity_cancellation', 'off', true);
 
 create or replace function public.prepare_redemption_reporting_snapshot()
 returns trigger

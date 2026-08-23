@@ -975,7 +975,7 @@
   border-top: 1px solid rgba(65, 58, 48, 0.09);
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   left: 0;
   padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
   position: fixed;
@@ -1004,6 +1004,19 @@
 .staff-premium-bottom-nav button.active {
   background: var(--staff-gold-soft);
   color: var(--staff-gold-dark);
+}
+
+.staff-premium-bottom-nav button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.staff-premium-bottom-nav .staff-premium-nav-scan {
+  color: var(--staff-gold-dark);
+}
+
+.staff-premium-nav-label-short {
+  display: none;
 }
 
 .app-drawer-panel:has(.staff-premium-pin-detail),
@@ -1268,6 +1281,10 @@
 }
 
 @media (max-width: 430px) {
+  .staff-premium-bottom-nav button {
+    font-size: 0.61rem;
+  }
+
   .staff-premium-header-meta {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -1330,6 +1347,16 @@
 
   .staff-redemption-review-card strong {
     text-align: left;
+  }
+}
+
+@media (max-width: 390px) {
+  .staff-premium-nav-label-wide {
+    display: none;
+  }
+
+  .staff-premium-nav-label-short {
+    display: inline;
   }
 }
 

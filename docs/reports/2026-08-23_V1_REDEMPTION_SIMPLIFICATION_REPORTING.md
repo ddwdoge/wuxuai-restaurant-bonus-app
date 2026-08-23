@@ -47,7 +47,7 @@ Jahresfilter.
 
 ## Migration
 
-`20260823001000_v1_redemption_reporting_simplification.sql`
+`20260823001500_v1_redemption_reporting_simplification.sql`
 
 Die Migration ist additiv. Sie wurde in diesem Auftrag nicht auf Staging oder
 Production angewendet. Ein lokaler DB-Linter war nicht verfügbar, weil im

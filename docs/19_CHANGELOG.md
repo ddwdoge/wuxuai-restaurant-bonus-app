@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Staff-Tages-KPIs und Schnellnavigation korrigiert
+
+- Staff-Tages-KPIs lesen gutgeschriebene Punkte aus `points_transactions` und
+  finalisierte Einlösungen aus dem unveränderbaren Aktivitätsjournal.
+- Lokale Tagesgrenzen stammen aus der Restaurant-Zeitzone; Testkunden und
+  Testeinlösungen bleiben aus operativen Werten ausgeschlossen.
+- Erfolgreiche Punktebuchungen laden die Tagesübersicht neu, während
+  Abfragefehler weiterhin nicht als echte Null-Aktivität erscheinen.
+- Die Staff-Bottom-Navigation bietet fünf direkte Ziele: Start, QR scannen,
+  Tages-PIN, Gast suchen und Mehr. Bestehende Handler und Businesslogik bleiben
+  unverändert.
+- Die kollidierende lokale Reporting-Migrationsnummer wurde vor dem
+  Staging-Lauf eindeutig auf `20260823001500` korrigiert.
+
 ## 2026-08-23 – Customer-Kartendetail über Leaflet stabilisiert
 
 - Das Restaurantdetail in der mobilen Kartenansicht verwendet den bestehenden

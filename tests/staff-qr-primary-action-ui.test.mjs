@@ -64,12 +64,14 @@ test("Heute-KPIs und Gast-Suche bleiben unverändert verfügbar", () => {
   assert.match(staffPortal, /loadStaffDailyActivity\(restaurantId\)/);
 });
 
-test("Bottom Navigation bleibt beim bewährten Drei-Ziele-Routing", () => {
+test("Bottom Navigation bietet fünf direkte V1-Ziele", () => {
   assert.match(staffPortal, /aria-label="Mitarbeiter-Navigation"/);
   assert.match(staffPortal, />Start</);
+  assert.match(staffPortal, /QR scannen/);
   assert.match(staffPortal, />Tages-PIN</);
+  assert.match(staffPortal, /Gast suchen/);
   assert.match(staffPortal, />Mehr</);
-  assert.match(styles, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
 });
 
 for (const width of [320, 375, 390, 414, 430, 768, 1024]) {

@@ -142,6 +142,7 @@ export function StaffTablet() {
   const [todayActivity, setTodayActivity] = useState<StaffDailyActivity[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [activityRefreshToken, setActivityRefreshToken] = useState(0);
   const [pinDetailOpen, setPinDetailOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -151,6 +152,7 @@ export function StaffTablet() {
   const scannerAnimationRef = useRef<number | null>(null);
   const scannerActiveRef = useRef(false);
   const scannerLaunchPendingRef = useRef(false);
+  const scannerReturnViewRef = useRef<StaffView>("home");
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
@@ -227,7 +229,7 @@ export function StaffTablet() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId]);
+  }, [activityRefreshToken, restaurantId]);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -441,6 +443,7 @@ export function StaffTablet() {
       setMessage("Der Kunden-QR-Scanner ist für dieses Restaurant nicht aktiviert.");
       return;
     }
+    scannerReturnViewRef.current = view;
     scannerLaunchPendingRef.current = true;
     setView("search");
     setScannerOpen(true);
@@ -525,6 +528,11 @@ export function StaffTablet() {
     setScannerManualValue("");
   }
 
+  function dismissScanner() {
+    closeScanner();
+    openStaffView(scannerReturnViewRef.current);
+  }
+
   async function executePinAction(action: PendingPinAction, pin: string) {
     if (!restaurantId) return;
     if (!pin.trim()) {
@@ -587,6 +595,7 @@ export function StaffTablet() {
         replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
         setBillAmount(0);
         setMessage("Vorgang gespeichert und protokolliert.");
+        setActivityRefreshToken((current) => current + 1);
       },
     });
   }
@@ -617,6 +626,7 @@ export function StaffTablet() {
         setPointsQrReference(null); setPointsPreview(null); setBillAmount(0);
         setMessage(`${result.points_added} Punkte wurden gutgeschrieben.`);
         setView("home");
+        setActivityRefreshToken((current) => current + 1);
       },
     });
   }
@@ -776,6 +786,7 @@ export function StaffTablet() {
                 id="customer-search"
                 placeholder="QR, Telefon, Name oder Gästecode"
                 required
+                autoFocus={view === "search" && !scannerOpen}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -792,7 +803,7 @@ export function StaffTablet() {
                 <section className="scanner-panel" aria-live="polite">
                   <div className="scanner-head">
                     <strong>QR scannen</strong>
-                    <button className="icon-button" onClick={closeScanner} type="button" aria-label="Scanner schließen">
+                    <button className="icon-button" onClick={dismissScanner} type="button" aria-label="Scanner schließen">
                       <X size={18} />
                     </button>
                   </div>
@@ -1002,19 +1013,50 @@ export function StaffTablet() {
 
       <nav aria-label="Mitarbeiter-Navigation" className="staff-premium-bottom-nav">
         <button
-          aria-current={view === "home" ? "page" : undefined}
-          className={view === "home" ? "active" : ""}
-          onClick={() => openStaffView("home")}
+          aria-current={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
+          className={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); openStaffView("home"); }}
           type="button"
         >
           <Home aria-hidden="true" size={21} />
           <span>Start</span>
         </button>
-        <button onClick={() => setPinDetailOpen(true)} type="button">
+        <button
+          aria-current={scannerOpen ? "page" : undefined}
+          aria-label="Kunden-QR scannen"
+          className={scannerOpen ? "active staff-premium-nav-scan" : "staff-premium-nav-scan"}
+          disabled={scannerStarting || scannerOpen}
+          onClick={() => void startQrScanner()}
+          type="button"
+        >
+          <QrCode aria-hidden="true" size={22} />
+          <span><span className="staff-premium-nav-label-wide">QR scannen</span><span className="staff-premium-nav-label-short">QR</span></span>
+        </button>
+        <button
+          aria-current={pinDetailOpen ? "page" : undefined}
+          className={pinDetailOpen ? "active" : ""}
+          onClick={() => { closeScanner(); setPinDetailOpen(true); }}
+          type="button"
+        >
           <KeyRound aria-hidden="true" size={21} />
           <span>Tages-PIN</span>
         </button>
-        <button aria-expanded={moreOpen} onClick={() => setMoreOpen(true)} type="button">
+        <button
+          aria-current={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
+          className={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); openStaffView("search"); }}
+          type="button"
+        >
+          <UserSearch aria-hidden="true" size={21} />
+          <span><span className="staff-premium-nav-label-wide">Gast suchen</span><span className="staff-premium-nav-label-short">Suchen</span></span>
+        </button>
+        <button
+          aria-current={moreOpen ? "page" : undefined}
+          aria-expanded={moreOpen}
+          className={moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); setMoreOpen(true); }}
+          type="button"
+        >
           <MoreHorizontal aria-hidden="true" size={21} />
           <span>Mehr</span>
         </button>
