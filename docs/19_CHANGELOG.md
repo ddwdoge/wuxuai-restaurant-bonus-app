@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Geschäftsadresse automatisch geocodiert
+
+- Owner geben im Standortformular nur noch Adresse, Postleitzahl, Ort und Land
+  ein; Koordinaten werden nach ausdrücklichem Klick serverseitig ermittelt.
+- Neue tenantgeschützte Supabase Edge Function übermittelt ausschließlich die
+  Geschäftsadresse an den fest definierten Nominatim-Endpunkt.
+- Zeitlich begrenzter Cache und atomarer globaler Provider-Slot verhindern
+  unnötige oder schnell aufeinanderfolgende externe Requests.
+- Mehrere Treffer, kein Treffer, Rate Limit und Adressänderungen besitzen klare
+  deutsche UI-Zustände; alte Koordinaten gelten nach Adressänderung nicht fort.
+- Legal-V0.9 bleibt unverändert; ein separates ungeprüftes Addendum dokumentiert
+  Datenschutz, Drittanbieterhinweis und spätere Production-Prüfung.
+
 ## 2026-08-23 – Owner-Standortkarte stabilisiert
 
 - Karten- und Markerstyles aus der Finder-Route in den lazy geladenen

@@ -8,6 +8,7 @@ import {
   Gift,
   ImageUp,
   KeyRound,
+  LoaderCircle,
   MapPinned,
   Scale,
   Palette,
@@ -26,6 +27,12 @@ import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { loadLoyaltySettings, updatePointsCollectionSettings } from "../../loyalty/loyaltyService";
+import {
+  geocodeOwnerLocation,
+  OwnerLocationGeocodingError,
+  ownerLocationAddressKey,
+  type OwnerLocationCandidate,
+} from "../ownerLocationGeocodingService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -56,6 +63,8 @@ type PartnerLocationForm = {
   shortDescription: string;
   coverImageUrl: string;
 };
+
+type GeocodingStatus = "idle" | "searching" | "found" | "ambiguous" | "not_found" | "stale" | "error" | "rate_limited";
 
 const weekdays: { key: Weekday; label: string }[] = [
   { key: "mon", label: "Montag" },
@@ -214,6 +223,7 @@ export function SettingsPage() {
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
   const { section } = useParams();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const geocodingRequestRef = useRef(0);
   const [details, setDetails] = useState<RestaurantDetails | null>(null);
   const [restaurantForm, setRestaurantForm] = useState({ name: "", ownerPhone: "" });
   const [openingHours, setOpeningHours] = useState<Record<Weekday, OpeningDay>>(() => normalizeOpeningHours(null));
@@ -226,6 +236,9 @@ export function SettingsPage() {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
   const [subscription, setSubscription] = useState<BranchSubscription | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocationForm | null>(null);
+  const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>("idle");
+  const [geocodingCandidates, setGeocodingCandidates] = useState<OwnerLocationCandidate[]>([]);
+  const [verifiedLocationKey, setVerifiedLocationKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draggingLogo, setDraggingLogo] = useState(false);
@@ -287,7 +300,7 @@ export function SettingsPage() {
             .limit(1)
             .maybeSingle();
           if (locationError) throw locationError;
-          setPartnerLocation(locationData ? {
+          const nextLocation = locationData ? {
             id: locationData.id,
             address: locationData.address ?? "",
             postalCode: locationData.postal_code ?? "",
@@ -298,7 +311,16 @@ export function SettingsPage() {
             isDiscoverable: Boolean(locationData.is_discoverable),
             shortDescription: locationData.public_short_description ?? "",
             coverImageUrl: locationData.public_cover_image_url ?? "",
-          } : null);
+          } : null;
+          setPartnerLocation(nextLocation);
+          setGeocodingCandidates([]);
+          const storedLatitude = Number(nextLocation?.latitude);
+          const storedLongitude = Number(nextLocation?.longitude);
+          const storedCoordinatesValid = nextLocation && Boolean(nextLocation.latitude.trim()) && Boolean(nextLocation.longitude.trim())
+            && Number.isFinite(storedLatitude) && storedLatitude >= -90 && storedLatitude <= 90
+            && Number.isFinite(storedLongitude) && storedLongitude >= -180 && storedLongitude <= 180;
+          setVerifiedLocationKey(storedCoordinatesValid ? ownerLocationAddressKey(nextLocation) : null);
+          setGeocodingStatus(storedCoordinatesValid ? "found" : "idle");
         } else {
           setPartnerLocation(null);
         }
@@ -435,12 +457,18 @@ export function SettingsPage() {
 
     const latitude = Number(partnerLocation.latitude);
     const longitude = Number(partnerLocation.longitude);
-    const coordinatesValid = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+    const coordinatesValid = Boolean(partnerLocation.latitude.trim()) && Boolean(partnerLocation.longitude.trim())
+      && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
       && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
-    const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim() && partnerLocation.city.trim());
+    const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim()
+      && partnerLocation.city.trim() && partnerLocation.country.trim());
 
-    if (!coordinatesValid) {
-      setErrorMessage("Bitte gib eine gültige Kartenposition ein.");
+    if (!publicDetailsComplete) {
+      setErrorMessage("Bitte fülle alle Pflichtfelder des Standorts aus.");
+      return;
+    }
+    if (!coordinatesValid || verifiedLocationKey !== ownerLocationAddressKey(partnerLocation)) {
+      setErrorMessage("Bitte zeige die aktuelle Adresse zuerst auf der Karte an.");
       return;
     }
     if (partnerLocation.isDiscoverable && (!publicDetailsComplete || details.status !== "active")) {
@@ -475,6 +503,72 @@ export function SettingsPage() {
       setErrorMessage("Standort konnte gerade nicht gespeichert werden.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function updatePartnerAddress(field: "address" | "postalCode" | "city" | "country", value: string) {
+    geocodingRequestRef.current += 1;
+    setPartnerLocation((current) => current ? { ...current, [field]: value, latitude: "", longitude: "" } : current);
+    setVerifiedLocationKey(null);
+    setGeocodingCandidates([]);
+    setGeocodingStatus("stale");
+    setStatus(null);
+  }
+
+  function applyGeocodingCandidate(candidate: OwnerLocationCandidate) {
+    const nextLocation = partnerLocation ? {
+      ...partnerLocation,
+      address: candidate.address,
+      postalCode: candidate.postalCode,
+      city: candidate.city,
+      country: candidate.country,
+      latitude: String(candidate.latitude),
+      longitude: String(candidate.longitude),
+    } : null;
+    setPartnerLocation(nextLocation);
+    setGeocodingCandidates([]);
+    setVerifiedLocationKey(nextLocation ? ownerLocationAddressKey(nextLocation) : null);
+    setGeocodingStatus("found");
+    setStatus(null);
+  }
+
+  async function findPartnerLocation() {
+    if (!details?.id || !partnerLocation) return;
+    const addressComplete = partnerLocation.address.trim() && partnerLocation.postalCode.trim()
+      && partnerLocation.city.trim() && partnerLocation.country.trim();
+    if (!addressComplete) {
+      setErrorMessage("Bitte fülle Adresse, Postleitzahl, Ort und Land aus.");
+      return;
+    }
+
+    const requestId = geocodingRequestRef.current + 1;
+    geocodingRequestRef.current = requestId;
+    setGeocodingStatus("searching");
+    setGeocodingCandidates([]);
+    setStatus(null);
+    setErrorMessage(null);
+    try {
+      const candidates = await geocodeOwnerLocation({
+        restaurantId: details.id,
+        address: partnerLocation.address,
+        postalCode: partnerLocation.postalCode,
+        city: partnerLocation.city,
+        country: partnerLocation.country,
+      });
+      if (requestId !== geocodingRequestRef.current) return;
+      if (candidates.length === 0) {
+        setGeocodingStatus("not_found");
+        return;
+      }
+      if (candidates.length === 1) {
+        applyGeocodingCandidate(candidates[0]);
+        return;
+      }
+      setGeocodingCandidates(candidates);
+      setGeocodingStatus("ambiguous");
+    } catch (error) {
+      if (requestId !== geocodingRequestRef.current) return;
+      setGeocodingStatus(error instanceof OwnerLocationGeocodingError && error.code === "RATE_LIMITED" ? "rate_limited" : "error");
     }
   }
 
@@ -755,7 +849,8 @@ export function SettingsPage() {
   if (section === "standort") {
     const latitude = Number(partnerLocation?.latitude);
     const longitude = Number(partnerLocation?.longitude);
-    const previewAvailable = partnerLocation && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+    const previewAvailable = partnerLocation && Boolean(partnerLocation.latitude.trim()) && Boolean(partnerLocation.longitude.trim())
+      && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
       && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
     const previewLocation: PartnerRestaurant | null = previewAvailable ? {
       restaurant_id: details.id,
@@ -785,21 +880,42 @@ export function SettingsPage() {
         <section className="card settings-detail-card">
           {partnerLocation ? (
             <form className="form" onSubmit={savePartnerLocation}>
-              {partnerLocation.isDiscoverable ? <RequiredFieldsNote /> : null}
+              <RequiredFieldsNote />
               <div className="grid two">
-                <div className="field"><FormLabel htmlFor="location-address" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Adresse</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-address" onChange={(event) => setPartnerLocation((current) => current ? { ...current, address: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.address} /></div>
-                <div className="field"><FormLabel htmlFor="location-postal-code" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Postleitzahl</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-postal-code" inputMode="numeric" onChange={(event) => setPartnerLocation((current) => current ? { ...current, postalCode: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.postalCode} /></div>
-                <div className="field"><FormLabel htmlFor="location-city" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Ort</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-city" onChange={(event) => setPartnerLocation((current) => current ? { ...current, city: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.city} /></div>
-                <div className="field"><FormLabel htmlFor="location-country" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Land</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-country" maxLength={2} onChange={(event) => setPartnerLocation((current) => current ? { ...current, country: event.target.value } : current)} required={partnerLocation.isDiscoverable} value={partnerLocation.country} /></div>
-                <div className="field"><FormLabel htmlFor="location-latitude" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Breitengrad</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-latitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, latitude: event.target.value } : current)} placeholder="48.208174" required={partnerLocation.isDiscoverable} value={partnerLocation.latitude} /></div>
-                <div className="field"><FormLabel htmlFor="location-longitude" optional={!partnerLocation.isDiscoverable} required={partnerLocation.isDiscoverable}>Längengrad</FormLabel><input aria-required={partnerLocation.isDiscoverable || undefined} className="input" id="location-longitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, longitude: event.target.value } : current)} placeholder="16.373819" required={partnerLocation.isDiscoverable} value={partnerLocation.longitude} /></div>
+                <div className="field"><FormLabel htmlFor="location-address" required>Adresse</FormLabel><input aria-required="true" className="input" id="location-address" maxLength={180} onChange={(event) => updatePartnerAddress("address", event.target.value)} required value={partnerLocation.address} /></div>
+                <div className="field"><FormLabel htmlFor="location-postal-code" required>Postleitzahl</FormLabel><input aria-required="true" className="input" id="location-postal-code" inputMode="numeric" maxLength={24} onChange={(event) => updatePartnerAddress("postalCode", event.target.value)} required value={partnerLocation.postalCode} /></div>
+                <div className="field"><FormLabel htmlFor="location-city" required>Ort</FormLabel><input aria-required="true" className="input" id="location-city" maxLength={100} onChange={(event) => updatePartnerAddress("city", event.target.value)} required value={partnerLocation.city} /></div>
+                <div className="field"><FormLabel htmlFor="location-country" required>Land</FormLabel><input aria-required="true" className="input" id="location-country" maxLength={2} onChange={(event) => updatePartnerAddress("country", event.target.value)} required value={partnerLocation.country} /></div>
               </div>
+              <div className="settings-location-geocoding">
+                <button className="button secondary settings-location-geocode-button" disabled={geocodingStatus === "searching"} onClick={findPartnerLocation} type="button">
+                  {geocodingStatus === "searching" ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <MapPinned aria-hidden="true" size={18} />}
+                  {geocodingStatus === "searching" ? "Adresse wird gesucht …" : ["not_found", "error", "rate_limited"].includes(geocodingStatus) ? "Erneut suchen" : "Adresse auf Karte anzeigen"}
+                </button>
+                {geocodingStatus === "found" ? <p className="settings-location-found" role="status">✓ Standort gefunden</p> : null}
+                {geocodingStatus === "stale" ? <p className="muted">Die Adresse wurde geändert. Bitte prüfe die neue Kartenposition.</p> : null}
+                {geocodingStatus === "not_found" ? <p className="status-message error">Adresse konnte nicht eindeutig gefunden werden. Bitte überprüfe Straße, Hausnummer, Postleitzahl und Ort.</p> : null}
+                {geocodingStatus === "rate_limited" ? <p className="status-message error">Die Kartensuche ist gerade ausgelastet. Bitte versuche es in einem Moment erneut.</p> : null}
+                {geocodingStatus === "error" ? <p className="status-message error">Die Adresse konnte gerade nicht gesucht werden. Bitte versuche es erneut.</p> : null}
+                {geocodingStatus === "ambiguous" ? (
+                  <div className="settings-location-results" aria-live="polite">
+                    <strong>Welche Adresse meinst du?</strong>
+                    {geocodingCandidates.map((candidate) => (
+                      <button className="settings-location-result" key={`${candidate.latitude}:${candidate.longitude}`} onClick={() => applyGeocodingCandidate(candidate)} type="button">
+                        <MapPinned aria-hidden="true" size={18} />
+                        <span>{candidate.displayName}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              {previewLocation ? <details className="settings-location-advanced"><summary>Erweiterte Einstellungen</summary><dl><div><dt>Breitengrad</dt><dd>{latitude.toFixed(6)}</dd></div><div><dt>Längengrad</dt><dd>{longitude.toFixed(6)}</dd></div></dl></details> : null}
               <div className="field"><FormLabel htmlFor="location-description" optional>Öffentliche Kurzbeschreibung</FormLabel><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
               <div className="field"><FormLabel htmlFor="location-cover" optional>Öffentliches Bild (HTTPS-Adresse)</FormLabel><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
-              ) : <p className="muted">Gib gültige Koordinaten ein, um die Kartenposition zu prüfen.</p>}
+              ) : <p className="muted">Zeige deine Adresse auf der Karte an, um die Position zu prüfen.</p>}
               <FormActions saving={saving} submitLabel="Standort speichern" />
             </form>
           ) : <p className="status-message error">Für dieses Restaurant wurde kein primärer Standort gefunden.</p>}

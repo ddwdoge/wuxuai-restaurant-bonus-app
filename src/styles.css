@@ -484,6 +484,23 @@ a {
 .settings-location-preview { display: grid; gap: 12px; }
 .settings-location-preview h2 { font-size: 18px; margin: 0; }
 .settings-location-preview .partner-map-canvas { border: 1px solid var(--border); border-radius: 18px; height: 300px; overflow: hidden; }
+.settings-location-geocoding { align-items: start; display: grid; gap: 10px; }
+.settings-location-geocode-button { justify-self: start; min-height: 48px; }
+.settings-location-found { color: #2f6f4e; font-weight: 700; margin: 0; }
+.settings-location-results { background: #fbf7ef; border: 1px solid #eadfcf; border-radius: 16px; display: grid; gap: 8px; padding: 14px; }
+.settings-location-result { align-items: center; background: #fff; border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; display: grid; font: inherit; gap: 10px; grid-template-columns: auto minmax(0, 1fr); min-height: 48px; padding: 10px 12px; text-align: left; }
+.settings-location-result:hover { border-color: var(--gold); }
+.settings-location-result:focus-visible { outline: 3px solid color-mix(in srgb, var(--gold) 38%, transparent); outline-offset: 2px; }
+.settings-location-advanced { border-block: 1px solid var(--border); padding-block: 10px; }
+.settings-location-advanced summary { cursor: pointer; font-weight: 600; min-height: 44px; padding-block: 10px; }
+.settings-location-advanced dl { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 8px 0 0; }
+.settings-location-advanced dl div { background: #fbf7ef; border-radius: 10px; padding: 10px; }
+.settings-location-advanced dt { color: var(--muted); font-size: 12px; }
+.settings-location-advanced dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .settings-location-geocode-button { justify-self: stretch; width: 100%; }
+  .settings-location-advanced dl { grid-template-columns: 1fr; }
+}
 .points-mode-fieldset { border: 0; margin: 0; min-width: 0; padding: 0; }
 .points-mode-fieldset legend { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
 .points-mode-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

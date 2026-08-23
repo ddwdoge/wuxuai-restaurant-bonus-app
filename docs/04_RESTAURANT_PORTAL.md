@@ -691,12 +691,21 @@ Endstatus: **LOCK**
 
 - Owner verwalten in V1 ausschließlich den bestehenden primären Standort ihres
   Restaurants. Dies ist keine allgemeine Filialverwaltung.
-- Adresse, PLZ, Ort, Land, Koordinaten, öffentliche Kurzbeschreibung und
-  öffentliches Bild können gepflegt werden.
+- Im normalen Owner-Flow werden Adresse, PLZ, Ort und Land gepflegt. Eine
+  ausdrücklich gestartete serverseitige Nominatim-Suche ermittelt die
+  Koordinaten; diese sind nur in den erweiterten Einstellungen sichtbar.
+- Eine Adressänderung verwirft die bisherige Kartenposition, bis der Owner die
+  neue Adresse erneut gesucht und geprüft hat.
+- Öffentliche Kurzbeschreibung und öffentliches Bild bleiben im bestehenden
+  Standortformular pflegbar.
 - `In Restaurantsuche sichtbar` ist eine ausdrückliche Freigabe und setzt ein
   aktives Restaurant, vollständige Adressdaten und valide Koordinaten voraus.
 - Bestehende Restaurants bleiben standardmäßig unsichtbar.
 - Owner können durch bestehende RLS nur den Standort ihres Restaurants ändern.
+- Nominatim erhält ausschließlich die normalisierte geschäftliche Adresse.
+  Auth-, Owner-, Kunden-, Zahlungs- und interne Tenantdaten werden nicht an den
+  Provider übertragen. Aufrufe sind gecacht, global begrenzt und nur für
+  berechtigte Owner/Restaurantadmins möglich.
 
 ## Rechtliche Bereitschaft V1
 

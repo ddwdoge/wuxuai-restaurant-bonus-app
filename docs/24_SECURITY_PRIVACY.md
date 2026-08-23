@@ -1188,3 +1188,18 @@ Endstatus: **LOCK**
 - Strukturierte Dispatcherlogs enthalten höchstens eine gekürzte
   Delivery-Referenz, Template-Key, Versuchszahl und sicheren Fehlercode, aber
   weder Empfängeradresse noch Queue-Payload.
+
+## Ergänzung 2026-08-23: Serverseitige Standort-Geocodierung
+
+- Eine Geocodierung erfolgt nur nach ausdrücklicher Owner-Aktion und nie als
+  Autocomplete oder Hintergrundprozess.
+- Ausschließlich die normalisierte geschäftliche Adresse wird serverseitig an
+  den fest konfigurierten Nominatim-Endpunkt übertragen.
+- Restaurant-ID, Owner-, Kunden-, Login-, Zahlungs- und Legal-Daten verlassen
+  WUXUAI bei diesem Aufruf nicht.
+- Authentifizierung, Restaurantrolle und Mandantenzuordnung werden vor dem
+  externen Aufruf serverseitig geprüft.
+- Provider-Cache und globale Aufrufbegrenzung sind für Browserrollen gesperrt;
+  Nominatim wird anwendungsweit höchstens einmal je 1,1 Sekunden aufgerufen.
+- Gespeicherte Koordinaten verhindern unnötige Wiederholungsabfragen. Eine
+  Adressänderung verwirft die alte Kartenposition, bis sie erneut geprüft wurde.

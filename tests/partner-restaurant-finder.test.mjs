@@ -170,5 +170,5 @@ test("Owner-Markervorschau rendert nur für validierte Koordinaten", async () =>
   assert.match(settings, /latitude >= -90 && latitude <= 90/);
   assert.match(settings, /longitude >= -180 && longitude <= 180/);
   assert.match(settings, /previewLocation \? \(/);
-  assert.match(settings, /Gib gültige Koordinaten ein, um die Kartenposition zu prüfen\./);
+  assert.match(settings, /Zeige deine Adresse auf der Karte an, um die Position zu prüfen\./);
 });
