@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Customer-Chips und Restaurantlogos mobil korrigiert
+
+- Filter in „Meine Lokale“ und „Lokale entdecken“ bleiben einzeilig,
+  horizontal scrollbar und erhalten rechts ausreichend Scroll-Abstand für den
+  letzten vollständig sichtbaren Chip.
+- Customer-spezifische Restaurantlogos verwenden durchgehend `object-fit:
+  contain`, erhalten breitere Markenflächen und werden nicht mehr durch
+  `overflow: hidden` abgeschnitten.
+- Lokalkarten begrenzen ihre Breite, lassen lange Namen und Adressen umbrechen
+  und behalten den bestehenden Safe-Area-Abstand zur Bottom-Navigation.
+- Keine Business-, Datenbank-, API-, Auth-, Reward-, Punkte- oder Geschenklogik
+  geändert.
+
 ## 2026-08-23 – Customer Mobile UI stabilisiert
 
 - Customer-Shell verwendet normalen vertikalen Seitenfluss statt eines
