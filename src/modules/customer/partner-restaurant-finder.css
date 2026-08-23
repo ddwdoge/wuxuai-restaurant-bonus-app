@@ -95,23 +95,6 @@
 .partner-map-panel { border: 1px solid var(--premium-border); border-radius: 20px; box-shadow: var(--premium-shadow); min-height: 0; overflow: hidden; position: relative; }
 .partner-map-fallback { align-items: flex-start; display: flex; flex-direction: column; gap: 14px; justify-content: center; min-height: 280px; padding: 24px; }
 .partner-map-fallback p { color: #625d55; margin: 0; max-width: 36rem; }
-.partner-map-canvas { height: 100%; min-height: 280px; width: 100%; }
-.partner-map-canvas .leaflet-control-attribution { background: rgba(255, 255, 255, 0.92); font-size: 10px; }
-.partner-map-canvas .leaflet-control-zoom a { align-items: center; color: #3a3834; display: flex; height: 44px; justify-content: center; line-height: 44px; width: 44px; }
-
-.partner-map-marker-shell { background: transparent; border: 0; }
-.partner-map-marker { align-items: center; background: var(--premium-gold); border: 3px solid #fff; border-radius: 50% 50% 50% 8px; box-shadow: 0 5px 15px rgba(45, 35, 22, 0.24); display: flex; height: 34px; justify-content: center; transform: rotate(-45deg); width: 34px; }
-.partner-map-marker > span { align-items: center; background: #fff; border-radius: 50%; color: #4c3a20; display: flex; font-size: 10px; font-weight: 800; height: 15px; justify-content: center; line-height: 1; transform: rotate(45deg); width: 15px; }
-.partner-map-marker.registered, .partner-map-marker.visited { box-shadow: 0 0 0 4px rgba(191, 143, 54, 0.34), 0 5px 15px rgba(45, 35, 22, 0.24); }
-.partner-map-marker.member { background: #9b702b; }
-.partner-map-marker.near { background: #8a5d22; box-shadow: 0 0 0 4px rgba(191, 143, 54, 0.34), 0 5px 15px rgba(45, 35, 22, 0.24); }
-.partner-map-marker.reward { background: #4f7a5b; }
-.partner-map-marker.closed { background: #77736d; }
-.partner-map-marker.selected { box-shadow: 0 0 0 5px rgba(31, 31, 31, 0.28), 0 6px 18px rgba(45, 35, 22, 0.28); transform: rotate(-45deg) scale(1.16); }
-.partner-map-marker.current { outline: 3px solid #1f1f1f; outline-offset: 3px; }
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(191, 143, 54, 0.25); }
-.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: var(--premium-gold); color: #fff; font-weight: 700; }
-
 .partner-list-panel { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding-bottom: 4px; }
 .partner-results-list { display: grid; gap: 9px; }
 .partner-result-card {

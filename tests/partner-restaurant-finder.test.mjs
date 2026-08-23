@@ -145,3 +145,30 @@ test("Kundenseite verwendet V1-Titel, sechs Filter und sichere Aktionen", async 
   assert.match(page, /Melde dich an, um deine Punkte bei teilnehmenden Lokalen zu sehen/);
   assert.doesNotMatch(page, /result\.locations\[0\]\?\.branch_id/);
 });
+
+test("Standortkarte lädt OSM-Kacheln direkt per HTTPS und besitzt einen kontrollierten Fehlerpfad", async () => {
+  const map = await readFile(new URL("../src/modules/customer/PartnerRestaurantMap.tsx", import.meta.url), "utf8");
+  assert.match(map, /https:\/\/tile\.openstreetmap\.org\/\{z\}\/\{x\}\/\{y\}\.png/);
+  assert.doesNotMatch(map, /http:\/\//);
+  assert.match(map, /tileload:/);
+  assert.match(map, /tileerror:/);
+  assert.match(map, /Karte konnte nicht geladen werden\./);
+  assert.match(map, /Erneut versuchen/);
+});
+
+test("Standortkarte synchronisiert Lazy- und Resize-Layouts ohne Dauerschleife", async () => {
+  const map = await readFile(new URL("../src/modules/customer/PartnerRestaurantMap.tsx", import.meta.url), "utf8");
+  assert.match(map, /import "\.\/partner-restaurant-map\.css"/);
+  assert.match(map, /ResizeObserver/);
+  assert.match(map, /map\.invalidateSize\(\{ animate: false \}\)/);
+  assert.match(map, /observer\?\.disconnect\(\)/);
+  assert.doesNotMatch(map, /setInterval/);
+});
+
+test("Owner-Markervorschau rendert nur für validierte Koordinaten", async () => {
+  const settings = await readFile(new URL("../src/modules/admin/pages/SettingsPage.tsx", import.meta.url), "utf8");
+  assert.match(settings, /latitude >= -90 && latitude <= 90/);
+  assert.match(settings, /longitude >= -180 && longitude <= 180/);
+  assert.match(settings, /previewLocation \? \(/);
+  assert.match(settings, /Gib gültige Koordinaten ein, um die Kartenposition zu prüfen\./);
+});

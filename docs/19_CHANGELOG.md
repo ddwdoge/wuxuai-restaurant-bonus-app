@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Owner-Standortkarte stabilisiert
+
+- Karten- und Markerstyles aus der Finder-Route in den lazy geladenen
+  Kartenbaustein verschoben, damit die Owner-Markervorschau unabhängig von der
+  vorherigen Navigation vollständig dargestellt wird.
+- Leaflet synchronisiert seine Größe nach dem sichtbaren Render und bei echten
+  Containeränderungen kontrolliert über `invalidateSize()`.
+- OpenStreetMap verwendet die kanonische HTTPS-Kacheladresse; ein fehlgeschlagener
+  Kachelabruf zeigt einen kompakten deutschen Fehlerzustand mit Retry.
+- Keine Standort-, Finder-, Datenbank-, RLS- oder Tenantlogik geändert.
+
 ## 2026-08-09 – V1 Release-Finishing für Geschenke und Benachrichtigungen
 
 - Willkommens- und Geburtstagsgeschenke verwenden additiv das bestehende
