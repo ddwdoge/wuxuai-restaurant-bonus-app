@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Customer-Kartendetail über Leaflet stabilisiert
+
+- Das Restaurantdetail in der mobilen Kartenansicht verwendet den bestehenden
+  Body-Portal-Drawer statt eines innerhalb der Finder-Seite fixierten Elements.
+- Kartencontainer und Leaflet-Laufzeit bilden einen isolierten Stacking-Kontext,
+  sodass Tiles, Marker, Popups und Controls den Drawer nicht mehr überlagern.
+- Der Drawer sperrt Hintergrundinteraktionen, scrollt auf iOS-taugliche Weise
+  intern und gibt Karteninteraktion sowie Body-Scroll nach dem Schließen frei.
+- Bottom-Navigation und Safe Areas bleiben berücksichtigt; Restaurant-, Karten-,
+  Punkte-, Reward- und Geschenklogik wurden nicht geändert.
+
 ## 2026-08-23 – Customer-Chips und Restaurantlogos mobil korrigiert
 
 - Filter in „Meine Lokale“ und „Lokale entdecken“ bleiben einzeilig,
@@ -2655,3 +2666,29 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Loading-, Empty- und Error-Zustände sind getrennt; fehlgeschlagene Requests
   besitzen einen kontrollierten Retry.
 - Der bestehende minimierte, restaurantgebundene Gäste-RPC bleibt unverändert.
+
+## 2026-08-23 – V1-Einlösung und Einlösungsberichte vereinheitlicht
+
+- Die normale Staff-Oberfläche enthält keine sechsstellige Codeprüfung mehr;
+  historische Code-Daten und Kompatibilitäts-RPCs bleiben unverändert erhalten.
+- Punkte-, Willkommens- und Geburtstagsbelohnungen verwenden in der Kunden-UX
+  den gemeinsamen serverzeitgesteuerten 15-Minuten-Präsentationsflow.
+- Das unveränderliche Aktivitätsjournal erhält additive Start-, Finalisierungs-
+  und optionale Referenzwert-Snapshots; fehlende historische Geldwerte werden
+  nicht rekonstruiert.
+- Der Owner-Bericht unterstützt Heute, Gestern, Wochen-, Monats-, Jahres- und
+  benutzerdefinierte Zeiträume mit serverseitiger Aggregation und begrenzten
+  Detailzeilen.
+- CSV und Druckansicht enthalten keine direkten Kundendaten; Testvorgänge sind
+  immer ausgeschlossen und Zeitgrenzen folgen der Restaurant-Zeitzone.
+
+## 2026-08-23 – Geschlossenen Live-Einlösungs-Drawer respektieren
+
+- Eine bewusst gestartete Einlösung öffnet den Präsentations-Drawer weiterhin
+  einmalig.
+- Nach dem Schließen aktualisieren Hydration, Polling und Abschluss nur noch den
+  serverseitigen Status und öffnen den Drawer nicht erneut.
+- Eine aktive Einlösung bleibt mit Titel, Restzeit und manueller Aktion als
+  kompakter Hinweis im normalen Seitenfluss erreichbar.
+- Einlöse-, Punkte-, Reporting-, Sicherheits- und Datenbanklogik bleiben
+  unverändert.

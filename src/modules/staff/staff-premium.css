@@ -216,7 +216,7 @@
 .staff-premium-pin-code {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   max-width: 390px;
   width: 100%;
 }
@@ -901,7 +901,7 @@
   border-top: 1px solid rgba(65, 58, 48, 0.09);
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   left: 0;
   padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
   position: fixed;

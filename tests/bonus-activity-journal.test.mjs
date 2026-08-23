@@ -83,7 +83,7 @@ test("report uses half-open period boundaries", () => {
 test("test activity is excluded by default", () => {
   assert.match(migration, /input_include_test boolean default false/);
   assert.match(migration, /input_include_test or not j\.is_test_event/);
-  assert.match(page, /Standardmäßig ausgeschlossen/);
+  assert.match(page, /standardmäßig ausgeschlossen/i);
 });
 
 test("existing export RPC signature remains available", () => {
@@ -133,16 +133,16 @@ test("owner route and navigation expose reports", () => {
   assert.match(layout, /to: "\/admin\/reports", label: "Berichte"/);
 });
 
-test("owner page provides month year and journal tabs", () => {
-  assert.match(page, /Monatsübersicht/);
-  assert.match(page, /Jahresübersicht/);
+test("owner page provides period selection and redemption journal", () => {
+  assert.match(page, /Dieser Monat/);
+  assert.match(page, /Jahresübersicht Bonus/);
   assert.match(page, /Einlösungsprotokoll/);
 });
 
 test("UI and export carry the mandatory cash boundary", () => {
-  assert.match(page, /kein Kassenbeleg, keine Registrierkasse/);
+  assert.match(page, /ersetzt keine gesetzlich vorgeschriebene Kassen-, Rechnungs- oder Steuerdokumentation/);
   assert.match(migration, /kein Kassenbeleg, keine Registrierkasse/);
-  assert.match(page, /LEGAL_REVIEW_REQUIRED/);
+  assert.doesNotMatch(page, /LEGAL_REVIEW_REQUIRED/);
 });
 
 test("UI does not call the activity report a tax or cash report", () => {

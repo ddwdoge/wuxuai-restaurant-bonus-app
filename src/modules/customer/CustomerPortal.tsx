@@ -674,7 +674,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         if (restored.state === "active") {
           setActiveRedemptionCode(restored.redemption);
           setRedemptionOutcome(null);
-          setRedemptionDrawerOpen(true);
           return;
         }
 
@@ -685,7 +684,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             pointsSpent: restored.redemption.pointsSpent,
             title: restored.redemption.title,
           });
-          setRedemptionDrawerOpen(true);
         }
       } catch (error) {
         console.error("Einlösecode konnte nicht serverseitig geprüft werden.", error);
@@ -726,7 +724,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             title: activeRedemptionCode.title,
           });
           setActiveRedemptionCode(null);
-          setRedemptionDrawerOpen(true);
           setMessage(serverStatus.status === "redeemed"
             ? "Einlösung erfolgreich bestätigt."
             : "Der Einlösecode ist nicht mehr verfügbar.");
@@ -759,16 +756,18 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       title: activeRedemptionCode.title,
     });
     setActiveRedemptionCode(null);
-    setRedemptionDrawerOpen(true);
     setMessage("Der Einlösecode ist abgelaufen.");
   }, [activeRedemptionCode, activeToken, redemptionSecondsRemaining, restaurantSlug]);
 
-  const applyPointsPresentation = useCallback((presentation: CustomerPointsPresentation) => {
+  const applyPointsPresentation = useCallback((
+    presentation: CustomerPointsPresentation,
+    options: { openDrawer?: boolean } = {},
+  ) => {
     setPresentationClockOffsetMs(new Date(presentation.server_now).getTime() - Date.now());
     if (presentation.active && presentation.status === "REDEEMED_ACTIVE") {
       setActivePointsPresentation(presentation);
       setRedemptionOutcome(null);
-      setRedemptionDrawerOpen(true);
+      if (options.openDrawer) setRedemptionDrawerOpen(true);
       return;
     }
     setActivePointsPresentation(null);
@@ -779,7 +778,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         title: presentation.reward_title,
         presentation: true,
       });
-      setRedemptionDrawerOpen(true);
+      if (options.openDrawer) setRedemptionDrawerOpen(true);
     }
   }, []);
 
@@ -841,7 +840,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   ]);
 
   useEffect(() => {
-    if (!activePointsPresentation?.active || !("wakeLock" in navigator)) return;
+    if (!activePointsPresentation?.active || !redemptionDrawerOpen || !("wakeLock" in navigator)) return;
     let released = false;
     let lock: { release: () => Promise<void> } | null = null;
     (navigator as Navigator & { wakeLock: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> } })
@@ -855,7 +854,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       released = true;
       if (lock) void lock.release();
     };
-  }, [activePointsPresentation]);
+  }, [activePointsPresentation, redemptionDrawerOpen]);
 
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
@@ -1187,7 +1186,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           rewardId: redeemOffer.id,
           idempotencyKey: crypto.randomUUID(),
         });
-        applyPointsPresentation(presentation);
+        applyPointsPresentation(presentation, { openDrawer: true });
         setActiveRedemptionCode(null);
         setCustomer((current) => current && presentation.points_balance != null
           ? {
@@ -1220,7 +1219,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         customerRewardId: redeemOffer.assignment_id,
         idempotencyKey: crypto.randomUUID(),
       });
-      applyPointsPresentation(presentation);
+      applyPointsPresentation(presentation, { openDrawer: true });
       setActiveRedemptionCode(null);
       setRewards((current) => current.map((reward) =>
         reward.assignment_id === redeemOffer.assignment_id
@@ -1716,6 +1715,22 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
         {customer && !isBonusCollection ? (
           <>
+            {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
+              <button
+                aria-label={`${activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? "Live-Einlösung"} anzeigen`}
+                className="premium-active-code"
+                onClick={() => setRedemptionDrawerOpen(true)}
+                type="button"
+              >
+                <span className="premium-active-code-icon"><Sparkles aria-hidden="true" size={18} /></span>
+                <span className="premium-active-code-copy">
+                  <strong>{activePointsPresentation?.reward_title ?? activeRedemptionCode?.title}</strong>
+                  <small>Live-Einlösung aktiv · {Math.floor((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) / 60)}:{String((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) % 60).padStart(2, "0")}</small>
+                </span>
+                <span className="premium-active-code-action">Anzeigen</span>
+              </button>
+            ) : null}
+
             {activeView === "home" ? (
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
@@ -2070,12 +2085,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             ) : null}
 
             <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
-
-            {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
-              <button className="premium-active-code" onClick={() => setRedemptionDrawerOpen(true)} type="button">
-                <Sparkles aria-hidden="true" size={18} /> {activePointsPresentation ? "Aktive Einlösung anzeigen" : "Aktiven Einlösecode anzeigen"}
-              </button>
-            ) : null}
 
             <AppDrawer
               description="Information des Restaurants"

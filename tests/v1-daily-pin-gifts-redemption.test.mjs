@@ -68,6 +68,5 @@ test("Customer-Portal verwendet das 15-Minuten-Präsentationsfenster auch für G
   assert.match(releaseMigration, /status = 'redeemed', redeemed_at = input_now/);
   assert.match(releaseMigration, /grant execute on function public\.start_customer_gift_presentation/);
   assert.doesNotMatch(customerPortal, /startCustomerRedemption\(/);
-  // Staff retains the historical code verifier for already-issued legacy codes.
-  assert.match(staffPortal, /Sechsstelliger Einlösecode/);
+  assert.doesNotMatch(staffPortal, /Sechsstelliger Einlösecode|Einlösecode prüfen|consumeRedemptionCode/);
 });

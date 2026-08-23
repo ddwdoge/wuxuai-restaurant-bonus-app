@@ -59,8 +59,8 @@ test("Mobile Navigation berücksichtigt Safe Areas und Inhalte", () => {
   assert.match(styles, /min-width: 0/);
 });
 
-test("Staff-Portal übernimmt konkrete Supabase-Fehlermeldungen", () => {
-  assert.match(staff, /classifyStaffRedemptionError\(error, phase\)/);
+test("Legacy-Codefehler bleiben sicher klassifiziert, aber aus der primären Staff-UX entfernt", () => {
+  assert.doesNotMatch(staff, /classifyStaffRedemptionError\(error, phase\)/);
   assert.match(staffErrors, /typeof errorLike\?\.message === "string"/);
   assert.match(staffErrors, /Diese Belohnung wurde bereits eingelöst/);
 });

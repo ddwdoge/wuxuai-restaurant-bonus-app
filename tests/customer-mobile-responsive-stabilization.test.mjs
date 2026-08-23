@@ -45,11 +45,13 @@ test("lange Restaurant-, Reward- und Kontoinhalte dürfen umbrechen", () => {
   assert.doesNotMatch(premiumCss, /premium-account-heading h1[^}]*white-space: nowrap/);
 });
 
-test("Finder hält Karte, Controls und Bottom Sheet oberhalb der Navigation", () => {
+test("Finder hält Karte, Controls und Portal-Drawer in klarer Layer-Hierarchie", () => {
   assert.match(finderCss, /grid-template-rows: minmax\(280px, 48dvh\)/);
-  assert.match(finderCss, /bottom: calc\(82px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(finderCss, /partner-map-panel[^}]*isolation: isolate;[^}]*z-index: 0/);
+  assert.match(finderCss, /partner-detail-drawer-content\) \.app-drawer-body[^}]*padding-bottom: calc\(18px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(finderCss, /partner-view-toggle button[^}]*min-width: 0/);
   assert.match(mapCss, /partner-map-runtime[\s\S]{0,120}min-width: 0/);
+  assert.match(finder, /open=\{detailOpenInDrawer\}/);
 });
 
 test("Customer Business-Handler und sichere Finder-Aktionen bleiben erhalten", () => {

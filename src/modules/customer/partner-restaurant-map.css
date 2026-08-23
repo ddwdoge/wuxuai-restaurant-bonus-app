@@ -1,9 +1,11 @@
 .partner-map-runtime {
   height: 100%;
+  isolation: isolate;
   min-height: 280px;
   min-width: 0;
   position: relative;
   width: 100%;
+  z-index: 0;
 }
 
 .partner-map-canvas {
