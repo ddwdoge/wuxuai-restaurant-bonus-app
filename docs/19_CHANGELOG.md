@@ -2594,3 +2594,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Sperre ergänzt.
 - Customer-Callback, Restaurant-Rückkehr, optionale Geburtstagsangabe und
   bestehende Owner-Registrierung bleiben unverändert.
+
+## 2026-08-23 – Gäste-Suche bei Restaurantwechsel stabilisiert
+
+- Suchzustand der Owner-Gästeliste ist jetzt an das aktive Restaurant gebunden
+  und wird bei einem Tenantwechsel zuverlässig zurückgesetzt.
+- Gästeliste und optionale Berechtigung für Identitätskorrekturen laden
+  unabhängig, damit ein Supportfehler keine vorhandenen Gäste ausblendet.
+- Loading-, Empty- und Error-Zustände sind getrennt; fehlgeschlagene Requests
+  besitzen einen kontrollierten Retry.
+- Der bestehende minimierte, restaurantgebundene Gäste-RPC bleibt unverändert.

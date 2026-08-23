@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Copy, Search, ShieldCheck, Users } from "lucide-react";
+import { useEffect, useMemo, useReducer, useState } from "react";
+import { Copy, LoaderCircle, RotateCw, Search, ShieldCheck, Users } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { CustomerPhoneField } from "../../../shared/components/CustomerPhoneField";
@@ -14,6 +14,7 @@ import {
 } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { customerPhoneValidation, splitCustomerPhone } from "../../customer/customerIdentity.mjs";
+import { createGuestListState, filterGuestList, guestListStateReducer } from "../guestListState.mjs";
 
 function customerStatus(customer: Customer) {
   if (customer.points_balance > 0 || customer.stamp_balance > 0) return "Aktiv";
@@ -32,8 +33,11 @@ export function CustomersPage() {
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const [filterState, dispatchFilter] = useReducer(guestListStateReducer, restaurantId, createGuestListState);
+  const query = filterState.restaurantId === restaurantId ? filterState.query : "";
+  const [loading, setLoading] = useState(Boolean(restaurantId));
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [identitySupportAllowed, setIdentitySupportAllowed] = useState(false);
   const [supportCustomer, setSupportCustomer] = useState<Customer | null>(null);
   const [supportDetail, setSupportDetail] = useState<CustomerIdentitySupportDetail | null>(null);
@@ -51,21 +55,62 @@ export function CustomersPage() {
   const [newAccessLink, setNewAccessLink] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!restaurantId) return;
+    dispatchFilter({ type: "restaurant_changed", restaurantId });
+    setSupportCustomer(null);
+    setSupportDetail(null);
+    setSupportMessage(null);
+    setNewAccessLink(null);
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!restaurantId) {
+      setCustomers([]);
+      setLoading(false);
+      setLoadError(null);
+      return;
+    }
 
     let cancelled = false;
+    setCustomers([]);
+    setLoading(true);
+    setLoadError(null);
 
-    Promise.all([loadCustomers(restaurantId), canManageCustomerIdentity(restaurantId)])
-      .then(([nextCustomers, supportAllowed]) => {
+    loadCustomers(restaurantId)
+      .then((nextCustomers) => {
         if (!cancelled) {
           setCustomers(nextCustomers);
-          setIdentitySupportAllowed(supportAllowed);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (!cancelled) {
-          setStatus(error instanceof Error ? error.message : "Gäste konnten nicht geladen werden.");
+          setCustomers([]);
+          setLoadError("Gäste konnten nicht geladen werden.");
         }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAttempt, restaurantId]);
+
+  useEffect(() => {
+    if (!restaurantId) {
+      setIdentitySupportAllowed(false);
+      return;
+    }
+
+    let cancelled = false;
+    canManageCustomerIdentity(restaurantId)
+      .then((supportAllowed) => {
+        if (!cancelled) setIdentitySupportAllowed(supportAllowed);
+      })
+      .catch(() => {
+        if (!cancelled) setIdentitySupportAllowed(false);
       });
 
     return () => {
@@ -74,11 +119,7 @@ export function CustomersPage() {
   }, [restaurantId]);
 
   const filteredCustomers = useMemo(() => {
-    const cleanQuery = query.trim().toLowerCase();
-    if (!cleanQuery) return customers;
-    return customers.filter((customer) =>
-      `${customer.name} ${customer.phone ?? ""} ${customer.customer_code}`.toLowerCase().includes(cleanQuery),
-    );
+    return filterGuestList(customers, query);
   }, [customers, query]);
 
   async function openIdentitySupport(customer: Customer) {
@@ -178,8 +219,13 @@ export function CustomersPage() {
             <input
               className="input"
               id="guest-search"
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => dispatchFilter({
+                type: "query_changed",
+                restaurantId,
+                query: event.target.value,
+              })}
               placeholder="Name oder maskierte Telefonnummer"
+              type="search"
               value={query}
             />
           </div>
@@ -187,7 +233,23 @@ export function CustomersPage() {
       </section>
 
       <section className="guest-card-grid" aria-label="Gästeliste">
-        {filteredCustomers.map((customer) => (
+        {loading ? (
+          <article className="card empty-state-card" role="status">
+            <LoaderCircle aria-hidden="true" size={34} />
+            <h2>Gäste werden geladen</h2>
+          </article>
+        ) : null}
+        {!loading && loadError ? (
+          <article className="card empty-state-card" role="alert">
+            <Users aria-hidden="true" size={34} />
+            <h2>Gäste konnten nicht geladen werden</h2>
+            <p className="muted">Bitte versuche es erneut.</p>
+            <button className="button secondary" onClick={() => setLoadAttempt((value) => value + 1)} type="button">
+              <RotateCw aria-hidden="true" size={18} /> Erneut versuchen
+            </button>
+          </article>
+        ) : null}
+        {!loading && !loadError ? filteredCustomers.map((customer) => (
           <article className="card guest-card" key={customer.id}>
             <div className="guest-card-head">
               <div>
@@ -208,17 +270,17 @@ export function CustomersPage() {
               </button>
             ) : null}
           </article>
-        ))}
-        {filteredCustomers.length === 0 ? (
+        )) : null}
+        {!loading && !loadError && filteredCustomers.length === 0 ? (
           <article className="card empty-state-card">
             <Users size={34} />
-            <h2>Keine Gäste gefunden</h2>
-            <p className="muted">Prüfe die Suche oder registriere neue Gäste über deinen Restaurant-QR.</p>
+            <h2>{query ? "Für diese Suche wurden keine Gäste gefunden" : "Noch keine Gäste"}</h2>
+            <p className="muted">{query
+              ? "Prüfe den Suchbegriff oder lösche die Suche."
+              : "Neue Gäste erscheinen hier nach ihrer Registrierung."}</p>
           </article>
         ) : null}
       </section>
-
-      {status ? <p className="status-message">{status}</p> : null}
 
       <AppDrawer
         description="Nur Owner und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
@@ -237,7 +299,7 @@ export function CustomersPage() {
           </>
         ) : <button className="button" onClick={closeIdentitySupport} type="button">Schließen</button>}
         onClose={closeIdentitySupport}
-        open={Boolean(supportCustomer)}
+        open={Boolean(supportCustomer && supportCustomer.restaurant_id === restaurantId)}
         size="large"
         title="Identitätsdaten korrigieren"
       >
