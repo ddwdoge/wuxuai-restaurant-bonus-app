@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-23 – Customer Mobile UI stabilisiert
+
+- Customer-Shell verwendet normalen vertikalen Seitenfluss statt eines
+  verschachtelten, gesperrten `100dvh`-Scrollcontainers.
+- Customer Home, Rewards, Geschenke und Konto erhalten kompaktere Karten,
+  Typografie und Abstände bei unveränderten Handlern und Datenverträgen.
+- Zentrale Lokalkarten wechseln auf kleinen Geräten in ein lesbares 2x2-KPI-
+  Raster; lange Namen, Adressen und Statuswerte dürfen umbrechen.
+- Finder-Suche, Umschalter und Filter bleiben mindestens 44 Pixel hoch, nutzen
+  auf 320 bis 430 Pixeln sichere Spalten und reservieren Platz für die feste
+  Bottom-Navigation.
+- Karten-Bottom-Sheet, Kartenfläche und Seiteninhalt berücksichtigen iOS Safe
+  Areas; es wurde keine Datenbank-, RLS-, Auth- oder Bonuslogik geändert.
+
 ## 2026-08-23 – Geschäftsadresse automatisch geocodiert
 
 - Owner geben im Standortformular nur noch Adresse, Postleitzahl, Ort und Land

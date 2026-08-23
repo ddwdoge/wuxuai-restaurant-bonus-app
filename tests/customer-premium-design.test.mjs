@@ -52,9 +52,10 @@ test("Kundenoberflächen verwenden keine Emoji-Icons", () => {
 
 test("Mobile Navigation berücksichtigt Safe Areas und Inhalte", () => {
   assert.match(styles, /env\(safe-area-inset-bottom\)/);
-  assert.match(styles, /padding: 14px 16px calc\(110px/);
-  assert.match(styles, /height: calc\(100dvh - 112px/);
-  assert.match(styles, /overflow-y: auto/);
+  assert.match(styles, /padding: max\(12px, env\(safe-area-inset-top\)\) 16px calc\(112px/);
+  assert.match(styles, /min-height: 100dvh/);
+  assert.doesNotMatch(styles, /\.customer-page-container[\s\S]{0,260}height: calc\(100dvh/);
+  assert.doesNotMatch(styles, /\.customer-premium-shell[\s\S]{0,900}overflow: hidden/);
   assert.match(styles, /min-width: 0/);
 });
 
