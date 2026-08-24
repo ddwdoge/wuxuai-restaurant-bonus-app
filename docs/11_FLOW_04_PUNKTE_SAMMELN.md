@@ -3,6 +3,18 @@
 
 # WUXUAI Bonus V1 – Flow 04: Punkte sammeln
 
+## QR-Vertrag vom 24.08.2026
+
+Der Standard neuer Restaurants ist restaurantgesteuert: Der Gast zeigt seinen
+persönlichen, kurzlebigen QR im Kundenportal und das Team scannt ihn im
+geschützten Mitarbeiterbereich. Dafür wird kein Kassa-QR ausgegeben.
+
+Der historische `/w/:slug`-Kassa-QR bleibt ausschliesslich für Restaurants mit
+`customer_initiated_only` oder `both` als Kompatibilitätsweg aktiv. Er wird
+nicht als Aufsteller-Duplikat ausgegeben. Ältere Abschnitte dieses Dokuments,
+die den Kassa-QR als einzigen allgemeinen V1-Standard beschreiben, sind damit
+teilweise superseded.
+
 ## Verbindliche V1-Entscheidung vom 03.08.2026: keine Bonnummer
 
 V1 verarbeitet im Punkteflow keine Bonnummer und keine Belegreferenz. Das gilt
@@ -750,9 +762,11 @@ Keine technischen RPC-Fehler anzeigen.
 
 ---
 
-## 19. QR im Starter Kit
+## 19. QR im Starter Kit (historisch, superseded)
 
-Der Bonus QR ist Teil des Restaurant Starter Kits.
+Der Bonus QR war Teil des Restaurant Starter Kits. Seit dem QR-Vertrag vom
+24.08.2026 enthält das Onboarding-Starter-Kit stattdessen den Neue-Gäste-QR und
+den Mitarbeiter-QR. `/w/:slug` bleibt nur als Kompatibilitätsroute bestehen.
 
 Die PDF soll klar zeigen:
 

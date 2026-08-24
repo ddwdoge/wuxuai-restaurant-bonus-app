@@ -118,6 +118,7 @@ export type LoyaltySettings = {
   referral_boost_enabled?: boolean;
   referral_boost_multiplier?: number;
   referral_boost_duration_days?: number;
+  referral_monthly_invite_limit?: number;
   points_collection_mode?: PointsCollectionMode;
   points_collection_max_amount_cents?: number;
   active: boolean;

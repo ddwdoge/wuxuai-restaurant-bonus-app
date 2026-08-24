@@ -17,6 +17,21 @@ einen zeitlich begrenzten 2x-Freundschaftsbonus.
 - Eigener Wert: ganze Zahl von 1 bis 365 Tagen.
 - Eine Aenderung gilt nur fuer kuenftige Qualifikationen.
 - Bereits aktive und historische Booster bleiben unveraendert.
+- Monatliches Einladungslimit: Default 5 neue Einladungen pro Gast und
+  Restaurant, Owner-konfigurierbar von 1 bis 100.
+- Der Kalendermonat wird in der Zeitzone des Restaurants berechnet.
+
+## Einladung freischalten
+
+- Ein Gast darf erst nach mindestens einer erfolgreichen positiven
+  Punktebuchung bei demselben Restaurant eine Einladung erzeugen.
+- Registrierung, Welcome-Gift-Zuteilung, Preview, Fehler und stornierte
+  Vorgange reichen nicht aus.
+- Vor der Freischaltung zeigt das Kundenportal einen gesperrten Hinweis.
+- Jede neu erzeugte Einladung verbraucht einen Monatsplatz. Das erneute Teilen
+  desselben bereits erzeugten Links verbraucht keinen weiteren Platz.
+- Historische Einladungen vor Einfuehrung des Limits werden nicht
+  rueckwirkend gezaehlt.
 
 ## Beguenstigte
 
@@ -32,6 +47,8 @@ einen zeitlich begrenzten 2x-Freundschaftsbonus.
 2. Der neue Gast registriert sich mit dem sicheren Customer-Auth- und
    Legal-RPC-Flow beim richtigen Restaurant. Die Landingpage verwendet dabei
    keine vereinfachte Parallelregistrierung.
+   Dabei wird genau wie bei direkter Registrierung hoechstens ein normales,
+   zunaechst gesperrtes Willkommensgeschenk zugeteilt.
 3. Registrierung allein qualifiziert nicht.
 4. Die erste gueltige, serverseitige Punktebuchung aktiviert den Referral
    atomar.
@@ -56,6 +73,9 @@ einen zeitlich begrenzten 2x-Freundschaftsbonus.
 - Advisory Lock und Row Lock verhindern verlorene parallele Verlaengerungen.
 - RLS bleibt aktiv; die Grant-Tabelle ist fuer Browser nicht beschreibbar.
 - Token, Telefonnummer, PIN und Auth-Daten erscheinen nicht im Audit.
+- Einladungstoken werden nur gehasht gespeichert. Eligibility und Monatslimit
+  werden serverseitig unter einem restaurant- und monatsbezogenen Lock
+  geprueft.
 - Der Referral-Rueckweg ist auf `/r/<restaurant-slug>/<sicherer-token>`
   begrenzt. Restaurant und Token werden bei der Annahme erneut serverseitig
   validiert.
@@ -64,11 +84,22 @@ einen zeitlich begrenzten 2x-Freundschaftsbonus.
 
 ## Kundenkommunikation
 
-- Noch nicht aktiv: Der einladende Gast sieht seine volle Dauer, der Freund die
-  halbe Dauer.
-- Eingeladener Freund aktiv: `Willkommen - 2x Punkte aktiv`.
-- Einladender Gast aktiv: verbleibende Laufzeit und Hinweis, dass jede weitere
-  erfolgreiche Einladung die volle Restaurantdauer addiert.
+- Der sichtbare Lebenszyklus stammt serverseitig aus Referral, Grant und Boost;
+  Browserzustand ist keine Statusautoritaet.
+- `waiting_registration`: Der Referrer sieht, dass sein Link bereit ist und die
+  Registrierung des Freundes noch aussteht.
+- `pending_qualification`: Der Referrer sieht `Freund erfolgreich eingeladen`;
+  der Freund sieht `Einladung erfolgreich angenommen` und den ausstehenden
+  ersten qualifizierten Besuch.
+- `active`: Beide sehen 2x, den exakten Ablaufzeitpunkt in Europe/Vienna und
+  eine Restzeit in Tagen beziehungsweise nahe am Ablauf in Stunden und Minuten.
+- Aktive Texte unterscheiden `Dein Bonus` fuer den Referrer und `Dein
+  Einladungsbonus` fuer den Freund. Die sichtbare volle beziehungsweise halbe
+  Dauer stammt aus der aktuellen Restaurantkonfiguration.
+- `expired`: Das Aktiv-Badge verschwindet; eine neue Einladung bleibt moeglich.
+- Das Kundenportal zeigt `Einladungen diesen Monat: X von Y`.
+- Mehrere erfolgreiche Einladungen zeigen das kombinierte serverseitige
+  Enddatum; der Multiplikator bleibt 2x.
 - Punkte bleiben immer restaurantbezogen.
 
 ## Owner-UI
@@ -76,7 +107,8 @@ einen zeitlich begrenzten 2x-Freundschaftsbonus.
 Der Bereich `Bonusprogramm -> Freundschaftsbonus` bietet Aktivierung,
 festen Multiplikator 2x und die Dauer 7/14/28/Custom. Die Vorschau zeigt beide
 Beguenstigten getrennt. Ungueltige Werte werden client- und serverseitig
-blockiert.
+blockiert. Das monatliche Einladungslimit ist als ganze Zahl von 1 bis 100
+restaurantbezogen konfigurierbar.
 
 ## Legacy
 

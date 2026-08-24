@@ -45,7 +45,7 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Server bleibt Autoritaet fuer Berechtigung, Ablauf, Einmalverwendung,
   Audit und Finalisierung.
 
-## Referral / Freundschaftsbonus - IMPLEMENTED, STAGING VERIFIED
+## Referral / Freundschaftsbonus - CODE INTEGRATED, STAGING VERIFIED
 
 - Multiplikator ist immer 2x und kann nicht gestapelt werden.
 - Default fuer neue Restaurants: 14 Tage.
@@ -56,6 +56,14 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   Tage. Sieben Tage ergeben 84 Stunden.
 - Erst die erste gueltige Punktebuchung des neuen Gasts qualifiziert die
   Empfehlung.
+- Der Referrer darf erst nach seiner eigenen ersten positiven Punktebuchung im
+  selben Restaurant neue Einladungen erzeugen.
+- Referral-Registrierung weist ueber denselben bestehenden Assignment-Flow wie
+  direkte Registrierung hoechstens ein gesperrtes Willkommensgeschenk zu.
+- Default sind 5 neue Einladungen pro Gast, Restaurant und lokalem
+  Kalendermonat; Owner duerfen 1 bis 100 konfigurieren.
+- Erneutes Teilen desselben Links ist idempotent und verbraucht keinen neuen
+  Monatsplatz. Historische Einladungen werden nicht rueckwirkend gezaehlt.
 - Weitere erfolgreiche Empfehlungen verlaengern die Laufzeit; der Multiplikator
   bleibt hoechstens 2x.
 - Bestehende historische Booster werden nicht rueckwirkend umgeschrieben.
@@ -72,6 +80,17 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   Darstellungen derselben Buchung doppelt zu zaehlen.
 - Owner-Einstellungen, Zusatzpunkte-KPIs, Testdatenausschluss und
   Tenant-Berechtigungen wurden auf Staging verifiziert.
+- Die additiven Migrationen
+  `20260824006000_referral_welcome_eligibility_monthly_quota.sql` und
+  `20260824006100_referral_registration_phone_ambiguity_fix.sql` sind auf
+  Staging angewendet. Der DB-Linter meldet danach 0 Fehler.
+- Derselbe offene Status-RPC liefert den serverseitigen Customer-Lebenszyklus
+  `waiting_registration`, `pending_qualification`, `active` oder `expired`
+  sowie Beguenstigtenrolle und Boost-Zeitfenster. Die UI erfindet keinen Status
+  aus Browserdaten.
+- Aktive Referrer sehen die volle, eingeladene Freunde die halbe konfigurierte
+  Dauer; mehrere Grants zeigen das kombinierte serverseitige Enddatum bei
+  unveraendert maximal 2x.
 
 ## Geocoding - IMPLEMENTED
 
@@ -91,6 +110,22 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der aktuelle Staff-Vertrag wird ueber den authentifizierten `staff_user_id`-
   Kontext abgesichert; alte `staff_member_id`-Kompatibilitaetsfelder duerfen
   keine Autoritaet besitzen.
+
+## QR Center und Starter Kit - IMPLEMENTED
+
+- Der Neue-Gaeste-QR `/customer/:slug` ist der einzige aktive oeffentliche
+  Registrierungs-QR. Unterschiedliche Druckorte und Papierformate verwenden
+  dieselbe URL und erzeugen keinen technischen QR-Typ.
+- Der Mitarbeiter-QR `/staff/:slug` ist der getrennte interne Einstieg. Die
+  Route bleibt durch Authentifizierung und Restaurantrollen geschuetzt; der QR
+  selbst erteilt keine Berechtigung.
+- Der fruehere Kassa-Aufsteller ist als doppelte Druckvariante entfernt.
+- `/w/:slug` bleibt fuer bestehende kundeninitiierte Sammelwege kompatibel und
+  wird im QR Center nur bei `customer_initiated_only` oder `both` angezeigt.
+- Das Onboarding erzeugt fuer neue Restaurants nur Gaeste- und Staff-QR-Assets.
+  Der Gaeste-QR darf im Starter Kit mehrfach gestaltet, aber nicht als neuer
+  Token oder neuer QR-Zweck erzeugt werden.
+- Historische Daten, Routen und Reportingbezeichnungen bleiben unveraendert.
 
 ## Customer Mobile - IMPLEMENTED
 
@@ -116,5 +151,8 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Beide Referral-Migrationen wurden kontrolliert auf Staging angewendet.
 - Staging-DB-Linter nach Anwendung: 0 Fehler.
 - Referral Final Staging Gate: verifiziert.
+- Referral Welcome/Eligibility/Monatslimit: `STAGING VERIFIED`.
+- Der physische Referral-Pilot mit echter E-Mail-Bestaetigung und iPhone Safari
+  bleibt ein offenes manuelles Release-Gate.
 - Production: `DEFERRED / LOCKED`.
 - Stripe: `DEFERRED`.

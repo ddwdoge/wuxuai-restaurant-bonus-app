@@ -880,3 +880,16 @@ Geburtstagsauslosung als primären V1-Kundenflow:
   aktiven Geburtstagspool zugeteilt und nicht vom Kunden neu ausgelost.
 - Der zentrale Kundenlogin verwendet Supabase Auth mit E-Mail, Passwort und
   E-Mail-Bestätigung. Ältere passwortlose Identitätsabschnitte sind historisch.
+
+## Referral-Lebenszyklus V1
+
+- Die Startseite zeigt serverseitig aufgeloeste Referral-Zustaende fuer
+  wartende Registrierung, ausstehende Qualifikation, aktiven und abgelaufenen
+  Bonus.
+- Pending-Zustaende bleiben nach Reload, Login, Callback und Geraetewechsel
+  erhalten, sobald der serverseitige Kundenzugang wiederhergestellt ist.
+- Aktive Booster zeigen Rolle, verbleibende Dauer und den exakten
+  Ablaufzeitpunkt in Europe/Vienna. Der Friend-Hinweis verwendet exakt die
+  halbe, der Referrer die volle aktuelle Owner-Dauer.
+- Nach Ablauf gibt es kein aktives Badge. Einladungs-CTA und restaurantbezogene
+  Punktetrennung bleiben bestehen.

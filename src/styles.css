@@ -767,7 +767,7 @@ a {
   display: grid;
   gap: 20px;
   margin: 0 auto;
-  max-width: 1280px;
+  max-width: 1440px;
   padding: 24px;
 }
 
@@ -885,7 +885,7 @@ a {
   align-items: start;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1.38fr);
 }
 
 .platform-restaurant-list-card,
@@ -1075,6 +1075,311 @@ a {
 
 .platform-audit-list strong {
   overflow-wrap: anywhere;
+}
+
+.platform-control-column,
+.platform-control-center {
+  min-width: 0;
+}
+
+.platform-control-center {
+  display: grid;
+  gap: 14px;
+}
+
+.platform-control-header {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid #e5dfd2;
+  border-radius: 8px;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.platform-control-header h2 {
+  color: #211f1a;
+  font-size: 27px;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin: 4px 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.platform-control-header p {
+  color: #655f55;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.platform-control-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.platform-health-badge {
+  align-items: center;
+  background: #f3f1ed;
+  border: 1px solid #d9d3c8;
+  border-radius: 999px;
+  color: #4d4941;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 28px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.platform-health-badge.success {
+  background: #eaf6f0;
+  border-color: #a9d4c1;
+  color: #176346;
+}
+
+.platform-health-badge.warning {
+  background: #fff7df;
+  border-color: #e6c66d;
+  color: #73570e;
+}
+
+.platform-health-badge.danger {
+  background: #fff0ef;
+  border-color: #e8b0aa;
+  color: #9f2f26;
+}
+
+.platform-health-badge.test {
+  background: #24211c;
+  border-color: #24211c;
+  color: #ffffff;
+}
+
+.platform-overall-health {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5dfd2;
+  border-left: 4px solid #b7953e;
+  border-radius: 8px;
+  display: flex;
+  gap: 9px;
+  min-height: 48px;
+  padding: 10px 14px;
+}
+
+.platform-overall-health span {
+  color: #655f55;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.platform-overall-health strong {
+  margin-left: auto;
+}
+
+.platform-overall-health.success svg { color: #176346; }
+.platform-overall-health.warning svg { color: #9a741a; }
+.platform-overall-health.danger svg { color: #b33a2f; }
+.platform-overall-health.neutral svg { color: #655f55; }
+
+.platform-control-section {
+  background: #ffffff;
+  border: 1px solid #e5dfd2;
+  border-radius: 8px;
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.platform-control-center .button {
+  min-height: 44px;
+}
+
+.platform-control-section h3,
+.platform-control-section h4 {
+  color: #211f1a;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.platform-control-section h3 {
+  font-size: 19px;
+}
+
+.platform-control-columns {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-section-title {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.platform-section-title p {
+  margin: 4px 0 0;
+}
+
+.platform-metric-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-metric-grid article {
+  min-width: 0;
+}
+
+.platform-metric-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.platform-health-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-health-grid article {
+  background: #faf9f6;
+  border: 1px solid #ebe6dc;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.platform-health-grid article > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.platform-health-grid article > div svg {
+  color: #9a741a;
+  flex: 0 0 auto;
+}
+
+.platform-health-grid article > span:not(.platform-health-badge) {
+  color: #655f55;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.platform-contract-note {
+  background: #fff9e9;
+  border-left: 3px solid #b7953e;
+  color: #655f55;
+  font-size: 12px;
+  margin: 0;
+  padding: 9px 10px;
+}
+
+.platform-qr-contract {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.platform-qr-contract span {
+  align-items: center;
+  color: #4d4941;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.platform-network-state {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+}
+
+.platform-network-state svg {
+  color: #b7953e;
+}
+
+.platform-network-state p {
+  color: #655f55;
+  margin: 0;
+}
+
+.platform-technical-details {
+  background: #ffffff;
+  border: 1px solid #e5dfd2;
+  border-radius: 8px;
+  padding: 0 16px 16px;
+}
+
+.platform-technical-details summary {
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 48px;
+  padding: 14px 0;
+}
+
+.platform-control-error {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e8b0aa;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 18px;
+}
+
+.platform-control-error svg {
+  color: #b33a2f;
+}
+
+.platform-control-error h2,
+.platform-control-error p {
+  margin: 0;
+}
+
+.platform-control-error p {
+  color: #655f55;
+  margin-top: 4px;
+}
+
+.platform-control-skeleton {
+  background: #ffffff;
+  border: 1px solid #e5dfd2;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.platform-control-skeleton > span,
+.platform-control-skeleton-grid span {
+  animation: platform-skeleton-pulse 1.4s ease-in-out infinite;
+  background: #ece8df;
+  border-radius: 6px;
+  display: block;
+  height: 22px;
+}
+
+.platform-control-skeleton > span:first-child { max-width: 52%; }
+.platform-control-skeleton > span:nth-child(2) { height: 54px; }
+
+.platform-control-skeleton-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-control-skeleton-grid span { height: 130px; }
+
+@keyframes platform-skeleton-pulse {
+  50% { opacity: 0.48; }
 }
 
 .platform-audit-shell {
@@ -3927,8 +4232,34 @@ a {
   align-items: stretch;
 }
 
+.qr-card-actions {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 320px);
+}
+
+.qr-card-actions .button {
+  margin: 0;
+  min-height: 44px;
+  width: 100%;
+}
+
+.qr-compatibility-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.qr-compatibility-section > .card {
+  max-width: 560px;
+}
+
 .qr-center-starter-card {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.qr-center-starter-card .button {
+  min-height: 44px;
 }
 
 .qr-preview-brand {
@@ -4018,6 +4349,10 @@ a {
   }
 
   .qr-starter-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .qr-center-starter-card {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
@@ -4239,6 +4574,34 @@ a {
   .platform-row-meta {
     align-items: start;
     text-align: left;
+  }
+
+  .platform-control-header,
+  .platform-section-title {
+    display: grid;
+  }
+
+  .platform-control-badges {
+    justify-content: flex-start;
+  }
+
+  .platform-control-columns,
+  .platform-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-control-error {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .platform-control-error .button,
+  .platform-link-grid .button {
+    width: 100%;
+  }
+
+  .platform-metric-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .grid.two,
@@ -4473,6 +4836,40 @@ a {
 .customer-phone-error { color: #9f2f29; font-size: 13px; margin: 0; }
 
 @media (max-width: 430px) {
+  .platform-admin-shell {
+    padding: 12px;
+  }
+
+  .platform-control-section,
+  .platform-control-header {
+    padding: 14px;
+  }
+
+  .platform-control-header h2 {
+    font-size: 23px;
+  }
+
+  .platform-metric-grid,
+  .platform-metric-grid.compact,
+  .platform-control-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platform-control-section > .platform-metric-grid:not(.compact) article:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .platform-overall-health {
+    align-items: flex-start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .platform-overall-health strong {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+
   .customer-phone-field-grid { grid-template-columns: minmax(118px, 0.8fr) minmax(0, 1.4fr); }
   .customer-phone-country { padding-left: 10px; padding-right: 8px; }
 }

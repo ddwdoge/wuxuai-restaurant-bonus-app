@@ -35,6 +35,7 @@ export function ReferralLanding() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [welcomeGiftAssigned, setWelcomeGiftAssigned] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const returnTo = `/r/${restaurantSlug}/${referralToken}`;
@@ -75,13 +76,14 @@ export function ReferralLanding() {
     setSubmitting(true);
     setMessage(null);
     try {
-      await joinCustomerReferral({
+      const result = await joinCustomerReferral({
         restaurantSlug,
         referralToken,
         termsAccepted,
         privacyAcknowledged,
         deviceId: getWebDeviceId(),
       });
+      setWelcomeGiftAssigned(result.welcome_gift_assigned);
       setJoined(true);
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Die Einladung konnte gerade nicht angenommen werden.");
@@ -126,8 +128,9 @@ export function ReferralLanding() {
           {joined ? (
             <div className="referral-pending-state" role="status">
               <CheckCircle2 aria-hidden="true" size={30} />
-              <h2>Einladung angenommen</h2>
-              <p>Dein Bonus Boost ist vorgemerkt. Er startet automatisch nach deinem ersten gültigen Besuch bei {data.restaurant.name}.</p>
+              <h2>Einladung erfolgreich angenommen</h2>
+              {welcomeGiftAssigned ? <p>Dein Willkommensgeschenk ist bereits verfügbar und wird nach deiner ersten Punktebuchung einlösbar.</p> : null}
+              <p>Dein 2× Bonus wird nach deinem ersten qualifizierten Besuch aktiviert.</p>
               <Link className="premium-button premium-button-primary" to={`/customer/${encodeURIComponent(restaurantSlug)}`}>
                 Meine Vorteile öffnen
               </Link>

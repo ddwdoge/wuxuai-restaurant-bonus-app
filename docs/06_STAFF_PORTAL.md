@@ -7,6 +7,12 @@ Tages-PIN, Suchen und Mehr. Die normale Einlösung ist eine serverzeitgebundene
 15-Minuten-Präsentation; eine sechsstellige Codeprüfung ist kein aktiver
 Primärflow. Ältere widersprechende Abschnitte sind nur Legacy-Historie.
 
+Der Mitarbeiter-QR `/staff/:slug` ist nur ein bequemer Einstieg in den
+geschützten Mitarbeiterbereich. Er enthält keine Staff-PIN, keinen Auth-Token
+und keine Rollenberechtigung. Erst die bestehende Authentifizierung und die
+serverseitige Restaurantzuordnung erlauben Zugriff. Danach ist „Kunden-QR
+scannen“ die primäre Aktion.
+
 ## Punktevergabe ab 31.07.2026
 
 Die frühere Regel „keine Punktevergabe im Staff Portal“ ist **partially superseded**. Wenn der Owner `restaurant_controlled_only` oder `both` aktiviert, scannt das Team den kurzlebigen Kunden-QR, erfasst den bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Der Browser übermittelt keine vertrauenswürdige Punktezahl; Vorschau und Buchung kommen aus getrennten Server-RPCs.

@@ -613,9 +613,12 @@ Erst nach erster bezahlter Konsumation / Punktebuchung.
 
 Erst beim nächsten Besuch.
 
-### 18.4 Referral Vorrang
+### 18.4 Referral-Gast
 
-Referral-Gast bekommt kein Willkommensgeschenk.
+Referral-Gaeste erhalten dasselbe normale, zunaechst gesperrte
+Willkommensgeschenk wie direkt registrierte Gaeste. Die bestehende
+restaurantbezogene Einmaligkeitsregel verhindert doppelte Zuteilungen bei Retry,
+Callback oder parallelen Requests.
 
 ### 18.5 Wirtschaftlichkeit
 
@@ -650,6 +653,14 @@ Sie erhöhen nicht den Multiplikator.
 ### 19.5 Audit
 
 Jede Aktivierung wird protokolliert.
+
+### 19.6 Einladungsvoraussetzung und Monatslimit
+
+Einladungserstellung setzt eine positive Punktebuchung des Referrers im selben
+Restaurant voraus. Das restaurantbezogene Monatslimit wird in lokaler
+Restaurantzeit atomar geprueft. Ein Wiederholungsversuch mit demselben sicheren
+Erstellungswert gibt dieselbe Einladung zurueck; Token werden nur gehasht
+gespeichert und niemals auditiert.
 
 ---
 
@@ -1225,3 +1236,12 @@ Endstatus: **LOCK**
   Nominatim wird anwendungsweit höchstens einmal je 1,1 Sekunden aufgerufen.
 - Gespeicherte Koordinaten verhindern unnötige Wiederholungsabfragen. Eine
   Adressänderung verwirft die alte Kartenposition, bis sie erneut geprüft wurde.
+
+## Ergänzung 2026-08-25: Control-Center-Vertragsgrenze
+
+- Das monatliche Referral-Limit wird nur innerhalb des geschützten Platform
+  Admin Control Centers gelesen.
+- Restaurant-Owner, Staff, Customer und Anon erhalten dadurch keine neue
+  Ausführungs- oder Tabellenberechtigung.
+- Ein fehlender oder fehlerhafter Settings-Lesezugriff wird nicht als gesunder
+  Defaultwert maskiert.

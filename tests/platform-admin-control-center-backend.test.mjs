@@ -10,6 +10,13 @@ const migration = readFileSync(
   "utf8",
 );
 const service = readFileSync(new URL("../src/modules/platform/platformAdminService.ts", import.meta.url), "utf8");
+const nullGuardHardening = readFileSync(
+  new URL(
+    "../supabase/migrations/20260824005500_platform_admin_null_guard_hardening.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("Control-Center-Migration folgt der offenen Referral-Bridge", () => {
   assert.match(migration, /20260824005000|ordered after the pending 04000/);
@@ -24,6 +31,15 @@ test("Control Center ist ausschließlich serverseitig für Plattformrollen freig
   assert.match(migration, /revoke execute[\s\S]*from public, anon, authenticated/);
   assert.match(migration, /grant execute[\s\S]*to authenticated/);
   assert.doesNotMatch(migration, /auth\.jwt|app_metadata|user_metadata|restaurant_members/);
+});
+
+test("Platform-Admin-Prädikat behandelt eine fehlende Rolle fail-closed", () => {
+  assert.match(nullGuardHardening, /create or replace function public\.is_platform_admin\(\)/);
+  assert.match(nullGuardHardening, /select coalesce\([\s\S]*public\.current_platform_role\(\)[\s\S]*false[\s\S]*\)/);
+  assert.match(nullGuardHardening, /set search_path = public, pg_temp/);
+  assert.match(nullGuardHardening, /revoke execute[\s\S]*from public, anon, authenticated/);
+  assert.doesNotMatch(nullGuardHardening, /grant execute/);
+  assert.doesNotMatch(nullGuardHardening, /create policy|drop policy|disable row level security/i);
 });
 
 test("Nutzungsdaten stammen aus aktuellen autoritativen Quellen und schließen Testdaten aus", () => {

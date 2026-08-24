@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
+import type { PointsCollectionMode } from "../../../shared/types/domain";
+import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { getQrCenterPurposes } from "../qrCenterFlow.mjs";
 
 type QrPrintPage = {
   boostHint?: boolean;
@@ -432,8 +435,8 @@ function drawQrPrintPage(
 }
 
 async function buildQrCenterStarterKitPdf(input: {
-  bonusQrId: string;
-  counterQrId: string;
+  bonusQrId?: string;
+  includeCustomerCollectCompatibility: boolean;
   logoUrl: string | null;
   primaryColor: string;
   restaurantName: string;
@@ -441,10 +444,11 @@ async function buildQrCenterStarterKitPdf(input: {
   secondaryColor: string;
   staffQrId: string;
 }) {
-  const [restaurantQr, bonusQr, counterQr, staffQr, loadedLogoImage] = await Promise.all([
+  const [restaurantQr, bonusQr, staffQr, loadedLogoImage] = await Promise.all([
     qrSvgToCanvas(input.restaurantQrId),
-    qrSvgToCanvas(input.bonusQrId),
-    qrSvgToCanvas(input.counterQrId),
+    input.includeCustomerCollectCompatibility && input.bonusQrId
+      ? qrSvgToCanvas(input.bonusQrId)
+      : Promise.resolve(null),
     qrSvgToCanvas(input.staffQrId),
     loadCanvasImage(input.logoUrl).catch(() => null),
   ]);
@@ -464,19 +468,10 @@ async function buildQrCenterStarterKitPdf(input: {
     },
     {
       boostHint: true,
-      headline: "Punkte sammeln",
-      note: "Bitte Mitarbeiter um die Tages-PIN.",
-      qrCanvas: bonusQr,
-      subheadline: "Nach dem Bezahlen scannen und Bonuspunkte sichern.",
-      usage: "Für die Kassa",
-    },
-    {
-      boostHint: true,
-      headline: "Nach dem Bezahlen scannen",
-      note: "Tages-PIN beim Mitarbeiter erfragen.",
-      qrCanvas: counterQr,
-      subheadline: "Punkte sammeln und Punkteeinlösungen freischalten.",
-      usage: "Für die Kassa",
+      headline: "Bonusprogramm entdecken",
+      qrCanvas: restaurantQr,
+      subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
+      usage: "Für Tisch oder Flyer",
     },
     {
       headline: "Mitarbeiterbereich",
@@ -486,6 +481,17 @@ async function buildQrCenterStarterKitPdf(input: {
       usage: "Für dein Team",
     },
   ];
+
+  if (input.includeCustomerCollectCompatibility && bonusQr) {
+    pageSpecs.splice(2, 0, {
+      boostHint: true,
+      headline: "Punkte sammeln",
+      note: "Bitte Mitarbeiter um die Tages-PIN.",
+      qrCanvas: bonusQr,
+      subheadline: "Nach dem Bezahlen scannen und Bonuspunkte sichern.",
+      usage: "Für bestehende Sammelwege",
+    });
+  }
 
   try {
     return buildPdf(pageSpecs.map((page) => drawQrPrintPage(page, branding)));
@@ -535,6 +541,7 @@ export function QrCenterPage() {
   const { activeRestaurant, branding } = useTenant();
   const [downloadError, setDownloadError] = useState("");
   const [starterKitLoading, setStarterKitLoading] = useState(false);
+  const [pointsCollectionMode, setPointsCollectionMode] = useState<PointsCollectionMode | null>(null);
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const restaurantName = activeRestaurant?.name ?? "Restaurant";
   const publicBaseUrl = getPublicAppBaseUrl();
@@ -543,14 +550,36 @@ export function QrCenterPage() {
   const staffTabletUrl = restaurantSlug ? `${publicBaseUrl}/staff/${restaurantSlug}` : publicBaseUrl;
   const primaryColor = safeColor(branding?.primary_color, "#0f766e");
   const secondaryColor = safeColor(branding?.secondary_color, "#f4a261");
+  const qrPurposes = pointsCollectionMode ? getQrCenterPurposes(pointsCollectionMode) : [];
+  const showCustomerCollectCompatibility = qrPurposes.includes("customer_collect_compatibility");
+
+  useEffect(() => {
+    let cancelled = false;
+    setPointsCollectionMode(null);
+    if (!restaurantSlug) return () => {
+      cancelled = true;
+    };
+
+    loadPublicPointsCollectionMode(restaurantSlug)
+      .then((mode) => {
+        if (!cancelled) setPointsCollectionMode(mode);
+      })
+      .catch(() => {
+        if (!cancelled) setPointsCollectionMode("customer_initiated_only");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantSlug]);
 
   async function downloadStarterKit() {
     setDownloadError("");
     setStarterKitLoading(true);
     try {
       const pdf = await buildQrCenterStarterKitPdf({
-        bonusQrId: "qr-bonus",
-        counterQrId: "qr-counter",
+        bonusQrId: showCustomerCollectCompatibility ? "qr-bonus" : undefined,
+        includeCustomerCollectCompatibility: showCustomerCollectCompatibility,
         logoUrl: branding?.logo_url ?? null,
         primaryColor,
         restaurantName,
@@ -587,57 +616,47 @@ export function QrCenterPage() {
       <header className="page-header">
         <div>
           <h1>QR Center</h1>
-          <p className="muted">Druckmaterial und QR-Codes für Eingang, Kassa und Team.</p>
+          <p className="muted">Druckmaterial für neue Gäste und den geschützten Mitarbeiterbereich.</p>
         </div>
       </header>
 
       <section className="card qr-starter-card qr-center-starter-card">
         <div>
           <h2>Restaurant Starter Kit</h2>
-          <p className="muted">Vier A6-Druckseiten: neue Gäste, Kassa, Kassa-Aufsteller und Mitarbeiterbereich.</p>
+          <p className="muted">
+            {showCustomerCollectCompatibility
+              ? "Vier A6-Druckseiten: zwei Gästeformate, bestehender Sammelweg und Mitarbeiterbereich."
+              : "Drei A6-Druckseiten: zwei Gästeformate und Mitarbeiterbereich."}
+          </p>
         </div>
-        <button className="button" disabled={starterKitLoading} onClick={downloadStarterKit} type="button">
+        <button className="button" disabled={starterKitLoading || !pointsCollectionMode} onClick={downloadStarterKit} type="button">
           <FileText size={18} />
-          {starterKitLoading ? "Starter Kit wird erstellt..." : "Starter Kit als PDF öffnen"}
+          {starterKitLoading
+            ? "Starter Kit wird erstellt..."
+            : pointsCollectionMode
+              ? "Starter Kit als PDF öffnen"
+              : "QR-Daten werden geladen..."}
         </button>
         {downloadError ? <p className="form-error">{downloadError}</p> : null}
       </section>
 
-      <section className="grid four qr-center-grid">
+      <section className="grid two qr-center-grid">
         <article className="card qr-box-large">
           {renderQrBrandBlock()}
           <h2>Neue Gäste QR</h2>
-          <p className="muted">Für den Eingang.</p>
+          <p className="muted">Für Eingang, Tischaufsteller, Kassa, Rechnung, Flyer oder Werbung.</p>
           <QRCodeSVG id="qr-restaurant" value={restaurantQrUrl} size={180} level="M" />
           <p className="muted">Neue Gäste werden Mitglied und erhalten ihr Willkommensgeschenk.</p>
-          <button className="button secondary" onClick={() => downloadQrPng("qr-restaurant", "neue-gaeste-qr.png")} type="button">
-            <Download size={18} />
-            Neue Gäste QR
-          </button>
-        </article>
-
-        <article className="card qr-box-large">
-          {renderQrBrandBlock()}
-          <h2>Kassa QR</h2>
-          <p className="muted">Für Bonuspunkte nach dem Bezahlen.</p>
-          <QRCodeSVG id="qr-bonus" value={bonusQrUrl} size={180} level="M" />
-          <p className="muted">Bestandsgäste scannen und fragen nach der Tages-PIN.</p>
-          <button className="button secondary" onClick={() => downloadQrPng("qr-bonus", "kassa-qr.png")} type="button">
-            <Download size={18} />
-            Kassa QR
-          </button>
-        </article>
-
-        <article className="card qr-box-large">
-          {renderQrBrandBlock()}
-          <h2>Kassa-Aufsteller</h2>
-          <p className="muted">Kompakte Version für den Tresen.</p>
-          <QRCodeSVG id="qr-counter" value={bonusQrUrl} size={180} level="M" />
-          <p className="muted">Nach dem Bezahlen scannen und Punkte sammeln.</p>
-          <button className="button secondary" onClick={() => downloadQrPng("qr-counter", "kassa-aufsteller-qr.png")} type="button">
-            <Download size={18} />
-            Kassa-Aufsteller
-          </button>
+          <div className="qr-card-actions">
+            <a className="button secondary" href={restaurantQrUrl}>
+              <QrCode size={18} />
+              Neue Gäste QR öffnen
+            </a>
+            <button className="button ghost" onClick={() => downloadQrPng("qr-restaurant", "neue-gaeste-qr.png")} type="button">
+              <Download size={18} />
+              QR herunterladen
+            </button>
+          </div>
         </article>
 
         <article className="card qr-box-large">
@@ -645,13 +664,39 @@ export function QrCenterPage() {
           <h2>Mitarbeiter QR</h2>
           <p className="muted">Nur für dein Team.</p>
           <QRCodeSVG id="qr-staff" value={staffTabletUrl} size={180} level="M" />
-          <p className="muted">Mitarbeiterbereich für Tages-PIN und Service.</p>
-          <a className="button secondary" href={staffTabletUrl}>
-            <QrCode size={18} />
-            Mitarbeiterbereich öffnen
-          </a>
+          <p className="muted">Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.</p>
+          <div className="qr-card-actions">
+            <a className="button secondary" href={staffTabletUrl}>
+              <QrCode size={18} />
+              Mitarbeiter QR öffnen
+            </a>
+            <button className="button ghost" onClick={() => downloadQrPng("qr-staff", "mitarbeiter-qr.png")} type="button">
+              <Download size={18} />
+              QR herunterladen
+            </button>
+          </div>
         </article>
       </section>
+
+      {showCustomerCollectCompatibility ? (
+        <section className="qr-compatibility-section" aria-labelledby="qr-compatibility-title">
+          <div>
+            <h2 id="qr-compatibility-title">Bestehender Sammelweg</h2>
+            <p className="muted">Nur sichtbar, weil dein Restaurant den kundeninitiierten Sammelweg verwendet.</p>
+          </div>
+          <article className="card qr-box-large">
+            {renderQrBrandBlock()}
+            <h3>Kassa QR</h3>
+            <p className="muted">Für Bonuspunkte nach dem Bezahlen.</p>
+            <QRCodeSVG id="qr-bonus" value={bonusQrUrl} size={180} level="M" />
+            <p className="muted">Bestandsgäste scannen und fragen nach der Tages-PIN.</p>
+            <button className="button secondary" onClick={() => downloadQrPng("qr-bonus", "kassa-qr.png")} type="button">
+              <Download size={18} />
+              Kassa QR herunterladen
+            </button>
+          </article>
+        </section>
+      ) : null}
     </>
   );
 }

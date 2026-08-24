@@ -36,7 +36,8 @@ test("Bonuskarten-Vorschau nutzt eine zentrierte responsive Einzelspalte", () =>
 test("echte QR-Codes bleiben ausschließlich im Starter-Kit verfügbar", () => {
   assert.ok(starterKitStart >= 0 && starterKitEnd > starterKitStart);
   assert.match(starterKit, /id="restaurant-qr"/);
-  assert.match(starterKit, /id="bonus-qr"/);
+  assert.match(starterKit, /id="staff-qr"/);
+  assert.doesNotMatch(starterKit, /id="bonus-qr"|\/w\/\$\{restaurantSlug\}/);
   assert.match(starterKit, /downloadRestaurantStarterKit/);
   assert.match(onboarding, /<QRCodeSVG[\s\S]*value=\{url\}/);
 });

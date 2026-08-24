@@ -754,9 +754,11 @@ Im QR Center später:
 - PNG
 - SVG
 - PDF
-- Sticker
-- Aufsteller
-- Tischkarten
+- Druckvarianten für Eingang, Tisch, Kassa, Rechnung oder Werbung verwenden
+  denselben Neue-Gäste-QR
+- Mitarbeiter-QR bleibt ein eigener, geschützter Einstieg
+- kein eigener technischer QR-Typ nur wegen Sticker, Aufsteller oder Tischkarte
+- Kassa-QR nur als Kompatibilitätsweg bei aktivem kundeninitiiertem Sammelmodus
 
 PDF Regeln:
 

@@ -167,6 +167,7 @@ export async function joinCustomerReferral(input: {
     restaurant_slug: string;
     customer_token: string;
     referral_status: "pending_registered" | "activated";
+    welcome_gift_assigned: boolean;
   };
   saveStoredCustomerToken(result.restaurant_slug, {
     customer_token: result.customer_token,

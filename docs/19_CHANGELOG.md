@@ -1,6 +1,54 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-24 - QR Center auf aktive V1-Zwecke fokussiert
+
+- Neue-Gäste-QR und Mitarbeiter-QR als zwei primäre QR-Center-Zwecke
+  festgeschrieben.
+- Technisch identischen Kassa-Aufsteller aus Owner-UI und Starter Kit entfernt.
+- Neue Restaurants erhalten im Onboarding zwei Druckvarianten desselben
+  Gäste-QR sowie den Staff-QR; keine zusätzlichen QR-Typen werden erzeugt.
+- Bestehenden `/w/:slug`-Kassa-QR für kundeninitiierte Sammelmodi
+  fail-safe kompatibel gehalten und nur dort als separaten Hinweis angezeigt.
+- Keine Datenbankmigration, keine historischen Datenlöschungen und keine
+  Änderung der Punkte-, Tages-PIN- oder Staff-Autorisierung.
+
+## 2026-08-24 - Platform Admin und Referral Staging Gate gehaertet
+
+- Platform-Admin-Control-Center-Migration `20260824005000` auf Staging
+  aktiviert und einen NULL-basierten Autorisierungsfehler mit der additiven
+  Fail-Closed-Migration `20260824005500` behoben.
+- Referral-Welcome-, Eligibility- und Monatslimit-Migration `20260824006000`
+  auf Staging aktiviert.
+- Mehrdeutige Telefonnummernreferenz in der Referral-Registrierung mit
+  Migration `20260824006100` behoben; Staging-DB-Linter danach ohne Fehler.
+- Referral-Qualifikation, Monatslimit, Welcome Gift, 100-/50-Prozent-Dauer,
+  2x-Punkte und Stacking transaktional gegen Staging verifiziert.
+
+## 2026-08-24 - Referral Customer Lifecycle UX integriert
+
+- Serverseitigen Referral-Statusvertrag um wartende Registrierung,
+  ausstehende Qualifikation, aktiv und abgelaufen erweitert.
+- Referrer- und Friend-Texte getrennt sowie exakten Ablaufzeitpunkt und
+  praezise Restzeit in das Kundenportal aufgenommen.
+- Aktive Dauer weiterhin dynamisch aus Owner-Konfiguration und serverseitigem
+  Boost-Enddatum; keine 30-/15-Tage-Laufzeit in der aktiven Customer-UI.
+- Qualifikation, 100-/50-Prozent-Regel, Stacking, Punkte-Engine und
+  Tenant-Sicherheit unveraendert gelassen.
+
+## 2026-08-24 - Referral Welcome Gift, Eligibility und Monatslimit integriert
+
+- Referral-Erstregistrierung an den bestehenden einmaligen Welcome-Gift-
+  Assignment-Flow angebunden; Geschenk bleibt bis zur ersten Punktebuchung
+  gesperrt.
+- Einladungserstellung serverseitig an die erste positive Punktebuchung des
+  Referrers im selben Restaurant gebunden.
+- Restaurantbezogenes Monatslimit mit Default 5, Owner-Bereich 1 bis 100,
+  lokaler Restaurant-Zeitzone und atomarem Idempotenzschutz vorbereitet.
+- Customer-UI fuer gesperrt, Monatslimit und angenommen-aber-pending ergaenzt.
+- Migration `20260824006000_referral_welcome_eligibility_monthly_quota.sql`
+  lokal vorbereitet; Staging-Anwendung bleibt wegen Migrationsreihenfolge offen.
+
 ## 2026-08-24 - Platform Admin Restaurant Control Center Backendvertrag
 
 - additive Migration `20260824005000_platform_admin_restaurant_control_center.sql` vorbereitet
@@ -2784,4 +2832,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   einen sicheren Retry-/Supportzustand, ohne die gültige Auth-Session zu löschen
   oder zur Login-Seite zurückzuleiten.
 - Platform-Admin-, Customer-, Staff-, Trial- und Onboarding-Verträge bleiben
+  unverändert.
+
+## 2026-08-25 – Platform Admin Referral-Limit vervollständigt
+
+- Der bestehende Restaurant-Control-Center-RPC liefert das autoritative,
+  restaurantbezogene monatliche Einladungslimit.
+- Die Platform-Admin-Oberfläche zeigt den echten Wert und unterscheidet ihn von
+  fehlenden Daten; Abfragefehler werden nicht als Standardwert 5 dargestellt.
+- Rollenprüfung, Grants, Tenant-RLS und Referral-Geschäftslogik bleiben
   unverändert.

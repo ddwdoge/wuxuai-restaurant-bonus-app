@@ -52,6 +52,7 @@ import {
   createReferralLink,
   defaultBonusAmountTiers,
   loadCustomerPortalData,
+  loadCustomerReferralInviteStatus,
   loadPublicPointsCollectionMode,
   registerRestaurantGuest,
   type BonusPointCollectionResult,
@@ -60,6 +61,7 @@ import {
   type PublicLoyaltySettings,
   type PublicPortalCustomer,
   type CustomerPointsQr,
+  type CustomerReferralInviteStatus,
 } from "../loyalty/loyaltyService";
 import {
   formatInvitedReferralDuration,
@@ -80,6 +82,8 @@ import {
   restoreScopedActiveRedemption,
   type ScopedActiveRedemption,
 } from "./customerRedemptionSession.mjs";
+import { createReferralCreationToken } from "./referralInviteFlow.mjs";
+import { formatReferralBoostExpiry, formatReferralBoostRemaining } from "./referralLifecycle.mjs";
 import {
   AppShell,
   BenefitTile,
@@ -140,14 +144,6 @@ type RedemptionOutcome = {
 };
 
 type ActiveRedemptionCode = ScopedActiveRedemption;
-
-function formatBoostRemaining(activeUntil: string, remainingDays: number | undefined, nowMs: number) {
-  const remainingMs = new Date(activeUntil).getTime() - nowMs;
-  if (remainingMs <= 0) return "Boost abgelaufen";
-  if (remainingMs < 86_400_000) return "Nur noch heute aktiv";
-  const days = Math.max(1, remainingDays ?? Math.ceil(remainingMs / 86_400_000));
-  return days === 1 ? "Noch 1 Tag gültig" : `Noch ${days} Tage gültig`;
-}
 
 function clampPercent(value: number) {
   return Math.min(100, Math.max(0, value));
@@ -266,6 +262,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [dailyPin, setDailyPin] = useState("");
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
+  const [referralInviteStatus, setReferralInviteStatus] = useState<CustomerReferralInviteStatus | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
   const [identitySummary, setIdentitySummary] = useState<CustomerIdentitySummary | null>(null);
@@ -289,6 +286,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
   const processedReminderDeepLinkRef = useRef<string | null>(null);
+  const referralCreationTokenRef = useRef<string | null>(null);
   const activeToken = customerToken ?? storedCustomerToken;
   const activeTokenSource = customerToken
     ? "url"
@@ -340,6 +338,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setRewards([]);
       setRestaurantOffers([]);
       setRetention(null);
+      setReferralInviteStatus(null);
       setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
       setActiveRedemptionCode(null);
       setRedeemOffer(null);
@@ -387,24 +386,28 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
         try {
-          const [retentionData, identityData] = await Promise.all([
+          const [retentionData, identityData, inviteStatus] = await Promise.all([
             loadCustomerRetentionStatus(restaurantSlug, activeToken),
             loadCustomerIdentitySummary(restaurantSlug, activeToken),
+            loadCustomerReferralInviteStatus(restaurantSlug, activeToken).catch(() => null),
           ]);
           if (!cancelled) {
             setRetention(retentionData);
             setIdentitySummary(identityData);
+            setReferralInviteStatus(inviteStatus);
           }
         } catch (retentionError) {
           if (!cancelled) {
             console.warn("Zusätzliche Kundenhinweise konnten nicht geladen werden.", retentionError);
             setRetention(null);
             setIdentitySummary(null);
+            setReferralInviteStatus(null);
           }
         }
       } else if (!cancelled) {
         setRetention(null);
         setIdentitySummary(null);
+        setReferralInviteStatus(null);
       }
     }
 
@@ -419,6 +422,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         setRestaurantOffers([]);
         setRetention(null);
         setIdentitySummary(null);
+        setReferralInviteStatus(null);
         setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
@@ -592,12 +596,22 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
   const referralBoostMultiplier = finalReferralBonusMultiplier;
   const referralBoostDurationDays = normalizeReferralBonusDuration(settings?.referral_boost_duration_days);
+  const referralInviteEligible = referralInviteStatus?.eligible === true;
+  const referralInviteLimitReached = referralInviteStatus ? referralInviteStatus.remaining <= 0 : false;
+  const referralInviteEnabled = referralBoostEnabled && referralInviteEligible && !referralInviteLimitReached;
+  const referralLifecycleState = referralInviteStatus?.lifecycle_state ?? "none";
+  const referralLifecycleRole = referralInviteStatus?.beneficiary_role ?? null;
+  const referralResetLabel = referralInviteStatus?.next_reset_at
+    ? new Intl.DateTimeFormat("de-AT", { day: "numeric", month: "long" }).format(new Date(referralInviteStatus.next_reset_at))
+    : null;
   const invitedReferralDurationLabel = formatInvitedReferralDuration(referralBoostDurationDays);
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
-  const activeBoostIsInvitedFriend = activeBoost?.beneficiary_role === "invited_friend";
+  const effectiveReferralRole = activeBoost?.beneficiary_role ?? referralLifecycleRole;
+  const activeBoostIsInvitedFriend = effectiveReferralRole === "invited_friend";
   const activePointMultiplier = activeBoost?.multiplier ?? 1;
-  const boostRemainingLabel = activeBoost ? formatBoostRemaining(activeBoost.active_until, activeBoost.remaining_days, nowMs) : null;
+  const boostRemainingLabel = activeBoost ? formatReferralBoostRemaining(activeBoost.active_until, nowMs) : null;
+  const boostExpiryLabel = activeBoost ? formatReferralBoostExpiry(activeBoost.active_until) : null;
   const boostEndsAtMs = activeBoost ? new Date(activeBoost.active_until).getTime() : 0;
   const boostStartedAtMs = activeBoost?.active_from
     ? new Date(activeBoost.active_from).getTime()
@@ -605,6 +619,30 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const boostTotalMs = Math.max(1, boostEndsAtMs - boostStartedAtMs);
   const boostRemainingMs = Math.max(0, boostEndsAtMs - nowMs);
   const boostProgress = activeBoost ? clampPercent((boostRemainingMs / boostTotalMs) * 100) : 0;
+  const referralLifecycleTitle = activeBoost
+    ? activeBoostIsInvitedFriend ? "Dein Einladungsbonus" : "Dein Bonus"
+    : referralLifecycleState === "waiting_registration"
+      ? "Einladung gesendet"
+      : referralLifecycleState === "pending_qualification"
+        ? referralLifecycleRole === "invited_friend"
+          ? "Einladung erfolgreich angenommen"
+          : "Freund erfolgreich eingeladen"
+        : referralLifecycleState === "expired"
+          ? "Dein letzter 2× Bonus ist abgelaufen"
+          : "Lade einen Freund ein";
+  const referralLifecycleDescription = activeBoost
+    ? activeBoostIsInvitedFriend
+      ? `Du sammelst doppelte Punkte und erhältst 50 % der eingestellten Bonusdauer. Aktiv bis ${boostExpiryLabel}.`
+      : `Du sammelst doppelte Punkte und erhältst die volle Bonusdauer. Aktiv bis ${boostExpiryLabel}.`
+    : referralLifecycleState === "waiting_registration"
+      ? "Warte darauf, dass dein Freund die Einladung annimmt. Der Bonus startet erst nach dem ersten qualifizierten Besuch deines Freundes."
+      : referralLifecycleState === "pending_qualification"
+        ? referralLifecycleRole === "invited_friend"
+          ? "Dein 2× Bonus ist vorbereitet. Sammle bei deinem ersten qualifizierten Besuch Punkte. Danach wird dein Einladungsbonus aktiviert."
+          : "Einladung angenommen. Sobald dein Freund erstmals qualifiziert Punkte sammelt, wird dein 2× Bonus aktiviert."
+        : referralLifecycleState === "expired"
+          ? "Du kannst jederzeit wieder einen Freund einladen und neue Bonuszeit sammeln."
+          : `Du erhältst ${referralBoostDurationDays} Tage, dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte.`;
   const previewPoints = selectedTier && settings
     ? calculateBonusTierPoints(selectedTier, settings.amount_per_point, activePointMultiplier)
     : 0;
@@ -1042,10 +1080,17 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     setMessage(null);
 
     try {
-      const result = await createReferralLink(restaurantSlug, activeToken, getWebDeviceId());
+      const creationToken = referralCreationTokenRef.current ?? createReferralCreationToken();
+      referralCreationTokenRef.current = creationToken;
+      const result = await createReferralLink(restaurantSlug, activeToken, getWebDeviceId(), creationToken);
       setReferralLink(`${window.location.origin}/r/${restaurantSlug}/${encodeURIComponent(result.referral_token)}`);
+      setReferralInviteStatus(result.quota);
+      referralCreationTokenRef.current = null;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Einladung konnte nicht erstellt werden.");
+      void loadCustomerReferralInviteStatus(restaurantSlug, activeToken)
+        .then(setReferralInviteStatus)
+        .catch(() => undefined);
     } finally {
       setCreatingReferral(false);
     }
@@ -1749,7 +1794,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 </div>
 
                 <PointsCard
-                  boostLabel={activeBoost ? `${activeBoost.multiplier}× Bonus Boost aktiv` : null}
+                  boostDetail={activeBoost ? `Aktiv bis ${boostExpiryLabel}` : null}
+                  boostLabel={activeBoost ? `${activeBoost.multiplier}× aktiv · ${boostRemainingLabel}` : null}
                   label={pointsTitle}
                   note={nextPointRedemption
                     ? nextPointRedemption.remaining_points > 0
@@ -1762,6 +1808,24 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   value={pointsValue}
                 />
                 <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                {!activeBoost && referralLifecycleState !== "none" ? (
+                  <PremiumCard className="premium-boost-card" variant="information">
+                    <div className="premium-icon-heading">
+                      <span><Flame aria-hidden="true" size={22} /></span>
+                      <div>
+                        <StatusBadge tone={referralLifecycleState === "expired" ? "neutral" : "warning"}>
+                          {referralLifecycleState === "waiting_registration"
+                            ? "Einladung versendet"
+                            : referralLifecycleState === "pending_qualification"
+                              ? "Qualifizierter Besuch ausständig"
+                              : "Abgelaufen"}
+                        </StatusBadge>
+                        <h2>{referralLifecycleTitle}</h2>
+                      </div>
+                    </div>
+                    <p>{referralLifecycleDescription}</p>
+                  </PremiumCard>
+                ) : null}
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="premium-legal-load-warning" role="status">
                     <span>Rechtliche Informationen sind vorübergehend nicht verfügbar. Dein Bonuskonto bleibt nutzbar.</span>
@@ -1811,11 +1875,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       status={activeBoost ? `${activeBoost.multiplier}× aktiv` : "Nicht aktiv"}
                     />
                     <BenefitTile
-                      disabled={creatingReferral}
+                      disabled={creatingReferral || !referralInviteEnabled}
                       icon={<UserPlus size={22} />}
                       label="Freund einladen"
-                      onClick={referralBoostEnabled ? handleCreateReferralLink : undefined}
-                      status={referralBoostEnabled ? `${referralBoostMultiplier}× für euch` : "Nicht verfügbar"}
+                      onClick={referralInviteEnabled ? handleCreateReferralLink : undefined}
+                      status={!referralInviteEligible
+                        ? "Nach erstem Besuch"
+                        : referralInviteLimitReached
+                          ? "Monatslimit erreicht"
+                          : `${referralBoostMultiplier}× für euch`}
                     />
                   </div>
                 </section>
@@ -1900,28 +1968,41 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <div className="premium-icon-heading">
                     <span><Flame aria-hidden="true" size={22} /></span>
                     <div>
-                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
-                      <h2>{activeBoost ? activeBoostIsInvitedFriend ? "Willkommen – 2× Punkte aktiv" : `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
+                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>
+                        {activeBoost ? "2× Bonus Boost aktiv" : referralLifecycleState === "expired" ? "Abgelaufen" : "Bonus Boost"}
+                      </StatusBadge>
+                      <h2>{referralLifecycleTitle}</h2>
                     </div>
                   </div>
                   <p>
                     {activeBoost
-                      ? activeBoost.multiplier === 2
-                        ? "Du sammelst aktuell doppelte Punkte."
-                        : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
-                      : `Du erhältst ${referralBoostDurationDays} Tage, dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte.`}
+                      ? referralLifecycleDescription
+                      : !referralInviteEligible
+                        ? "Nach deinem ersten qualifizierten Besuch kannst du Freunde einladen und 2× Bonuszeit sammeln."
+                        : referralLifecycleDescription}
                   </p>
                   <div className="premium-boost-meta">
                     <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
-                    <span>{boostRemainingLabel ?? `+${referralBoostDurationDays} Tage`}</span>
+                    <span>{boostRemainingLabel
+                      ?? (referralLifecycleState === "expired" && referralInviteStatus?.active_until
+                        ? `Abgelaufen am ${formatReferralBoostExpiry(referralInviteStatus.active_until)}`
+                        : `+${referralBoostDurationDays} Tage`)}</span>
                   </div>
                   {activeBoost ? (
                     <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
                   ) : null}
                   {referralBoostEnabled ? (
-                    <PrimaryButton disabled={creatingReferral} onClick={handleCreateReferralLink}>
+                    <PrimaryButton disabled={creatingReferral || !referralInviteEnabled} onClick={handleCreateReferralLink}>
                       Freund einladen
                     </PrimaryButton>
+                  ) : null}
+                  {referralInviteStatus ? (
+                    <div className="premium-legal-note-small" aria-live="polite">
+                      <p>Einladungen diesen Monat: {referralInviteStatus.used} von {referralInviteStatus.limit}</p>
+                      <p>{referralInviteLimitReached
+                        ? `Monatslimit erreicht.${referralResetLabel ? ` Ab ${referralResetLabel} kannst du wieder Freunde einladen.` : ""}`
+                        : `Du kannst noch ${referralInviteStatus.remaining} ${referralInviteStatus.remaining === 1 ? "Freund" : "Freunde"} einladen.`}</p>
+                    </div>
                   ) : null}
                   <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                   {referralLink ? (
@@ -2053,7 +2134,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
                     <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
-                    <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
+                    <button disabled={creatingReferral || !referralInviteEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralInviteEligible ? `${referralBoostMultiplier}× Punkte` : "Nach erstem Besuch"}</span></button>
                     <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
                     <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>
                   </div>

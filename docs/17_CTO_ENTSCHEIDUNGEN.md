@@ -3,6 +3,22 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-24 - QR Center: zwei aktive Zwecke, ein Kompatibilitaetsweg
+
+- Aktive V1-QR-Zwecke sind der oeffentliche Neue-Gaeste-QR und der geschuetzte
+  Mitarbeiter-QR.
+- Eingang, Tischaufsteller, Kassa, Rechnung, Flyer und Plakat sind nur
+  Druckvarianten desselben Neue-Gaeste-QR; sie erzeugen keinen eigenen QR-Typ.
+- Der bisherige Kassa-Aufsteller war technisch nur eine zweite Darstellung der
+  identischen `/w/:slug`-URL und ist aus QR Center und Starter Kit entfernt.
+- Der Kassa-QR bleibt ausschliesslich als sichtbarer Kompatibilitaetsweg fuer
+  Restaurants mit `customer_initiated_only` oder `both` erhalten. Die Route
+  `/w/:slug` bleibt fuer bestehendes Druckmaterial funktionsfaehig.
+- Neue Restaurants starten weiterhin `restaurant_controlled_only`; ihr Starter
+  Kit enthaelt zwei Gaeste-Druckformate mit identischer URL und einen Staff-QR.
+- Es werden keine historischen Daten geloescht und keine QR-Geheimnisse in
+  Drucklinks aufgenommen.
+
 ## 2026-08-24 - Canonical Recovery Lock
 
 - Sichtbarer Name ist **WUXUAI Bonus**; der Kundenbereich heißt **Meine
@@ -18,6 +34,22 @@
 - Diese Entscheidung ersetzt jede ältere widersprechende Aussage. Details:
   `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` und
   `docs/LEGACY_DOCUMENT_INDEX.md`.
+
+## 2026-08-24 - Referral Welcome Gift, Eligibility und Monatslimit
+
+- Ein Referral-Gast erhaelt ueber denselben bestehenden Assignment-Flow wie
+  ein direkt registrierter Gast genau ein zunaechst gesperrtes
+  Willkommensgeschenk pro Restaurant.
+- Der einladende Gast darf erst nach seiner eigenen ersten positiven
+  Punktebuchung im selben Restaurant Einladungen erzeugen.
+- Default sind 5 neue Einladungen pro Gast, Restaurant und lokalem
+  Kalendermonat; Owner duerfen 1 bis 100 konfigurieren.
+- Erneutes Teilen desselben Links verbraucht keinen weiteren Monatsplatz.
+- Die Einladung bleibt bis zur ersten qualifizierten Punktebuchung des
+  eingeladenen Freundes pending. Referrer-Punkte qualifizieren sie niemals.
+- Diese Entscheidung ersetzt insbesondere die alten Regeln in Abschnitt 28
+  und spaetere historische Aussagen, wonach Referral-Gaeste kein
+  Willkommensgeschenk erhalten.
 
 ## 2026-08-03 – V1-Punkteflow ohne Bonnummer
 

@@ -74,5 +74,7 @@ test("customer referral copy distinguishes full and half duration", () => {
   assert.match(referralLanding, /formatInvitedReferralDuration/);
   assert.doesNotMatch(referralLanding, /30 Tage lang 2×/);
   assert.match(customerPortal, /invitedReferralDurationLabel/);
-  assert.match(customerPortal, /Willkommen – 2× Punkte aktiv/);
+  assert.match(customerPortal, /Dein Einladungsbonus/);
+  assert.match(customerPortal, /50 % der eingestellten Bonusdauer/);
+  assert.match(customerPortal, /die volle Bonusdauer/);
 });

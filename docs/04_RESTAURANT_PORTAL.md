@@ -7,6 +7,12 @@ Freundschaftsbonus bietet 7, 14, 28 oder einen eigenen Wert von 1 bis 365 Tagen;
 2x ist fest. Der Referrer erhält die volle, der Freund exakt die halbe Dauer.
 Ältere widersprechende Referral- oder Branding-Angaben sind superseded.
 
+Das QR Center priorisiert genau zwei Zwecke: Neue Gäste und Mitarbeiter. Der
+Neue-Gäste-QR darf für Eingang, Tisch, Kassa, Rechnung oder Werbung in mehreren
+Druckformaten verwendet werden. Ein separater Kassa-Aufsteller existiert nicht
+mehr. Der historische Kassa-QR wird nur für Restaurants mit aktivem
+kundeninitiiertem Sammelmodus als Kompatibilitätsweg angezeigt.
+
 ## Dynamischer Dashboard-Schritt
 
 Das Dashboard zeigt oberhalb der Kennzahlen maximal einen priorisierten

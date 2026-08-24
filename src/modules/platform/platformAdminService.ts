@@ -209,6 +209,7 @@ export type PlatformRestaurantControlCenter = {
         multiplier: 2;
         configured_duration_days: number;
         duration_type: "preset" | "custom";
+        monthly_invite_limit: number;
         friend_duration_ratio: 0.5;
         qualified_referrals_30d: number;
         active_boosters: number;

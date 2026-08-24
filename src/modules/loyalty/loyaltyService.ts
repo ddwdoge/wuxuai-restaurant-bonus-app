@@ -25,7 +25,7 @@ export const menuPointPresets = [
 ];
 
 const loyaltySettingsSelect =
-  "id, restaurant_id, loyalty_mode, amount_per_point, redemption_return_rate, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, points_collection_mode, points_collection_max_amount_cents, active, created_at";
+  "id, restaurant_id, loyalty_mode, amount_per_point, redemption_return_rate, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, referral_monthly_invite_limit, points_collection_mode, points_collection_max_amount_cents, active, created_at";
 
 const legacyLoyaltySettingsSelect =
   "id, restaurant_id, loyalty_mode, amount_per_point, stamps_required, bonus_amount_tiers, bonus_boost_multiplier, smart_upsell_enabled, smart_upsell_threshold, referral_boost_enabled, referral_boost_multiplier, referral_boost_duration_days, active, created_at";
@@ -36,13 +36,14 @@ function normalizeLoyaltySettings(settings: LoyaltySettings): LoyaltySettings {
     redemption_return_rate: Number(settings.redemption_return_rate) || 0.03,
     points_collection_mode: settings.points_collection_mode ?? "customer_initiated_only",
     points_collection_max_amount_cents: Number(settings.points_collection_max_amount_cents) || 30000,
+    referral_monthly_invite_limit: Number(settings.referral_monthly_invite_limit) || 5,
   };
 }
 
 function isMissingRedemptionReturnRate(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };
-  return maybeError.code === "42703" || /redemption_return_rate|points_collection_/i.test(maybeError.message ?? "");
+  return maybeError.code === "42703" || /redemption_return_rate|points_collection_|referral_monthly_invite_limit/i.test(maybeError.message ?? "");
 }
 
 export type LoyaltyRuleInput = {
@@ -90,6 +91,7 @@ export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode):
     referral_boost_enabled: true,
     referral_boost_multiplier: referralBonusMultiplier,
     referral_boost_duration_days: referralBonusDefaultDurationDays,
+    referral_monthly_invite_limit: 5,
     points_collection_mode: "restaurant_controlled_only",
     points_collection_max_amount_cents: 30000,
     active: true,
@@ -189,20 +191,28 @@ export type ReferralBonusSettingsInput = {
   restaurantId: string;
   enabled: boolean;
   durationDays: number;
+  monthlyInviteLimit: number;
 };
 
 export function validateReferralBonusDuration(durationDays: number) {
   return isValidReferralBonusDuration(durationDays);
 }
 
+export function validateReferralMonthlyInviteLimit(limit: number) {
+  return Number.isInteger(limit) && limit >= 1 && limit <= 100;
+}
+
 export async function saveReferralBonusSettings(
   input: ReferralBonusSettingsInput,
-): Promise<Pick<LoyaltySettings, "referral_boost_enabled" | "referral_boost_multiplier" | "referral_boost_duration_days">> {
+): Promise<Pick<LoyaltySettings, "referral_boost_enabled" | "referral_boost_multiplier" | "referral_boost_duration_days" | "referral_monthly_invite_limit">> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
   }
   if (!validateReferralBonusDuration(input.durationDays)) {
     throw new Error("Die Dauer muss zwischen 1 und 365 ganzen Tagen liegen.");
+  }
+  if (!validateReferralMonthlyInviteLimit(input.monthlyInviteLimit)) {
+    throw new Error("Das Monatslimit muss zwischen 1 und 100 liegen.");
   }
 
   const { data, error } = await supabase.rpc("update_referral_bonus_settings", {
@@ -210,6 +220,7 @@ export async function saveReferralBonusSettings(
     input_enabled: input.enabled,
     input_multiplier: 2,
     input_duration_days: input.durationDays,
+    input_monthly_invite_limit: input.monthlyInviteLimit,
   });
 
   if (error) throw error;
@@ -218,12 +229,14 @@ export async function saveReferralBonusSettings(
     referral_boost_enabled?: boolean;
     referral_boost_multiplier?: number;
     referral_boost_duration_days?: number;
+    referral_monthly_invite_limit?: number;
   } | null;
 
   return {
     referral_boost_enabled: result?.referral_boost_enabled ?? input.enabled,
     referral_boost_multiplier: Number(result?.referral_boost_multiplier) || 2,
     referral_boost_duration_days: Number(result?.referral_boost_duration_days) || input.durationDays,
+    referral_monthly_invite_limit: Number(result?.referral_monthly_invite_limit) || input.monthlyInviteLimit,
   };
 }
 
@@ -321,6 +334,7 @@ export type PublicLoyaltySettings = Pick<LoyaltySettings, "loyalty_mode" | "amou
   referral_boost_enabled?: boolean;
   referral_boost_multiplier?: number;
   referral_boost_duration_days?: number;
+  referral_monthly_invite_limit?: number;
   points_collection_mode?: PointsCollectionMode;
 };
 
@@ -586,8 +600,34 @@ function isMissingGiftMetadataRpc(error: { message?: string; details?: string; h
 }
 
 export type ReferralLinkResult = {
+  success: boolean;
   referral_token: string;
   referral_id: string;
+  replayed: boolean;
+  quota: CustomerReferralInviteStatus;
+};
+
+export type CustomerReferralInviteStatus = {
+  eligible: boolean;
+  eligibility_reason: "eligible" | "first_qualifying_visit_required";
+  used: number;
+  limit: number;
+  remaining: number;
+  month_start: string;
+  next_reset_at: string;
+  accepted_count: number;
+  qualified_count: number;
+  latest_invitation_status: "pending" | "pending_registered" | "activated" | "blocked" | null;
+  lifecycle_state: "none" | "waiting_registration" | "pending_qualification" | "active" | "expired";
+  beneficiary_role: "referrer" | "invited_friend" | null;
+  active_from: string | null;
+  active_until: string | null;
+};
+
+type ReferralLinkResponse = Partial<ReferralLinkResult> & {
+  success: boolean;
+  error_code?: "FIRST_QUALIFYING_VISIT_REQUIRED" | "REFERRAL_MONTHLY_LIMIT_REACHED" | "REFERRAL_DISABLED";
+  quota?: CustomerReferralInviteStatus;
 };
 
 export type PublicReferralData = {
@@ -949,6 +989,7 @@ export async function createReferralLink(
   restaurantSlug: string,
   customerToken: string,
   deviceId?: string | null,
+  creationToken?: string,
 ): Promise<ReferralLinkResult> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
@@ -958,10 +999,34 @@ export async function createReferralLink(
     input_restaurant_slug: restaurantSlug,
     input_customer_token: customerToken,
     input_device_id: deviceId ?? null,
+    input_creation_token: creationToken,
   });
 
   if (error) throw error;
-  return data as ReferralLinkResult;
+  const result = data as ReferralLinkResponse;
+  if (!result.success) {
+    if (result.error_code === "FIRST_QUALIFYING_VISIT_REQUIRED") {
+      throw new Error("Nach deinem ersten qualifizierten Besuch kannst du Freunde einladen und 2× Bonuszeit sammeln.");
+    }
+    if (result.error_code === "REFERRAL_MONTHLY_LIMIT_REACHED") {
+      throw new Error("Du hast dein Einladungslimit für diesen Monat erreicht.");
+    }
+    throw new Error("Einladungen sind für dieses Restaurant derzeit nicht verfügbar.");
+  }
+  return result as ReferralLinkResult;
+}
+
+export async function loadCustomerReferralInviteStatus(
+  restaurantSlug: string,
+  customerToken: string,
+): Promise<CustomerReferralInviteStatus> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("get_customer_referral_invite_status", {
+    input_restaurant_slug: restaurantSlug,
+    input_customer_token: customerToken,
+  });
+  if (error) throw publicPortalRequestError(error);
+  return data as CustomerReferralInviteStatus;
 }
 
 export async function loadPublicReferral(restaurantSlug: string, referralToken: string): Promise<PublicReferralData> {

@@ -4,6 +4,15 @@
 
 Status: **LOCK**
 
+## Current QR Starter Kit Lock 2026-08-24
+
+Das Starter Kit neuer Restaurants enthält den Neue-Gäste-QR in zwei
+Druckvarianten und den Mitarbeiter-QR für den internen Bereich. Beide
+Gästevarianten verwenden dieselbe `/customer/:slug`-URL. Das Onboarding erzeugt
+keinen separaten Kassa-QR und keinen Kassa-Aufsteller. Bestehende
+kundeninitiierte Sammelwege bleiben ausserhalb des Onboardings über
+`/w/:slug` kompatibel.
+
 Dieses Dokument beschreibt den vollständigen Flow 01 des WUXUAI Bonus
 Systems.
 
@@ -528,10 +537,9 @@ Er lädt das Starter Kit herunter.
 Das PDF enthält:
 
 -   Infoseite für Restaurantbesitzer
--   Restaurant QR
--   Mein Bonus QR
--   Kassen-Aufsteller
--   Eingangs-Aufsteller
+-   Neue-Gäste-QR für Eingang oder Aufsteller
+-   derselbe Neue-Gäste-QR als alternatives Tisch-/Flyerformat
+-   Mitarbeiter-QR für den internen Bereich
 
 ### PDF Regeln
 

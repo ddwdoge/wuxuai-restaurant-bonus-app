@@ -13,6 +13,7 @@ import {
   saveReferralBonusSettings,
   setLoyaltyRuleActive,
   validateReferralBonusDuration,
+  validateReferralMonthlyInviteLimit,
 } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 import {
@@ -159,8 +160,13 @@ export function LoyaltyPage() {
     if (!restaurantId) return;
 
     const durationDays = Number(settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays);
+    const monthlyInviteLimit = Number(settings.referral_monthly_invite_limit ?? 5);
     if (!validateReferralBonusDuration(durationDays)) {
       setStatus("Die Dauer muss zwischen 1 und 365 ganzen Tagen liegen.");
+      return;
+    }
+    if (!validateReferralMonthlyInviteLimit(monthlyInviteLimit)) {
+      setStatus("Das Monatslimit muss zwischen 1 und 100 liegen.");
       return;
     }
 
@@ -171,6 +177,7 @@ export function LoyaltyPage() {
         restaurantId,
         enabled: settings.referral_boost_enabled ?? true,
         durationDays,
+        monthlyInviteLimit,
       });
       setSettings((current) => ({ ...current, ...saved }));
       setStatus("Freundschaftsbonus gespeichert.");
@@ -446,6 +453,27 @@ export function LoyaltyPage() {
             </div>
           ) : null}
 
+          <div className="field referral-bonus-monthly-limit">
+            <FormLabel htmlFor="referral-monthly-invite-limit" required>Einladungen pro Kunde / Monat</FormLabel>
+            <input
+              aria-required="true"
+              className="input"
+              id="referral-monthly-invite-limit"
+              inputMode="numeric"
+              max={100}
+              min={1}
+              required
+              step="1"
+              type="number"
+              value={settings.referral_monthly_invite_limit ?? 5}
+              onChange={(event) => setSettings((current) => ({
+                ...current,
+                referral_monthly_invite_limit: Number(event.target.value),
+              }))}
+            />
+            <small>Standard sind 5 neue Einladungen pro Gast und Kalendermonat. Erlaubt sind 1 bis 100.</small>
+          </div>
+
           <div className="referral-bonus-preview" aria-live="polite">
             Der einladende Gast erhält {normalizeReferralBonusDuration(settings.referral_boost_duration_days)} Tage.
             Der eingeladene Freund erhält exakt{" "}
@@ -455,7 +483,9 @@ export function LoyaltyPage() {
 
           <button
             className="button"
-            disabled={savingReferralBonus || !validateReferralBonusDuration(Number(settings.referral_boost_duration_days))}
+            disabled={savingReferralBonus
+              || !validateReferralBonusDuration(Number(settings.referral_boost_duration_days))
+              || !validateReferralMonthlyInviteLimit(Number(settings.referral_monthly_invite_limit ?? 5))}
             type="submit"
           >
             <Save size={18} />

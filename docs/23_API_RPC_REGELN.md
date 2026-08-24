@@ -310,8 +310,8 @@ Pflichten:
 - phone pro Restaurant prüfen
 - keine vollständigen Kundendaten bei bestehender Telefonnummer an anon zurückgeben
 - Token sicher erzeugen
-- Willkommensgeschenk nur bei normaler Registrierung
-- Referral Vorrang beachten, falls Route/Service gemeinsam genutzt wird
+- Willkommensgeschenk bei direkter und Referral-Erstregistrierung ueber denselben
+  kanonischen Assignment-Flow zuteilen
 - Audit schreiben
 
 ### 7.3 register_referral_customer / referral registration
@@ -320,7 +320,8 @@ Zweck:
 
 - eingeladenen Freund registrieren
 - Referral-Beziehung speichern
-- kein Willkommensgeschenk zuteilen
+- hoechstens ein normales, zunaechst gesperrtes Willkommensgeschenk ueber
+  `assign_welcome_starter_reward` zuteilen
 - Bonus Boost noch nicht aktivieren
 
 Pflichten:
@@ -330,8 +331,19 @@ Pflichten:
 - A↔B Zirkel blockieren
 - gleiche Telefonnummer-Regel prüfen
 - Referral Status pending setzen
-- kein Welcome Gift
+- keine parallele Welcome-Gift-Insertlogik; bestehende Unique-Regel nutzen
 - Audit schreiben
+
+### 7.3a create_referral_link / get_customer_referral_invite_status
+
+- Restaurant und geheimen Customer-Token serverseitig pruefen.
+- Mindestens eine positive Punktebuchung desselben Kunden im selben Restaurant
+  verlangen.
+- Monatliches Limit serverseitig unter Lock pruefen und atomar verbrauchen.
+- Restaurant-Zeitzone fuer Monatsgrenzen verwenden.
+- Retry desselben Erstellungswerts gibt denselben Link zurueck und zaehlt nicht
+  doppelt.
+- Rohwerte von Referral- und Erstellungs-Token weder speichern noch auditieren.
 
 ### 7.4 get_public_customer_portal
 
@@ -1055,3 +1067,15 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
 - `get_customer_data_export(slug, token)` gibt bei Dokumentannahmen nur
   Nachweismetadaten wie Titel, Version, Hash, Gültigkeitsdatum, Annahmezeit und
   Quelle aus. Dokumentvolltexte sind nicht Teil des personenbezogenen Exports.
+
+## Ergänzung 2026-08-25: Platform Admin Referral-Limit
+
+- `get_platform_restaurant_control_center(uuid)` liefert im vorhandenen
+  Referral-Teilvertrag zusätzlich `monthly_invite_limit`.
+- Quelle ist ausschließlich
+  `loyalty_settings.referral_monthly_invite_limit`; der RPC erfindet bei
+  fehlenden Daten oder Abfragefehlern keinen Wert 5.
+- Fehlt die gesamte Restaurantkonfiguration, bleibt der Referral-Teilvertrag
+  ausdrücklich `unavailable`. SQL-Fehler werden als RPC-Fehler weitergegeben.
+- `SECURITY DEFINER`, fester `search_path`, Platform-Admin-Prüfung und der nur
+  für `authenticated` gewährte `EXECUTE`-Vertrag bleiben unverändert.

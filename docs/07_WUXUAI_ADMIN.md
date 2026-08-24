@@ -901,3 +901,17 @@ Wenn Codex am WUXUAI Admin Portal arbeitet:
 ------------------------------------------------------------------------
 
 Endstatus: **LOCK**
+
+------------------------------------------------------------------------
+
+## 19. Platform Admin Control Center – Referral-Limit
+
+Der restaurantbezogene Control-Center-Vertrag zeigt das monatliche
+Einladungslimit ausschließlich aus
+`loyalty_settings.referral_monthly_invite_limit`. Ein vorhandener Wert wird
+unverändert ausgegeben. Fehlt die Restaurantkonfiguration, zeigt die Oberfläche
+„Keine Daten verfügbar“; Abfragefehler werden nicht als Standardwert ausgegeben.
+
+Der Datenbankstandard für neue Einstellungen bleibt 5, der zulässige
+Owner-Bereich 1 bis 100. Zugriff auf den Aggregationsvertrag bleibt auf aktive,
+serverseitig geprüfte Platform Admins begrenzt.

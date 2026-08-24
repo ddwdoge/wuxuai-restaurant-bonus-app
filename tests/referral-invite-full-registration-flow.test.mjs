@@ -95,17 +95,17 @@ test("referral registration and membership binding are atomic, locked and retry-
   assert.match(accountService, /join_authenticated_customer_referral/);
 });
 
-test("signup and acceptance do not qualify or grant referral boosts", () => {
+test("signup and acceptance reserve the welcome gift but do not qualify or grant referral boosts", () => {
   assert.doesNotMatch(migration, /set\s+status\s*=\s*'activated'/i);
   assert.doesNotMatch(migration, /apply_v1_referral_boost_grant|upsert_referral_boost/);
   assert.doesNotMatch(migration, /insert into public\.points_transactions/);
   assert.match(migration, /referral_status', 'pending_registered'/);
-  assert.match(landing, /ersten gültigen Besuch/);
+  assert.match(landing, /ersten qualifizierten Besuch/);
 });
 
 test("referral context is persisted server-side rather than only in browser storage", () => {
   assert.match(migration, /register_referral_customer_legal/);
   assert.match(migration, /customer_account_memberships/);
   assert.doesNotMatch(landing, /localStorage|sessionStorage/);
-  assert.match(landing, /Einladung angenommen/);
+  assert.match(landing, /Einladung erfolgreich angenommen/);
 });

@@ -173,7 +173,7 @@ const stepHelp = [
     sentences: [
       "Hier findest du die fertigen QR-Codes für dein Restaurant.",
       "Nutze den Restaurant-QR für die Anmeldung neuer Gäste.",
-      "Der Bonus-QR öffnet das persönliche Bonusprogramm vor Ort.",
+      "Der Mitarbeiter-QR führt dein Team in den geschützten Mitarbeiterbereich.",
       "Lade das Starter Kit herunter und platziere es gut sichtbar.",
     ],
     note: "Dauer: ca. 1 Minute",
@@ -901,8 +901,9 @@ function drawStarterKitInfoPage(
     "Drucke alle Seiten aus.",
     "Für längere Haltbarkeit empfehlen wir Laminieren.",
     'Seite "Mitglied werden" am Eingang aufstellen.',
-    'Seite "Bonuspunkte sammeln" an der Kassa aufstellen.',
-    "Teste beide QR Codes einmal.",
+    'Seite "Bonusprogramm entdecken" für Tisch oder Flyer verwenden.',
+    'Seite "Mitarbeiterbereich" nur intern verwenden.',
+    "Teste beide QR-Code-Arten einmal.",
     "Danach ist dein Bonusprogramm einsatzbereit.",
   ];
 
@@ -934,16 +935,16 @@ function drawStarterKitInfoPage(
 }
 
 async function downloadRestaurantStarterKit(input: {
-  bonusQrId: string;
   logoUrl: string;
   primaryColor: string;
   restaurantName: string;
   restaurantQrId: string;
   secondaryColor: string;
+  staffQrId: string;
 }) {
-  const [restaurantQr, bonusQr, logoImage] = await Promise.all([
+  const [restaurantQr, staffQr, logoImage] = await Promise.all([
     qrSvgToCanvas(input.restaurantQrId),
-    qrSvgToCanvas(input.bonusQrId),
+    qrSvgToCanvas(input.staffQrId),
     loadCanvasImage(input.logoUrl).catch(() => null),
   ]);
   const branding = {
@@ -959,19 +960,14 @@ async function downloadRestaurantStarterKit(input: {
       qrCanvas: restaurantQr,
     },
     {
-      headline: "Bonuspunkte sammeln",
-      shortNote: "Nach dem Bezahlen\nQR scannen\nBonuspunkte sammeln.",
-      qrCanvas: bonusQr,
-    },
-    {
-      headline: "Bonuspunkte sammeln",
-      shortNote: "Für die Kassa",
-      qrCanvas: bonusQr,
-    },
-    {
-      headline: "Mitglied werden",
-      shortNote: "Neue Gäste\nstarten hier ihr Bonusprogramm.",
+      headline: "Bonusprogramm entdecken",
+      shortNote: "Für Tisch oder Flyer\nNeue Gäste starten hier.",
       qrCanvas: restaurantQr,
+    },
+    {
+      headline: "Mitarbeiterbereich",
+      shortNote: "Nur für dein Team\nAnmeldung erforderlich.",
+      qrCanvas: staffQr,
     },
   ];
 
@@ -1207,7 +1203,7 @@ export function RestaurantOnboarding() {
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
-  const bonusQrUrl = `${publicBaseUrl}/w/${restaurantSlug}`;
+  const staffTabletUrl = `${publicBaseUrl}/staff/${restaurantSlug}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 
@@ -2108,7 +2104,7 @@ export function RestaurantOnboarding() {
               <article className="calculation-card">
                 <strong>Restaurant Starter Kit</strong>
                 <p className="muted">
-                  Lade dein druckfertiges Paket herunter. Es enthält alles für Eingang und Kassa.
+                  Lade dein druckfertiges Paket für neue Gäste und dein Team herunter.
                 </p>
               </article>
               <div className="qr-launch-grid">
@@ -2123,14 +2119,14 @@ export function RestaurantOnboarding() {
                   url={restaurantQrUrl}
                 />
                 <QrLaunchCard
-                  description="Bestandsgäste scannen diesen QR-Code nach dem Bezahlen und sammeln Bonuspunkte."
-                  icon="🎁"
-                  id="bonus-qr"
+                  description="Dein Team öffnet damit den geschützten Mitarbeiterbereich. Eine Anmeldung bleibt erforderlich."
+                  icon="👥"
+                  id="staff-qr"
                   logoUrl={visibleLogoUrl}
                   restaurantName={form.restaurantName}
-                  subtitle="Meine Vorteile"
-                  title="Bonuspunkte sammeln"
-                  url={bonusQrUrl}
+                  subtitle="Nur für dein Team"
+                  title="Mitarbeiterbereich"
+                  url={staffTabletUrl}
                 />
               </div>
               <div className="starter-kit-action">
@@ -2138,12 +2134,12 @@ export function RestaurantOnboarding() {
                   className="button starter-kit-button"
                   onClick={() => {
                     downloadRestaurantStarterKit({
-                      bonusQrId: "bonus-qr",
                       logoUrl: visibleLogoUrl,
                       primaryColor: form.primaryColor,
                       restaurantName: form.restaurantName,
                       restaurantQrId: "restaurant-qr",
                       secondaryColor: form.secondaryColor,
+                      staffQrId: "staff-qr",
                     }).catch((error) => {
                       window.alert(error instanceof Error ? error.message : "Restaurant Starter Kit konnte nicht gespeichert werden.");
                     });

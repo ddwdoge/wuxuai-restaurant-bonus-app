@@ -850,7 +850,8 @@ Regeln:
 - normale Registrierung → Geschenk zuteilen locked
 - erste Punktebuchung → unlock
 - Einlösung erst nächster Besuch
-- Referral Registrierung → kein Geschenk
+- Referral-Registrierung → derselbe Assignment-Flow wie normale Registrierung,
+  hoechstens ein gesperrtes Geschenk pro Kunde und Restaurant
 - Geschenk einmalig pro Kunde/Restaurant
 
 ---
@@ -874,6 +875,8 @@ Wichtige Felder:
 - registered_at
 - activated_at
 - metadata
+- quota_counted
+- quota_month
 
 Status:
 
@@ -889,6 +892,10 @@ Regeln:
 - Aktivierung erst bei erster Punktebuchung
 - keine doppelte Aktivierung
 - Audit schreiben
+- Erstellung erst nach positiver Punktebuchung des Referrers im selben Tenant
+- neue Einladungen gegen `referral_monthly_invite_limit` im lokalen
+  Restaurantmonat zaehlen
+- historische Datensaetze mit `quota_counted = false` nicht rueckwirkend zaehlen
 
 ---
 

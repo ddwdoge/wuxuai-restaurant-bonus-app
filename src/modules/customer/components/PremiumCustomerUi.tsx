@@ -157,6 +157,7 @@ export function ProgressBar({ label, value }: { label: string; value: number }) 
 }
 
 type PointsCardProps = {
+  boostDetail?: string | null;
   boostLabel?: string | null;
   label: string;
   note: string;
@@ -165,7 +166,7 @@ type PointsCardProps = {
   value: string;
 };
 
-export function PointsCard({ boostLabel, label, note, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
+export function PointsCard({ boostDetail, boostLabel, label, note, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
   return (
     <PremiumCard className="premium-points-card" variant="highlight">
       <div className="premium-points-heading">
@@ -173,6 +174,7 @@ export function PointsCard({ boostLabel, label, note, progress, progressLabel = 
         {boostLabel ? <StatusBadge tone="warning">{boostLabel}</StatusBadge> : null}
       </div>
       <strong className="premium-points-value">{value}</strong>
+      {boostDetail ? <small className="premium-points-boost-detail">{boostDetail}</small> : null}
       {typeof progress === "number" ? <ProgressBar label={progressLabel} value={progress} /> : null}
       <p>{note}</p>
     </PremiumCard>
