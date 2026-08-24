@@ -168,7 +168,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   }
 
   const emptyAccess = !loading && !error && !account;
-  const heading = view === "locations" ? "Meine Lokale" : view === "account" ? "Konto" : "Mein WUXUAI";
+  const heading = view === "locations" ? "Meine Lokale" : view === "account" ? "Konto" : "Meine Vorteile";
 
   return (
     <AppShell>
@@ -179,7 +179,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
         </header>
 
         {loading ? <LoadingState description="Dein Kundenbereich wird geladen." /> : null}
-        {error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Mein WUXUAI konnte nicht geladen werden" /> : null}
+        {error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Deine Vorteile konnten nicht geladen werden" /> : null}
         {emptyAccess ? (
           <EmptyState
             action={<Link className="premium-button premium-button-primary" to="/customer/restaurants">Lokale entdecken</Link>}

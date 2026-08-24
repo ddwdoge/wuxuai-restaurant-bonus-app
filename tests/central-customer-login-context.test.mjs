@@ -5,15 +5,15 @@ import test from "node:test";
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("QR-Route prüft zuerst die zentrale Kundensitzung und behält den Restaurantpfad", async () => {
-  const [app, access, authPage] = await Promise.all([read("../src/app/App.tsx"), read("../src/modules/customer/CustomerRestaurantAccess.tsx"), read("../src/modules/customer/CustomerAuthPage.tsx")]);
+  const [app, access, returnPath] = await Promise.all([read("../src/app/App.tsx"), read("../src/modules/customer/CustomerRestaurantAccess.tsx"), read("../src/modules/customer/customerReturnPath.mjs")]);
   assert.match(app, /CustomerRestaurantAccess/);
   assert.match(access, /useAuth\(\)/);
   assert.match(access, /returnTo = `\$\{isBonusCollection \? "\/w" : "\/customer"\}/);
   assert.match(access, /Mit bestehendem Kundenkonto anmelden/);
   assert.match(access, /Neues Kundenkonto erstellen/);
-  assert.match(authPage, /isCollectPath = \/\^\\\/w\\\//);
-  assert.match(authPage, /isCustomerPath \|\| isCollectPath/);
-  assert.match(authPage, /value\.startsWith\("\/\/"\)/);
+  assert.match(returnPath, /isCollectPath = \/\^\\\/w\\\//);
+  assert.match(returnPath, /isCustomerPath \|\| isCollectPath \|\| isReferralPath/);
+  assert.match(returnPath, /value\.startsWith\("\/\/"\)/);
 });
 
 test("Registrierung nutzt Supabase Auth mit E-Mail Passwort und Bestätigungslink", async () => {

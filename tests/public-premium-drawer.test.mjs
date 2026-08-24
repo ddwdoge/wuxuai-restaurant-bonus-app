@@ -22,7 +22,7 @@ test("öffentliche Startseite behält drei echte Hauptwege auf Route /", () => {
   assert.match(publicHome, /title="Restaurant Login" to="\/login"/);
   assert.match(publicHome, /title="Restaurant registrieren" to="\/register"/);
   assert.match(publicHome, /title="Gast-Bonus öffnen" to="\/customer"/);
-  assert.match(publicHome, /title="Restaurant Bonus einfach starten\."/);
+  assert.match(publicHome, /title="Bonusprogramm einfach starten\."/);
 });
 
 test("Startseite verwendet zentrale Premium-Tokens und kompakte Mobile-Karten", () => {

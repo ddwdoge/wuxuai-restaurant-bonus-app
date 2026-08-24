@@ -20,7 +20,7 @@ test("zentrale Kundenrouten benötigen keinen Restaurant-Slug", async () => {
   }
 });
 
-test("Mein WUXUAI verwendet genau die vier freigegebenen Navigationsziele", async () => {
+test("Meine Vorteile verwendet genau die vier freigegebenen Navigationsziele", async () => {
   const navigation = await readFile(navigationUrl, "utf8");
   for (const label of ["Start", "Meine Lokale", "Entdecken", "Konto"]) assert.match(navigation, new RegExp(`label: "${label}"`));
   assert.doesNotMatch(navigation, /label: "Aktuelles"/);

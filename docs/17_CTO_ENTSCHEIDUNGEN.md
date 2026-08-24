@@ -3,6 +3,22 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-24 - Canonical Recovery Lock
+
+- Sichtbarer Name ist **WUXUAI Bonus**; der Kundenbereich heißt **Meine
+  Vorteile**.
+- Customer Auth verwendet E-Mail, Passwortbestätigung, E-Mail-Bestätigung und
+  ausschließlich die aktiven Legal-RPCs.
+- Einlösungen verwenden primär die serverzeitgebundene 15-Minuten-Präsentation;
+  die sechsstellige Codeprüfung ist kein normaler Staff-Flow.
+- Freundschaftsbonus: fest 2x; Default 14 Tage; Owner 7/14/28/Custom; Referrer
+  100 Prozent, Freund exakt 50 Prozent derselben gespeicherten Dauer.
+- Manuelle Koordinaten sind keine Pflicht; Owner-Geocodierung erfolgt
+  serverseitig nach ausdrücklicher Aktion.
+- Diese Entscheidung ersetzt jede ältere widersprechende Aussage. Details:
+  `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` und
+  `docs/LEGACY_DOCUMENT_INDEX.md`.
+
 ## 2026-08-03 – V1-Punkteflow ohne Bonnummer
 
 - V1 besitzt keine POS-/Kassenintegration und keine Bonnummer im Punkteflow.
@@ -291,14 +307,14 @@ V2 erweitert über Business-Type-Templates.
 
 ---
 
-## 6. Produktname V1: WUXUAI Restaurant Bonus
+## 6. Produktname V1: WUXUAI Bonus
 
 🟢 **LOCK / ERSETZT LANGFRISTIGE DACHMARKENREGEL AM 30.07.2026**
 
 V1 wird unter folgender Produktpositionierung fertiggestellt:
 
 ```text
-WUXUAI Restaurant Bonus
+WUXUAI Bonus
 ```
 
 Die branchenneutrale Marke bleibt fuer V2 archiviert:
@@ -951,8 +967,8 @@ Standard:
 
 ```text
 2× Punkte
-30 Tage
-+30 Tage pro erfolgreichem Freund
+Default 14 Tage
+Referrer volle Dauer, Freund exakt halbe Dauer
 ```
 
 Aktivierung erst nach erster Punktebuchung des eingeladenen Freundes.
@@ -1956,8 +1972,10 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Ablauf-Erinnerungen: serverseitige Stufen 7/3/1/0 Tage, Darstellung im Startseiten-Drawer und freiwilliger Web Push. Drawer ist der vollständige Fallback.
 - Geburtstagsgeschenk: freiwilliger Tag/Monat, Abholung 3 Tage vor bis 7 Tage nach dem Geburtstag, serverseitige Zufallsauswahl aus dem freigegebenen aktiven Willkommensgeschenk-Pool, höchstens einmal pro Jahr.
 - Diese Geburtstagsregel ersetzt die automatische Auswahl 14 Tage vor dem Geburtstag.
-- Bonus Boost: beide Beteiligten erhalten nach der ersten gültigen Punktebuchung des geworbenen Neukunden 30 Tage lang exakt 2× Punkte.
-- Weitere erfolgreiche Empfehlungen verlängern den aktiven Boost des Empfehlenden jeweils um 30 Tage.
+- Bonus Boost: Nach der ersten gültigen Punktebuchung erhält der Referrer für
+  die volle, der Freund für exakt die halbe gespeicherte Restaurantdauer 2×.
+- Weitere erfolgreiche Empfehlungen verlängern den Referrer um die jeweils bei
+  Qualifikation gespeicherte volle Dauer; 2× bleibt die Obergrenze.
 - Keine Push-Nachricht, Auslosung oder Empfehlung darf die bestehende serverseitige Punkte- oder Einlösesicherheit umgehen.
 
 ## CTO-Entscheidung 2026-07-24: Legal-Compliance-Layer
@@ -1991,7 +2009,10 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 
 🟢 **FIX / V1**
 
-- Der Freundschaftsbonus bleibt exakt 2×; Standarddauer bleibt 30 Tage.
+- Der Freundschaftsbonus bleibt exakt 2×; Standarddauer ist 14 Tage.
+- Owner-Auswahl: 7, 14, 28 oder ein eigener Wert von 1 bis 365 Tagen.
+- Der Referrer erhält 100 Prozent, der eingeladene Freund exakt 50 Prozent der
+  bei Qualifikation gespeicherten Dauer.
 - Owner/Admin dürfen pro Restaurant 1 bis 365 ganze Tage konfigurieren.
 - Manager, Mitarbeiter und Kunden dürfen diese Einstellung nicht ändern.
 - Die gespeicherte Dauer wird erst bei einer neuen erfolgreichen Empfehlungsqualifizierung verwendet.
@@ -2047,7 +2068,7 @@ Promotionflächen ausschließlich für dieses eng begrenzte Informationsmodul.
 
 🟢 **LOCKED / V1 / DRAFT_LEGAL_REVIEW_REQUIRED**
 
-- `Mein WUXUAI` verbindet serverseitig validierte restaurantbezogene
+- `Meine Vorteile` verbindet serverseitig validierte restaurantbezogene
   Memberships, ohne Punkte restaurantübergreifend zu summieren.
 - Der QR bleibt für Beitritt und Vor-Ort-Kontext; bestehende Memberships dürfen
   ohne erneuten Scan geöffnet werden.

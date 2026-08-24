@@ -11,7 +11,7 @@ export function PublicHome() {
     <PublicPageShell
       description="Ein Login für Restaurants. Ein QR für Gäste."
       eyebrow="WUXUAI Bonus"
-      title="Restaurant Bonus einfach starten."
+      title="Bonusprogramm einfach starten."
       width="entry"
     >
       <div className="public-premium-entry-grid">

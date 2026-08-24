@@ -80,7 +80,9 @@ test("Registrierung nutzt ausschließlich Legal-Wrapper und getrennte Opt-ins", 
   assert.match(customerPortal, /termsAccepted: form\.termsAccepted/);
   assert.match(customerPortal, /marketingPush: form\.marketingPush/);
   assert.match(customerPortal, /Freiwillige Einwilligungen/);
-  assert.match(referralLanding, /termsAccepted: form\.termsAccepted/);
+  assert.match(referralLanding, /joinCustomerReferral\(\{/);
+  assert.match(referralLanding, /termsAccepted,/);
+  assert.match(referralLanding, /privacyAcknowledged,/);
 });
 
 test("Migration blockiert Registrierung ohne Pflichtannahme serverseitig", () => {
@@ -211,8 +213,8 @@ test("Legal-Fehler bleibt vom Bonusportal getrennt und blockiert nur Registrieru
   assert.match(customerPortal, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
   assert.match(customerPortal, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
   assert.match(customerPortal, /reloadLegalCenter/);
-  assert.match(referralLanding, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
-  assert.match(referralLanding, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
+  assert.match(referralLanding, /const legalReady = legalCenterState\.status === "ready"/);
+  assert.match(referralLanding, /disabled=\{!legalReady \|\| !termsAccepted \|\| !privacyAcknowledged \|\| submitting\}/);
   assert.match(legalCenter, /data\.missing_configuration/);
 });
 

@@ -5,6 +5,17 @@
 Dieses Dokument definiert die verbindlichen Produktregeln für WUXUAI
 Bonus V1.
 
+## Current Lock 2026-08-24
+
+- Produktname: **WUXUAI Bonus**; Kundenbereich: **Meine Vorteile**.
+- Kundenidentität: Supabase Auth mit E-Mail, Passwortbestätigung und
+  E-Mail-Bestätigung; aktive Registrierung nur über die Legal-RPCs.
+- Einlösung: serverzeitgebundene 15-Minuten-Präsentation, keine sechsstellige
+  Codeprüfung als normaler Staff-Flow.
+- Freundschaftsbonus: fest 2x; Default 14 Tage; 7/14/28/Custom; Referrer 100
+  Prozent, Freund exakt 50 Prozent der gespeicherten Dauer.
+- Bei Widerspruch gilt `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+
 ## Produktprinzipien
 
 -   Onboarding = Installationsassistent, kein Administrationsformular.
@@ -97,10 +108,10 @@ Status: LOCK
 - Storno einer Punktebelohnung ist nur für Owner oder Support mit Begründung,
   Audit, Journal und atomarer Rückbuchung zulässig.
 
-## LOCK-Ergänzung 2026-08-04: Mein WUXUAI und Angebots-E-Mails
+## LOCK-Ergänzung 2026-08-04: Meine Vorteile und Angebots-E-Mails
 
 - Nach einem serverseitig validierten ersten Restaurantbeitritt darf der Kunde
-  bestehende Memberships im zentralen Bereich `Mein WUXUAI` erneut öffnen.
+  bestehende Memberships im zentralen Bereich `Meine Vorteile` erneut öffnen.
 - Punkte, Rewards, Geschenke und Besuche bleiben strikt restaurantbezogen und
   werden nicht summiert.
 - Der Restaurant-QR bleibt für ersten Beitritt und Vor-Ort-Kontext erhalten.

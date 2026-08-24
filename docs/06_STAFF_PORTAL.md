@@ -1,5 +1,12 @@
 # 06_STAFF_PORTAL.md
 
+## Current Lock 2026-08-24
+
+QR-Scan ist die primäre Staff-Aktion. Die Bottom Navigation lautet Start, QR,
+Tages-PIN, Suchen und Mehr. Die normale Einlösung ist eine serverzeitgebundene
+15-Minuten-Präsentation; eine sechsstellige Codeprüfung ist kein aktiver
+Primärflow. Ältere widersprechende Abschnitte sind nur Legacy-Historie.
+
 ## Punktevergabe ab 31.07.2026
 
 Die frühere Regel „keine Punktevergabe im Staff Portal“ ist **partially superseded**. Wenn der Owner `restaurant_controlled_only` oder `both` aktiviert, scannt das Team den kurzlebigen Kunden-QR, erfasst den bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Der Browser übermittelt keine vertrauenswürdige Punktezahl; Vorschau und Buchung kommen aus getrennten Server-RPCs.
@@ -70,7 +77,7 @@ Das Kundenportal ist für Gäste.
 
 Gäste können dort:
 
-- Mein Bonus öffnen
+- Meine Vorteile öffnen
 - QR zeigen
 - Punkte sehen
 - Bonus Boost sehen
@@ -148,7 +155,7 @@ Kellner-PIN auf dem Kundenhandy.
 
 Ablauf:
 
-1. Gast öffnet „Mein Bonus“.
+1. Gast öffnet „Meine Vorteile“.
 2. Gast öffnet eine freigeschaltete Belohnung.
 3. Gast bestätigt final:
 

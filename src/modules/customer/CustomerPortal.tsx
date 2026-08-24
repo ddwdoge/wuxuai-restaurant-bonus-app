@@ -62,6 +62,11 @@ import {
   type CustomerPointsQr,
 } from "../loyalty/loyaltyService";
 import {
+  formatInvitedReferralDuration,
+  normalizeReferralBonusDuration,
+  referralBonusMultiplier as finalReferralBonusMultiplier,
+} from "../loyalty/referralBonusSettings.mjs";
+import {
   emitCustomerAccessDiagnostic,
   isPermanentCustomerAccessError,
   readStoredCustomerToken,
@@ -585,10 +590,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
-  const referralBoostMultiplier = Number(settings?.referral_boost_multiplier) || 2;
-  const referralBoostDurationDays = Number(settings?.referral_boost_duration_days) || 30;
+  const referralBoostMultiplier = finalReferralBonusMultiplier;
+  const referralBoostDurationDays = normalizeReferralBonusDuration(settings?.referral_boost_duration_days);
+  const invitedReferralDurationLabel = formatInvitedReferralDuration(referralBoostDurationDays);
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
+  const activeBoostIsInvitedFriend = activeBoost?.beneficiary_role === "invited_friend";
   const activePointMultiplier = activeBoost?.multiplier ?? 1;
   const boostRemainingLabel = activeBoost ? formatBoostRemaining(activeBoost.active_until, activeBoost.remaining_days, nowMs) : null;
   const boostEndsAtMs = activeBoost ? new Date(activeBoost.active_until).getTime() : 0;
@@ -615,7 +622,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     "Bonus Boost",
     activeBoost
       ? `Wenn dein Bonus Boost aktiv ist, sammelst du für begrenzte Zeit doppelte Punkte.`
-      : `Lade einen Freund ein. Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`,
+      : `Lade einen Freund ein. Du erhältst ${referralBoostDurationDays} Tage und dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`,
     activeBoost
       ? `Normal: 50 Punkte. Mit Bonus Boost: ${Math.round(50 * activeBoost.multiplier)} Punkte.`
       : `Normal: 50 Punkte. Mit Bonus Boost: ${Math.round(50 * referralBoostMultiplier)} Punkte.`,
@@ -625,7 +632,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
     isBonusCollection
       ? `Bitte Mitarbeiter um die Tages-PIN. Pro Rechnung ist eine Punktebuchung möglich.`
       : activeBoost
-        ? `Bonus Boost ist aktiv: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Lade Freunde ein und verlängere um ${referralBoostDurationDays} Tage.`
+        ? activeBoostIsInvitedFriend
+          ? `Willkommen: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Wenn du später selbst einen Freund einlädst, erhältst du den vollen Bonuszeitraum.`
+          : `Bonus Boost ist aktiv: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Jede weitere erfolgreiche Einladung verlängert um ${referralBoostDurationDays} Tage.`
       : referralBoostEnabled
         ? `Bonus Boost startet erst, wenn dein eingeladener Freund erstmals Punkte sammelt: ${referralBoostMultiplier}× Punkte für ${referralBoostDurationDays} Tage.`
       : pointRedemptions.some((offer) => offer.status === "unlocked")
@@ -1346,7 +1355,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
         {!customer && guestStep === "welcome" && !activeToken && !isBonusCollection ? (
           <article className="customer-hero-card">
-            <span className="pill">Mein Bonus</span>
+            <span className="pill">Meine Vorteile</span>
             <h2>Du bist auf diesem Gerät noch nicht angemeldet.</h2>
             <p className="muted">
               Wenn du bereits Mitglied bist, öffne deinen persönlichen Bonus-Link. Du kannst sonst neu beitreten.
@@ -1360,7 +1369,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
         {!customer && guestStep === "welcome" && (activeToken || isBonusCollection) ? (
           <article className="customer-hero-card">
-            <span className="pill">Mein Bonus</span>
+            <span className="pill">Meine Vorteile</span>
             <h2>{isBonusCollection ? `Willkommen bei ${restaurant.name}` : "Willkommen"}</h2>
             <p className="muted">{reasonToJoin}</p>
             <button className="button customer-primary-button" onClick={() => setGuestStep("register")} type="button">
@@ -1501,7 +1510,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             </div>
             <div className="grid two">
               <button className="button customer-primary-button" onClick={openMemberHome} type="button">
-                Mein Bonus öffnen
+                Meine Vorteile öffnen
               </button>
               <button className="button secondary" onClick={copyPortalLink} type="button">
                 Link kopieren
@@ -1734,7 +1743,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             {activeView === "home" ? (
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
-                  <span>Mein Bonus bei {restaurant.name}</span>
+                  <span>Meine Vorteile bei {restaurant.name}</span>
                   <h1 id="customer-home-title">Hallo {customer.name.split(" ")[0]},</h1>
                   <p>schön, dass du wieder da bist. Hier siehst du deine Punkte und Vorteile.</p>
                 </div>
@@ -1825,7 +1834,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
                 <Link className="premium-restaurant-finder-link" to="/customer">
                   <span><UserRound aria-hidden="true" size={22} /></span>
-                  <div><strong>Mein WUXUAI</strong><small>Alle deine Lokale und Punkte getrennt im Überblick</small></div>
+                  <div><strong>Meine Vorteile</strong><small>Alle deine Lokale und Punkte getrennt im Überblick</small></div>
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 
@@ -1892,7 +1901,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     <span><Flame aria-hidden="true" size={22} /></span>
                     <div>
                       <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
-                      <h2>{activeBoost ? `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
+                      <h2>{activeBoost ? activeBoostIsInvitedFriend ? "Willkommen – 2× Punkte aktiv" : `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
                     </div>
                   </div>
                   <p>
@@ -1900,7 +1909,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       ? activeBoost.multiplier === 2
                         ? "Du sammelst aktuell doppelte Punkte."
                         : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
-                      : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte.`}
+                      : `Du erhältst ${referralBoostDurationDays} Tage, dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte.`}
                   </p>
                   <div className="premium-boost-meta">
                     <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>

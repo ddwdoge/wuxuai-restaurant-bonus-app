@@ -4,6 +4,33 @@
 
 Status: **LOCK**
 
+## Loop 3A - Restaurant Control Center Backendvertrag
+
+Der read-only Vertrag `get_platform_restaurant_control_center` bündelt
+Restaurant-, Abo-, Nutzungs-, Referral-, Einlösungs- und Systemzustände für
+genau ein Restaurant. Er ist ausschließlich über die autoritative
+`platform_admins`-Rolle erreichbar. Reale Nullwerte, fehlende Telemetrie und
+RPC-Fehler bleiben unterscheidbar; die bestehende Detailoberfläche wird erst in
+einem späteren Loop auf diesen Vertrag umgestellt.
+
+Die Migration `20260824005000_platform_admin_restaurant_control_center.sql`
+folgt chronologisch auf die noch offene Referral-Bridge `04000` und ist nicht
+auf Staging angewendet.
+
+## Current Lock 2026-08-24 - Platform Admin Foundation
+
+- Die bestehenden Routen `/admin/platform` und `/platform-admin` verwenden
+  denselben geschuetzten Plattformbereich; es entsteht kein paralleles System.
+- Interne Rollen stammen ausschliesslich aus aktiven Eintraegen in
+  `platform_admins`. Restaurant-Ownership, Staff- oder Customer-Rollen verleihen
+  keinen Plattformzugriff.
+- Der Browser fragt nur `get_current_platform_role` ab. Globale Daten laufen
+  ueber eng begrenzte `SECURITY DEFINER`-RPCs mit serverseitiger Rollenpruefung.
+- Direkte Browserrechte auf `platform_admins` sind entzogen. Eine Service Role
+  wird nicht an den Browser ausgeliefert.
+- Die bestehende Restaurantverwaltung und das Audit bleiben erhalten; Loop 1
+  baut kein neues vollstaendiges Dashboard.
+
 Dieses Dokument beschreibt das **WUXUAI Admin Portal** als interne
 Verwaltungsoberfläche für den Betreiber der SaaS-Plattform.\
 Das WUXUAI Admin Portal ist **nicht** das Restaurant Portal, **nicht**

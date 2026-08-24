@@ -1,6 +1,31 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## Platform Admin Foundation
+
+`platform_admins` ist die einzige Laufzeitautoritaet fuer interne
+Plattformrollen. Die Tabelle ist an `auth.users` gebunden, verlangt einen aktiven
+Eintrag, besitzt RLS und hat keine direkten Browserrechte. Restaurantrollen und
+Restaurant-Ownership werden bei der Plattformautorisierung nicht ausgewertet.
+Der Client erhaelt nur die eigene verifizierte Rolle ueber
+`get_current_platform_role`; globale Plattformdaten bleiben hinter dedizierten
+serverseitig autorisierten RPCs.
+
+Der additive Control-Center-Vertrag `05000` verwendet die bestehenden
+autoritativen Tabellen und erzeugt keine parallele Analytics-Datenhaltung.
+Tageswerte folgen der Restaurant-Zeitzone, 30-Tage-Werte sind rollierend und
+Testkunden beziehungsweise Testevents werden ausgeschlossen. Nicht
+restaurantbezogene Cron- und Geocoding-Telemetrie wird als `unavailable`
+ausgegeben.
+
+## Current Lock 2026-08-24 - Freundschaftsbonus
+
+Neue Restaurants verwenden 14 Tage. Qualifizierte Referrer erhalten die volle,
+eingeladene Freunde exakt die halbe gespeicherte Dauer; 2x ist die Obergrenze.
+Grants sind pro Referral, Kunde und Rolle idempotent. Historische Booster werden
+nicht umgeschrieben. Die Forward-Migration ist
+`20260824001000_v1_referral_owner_duration_split.sql`.
+
 ## V1 Aktuelles & Angebote
 
 `restaurant_offers` ist ein eigenstaendiges restaurantbezogenes
@@ -889,7 +914,8 @@ Regeln:
 
 - Multiplikator stapelt nicht.
 - Weitere erfolgreiche Freunde verlängern Dauer.
-- Standard: 2×, 30 Tage, +30 Tage pro Freund.
+- Standard: 2× und 14 Tage. Referrer erhalten die volle, Freunde exakt die
+  halbe gespeicherte Dauer; weitere Referrals verlängern nur die Laufzeit.
 - Punkteberechnung nutzt aktiven Boost.
 
 ---

@@ -1,6 +1,31 @@
 
 # 23_API_RPC_REGELN.md
 
+## Platform Admin Foundation
+
+Plattformrollen werden ausschliesslich serverseitig ueber
+`get_current_platform_role` aus aktiven `platform_admins`-Eintraegen aufgeloest.
+Der Browser darf die Rollentabelle nicht direkt lesen oder veraendern. Globale
+Restaurantdaten laufen ueber `get_platform_restaurants`,
+`get_platform_restaurant_detail` und eng begrenzte Schreib-RPCs. Jede RPC prueft
+die Plattformrolle erneut; eine Client-Route allein ist nie Autoritaet.
+
+`get_platform_restaurant_control_center(input_restaurant_id)` ist ein
+read-only Aggregationsvertrag. Jeder Messwert trägt einen Verfügbarkeitszustand,
+sodass `0`, `unavailable` und ein fehlgeschlagener RPC nicht vermischt werden.
+Der RPC liefert keine Kundenlisten, PINs, Token, SMTP-Inhalte oder rohe
+Audit-Metadaten.
+
+## Current Lock 2026-08-24
+
+- Aktive Customer-Registrierung ruft nur
+  `register_restaurant_customer_legal` beziehungsweise
+  `register_referral_customer_legal` auf.
+- Neue Einlösungen verwenden die serverzeitgebundene 15-Minuten-Präsentation;
+  Legacy-Code-RPCs sind kein aktiver Primärvertrag.
+- Referral-Grants sind serverseitig pro Referral, Kunde und Rolle idempotent;
+  die halbe Freundesdauer wird zeitgenau gespeichert.
+
 ## RPC-Gruppe Aktuelles & Angebote
 
 Owner-RPCs pruefen `auth.uid()`, Adminrolle, `restaurant_id` und gegebenenfalls

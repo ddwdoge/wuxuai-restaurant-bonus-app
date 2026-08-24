@@ -39,9 +39,10 @@ test("Punkte sammeln und Einlösung behalten vorhandene Service-Aufrufe", () => 
   assert.match(portal, /Vierstellige Tages-PIN/);
 });
 
-test("Info und Einlösung verwenden den gemeinsamen barrierefreien Drawer", () => {
+test("Info und Einlösung verwenden den gemeinsamen barrierefreien Drawer, Referral bleibt eine fokussierte Landingpage", () => {
   assert.match(portal, /<AppDrawer/);
-  assert.match(referral, /<AppDrawer/);
+  assert.match(referral, /referral-invite-card/);
+  assert.match(referral, /Kundenkonto erstellen/);
   assert.match(portal, /redemptionDrawerOpen/);
 });
 

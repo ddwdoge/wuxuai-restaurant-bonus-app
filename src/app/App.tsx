@@ -12,6 +12,7 @@ import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundar
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
 import { useAuth } from "../modules/auth/AuthProvider";
+import { PLATFORM_ADMIN_ROLES } from "../modules/platform/platformAdminAuthorization.mjs";
 import {
   customerPortalInstanceKey,
   readCustomerScanContext,
@@ -213,17 +214,7 @@ export function App() {
         path="/admin/platform"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "platform_owner",
-              "platform_admin",
-              "app_admin",
-              "super_admin",
-              "wuxuai_admin",
-              "support",
-              "billing_admin",
-              "security_admin",
-              "viewer",
-            ]}
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -234,7 +225,7 @@ export function App() {
         path="/admin/platform/audit"
         element={
           <ProtectedRoute
-            allowedRoles={["platform_owner", "platform_admin", "app_admin", "super_admin", "wuxuai_admin", "support", "security_admin", "viewer"]}
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
             roleScope="platform"
           >
             {withFallback(<PlatformAuditPage />, <PlatformLoading />)}
@@ -245,17 +236,7 @@ export function App() {
         path="/admin/platform/restaurants/:restaurantId"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "platform_owner",
-              "platform_admin",
-              "app_admin",
-              "super_admin",
-              "wuxuai_admin",
-              "support",
-              "billing_admin",
-              "security_admin",
-              "viewer",
-            ]}
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -266,17 +247,7 @@ export function App() {
         path="/platform-admin"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "platform_owner",
-              "platform_admin",
-              "app_admin",
-              "super_admin",
-              "wuxuai_admin",
-              "support",
-              "billing_admin",
-              "security_admin",
-              "viewer",
-            ]}
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -287,17 +258,7 @@ export function App() {
         path="/platform-admin/restaurants"
         element={
           <ProtectedRoute
-            allowedRoles={[
-              "platform_owner",
-              "platform_admin",
-              "app_admin",
-              "super_admin",
-              "wuxuai_admin",
-              "support",
-              "billing_admin",
-              "security_admin",
-              "viewer",
-            ]}
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}

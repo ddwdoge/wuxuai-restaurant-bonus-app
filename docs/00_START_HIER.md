@@ -27,12 +27,12 @@ Wenn Codex, ein Entwickler oder ein späteres Teammitglied eine Entscheidung tre
 
 ### 2.1 Offizieller Produktname fuer V1
 
-**WUXUAI Restaurant Bonus**
+**WUXUAI Bonus**
 
-`WUXUAI Bonus` bleibt als archivierte branchenneutrale V2-Richtung erhalten.
-Bezeichnungen wie `Restaurant Growth OS` oder `Restaurant Bonus OS` duerfen in
-internen technischen Legacy-Namen vorkommen, sind aber nicht die sichtbare
-V1-Produktpositionierung.
+Der zentrale Kundenbereich heißt sichtbar **Meine Vorteile**. Frühere
+Produktnamen dürfen nur in unveränderbaren technischen Legacy-Namen,
+historischen Migrationen und archivierten Berichten vorkommen. Der aktuelle
+Vertrag steht in `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
 
 ### 2.2 V1 Marktfokus
 
@@ -189,7 +189,7 @@ Für Gäste.
 Aufgaben:
 
 - Mitglied werden
-- Mein Bonus ansehen
+- Meine Vorteile ansehen
 - Punkte sehen
 - Belohnungen sehen
 - Bonus Boost sehen
@@ -459,7 +459,7 @@ Einzelne QR-Downloads, Sticker, Flyer und weitere Druckoptionen gehören später
 Das Starter Kit enthält:
 
 - Restaurant QR für neue Gäste
-- Mein Bonus QR für Punkte sammeln
+- QR für Meine Vorteile zum Punkte sammeln
 - Kassen-Aufsteller
 - Eingangs-Aufsteller
 - dezenter Footer „Powered by WUXUAI Bonus • www.wuxuaisbi.com“

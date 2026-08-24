@@ -6,7 +6,11 @@ import {
   CUSTOMER_ACCESS_FAILURE_REASONS,
   customerAccessFailureReason,
 } from "../customer/customerAccessErrors.mjs";
-import { isValidReferralBonusDuration } from "./referralBonusSettings.mjs";
+import {
+  isValidReferralBonusDuration,
+  referralBonusDefaultDurationDays,
+  referralBonusMultiplier,
+} from "./referralBonusSettings.mjs";
 
 export const loyaltyModeLabels: Record<LoyaltyMode, string> = {
   amount_based: "Betragsbasiert",
@@ -84,8 +88,8 @@ export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode):
     smart_upsell_enabled: true,
     smart_upsell_threshold: 5,
     referral_boost_enabled: true,
-    referral_boost_multiplier: 2,
-    referral_boost_duration_days: 30,
+    referral_boost_multiplier: referralBonusMultiplier,
+    referral_boost_duration_days: referralBonusDefaultDurationDays,
     points_collection_mode: "restaurant_controlled_only",
     points_collection_max_amount_cents: 30000,
     active: true,
@@ -345,6 +349,8 @@ export type PublicPortalCustomer = Pick<
     active_from?: string;
     active_until: string;
     remaining_days: number;
+    beneficiary_role?: "referrer" | "invited_friend";
+    granted_duration_seconds?: number;
   } | null;
 };
 
@@ -588,7 +594,7 @@ export type PublicReferralData = {
   restaurant: Pick<Restaurant, "name" | "slug" | "status">;
   branding: Pick<RestaurantBranding, "logo_url" | "primary_color" | "secondary_color" | "button_color" | "font_family">;
   referrer: {
-    first_name: string;
+    first_name: string | null;
   };
   settings: Pick<PublicLoyaltySettings, "referral_boost_enabled" | "referral_boost_multiplier" | "referral_boost_duration_days">;
 };
@@ -718,8 +724,34 @@ export async function loadCustomerPortalData(
     }));
   });
 
+  let referralBoostContext: {
+    beneficiary_role: "referrer" | "invited_friend";
+    granted_duration_seconds: number;
+  } | null = null;
+
+  if (portalData.customer?.bonus_boost && customerToken) {
+    const { data: contextData, error: contextError } = await supabase.rpc(
+      "get_public_customer_referral_boost_context",
+      {
+        input_restaurant_slug: restaurantSlug,
+        input_customer_token: customerToken,
+      },
+    );
+    if (!contextError) {
+      referralBoostContext = contextData as typeof referralBoostContext;
+    }
+  }
+
   return {
     ...portalData,
+    customer: portalData.customer
+      ? {
+        ...portalData.customer,
+        bonus_boost: portalData.customer.bonus_boost
+          ? { ...portalData.customer.bonus_boost, ...(referralBoostContext ?? {}) }
+          : null,
+      }
+      : null,
     offers: [
       ...portalData.offers.filter((offer) => !offer.is_starter_reward),
       ...expandedStarterOffers,

@@ -1,6 +1,14 @@
 
 # 09_FLOW_02_GAST_WERDEN.md
 
+## Current Lock 2026-08-24
+
+Der aktive Flow verwendet Supabase Auth mit E-Mail, Passwortbestätigung,
+E-Mail-Bestätigung und den restaurantgebundenen Legal-RPCs. Der sichtbare
+Kundenbereich heißt **Meine Vorteile**. Referral registriert allein noch nicht;
+erst die erste gültige Punktebuchung qualifiziert. Ältere token-only- oder
+Legacy-RPC-Angaben sind superseded.
+
 # WUXUAI Bonus V1 – Flow 02: Gast werden
 
 Status: **LOCK**
@@ -36,7 +44,7 @@ QR scannen
 → Beitritt ausdrücklich bestätigen
 → Mitglied werden
 → persönlichen QR sehen
-→ Mein Bonus öffnen
+→ Meine Vorteile öffnen
 ```
 
 ---
@@ -260,7 +268,7 @@ Der Gast sieht:
 Du bist jetzt Mitglied.
 
 [Mein QR anzeigen]
-[Mein Bonus öffnen]
+[Meine Vorteile öffnen]
 ```
 
 Der persönliche QR ist sofort verfügbar.
@@ -410,6 +418,21 @@ Ein Gast darf niemals gleichzeitig erhalten:
 - Bonus Boost als eingeladener Freund
 
 Freunde-Einladung hat immer Vorrang.
+
+### 9.4 Kanonischer Einladungs- und Registrierungsweg
+
+Die Referral-Landingpage besitzt kein eigenes Identitaetsformular. Sie zeigt
+zuerst Einlader, Restaurant und den zeitlich korrekten Vorteil und fuehrt dann
+in den zentralen Customer-Auth-Flow mit E-Mail, Passwort und
+Passwortbestaetigung. Der streng validierte Referral-Rueckweg wird in den
+Supabase-Auth-Metadaten erhalten und nach der E-Mail-Bestaetigung erneut
+serverseitig gegen Restaurant und Token geprueft.
+
+Erst die restaurantbezogene Pflichtannahme verknuepft Customer-Row,
+Referral `pending_registered` und zentrale Membership in einer Transaktion.
+Weder Linkaufruf noch Kontoerstellung, E-Mail-Bestaetigung oder Beitritt
+aktivieren den Boost. Die Aktivierung bleibt ausschliesslich Aufgabe der ersten
+gueltigen serverseitigen Punktebuchung.
 
 ---
 
@@ -633,7 +656,7 @@ Der Gast sieht:
 
 ```text
 Lade einen Freund ein
-+30 Tage Bonus Boost
+2× Bonus für die gespeicherte Restaurantdauer
 ```
 
 ### 16.3 Kein versteckter Bonus
@@ -865,4 +888,5 @@ Endstatus: **LOCK**
 - Die bisherige automatische Zuteilung 14 Tage vor dem Geburtstag ist ersetzt: Der Gast löst im gültigen Zeitraum selbst einmalig die serverseitige Auslosung aus.
 - Die gespeicherte Auswahl bleibt bei Reload und erneutem Drücken identisch.
 - Eine Empfehlung gilt erst nach der ersten gültigen Punktebuchung des neuen Restaurantkunden als qualifiziert.
-- Erst dann erhalten der empfehlende und der geworbene Gast jeweils 30 Tage lang 2× Punkte.
+- Erst dann erhält der empfehlende Gast für die volle und der geworbene Gast
+  für exakt die halbe gespeicherte Restaurantdauer 2× Punkte.

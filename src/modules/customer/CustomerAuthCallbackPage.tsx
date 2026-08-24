@@ -9,7 +9,8 @@ import {
 } from "../auth/emailConfirmationService";
 import { readEmailConfirmationPayload } from "../auth/emailConfirmationFlow.mjs";
 import { AppShell, PremiumCard, PrimaryButton } from "./components/PremiumCustomerUi";
-import { customerAuthReturnStorageKey, safeCustomerReturnPath } from "./CustomerAuthPage";
+import { customerAuthReturnStorageKey } from "./CustomerAuthPage";
+import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import "./central-customer.css";
 
 const RESEND_COOLDOWN_SECONDS = 60;

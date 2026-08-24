@@ -1,6 +1,28 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## Platform Admin Isolation
+
+- Plattformzugriff folgt nicht aus Restaurant-Ownership oder Membership.
+- Nur aktive interne Eintraege in `platform_admins` sind autoritativ.
+- Anon, Customer, Staff und Owner erhalten keine Plattformrolle.
+- Direkte Tabellenrechte auf die interne Rollentabelle sind fuer Browserrollen
+  entzogen; RLS bleibt zusaetzlich aktiv.
+- Plattform-RPCs verwenden feste `search_path`-Werte und pruefen die Rolle
+  serverseitig.
+- Die Browseranwendung enthaelt keine Service-Role-Zugangsdaten.
+- Der Restaurant-Control-Center-RPC prüft dieselbe serverseitige Rollenquelle,
+  besitzt einen festen `search_path` und gibt standardmäßig nur Aggregate sowie
+  begrenzte, bereinigte Auditfelder zurück.
+
+## Current Lock 2026-08-24
+
+Customer Auth, Restaurantmitgliedschaft und aktive Legal-RPCs bleiben die
+Identitäts- und Tenant-Autorität. Neue Einlösungen nutzen die 15-Minuten-
+Präsentation. Referral-Grants sind tenantgebunden, atomar und idempotent; weder
+Referral-Token noch Auth-, PIN- oder Customer-Token werden geloggt. Ältere
+widersprechende Code- und token-only-Regeln sind superseded.
+
 ## Aktuelles & Angebote
 
 Angebote sind oeffentliche Restaurantinformationen, keine Bonus- oder

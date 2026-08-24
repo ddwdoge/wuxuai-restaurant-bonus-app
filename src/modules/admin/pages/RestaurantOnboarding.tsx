@@ -1891,7 +1891,7 @@ export function RestaurantOnboarding() {
                     </span>
                     <div className="restaurant-brand-copy">
                       <h3 className="restaurant-brand-title">{form.restaurantName || "Dein Restaurant"}</h3>
-                      <p className="restaurant-brand-subtitle">Mein Bonus</p>
+                      <p className="restaurant-brand-subtitle">Meine Vorteile</p>
                     </div>
                   </div>
                   <div className="bonus-preview-card" style={{ background: bonusCardColor, borderColor: form.secondaryColor }}>
@@ -2128,7 +2128,7 @@ export function RestaurantOnboarding() {
                   id="bonus-qr"
                   logoUrl={visibleLogoUrl}
                   restaurantName={form.restaurantName}
-                  subtitle="Mein Bonus"
+                  subtitle="Meine Vorteile"
                   title="Bonuspunkte sammeln"
                   url={bonusQrUrl}
                 />

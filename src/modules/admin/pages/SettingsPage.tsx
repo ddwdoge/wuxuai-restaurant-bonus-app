@@ -1021,7 +1021,7 @@ export function SettingsPage() {
                 ) : trialExpired ? (
                   <p>Nach der Testphase kannst du dein Monatsabo aktivieren.</p>
                 ) : (
-                  <p>Plan: Restaurant Bonus</p>
+                  <p>Plan: WUXUAI Bonus</p>
                 )}
               </div>
               <div className="settings-meta-grid">

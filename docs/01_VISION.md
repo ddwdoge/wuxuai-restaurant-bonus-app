@@ -6,6 +6,16 @@ Zweck: Produktvision, Grundphilosophie, strategische Richtung und Entscheidungsr
 Sprache: Deutsch für V1.  
 Geltung: Diese Datei gilt für Produkt, UX, Codex, Architektur, Business und spätere Weiterentwicklung.
 
+## Current Lock 2026-08-24
+
+- Sichtbarer Produktname: **WUXUAI Bonus**.
+- Der Kundenbereich heißt **Meine Vorteile**.
+- Freundschaftsbonus: 2x, Default 14 Tage, Owner-Auswahl 7/14/28/Custom;
+  einladender Gast erhält 100 Prozent, eingeladener Freund exakt 50 Prozent der
+  bei Qualifikation gespeicherten Dauer.
+- Widersprechende ältere Aussagen in diesem Dokument sind historisch und durch
+  `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` ersetzt.
+
 ---
 
 ## 1. Warum WUXUAI Bonus existiert
@@ -272,7 +282,7 @@ Deshalb muss die Architektur langfristig geschäftsneutral bleiben, auch wenn V1
 
 ## 9. Produktname in V1 und V2
 
-V1 wird bewusst als **WUXUAI Restaurant Bonus** verkauft und fuer Restaurants
+V1 wird bewusst als **WUXUAI Bonus** verkauft und fuer Restaurants
 und Cafes fertiggestellt.
 
 Der Produktkern ist nicht Restaurant.
@@ -665,7 +675,7 @@ Es enthält:
 
 - Anleitung für Restaurantbesitzer
 - Restaurant QR
-- Mein Bonus QR
+- Meine-Vorteile-QR
 - Kassen-Aufsteller
 - Eingangs-Aufsteller
 
@@ -763,7 +773,7 @@ Für Gäste.
 Aufgaben:
 
 - Mitglied werden
-- Mein Bonus sehen
+- Meine Vorteile sehen
 - QR anzeigen
 - Punkte sehen
 - Belohnungen sehen

@@ -1,5 +1,12 @@
 # 04_RESTAURANT_PORTAL.md
 
+## Current Lock 2026-08-24
+
+Das Owner-Portal verwendet den sichtbaren Produktnamen **WUXUAI Bonus**. Der
+Freundschaftsbonus bietet 7, 14, 28 oder einen eigenen Wert von 1 bis 365 Tagen;
+2x ist fest. Der Referrer erhält die volle, der Freund exakt die halbe Dauer.
+Ältere widersprechende Referral- oder Branding-Angaben sind superseded.
+
 ## Dynamischer Dashboard-Schritt
 
 Das Dashboard zeigt oberhalb der Kennzahlen maximal einen priorisierten
@@ -89,7 +96,7 @@ Session - schnelle Aktionen ohne Admin-Komplexität
 
 Für Gäste.
 
-Beispiele: - Mein Bonus - Punkte - Punkteeinlösungen - Bonus Boost - QR zeigen
+Beispiele: - Meine Vorteile - Punkte - Punkteeinlösungen - Bonus Boost - QR zeigen
 
 ------------------------------------------------------------------------
 
@@ -417,7 +424,7 @@ Keine Einzel-Downloads. Keine SVG. Keine erweiterten Optionen.
 ### 8.2 Nach Onboarding
 
 Im QR Center dürfen später Einzeldateien angeboten werden: - Restaurant
-QR PNG - Mein Bonus QR PNG - PDF - Sticker - Aufsteller - Tischkarte -
+QR PNG - Meine-Vorteile-QR PNG - PDF - Sticker - Aufsteller - Tischkarte -
 Fensteraufkleber
 
 ### 8.3 Zweck

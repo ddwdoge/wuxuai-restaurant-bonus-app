@@ -13,6 +13,7 @@ import {
   type SubscriptionStatus,
 } from "./platformAdminService";
 import { useAuth } from "../auth/AuthProvider";
+import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
@@ -143,13 +144,7 @@ export function PlatformAdminPage() {
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const canWrite =
-    platformRole === "platform_owner" ||
-    platformRole === "platform_admin" ||
-    platformRole === "app_admin" ||
-    platformRole === "super_admin" ||
-    platformRole === "wuxuai_admin" ||
-    platformRole === "billing_admin";
+  const canWrite = canWritePlatformAdmin(platformRole);
 
   async function loadData(preferredId = selectedRestaurantId) {
     setLoading(true);

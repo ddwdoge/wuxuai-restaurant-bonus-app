@@ -162,7 +162,7 @@ V2 enthält später:
 - Wochenplan
 - POS-QR mit signierter Rechnung
 - Stripe-Automation
-- WUXUAI Admin Portal
+- vollstaendiges WUXUAI Admin Backoffice ausserhalb der freigegebenen sicheren V1-Basis
 - Mehrsprachigkeit
 - Smart Recommendation Engine
 - automatisierte oder personalisierte Promotionflächen

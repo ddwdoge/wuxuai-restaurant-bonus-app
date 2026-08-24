@@ -10,6 +10,7 @@ import {
   createInvalidRefreshSessionHandler,
 } from "./authSessionGuard.mjs";
 import { classifyOwnerAuthError, isOwnerEmailConfirmed, ownerAuthErrorMessage } from "./ownerAuthFlow.mjs";
+import { isPlatformAdminRole } from "../platform/platformAdminAuthorization.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -17,45 +18,26 @@ type AuthContextValue = {
   role: UserRole | null;
   restaurantRole: RestaurantUserRole | null;
   platformRole: PlatformRole | null;
+  restaurantAuthorizationError: boolean;
   loading: boolean;
   lastAuthEvent: AuthChangeEvent | null;
+  retryAuthorization: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const platformRoles: PlatformRole[] = [
-  "platform_owner",
-  "platform_admin",
-  "app_admin",
-  "super_admin",
-  "wuxuai_admin",
-  "support",
-  "billing_admin",
-  "security_admin",
-  "viewer",
-];
-const restaurantRoles: RestaurantUserRole[] = ["owner", "admin", "manager", "staff", "supervisor", "customer"];
 const restaurantRolePriority: RestaurantUserRole[] = ["owner", "admin", "manager"];
 
-function readAppMetadataRestaurantRole(user: User | null): RestaurantUserRole {
-  const metadataRole = user?.app_metadata?.role;
-  return typeof metadataRole === "string" && restaurantRoles.includes(metadataRole as RestaurantUserRole)
-    ? (metadataRole as RestaurantUserRole)
-    : "customer";
-}
+type RestaurantRoleResolution = {
+  role: RestaurantUserRole | null;
+  unavailable: boolean;
+};
 
-function readAppMetadataPlatformRole(user: User | null): PlatformRole | null {
-  const metadataRole = user?.app_metadata?.role;
-  return typeof metadataRole === "string" && platformRoles.includes(metadataRole as PlatformRole)
-    ? (metadataRole as PlatformRole)
-    : null;
-}
-
-async function readVerifiedRestaurantRole(user: User): Promise<RestaurantUserRole> {
+async function readVerifiedRestaurantRole(user: User): Promise<RestaurantRoleResolution> {
   if (!supabase) {
-    return "customer";
+    return { role: null, unavailable: true };
   }
 
   const { data, error } = await supabase
@@ -63,22 +45,25 @@ async function readVerifiedRestaurantRole(user: User): Promise<RestaurantUserRol
     .select("role")
     .eq("user_id", user.id);
 
-  if (!error && data?.length) {
-    const roles = data.map((membership) => membership.role as RestaurantUserRole);
-    return restaurantRolePriority.find((role) => roles.includes(role)) ?? "customer";
+  if (error) {
+    console.warn("Restaurantrolle konnte nicht geprüft werden.", error);
+    return { role: null, unavailable: true };
   }
 
-  return readAppMetadataRestaurantRole(user);
+  if (data?.length) {
+    const roles = data.map((membership) => membership.role as RestaurantUserRole);
+    return {
+      role: restaurantRolePriority.find((role) => roles.includes(role)) ?? "customer",
+      unavailable: false,
+    };
+  }
+
+  return { role: "customer", unavailable: false };
 }
 
-async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null> {
+async function readVerifiedPlatformRole(): Promise<PlatformRole | null> {
   if (!supabase) {
     return null;
-  }
-
-  const metadataRole = readAppMetadataPlatformRole(user);
-  if (metadataRole) {
-    return metadataRole;
   }
 
   const { data, error } = await supabase.rpc("get_current_platform_role");
@@ -87,7 +72,7 @@ async function readVerifiedPlatformRole(user: User): Promise<PlatformRole | null
     return null;
   }
 
-  return typeof data === "string" && platformRoles.includes(data as PlatformRole) ? (data as PlatformRole) : null;
+  return isPlatformAdminRole(data) ? data : null;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -103,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [roleLoading, setRoleLoading] = useState(Boolean(supabase && authSessionRequired));
   const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
+  const [restaurantAuthorizationError, setRestaurantAuthorizationError] = useState(false);
+  const [authorizationRevision, setAuthorizationRevision] = useState(0);
   const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   function clearAuthState() {
@@ -110,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setRestaurantRole(null);
     setPlatformRole(null);
+    setRestaurantAuthorizationError(false);
     setLastAuthEvent("SIGNED_OUT");
     setAuthLoading(false);
     setRoleLoading(false);
@@ -230,23 +218,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
         setRestaurantRole(null);
         setPlatformRole(null);
+        setRestaurantAuthorizationError(false);
         setRoleLoading(false);
         return;
       }
 
       setRoleLoading(true);
       try {
-        const [nextRestaurantRole, nextPlatformRole] = await Promise.all([
+        const [restaurantResolution, nextPlatformRole] = await Promise.all([
           readVerifiedRestaurantRole(user),
-          readVerifiedPlatformRole(user),
+          readVerifiedPlatformRole(),
         ]);
         if (!cancelled) {
-          setRestaurantRole(nextRestaurantRole);
+          setRestaurantRole(restaurantResolution.role);
+          setRestaurantAuthorizationError(restaurantResolution.unavailable);
           setPlatformRole(nextPlatformRole);
         }
       } catch {
         if (!cancelled) {
-          setRestaurantRole("customer");
+          setRestaurantRole(null);
+          setRestaurantAuthorizationError(true);
           setPlatformRole(null);
         }
       } finally {
@@ -261,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [authorizationRevision, user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -271,6 +262,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: restaurantRole,
       restaurantRole,
       platformRole,
+      restaurantAuthorizationError,
+      retryAuthorization: () => setAuthorizationRevision((current) => current + 1),
       loading: authLoading || roleLoading,
       async signIn(email: string, password: string) {
         if (!supabase) {
@@ -290,6 +283,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           confirmationError.name = "EmailConfirmationRequiredError";
           throw confirmationError;
         }
+        setSession(data.session);
+        setUser(data.user);
+        setRestaurantRole(null);
+        setPlatformRole(null);
+        setRestaurantAuthorizationError(false);
+        setAuthLoading(false);
+        setRoleLoading(true);
       },
       async signOut() {
         let logoutFailed = false;
@@ -315,7 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [authLoading, lastAuthEvent, platformRole, restaurantRole, roleLoading, session, user],
+    [authLoading, lastAuthEvent, platformRole, restaurantAuthorizationError, restaurantRole, roleLoading, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

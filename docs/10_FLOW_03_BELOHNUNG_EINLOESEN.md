@@ -1,6 +1,13 @@
 
 # 10_FLOW_03_BELOHNUNG_EINLOESEN.md
 
+## Current Lock 2026-08-24
+
+Der V1-Primärflow ist die serverzeitgebundene 15-Minuten-Live-Präsentation für
+Punkte-, Welcome- und Birthday-Einlösungen. Die normale Staff-Oberfläche besitzt
+keine sechsstellige Codeprüfung. Historische Codes bleiben ausschließlich als
+Legacy-Kompatibilität bestehen und werden nicht für neue Einlösungen erzeugt.
+
 # WUXUAI Bonus V1 – Flow 03: Punkteeinlösung verwenden
 
 Status: **LOCK**
@@ -25,7 +32,7 @@ Das Ziel von Flow 03 lautet:
 Der Ablauf soll für den Gast und für das Restaurant sofort verständlich sein:
 
 ```text
-Gast öffnet Mein Bonus
+Gast öffnet Meine Vorteile
 → Gast öffnet freigeschaltete Punkteeinlösung
 → Gast bestätigt final
 → System löst serverseitig ein

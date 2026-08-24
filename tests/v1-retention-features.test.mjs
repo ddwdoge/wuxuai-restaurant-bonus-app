@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260722003000_v1_retention_features.sql", import.meta.url), "utf8");
+const currentReferralMigration = readFileSync(new URL("../supabase/migrations/20260824001000_v1_referral_owner_duration_split.sql", import.meta.url), "utf8");
 const giftMigration = readFileSync(new URL("../supabase/migrations/20260714002000_daily_pin_booking_gifts_redemption_v1.sql", import.meta.url), "utf8");
 const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const retentionService = readFileSync(new URL("../src/modules/customer/retentionService.ts", import.meta.url), "utf8");
@@ -52,14 +53,18 @@ test("automatic birthday cron replaces the historical explicit customer draw", (
   assert.match(releaseMigration, /'mode', 'automatic_14_days'/);
 });
 
-test("retention baseline keeps the 2x default and atomic referral qualification", () => {
+test("historical retention stays intact while the current referral rule is atomic", () => {
   assert.match(migration, /set referral_boost_multiplier = 2, referral_boost_duration_days = 30/);
   assert.match(migration, /now\(\) \+ interval '30 days'/);
   assert.match(migration, /extension_base \+ interval '30 days'/);
-  assert.match(migration, /pg_advisory_xact_lock/);
-  assert.match(migration, /BONUS_BOOST_ACTIVATED/);
-  assert.match(migration, /BONUS_BOOST_EXTENDED/);
-  assert.match(portal, /Number\(settings\?\.referral_boost_multiplier\) \|\| 2/);
+  assert.match(currentReferralMigration, /referral_boost_duration_days set default 14/);
+  assert.match(currentReferralMigration, /input_beneficiary_role text/);
+  assert.match(currentReferralMigration, /input_granted_duration interval/);
+  assert.match(currentReferralMigration, /pg_advisory_xact_lock/);
+  assert.match(currentReferralMigration, /BONUS_BOOST_ACTIVATED/);
+  assert.match(currentReferralMigration, /BONUS_BOOST_EXTENDED/);
+  assert.match(portal, /referralBonusMultiplier as finalReferralBonusMultiplier/);
+  assert.match(portal, /const referralBoostMultiplier = finalReferralBonusMultiplier/);
   assert.match(migration, /and not c\.is_test_customer/);
   assert.match(migration, /and not is_test_event/);
 });

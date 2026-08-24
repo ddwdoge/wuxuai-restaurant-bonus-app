@@ -61,7 +61,7 @@ type CustomerHeaderProps = RestaurantLogoProps & {
   subtitle?: string;
 };
 
-export function CustomerHeader({ compact = false, logoUrl, name, onInfo, primaryColor, subtitle = "Mein Bonus" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, logoUrl, name, onInfo, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
       <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
@@ -90,7 +90,7 @@ const navigationItems = [
 
 export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
   return (
-    <nav aria-label="Mein Bonus Navigation" className="premium-bottom-navigation">
+    <nav aria-label="Meine Vorteile Navigation" className="premium-bottom-navigation">
       {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}

@@ -105,10 +105,11 @@ test("Fertig verlangt nur gültige Pflichtfelder und Pflichtzustimmungen", () =>
   assert.equal(customerRegistrationCanSubmit({ ...validRequired, marketingEmail: true }, true), true);
 });
 
-test("freiwillige Einwilligungen blockieren weder Restaurant- noch Referral-Registrierung", () => {
+test("freiwillige Einwilligungen blockieren die Restaurant-Registrierung nicht und Referral nutzt das zentrale Konto", () => {
   assert.doesNotMatch(portalSource, /if \(form\.birthday && !form\.birthdayProcessing\)/);
-  assert.doesNotMatch(referralSource, /if \(form\.birthday && !form\.birthdayProcessing\)/);
-  assert.match(referralSource, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
+  assert.doesNotMatch(referralSource, /marketingPush|marketingSms|marketingEmail|birthdayProcessing/);
+  assert.match(referralSource, /joinCustomerReferral/);
+  assert.match(referralSource, /disabled=\{!legalReady \|\| !termsAccepted \|\| !privacyAcknowledged \|\| submitting\}/);
   assert.match(loyaltySource, /input_marketing_push:\s*input\.legal\.marketingPush/);
   assert.match(loyaltySource, /input_marketing_sms:\s*input\.legal\.marketingSms/);
   assert.match(loyaltySource, /input_marketing_email:\s*input\.legal\.marketingEmail/);

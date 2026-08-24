@@ -16,8 +16,13 @@ import {
 } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 import {
+  formatInvitedReferralDuration,
   isReferralBonusDurationPreset,
+  normalizeReferralBonusDuration,
+  referralBonusDefaultDurationDays,
   referralBonusDurationPresets,
+  referralBonusMaxDurationDays,
+  referralBonusMinDurationDays,
 } from "../../loyalty/referralBonusSettings.mjs";
 import {
   isAllowedRedemptionRatePercent,
@@ -153,7 +158,7 @@ export function LoyaltyPage() {
     event.preventDefault();
     if (!restaurantId) return;
 
-    const durationDays = Number(settings.referral_boost_duration_days ?? 30);
+    const durationDays = Number(settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays);
     if (!validateReferralBonusDuration(durationDays)) {
       setStatus("Die Dauer muss zwischen 1 und 365 ganzen Tagen liegen.");
       return;
@@ -394,8 +399,8 @@ export function LoyaltyPage() {
                 className="select"
                 id="referral-boost-duration"
                 required
-                value={isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30)
-                  ? String(settings.referral_boost_duration_days ?? 30)
+                value={isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays)
+                  ? String(settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays)
                   : "custom"}
                 onChange={(event) => {
                   if (event.target.value === "custom") {
@@ -416,7 +421,7 @@ export function LoyaltyPage() {
             </div>
           </div>
 
-          {!isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? 30) ? (
+          {!isReferralBonusDurationPreset(settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays) ? (
             <div className="field referral-bonus-custom-duration">
               <FormLabel htmlFor="referral-boost-custom-duration" required>Eigener Wert in Tagen</FormLabel>
               <input
@@ -424,12 +429,12 @@ export function LoyaltyPage() {
                 className="input"
                 id="referral-boost-custom-duration"
                 inputMode="numeric"
-                max="365"
-                min="1"
+                max={referralBonusMaxDurationDays}
+                min={referralBonusMinDurationDays}
                 required
                 step="1"
                 type="number"
-                value={settings.referral_boost_duration_days ?? 30}
+                value={settings.referral_boost_duration_days ?? referralBonusDefaultDurationDays}
                 onChange={(event) =>
                   setSettings((current) => ({
                     ...current,
@@ -442,8 +447,10 @@ export function LoyaltyPage() {
           ) : null}
 
           <div className="referral-bonus-preview" aria-live="polite">
-            Bei {settings.referral_boost_duration_days ?? 30} Tagen erhält jede weitere erfolgreiche Einladung weitere{" "}
-            {settings.referral_boost_duration_days ?? 30} Bonustage.
+            Der einladende Gast erhält {normalizeReferralBonusDuration(settings.referral_boost_duration_days)} Tage.
+            Der eingeladene Freund erhält exakt{" "}
+            {formatInvitedReferralDuration(normalizeReferralBonusDuration(settings.referral_boost_duration_days))}.
+            Weitere erfolgreiche Einladungen verlängern nur die Laufzeit; der Multiplikator bleibt 2×.
           </div>
 
           <button

@@ -134,6 +134,47 @@ export async function joinCustomerRestaurant(input: {
   return result;
 }
 
+export async function joinCustomerReferral(input: {
+  restaurantSlug: string;
+  referralToken: string;
+  termsAccepted: boolean;
+  privacyAcknowledged: boolean;
+  deviceId: string;
+}) {
+  const { data, error } = await requireClient().rpc("join_authenticated_customer_referral", {
+    input_restaurant_slug: input.restaurantSlug,
+    input_referral_token: input.referralToken,
+    input_terms_accepted: input.termsAccepted,
+    input_privacy_acknowledged: input.privacyAcknowledged,
+    input_device_id: input.deviceId,
+  });
+  if (error) {
+    if (error.message.includes("REFERRAL_CUSTOMER_NOT_NEW")) {
+      throw new Error("Diese Einladung gilt nur für neue Mitglieder dieses Restaurants.");
+    }
+    if (error.message.includes("CUSTOMER_LEGAL_NOT_READY")) {
+      throw new Error("Dieses Bonusprogramm ist noch nicht für neue Mitglieder freigegeben.");
+    }
+    if (error.message.includes("REFERRAL_INVALID")) {
+      throw new Error("Diese Einladung ist ungültig oder nicht mehr verfügbar.");
+    }
+    if (error.message.includes("CUSTOMER_ACCOUNT_RECOVERY_REQUIRED")) {
+      throw new Error("Für deine Telefonnummer besteht bereits eine Mitgliedschaft. Bitte wende dich an den Support, um sie sicher zu verbinden.");
+    }
+    throw new Error("Die Einladung konnte gerade nicht angenommen werden.");
+  }
+  const result = data as {
+    restaurant_slug: string;
+    customer_token: string;
+    referral_status: "pending_registered" | "activated";
+  };
+  saveStoredCustomerToken(result.restaurant_slug, {
+    customer_token: result.customer_token,
+    device_id: input.deviceId,
+  });
+  return result;
+}
+
 export async function pauseAllCustomerOfferEmails(paused: boolean) {
   const { error } = await requireClient().rpc("pause_all_customer_offer_emails", {
     input_paused: paused,

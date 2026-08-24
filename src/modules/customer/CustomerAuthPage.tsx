@@ -12,6 +12,7 @@ import {
   isCustomerPasswordConfirmationValid,
 } from "./customerAuthFlow.mjs";
 import { registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
+import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import { AppShell, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
 
@@ -19,16 +20,6 @@ type CustomerAuthMode = "login" | "register";
 
 const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 const RESEND_COOLDOWN_SECONDS = 60;
-
-export function safeCustomerReturnPath(value: string | null) {
-  const containsControlCharacter = value
-    ? Array.from(value).some((character) => character.charCodeAt(0) <= 31)
-    : false;
-  if (!value || value.startsWith("//") || value.includes("\\") || containsControlCharacter) return "/customer";
-  const isCustomerPath = value === "/customer" || value.startsWith("/customer/") || value.startsWith("/customer?");
-  const isCollectPath = /^\/w\/[^/?#]+(?:[?#].*)?$/.test(value);
-  return isCustomerPath || isCollectPath ? value : "/customer";
-}
 
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const navigate = useNavigate();
@@ -149,7 +140,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         <PremiumCard className="central-auth-card">
           <div className="central-icon-heading">
             {mode === "login" ? <LogIn aria-hidden="true" size={23} /> : <UserPlus aria-hidden="true" size={23} />}
-            <div><span>Mein WUXUAI</span><h1>{mode === "login" ? "Kundenkonto öffnen" : "Kundenkonto erstellen"}</h1></div>
+            <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Kundenkonto öffnen" : "Kundenkonto erstellen"}</h1></div>
           </div>
           <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
           <form className="central-auth-form" onSubmit={submit}>

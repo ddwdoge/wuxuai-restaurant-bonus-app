@@ -11,7 +11,7 @@ const items = [
 
 export function CentralCustomerNavigation() {
   return (
-    <nav aria-label="Mein WUXUAI Navigation" className="central-customer-navigation">
+    <nav aria-label="Meine Vorteile Navigation" className="central-customer-navigation">
       {items.map(({ end, icon: Icon, label, to }) => (
         <NavLink className={({ isActive }) => isActive ? "active" : undefined} end={end} key={to} to={to}>
           <Icon aria-hidden="true" size={20} />

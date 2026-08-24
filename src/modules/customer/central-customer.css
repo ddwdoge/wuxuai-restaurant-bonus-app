@@ -113,6 +113,32 @@
 .central-auth-status { justify-items: center; text-align: center; }
 .central-auth-status > .premium-button { width: 100%; justify-content: center; }
 .central-confirmation-resend { width: 100%; text-align: left; }
+.referral-invite-page { width: min(680px, 100%); }
+.referral-invite-card { gap: 20px; }
+.referral-restaurant-brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.referral-restaurant-brand img,
+.referral-restaurant-brand > svg { width: 58px; height: 58px; flex: 0 0 auto; border-radius: 7px; object-fit: contain; padding: 6px; box-sizing: border-box; background: #f6eddc; color: #9b6f25; }
+.referral-restaurant-brand > div { min-width: 0; }
+.referral-restaurant-brand span,
+.referral-acceptance > div:first-child > span { color: #9b6f25; font-size: .76rem; font-weight: 800; text-transform: uppercase; }
+.referral-restaurant-brand h1 { overflow-wrap: anywhere; }
+.referral-benefit-summary { display: grid; gap: 10px; padding: 16px; border: 1px solid #e5d7bf; border-radius: 8px; background: #fbf7ef; }
+.referral-benefit-summary .pill { width: fit-content; }
+.referral-benefit-summary h2,
+.referral-benefit-summary p,
+.referral-acceptance h2,
+.referral-acceptance p,
+.referral-pending-state h2,
+.referral-pending-state p { margin: 0; }
+.referral-benefit-summary p,
+.referral-acceptance p,
+.referral-pending-state p { color: #665f56; line-height: 1.55; }
+.referral-auth-actions small { color: #746b61; text-align: center; }
+.referral-acceptance,
+.referral-pending-state { display: grid; gap: 15px; }
+.referral-pending-state { justify-items: center; text-align: center; }
+.referral-pending-state > svg { color: #277a50; }
+.referral-pending-state .premium-button { width: 100%; justify-content: center; box-sizing: border-box; }
 .central-join-consents { display: grid; gap: 12px; padding: 14px; border: 1px solid #e5d7bf; border-radius: 7px; background: #fbf7ef; }
 .central-join-consents p { margin: 0; }
 .central-join-consents label { min-height: 44px; display: flex; align-items: flex-start; gap: 10px; color: #302a23; }
@@ -143,6 +169,11 @@
 }
 
 @media (max-width: 430px) {
+  .referral-invite-page { padding-inline: 12px; }
+  .referral-invite-card { padding: 17px; }
+  .referral-restaurant-brand { align-items: flex-start; }
+  .referral-restaurant-brand img,
+  .referral-restaurant-brand > svg { width: 50px; height: 50px; }
   .central-location-heading { align-items: start; display: grid; grid-template-columns: auto minmax(0, 1fr); }
   .central-location-heading .premium-status-badge { grid-column: 2; margin-left: 0; }
   .central-location-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -154,6 +154,124 @@ export type PlatformRestaurantDetail = {
   audit: PlatformAuditEntry[];
 };
 
+export type PlatformMetric<T> =
+  | { status: "available"; value: T }
+  | { status: "unavailable"; value: null };
+
+export type PlatformSubsystemHealth = "healthy" | "warning" | "error" | "unavailable";
+
+export type PlatformRestaurantControlCenter = {
+  contract_version: "platform_restaurant_control_center_v1";
+  generated_at: string;
+  timezone: string;
+  overall_health: "healthy" | "warning" | "error" | "unknown";
+  account: {
+    restaurant_id: string;
+    restaurant_name: string;
+    restaurant_status: RestaurantStatus;
+    onboarding_status: string | null;
+    setup_completed: boolean;
+    owner: { user_id: string; name: string | null; business_email: string | null };
+    created_at: string;
+    last_activity_at: string | null;
+    internal_test: PlatformMetric<boolean>;
+  };
+  subscription: PlatformMetric<{
+    subscription_status: SubscriptionStatus | null;
+    payment_status: PaymentStatus | null;
+    plan_key: string;
+    trial_started_at: string | null;
+    trial_ends_at: string | null;
+    trial_days_remaining: number | null;
+    current_period_end: string | null;
+  }>;
+  usage: {
+    customers_total: PlatformMetric<number>;
+    customers_new_30d: PlatformMetric<number>;
+    points_today: PlatformMetric<number>;
+    points_30d: PlatformMetric<number>;
+    welcome_gifts_active: PlatformMetric<number>;
+    birthday_gifts_active: PlatformMetric<number>;
+  };
+  redemption: {
+    health: PlatformSubsystemHealth;
+    redemptions_today: PlatformMetric<number>;
+    redemptions_30d: PlatformMetric<number>;
+    last_redemption_at: PlatformMetric<string | null>;
+    breakdown_30d: { points: number; welcome: number; birthday: number };
+    failures_24h: number;
+  };
+  referral:
+    | {
+        status: "available";
+        health: PlatformSubsystemHealth;
+        enabled: boolean;
+        multiplier: 2;
+        configured_duration_days: number;
+        duration_type: "preset" | "custom";
+        friend_duration_ratio: 0.5;
+        qualified_referrals_30d: number;
+        active_boosters: number;
+        boost_extra_points_30d: number;
+        last_qualified_referral_at: string | null;
+      }
+    | { status: "unavailable"; health: "unavailable"; value: null };
+  health: {
+    registration: {
+      status: PlatformSubsystemHealth;
+      last_success: string | null;
+      failures_24h: number;
+      failures_7d: number;
+    };
+    email: {
+      status: PlatformSubsystemHealth;
+      last_success: string | null;
+      last_failure: string | null;
+      failed_24h: number;
+      pending_retry_count: number;
+    };
+    geolocation: {
+      status: PlatformSubsystemHealth;
+      address_complete: boolean | null;
+      coordinates_present: boolean | null;
+      public_search_eligible: boolean | null;
+      last_geocode_status: PlatformMetric<string>;
+    };
+    staff: {
+      status: PlatformSubsystemHealth;
+      staff_count: PlatformMetric<number>;
+      daily_pin_available: PlatformMetric<boolean>;
+      qr_flow_available: PlatformMetric<boolean>;
+    };
+    cron: {
+      status: "unavailable";
+      last_success: null;
+      last_failure: null;
+      failure_count: null;
+      reason: string;
+    };
+  };
+  audit: Array<{
+    id: string;
+    timestamp: string;
+    actor_type: string;
+    actor_label: string;
+    event_key: string;
+    event_label: string;
+    status: "success" | "failed" | "blocked";
+    target_type: string | null;
+    target_id: string | null;
+    before: Record<string, string | null> | null;
+    after: Record<string, string | null> | null;
+  }>;
+  capabilities: {
+    restaurant_status_change: "supported";
+    subscription_update: "supported";
+    trial_extension: "supported";
+    manual_payment: { status: "deferred"; reason: string };
+  };
+};
+
 export async function loadPlatformRestaurants() {
   if (!supabase) {
     return { summary: emptySummary, restaurants: [] };
@@ -185,6 +303,24 @@ export async function loadPlatformRestaurantDetail(restaurantId: string): Promis
   }
 
   return data as PlatformRestaurantDetail;
+}
+
+export async function loadPlatformRestaurantControlCenter(
+  restaurantId: string,
+): Promise<PlatformRestaurantControlCenter> {
+  if (!supabase) {
+    throw new Error("Supabase ist nicht konfiguriert.");
+  }
+
+  const { data, error } = await supabase.rpc("get_platform_restaurant_control_center", {
+    input_restaurant_id: restaurantId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as PlatformRestaurantControlCenter;
 }
 
 export async function updatePlatformRestaurantSubscription(input: {

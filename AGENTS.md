@@ -1,6 +1,6 @@
 # AGENTS.md
 
-# WUXUAI Restaurant Bonus V1 – Codex Arbeitsanweisung
+# WUXUAI Bonus V1 – Codex Arbeitsanweisung
 
 Status: **AKTIV / PFLICHT**
 
@@ -9,6 +9,10 @@ Diese Datei ist die Startanweisung für Codex in diesem Repository.
 Codex darf nicht frei planen, nicht frei interpretieren und nicht aus alten Chatverläufen raten.
 
 Die Engineering Bible im Ordner `/docs` ist die verbindliche Wahrheit für dieses Projekt.
+
+Aktueller Produktvertrag: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+Historische, widersprechende Regeln sind in `docs/LEGACY_DOCUMENT_INDEX.md`
+eingefroren und nicht mehr als aktive Implementierungsanweisung zu verwenden.
 
 ---
 
@@ -52,7 +56,7 @@ Nicht eigenmächtig gegen die Bible arbeiten.
 
 ## 3. Projektziel V1
 
-WUXUAI Restaurant Bonus V1 soll zuerst fertig gebaut und pilotfähig werden.
+WUXUAI Bonus V1 soll zuerst fertig gebaut und pilotfähig werden.
 
 Fokus:
 

@@ -11,7 +11,14 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant", requireConfirmedEmail = false }: ProtectedRouteProps) {
-  const { loading, platformRole, restaurantRole, user } = useAuth();
+  const {
+    loading,
+    platformRole,
+    restaurantAuthorizationError,
+    restaurantRole,
+    retryAuthorization,
+    user,
+  } = useAuth();
   const location = useLocation();
   const activeRole = roleScope === "platform" ? platformRole : restaurantRole;
 
@@ -27,11 +34,27 @@ export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant
     return <Navigate to="/auth/confirm-email" state={{ email: user.email ?? "" }} replace />;
   }
 
+  if (roleScope === "restaurant" && restaurantAuthorizationError) {
+    return (
+      <main className="auth-shell" role="alert">
+        <h1>Restaurantzugang konnte nicht geladen werden</h1>
+        <p>Deine Anmeldung bleibt bestehen. Bitte prüfe den Restaurantzugang erneut.</p>
+        <button onClick={retryAuthorization} type="button">Erneut versuchen</button>
+      </main>
+    );
+  }
+
   if (!activeRole || !allowedRoles.includes(activeRole)) {
     if (roleScope === "platform") {
       return <div className="auth-shell">Du hast keinen Zugriff auf diese Seite.</div>;
     }
-    return <Navigate to="/" replace />;
+    return (
+      <main className="auth-shell" role="alert">
+        <h1>Kein Restaurantzugang eingerichtet</h1>
+        <p>Für dieses Konto ist aktuell kein Restaurant hinterlegt. Deine Anmeldung bleibt bestehen.</p>
+        <button onClick={retryAuthorization} type="button">Erneut prüfen</button>
+      </main>
+    );
   }
 
   return <>{children}</>;

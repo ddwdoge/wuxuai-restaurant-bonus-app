@@ -1,6 +1,60 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-24 - Platform Admin Restaurant Control Center Backendvertrag
+
+- additive Migration `20260824005000_platform_admin_restaurant_control_center.sql` vorbereitet
+- autoritative Restaurant-, Abo-, Nutzungs-, Referral-, Einlösungs- und Health-Aggregation ergänzt
+- Nullwerte, fehlende Telemetrie und RPC-Fehler explizit getrennt
+- Plattformrolle serverseitig geprüft; normale Tenant-RLS unverändert
+- keine UI-Umstellung, keine Staging-Anwendung und keine Production-Aktion
+
+## 2026-08-24 - Referral-Einladung an zentrale Kundenregistrierung angebunden
+
+- Vereinfachtes Referral-Sonderformular entfernt und die Einladung an den
+  bestehenden Customer-Auth-Flow mit E-Mail-Bestaetigung und Doppelpasswort
+  angebunden.
+- Streng validierten Referral-Rueckweg fuer den Auth-Callback ergaenzt.
+- Additive authenticated-only RPC-Bruecke fuer atomare Referral-, Customer- und
+  Membership-Zuordnung vorbereitet; bestehende Qualifizierung und Booster-
+  Engine bleiben unveraendert.
+- Freunde-Dauer fuer 7/14/28 Tage sichtbar als 84 Stunden, 7 Tage und 14 Tage
+  vereinheitlicht.
+
+## 2026-08-24 - Platform Admin V1 Foundation gehaertet
+
+- Bestehende Plattform-Admin-Routen und RPCs wiederverwendet statt ein zweites
+  Adminsystem aufzubauen.
+- Plattformrollen im Client zentralisiert und ausschliesslich ueber den
+  serververifizierten Rollen-RPC geladen.
+- `platform_admins` als einzige Laufzeitautoritaet vorbereitet; direkte
+  Browserrechte und direkte Helper-Ausfuehrung entzogen.
+- Owner, Staff, Customer und Anon bleiben von Plattformfunktionen getrennt.
+- Bestehender Plattform-Auditvertrag mit Actor, Aktion, Ziel, Vorher-/Nachher-
+  Zustand und optionalem Grund bleibt erhalten.
+
+## 2026-08-24 - Referral Final Gate und autoritative Testbasis verifiziert
+
+- Referral-Owner-Audit auf den bestehenden Actor-Vertrag `admin` korrigiert.
+- Booster-KPIs auf aktuelle `POINTS_ADDED`-Events umgestellt und sichere
+  Legacy-Kompatibilitaet mit Deduplizierung beibehalten.
+- Testkunden und Testevents bleiben aus operativen Booster-KPIs ausgeschlossen.
+- Migration `20260824002000_fix_referral_settings_audit_and_boost_kpis.sql` auf
+  Staging angewendet und Local/Remote-Historie synchronisiert.
+- Die vollstaendige autoritative Testsuite im Recovery-Worktree wiederhergestellt;
+  die abweichenden 48 Tests stammten aus einer unvollstaendigen Repository-Kopie.
+
+## 2026-08-24 - Canonical V1 Recovery integriert
+
+- Sichtbares Branding auf WUXUAI Bonus und den Kundenbereich Meine Vorteile
+  vereinheitlicht, ohne Routes oder technische Datenbanknamen umzubenennen.
+- Freundschaftsbonus auf Default 14 Tage, 7/14/28/Custom sowie volle
+  Referrer- und exakt halbe Freundesdauer konsolidiert; 2x bleibt die Obergrenze.
+- Historische Booster bleiben unverändert; neue Grants sind rollenbezogen und
+  idempotent.
+- Canonical Product Contract und Legacy Document Index trennen den aktuellen
+  V1-Vertrag von historischen Reports und Migrationen.
+
 ## 2026-08-23 – Staff-Tages-KPIs und Schnellnavigation korrigiert
 
 - Staff-Tages-KPIs lesen gutgeschriebene Punkte aus `points_transactions` und
@@ -2719,3 +2773,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Mehrfachklicks.
 - Keine Scanner-, Punkte-, PIN-, Reporting-, Berechtigungs- oder Datenbanklogik
   geändert.
+
+## 2026-08-24 – Owner-Login und Restaurantzugang getrennt behandelt
+
+- Erfolgreiche Supabase-Sessions werden vor der Dashboard-Navigation direkt in
+  den Auth-Provider übernommen, damit kein veralteter Guard-Zustand entsteht.
+- Restaurantrollen werden ausschließlich aus der autoritativen
+  Restaurant-Mitgliedschaft abgeleitet, nicht aus Auth-Metadaten.
+- Temporäre Restaurant-Lookup-Fehler und fehlende Restaurantzuordnungen zeigen
+  einen sicheren Retry-/Supportzustand, ohne die gültige Auth-Session zu löschen
+  oder zur Login-Seite zurückzuleiten.
+- Platform-Admin-, Customer-, Staff-, Trial- und Onboarding-Verträge bleiben
+  unverändert.

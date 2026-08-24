@@ -1,10 +1,22 @@
 # 05_CUSTOMER_PORTAL.md
 
+## Current Lock 2026-08-24
+
+- Der Kundenbereich heißt **Meine Vorteile**.
+- Kunden verwenden Supabase Auth mit E-Mail, Passwortbestätigung und
+  E-Mail-Bestätigung; aktive Registrierung verwendet nur die Legal-RPCs.
+- Einlösungen laufen primär über die serverzeitgebundene
+  15-Minuten-Präsentation, nicht über einen sechsstelligen Primärcode.
+- Beim Freundschaftsbonus erhält der Referrer die volle und der eingeladene
+  Freund exakt die halbe konfigurierte Dauer; der Multiplikator bleibt 2x.
+- Widersprechende ältere Abschnitte sind historisch und im
+  `docs/LEGACY_DOCUMENT_INDEX.md` erfasst.
+
 ## Persönlicher Punkte-QR
 
 Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.
 
-# WUXUAI Bonus V1 – Customer Portal / „Mein Bonus“
+# WUXUAI Bonus V1 – Customer Portal / „Meine Vorteile“
 
 Status: **LOCK**
 
@@ -53,7 +65,7 @@ Er soll nur sehen:
 
 Das Kundenportal heißt sichtbar:
 
-**Mein Bonus**
+**Meine Vorteile**
 
 Nicht:
 - Customer Portal
@@ -344,7 +356,9 @@ Sondern:
 ### 8.2 Standard V1
 
 - 2× Punkte
-- 30 Tage
+- Default 14 Tage; Restaurantwahl 7, 14, 28 oder eigener Wert
+- Referrer erhält 100 Prozent, eingeladener Freund exakt 50 Prozent der bei
+  Qualifikation gespeicherten Dauer
 - Aktivierung erst nach echter Konsumation des eingeladenen Freundes
 
 ### 8.3 Anzeige im Kundenportal
@@ -367,17 +381,16 @@ Wenn Bonus Boost aktiv ist, muss der Effekt zusätzlich sichtbar sein:
 Wenn Bonus Boost nicht aktiv ist:
 
 > 🔥 Lade einen Freund ein  
-> Ihr sammelt beide 30 Tage lang 2× Punkte, sobald dein Freund erstmals Punkte sammelt.
+> Nach dem ersten gültigen Besuch sammelt ihr 2× Punkte: du für die volle und
+> dein Freund für die halbe Restaurantdauer.
 
 ### 8.4 Verlängerung
 
 Jeder erfolgreiche Freund verlängert den Boost.
 
-Beispiel:
-
-- 1 Freund = +30 Tage
-- 2 Freunde = +60 Tage
-- 3 Freunde = +90 Tage
+Jede weitere erfolgreiche Empfehlung verlängert den Referrer um die beim
+Qualifikationszeitpunkt gespeicherte volle Restaurantdauer. Der Multiplikator
+bleibt maximal 2×.
 
 ### 8.5 Emotion
 
@@ -451,7 +464,7 @@ Der Gast darf niemals Punkte eintippen.
 
 ## 10. Punkteeinlösungen im Kundenportal
 
-### 10.0 Reihenfolge in „Mein Bonus“
+### 10.0 Reihenfolge in „Meine Vorteile“
 
 Die Kundenansicht ist nach Wichtigkeit sortiert:
 
@@ -560,7 +573,7 @@ Erlaubt:
 - technische Funktionsnamen im Code
 
 Sichtbare Begriffe:
-- Mein Bonus
+- Meine Vorteile
 - Punkte
 - Punkteeinlösung
 - Willkommensgeschenk
@@ -737,7 +750,8 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Web Push ist freiwillig und ergänzt den Drawer. Ohne Zustimmung oder Browserunterstützung bleibt der Drawer vollständig nutzbar.
 - Ein Push-Link öffnet ausschließlich die zugehörige Punkteeinlösung; er löst nichts automatisch ein.
 - Geburtstagstag und -monat können freiwillig im Konto gespeichert werden. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag kann der Gast genau einmal pro Kalenderjahr eine serverseitig ausgeloste Überraschung abholen.
-- Der Freunde-Bonus ist fest auf 2× Punkte für beide Beteiligten während 30 Tagen gesetzt.
+- Der Freundschaftsbonus ist fest 2×. Der Referrer erhält die volle, der
+  eingeladene Freund exakt die halbe gespeicherte Restaurantdauer.
 
 ## CTO-Ergänzung 2026-07-23: QR-Restaurantkontext
 
@@ -833,7 +847,7 @@ stornieren.
 
 ## CTO-Ergänzung 2026-08-04: Zentraler Kundenbereich
 
-- `/customer` öffnet `Mein WUXUAI` ohne Restaurant-Slug.
+- `/customer` öffnet `Meine Vorteile` ohne Restaurant-Slug.
 - Die Navigation lautet `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
 - Memberships werden nur nach einem gültigen restaurantbezogenen Kundenzugang
   serverseitig mit dem zentralen Konto verknüpft.

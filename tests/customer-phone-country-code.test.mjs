@@ -13,6 +13,7 @@ import {
 const componentSource = await readFile(new URL("../src/shared/components/CustomerPhoneField.tsx", import.meta.url), "utf8");
 const portalSource = await readFile(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const referralSource = await readFile(new URL("../src/modules/customer/ReferralLanding.tsx", import.meta.url), "utf8");
+const customerAuthSource = await readFile(new URL("../src/modules/customer/CustomerAuthPage.tsx", import.meta.url), "utf8");
 const supportSource = await readFile(new URL("../src/modules/admin/pages/CustomersPage.tsx", import.meta.url), "utf8");
 const loyaltySource = await readFile(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/20260729002000_customer_phone_e164_hardening.sql", import.meta.url), "utf8");
@@ -55,7 +56,8 @@ test("gespeicherte E.164-Nummern werden für den Support sicher getrennt", () =>
 
 test("alle Identitätsformulare verwenden dieselbe zugängliche Komponente", () => {
   assert.match(portalSource, /<CustomerPhoneField/);
-  assert.match(referralSource, /<CustomerPhoneField/);
+  assert.match(customerAuthSource, /<CustomerPhoneField/);
+  assert.doesNotMatch(referralSource, /CustomerPhoneField/);
   assert.match(supportSource, /<CustomerPhoneField/);
   assert.match(componentSource, /autoComplete="tel-national"/);
   assert.match(componentSource, /autoComplete="tel-country-code"/);
@@ -65,7 +67,7 @@ test("alle Identitätsformulare verwenden dieselbe zugängliche Komponente", () 
 
 test("öffentliche Registrierung und Support senden nur zentral normalisierte Werte", () => {
   assert.match(portalSource, /phone:\s*phoneValidation\.e164/);
-  assert.match(referralSource, /phone:\s*phoneValidation\.e164/);
+  assert.match(customerAuthSource, /phone:\s*phoneResult\.e164/);
   assert.match(loyaltySource, /input_new_phone:\s*normalizedPhone/);
   assert.match(loyaltySource, /normalizeCustomerPhone\(input\.newPhone\)/);
 });
