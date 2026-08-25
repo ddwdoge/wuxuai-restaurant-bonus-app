@@ -1245,3 +1245,21 @@ Endstatus: **LOCK**
   Ausführungs- oder Tabellenberechtigung.
 - Ein fehlender oder fehlerhafter Settings-Lesezugriff wird nicht als gesunder
   Defaultwert maskiert.
+
+## Ergänzung 2026-08-25: Staff-Identität und Einladungen
+
+- Name oder E-Mail-Adresse allein erteilen keinen Zugriff. Erst ein gültiger
+  Auth-Link, persönliche Passwortsetzung und der gebundene Annahme-RPC
+  aktivieren die restaurantbezogene Staff-Mitgliedschaft.
+- Owner können keine Plattformrolle und keine fremde Restaurantrolle über die
+  Teamverwaltung vergeben. Staff, Customer und Anon können sich nicht selbst
+  hinzufügen oder reaktivieren.
+- Eine Auth-Identität mit aktiver Owner-, Platform-Admin- oder Customer-
+  Zuordnung wird nicht als Staff-Zugang gebunden. Eine bestehende reine
+  Staff-Identität darf nur über eine weitere ausdrückliche Restaurantbindung
+  einem zusätzlichen Standort zugeordnet werden; globale Freigabe entsteht nie.
+- Service-Role- und Auth-Link-Geheimnisse werden weder an den Browser
+  ausgeliefert noch protokolliert. Der Staff-QR enthält keine Rolle und kein
+  Authentifizierungsgeheimnis.
+- Sperren und Archivieren wirken fail-closed auf die zentrale
+  `is_restaurant_member`-Prüfung. Normale Tenant-RLS bleibt aktiv.

@@ -632,3 +632,19 @@ Für normale Punktebelohnungen wird sie ersetzt: Der Kunde bestätigt selbst, di
 Punkte werden sofort serverseitig abgezogen und das Team kontrolliert nur den
 15 Minuten aktiven Präsentationsbildschirm. Das Staff Portal führt für normale
 Punktebelohnungen weder Code-, PIN- noch QR-Bestätigung aus.
+
+## CTO-Ergänzung 2026-08-25: Persönliche Staff-Zugänge in V1
+
+- Jeder aktive Mitarbeiter verwendet eine eigene bestätigte Supabase-Auth-
+  Identität mit persönlicher E-Mail-Adresse und eigenem Passwort.
+- Die Staff-Rolle stammt ausschließlich aus der serverseitigen,
+  restaurantbezogenen Mitgliedschaft. Client-Metadaten und der Staff-QR sind
+  keine Rollenautorität.
+- Einladungen bleiben bis zur persönlichen Annahme inaktiv. Gesperrte oder
+  entfernte Zugänge verlieren den Restaurantzugriff sofort.
+- Punkteaktionen verwenden weiterhin die bestehende Tages-PIN und werden über
+  `auth.uid()` dem handelnden Teamkonto zugeordnet.
+- Die bestehende sechsstellige Geschenkbestätigung und das
+  Punkte-Präsentationsfenster bleiben unverändert.
+- Alte `staff_members`-PIN-Zeilen bleiben kompatibel, begründen aber keinen
+  persönlichen Auth-Zugang und erscheinen nicht als eingeladene Teamkonten.

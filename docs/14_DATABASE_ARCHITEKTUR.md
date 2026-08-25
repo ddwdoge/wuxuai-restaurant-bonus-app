@@ -1384,3 +1384,17 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
   eine bestehende Legacy-Membership nach positiver Serverprüfung verknüpfen.
 - Es findet keine automatische Zusammenführung über Telefonnummer, Geburtstag
   oder Gerätekennung statt.
+
+## Ergänzung 2026-08-25: Owner-Teamverwaltung
+
+- `staff_members.auth_user_id` bindet einen Teamdatensatz an genau eine
+  Supabase-Auth-Identität im jeweiligen Restaurant.
+- `account_status` unterscheidet `legacy`, `invited`, `active`, `suspended`
+  und `archived`. Nur `active` zusammen mit einer passenden
+  `restaurant_members`-Zeile erteilt Staff-Zugriff.
+- Partielle Unique-Indizes verhindern doppelte E-Mail- und Auth-Bindungen pro
+  Restaurant. Bestehende Legacy-PIN-Datensätze bleiben erhalten.
+- Direkte Browser-Schreibrechte auf `staff_members` und direkte Zuweisungen
+  von `staff`/`supervisor` in `restaurant_members` sind nicht erlaubt.
+- Entfernen ist eine auditierte Archivierung; historische Aktionen und
+  Auditdaten bleiben erhalten.

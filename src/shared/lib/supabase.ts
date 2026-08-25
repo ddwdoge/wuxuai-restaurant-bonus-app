@@ -36,3 +36,15 @@ export const ownerRecoverySupabase = isSupabaseConfigured
       },
     })
   : null;
+
+export const staffInviteSupabase = isSupabaseConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: true,
+        storage: window.sessionStorage,
+        storageKey: "wuxuai-staff-invite-auth",
+      },
+    })
+  : null;

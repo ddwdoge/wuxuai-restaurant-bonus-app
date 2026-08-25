@@ -28,7 +28,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const restaurantRolePriority: RestaurantUserRole[] = ["owner", "admin", "manager"];
+const restaurantRolePriority: RestaurantUserRole[] = ["owner", "admin", "manager", "supervisor", "staff"];
 
 type RestaurantRoleResolution = {
   role: RestaurantUserRole | null;

@@ -1,7 +1,7 @@
 const AUTH_SESSION_PATH_PREFIXES = Object.freeze([
   "/admin",
   "/customer",
-  "/staff/",
+  "/staff",
   "/platform-admin",
 ]);
 

@@ -150,11 +150,12 @@ test("temporärer Refresh-Fehler stoppt nicht den Scheduler und wird nicht sofor
   assert.equal(intervals.size, 1);
 });
 
-test("App und Recovery verwenden stabile Singleton-Exporte ohne Supabase-Auto-Refresh", () => {
+test("App, Recovery und Staff-Einladung verwenden stabile Clients ohne Supabase-Auto-Refresh", () => {
   const source = readFileSync(new URL("../src/shared/lib/supabase.ts", import.meta.url), "utf8");
-  assert.equal((source.match(/createClient\(/g) ?? []).length, 2);
-  assert.equal((source.match(/autoRefreshToken:\s*false/g) ?? []).length, 2);
+  assert.equal((source.match(/createClient\(/g) ?? []).length, 3);
+  assert.equal((source.match(/autoRefreshToken:\s*false/g) ?? []).length, 3);
   assert.match(source, /storageKey:\s*"wuxuai-owner-recovery-auth"/);
+  assert.match(source, /storageKey:\s*"wuxuai-staff-invite-auth"/);
 });
 
 test("explizite Registrierungs-Refreshes verwenden denselben ungültigen Session-Guard", () => {

@@ -1079,3 +1079,17 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   ausdrücklich `unavailable`. SQL-Fehler werden als RPC-Fehler weitergegeben.
 - `SECURITY DEFINER`, fester `search_path`, Platform-Admin-Prüfung und der nur
   für `authenticated` gewährte `EXECUTE`-Vertrag bleiben unverändert.
+
+## Ergänzung 2026-08-25: Staff-Account-RPCs
+
+- Owner-Teamaktionen verwenden kleine `SECURITY DEFINER`-RPCs mit festem
+  `search_path`, serverseitiger Owner/Admin-Prüfung und Restaurantbindung.
+- `create_restaurant_staff_invitation` erzeugt nur eine inaktive Einladung.
+- `bind_restaurant_staff_auth_identity` akzeptiert ausschließlich die exakte,
+  normalisierte Auth-E-Mail und aktiviert den Zugang nicht.
+- `accept_my_restaurant_staff_invitation` wird in der authentifizierten
+  Einladungs-Sitzung durch genau die gebundene Identität ausgeführt.
+- Statuswechsel und erneuter Versand sind rate-limitiert, tenantgebunden und
+  auditierbar. `anon` besitzt kein Execute-Recht.
+- Die Edge Function `owner-staff-invite` ist der einzige Auth-Admin-Transport;
+  die Service Role bleibt serverseitig.

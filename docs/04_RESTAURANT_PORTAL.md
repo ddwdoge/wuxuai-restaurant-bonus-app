@@ -752,3 +752,17 @@ Restaurantpersonal kontrolliert den 15 Minuten aktiven Bildschirm nur visuell.
 Owner können eine fehlerhafte Aktivierung im Bonus-Aktivitätsbericht mit einer
 Begründung stornieren; Punkte, Journalstatus und Audit werden dabei atomar
 korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
+
+## Owner-Teamverwaltung V1
+
+- Unter `Mitarbeiter` verwalten Owner und berechtigte Restaurantadmins
+  individuelle Teamzugänge des eigenen Restaurants.
+- Eine Einladung benötigt Name und E-Mail-Adresse. Es wird kein gemeinsames
+  Restaurant- oder Mitarbeiterpasswort erzeugt.
+- Der Zugang wird erst nach persönlicher Annahme des Auth-Links und eigener
+  Passwortsetzung aktiv.
+- Owner können offene Einladungen erneut senden sowie aktive Zugänge sperren,
+  reaktivieren oder auditierbar entfernen. Auditdaten werden nicht gelöscht.
+- Manager, Staff, Customer und Anon dürfen Teamzugänge nicht verwalten.
+- Der Mitarbeiter-QR öffnet ausschließlich den Login-Einstieg und verleiht
+  weder Rolle noch Restaurantzugriff.

@@ -45,8 +45,9 @@ test("Bestehende Speicher- und Datenlogik bleibt verbunden", () => {
 test("Informations-KPIs bleiben nicht klickbar und echte Navigation bleibt erhalten", () => {
   assert.match(dashboard, /<article className="card dashboard-kpi-card"/);
   assert.doesNotMatch(dashboard, /dashboard-kpi-card[^\n]*onClick/);
-  assert.match(staffPage, /className="card staff-admin-card"/);
-  assert.match(staffPage, /className="card staff-admin-card staff-admin-card-clickable"/);
+  assert.match(staffPage, /className="card staff-team-row"/);
+  assert.match(staffPage, /Mitarbeiterbereich öffnen/);
+  assert.match(staffPage, /title="Mitarbeiter hinzufügen"/);
   assert.match(staffPage, /to=\{staffTabletPath\}/);
 });
 

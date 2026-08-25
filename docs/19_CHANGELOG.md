@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Owner-Teamverwaltung mit persönlichen Staff-Zugängen
+
+- Bestehende `staff_members`-Architektur additiv um persönliche
+  Supabase-Auth-Bindung und auditierte Account-Status erweitert.
+- Owner-Oberfläche für Einladen, erneutes Senden, Sperren, Reaktivieren und
+  Entfernen umgesetzt.
+- Staff-Einladung über serverseitige Edge Function und explizite persönliche
+  Annahme abgesichert; QR bleibt reiner Login-Einstieg.
+- Staff-Routen an die aktive restaurantbezogene Mitgliedschaft gebunden und
+  bestehende Tages-PIN-, Punkte- und Einlöseflows unverändert gelassen.
+
 ## 2026-08-24 - QR Center auf aktive V1-Zwecke fokussiert
 
 - Neue-Gäste-QR und Mitarbeiter-QR als zwei primäre QR-Center-Zwecke
