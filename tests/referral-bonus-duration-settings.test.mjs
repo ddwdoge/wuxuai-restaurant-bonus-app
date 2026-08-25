@@ -19,6 +19,7 @@ const finalMigration = readFileSync(
 );
 const service = readFileSync(new URL("../src/modules/loyalty/loyaltyService.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../src/modules/admin/pages/LoyaltyPage.tsx", import.meta.url), "utf8");
+const settingsPage = readFileSync(new URL("../src/modules/admin/pages/SettingsPage.tsx", import.meta.url), "utf8");
 const referralLanding = readFileSync(new URL("../src/modules/customer/ReferralLanding.tsx", import.meta.url), "utf8");
 const customerPortal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 
@@ -49,6 +50,14 @@ test("owner can configure any whole duration from 1 to 365 days", () => {
   assert.match(service, /isValidReferralBonusDuration\(durationDays\)/);
   assert.match(page, /referralBonusDurationPresets\.map/);
   assert.match(page, /Eigener Wert/);
+});
+
+test("owner navigation opens the existing referral settings directly", () => {
+  assert.match(settingsPage, /Freunde einladen & 2× Bonus/);
+  assert.match(settingsPage, /\/admin\/loyalty#freundschaftsbonus/);
+  assert.match(page, /id="freundschaftsbonus"/);
+  assert.match(page, /location\.hash !== "#freundschaftsbonus"/);
+  assert.match(page, /scrollIntoView/);
 });
 
 test("new qualifications split the saved duration without changing active periods retroactively", () => {

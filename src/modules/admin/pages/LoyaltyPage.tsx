@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit3, Plus, Power, Save } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import type { LoyaltyMode, LoyaltyRule, LoyaltySettings } from "../../../shared/types/domain";
 import {
   defaultSettingsForMode,
@@ -62,6 +63,7 @@ function formForMode(mode: LoyaltyMode): RuleForm {
 }
 
 export function LoyaltyPage() {
+  const location = useLocation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
@@ -106,6 +108,13 @@ export function LoyaltyPage() {
       cancelled = true;
     };
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (location.hash !== "#freundschaftsbonus") return;
+    const section = document.getElementById("freundschaftsbonus");
+    section?.scrollIntoView({ block: "start" });
+    section?.focus({ preventScroll: true });
+  }, [location.hash]);
 
   const visibleRules = useMemo(
     () => rulesForMode(rules, settings.loyalty_mode),
@@ -372,10 +381,15 @@ export function LoyaltyPage() {
         </article>
       </section>
 
-      <section className="card referral-bonus-settings" style={{ marginTop: 16 }}>
+      <section
+        className="card referral-bonus-settings"
+        id="freundschaftsbonus"
+        style={{ marginTop: 16 }}
+        tabIndex={-1}
+      >
         <div>
           <p className="premium-owner-kicker">Bonusprogramm</p>
-          <h2>Freundschaftsbonus</h2>
+          <h2>Freunde einladen & 2× Bonus</h2>
           <p className="muted">
             Nach einer erfolgreichen Einladung erhalten beide Gäste für die gewählte Dauer den 2× Bonus.
           </p>
@@ -471,13 +485,16 @@ export function LoyaltyPage() {
                 referral_monthly_invite_limit: Number(event.target.value),
               }))}
             />
-            <small>Standard sind 5 neue Einladungen pro Gast und Kalendermonat. Erlaubt sind 1 bis 100.</small>
+            <small>
+              Legt fest, wie viele neue Einladungen ein Kunde pro Monat erstellen kann. Standard ist 5;
+              erlaubt sind 1 bis 100.
+            </small>
           </div>
 
           <div className="referral-bonus-preview" aria-live="polite">
-            Der einladende Gast erhält {normalizeReferralBonusDuration(settings.referral_boost_duration_days)} Tage.
-            Der eingeladene Freund erhält exakt{" "}
-            {formatInvitedReferralDuration(normalizeReferralBonusDuration(settings.referral_boost_duration_days))}.
+            Der einladende Gast erhält die volle Bonusdauer: {normalizeReferralBonusDuration(settings.referral_boost_duration_days)} Tage 2×.
+            Der eingeladene Freund erhält 50 % der Bonusdauer:{" "}
+            {formatInvitedReferralDuration(normalizeReferralBonusDuration(settings.referral_boost_duration_days))} 2×.
             Weitere erfolgreiche Einladungen verlängern nur die Laufzeit; der Multiplikator bleibt 2×.
           </div>
 

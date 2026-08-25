@@ -16,6 +16,7 @@ import {
   ScanLine,
   Save,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
@@ -952,6 +953,13 @@ export function SettingsPage() {
             to="/admin/welcome-gifts"
           />
           <SettingsLinkCard
+            description="Lege Aktivierung, Bonusdauer und monatliches Einladungslimit fest."
+            icon={Users}
+            label="2× Bonus einstellen"
+            title="Freunde einladen & 2× Bonus"
+            to="/admin/loyalty#freundschaftsbonus"
+          />
+          <SettingsLinkCard
             description="Plane letzte Punktevergabe, Kundenhinweis und Einlösefrist."
             icon={Scale}
             label="Programmende sicher planen"
@@ -1115,6 +1123,13 @@ export function SettingsPage() {
           label="Willkommensgeschenke verwalten"
           title="Willkommensgeschenke"
           to="/admin/welcome-gifts"
+        />
+        <SettingsLinkCard
+          description="Lege Aktivierung, Bonusdauer und monatliches Einladungslimit fest."
+          icon={Users}
+          label="2× Bonus einstellen"
+          title="Freunde einladen & 2× Bonus"
+          to="/admin/loyalty#freundschaftsbonus"
         />
         <SettingsLinkCard
           description="Öffne den Mitarbeiterbereich und sieh die heutige Tages-PIN."
