@@ -10,7 +10,6 @@ import {
   MapPin,
   Newspaper,
   Search,
-  Store,
   Trophy,
   X,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { AppShell, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
 import { CentralCustomerNavigation } from "./components/CentralCustomerNavigation";
+import { RestaurantHeroImage, RestaurantLogoImage } from "./components/RestaurantHeroImage";
 import { readStoredCustomerToken } from "./customerTokenStorage";
 import {
   distanceInKilometers,
@@ -95,9 +95,7 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
       onClick={onSelect}
       type="button"
     >
-      <span className="partner-result-logo">
-        {location.logo_url ? <img alt="" loading="lazy" src={location.logo_url} /> : <Store aria-hidden="true" size={24} />}
-      </span>
+      <RestaurantLogoImage alt="" className="partner-result-logo" logoUrl={location.logo_url} name={location.name} />
       <span className="partner-result-copy">
         <strong>{location.name}</strong>
         <small>{locationAddress(location)}</small>
@@ -122,11 +120,9 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
   return (
     <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
       <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
-      {location.cover_image_url ? <img alt={`${location.name} Titelbild`} className="partner-detail-cover" loading="lazy" src={location.cover_image_url} /> : null}
+      <RestaurantHeroImage coverImageUrl={location.cover_image_url} logoUrl={location.logo_url} name={location.name} />
       <div className="partner-detail-heading">
-        <span className="partner-detail-logo">
-          {location.logo_url ? <img alt={`${location.name} Logo`} loading="lazy" src={location.logo_url} /> : <Store aria-hidden="true" size={25} />}
-        </span>
+        <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
         <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : membership?.registered ? "Dein Bonus" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description">{location.short_description}</p> : null}

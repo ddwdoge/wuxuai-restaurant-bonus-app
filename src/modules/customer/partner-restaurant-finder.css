@@ -117,8 +117,11 @@
 }
 .partner-result-card.selected { border-color: var(--premium-gold); box-shadow: 0 0 0 2px rgba(191, 143, 54, 0.12); }
 .partner-result-card:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.3); outline-offset: 2px; }
-.partner-result-logo, .partner-detail-logo { align-items: center; background: var(--premium-gold-soft); border-radius: 13px; color: var(--premium-gold-dark); display: flex; height: 48px; justify-content: center; width: 58px; flex: 0 0 auto; }
-.partner-result-logo img, .partner-detail-logo img { display: block; height: auto; max-height: 100%; max-width: 100%; object-fit: contain; padding: 5px; width: auto; box-sizing: border-box; }
+.partner-result-logo, .partner-detail-logo { align-items: center; background: var(--premium-gold-soft); border-radius: 13px; color: var(--premium-gold-dark); display: flex; height: 48px; justify-content: center; position: relative; width: 58px; flex: 0 0 auto; }
+.partner-result-logo img, .partner-detail-logo img { display: block; height: auto; max-height: 100%; max-width: 100%; object-fit: contain; opacity: 0; padding: 5px; width: auto; box-sizing: border-box; }
+.partner-result-logo img.is-loaded, .partner-detail-logo img.is-loaded { opacity: 1; }
+.restaurant-logo-placeholder { align-items: center; display: flex; inset: 0; justify-content: center; position: absolute; }
+.restaurant-logo-placeholder strong { align-items: center; background: var(--premium-surface); border-radius: 50%; display: flex; font-size: 10px; height: 18px; justify-content: center; position: absolute; right: 4px; top: 4px; width: 18px; }
 .partner-result-copy { display: grid; gap: 3px; min-width: 0; }
 .partner-result-copy strong { font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .partner-result-copy small { color: var(--premium-text-secondary); line-height: 1.35; overflow-wrap: anywhere; }
@@ -132,7 +135,14 @@
 .partner-detail-card { background: var(--wux-surface, var(--premium-surface)); border: 1px solid var(--wux-border, var(--premium-border)); border-radius: var(--wux-radius-card, 20px); box-shadow: var(--wux-shadow-card, var(--premium-shadow)); display: grid; gap: 15px; overflow: hidden; padding: 16px; position: relative; }
 .partner-detail-close { align-items: center; background: var(--wux-background, var(--premium-background-soft)); border-radius: 50%; color: var(--premium-text); display: none; height: 44px; justify-content: center; position: absolute; right: 10px; top: 10px; width: 44px; z-index: 2; }
 .partner-detail-close:focus-visible { outline: 3px solid color-mix(in srgb, var(--wux-gold, var(--premium-gold)) 32%, transparent); outline-offset: 2px; }
-.partner-detail-cover { height: 112px; margin: -16px -16px 0; object-fit: cover; width: calc(100% + 32px); }
+.partner-detail-hero { background: #f3e6cc; height: 112px; isolation: isolate; margin: -16px -16px 0; overflow: hidden; position: relative; width: calc(100% + 32px); }
+.partner-detail-cover { display: block; height: 100%; inset: 0; object-fit: cover; opacity: 0; position: absolute; transition: opacity 160ms ease; width: 100%; z-index: 1; }
+.partner-detail-cover.is-loaded { opacity: 1; }
+.partner-detail-hero-fallback { align-items: center; background: #f3e6cc; display: flex; inset: 0; justify-content: center; position: absolute; }
+.partner-detail-hero-logo { align-items: center; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--premium-border); border-radius: 16px; color: var(--premium-gold-dark); display: flex; height: 72px; justify-content: center; overflow: hidden; position: relative; width: 96px; }
+.partner-detail-hero-logo img { box-sizing: border-box; display: block; height: 100%; object-fit: contain; opacity: 0; padding: 10px; width: 100%; }
+.partner-detail-hero-logo img.is-loaded { opacity: 1; }
+.partner-detail-hero-logo .restaurant-logo-placeholder strong { font-size: 13px; height: 24px; right: 7px; top: 7px; width: 24px; }
 .partner-detail-heading { align-items: start; display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr); }
 .partner-detail-heading > div { min-width: 0; }
 .partner-detail-heading h2 { font-family: var(--premium-display-font); font-size: 25px; font-weight: 600; line-height: 1.1; margin: 7px 0 4px; overflow-wrap: anywhere; }
@@ -179,6 +189,7 @@
   touch-action: pan-y;
 }
 .partner-detail-drawer-content .partner-detail-card { border: 0; box-shadow: none; overflow: visible; padding: 0; }
+.partner-detail-drawer-content .partner-detail-hero { margin: 0; width: 100%; }
 
 @media (max-width: 767px) {
   .partner-finder-shell { overflow-y: auto; }

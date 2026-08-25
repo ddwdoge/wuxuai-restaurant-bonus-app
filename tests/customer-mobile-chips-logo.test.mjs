@@ -4,12 +4,13 @@ import test from "node:test";
 
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [centralCss, finderCss, premiumCss, centralPage, finderPage] = await Promise.all([
+const [centralCss, finderCss, premiumCss, centralPage, finderPage, restaurantImage] = await Promise.all([
   read("../src/modules/customer/central-customer.css"),
   read("../src/modules/customer/partner-restaurant-finder.css"),
   read("../src/modules/customer/customer-premium.css"),
   read("../src/modules/customer/CentralCustomerPage.tsx"),
   read("../src/modules/customer/PartnerRestaurantFinderPage.tsx"),
+  read("../src/modules/customer/components/RestaurantHeroImage.tsx"),
 ]);
 
 test("Customer-Filterleisten bleiben horizontal scrollbar und der letzte Chip erreichbar", () => {
@@ -50,7 +51,8 @@ test("Restaurantkarten begrenzen ihre Breite und lassen lange Inhalte umbrechen"
 
 test("fehlende Logos behalten in Liste, Karte und Kundenportal einen sichtbaren Fallback", () => {
   assert.match(centralPage, /membership\.logo_url[\s\S]{0,180}<Store aria-hidden="true"/);
-  assert.ok((finderPage.match(/<Store aria-hidden="true"/g) ?? []).length >= 2);
+  assert.equal((finderPage.match(/<RestaurantLogoImage/g) ?? []).length, 2);
+  assert.match(restaurantImage, /<Store size=\{22\} \/>/);
   assert.match(premiumCss, /premium-restaurant-logo > span/);
 });
 

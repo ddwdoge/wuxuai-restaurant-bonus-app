@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurant Hero Image Visual Fixture</title>
+    <link rel="stylesheet" href="/src/modules/customer/partner-restaurant-finder.css" />
+    <style>
+      :root {
+        --premium-background: #f8f5ef;
+        --premium-background-soft: #fcfaf6;
+        --premium-border: #ebe5dc;
+        --premium-gold-dark: #956820;
+        --premium-gold-soft: #f3e6cc;
+        --premium-shadow: 0 8px 30px rgba(50, 40, 25, 0.06);
+        --premium-surface: #fff;
+        --premium-text: #1f1f1f;
+        --premium-text-secondary: #6f6a63;
+      }
+      * { box-sizing: border-box; }
+      body { background: var(--premium-background); color: var(--premium-text); font-family: Arial, sans-serif; margin: 0; padding: 16px; }
+      main { display: grid; gap: 20px; margin: 0 auto; max-width: 1120px; }
+      h1 { font-size: 22px; margin: 0; }
+      .fixture-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .fixture-card { min-width: 0; }
+      .fixture-card h2 { font-size: 18px; margin: 0; overflow-wrap: anywhere; }
+      .fixture-card p { color: var(--premium-text-secondary); margin: 0; }
+      .partner-detail-hero-logo img { opacity: 1; }
+      @media (max-width: 767px) { .fixture-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Restaurant-Titelbilder</h1>
+      <div class="fixture-grid">
+        <article class="partner-detail-card fixture-card" data-case="valid">
+          <div class="partner-detail-hero" data-image-state="valid">
+            <div class="partner-detail-hero-fallback" aria-hidden="true">
+              <span class="partner-detail-hero-logo"><span class="restaurant-logo-placeholder"><strong>K</strong></span></span>
+            </div>
+            <img alt="Kaffee Konditorei Titelbild" class="partner-detail-cover is-loaded" src="https://bwhvfjuwixgwduoeqaya.supabase.co/storage/v1/object/public/restaurant-media/1dbd4d83-cd4f-441e-9d3f-71a34febfed2/branding/logo-1787509992653.png" />
+          </div>
+          <h2>Valides Titelbild</h2>
+          <p>Das Bild füllt die stabile Hero-Fläche.</p>
+        </article>
+        <article class="partner-detail-card fixture-card" data-case="missing">
+          <div aria-label="WU und XU Group GmbH Titelbild nicht verfügbar" class="partner-detail-hero" data-image-state="missing" role="img">
+            <div class="partner-detail-hero-fallback">
+              <span class="partner-detail-hero-logo"><img alt="WU und XU Group GmbH Logo" src="https://bwhvfjuwixgwduoeqaya.supabase.co/storage/v1/object/public/restaurant-media/1dbd4d83-cd4f-441e-9d3f-71a34febfed2/branding/logo-1787509992653.png" /></span>
+            </div>
+          </div>
+          <h2>Kein Titelbild</h2>
+          <p>Das Restaurantlogo bleibt sichtbar.</p>
+        </article>
+        <article class="partner-detail-card fixture-card" data-case="broken">
+          <div aria-label="Sehrlangesrestaurantnamemitinnenstadtfiliale Titelbild nicht verfügbar" class="partner-detail-hero" data-image-state="error" role="img">
+            <div class="partner-detail-hero-fallback">
+              <span class="partner-detail-hero-logo"><span class="restaurant-logo-placeholder"><strong>S</strong></span></span>
+            </div>
+          </div>
+          <h2>Sehrlangesrestaurantnamemitinnenstadtfiliale</h2>
+          <p>Defektes Titelbild und fehlendes Logo nutzen den neutralen Zustand.</p>
+        </article>
+      </div>
+    </main>
+  </body>
+</html>

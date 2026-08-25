@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Restaurant-Titelbilder gegen fehlerhafte Quellen abgesichert
+
+- Fehlerhafte oder fehlende Titelbild-Adressen im Customer-Partnerfinder zeigen
+  keinen Browser-Fehlerzustand und keinen sichtbaren Alternativtext mehr.
+- Gemeinsamen Bildzustand fuer Laden, gueltiges Bild, fehlendes Bild und
+  Ladefehler eingefuehrt; Restaurantlogo und neutraler Lokal-Fallback folgen
+  in dieser Reihenfolge.
+- Hero-Abmessungen im Detail-Drawer von 320 bis 1024 Pixel stabil gehalten;
+  Finder-, Karten-, Auth-, Punkte- und Rewardlogik bleiben unveraendert.
+
 ## 2026-08-25 - Customer Redeem Tabs geometrisch synchronisiert
 
 - `Alle Belohnungen` und `Meine Belohnungen` auf eine gemeinsame, unveraenderliche
