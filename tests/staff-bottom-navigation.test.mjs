@@ -29,7 +29,7 @@ test("Aktive Zustände und Scanner-Rückkehr sind eindeutig", () => {
   assert.match(nav, /className=\{scannerOpen \? "active staff-premium-nav-scan"/);
   assert.match(staffPortal, /scannerReturnViewRef\.current = view/);
   assert.match(staffPortal, /openStaffView\(scannerReturnViewRef\.current\)/);
-  assert.match(staffPortal, /onClick=\{dismissScanner\}/);
+  assert.match(staffPortal, /onClose=\{dismissScanner\}/);
 });
 
 test("Fünf gleich breite Touchziele passen ohne horizontalen Nav-Scroll", () => {

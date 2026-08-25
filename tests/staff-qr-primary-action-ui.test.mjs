@@ -11,6 +11,9 @@ const home = staffPortal.slice(homeStart, homeEnd);
 const scannerStart = staffPortal.indexOf("async function startQrScanner");
 const scannerEnd = staffPortal.indexOf("function closeScanner", scannerStart);
 const scanner = staffPortal.slice(scannerStart, scannerEnd);
+const cameraStart = staffPortal.indexOf("async function activateQrScannerCamera");
+const cameraEnd = staffPortal.indexOf("async function startQrScanner", cameraStart);
+const camera = staffPortal.slice(cameraStart, cameraEnd);
 
 test("Kunden-QR ist die erste Hauptaktion vor Tages-PIN KPIs und Gast-Suche", () => {
   const qrIndex = home.indexOf('id="staff-scan-title"');
@@ -25,10 +28,11 @@ test("Kunden-QR ist die erste Hauptaktion vor Tages-PIN KPIs und Gast-Suche", ()
 
 test("Primary CTA verwendet ausschließlich den bestehenden Scanner-Handler", () => {
   assert.match(home, /className="staff-premium-scan-button"[\s\S]*onClick=\{\(\) => void startQrScanner\(\)\}/);
-  assert.match(scanner, /navigator\.mediaDevices\?\.getUserMedia/);
-  assert.match(scanner, /BrowserQRCodeReader/);
-  assert.match(scanner, /decodeFromConstraints/);
-  assert.match(scanner, /handleScannerValue\(rawValue\)/);
+  assert.match(scanner, /activateQrScannerCamera\(\)/);
+  assert.match(camera, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(camera, /BrowserQRCodeReader/);
+  assert.match(camera, /decodeFromConstraints/);
+  assert.match(camera, /handleScannerValue\(rawValue\)/);
   assert.match(staffPortal, /previewRestaurantControlledPoints/);
   assert.match(staffPortal, /confirmRestaurantControlledPoints/);
 });

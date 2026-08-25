@@ -54,7 +54,7 @@ test("fehlgeschlagene Vorschau sperrt den Punktebereich und bietet Suche oder Re
 });
 
 test("Gastwechsel löscht nur die aktuelle Auswahl und öffnet erneut die Suche", () => {
-  const clearStart = staffPortal.indexOf("function clearSelectedCustomer");
+  const clearStart = staffPortal.indexOf("function resetSelectedCustomerState");
   const clearEnd = staffPortal.indexOf("function formatBoostExpiry", clearStart);
   const clearSelection = staffPortal.slice(clearStart, clearEnd);
   assert.match(clearSelection, /setSelectedCustomerId\(""\)/);

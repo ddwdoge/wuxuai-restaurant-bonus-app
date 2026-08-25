@@ -100,8 +100,8 @@ test("scanner contract accepts current payload and manual code but rejects unrel
 test("invalid QR feedback remains visible while manual fallback stays available", () => {
   assert.match(staffPortal, /Dieser QR-Code ist kein gültiger Kunden-QR\. Bitte versuche es erneut\./);
   assert.match(staffPortal, /Kunden-QR ruhig und vollständig in den Rahmen halten\./);
-  assert.match(staffPortal, /QR-Code manuell eingeben/);
-  assert.match(staffPortal, /Telefon, Name oder Gästecode/);
+  assert.match(staffPortal, /QR nicht verfügbar\? Gast suchen/);
+  assert.match(staffPortal, /Name, Telefon oder Gästecode/);
   assert.match(loyaltyService, /QR_NOT_FOUND/);
   assert.match(loyaltyService, /ungültig, abgelaufen oder gehört nicht zu diesem Restaurant/);
 });

@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Staff-QR als unmittelbaren operativen Drawer umgesetzt
+
+- Primäre Bottom-Navigation `QR scannen` öffnet nun mit einem Tap einen
+  fokussierten Scanner-Drawer, dessen bestehende ZXing-Kamera auf Mobilgeräten
+  direkt unter dem kompakten Header sichtbar ist.
+- Erkennung, sichere Kundenvorschau, Punkteformular, Tages-PIN, Fehler und
+  Erfolg bleiben in einem zustandsbasierten Drawer ohne verschachtelte Modale.
+- Kamera-, QR-, Punkte-, Tenant-, Staff-/Owner- und Actor-Verträge unverändert
+  gelassen; Gastwechsel und nächster Gast starten dieselbe Kamera kontrolliert
+  neu.
+
 ## 2026-08-25 - Staff-Kundenflow nach Vorgangspriorität geordnet
 
 - Aktive Rückmeldung, Kundenkarte, Punktevergabe und Schnellsuche im Staff- und Betreiberzugriff verbindlich in dieser Reihenfolge angeordnet.
