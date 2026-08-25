@@ -2766,10 +2766,21 @@ a {
   border: 1px solid #dde3ea;
   border-radius: 8px;
   display: flex;
-  height: 222px;
+  height: 302px;
   justify-content: center;
-  padding: 20px;
-  width: 222px;
+  padding: 15px;
+  width: 302px;
+}
+
+.operational-qr-code {
+  background: #ffffff;
+  display: block;
+  flex: 0 0 auto;
+  height: 270px;
+  max-height: 270px;
+  max-width: 270px;
+  shape-rendering: crispEdges;
+  width: 270px;
 }
 
 .starter-qr-description {

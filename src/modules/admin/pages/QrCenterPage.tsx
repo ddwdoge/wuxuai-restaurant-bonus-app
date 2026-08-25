@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
+import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import type { PointsCollectionMode } from "../../../shared/types/domain";
 import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
@@ -198,7 +199,7 @@ function buildPdf(pages: PdfPage[]) {
   return new Blob([concatBytes(chunks)], { type: "application/pdf" });
 }
 
-async function qrSvgToCanvas(svgId: string, size = 960) {
+async function qrSvgToCanvas(svgId: string, size = OPERATIONAL_QR_EXPORT.qrSize) {
   const svg = document.getElementById(svgId);
   if (!svg) {
     throw new Error("QR-Code konnte nicht gefunden werden.");
@@ -227,6 +228,7 @@ async function qrSvgToCanvas(svgId: string, size = 960) {
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, size, size);
+  context.imageSmoothingEnabled = false;
   context.drawImage(image, 0, 0, size, size);
   URL.revokeObjectURL(url);
   return canvas;
@@ -356,7 +358,7 @@ function drawQrPrintPage(
 
   const margin = 72;
   const contentWidth = canvas.width - margin * 2;
-  const qrSize = 610;
+  const qrSize = 630;
   const qrX = (canvas.width - qrSize) / 2;
   const qrY = 612;
 
@@ -399,6 +401,7 @@ function drawQrPrintPage(
   context.strokeStyle = branding.accentColor;
   context.lineWidth = 6;
   context.stroke();
+  context.imageSmoothingEnabled = false;
   context.drawImage(page.qrCanvas, qrX, qrY, qrSize, qrSize);
 
   context.fillStyle = branding.primaryColor;
@@ -515,8 +518,8 @@ function downloadQrPng(svgId: string, filename: string) {
 
   image.onload = () => {
     const canvas = document.createElement("canvas");
-    canvas.width = 720;
-    canvas.height = 720;
+    canvas.width = OPERATIONAL_QR_EXPORT.canvasSize;
+    canvas.height = OPERATIONAL_QR_EXPORT.canvasSize;
     const context = canvas.getContext("2d");
     if (!context) {
       URL.revokeObjectURL(url);
@@ -525,7 +528,14 @@ function downloadQrPng(svgId: string, filename: string) {
 
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 60, 60, 600, 600);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(
+      image,
+      OPERATIONAL_QR_EXPORT.inset,
+      OPERATIONAL_QR_EXPORT.inset,
+      OPERATIONAL_QR_EXPORT.qrSize,
+      OPERATIONAL_QR_EXPORT.qrSize,
+    );
     URL.revokeObjectURL(url);
 
     const link = document.createElement("a");
@@ -646,7 +656,7 @@ export function QrCenterPage() {
           {renderQrBrandBlock()}
           <h2>Neue Gäste QR</h2>
           <p className="muted">Für Eingang, Tischaufsteller, Kassa, Rechnung, Flyer oder Werbung.</p>
-          <QRCodeSVG id="qr-restaurant" value={restaurantQrUrl} size={180} level="M" />
+          <OperationalQrCode id="qr-restaurant" title="QR-Code für neue Gäste" value={restaurantQrUrl} />
           <p className="muted">Neue Gäste werden Mitglied und erhalten ihr Willkommensgeschenk.</p>
           <div className="qr-card-actions">
             <a className="button secondary" href={restaurantQrUrl}>
@@ -664,7 +674,7 @@ export function QrCenterPage() {
           {renderQrBrandBlock()}
           <h2>Mitarbeiter QR</h2>
           <p className="muted">Nur für dein Team.</p>
-          <QRCodeSVG id="qr-staff" value={staffTabletUrl} size={180} level="M" />
+          <OperationalQrCode id="qr-staff" title="QR-Code für den Mitarbeiterbereich" value={staffTabletUrl} />
           <p className="muted">Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.</p>
           <div className="qr-card-actions">
             <a className="button secondary" href={staffTabletUrl}>
@@ -689,7 +699,7 @@ export function QrCenterPage() {
             {renderQrBrandBlock()}
             <h3>Kassa QR</h3>
             <p className="muted">Für Bonuspunkte nach dem Bezahlen.</p>
-            <QRCodeSVG id="qr-bonus" value={bonusQrUrl} size={180} level="M" />
+            <OperationalQrCode id="qr-bonus" title="QR-Code für den bestehenden Sammelweg" value={bonusQrUrl} />
             <p className="muted">Bestandsgäste scannen und fragen nach der Tages-PIN.</p>
             <button className="button secondary" onClick={() => downloadQrPng("qr-bonus", "kassa-qr.png")} type="button">
               <Download size={18} />

@@ -1,6 +1,15 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Operative QR-Codes fuer physische Kameras gehaertet
+
+- Neue-Gaeste-, Mitarbeiter- und kompatible Kassa-QRs auf eine gemeinsame
+  schwarz-weisse Renderkonfiguration mit vier Modulen Ruhezone umgestellt.
+- Bildschirmdarstellung auf 270 Pixel sowie PNG- und Starter-Kit-Ausgaben auf
+  hochaufloesende, geglaettungsfreie Rasterpfade angehoben.
+- Staff- und Gaeste-Nutzlasten programmgesteuert aus dem erzeugten QR-Raster
+  dekodiert; Loginroute, Authentifizierung, Rollen und RLS bleiben unveraendert.
+
 ## 2026-08-25 - Betreiberzugriff auf eigenen Mitarbeiterbereich
 
 - Staff-Routen fuer autoritative Owner-, Admin- und Manager-Beziehungen des
@@ -2876,3 +2885,19 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   fehlenden Daten; Abfragefehler werden nicht als Standardwert 5 dargestellt.
 - Rollenprüfung, Grants, Tenant-RLS und Referral-Geschäftslogik bleiben
   unverändert.
+
+## 2026-08-25 – Owner- und Staff-Betriebszugriff auf Staging verifiziert
+
+- Owner, Admin und Manager können den Mitarbeiterbereich ausschließlich für
+  das eigene Restaurant im klar gekennzeichneten Betreiberzugriff öffnen.
+- Aktive persönliche Staff-Konten können die minimierte Gästeliste ihres
+  Restaurants laden; gesperrte oder fremde Staff-Zugänge bleiben blockiert.
+- Punkteaktionen werden im Audit getrennt der echten Administration oder dem
+  echten Staff-Mitglied zugeordnet, ohne Staff-Impersonation.
+- Ein neuer Punkte-QR löscht vor der serverseitigen Vorschau jede alte sichtbare
+  Kundenauswahl und zeigt die kurzlebige QR-Referenz nicht im Suchfeld an.
+- Migrationen `20260825005000` und `20260825006000` sind auf Staging angewendet;
+  Remote-Historie und lokaler Stand sind synchron, der DB-Linter meldet null
+  Fehler.
+- Production bleibt gesperrt; physische Owner-/Staff-QR-Scans auf einem echten
+  iPhone bleiben ein separates manuelles Gate.

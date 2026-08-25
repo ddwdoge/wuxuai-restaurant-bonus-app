@@ -12,7 +12,6 @@ import {
   Utensils,
   UtensilsCrossed,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   completePilotOnboarding,
@@ -23,6 +22,8 @@ import { useTenant } from "../../tenant/TenantProvider";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
+import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
@@ -421,7 +422,7 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-async function qrSvgToCanvas(svgId: string, size = 960) {
+async function qrSvgToCanvas(svgId: string, size = OPERATIONAL_QR_EXPORT.qrSize) {
   const svg = document.getElementById(svgId);
   if (!svg) {
     throw new Error("QR-Code konnte nicht gefunden werden.");
@@ -450,6 +451,7 @@ async function qrSvgToCanvas(svgId: string, size = 960) {
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, size, size);
+  context.imageSmoothingEnabled = false;
   context.drawImage(image, 0, 0, size, size);
   URL.revokeObjectURL(url);
   return canvas;
@@ -735,7 +737,7 @@ function drawStarterKitPage(
   const margin = 188;
   const logoWidth = 984;
   const logoHeight = 276;
-  const qrSize = 820;
+  const qrSize = 900;
   const qrX = (canvas.width - qrSize) / 2;
   const qrY = 1010;
   const cardPadding = 104;
@@ -801,6 +803,7 @@ function drawStarterKitPage(
   context.strokeStyle = branding.secondaryColor;
   context.lineWidth = 8;
   context.stroke();
+  context.imageSmoothingEnabled = false;
   context.drawImage(spec.qrCanvas, qrX, qrY, qrSize, qrSize);
 
   context.fillStyle = "#344251";
@@ -2298,7 +2301,7 @@ function QrLaunchCard({
         <p>{subtitle}</p>
       </div>
       <div className="starter-qr-code">
-        <QRCodeSVG id={id} value={url} size={178} level="M" />
+        <OperationalQrCode id={id} title={`${title} QR-Code`} value={url} />
       </div>
       <p className="starter-qr-description">{description}</p>
     </article>

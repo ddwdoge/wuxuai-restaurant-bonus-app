@@ -39,5 +39,5 @@ test("echte QR-Codes bleiben ausschließlich im Starter-Kit verfügbar", () => {
   assert.match(starterKit, /id="staff-qr"/);
   assert.doesNotMatch(starterKit, /id="bonus-qr"|\/w\/\$\{restaurantSlug\}/);
   assert.match(starterKit, /downloadRestaurantStarterKit/);
-  assert.match(onboarding, /<QRCodeSVG[\s\S]*value=\{url\}/);
+  assert.match(onboarding, /<OperationalQrCode[\s\S]*value=\{url\}/);
 });
