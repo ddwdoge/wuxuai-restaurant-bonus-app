@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { useAuth } from "../../auth/AuthProvider";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { useTenant } from "../../tenant/TenantProvider";
 import { STAFF_STATUS_LABELS, staffActionsForStatus, validateStaffInvitation } from "../staffManagementFlow.mjs";
 import {
@@ -34,7 +35,7 @@ export function StaffPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const restaurantId = activeRestaurant?.id ?? "";
-  const staffTabletPath = activeRestaurant ? `/staff/${activeRestaurant.slug}` : "/admin";
+  const staffTabletPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const canManage = restaurantRole === "owner" || restaurantRole === "admin";
 
   const refreshMembers = useCallback(async () => {

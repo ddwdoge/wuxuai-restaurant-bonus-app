@@ -6,6 +6,7 @@ import type { PointsCollectionMode } from "../../../shared/types/domain";
 import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { getQrCenterPurposes } from "../qrCenterFlow.mjs";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
 type QrPrintPage = {
   boostHint?: boolean;
@@ -547,7 +548,7 @@ export function QrCenterPage() {
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = restaurantSlug ? `${publicBaseUrl}/customer/${restaurantSlug}` : publicBaseUrl;
   const bonusQrUrl = restaurantSlug ? `${publicBaseUrl}/w/${restaurantSlug}` : publicBaseUrl;
-  const staffTabletUrl = restaurantSlug ? `${publicBaseUrl}/staff/${restaurantSlug}` : publicBaseUrl;
+  const staffTabletUrl = restaurantSlug ? `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}` : publicBaseUrl;
   const primaryColor = safeColor(branding?.primary_color, "#0f766e");
   const secondaryColor = safeColor(branding?.secondary_color, "#f4a261");
   const qrPurposes = pointsCollectionMode ? getQrCenterPurposes(pointsCollectionMode) : [];

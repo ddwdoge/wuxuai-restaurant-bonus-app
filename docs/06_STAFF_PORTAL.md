@@ -7,11 +7,14 @@ Tages-PIN, Suchen und Mehr. Die normale Einlösung ist eine serverzeitgebundene
 15-Minuten-Präsentation; eine sechsstellige Codeprüfung ist kein aktiver
 Primärflow. Ältere widersprechende Abschnitte sind nur Legacy-Historie.
 
-Der Mitarbeiter-QR `/staff/:slug` ist nur ein bequemer Einstieg in den
-geschützten Mitarbeiterbereich. Er enthält keine Staff-PIN, keinen Auth-Token
-und keine Rollenberechtigung. Erst die bestehende Authentifizierung und die
-serverseitige Restaurantzuordnung erlauben Zugriff. Danach ist „Kunden-QR
-scannen“ die primäre Aktion.
+Der Mitarbeiter-QR führt auf `/staff/login?restaurant=:slug` und ist nur ein
+bequemer Einstieg in den geschützten Mitarbeiterbereich. Bereits gedruckte
+QRs mit `/staff/:slug` werden ohne Berechtigungswirkung auf denselben Login
+weitergeleitet. Der QR enthält keine Staff-PIN, keinen Auth-Token und keine
+Rollenberechtigung. Erst die persönliche Authentifizierung und die exakte,
+aktive serverseitige Staff-Zuordnung zum Restaurant erlauben Zugriff. Owner-,
+Customer- und Plattformrollen verleihen keinen Staff-Zugriff. Danach ist
+„Kunden-QR scannen“ die primäre Aktion.
 
 ## Punktevergabe ab 31.07.2026
 

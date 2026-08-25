@@ -116,9 +116,11 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Neue-Gaeste-QR `/customer/:slug` ist der einzige aktive oeffentliche
   Registrierungs-QR. Unterschiedliche Druckorte und Papierformate verwenden
   dieselbe URL und erzeugen keinen technischen QR-Typ.
-- Der Mitarbeiter-QR `/staff/:slug` ist der getrennte interne Einstieg. Die
-  Route bleibt durch Authentifizierung und Restaurantrollen geschuetzt; der QR
-  selbst erteilt keine Berechtigung.
+- Der Mitarbeiter-QR `/staff/login?restaurant=:slug` ist der getrennte interne
+  Einstieg. Bestehende `/staff/:slug`-Drucke bleiben als sichere Weiterleitung
+  kompatibel. Die Route verlangt eine persönliche Authentifizierung sowie eine
+  aktive, exakt zum Restaurant passende Staff-Zuordnung; der QR selbst erteilt
+  keine Berechtigung. Owner- und Plattformrollen sind kein Staff-Ersatz.
 - Der fruehere Kassa-Aufsteller ist als doppelte Druckvariante entfernt.
 - `/w/:slug` bleibt fuer bestehende kundeninitiierte Sammelwege kompatibel und
   wird im QR Center nur bei `customer_initiated_only` oder `both` angezeigt.

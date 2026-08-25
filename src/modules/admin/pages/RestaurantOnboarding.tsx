@@ -27,6 +27,7 @@ import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { onboardingCompletionErrorMessage, safeLegalRpcError } from "../../legal/legalPublicationDate.mjs";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
@@ -1203,7 +1204,7 @@ export function RestaurantOnboarding() {
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
-  const staffTabletUrl = `${publicBaseUrl}/staff/${restaurantSlug}`;
+  const staffTabletUrl = `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
 

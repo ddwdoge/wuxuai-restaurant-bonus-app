@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
@@ -330,7 +331,7 @@ export function StaffTablet() {
 
     try {
       await signOut();
-      navigate("/restaurant/login", { replace: true });
+      navigate(buildStaffLoginPath(slug), { replace: true });
     } catch {
       setLogoutError("Abmelden ist gerade nicht möglich. Bitte versuche es erneut.");
     } finally {

@@ -25,7 +25,8 @@ test("Logout entfernt Tenant-Daten und leitet zum Restaurant-Login", () => {
   assert.match(tenantProvider, /setBranding\(null\)/);
   assert.match(adminLayout, /clearTenantState\(\)/);
   assert.match(adminLayout, /navigate\("\/restaurant\/login"/);
-  assert.match(protectedRoute, /Navigate to="\/restaurant\/login"/);
+  assert.match(protectedRoute, /: "\/restaurant\/login"/);
+  assert.match(protectedRoute, /buildStaffLoginPath\(staffSlug\)/);
   assert.match(app, /path="\/restaurant\/login" element=\{<LoginPage \/>\}/);
 });
 

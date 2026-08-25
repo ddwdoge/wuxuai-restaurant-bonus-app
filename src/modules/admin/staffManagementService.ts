@@ -55,7 +55,7 @@ async function readFunctionFailure(error: unknown, data: unknown) {
     }
   }
 
-  console.warn("Staff invitation request failed", { status, code });
+  console.warn(`Staff invitation request failed: ${JSON.stringify({ status, code })}`);
   return code;
 }
 

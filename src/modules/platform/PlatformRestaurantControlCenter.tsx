@@ -30,6 +30,7 @@ import {
   getRestaurantStatusLabel,
   getSetupLabel,
 } from "./platformControlCenterView.mjs";
+import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
@@ -297,7 +298,7 @@ export function PlatformRestaurantControlCenter({
         <div className="platform-link-grid" aria-label="Restaurant Links">
           <a className="button secondary" href={`${portalOrigin}/admin`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Restaurant Portal · Anmeldung erforderlich</a>
           <a className="button secondary" href={`${portalOrigin}/customer/${restaurant.slug}`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Gäste-QR-Link öffnen</a>
-          <a className="button secondary" href={`${portalOrigin}/staff/${restaurant.slug}`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Staff Portal · Anmeldung erforderlich</a>
+          <a className="button secondary" href={`${portalOrigin}${buildStaffLoginPath(restaurant.slug)}`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Mitarbeiterbereich · Anmeldung erforderlich</a>
           <a className="button secondary" href={`${portalOrigin}/admin/qr`} rel="noreferrer" target="_blank"><ExternalLink size={18} />QR Center · Anmeldung erforderlich</a>
         </div>
         <div className="platform-qr-contract"><span><CheckCircle2 size={17} />Neuer Gäste-QR aktiv</span><span><CheckCircle2 size={17} />Mitarbeiter-QR aktiv</span><span><AlertTriangle size={17} />Kassa-Aufsteller in V1 nicht aktiv</span></div>

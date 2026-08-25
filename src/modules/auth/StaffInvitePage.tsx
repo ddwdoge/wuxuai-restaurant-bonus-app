@@ -5,6 +5,7 @@ import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { PublicContentCard, PublicFormField, PublicPageShell, PublicPrimaryButton } from "../public/PublicPageComponents";
 import { validateStaffInvitePassword } from "./staffInviteFlow.mjs";
 import { clearStaffInviteUrl, completeStaffInvite, establishStaffInviteSession } from "./staffInviteService";
+import { buildStaffLoginPath } from "./staffLoginFlow.mjs";
 
 export function StaffInvitePage() {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ export function StaffInvitePage() {
     setLoading(true);
     setError(null);
     try {
-      await completeStaffInvite(password);
-      navigate("/restaurant/login", { replace: true, state: { logoutMessage: "Dein Mitarbeiterzugang ist bereit. Du kannst dich jetzt anmelden." } });
+      const result = await completeStaffInvite(password);
+      navigate(buildStaffLoginPath(result.restaurantSlug), { replace: true, state: { logoutMessage: "Dein Mitarbeiterzugang ist bereit. Du kannst dich jetzt anmelden." } });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Zugang konnte nicht eingerichtet werden.");
     } finally {
@@ -51,7 +52,7 @@ export function StaffInvitePage() {
     <PublicPageShell description="Lege dein persönliches Passwort für den Mitarbeiterbereich fest." eyebrow="Sicherer Teamzugang" title="Einladung annehmen">
       <PublicContentCard>
         <div className="public-premium-status-icon" aria-hidden="true"><KeyRound size={28} /></div>
-        {ready ? <form className="public-premium-form" onSubmit={handleSubmit}><RequiredFieldsNote /><PublicFormField autoComplete="new-password" disabled={loading} id="staff-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /><PublicFormField autoComplete="new-password" disabled={loading} id="staff-password-confirmation" label="Passwort bestätigen" minLength={8} onChange={(event) => setConfirmation(event.target.value)} required type="password" value={confirmation} />{error ? <p className="public-premium-alert public-premium-alert-error" role="alert">{error}</p> : null}<PublicPrimaryButton icon={<KeyRound size={18} />} loading={loading} loadingLabel="Zugang wird eingerichtet …" type="submit">Zugang einrichten</PublicPrimaryButton></form> : <><p className={`public-premium-alert${error ? " public-premium-alert-error" : ""}`} role={error ? "alert" : "status"}>{error ?? "Die Einladung wird geprüft …"}</p>{error ? <div className="public-premium-secondary-actions"><Link className="public-premium-secondary-link" to="/restaurant/login">Zum Login</Link></div> : null}</>}
+        {ready ? <form className="public-premium-form" onSubmit={handleSubmit}><RequiredFieldsNote /><PublicFormField autoComplete="new-password" disabled={loading} id="staff-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /><PublicFormField autoComplete="new-password" disabled={loading} id="staff-password-confirmation" label="Passwort bestätigen" minLength={8} onChange={(event) => setConfirmation(event.target.value)} required type="password" value={confirmation} />{error ? <p className="public-premium-alert public-premium-alert-error" role="alert">{error}</p> : null}<PublicPrimaryButton icon={<KeyRound size={18} />} loading={loading} loadingLabel="Zugang wird eingerichtet …" type="submit">Zugang einrichten</PublicPrimaryButton></form> : <><p className={`public-premium-alert${error ? " public-premium-alert-error" : ""}`} role={error ? "alert" : "status"}>{error ?? "Die Einladung wird geprüft …"}</p>{error ? <div className="public-premium-secondary-actions"><Link className="public-premium-secondary-link" to="/staff/login">Zum Mitarbeiter-Login</Link></div> : null}</>}
       </PublicContentCard>
     </PublicPageShell>
   );

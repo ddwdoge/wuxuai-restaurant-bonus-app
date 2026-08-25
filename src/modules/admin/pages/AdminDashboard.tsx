@@ -13,6 +13,7 @@ import {
   type DashboardSetupStatus,
 } from "../dashboardNoticeService";
 import { resolveDashboardNextStep } from "../dashboardNextStep.mjs";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
 const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
@@ -119,7 +120,7 @@ export function AdminDashboard() {
     return () => { cancelled = true; };
   }, [activeRestaurant?.id, reloadKey]);
 
-  const staffPath = activeRestaurant ? `/staff/${activeRestaurant.slug}` : "/admin";
+  const staffPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const dashboardKpis = [
     { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers) },
     { icon: UserPlus, label: "Neue Kunden heute", value: String(rewardKpis.newMembersToday) },

@@ -30,8 +30,16 @@ export async function completeStaffInvite(password: string) {
     input_staff_member_id: staffMemberId,
   });
   if (acceptanceError || !data?.success) throw new Error("Der Teamzugang konnte nicht aktiviert werden.");
+  const restaurantId = typeof data.restaurant_id === "string" ? data.restaurant_id : null;
+  const { data: restaurant, error: restaurantError } = restaurantId
+    ? await client.from("restaurants").select("slug").eq("id", restaurantId).maybeSingle()
+    : { data: null, error: new Error("Restaurant fehlt.") };
+  if (restaurantError || typeof restaurant?.slug !== "string") {
+    throw new Error("Der Restaurantzugang konnte nicht zugeordnet werden.");
+  }
   window.sessionStorage.removeItem(STAFF_INVITE_MARKER_KEY);
   await client.auth.signOut({ scope: "local" });
+  return { restaurantSlug: restaurant.slug };
 }
 
 export function clearStaffInviteUrl() {

@@ -11,6 +11,7 @@ import {
 } from "./authSessionGuard.mjs";
 import { classifyOwnerAuthError, isOwnerEmailConfirmed, ownerAuthErrorMessage } from "./ownerAuthFlow.mjs";
 import { isPlatformAdminRole } from "../platform/platformAdminAuthorization.mjs";
+import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -81,7 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authSessionRequired = requiresAuthenticatedSession(location.pathname);
   const invalidSessionRedirect = location.pathname.startsWith("/customer")
     ? `/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
-    : "/restaurant/login";
+    : location.pathname.startsWith("/staff")
+      ? buildStaffLoginPath(staffSlugFromLegacyPath(location.pathname) ?? new URLSearchParams(location.search).get("restaurant"))
+      : "/restaurant/login";
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(Boolean(supabase && authSessionRequired));

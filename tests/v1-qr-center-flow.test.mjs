@@ -28,7 +28,7 @@ test("onboarding starter kit uses guest and protected staff QR only", () => {
   assert.match(onboarding, /id="restaurant-qr"/);
   assert.match(onboarding, /id="staff-qr"/);
   assert.doesNotMatch(onboarding, /id="bonus-qr"/);
-  assert.match(onboarding, /staffTabletUrl = `\$\{publicBaseUrl\}\/staff\/\$\{restaurantSlug\}`/);
+  assert.match(onboarding, /staffTabletUrl = `\$\{publicBaseUrl\}\$\{buildStaffLoginPath\(restaurantSlug\)\}`/);
 });
 
 test("alternate guest print reuses the same technical guest QR", () => {

@@ -8,6 +8,8 @@ import { ConfirmEmailPage } from "../modules/auth/ConfirmEmailPage";
 import { ForgotPasswordPage } from "../modules/auth/ForgotPasswordPage";
 import { UpdatePasswordPage } from "../modules/auth/UpdatePasswordPage";
 import { StaffInvitePage } from "../modules/auth/StaffInvitePage";
+import { StaffLoginPage } from "../modules/auth/StaffLoginPage";
+import { StaffRestaurantRouteGate } from "../modules/auth/StaffRestaurantRouteGate";
 import { PublicHome } from "../modules/public/PublicHome";
 import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundary";
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
@@ -181,7 +183,7 @@ function StaffIndexRoute() {
   if (loading) return <StaffLoading />;
   return activeRestaurant
     ? <Navigate replace to={`/staff/${activeRestaurant.slug}`} />
-    : <Navigate replace to="/restaurant/login" />;
+    : <Navigate replace to="/staff/login" />;
 }
 
 export function App() {
@@ -196,6 +198,7 @@ export function App() {
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
       <Route path="/auth/staff-invite" element={<StaffInvitePage />} />
+      <Route path="/staff/login" element={<StaffLoginPage />} />
       <Route
         path="/admin"
         element={
@@ -278,7 +281,7 @@ export function App() {
       <Route
         path="/staff"
         element={
-          <ProtectedRoute allowedRoles={["staff", "supervisor", "owner", "admin", "manager"]}>
+          <ProtectedRoute allowedRoles={["staff", "supervisor"]}>
             <StaffIndexRoute />
           </ProtectedRoute>
         }
@@ -286,8 +289,8 @@ export function App() {
       <Route
         path="/staff/:slug"
         element={
-          <ProtectedRoute allowedRoles={["staff", "supervisor", "owner", "admin", "manager"]}>
-            <RestaurantSetupGate>{withFallback(<StaffTablet />, <StaffLoading />)}</RestaurantSetupGate>
+          <ProtectedRoute allowedRoles={["staff", "supervisor"]}>
+            <StaffRestaurantRouteGate>{withFallback(<StaffTablet />, <StaffLoading />)}</StaffRestaurantRouteGate>
           </ProtectedRoute>
         }
       />

@@ -5,6 +5,7 @@ import { STAFF_STATUS_LABELS, staffActionsForStatus, validateStaffInvitation } f
 import { establishStaffInviteSessionCore, validateStaffInvitePassword } from "../src/modules/auth/staffInviteFlow.mjs";
 
 const migration = readFileSync("supabase/migrations/20260825002000_owner_staff_account_management.sql", "utf8");
+const auditFixMigration = readFileSync("supabase/migrations/20260825003000_owner_staff_invite_audit_null_fix.sql", "utf8");
 const edgeFunction = readFileSync("supabase/functions/owner-staff-invite/index.ts", "utf8");
 const staffPage = readFileSync("src/modules/admin/pages/StaffPage.tsx", "utf8");
 const authProvider = readFileSync("src/modules/auth/AuthProvider.tsx", "utf8");
@@ -85,7 +86,16 @@ test("Edge Function hält Service Role serverseitig und prüft Owner erneut per 
   assert.match(edgeFunction, /userClient\.rpc\("create_restaurant_staff_invitation"/);
   assert.match(edgeFunction, /userClient\.rpc\("bind_restaurant_staff_auth_identity"/);
   assert.match(edgeFunction, /signInWithOtp/);
+  assert.match(edgeFunction, /const \{ error: mailError \} = await mailClient\.auth\.signInWithOtp/);
   assert.doesNotMatch(edgeFunction, /console\.(log|error)|user_metadata|app_metadata/);
+});
+
+test("Erste Auth-Bindung erzeugt den Staff-Invite-Audit nullsicher", () => {
+  assert.match(auditFixMigration, /already_bound := staff_record\.auth_user_id is not distinct from input_auth_user_id/);
+  assert.match(auditFixMigration, /if not already_bound then[\s\S]*'STAFF_INVITED'/);
+  assert.match(auditFixMigration, /security definer[\s\S]*set search_path = public, auth, pg_temp/);
+  assert.match(auditFixMigration, /revoke all on function public\.bind_restaurant_staff_auth_identity[\s\S]*from public, anon/);
+  assert.match(auditFixMigration, /grant execute on function public\.bind_restaurant_staff_auth_identity[\s\S]*to authenticated/);
 });
 
 test("Einladungsannahme akzeptiert nur einen echten Auth-Link und prüft Passwortwiederholung", async () => {
@@ -121,8 +131,10 @@ test("Owner-UI bietet vollständige Teamverwaltung ohne gemeinsames Passwort", (
 
 test("Staff erhält serverseitig aufgelöste Rolle und geschützte Routen", () => {
   assert.match(authProvider, /\["owner", "admin", "manager", "supervisor", "staff"\]/);
-  assert.match(app, /path="\/staff"[\s\S]*allowedRoles=\{\["staff", "supervisor", "owner", "admin", "manager"\]\}/);
+  assert.match(app, /path="\/staff"[\s\S]*allowedRoles=\{\["staff", "supervisor"\]\}/);
+  assert.doesNotMatch(app, /allowedRoles=\{\["staff", "supervisor", "owner"/);
   assert.match(app, /path="\/staff\/:slug"/);
+  assert.match(app, /path="\/staff\/login"/);
   assert.match(app, /path="\/auth\/staff-invite"/);
 });
 

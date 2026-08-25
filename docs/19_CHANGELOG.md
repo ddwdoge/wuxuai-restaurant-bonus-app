@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Staff QR auf persönlichen Mitarbeiter-Login geroutet
+
+- Neuen restaurantbezogenen `/staff/login` mit persönlicher E-Mail und
+  persönlichem Passwort ergänzt; Owner-Texte und Owner-Registrierungslogik
+  werden nicht wiederverwendet.
+- Aktive Staff-/Supervisor-Zuordnung für den exakten QR-Slug serverseitig
+  geprüft; Owner, Plattformadmin, Customer, gesperrte und fremde Staff-Konten
+  bleiben ausgeschlossen.
+- Neue Staff-QRs und Starter Kits auf den Mitarbeiter-Login umgestellt und
+  bestehende `/staff/:slug`-Drucke kompatibel weitergeleitet.
+
 ## 2026-08-25 - Owner-Teamverwaltung mit persönlichen Staff-Zugängen
 
 - Bestehende `staff_members`-Architektur additiv um persönliche

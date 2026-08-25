@@ -138,11 +138,11 @@ Deno.serve(async (request) => {
       const mailClient = createClient(supabaseUrl, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
-      const { error } = await mailClient.auth.signInWithOtp({
+      const { error: mailError } = await mailClient.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
       });
-      if (error) return json({ error: "STAFF_INVITE_DELIVERY_FAILED" }, 502, origin);
+      if (mailError) return json({ error: "STAFF_INVITE_DELIVERY_FAILED" }, 502, origin);
     }
     if (!invitedUser) return json({ error: "STAFF_INVITE_FAILED" }, 502, origin);
 
