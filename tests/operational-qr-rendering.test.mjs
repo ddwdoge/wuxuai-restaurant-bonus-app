@@ -100,3 +100,14 @@ test("screen, PNG and Starter Kit paths preserve native resolution without smoot
   assert.match(qrCenter, /staffQrId: "qr-staff"/);
   assert.match(onboarding, /staffQrId: "staff-qr"/);
 });
+
+test("Starter Kit PDF remains available until the QR Center page is left", () => {
+  const openPdfStart = qrCenter.indexOf("function openPdfBlob");
+  const openPdfEnd = qrCenter.indexOf("function roundedRect", openPdfStart);
+  const openPdf = qrCenter.slice(openPdfStart, openPdfEnd);
+
+  assert.match(openPdf, /activePdfUrls\.add\(url\)/);
+  assert.match(openPdf, /addEventListener\("pagehide"/);
+  assert.match(openPdf, /activePdfUrls\.forEach\(\(activeUrl\) => URL\.revokeObjectURL\(activeUrl\)\)/);
+  assert.doesNotMatch(openPdf, /setTimeout|60_000/);
+});

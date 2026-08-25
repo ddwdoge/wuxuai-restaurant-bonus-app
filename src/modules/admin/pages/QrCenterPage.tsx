@@ -29,6 +29,8 @@ type PdfPage = {
 const footerText = "Powered by WUXUAI Bonus";
 const a6PageWidthPt = 297.64;
 const a6PageHeightPt = 419.53;
+const activePdfUrls = new Set<string>();
+let pdfCleanupRegistered = false;
 
 function base64ToBytes(value: string) {
   const binary = window.atob(value);
@@ -61,13 +63,24 @@ function triggerDownload(blob: Blob, filename: string) {
 
 function openPdfBlob(blob: Blob, fallbackFilename: string) {
   const url = URL.createObjectURL(blob);
+  activePdfUrls.add(url);
+
+  if (!pdfCleanupRegistered) {
+    pdfCleanupRegistered = true;
+    window.addEventListener("pagehide", () => {
+      activePdfUrls.forEach((activeUrl) => URL.revokeObjectURL(activeUrl));
+      activePdfUrls.clear();
+      pdfCleanupRegistered = false;
+    }, { once: true });
+  }
+
   const openedWindow = window.open(url, "_blank", "noopener,noreferrer");
   if (!openedWindow) {
     triggerDownload(blob, fallbackFilename);
     URL.revokeObjectURL(url);
+    activePdfUrls.delete(url);
     return;
   }
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 function roundedRect(

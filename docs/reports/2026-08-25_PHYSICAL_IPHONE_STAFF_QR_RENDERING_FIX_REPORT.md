@@ -79,6 +79,12 @@ pixelgenau nach und dekodiert es wieder. Ergebnis:
 - Domain liefert den neuen QR-Chunk und neuen Asset-Einstieg aus
 - Production: nicht veraendert
 
+Beim ersten physischen Starter-Kit-Gate wurde ein unabhaengiger Blob-Lifecycle-
+Fehler reproduziert: Das PDF wurde nach 60 Sekunden widerrufen und ein spaeter
+ladender Tab zeigte `ERR_FILE_NOT_FOUND`. Der PDF-Link bleibt nun fuer die
+Lebensdauer der QR-Center-Seite gueltig und wird erst bei `pagehide` freigegeben.
+Der QR-Inhalt und die PDF-Erzeugung selbst waren davon nicht betroffen.
+
 ## Qualitaet
 
 - Tests: 917/917 PASS
