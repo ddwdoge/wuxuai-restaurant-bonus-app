@@ -119,6 +119,19 @@ test("staff sends amount and reference but not a trusted points value", () => {
   assert.match(staff, /Punkte serverseitig berechnen/);
 });
 
+test("a fresh points QR clears stale customer selection and the visible raw reference", () => {
+  const pointsQrBranch = staff.match(
+    /if \(pointsReference && restaurantId && restaurantControlledEnabled\) \{[\s\S]*?return;\n    \}/,
+  )?.[0] ?? "";
+
+  assert.match(pointsQrBranch, /setPointsQrReference\(pointsReference\)/);
+  assert.match(pointsQrBranch, /setSelectedCustomerId\(""\)/);
+  assert.match(pointsQrBranch, /setQuery\(""\)/);
+  assert.ok(
+    pointsQrBranch.indexOf('setSelectedCustomerId("")') < pointsQrBranch.indexOf('setView("earn")'),
+  );
+});
+
 test("customer QR payload contains only type and short-lived token", () => {
   assert.match(customer, /JSON\.stringify\(\{ type: "wuxuai_points_credit", token: pointsQr\.qr_token \}\)/);
   assert.doesNotMatch(customer, /wuxuai_points_credit[^\n]*(name|phone|email|customer_code)/);

@@ -400,6 +400,8 @@ export function StaffTablet() {
       setPointsQrReference(pointsReference);
       setPointsPreview(null);
       setBillAmount(0);
+      setSelectedCustomerId("");
+      setQuery("");
       setView("earn");
       setMessage("Kunden-QR erkannt. Gib jetzt den bonusberechtigten Betrag ein.");
       return;
