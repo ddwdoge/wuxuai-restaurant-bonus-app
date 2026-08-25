@@ -2916,3 +2916,9 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Einmalverwendung, Tages-PIN und Punkteberechnung bleiben unverändert.
 - Fremde, ungültige oder abgelaufene QR-Referenzen erzeugen eine sichere
   verständliche Meldung, ohne interne RPC-Daten oder Tokens anzuzeigen.
+- Im Staff-Kundenbereich steht der ausgewählte beziehungsweise erkannte Gast
+  jetzt vor Schnellsuche und Punkteformular; ohne Auswahl bleibt der
+  Punktebereich inaktiv.
+- Manuelle Suche und QR-Scan verwenden dieselbe Kundenkarte und denselben
+  Gastwechsel. Der aktive Freundschaftsbonus erscheint dort, sobald ihn die
+  bestehende serverseitige Punkte-Vorschau bestätigt.

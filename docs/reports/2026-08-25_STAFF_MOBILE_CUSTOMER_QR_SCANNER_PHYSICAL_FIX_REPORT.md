@@ -48,6 +48,16 @@ Wert**.
   Transparenz.
 - Erzeugung und Parsing des aktuellen Payloads verwenden denselben zentralen
   Vertrag.
+- Die Kundenkarte steht im Staff-Kundenbereich an erster Stelle, gefolgt von
+  Schnellsuche/QR-Scan und erst danach dem Punkteformular.
+- Ohne ausgewählten Gast oder kurzlebigen QR-Kontext bleibt der Punktebereich
+  inaktiv. „Anderen Gast wählen“ löscht nur die aktuelle Auswahl und öffnet die
+  gemeinsame Suche.
+- Bei manueller Auswahl sind Name und Punktestand sofort sichtbar. Beim
+  kurzlebigen Punkte-QR zeigt die Karte sofort den erkannten QR-Kontext; Name,
+  Punktestand und 2×-Status erscheinen erst nach der bestehenden serverseitigen
+  Punkte-Vorschau. Der QR enthält diese Daten absichtlich nicht, und es wurde
+  kein neuer Identitäts-RPC eingeführt.
 
 ## Payload und Sicherheit
 
@@ -81,7 +91,7 @@ gehörig angezeigt; direkte Cross-Tenant-Auflösung bleibt unmöglich.
 - ZXing-Kamera, Rückkamera, Single-Scan und manuelles Fallback: PASS
 - Operational-QR-Kontrast und Ruhezone: PASS
 - Restaurantbindung und Cross-Tenant-Schutz: bestehende serverseitige Tests PASS
-- Tests: 923/923 PASS
+- Tests: 932/932 PASS
 - Typecheck: PASS
 - Lint: PASS, 0 Fehler und 7 bestehende Warnungen
 - Build: PASS
@@ -92,10 +102,10 @@ gehörig angezeigt; direkte Cross-Tenant-Auflösung bleibt unmöglich.
 Staging-Deployment:
 
 - Cloudflare Worker: `wuxuai-restaurant-bonus-app`
-- Version: `0102c728-87a4-4afc-8221-cf2b14433a92`
+- Aktuelle Version: `45a82137-2c91-4f2d-8413-203763c85e6b`
 - Worker-URL: `https://wuxuai-restaurant-bonus-app.dongdongwu4899.workers.dev`
 - Staging-Domain: `https://bonus.wuxuaisbi.com`
-- Domain liefert den neuen Bundle `StaffTablet-CM3fGJdJ.js`: PASS
+- Domain liefert den neuen Bundle `StaffTablet-CFUbI0zb.js`: PASS
 - Bundle enthält ZXing und keinen aktiven `BarcodeDetector`-Scanner: PASS
 
 Vom ursprünglichen Fehler reproduziert:

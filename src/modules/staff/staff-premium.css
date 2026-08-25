@@ -178,6 +178,99 @@
   min-width: 0;
 }
 
+.staff-customer-flow {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.staff-customer-context-card {
+  border-left: 4px solid #c8a04b;
+  display: grid;
+  gap: 10px;
+}
+
+.staff-customer-context-card.is-empty {
+  border-left-color: #cfd8e3;
+}
+
+.staff-customer-context-card h2,
+.staff-customer-context-card p {
+  margin: 0;
+}
+
+.staff-customer-context-card .button {
+  justify-self: start;
+  min-height: 44px;
+}
+
+.staff-customer-context-status {
+  align-items: center;
+  color: #72551c;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 7px;
+}
+
+.staff-customer-context-points {
+  color: #475569;
+}
+
+.staff-customer-context-points strong {
+  color: #17202a;
+}
+
+.staff-customer-boost {
+  background: #fff8e8;
+  border: 1px solid #ead7a5;
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+}
+
+.staff-customer-boost span {
+  color: #72551c;
+  font-size: 0.84rem;
+}
+
+.staff-customer-search-actions {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.staff-customer-search-actions .button {
+  min-height: 48px;
+}
+
+.staff-points-credit-card {
+  margin-top: 16px;
+}
+
+.staff-points-credit-card.is-disabled {
+  opacity: 0.72;
+}
+
+@media (max-width: 430px) {
+  .staff-customer-flow {
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .staff-customer-context-card,
+  .staff-customer-search-card,
+  .staff-points-credit-card {
+    padding: 16px;
+  }
+
+  .staff-customer-search-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .staff-premium-scan-hero {
   background: linear-gradient(135deg, #c6963d, var(--staff-gold-dark));
   border-radius: 22px;

@@ -42,7 +42,6 @@ import {
   type TodayRestaurantPin,
   type RestaurantControlledPointsPreview,
 } from "../loyalty/loyaltyService";
-import { loadStaffCustomerRewards, type StaffCustomerRewardView } from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
 import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
@@ -96,7 +95,6 @@ export function StaffTablet() {
     defaultSettingsForMode(restaurantId, "menu_points"),
   );
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
-  const [staffRewards, setStaffRewards] = useState<StaffCustomerRewardView[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
@@ -246,30 +244,6 @@ export function StaffTablet() {
   }, [restaurantId]);
 
   useEffect(() => {
-    if (!restaurantId || !selectedCustomerId) {
-      setStaffRewards([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    loadStaffCustomerRewards(restaurantId, selectedCustomerId)
-      .then((nextRewards) => {
-        if (!cancelled) setStaffRewards(nextRewards);
-      })
-      .catch((error) => {
-        console.error("Punkteeinlösungen konnten nicht geladen werden.", error);
-        if (!cancelled) {
-          setStaffRewards([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId, selectedCustomerId]);
-
-  useEffect(() => {
     return () => {
       stopScanner();
     };
@@ -294,9 +268,11 @@ export function StaffTablet() {
     || settings.points_collection_mode === "both";
   const customerInitiatedStaffToolsEnabled = settings.points_collection_mode !== "restaurant_controlled_only";
   const stampRules = activeRules.filter((rule) => rule.stamps > 0);
-  const unlockedRewards = staffRewards.filter((offer) => offer.status === "unlocked");
   const todayPointsIssued = todayActivity.reduce((total, activity) => total + activity.points_issued, 0);
   const todayRewardsRedeemed = todayActivity.reduce((total, activity) => total + activity.rewards_redeemed, 0);
+  const recognizedCustomerName = pointsPreview?.customer_label ?? selectedCustomer?.name ?? null;
+  const recognizedPointsBalance = pointsPreview?.points_balance ?? selectedCustomer?.points_balance ?? null;
+  const hasCustomerContext = Boolean(selectedCustomer || pointsQrReference);
   const currentDateLabel = useMemo(
     () => new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
     [],
@@ -320,6 +296,29 @@ export function StaffTablet() {
     setMessage(null);
     setView(nextView);
     setMoreOpen(false);
+  }
+
+  function clearSelectedCustomer() {
+    setSelectedCustomerId("");
+    setPointsQrReference(null);
+    setPointsPreview(null);
+    setBillAmount(0);
+    setQuery("");
+    setMessage(null);
+    setView("search");
+  }
+
+  function formatBoostExpiry(expiresAt: string) {
+    return new Intl.DateTimeFormat("de-AT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Europe/Vienna",
+    }).format(new Date(expiresAt));
+  }
+
+  function boostRemainingDays(expiresAt: string) {
+    return Math.max(1, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
   }
 
   function replaceCustomerBalance(customerId: string, pointsBalance: number, stampBalance: number) {
@@ -595,7 +594,7 @@ export function StaffTablet() {
     await findCustomerFromSearch(query);
   }
 
-  function selectCustomer(customerId: string, nextView: StaffView = "search") {
+  function selectCustomer(customerId: string, nextView: StaffView = "earn") {
     setSelectedCustomerId(customerId);
     setView(nextView);
   }
@@ -733,8 +732,40 @@ export function StaffTablet() {
           <button className="staff-premium-back" onClick={() => openStaffView("home")} type="button"><Home aria-hidden="true" size={18} />Zur Startseite</button>
         )}
 
-      {view !== "home" ? <section className="grid two staff-premium-existing-grid">
-        <article className="card">
+      {view !== "home" ? <section className="staff-customer-flow">
+        <article className={`card staff-customer-context-card${hasCustomerContext ? " is-selected" : " is-empty"}`} aria-live="polite">
+          {recognizedCustomerName && recognizedPointsBalance !== null ? (
+            <>
+              <span className="staff-customer-context-status"><BadgeCheck aria-hidden="true" size={18} />Gast erkannt</span>
+              <h2>{recognizedCustomerName}</h2>
+              <p className="staff-customer-context-points">Aktuell <strong>{recognizedPointsBalance} Punkte</strong></p>
+              {pointsPreview?.boost_multiplier && pointsPreview.boost_multiplier > 1 ? (
+                <div className="staff-customer-boost">
+                  <strong>{pointsPreview.boost_multiplier}× Bonus aktiv</strong>
+                  {pointsPreview.boost_expires_at ? (
+                    <span>Noch {boostRemainingDays(pointsPreview.boost_expires_at)} Tage · bis {formatBoostExpiry(pointsPreview.boost_expires_at)}</span>
+                  ) : null}
+                </div>
+              ) : null}
+              <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
+            </>
+          ) : pointsQrReference ? (
+            <>
+              <span className="staff-customer-context-status"><BadgeCheck aria-hidden="true" size={18} />Kunden-QR erkannt</span>
+              <h2>Gast wird sicher geprüft</h2>
+              <p className="muted">Name und Punktestand erscheinen nach der serverseitigen Punkte-Vorschau.</p>
+              <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
+            </>
+          ) : (
+            <>
+              <span className="staff-customer-context-status"><UserSearch aria-hidden="true" size={18} />Kein Gast gewählt</span>
+              <h2>Kein Gast gewählt</h2>
+              <p className="muted">Bitte QR scannen oder Gast suchen.</p>
+            </>
+          )}
+        </article>
+
+        <article className="card staff-customer-search-card">
           <form className="form" onSubmit={handleSearch}>
             <RequiredFieldsNote />
             <div className="field">
@@ -750,10 +781,10 @@ export function StaffTablet() {
                 onChange={(event) => setQuery(event.target.value)}
               />
             </div>
-            <button className="button" type="submit">
-              <Search size={18} />
-              Gast suchen
-            </button>
+            <div className="row-actions staff-customer-search-actions">
+              <button className="button" type="submit"><Search size={18} />Gast suchen</button>
+              <button className="button secondary" disabled={scannerStarting || scannerOpen} onClick={() => void startQrScanner()} type="button"><QrCode size={18} />QR scannen</button>
+            </div>
           </form>
 
           {view === "search" ? (
@@ -825,29 +856,12 @@ export function StaffTablet() {
             </div>
           ) : null}
         </article>
-
-        <article className="card">
-          <h2>{selectedCustomer?.name ?? "Kein Gast gewählt"}</h2>
-          {selectedCustomer ? (
-            <>
-              <p className="muted">
-                <QrCode size={16} /> {selectedCustomer.customer_code}
-              </p>
-              <p>
-                <span className="pill">{selectedCustomer.points_balance} Punkte</span>{" "}
-                <span className="pill">{selectedCustomer.stamp_balance} Stempel</span>{" "}
-                <span className="pill">{unlockedRewards.length} Punkteeinlösungen</span>
-              </p>
-            </>
-          ) : (
-            <p className="muted">Bitte QR scannen oder Gast suchen.</p>
-          )}
-        </article>
       </section> : null}
 
       {view === "earn" ? (
-        <section className="card" style={{ marginTop: 16 }}>
+        <section aria-disabled={!hasCustomerContext} className={`card staff-points-credit-card${hasCustomerContext ? "" : " is-disabled"}`}>
           <h2>{pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
+          {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
           {pointsQrReference ? <div className="restaurant-controlled-credit">
             <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
             <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
@@ -868,6 +882,7 @@ export function StaffTablet() {
                   className="input"
                   id="bill-amount"
                   min="0"
+                  disabled={!selectedCustomer}
                   required
                   step="0.01"
                   type="number"
@@ -907,6 +922,7 @@ export function StaffTablet() {
                   aria-required="true"
                   className="select"
                   id="stamp-rule"
+                  disabled={!selectedCustomer}
                   required
                   value={selectedStampRuleId}
                   onChange={(event) => setSelectedStampRuleId(event.target.value)}
