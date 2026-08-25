@@ -101,6 +101,7 @@ export function StaffTablet() {
   const [billAmount, setBillAmount] = useState(0);
   const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
   const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
+  const [customerPreviewError, setCustomerPreviewError] = useState<string | null>(null);
   const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
   const [pinDraft, setPinDraft] = useState("");
@@ -273,6 +274,16 @@ export function StaffTablet() {
   const recognizedCustomerName = pointsPreview?.customer_label ?? selectedCustomer?.name ?? null;
   const recognizedPointsBalance = pointsPreview?.points_balance ?? selectedCustomer?.points_balance ?? null;
   const hasCustomerContext = Boolean(selectedCustomer || pointsQrReference);
+  const customerStatusMessage = message
+    ?? (pointsPreview
+      ? "Kunde erfolgreich geladen."
+      : pointsQrReference
+        ? "Kunden-QR erkannt."
+        : selectedCustomer
+          ? "Gast ausgewählt."
+          : "Bitte QR scannen oder Gast suchen.");
+  const customerStatusIsError = Boolean(customerPreviewError)
+    || Boolean(message && /(nicht|konnte|ungültig|abgelaufen|fehler|überschreitet|zu viele)/i.test(message));
   const currentDateLabel = useMemo(
     () => new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
     [],
@@ -302,6 +313,7 @@ export function StaffTablet() {
     setSelectedCustomerId("");
     setPointsQrReference(null);
     setPointsPreview(null);
+    setCustomerPreviewError(null);
     setBillAmount(0);
     setQuery("");
     setMessage(null);
@@ -366,6 +378,7 @@ export function StaffTablet() {
     if (pointsReference && restaurantId && restaurantControlledEnabled) {
       setPointsQrReference(pointsReference);
       setPointsPreview(null);
+      setCustomerPreviewError(null);
       setBillAmount(0);
       setSelectedCustomerId("");
       setQuery("");
@@ -385,6 +398,7 @@ export function StaffTablet() {
             : [customerFromQr, ...currentCustomers];
         });
         setSelectedCustomerId(customerFromQr.id);
+        setCustomerPreviewError(null);
         setView("search");
         setMessage("Gast per QR gefunden.");
         return;
@@ -561,12 +575,14 @@ export function StaffTablet() {
   async function handleRestaurantControlledPreview() {
     if (!restaurantId || !pointsQrReference) return;
     const amountCents = Math.round(billAmount * 100);
-    setSaving(true); setMessage(null);
+    setSaving(true); setMessage(null); setCustomerPreviewError(null);
     try {
       setPointsPreview(await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents));
     } catch (error) {
       setPointsPreview(null);
-      setMessage(error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.");
+      const nextError = error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.";
+      setCustomerPreviewError(nextError);
+      setMessage(nextError);
     } finally { setSaving(false); }
   }
 
@@ -596,6 +612,8 @@ export function StaffTablet() {
 
   function selectCustomer(customerId: string, nextView: StaffView = "earn") {
     setSelectedCustomerId(customerId);
+    setCustomerPreviewError(null);
+    setMessage(null);
     setView(nextView);
   }
 
@@ -733,6 +751,11 @@ export function StaffTablet() {
         )}
 
       {view !== "home" ? <section className="staff-customer-flow">
+        <div className="staff-customer-flow-status" aria-live={customerStatusIsError ? "assertive" : "polite"} role={customerStatusIsError ? "alert" : "status"}>
+          {customerStatusIsError ? <CircleAlert aria-hidden="true" size={20} /> : <BadgeCheck aria-hidden="true" size={20} />}
+          <strong>{customerStatusMessage}</strong>
+        </div>
+
         <article className={`card staff-customer-context-card${hasCustomerContext ? " is-selected" : " is-empty"}`} aria-live="polite">
           {recognizedCustomerName && recognizedPointsBalance !== null ? (
             <>
@@ -751,9 +774,13 @@ export function StaffTablet() {
             </>
           ) : pointsQrReference ? (
             <>
-              <span className="staff-customer-context-status"><BadgeCheck aria-hidden="true" size={18} />Kunden-QR erkannt</span>
-              <h2>Gast wird sicher geprüft</h2>
-              <p className="muted">Name und Punktestand erscheinen nach der serverseitigen Punkte-Vorschau.</p>
+              <span className="staff-customer-context-status">
+                {customerPreviewError ? <CircleAlert aria-hidden="true" size={18} /> : <BadgeCheck aria-hidden="true" size={18} />}
+                {customerPreviewError ? "Kundendaten nicht verfügbar" : "Kunden-QR erkannt"}
+              </span>
+              <h2>{customerPreviewError ? "Gast konnte nicht sicher geladen werden" : saving ? "Kundendaten werden geladen …" : "Gast wird sicher geprüft"}</h2>
+              <p className="muted">{customerPreviewError ?? "Name und Punktestand erscheinen mit der sicheren serverseitigen Punkte-Vorschau."}</p>
+              {customerPreviewError ? <button className="button" onClick={() => { setCustomerPreviewError(null); setMessage(null); }} type="button">Erneut versuchen</button> : null}
               <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
             </>
           ) : (
@@ -765,102 +792,9 @@ export function StaffTablet() {
           )}
         </article>
 
-        <article className="card staff-customer-search-card">
-          <form className="form" onSubmit={handleSearch}>
-            <RequiredFieldsNote />
-            <div className="field">
-              <FormLabel htmlFor="customer-search" required>Schnellsuche</FormLabel>
-              <input
-                aria-required="true"
-                className="input"
-                id="customer-search"
-                placeholder="QR, Telefon, Name oder Gästecode"
-                required
-                autoFocus={view === "search" && !scannerOpen}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </div>
-            <div className="row-actions staff-customer-search-actions">
-              <button className="button" type="submit"><Search size={18} />Gast suchen</button>
-              <button className="button secondary" disabled={scannerStarting || scannerOpen} onClick={() => void startQrScanner()} type="button"><QrCode size={18} />QR scannen</button>
-            </div>
-          </form>
-
-          {view === "search" ? (
-            <div className="rule-list compact-list">
-              {scannerOpen ? (
-                <section className="scanner-panel" aria-live="polite">
-                  <div className="scanner-head">
-                    <strong>QR scannen</strong>
-                    <button className="icon-button" onClick={dismissScanner} type="button" aria-label="Scanner schließen">
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div className="scanner-video-frame">
-                    <video
-                      ref={scannerVideoRef}
-                      className="scanner-video"
-                      autoPlay
-                      muted
-                      playsInline
-                      aria-label="Kamera-Vorschau für QR-Scan"
-                    />
-                    {scannerStarting ? <span className="scanner-overlay">Kamera wird geöffnet...</span> : null}
-                  </div>
-                  {scannerStatus ? <p className="muted">{scannerStatus}</p> : null}
-                  {scannerError ? <p className="status-message error">{scannerError}</p> : null}
-                  <form
-                    className="scanner-manual-form"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      if (!scannerManualValue.trim()) {
-                        setScannerError("Bitte QR-Code, Telefon, Name oder Gästecode eingeben.");
-                        return;
-                      }
-                      void handleScannerValue(scannerManualValue);
-                    }}
-                  >
-                    <FormLabel htmlFor="scanner-manual-input" required>QR-Code manuell eingeben</FormLabel>
-                    <div className="row-actions">
-                      <input
-                        aria-required="true"
-                        className="input"
-                        id="scanner-manual-input"
-                        placeholder="QR-Code, Telefon, Name oder Gästecode"
-                        required
-                        value={scannerManualValue}
-                        onChange={(event) => setScannerManualValue(event.target.value)}
-                      />
-                      <button className="button secondary" type="submit">
-                        <Search size={16} />
-                        Suchen
-                      </button>
-                    </div>
-                  </form>
-                </section>
-              ) : null}
-              {staffLoading ? <p className="muted">Mitarbeiterdaten werden geladen...</p> : null}
-              {!staffLoading && staffError ? <p className="status-message">{staffError}</p> : null}
-              {filteredCustomers.map((customer) => (
-                <button
-                  className={`customer-row${customer.id === selectedCustomerId ? " active" : ""}`}
-                  key={customer.id}
-                  onClick={() => selectCustomer(customer.id)}
-                  type="button"
-                >
-                  <strong>{customer.name}</strong>
-                  <span>{customer.phone ?? customer.customer_code}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </article>
-      </section> : null}
-
-      {view === "earn" ? (
+        {view === "earn" && !customerPreviewError ? (
         <section aria-disabled={!hasCustomerContext} className={`card staff-points-credit-card${hasCustomerContext ? "" : " is-disabled"}`}>
-          <h2>{pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
+          <h2>{recognizedCustomerName ? `Punkte für ${recognizedCustomerName} vergeben` : pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
           {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
           {pointsQrReference ? <div className="restaurant-controlled-credit">
             <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
@@ -984,6 +918,99 @@ export function StaffTablet() {
           ) : null}
         </section>
       ) : null}
+
+        <article className={`card staff-customer-search-card${hasCustomerContext ? " is-secondary" : ""}`}>
+          <form className="form" onSubmit={handleSearch}>
+            <RequiredFieldsNote />
+            <div className="field">
+              <FormLabel htmlFor="customer-search" required>Schnellsuche</FormLabel>
+              <input
+                aria-required="true"
+                className="input"
+                id="customer-search"
+                placeholder="QR, Telefon, Name oder Gästecode"
+                required
+                autoFocus={view === "search" && !scannerOpen}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            <div className="row-actions staff-customer-search-actions">
+              <button className="button" type="submit"><Search size={18} />Gast suchen</button>
+              <button className="button secondary" disabled={scannerStarting || scannerOpen} onClick={() => void startQrScanner()} type="button"><QrCode size={18} />QR scannen</button>
+            </div>
+          </form>
+
+          {view === "search" ? (
+            <div className="rule-list compact-list">
+              {scannerOpen ? (
+                <section className="scanner-panel" aria-live="polite">
+                  <div className="scanner-head">
+                    <strong>QR scannen</strong>
+                    <button className="icon-button" onClick={dismissScanner} type="button" aria-label="Scanner schließen">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="scanner-video-frame">
+                    <video
+                      ref={scannerVideoRef}
+                      className="scanner-video"
+                      autoPlay
+                      muted
+                      playsInline
+                      aria-label="Kamera-Vorschau für QR-Scan"
+                    />
+                    {scannerStarting ? <span className="scanner-overlay">Kamera wird geöffnet...</span> : null}
+                  </div>
+                  {scannerStatus ? <p className="muted">{scannerStatus}</p> : null}
+                  {scannerError ? <p className="status-message error">{scannerError}</p> : null}
+                  <form
+                    className="scanner-manual-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!scannerManualValue.trim()) {
+                        setScannerError("Bitte QR-Code, Telefon, Name oder Gästecode eingeben.");
+                        return;
+                      }
+                      void handleScannerValue(scannerManualValue);
+                    }}
+                  >
+                    <FormLabel htmlFor="scanner-manual-input" required>QR-Code manuell eingeben</FormLabel>
+                    <div className="row-actions">
+                      <input
+                        aria-required="true"
+                        className="input"
+                        id="scanner-manual-input"
+                        placeholder="QR-Code, Telefon, Name oder Gästecode"
+                        required
+                        value={scannerManualValue}
+                        onChange={(event) => setScannerManualValue(event.target.value)}
+                      />
+                      <button className="button secondary" type="submit">
+                        <Search size={16} />
+                        Suchen
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              ) : null}
+              {staffLoading ? <p className="muted">Mitarbeiterdaten werden geladen...</p> : null}
+              {!staffLoading && staffError ? <p className="status-message">{staffError}</p> : null}
+              {filteredCustomers.map((customer) => (
+                <button
+                  className={`customer-row${customer.id === selectedCustomerId ? " active" : ""}`}
+                  key={customer.id}
+                  onClick={() => selectCustomer(customer.id)}
+                  type="button"
+                >
+                  <strong>{customer.name}</strong>
+                  <span>{customer.phone ?? customer.customer_code}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </article>
+      </section> : null}
 
       </div>
 
@@ -1109,7 +1136,7 @@ export function StaffTablet() {
         </div>
       </AppDrawer>
 
-      {message ? <p className="status-message">{message}</p> : null}
+      {view === "home" && message ? <p className="status-message">{message}</p> : null}
 
       <AppDrawer
         description={pendingPinAction?.detail}

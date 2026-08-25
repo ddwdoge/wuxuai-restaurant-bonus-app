@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Staff-Kundenflow nach Vorgangspriorität geordnet
+
+- Aktive Rückmeldung, Kundenkarte, Punktevergabe und Schnellsuche im Staff- und Betreiberzugriff verbindlich in dieser Reihenfolge angeordnet.
+- Leerer Zustand führt weiterhin direkt zur Suche; bei Preview-Fehlern bleibt die Punktevergabe gesperrt und Retry oder Gastwechsel verfügbar.
+- QR-, Punkte-, Tages-PIN-, Actor- und Tenantverträge unverändert gelassen und die Reihenfolge für 320 bis 1024 Pixel abgesichert.
+
+## 2026-08-25 - Staging Staff-Login Live-Daten Diagnose
+
+- Aktiven Cloudflare-Build, eingebettete Staging-Supabase-Konfiguration, Auth-Erreichbarkeit und öffentlichen Staff-Kontext geprüft.
+- iPhone-Meldung auf einen alten, bereits geladenen Frontend-Zustand ohne Supabase-Client eingegrenzt; keine Code-, RLS-, RPC- oder Datenbankänderung erforderlich.
+- Diagnose in `docs/reports/2026-08-25_STAGING_STAFF_LOGIN_LIVE_DATA_DIAGNOSIS_REPORT.md` dokumentiert.
+
 ## 2026-08-25 - Operative QR-Codes fuer physische Kameras gehaertet
 
 - Neue-Gaeste-, Mitarbeiter- und kompatible Kassa-QRs auf eine gemeinsame

@@ -185,6 +185,24 @@
   min-width: 0;
 }
 
+.staff-customer-flow-status {
+  align-items: center;
+  background: #fff8e8;
+  border: 1px solid #ead7a5;
+  border-radius: 8px;
+  color: #5f4617;
+  display: flex;
+  gap: 9px;
+  min-height: 48px;
+  min-width: 0;
+  padding: 11px 14px;
+}
+
+.staff-customer-flow-status strong {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .staff-customer-context-card {
   border-left: 4px solid #c8a04b;
   display: grid;
@@ -246,6 +264,11 @@
   min-height: 48px;
 }
 
+.staff-customer-search-card.is-secondary {
+  border-color: #e8e2d8;
+  box-shadow: 0 8px 20px rgba(71, 55, 33, 0.06);
+}
+
 .staff-points-credit-card {
   margin-top: 16px;
 }
@@ -264,6 +287,11 @@
   .staff-customer-search-card,
   .staff-points-credit-card {
     padding: 16px;
+  }
+
+  .staff-customer-flow-status {
+    align-items: flex-start;
+    padding: 11px 12px;
   }
 
   .staff-customer-search-actions {
