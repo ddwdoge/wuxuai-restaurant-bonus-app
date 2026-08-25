@@ -1,6 +1,26 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Customer Redeem Tabs geometrisch synchronisiert
+
+- `Alle Belohnungen` und `Meine Belohnungen` auf eine gemeinsame, unveraenderliche
+  Seiten- und Content-Grid-Struktur vereinheitlicht.
+- Kurze Empty-State-Inhalte im Safari-Grid oben verankert, damit Header, Titel,
+  Tabs, Punktezeile und Rechtshinweis beim Tabwechsel nicht mehr gestreckt werden.
+- Karten- und Empty-State-Breite von 320 bis 1440 Pixel geometrisch verglichen;
+  Bottom Navigation, Reward-Design und Einloeselogik bleiben unveraendert.
+
+## 2026-08-25 - Rollenbewusste Portal-Anmeldung live freigegeben
+
+- Freigegebenen Commit `a2c9904` mit bestaetigter Staging-Supabase-Konfiguration
+  auf die bestehende Cloudflare-Staging-App ausgerollt.
+- Reale Customer-, Staff-, Owner- und Platform-Admin-Sitzungen positiv und
+  negativ gegeneinander geprueft; legitime Owner-/Platform-Admin-Mischrolle
+  bleibt in beiden Portalen autorisiert.
+- Falsche Portalzugriffe enden vor den Fachoberflaechen mit klarer Rollenkarte,
+  bestaetigtem Ziel und sicherem Kontowechsel; die mobile Rollenkarte ist von
+  320 bis 1024 Pixel ohne horizontalen Ueberlauf geprueft.
+
 ## 2026-08-25 - Rollenbewusste Portal-Anmeldung abgesichert
 
 - Gemeinsamen serverseitigen Zugriffsvertrag fuer Customer-, Staff-, Owner- und

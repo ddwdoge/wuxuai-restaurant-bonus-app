@@ -31,6 +31,7 @@
 }
 
 .customer-page-container {
+  align-content: start;
   display: grid;
   gap: 20px;
   margin: 0 auto;
@@ -398,7 +399,7 @@
   min-width: 0;
   width: 100%;
 }
-.premium-redemption-content { gap: 16px; }
+.premium-redemption-content { align-content: start; gap: 16px; }
 .premium-redemption-summary { align-items: end; display: flex; gap: 16px; justify-content: space-between; }
 .premium-redemption-summary > div { display: grid; gap: 2px; }
 .premium-redemption-summary span, .premium-redemption-summary p { color: var(--premium-text-secondary); font-size: 13px; margin: 0; }

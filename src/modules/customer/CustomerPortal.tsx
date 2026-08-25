@@ -2052,13 +2052,14 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
                 </div>
                 <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
-                {filteredRedemptions.length ? (
-                  <div
-                    aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
-                    className="premium-reward-grid premium-redemption-grid"
-                    id="reward-overview"
-                    role="tabpanel"
-                  >
+                <div
+                  aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
+                  className="premium-reward-grid premium-redemption-grid"
+                  id="reward-overview"
+                  role="tabpanel"
+                >
+                  {filteredRedemptions.length ? (
+                    <>
                     {filteredRedemptions.map((reward) => {
                       const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
                       return (
@@ -2077,15 +2078,16 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       />
                       );
                     })}
-                  </div>
-                ) : (
-                  <EmptyState
-                    description={rewardFilter === "all"
-                      ? "Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet."
-                      : "Sobald etwas für dich bereitsteht, erscheint es hier."}
-                    title={rewardFilter === "all" ? "Noch nichts zum Einlösen" : "Noch keine persönlichen Belohnungen"}
-                  />
-                )}
+                    </>
+                  ) : (
+                    <EmptyState
+                      description={rewardFilter === "all"
+                        ? "Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet."
+                        : "Sobald etwas für dich bereitsteht, erscheint es hier."}
+                      title={rewardFilter === "all" ? "Noch nichts zum Einlösen" : "Noch keine persönlichen Belohnungen"}
+                    />
+                  )}
+                </div>
               </section>
             ) : null}
 
