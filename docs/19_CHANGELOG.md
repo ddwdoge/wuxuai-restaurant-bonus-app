@@ -2901,3 +2901,18 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Fehler.
 - Production bleibt gesperrt; physische Owner-/Staff-QR-Scans auf einem echten
   iPhone bleiben ein separates manuelles Gate.
+
+## 2026-08-25 – Mobilen Kunden-QR-Scanner für iPhone Safari gehärtet
+
+- Der Staff-Scanner verwendet für die QR-Decodierung jetzt den bereits im
+  Kundenportal bewährten ZXing-Reader statt ausschließlich der nicht
+  verlässlich verfügbaren nativen `BarcodeDetector`-Schnittstelle.
+- Staff und Betreiberzugriff teilen weiterhin dieselbe Scannerkomponente; die
+  Rückkamera, der vollständige Videoframe und ein Single-Scan-Schutz bleiben
+  für beide Rollen identisch.
+- Der kurzlebige persönliche Punkte-QR verwendet den zentralen kontrastreichen
+  QR-Standard mit 270 Pixeln und vier Modulen Ruhezone.
+- QR-Inhalt, fünfminütige Gültigkeit, serverseitige Restaurantbindung,
+  Einmalverwendung, Tages-PIN und Punkteberechnung bleiben unverändert.
+- Fremde, ungültige oder abgelaufene QR-Referenzen erzeugen eine sichere
+  verständliche Meldung, ohne interne RPC-Daten oder Tokens anzuzeigen.

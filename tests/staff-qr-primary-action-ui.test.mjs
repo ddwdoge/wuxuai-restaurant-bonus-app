@@ -25,7 +25,9 @@ test("Kunden-QR ist die erste Hauptaktion vor Tages-PIN KPIs und Gast-Suche", ()
 
 test("Primary CTA verwendet ausschließlich den bestehenden Scanner-Handler", () => {
   assert.match(home, /className="staff-premium-scan-button"[\s\S]*onClick=\{\(\) => void startQrScanner\(\)\}/);
-  assert.match(scanner, /navigator\.mediaDevices\.getUserMedia/);
+  assert.match(scanner, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(scanner, /BrowserQRCodeReader/);
+  assert.match(scanner, /decodeFromConstraints/);
   assert.match(scanner, /handleScannerValue\(rawValue\)/);
   assert.match(staffPortal, /previewRestaurantControlledPoints/);
   assert.match(staffPortal, /confirmRestaurantControlledPoints/);

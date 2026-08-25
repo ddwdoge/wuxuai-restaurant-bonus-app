@@ -29,6 +29,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { OperationalQrCode } from "../../shared/components/OperationalQrCode";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
@@ -63,6 +64,7 @@ import {
   type CustomerPointsQr,
   type CustomerReferralInviteStatus,
 } from "../loyalty/loyaltyService";
+import { buildCustomerPointsQrPayload } from "../loyalty/customerPointsQr.mjs";
 import {
   formatInvitedReferralDuration,
   normalizeReferralBonusDuration,
@@ -2423,7 +2425,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       <p>Zeige diesen QR dem Team. Er gilt fünf Minuten und kann nur einmal für eine Punktebuchung verwendet werden.</p>
                       {pointsQrLoading ? <LoadingState description="Punkte-QR wird erstellt." /> : null}
                       {pointsQr ? <>
-                        <div className="premium-qr-frame"><QRCodeSVG value={JSON.stringify({ type: "wuxuai_points_credit", token: pointsQr.qr_token })} size={196} level="M" /></div>
+                        <div className="premium-qr-frame"><OperationalQrCode id="customer-points-credit-qr" title="Persönlicher Punkte-QR" value={buildCustomerPointsQrPayload(pointsQr.qr_token)} /></div>
                         <StatusBadge><Clock3 aria-hidden="true" size={15} /> 5 Minuten gültig</StatusBadge>
                         <p className="premium-manual-code">Ersatzcode: <strong>{pointsQr.manual_code.replace(/(\d{4})(\d{4})/, "$1 $2")}</strong></p>
                         <SecondaryButton disabled={pointsQrLoading} onClick={() => void refreshPersonalPointsQr()}><QrCode aria-hidden="true" size={18} /> Neuen QR erstellen</SecondaryButton>

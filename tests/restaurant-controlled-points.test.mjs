@@ -133,7 +133,7 @@ test("a fresh points QR clears stale customer selection and the visible raw refe
 });
 
 test("customer QR payload contains only type and short-lived token", () => {
-  assert.match(customer, /JSON\.stringify\(\{ type: "wuxuai_points_credit", token: pointsQr\.qr_token \}\)/);
+  assert.match(customer, /buildCustomerPointsQrPayload\(pointsQr\.qr_token\)/);
   assert.doesNotMatch(customer, /wuxuai_points_credit[^\n]*(name|phone|email|customer_code)/);
 });
 

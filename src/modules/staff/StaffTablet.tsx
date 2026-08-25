@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import type { IScannerControls } from "@zxing/browser";
 import {
   BadgeCheck,
   CalendarDays,
@@ -43,6 +44,7 @@ import {
 } from "../loyalty/loyaltyService";
 import { loadStaffCustomerRewards, type StaffCustomerRewardView } from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
+import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
 import "./staff-premium.css";
 
@@ -55,21 +57,6 @@ type PendingPinAction = {
   pinHelp: string;
   run: (dailyPin: string) => Promise<void>;
 };
-
-type BarcodeDetectorResult = {
-  rawValue?: string;
-};
-
-type BarcodeDetectorInstance = {
-  detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]>;
-};
-
-type BarcodeDetectorConstructor = new (options?: { formats?: string[] }) => BarcodeDetectorInstance;
-
-type WindowWithBarcodeDetector = Window &
-  typeof globalThis & {
-    BarcodeDetector?: BarcodeDetectorConstructor;
-  };
 
 function extractCustomerToken(value: string) {
   const trimmed = value.trim();
@@ -87,17 +74,6 @@ function extractCustomerToken(value: string) {
     return parsedUrl.searchParams.get("token") || parsedUrl.searchParams.get("customer_token");
   } catch {
     return trimmed.length > 24 && !trimmed.includes(" ") ? trimmed : null;
-  }
-}
-
-function extractPointsCreditReference(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  try {
-    const parsed = JSON.parse(trimmed) as { type?: string; token?: string };
-    return parsed.type === "wuxuai_points_credit" && parsed.token ? parsed.token : null;
-  } catch {
-    return /^\d{8}$/.test(trimmed.replace(/\s/g, "")) ? trimmed.replace(/\s/g, "") : null;
   }
 }
 
@@ -151,9 +127,8 @@ export function StaffTablet() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerStreamRef = useRef<MediaStream | null>(null);
-  const scannerAnimationRef = useRef<number | null>(null);
-  const scannerActiveRef = useRef(false);
+  const scannerControlsRef = useRef<IScannerControls | null>(null);
+  const scannerHandlingResultRef = useRef(false);
   const scannerLaunchPendingRef = useRef(false);
   const scannerReturnViewRef = useRef<StaffView>("home");
 
@@ -358,19 +333,12 @@ export function StaffTablet() {
   }
 
   function stopScanner() {
-    scannerActiveRef.current = false;
-
-    if (scannerAnimationRef.current !== null) {
-      cancelAnimationFrame(scannerAnimationRef.current);
-      scannerAnimationRef.current = null;
-    }
-
-    if (scannerStreamRef.current) {
-      scannerStreamRef.current.getTracks().forEach((track) => track.stop());
-      scannerStreamRef.current = null;
-    }
+    scannerControlsRef.current?.stop();
+    scannerControlsRef.current = null;
 
     if (scannerVideoRef.current) {
+      const stream = scannerVideoRef.current.srcObject;
+      if (stream instanceof MediaStream) stream.getTracks().forEach((track) => track.stop());
       scannerVideoRef.current.srcObject = null;
     }
   }
@@ -395,7 +363,7 @@ export function StaffTablet() {
 
   async function findCustomerFromSearch(searchValue: string) {
     const nextQuery = searchValue.trim();
-    const pointsReference = extractPointsCreditReference(nextQuery);
+    const pointsReference = extractCustomerPointsQrReference(nextQuery);
     if (pointsReference && restaurantId && restaurantControlledEnabled) {
       setPointsQrReference(pointsReference);
       setPointsPreview(null);
@@ -457,6 +425,7 @@ export function StaffTablet() {
     setScannerStatus("Kamera wird geöffnet...");
     setMessage(null);
     stopScanner();
+    scannerHandlingResultRef.current = false;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       scannerLaunchPendingRef.current = false;
@@ -467,54 +436,38 @@ export function StaffTablet() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: { ideal: "environment" } },
-      });
-      scannerStreamRef.current = stream;
-      scannerActiveRef.current = true;
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      if (!scannerVideoRef.current) throw new Error("Scanner video is unavailable.");
+      const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 180 });
+      const controls = await reader.decodeFromConstraints(
+        { audio: false, video: { facingMode: { ideal: "environment" } } },
+        scannerVideoRef.current,
+        (result, _decodeError, scannerControls) => {
+          if (!result || scannerHandlingResultRef.current) return;
+          const rawValue = result.getText();
+          const recognized = extractCustomerPointsQrReference(rawValue) || extractCustomerToken(rawValue);
+          if (!recognized) {
+            setScannerError("Dieser QR-Code ist kein gültiger Kunden-QR. Bitte versuche es erneut.");
+            setScannerStatus("Kunden-QR ruhig und vollständig in den Rahmen halten.");
+            return;
+          }
 
-      if (scannerVideoRef.current) {
-        scannerVideoRef.current.srcObject = stream;
-        await scannerVideoRef.current.play();
-      }
-
-      const BarcodeDetector = (window as WindowWithBarcodeDetector).BarcodeDetector;
-      if (!BarcodeDetector) {
-        scannerLaunchPendingRef.current = false;
-        setScannerStarting(false);
-        setScannerStatus("Kamera geöffnet. Automatisches QR-Lesen wird von diesem Browser nicht unterstützt.");
+          scannerHandlingResultRef.current = true;
+          scannerControls.stop();
+          scannerControlsRef.current = null;
+          setScannerStatus("Kunden-QR erkannt.");
+          void handleScannerValue(rawValue);
+        },
+      );
+      if (scannerHandlingResultRef.current) {
+        controls.stop();
         return;
       }
-
-      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      scannerControlsRef.current = controls;
       setScannerStarting(false);
-      setScannerStatus("QR-Code vor die Kamera halten.");
-
-      const scanFrame = async () => {
-        if (!scannerActiveRef.current || !scannerVideoRef.current) return;
-
-        try {
-          if (scannerVideoRef.current.readyState >= 2) {
-            const codes = await detector.detect(scannerVideoRef.current);
-            const rawValue = codes.find((code) => code.rawValue)?.rawValue;
-            if (rawValue) {
-              await handleScannerValue(rawValue);
-              return;
-            }
-          }
-        } catch (error) {
-          console.error("QR konnte nicht automatisch gelesen werden.", error);
-          setScannerStatus("Kamera geöffnet. Bitte QR-Code ruhig vor die Kamera halten.");
-        }
-
-        scannerAnimationRef.current = requestAnimationFrame(scanFrame);
-      };
-
-      scannerAnimationRef.current = requestAnimationFrame(scanFrame);
+      setScannerStatus("Kunden-QR ruhig und vollständig in den Rahmen halten.");
       scannerLaunchPendingRef.current = false;
     } catch (error) {
-      console.error("QR-Scanner konnte nicht geöffnet werden.", error);
       stopScanner();
       setScannerStarting(false);
       setScannerStatus(null);
@@ -526,6 +479,7 @@ export function StaffTablet() {
   function closeScanner() {
     scannerLaunchPendingRef.current = false;
     stopScanner();
+    scannerHandlingResultRef.current = false;
     setScannerOpen(false);
     setScannerStarting(false);
     setScannerStatus(null);
@@ -816,6 +770,7 @@ export function StaffTablet() {
                     <video
                       ref={scannerVideoRef}
                       className="scanner-video"
+                      autoPlay
                       muted
                       playsInline
                       aria-label="Kamera-Vorschau für QR-Scan"

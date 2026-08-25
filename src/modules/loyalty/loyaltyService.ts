@@ -922,7 +922,12 @@ export async function previewRestaurantControlledPoints(restaurantId: string, qr
   });
   if (error) throw error;
   const result = data as RestaurantControlledPointsPreview;
-  if (result.success === false) throw new Error(result.error_message ?? "Punkte konnten nicht berechnet werden.");
+  if (result.success === false) {
+    if (result.error_code === "QR_NOT_FOUND") {
+      throw new Error("Dieser QR-Code ist ungültig, abgelaufen oder gehört nicht zu diesem Restaurant.");
+    }
+    throw new Error(result.error_message ?? "Punkte konnten nicht berechnet werden.");
+  }
   return result;
 }
 
