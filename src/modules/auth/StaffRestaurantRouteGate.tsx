@@ -9,6 +9,7 @@ export function StaffRestaurantRouteGate({ children }: { children: React.ReactNo
   const slug = normalizeStaffRestaurantSlug(routeSlug);
   const [state, setState] = useState<"loading" | "allowed" | "denied" | "error">("loading");
   const [access, setAccess] = useState<StaffRestaurantAccess | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,11 +33,11 @@ export function StaffRestaurantRouteGate({ children }: { children: React.ReactNo
         if (!cancelled) setState("error");
       });
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [revision, slug]);
 
   if (state === "loading") return <div className="auth-shell">Mitarbeiterzugang wird geprüft …</div>;
   if (state === "error") {
-    return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Bitte lade die Seite erneut.</p></main>;
+    return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => setRevision((current) => current + 1)} type="button">Erneut versuchen</button></main>;
   }
   if (state === "denied") {
     return <main className="auth-shell" role="alert"><h1>Kein Mitarbeiterzugang</h1><p>Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.</p></main>;

@@ -178,6 +178,12 @@ Wochentage und Uhrzeiten sowie den V1-Restaurantstandort enthalten. Der
 Arbeitsablauf umfasst Entwurf, geplante Veröffentlichung, Veröffentlichung,
 automatische öffentliche Ausblendung nach Ablauf und Deaktivierung.
 
+`Veröffentlicht` und `aktiv` bestimmen die Kundensichtbarkeit bis zum finalen
+Ablaufdatum. Startdatum, Wochentage und tägliche Uhrzeiten steuern ausschließlich
+die aktuelle Gültigkeit. Sie dürfen einen veröffentlichten Beitrag nicht aus dem
+Marketingfeed entfernen. Die Owner-Ansicht weist deshalb Veröffentlichung,
+Kundensichtbarkeit und aktuelle Gültigkeit getrennt aus.
+
 Das Modul schafft einen direkten Restaurantnutzen: Bestehende Bonusgäste können
 beim Öffnen des Kundenportals auf aktuelle Informationen aufmerksam werden.
 Eine konkrete Umsatzsteigerung oder Rückkehrquote wird nicht versprochen.

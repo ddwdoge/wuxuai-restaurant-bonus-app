@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  getOfferValidityState,
   isPublicOfferVisible,
   maximumConcurrentOffers,
   sortPublicOffers,
@@ -10,8 +11,11 @@ import {
 
 const migrationUrl = new URL("../supabase/migrations/20260804001000_restaurant_offers_v1.sql", import.meta.url);
 const auditFixMigrationUrl = new URL("../supabase/migrations/20260819001000_fix_offers_audit_actor_type.sql", import.meta.url);
+const visibilityMigrationUrl = new URL("../supabase/migrations/20260826001000_customer_offer_visibility_validity_split.sql", import.meta.url);
 const ownerPageUrl = new URL("../src/modules/admin/pages/RestaurantOffersPage.tsx", import.meta.url);
 const serviceUrl = new URL("../src/modules/offers/restaurantOfferService.ts", import.meta.url);
+const customerOfferCardUrl = new URL("../src/modules/customer/components/RestaurantOfferCard.tsx", import.meta.url);
+const customerOfferCssUrl = new URL("../src/modules/customer/components/restaurant-offer-card.css", import.meta.url);
 const customerPortalUrl = new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url);
 const finderUrl = new URL("../src/modules/customer/PartnerRestaurantFinderPage.tsx", import.meta.url);
 
@@ -52,17 +56,17 @@ test("Preisvalidierung erlaubt keine negativen oder irreführenden Vergleichspre
   assert.equal(validateRestaurantOfferDraft(validDraft({ previousPrice: 15 })), null);
 });
 
-test("Nur aktive veröffentlichte Beiträge im Zeitraum sind öffentlich", () => {
+test("Veröffentlichung und Aktivierung steuern die Sichtbarkeit bis zum Ablauf", () => {
   const now = new Date("2026-08-05T12:00:00Z");
   const active = { status: "PUBLISHED", is_active: true, valid_from: "2026-08-05T00:00:00Z", valid_to: "2026-08-06T00:00:00Z" };
   assert.equal(isPublicOfferVisible(active, now), true);
   assert.equal(isPublicOfferVisible({ ...active, status: "DRAFT" }, now), false);
   assert.equal(isPublicOfferVisible({ ...active, is_active: false }, now), false);
-  assert.equal(isPublicOfferVisible({ ...active, valid_from: "2026-08-06T00:00:00Z" }, now), false);
+  assert.equal(isPublicOfferVisible({ ...active, valid_from: "2026-08-06T00:00:00Z" }, now), true);
   assert.equal(isPublicOfferVisible({ ...active, valid_to: "2026-08-05T00:00:00Z" }, now), false);
 });
 
-test("Wochentage und Zeitfenster werden in Europe/Vienna ausgewertet", () => {
+test("Zeitplan ändert die Europe/Vienna-Gültigkeit, nicht die öffentliche Sichtbarkeit", () => {
   const mondayLunch = {
     status: "PUBLISHED",
     is_active: true,
@@ -73,8 +77,23 @@ test("Wochentage und Zeitfenster werden in Europe/Vienna ausgewertet", () => {
     time_to: "14:00:00",
   };
   assert.equal(isPublicOfferVisible(mondayLunch, new Date("2026-08-03T10:30:00Z")), true);
-  assert.equal(isPublicOfferVisible(mondayLunch, new Date("2026-08-03T13:30:00Z")), false);
-  assert.equal(isPublicOfferVisible(mondayLunch, new Date("2026-08-04T10:30:00Z")), false);
+  assert.equal(getOfferValidityState(mondayLunch, new Date("2026-08-03T10:30:00Z")), "CURRENT");
+  assert.equal(isPublicOfferVisible(mondayLunch, new Date("2026-08-03T13:30:00Z")), true);
+  assert.equal(getOfferValidityState(mondayLunch, new Date("2026-08-03T13:30:00Z")), "NOT_CURRENT");
+  assert.equal(isPublicOfferVisible(mondayLunch, new Date("2026-08-04T10:30:00Z")), true);
+  assert.equal(getOfferValidityState(mondayLunch, new Date("2026-08-04T10:30:00Z")), "NOT_CURRENT");
+});
+
+test("Bevorstehende Angebote bleiben sichtbar und erhalten einen eigenen Gültigkeitsstatus", () => {
+  const upcoming = {
+    status: "PUBLISHED",
+    is_active: true,
+    valid_from: "2026-08-28T00:00:00Z",
+    valid_to: "2026-09-01T00:00:00Z",
+  };
+  const now = new Date("2026-08-26T10:00:00Z");
+  assert.equal(isPublicOfferVisible(upcoming, now), true);
+  assert.equal(getOfferValidityState(upcoming, now), "UPCOMING");
 });
 
 test("Fünf parallele Beiträge sind erlaubt, ein sechster ist erkennbar", () => {
@@ -130,16 +149,27 @@ test("Parallelveröffentlichung wird mit Restaurant-Lock und Fünfergrenze gesch
   assert.match(migration, /OFFER_ACTIVE_LIMIT_REACHED/);
 });
 
-test("Öffentliche Abfrage zeigt keine Entwürfe, deaktivierten oder abgelaufenen Beiträge", async () => {
-  const migration = await readFile(migrationUrl, "utf8");
-  const publicFunction = migration.slice(migration.indexOf("create or replace function public.get_public_restaurant_offers"), migration.indexOf("create or replace function public.record_public_restaurant_offer_event"));
+test("Forward-Migration trennt öffentliche Sichtbarkeit von Zeitplan und Startdatum", async () => {
+  const migration = await readFile(visibilityMigrationUrl, "utf8");
+  const publicFunction = migration.slice(migration.indexOf("create or replace function public.get_public_restaurant_offers"), migration.indexOf("revoke all on function public.get_public_restaurant_offers"));
   assert.match(publicFunction, /o\.status = 'PUBLISHED'/);
   assert.match(publicFunction, /o\.is_active = true/);
-  assert.match(publicFunction, /o\.valid_from <= now\(\)/);
   assert.match(publicFunction, /o\.valid_to > now\(\)/);
-  assert.match(publicFunction, /Europe\/Vienna/);
-  assert.match(publicFunction, /extract\(isodow/);
+  const whereClause = publicFunction.slice(publicFunction.indexOf("where o.status"), publicFunction.indexOf("order by priority"));
+  assert.doesNotMatch(whereClause, /o\.valid_from <= now\(\)/);
+  assert.doesNotMatch(whereClause, /extract\(isodow|time_from|time_to|Europe\/Vienna/);
+  assert.match(publicFunction, /r\.slug = trim\(input_restaurant_slug\)/);
+  assert.match(publicFunction, /b\.restaurant_id = r\.id/);
   assert.doesNotMatch(publicFunction, /customer_id|phone|birthday|token_hash/);
+});
+
+test("Forward-Migration behält sichere RPC-Eigenschaften und enge Grants", async () => {
+  const migration = await readFile(visibilityMigrationUrl, "utf8");
+  assert.match(migration, /security definer/);
+  assert.match(migration, /set search_path = public, pg_temp/);
+  assert.match(migration, /revoke all on function public\.get_public_restaurant_offers\(text, integer\) from public, anon, authenticated/);
+  assert.match(migration, /grant execute on function public\.get_public_restaurant_offers\(text, integer\) to anon, authenticated/);
+  assert.doesNotMatch(migration, /service_role|disable row level security/i);
 });
 
 test("Analytics speichert ausschließlich aggregierte PII-freie Zähler", async () => {
@@ -193,6 +223,36 @@ test("CustomerPortal zeigt höchstens drei aktuelle Beiträge und verändert kei
   assert.match(page, /title="Aktuelles & Angebote"/);
   const offersSection = page.slice(page.indexOf("restaurantOffers.length"), page.indexOf("restaurantOffers.length") + 1800);
   assert.doesNotMatch(offersSection, /collectBonusPoints|startCustomerRedemption|setStoredCustomerToken|registerRestaurantGuest/);
+});
+
+test("Customer-Angebote zeigen Gültigkeitsstatus und kompakten Zeitplan", async () => {
+  const [card, service] = await Promise.all([readFile(customerOfferCardUrl, "utf8"), readFile(serviceUrl, "utf8")]);
+  for (const copy of ["Jetzt gültig", "Heute nicht gültig", "Gültig ab", "Gültigkeit:"]) {
+    assert.match(`${card}\n${service}`, new RegExp(copy));
+  }
+  assert.match(card, /formatRestaurantOfferSchedule/);
+  assert.match(card, /formatRestaurantOfferPeriod/);
+  assert.match(card, /onError=\{\(\) => setFailed\(true\)\}/);
+});
+
+test("Mobile Customer-Angebotskarten halten 16:9, Textgrenzen und volle CTA-Breite", async () => {
+  const css = await readFile(customerOfferCssUrl, "utf8");
+  assert.match(css, /aspect-ratio: 16 \/ 9/);
+  assert.match(css, /object-fit: cover/);
+  assert.match(css, /-webkit-line-clamp: 3/);
+  assert.match(css, /customer-offer-card \.premium-button \{ min-height: 44px; width: 100%; \}/);
+  assert.match(css, /@media \(max-width: 560px\)/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\)/);
+  assert.doesNotMatch(css, /(?:^|[;{])\s*width:\s*[5-9]\d\dpx/m);
+});
+
+test("Owner UI trennt Veröffentlichung, Kundensichtbarkeit und aktuelle Gültigkeit", async () => {
+  const page = await readFile(ownerPageUrl, "utf8");
+  assert.match(page, /Kundensichtbarkeit/);
+  assert.match(page, /Aktuelle Gültigkeit/);
+  assert.match(page, /veröffentlicht und sichtbar/);
+  assert.match(page, /restaurantOfferCustomerVisibility/);
+  assert.match(page, /restaurantOfferValidityPresentation/);
 });
 
 test("Finder zeigt einen kompakten Hinweis und sichere Aktionen", async () => {

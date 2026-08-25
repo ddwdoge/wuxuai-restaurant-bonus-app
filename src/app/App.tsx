@@ -168,7 +168,7 @@ function CustomerCentralRoute({ children }: { children: ReactNode }) {
 }
 
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
-  const { activeRestaurant, loading } = useTenant();
+  const { activeRestaurant, loadError, loading, refreshTenants } = useTenant();
   const location = useLocation();
   const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
@@ -176,6 +176,10 @@ function RestaurantSetupGate({ children }: { children: ReactNode }) {
 
   if (loading) {
     return <AdminLoading />;
+  }
+
+  if (loadError) {
+    return <main className="auth-shell" role="alert"><h1>Restaurantdaten konnten nicht geladen werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => void refreshTenants()} type="button">Erneut versuchen</button></main>;
   }
 
   if (activeRestaurant && !onboardingCompleted && !isSetupAllowedRoute) {
@@ -186,8 +190,9 @@ function RestaurantSetupGate({ children }: { children: ReactNode }) {
 }
 
 function StaffIndexRoute() {
-  const { activeRestaurant, loading } = useTenant();
+  const { activeRestaurant, loadError, loading, refreshTenants } = useTenant();
   if (loading) return <StaffLoading />;
+  if (loadError) return <main className="auth-shell" role="alert"><h1>Restaurantdaten konnten nicht geladen werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => void refreshTenants()} type="button">Erneut versuchen</button></main>;
   return activeRestaurant
     ? <Navigate replace to={`/staff/${activeRestaurant.slug}`} />
     : <Navigate replace to="/staff/login" />;

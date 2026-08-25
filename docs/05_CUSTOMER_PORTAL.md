@@ -801,6 +801,14 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   nur, wenn mindestens ein aktuell veröffentlichter Beitrag vorhanden ist.
 - Beiträge zeigen Angebotsart, Titel, Bild, Kurzbeschreibung, optionalen Preis,
   Gültigkeit und eine klar beschriftete Aktion.
+- Ein veröffentlichter und aktiver Beitrag bleibt bis zu seinem finalen
+  Ablaufdatum sichtbar. Ein zukünftiges Startdatum, ein anderer Wochentag oder
+  ein geschlossenes tägliches Zeitfenster ändern nur den sichtbaren
+  Gültigkeitsstatus, nicht die Sichtbarkeit im Marketingfeed.
+- Der Gültigkeitsstatus wird nach `Europe/Vienna` als beispielsweise `Jetzt
+  gültig`, `Heute nicht gültig`, `Heute 11:00–15:00 Uhr` oder `Gültig ab
+  TT.MM.JJJJ` dargestellt. Abgelaufene Beiträge werden im normalen Feed nicht
+  mehr angezeigt.
 - Eine globale Ansicht `Aktuelles` ist durch die spätere zentrale
   Kundenkonto-Entscheidung ersetzt. Vollständige Beiträge werden nur im
   bewusst ausgewählten Restaurantkontext angezeigt; `Meine Lokale` darf

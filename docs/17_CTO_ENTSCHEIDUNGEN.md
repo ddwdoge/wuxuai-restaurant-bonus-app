@@ -2170,3 +2170,19 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   Geschenke zurück. Ein freigegebener serverseitiger Versandprovider bleibt
   Voraussetzung für tatsächliche Zustellung.
 - Stripe bleibt ausdrücklich außerhalb dieses Sprints.
+
+## CTO-Entscheidung 2026-08-26: Sichtbarkeit und Gültigkeit von Angeboten
+
+🟢 **LOCKED / V1**
+
+- `PUBLISHED` und `is_active = true` machen einen restaurantbezogenen Beitrag
+  bis zu seinem finalen Ablaufdatum im Customer-Marketingfeed sichtbar.
+- `valid_from`, Wochentage und tägliche Zeitfenster bestimmen die aktuelle
+  Gültigkeit nach `Europe/Vienna`, dürfen den Beitrag aber nicht aus dem Feed
+  entfernen. Das gilt insbesondere für Mittagsmenüs außerhalb der Mittagszeit.
+- Beiträge vor `valid_from` werden als bevorstehend angezeigt; Beiträge nach
+  `valid_to` werden aus dem normalen Feed ausgeblendet.
+- Entwürfe, deaktivierte, archivierte und fremde Restaurantbeiträge bleiben
+  verborgen. Tenant-Grenzen und öffentliche Feldbegrenzung bleiben unverändert.
+- Diese Entscheidung betrifft Marketingdarstellung und keine Reward-, Claim-
+  oder Einlöseberechtigung.

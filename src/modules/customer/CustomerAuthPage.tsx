@@ -24,7 +24,7 @@ const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
-  const { loading: authLoading, portalAccess, user } = useAuth();
+  const { loading: authLoading, portalAccess, signIn, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = safeCustomerReturnPath(searchParams.get("returnTo"));
@@ -74,14 +74,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     setConfirmationPending(false);
     try {
       if (mode === "login") {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-        if (error) throw error;
-        if (!data.user?.email_confirmed_at) {
-          await supabase.auth.signOut({ scope: "local" });
-          setMessageKind("error");
-          setMessage("Bitte bestätige zuerst deine E-Mail-Adresse.");
-          return;
-        }
+        await signIn(email.trim().toLowerCase(), password);
         navigate(returnTo, { replace: true });
         return;
       }

@@ -144,6 +144,16 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Map-Drawer wird ueber ein Body-Portal gerendert; Leaflet bleibt darunter
   und erhaelt bei offenem Drawer keine Pointer-Events.
 
+## Aktuelles & Angebote - IMPLEMENTED
+
+- `PUBLISHED` plus `is_active = true` bedeutet bis zum finalen Ablaufdatum:
+  sichtbar als restaurantbezogener Marketinginhalt.
+- Startdatum, Wochentage und tägliche Zeitfenster definieren die aktuelle
+  Gültigkeit nach `Europe/Vienna`; sie filtern den Beitrag nicht aus dem Feed.
+- Bevorstehende Beiträge bleiben mit `Gültig ab` sichtbar. Abgelaufene,
+  deaktivierte, archivierte und fremde Beiträge bleiben verborgen.
+- Sichtbarkeit verändert keine Reward-, Punkte-, Claim- oder Einlöselogik.
+
 ## Reporting - IMPLEMENTED
 
 - Tages-, Wochen-, Monats- und Jahresauswertung sowie CSV-/Druckexport sind im

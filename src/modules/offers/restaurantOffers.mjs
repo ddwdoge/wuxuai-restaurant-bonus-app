@@ -8,27 +8,50 @@ export const OFFER_TYPE_PRIORITY = Object.freeze({
   NEWS: 7,
 });
 
-export function isPublicOfferVisible(offer, now = new Date()) {
-  const nowMs = now.getTime();
-  const viennaParts = new Intl.DateTimeFormat("en-GB", {
+function viennaClock(now) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Vienna",
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(now);
-  const weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(
-    viennaParts.find((part) => part.type === "weekday")?.value,
-  ) + 1;
-  const localTime = `${viennaParts.find((part) => part.type === "hour")?.value}:${viennaParts.find((part) => part.type === "minute")?.value}`;
-  const matchesWeekday = !Array.isArray(offer?.weekdays) || offer.weekdays.length === 0 || offer.weekdays.includes(weekday);
-  const matchesTime = !offer?.time_from || !offer?.time_to || (localTime >= offer.time_from.slice(0, 5) && localTime < offer.time_to.slice(0, 5));
+  return {
+    weekday: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(
+      parts.find((part) => part.type === "weekday")?.value,
+    ) + 1,
+    time: `${parts.find((part) => part.type === "hour")?.value}:${parts.find((part) => part.type === "minute")?.value}`,
+  };
+}
+
+export function isPublicOfferVisible(offer, now = new Date()) {
+  const nowMs = now.getTime();
+  const validToMs = new Date(offer?.valid_to).getTime();
   return offer?.status === "PUBLISHED"
     && offer?.is_active === true
-    && new Date(offer.valid_from).getTime() <= nowMs
-    && new Date(offer.valid_to).getTime() > nowMs
-    && matchesWeekday
-    && matchesTime;
+    && Number.isFinite(validToMs)
+    && validToMs > nowMs;
+}
+
+export function getOfferValidityState(offer, now = new Date()) {
+  const nowMs = now.getTime();
+  const validFromMs = new Date(offer?.valid_from).getTime();
+  const validToMs = new Date(offer?.valid_to).getTime();
+  if (!Number.isFinite(validFromMs) || !Number.isFinite(validToMs) || validToMs <= nowMs) return "EXPIRED";
+  if (validFromMs > nowMs) return "UPCOMING";
+
+  const { weekday, time } = viennaClock(now);
+  const matchesWeekday = !Array.isArray(offer?.weekdays)
+    || offer.weekdays.length === 0
+    || offer.weekdays.includes(weekday);
+  if (!matchesWeekday) return "NOT_CURRENT";
+
+  if (!offer?.time_from || !offer?.time_to) return "CURRENT";
+  const timeFrom = offer.time_from.slice(0, 5);
+  const timeTo = offer.time_to.slice(0, 5);
+  if (time < timeFrom) return "LATER_TODAY";
+  if (time >= timeTo) return "NOT_CURRENT";
+  return "CURRENT";
 }
 
 export function validateRestaurantOfferDraft(offer) {

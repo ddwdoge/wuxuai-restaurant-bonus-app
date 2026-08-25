@@ -27,10 +27,13 @@ import {
   deleteRestaurantOfferDraft,
   duplicateRestaurantOffer,
   formatRestaurantOfferPrice,
+  formatRestaurantOfferSchedule,
   loadRestaurantOfferBranches,
   loadRestaurantOfferEmailSummary,
   loadRestaurantOffers,
+  restaurantOfferCustomerVisibility,
   restaurantOfferDisplayStatus,
+  restaurantOfferValidityPresentation,
   restaurantOfferTypeLabels,
   restaurantOfferTypes,
   saveRestaurantOffer,
@@ -127,7 +130,7 @@ function formatPeriod(offer: RestaurantOffer) {
 
 function statusTone(status: string) {
   if (status === "Veröffentlicht") return "active";
-  if (status === "Geplant" || status === "Entwurf") return "draft";
+  if (status === "Entwurf") return "draft";
   if (status === "Abgelaufen") return "expired";
   return "inactive";
 }
@@ -179,7 +182,7 @@ export function RestaurantOffersPage() {
 
   const visibleOffers = useMemo(() => offers.filter((offer) => {
     const displayStatus = restaurantOfferDisplayStatus(offer);
-    if (filter === "published") return displayStatus === "Veröffentlicht" || displayStatus === "Geplant";
+    if (filter === "published") return displayStatus === "Veröffentlicht";
     if (filter === "draft") return displayStatus === "Entwurf";
     if (filter === "inactive") return ["Deaktiviert", "Abgelaufen", "Archiviert"].includes(displayStatus);
     return true;
@@ -365,7 +368,7 @@ export function RestaurantOffersPage() {
             <button aria-pressed={filter === value} className={filter === value ? "active" : ""} key={value} onClick={() => setFilter(value)} type="button">{label}</button>
           ))}
         </div>
-        <span>{offers.filter((offer) => restaurantOfferDisplayStatus(offer) === "Veröffentlicht").length} von 5 aktuell aktiv</span>
+        <span>{offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length} von 5 veröffentlicht und sichtbar</span>
       </div>
 
       {statusMessage ? <p aria-live="polite" className="restaurant-offers-message">{statusMessage}</p> : null}
@@ -377,6 +380,8 @@ export function RestaurantOffersPage() {
         <section aria-label="Gespeicherte Angebote" className="restaurant-offers-grid">
           {visibleOffers.map((offer) => {
             const displayStatus = restaurantOfferDisplayStatus(offer);
+            const validity = restaurantOfferValidityPresentation(offer);
+            const customerVisibility = restaurantOfferCustomerVisibility(offer);
             return (
               <article className="restaurant-offer-card" key={offer.id}>
                 <div className="restaurant-offer-media">
@@ -388,7 +393,10 @@ export function RestaurantOffersPage() {
                   <h2>{offer.title}</h2>
                   <p>{offer.short_description}</p>
                   <dl>
-                    <div><dt>Gültigkeit</dt><dd>{formatPeriod(offer)}</dd></div>
+                    <div><dt>Kundensichtbarkeit</dt><dd>{customerVisibility}</dd></div>
+                    <div><dt>Aktuelle Gültigkeit</dt><dd>{validity.label}</dd></div>
+                    <div><dt>Zeitplan</dt><dd>{formatRestaurantOfferSchedule(offer)}</dd></div>
+                    <div><dt>Zeitraum</dt><dd>{formatPeriod(offer)}</dd></div>
                     <div><dt>Standort</dt><dd>{offer.branch_name ?? activeRestaurant.name}</dd></div>
                     {offer.current_price != null ? <div><dt>Preis</dt><dd>{formatRestaurantOfferPrice(offer.current_price)}</dd></div> : null}
                   </dl>

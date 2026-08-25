@@ -1,6 +1,33 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-26 - Angebots-Sichtbarkeit von Gültigkeit getrennt
+
+- Veröffentlichte aktive Restaurantangebote bleiben bis zum finalen Ablauf im
+  Customer-Marketingfeed sichtbar, auch vor Startdatum oder außerhalb von
+  Wochentag und täglichem Zeitfenster.
+- Europe/Vienna-Gültigkeitsstatus, Zeitplan und Zeitraum werden in Customer-
+  und Owner-Ansicht ausdrücklich angezeigt; Owner sehen Veröffentlichung,
+  Kundensichtbarkeit und aktuelle Gültigkeit getrennt.
+- Customer-Karten auf 320 bis 430 Pixel mit 16:9-Bildfläche, stabiler
+  Fallbackfläche, begrenzten Textzeilen und voller CTA-Breite normalisiert.
+- Additive Migration
+  `20260826001000_customer_offer_visibility_validity_split.sql`; Reward-,
+  Einlöse-, RLS- und Tenant-Verträge bleiben unverändert.
+
+## 2026-08-25 - Globale Post-Login-Hydration stabilisiert
+
+- Owner-, Staff- und Customer-Passwortlogin verwenden denselben zentralen
+  Session- und Autorisierungsabschluss vor der ersten Portalnavigation.
+- Erfolgreiche Autorisierung invalidiert den restaurantbezogenen Tenant-Kontext
+  gezielt, auch bei derselben Identitaet in einem lange geoeffneten Tab.
+- Safari-BFCache und die Rueckkehr in einen sichtbaren geschuetzten Tab validieren
+  Session und Portalzugriff kontrolliert neu, ohne normalen Full-Page-Reload.
+- Temporaere Autorisierungs-, Tenant- und Staff-Kontextfehler behalten die
+  Sitzung und bieten einen lokalen Wiederholungsversuch statt einer leeren
+  Ansicht.
+- Keine Migration, keine RLS-/Grant-Aenderung und keine fachliche Aenderung.
+
 ## 2026-08-25 - Restaurant-Titelbilder gegen fehlerhafte Quellen abgesichert
 
 - Fehlerhafte oder fehlende Titelbild-Adressen im Customer-Partnerfinder zeigen

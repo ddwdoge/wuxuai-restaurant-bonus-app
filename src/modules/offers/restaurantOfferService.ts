@@ -1,4 +1,9 @@
 import { supabase } from "../../shared/lib/supabase";
+import {
+  getOfferValidityState,
+  isPublicOfferVisible,
+  type OfferValidityState,
+} from "./restaurantOffers.mjs";
 
 export const restaurantOfferTypes = [
   "WEEKLY_OFFER",
@@ -95,6 +100,53 @@ export const restaurantOfferTypeLabels: Record<RestaurantOfferType, string> = {
   EVENT: "Veranstaltung",
   NEWS: "Neuigkeit",
 };
+
+const offerWeekdayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+function formatOfferDate(value: string) {
+  return new Intl.DateTimeFormat("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Vienna",
+  }).format(new Date(value));
+}
+
+export function formatRestaurantOfferSchedule(offer: RestaurantOffer) {
+  const weekdays = offer.weekdays ?? [];
+  let weekdayText = "Täglich";
+  if (weekdays.join(",") === "1,2,3,4,5") weekdayText = "Mo–Fr";
+  else if (weekdays.join(",") === "6,7") weekdayText = "Sa–So";
+  else if (weekdays.length > 0) weekdayText = weekdays.map((day) => offerWeekdayLabels[day - 1]).filter(Boolean).join(", ");
+
+  if (offer.time_from && offer.time_to) {
+    return `${weekdayText} · ${offer.time_from.slice(0, 5)}–${offer.time_to.slice(0, 5)} Uhr`;
+  }
+  return weekdays.length > 0 ? weekdayText : "Während des gesamten Angebotszeitraums";
+}
+
+export function formatRestaurantOfferPeriod(offer: RestaurantOffer) {
+  return `${formatOfferDate(offer.valid_from)}–${formatOfferDate(offer.valid_to)}`;
+}
+
+export function restaurantOfferValidityPresentation(offer: RestaurantOffer, now = new Date()): {
+  state: OfferValidityState;
+  label: string;
+  tone: "current" | "upcoming" | "not-current" | "expired";
+} {
+  const state = getOfferValidityState(offer, now);
+  if (state === "CURRENT") return { state, label: "Jetzt gültig", tone: "current" };
+  if (state === "LATER_TODAY" && offer.time_from && offer.time_to) {
+    return { state, label: `Heute ${offer.time_from.slice(0, 5)}–${offer.time_to.slice(0, 5)} Uhr`, tone: "upcoming" };
+  }
+  if (state === "UPCOMING") return { state, label: `Gültig ab ${formatOfferDate(offer.valid_from)}`, tone: "upcoming" };
+  if (state === "EXPIRED") return { state, label: "Abgelaufen", tone: "expired" };
+  return { state, label: "Heute nicht gültig", tone: "not-current" };
+}
+
+export function restaurantOfferCustomerVisibility(offer: RestaurantOffer, now = new Date()) {
+  return isPublicOfferVisible(offer, now) ? "Sichtbar" : "Nicht sichtbar";
+}
 
 function requireClient() {
   if (!supabase) throw new Error("Live-Daten sind gerade nicht verfügbar.");
@@ -217,7 +269,6 @@ export function restaurantOfferDisplayStatus(offer: RestaurantOffer, now = new D
   if (offer.status === "ARCHIVED") return "Archiviert";
   if (offer.status === "DISABLED" || !offer.is_active) return offer.status === "DRAFT" ? "Entwurf" : "Deaktiviert";
   if (new Date(offer.valid_to).getTime() <= now.getTime()) return "Abgelaufen";
-  if (new Date(offer.valid_from).getTime() > now.getTime()) return "Geplant";
   return "Veröffentlicht";
 }
 

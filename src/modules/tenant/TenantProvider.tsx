@@ -8,6 +8,7 @@ type TenantContextValue = {
   activeRestaurant: Restaurant | null;
   branding: RestaurantBranding | null;
   loading: boolean;
+  loadError: boolean;
   clearTenantState: () => void;
   refreshTenants: () => Promise<void>;
   setActiveRestaurantId: (restaurantId: string) => void;
@@ -41,11 +42,12 @@ async function loadBrandingForRestaurant(restaurantId: string) {
 }
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { contextRevision, user } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [activeRestaurantId, setActiveRestaurantId] = useState("");
   const [branding, setBranding] = useState<RestaurantBranding | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const [loadError, setLoadError] = useState(false);
   const tenantLoadRequestId = useRef(0);
 
   const clearTenantState = useCallback(() => {
@@ -53,6 +55,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setRestaurants([]);
     setActiveRestaurantId("");
     setBranding(null);
+    setLoadError(false);
     setLoading(false);
   }, []);
 
@@ -70,6 +73,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   async function loadTenantsForUser(userId: string, requestId = tenantLoadRequestId.current) {
     setLoading(true);
+    setLoadError(false);
     const { data: memberships, error: membershipError } = await supabase!
       .from("restaurant_members")
       .select("restaurant_id")
@@ -84,6 +88,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setRestaurants([]);
       setActiveRestaurantId("");
       setBranding(null);
+      setLoadError(true);
       setLoading(false);
       return;
     }
@@ -114,6 +119,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setRestaurants([]);
       setActiveRestaurantId("");
       setBranding(null);
+      setLoadError(true);
       setLoading(false);
       return;
     }
@@ -133,6 +139,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
     );
     replaceTenantState(nextRestaurants);
+    setLoadError(false);
     setLoading(false);
   }
 
@@ -148,6 +155,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setRestaurants([]);
     setActiveRestaurantId("");
     setBranding(null);
+    setLoadError(false);
     setLoading(true);
 
     async function loadTenants() {
@@ -155,7 +163,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadTenants();
-  }, [clearTenantState, user]);
+  }, [clearTenantState, contextRevision, user]);
 
   useEffect(() => {
     if (!supabase) {
@@ -195,6 +203,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       activeRestaurant,
       branding,
       clearTenantState,
+      loadError,
       loading,
       refreshTenants: async () => {
         if (supabase && user) {
@@ -218,7 +227,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         );
       },
     }),
-    [activeRestaurant, branding, clearTenantState, loading, restaurants, user],
+    [activeRestaurant, branding, clearTenantState, loadError, loading, restaurants, user],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
