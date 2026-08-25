@@ -35,11 +35,38 @@ function messageForCode(code?: string) {
   return messages[code ?? ""] ?? "Der Teamzugang konnte nicht aktualisiert werden.";
 }
 
+async function readFunctionFailure(error: unknown, data: unknown) {
+  let code = typeof data === "object" && data && "error" in data && typeof data.error === "string"
+    ? data.error
+    : "STAFF_INVITE_FAILED";
+  let status: number | null = null;
+  const context = typeof error === "object" && error && "context" in error
+    ? (error as { context?: Response }).context
+    : null;
+
+  if (context instanceof Response) {
+    status = context.status;
+    try {
+      const payload = await context.clone().json() as { error?: unknown; message?: unknown };
+      if (typeof payload.error === "string") code = payload.error;
+      else if (typeof payload.message === "string") code = payload.message;
+    } catch {
+      // The response status remains enough to classify gateway failures safely.
+    }
+  }
+
+  console.warn("Staff invitation request failed", { status, code });
+  return code;
+}
+
 export async function loadOwnerStaffMembers(restaurantId: string) {
   const { data, error } = await requireClient().rpc("get_owner_staff_members", {
     input_restaurant_id: restaurantId,
   });
-  if (error || !data?.success) throw new Error(messageForCode(data?.error_code ?? error?.message));
+  if (error || !data?.success) {
+    console.warn("Staff team request failed", { code: data?.error_code ?? error?.code ?? "TEAM_LOAD_FAILED" });
+    throw new Error("Team konnte nicht geladen werden. Erneut versuchen.");
+  }
   return (data.staff ?? []) as OwnerStaffMember[];
 }
 
@@ -47,14 +74,22 @@ export async function inviteOwnerStaffMember(restaurantId: string, name: string,
   const { data, error } = await requireClient().functions.invoke("owner-staff-invite", {
     body: { action: "invite", restaurantId, name, email },
   });
-  if (error || !data?.success) throw new Error(messageForCode(data?.error));
+  if (error || !data?.success) {
+    const code = await readFunctionFailure(error, data);
+    if (code === "STAFF_EMAIL_ALREADY_EXISTS") throw new Error("Diese Person gehört bereits zu deinem Team.");
+    if (code === "STAFF_INVITE_RATE_LIMITED") throw new Error("Bitte warte kurz, bevor du die Einladung erneut sendest.");
+    throw new Error("Einladung konnte nicht gesendet werden.");
+  }
 }
 
 export async function resendOwnerStaffInvitation(restaurantId: string, staffMemberId: string) {
   const { data, error } = await requireClient().functions.invoke("owner-staff-invite", {
     body: { action: "resend", restaurantId, staffMemberId },
   });
-  if (error || !data?.success) throw new Error(messageForCode(data?.error));
+  if (error || !data?.success) {
+    const code = await readFunctionFailure(error, data);
+    throw new Error(messageForCode(code));
+  }
 }
 
 export async function changeOwnerStaffStatus(
