@@ -26,6 +26,7 @@ import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useAuth } from "../auth/AuthProvider";
+import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
   applyStaffLoyaltyAction,
   confirmRestaurantControlledPoints,
@@ -104,6 +105,7 @@ export function StaffTablet() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { signOut, user } = useAuth();
+  const staffPortalAccess = useStaffPortalAccess();
   const { activeRestaurant, branding, loading: tenantLoading, restaurants } = useTenant();
   const staffRestaurant = useMemo(() => {
     if (slug) {
@@ -675,7 +677,7 @@ export function StaffTablet() {
           <span>Menü</span>
         </button>
         <div className="staff-premium-header-meta">
-          <span><ShieldCheck aria-hidden="true" size={16} />Mitarbeiterbereich</span>
+          <span><ShieldCheck aria-hidden="true" size={16} />{staffPortalAccess?.access_mode === "operator" ? "Mitarbeiterbereich – Betreiberzugriff" : "Mitarbeiterbereich"}</span>
           <time dateTime={new Date().toISOString().slice(0, 10)}><CalendarDays aria-hidden="true" size={16} />{currentDateLabel}</time>
         </div>
       </header>

@@ -66,7 +66,7 @@ export function StaffLoginPage() {
           navigate(`/staff/${restaurantSlug}`, { replace: true });
           return;
         }
-        setError("Dieses Konto besitzt keinen aktiven Mitarbeiterzugang für dieses Restaurant.");
+        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
       })
       .catch((caught) => {
         if (!cancelled) setError(caught instanceof Error ? caught.message : "Der Mitarbeiterzugang konnte gerade nicht geprüft werden.");
@@ -87,7 +87,7 @@ export function StaffLoginPage() {
       const access = await resolveMyStaffRestaurantAccess(restaurantSlug);
       if (!access.success || access.restaurant_slug !== restaurantSlug) {
         await signOut();
-        setError("Dieses Konto besitzt keinen aktiven Mitarbeiterzugang für dieses Restaurant.");
+        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
         return;
       }
       navigate(`/staff/${restaurantSlug}`, { replace: true });
@@ -118,7 +118,7 @@ export function StaffLoginPage() {
 
   return (
     <PublicPageShell
-      description="Mit deinem persönlichen Mitarbeiterkonto anmelden."
+      description="Mit deinem persönlichen Konto anmelden."
       eyebrow={restaurantName ?? "WUXUAI Bonus"}
       title="Mitarbeiterbereich"
     >

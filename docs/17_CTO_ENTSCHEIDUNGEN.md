@@ -475,6 +475,15 @@ One Persona – One Interface.
 - Adminfunktionen im Staff Portal
 - Staff-Prozesse im Kundenportal
 
+### Betreiberzugriff auf operative Staff-Prozesse
+
+Owner, Admins und Manager dürfen den Mitarbeiterbereich ihres eigenen
+Restaurants mit ihrer normalen Betreiberidentität verwenden. Das ist kein
+Rollenwechsel: Es wird keine Staff-Zuordnung erzeugt und keine
+Mitarbeiteridentität imitiert. Die Berechtigung wird für den konkreten Tenant
+serverseitig aus `restaurant_members` ermittelt; eine reine Plattformrolle
+begründet keinen Zugriff.
+
 ---
 
 ## 10. Restaurant Portal zuerst stabilisieren

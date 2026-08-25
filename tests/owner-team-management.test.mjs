@@ -129,10 +129,10 @@ test("Owner-UI bietet vollständige Teamverwaltung ohne gemeinsames Passwort", (
   assert.doesNotMatch(staffPage, /shared password|gemeinsames Passwort|PIN eingeben/i);
 });
 
-test("Staff erhält serverseitig aufgelöste Rolle und geschützte Routen", () => {
+test("Staff und Betreiber erhalten serverseitig aufgelöste, geschützte Routen", () => {
   assert.match(authProvider, /\["owner", "admin", "manager", "supervisor", "staff"\]/);
-  assert.match(app, /path="\/staff"[\s\S]*allowedRoles=\{\["staff", "supervisor"\]\}/);
-  assert.doesNotMatch(app, /allowedRoles=\{\["staff", "supervisor", "owner"/);
+  assert.match(app, /path="\/staff"[\s\S]*allowedRoles=\{\["owner", "admin", "manager", "staff", "supervisor"\]\}/);
+  assert.match(app, /<StaffRestaurantRouteGate>/);
   assert.match(app, /path="\/staff\/:slug"/);
   assert.match(app, /path="\/staff\/login"/);
   assert.match(app, /path="\/auth\/staff-invite"/);

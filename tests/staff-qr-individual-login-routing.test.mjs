@@ -32,15 +32,14 @@ test("Staff slug and login URL preserve only a valid restaurant context", () => 
   assert.equal(staffSlugFromLegacyPath("/staff/%E0%A4%A"), null);
 });
 
-test("only individual Staff roles qualify for the Staff portal", () => {
+test("individual Staff roles remain distinct from operator access", () => {
   assert.equal(isIndividualStaffRole("staff"), true);
   assert.equal(isIndividualStaffRole("supervisor"), true);
   for (const role of ["owner", "admin", "manager", "platform_admin", "customer", null]) {
     assert.equal(isIndividualStaffRole(role), false, String(role));
   }
   assert.match(app, /path="\/staff\/login" element=\{<StaffLoginPage \/>\}/);
-  assert.equal((app.match(/<ProtectedRoute allowedRoles=\{\["staff", "supervisor"\]\}>/g) ?? []).length, 2);
-  assert.doesNotMatch(app, /allowedRoles=\{\["staff", "supervisor", "owner"/);
+  assert.equal((app.match(/<ProtectedRoute allowedRoles=\{\["owner", "admin", "manager", "staff", "supervisor"\]\}>/g) ?? []).length, 2);
 });
 
 test("legacy Staff QR redirects anonymous users to the restaurant-specific Staff login", () => {
@@ -58,7 +57,7 @@ test("new QR and Starter Kit links point directly to the individual Staff login"
 
 test("Staff login uses individual credentials and checks exact server access", () => {
   assert.match(loginPage, /title="Mitarbeiterbereich"/);
-  assert.match(loginPage, /Mit deinem persönlichen Mitarbeiterkonto anmelden\./);
+  assert.match(loginPage, /Mit deinem persönlichen Konto anmelden\./);
   assert.match(loginPage, /label="E-Mail"/);
   assert.match(loginPage, /label="Passwort"/);
   assert.match(loginPage, /await signIn\(email, password\)/);

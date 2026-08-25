@@ -110,6 +110,11 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der aktuelle Staff-Vertrag wird ueber den authentifizierten `staff_user_id`-
   Kontext abgesichert; alte `staff_member_id`-Kompatibilitaetsfelder duerfen
   keine Autoritaet besitzen.
+- Owner, Admins und Manager duerfen den operativen Mitarbeiterbereich nur fuer
+  eigene, autoritativ zugeordnete Restaurants verwenden. Ihre Rolle bleibt
+  unveraendert; es wird keine Staff-Identitaet erzeugt oder imitiert.
+- Betreiberaktionen behalten `auth.uid()` als Akteur und werden im Audit als
+  Admin-Aktion mit der konkreten Restaurantrolle gekennzeichnet.
 
 ## QR Center und Starter Kit - IMPLEMENTED
 
@@ -119,8 +124,9 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Mitarbeiter-QR `/staff/login?restaurant=:slug` ist der getrennte interne
   Einstieg. Bestehende `/staff/:slug`-Drucke bleiben als sichere Weiterleitung
   kompatibel. Die Route verlangt eine persönliche Authentifizierung sowie eine
-  aktive, exakt zum Restaurant passende Staff-Zuordnung; der QR selbst erteilt
-  keine Berechtigung. Owner- und Plattformrollen sind kein Staff-Ersatz.
+  aktive, exakt zum Restaurant passende Staff-Zuordnung oder eine autoritative
+  Owner-/Admin-/Manager-Zuordnung; der QR selbst erteilt keine Berechtigung.
+  Eine Plattformrolle allein ist kein Staff- oder Betreiberersatz.
 - Der fruehere Kassa-Aufsteller ist als doppelte Druckvariante entfernt.
 - `/w/:slug` bleibt fuer bestehende kundeninitiierte Sammelwege kompatibel und
   wird im QR Center nur bei `customer_initiated_only` oder `both` angezeigt.

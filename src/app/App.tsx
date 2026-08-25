@@ -281,7 +281,7 @@ export function App() {
       <Route
         path="/staff"
         element={
-          <ProtectedRoute allowedRoles={["staff", "supervisor"]}>
+          <ProtectedRoute allowedRoles={["owner", "admin", "manager", "staff", "supervisor"]}>
             <StaffIndexRoute />
           </ProtectedRoute>
         }
@@ -289,7 +289,7 @@ export function App() {
       <Route
         path="/staff/:slug"
         element={
-          <ProtectedRoute allowedRoles={["staff", "supervisor"]}>
+          <ProtectedRoute allowedRoles={["owner", "admin", "manager", "staff", "supervisor"]}>
             <StaffRestaurantRouteGate>{withFallback(<StaffTablet />, <StaffLoading />)}</StaffRestaurantRouteGate>
           </ProtectedRoute>
         }

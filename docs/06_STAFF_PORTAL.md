@@ -651,3 +651,19 @@ Punktebelohnungen weder Code-, PIN- noch QR-Bestätigung aus.
   Punkte-Präsentationsfenster bleiben unverändert.
 - Alte `staff_members`-PIN-Zeilen bleiben kompatibel, begründen aber keinen
   persönlichen Auth-Zugang und erscheinen nicht als eingeladene Teamkonten.
+
+## CTO-Ergänzung 2026-08-25: Betreiberzugriff auf den eigenen Mitarbeiterbereich
+
+- Owner, Admins und Manager dürfen den operativen Mitarbeiterbereich nur für
+  Restaurants öffnen, denen sie über eine autoritative `restaurant_members`-
+  Beziehung zugeordnet sind.
+- Dieser Zugriff erzeugt keine `staff_members`-Zeile, ändert keine Rolle und
+  stellt keine Mitarbeiteridentität nach. Die Sitzung bleibt dem tatsächlichen
+  Betreiberkonto zugeordnet.
+- Reine Plattformrollen, Kunden, anonyme Nutzer und Betreiber fremder
+  Restaurants erhalten keinen Zugriff.
+- Punkte- und andere operative Aktionen verwenden weiterhin `auth.uid()` als
+  Akteur. Der Audit-Vertrag kennzeichnet Betreiberaktionen als `admin` und
+  bewahrt die konkrete Restaurantrolle in den Metadaten.
+- Ein gesperrter Mitarbeiterzugang hat keine Auswirkung auf die unabhängige
+  Betreiberberechtigung.

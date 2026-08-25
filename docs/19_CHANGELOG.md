@@ -1,14 +1,26 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Betreiberzugriff auf eigenen Mitarbeiterbereich
+
+- Staff-Routen fuer autoritative Owner-, Admin- und Manager-Beziehungen des
+  konkret angefragten Restaurants geoeffnet; fremde Tenants und reine
+  Plattformrollen bleiben gesperrt.
+- Betreiberzugriff ohne Staff-Zeile, Rollenwechsel oder Staff-Impersonation
+  umgesetzt und in der UI als Betreiberzugriff gekennzeichnet.
+- Bestehende operative Audit-Aufrufe normalisieren den echten Betreiberakteur
+  auf `admin`, behalten `auth.uid()` und dokumentieren die Restaurantrolle.
+
 ## 2026-08-25 - Staff QR auf persönlichen Mitarbeiter-Login geroutet
 
 - Neuen restaurantbezogenen `/staff/login` mit persönlicher E-Mail und
   persönlichem Passwort ergänzt; Owner-Texte und Owner-Registrierungslogik
   werden nicht wiederverwendet.
 - Aktive Staff-/Supervisor-Zuordnung für den exakten QR-Slug serverseitig
-  geprüft; Owner, Plattformadmin, Customer, gesperrte und fremde Staff-Konten
-  bleiben ausgeschlossen.
+  geprüft; die spätere Betreiberzugriffsentscheidung erlaubt zusätzlich
+  autoritative Owner-/Admin-/Manager-Zuordnungen für den eigenen Tenant.
+  Plattformadmin, Customer, gesperrte und fremde Staff-Konten bleiben allein
+  durch diese Rollen ausgeschlossen.
 - Neue Staff-QRs und Starter Kits auf den Mitarbeiter-Login umgestellt und
   bestehende `/staff/:slug`-Drucke kompatibel weitergeleitet.
 

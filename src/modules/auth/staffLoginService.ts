@@ -12,6 +12,8 @@ export type StaffRestaurantAccess = {
   restaurant_id?: string;
   restaurant_name?: string;
   restaurant_slug?: string;
+  access_mode?: "operator" | "staff";
+  restaurant_role?: "owner" | "admin" | "manager" | "staff" | "supervisor";
   staff_role?: "staff" | "supervisor";
 };
 
