@@ -236,10 +236,18 @@
 }
 
 .public-premium-secondary-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
   color: var(--wux-gold-dark);
+  display: inline-flex;
   font-weight: 700;
+  gap: 7px;
+  justify-content: center;
   min-height: 44px;
   padding: 11px 2px;
+  text-align: center;
+  width: 100%;
 }
 
 .public-premium-trust-note {

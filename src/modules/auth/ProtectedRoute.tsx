@@ -3,25 +3,38 @@ import { useAuth } from "./AuthProvider";
 import type { UserRole } from "../../shared/types/domain";
 import { isOwnerEmailConfirmed } from "./ownerAuthFlow.mjs";
 import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.mjs";
+import type { PortalKind } from "./portalAccessUx.mjs";
+import { WrongPortalNotice } from "./WrongPortalNotice";
 
 type ProtectedRouteProps = {
   allowedRoles: UserRole[];
   children: React.ReactNode;
   roleScope?: "restaurant" | "platform";
   requireConfirmedEmail?: boolean;
+  portalKind?: Exclude<PortalKind, "customer">;
 };
 
-export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant", requireConfirmedEmail = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ allowedRoles, children, portalKind, roleScope = "restaurant", requireConfirmedEmail = false }: ProtectedRouteProps) {
   const {
     loading,
     platformRole,
+    portalAccess,
+    portalAccessError,
     restaurantAuthorizationError,
     restaurantRole,
     retryAuthorization,
     user,
   } = useAuth();
   const location = useLocation();
+  const effectivePortalKind = portalKind ?? (location.pathname === "/staff" || staffSlugFromLegacyPath(location.pathname) ? "staff" : undefined);
   const activeRole = roleScope === "platform" ? platformRole : restaurantRole;
+  const portalAllowed = effectivePortalKind === "owner"
+    ? portalAccess.owner_access
+    : effectivePortalKind === "staff"
+      ? portalAccess.staff_access
+      : effectivePortalKind === "platform"
+        ? portalAccess.platform_access
+        : true;
 
   if (loading) {
     return <div className="auth-shell">Lade Sitzung...</div>;
@@ -47,6 +60,20 @@ export function ProtectedRoute({ allowedRoles, children, roleScope = "restaurant
         <button onClick={retryAuthorization} type="button">Erneut versuchen</button>
       </main>
     );
+  }
+
+  if (portalAccessError) {
+    return (
+      <main className="auth-shell" role="alert">
+        <h1>Zugang konnte nicht geprüft werden</h1>
+        <p>Deine Anmeldung bleibt bestehen. Bitte prüfe den Zugang erneut.</p>
+        <button onClick={retryAuthorization} type="button">Erneut versuchen</button>
+      </main>
+    );
+  }
+
+  if (effectivePortalKind && !portalAllowed) {
+    return <WrongPortalNotice portal={effectivePortalKind} staffSlug={staffSlugFromLegacyPath(location.pathname)} />;
   }
 
   if (!activeRole || !allowedRoles.includes(activeRole)) {

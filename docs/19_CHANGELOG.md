@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-25 - Rollenbewusste Portal-Anmeldung abgesichert
+
+- Gemeinsamen serverseitigen Zugriffsvertrag fuer Customer-, Staff-, Owner- und
+  Platform-Admin-Portale ergaenzt, ohne Rollen aus Metadaten, E-Mail-Mustern
+  oder lokalem Browserzustand abzuleiten.
+- Nach erfolgreicher Authentifizierung werden falsche Portalzugriffe mit einer
+  klaren deutschen Meldung, einem bestaetigten Portalziel und sicherem
+  Kontowechsel beendet.
+- Customer-Datenaufrufe werden bei einem bestaetigten Rollenfehler vor dem
+  Rendern des Customer-Portals verhindert; bestehende Auth-, Tenant- und
+  Fachvertraege bleiben unveraendert.
+
 ## 2026-08-25 - Staff-QR als unmittelbaren operativen Drawer umgesetzt
 
 - Primäre Bottom-Navigation `QR scannen` öffnet nun mit einem Tap einen

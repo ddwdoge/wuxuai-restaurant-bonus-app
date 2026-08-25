@@ -12,6 +12,7 @@ import {
 import { useAuth } from "./AuthProvider";
 import { normalizeStaffRestaurantSlug } from "./staffLoginFlow.mjs";
 import { loadPublicStaffLoginContext, resolveMyStaffRestaurantAccess } from "./staffLoginService";
+import { WrongPortalNotice } from "./WrongPortalNotice";
 
 export function StaffLoginPage() {
   const { loading: authLoading, signIn, signOut, user } = useAuth();
@@ -25,6 +26,7 @@ export function StaffLoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const readyMessage = typeof (location.state as { logoutMessage?: unknown } | null)?.logoutMessage === "string"
     ? (location.state as { logoutMessage: string }).logoutMessage
     : null;
@@ -66,6 +68,7 @@ export function StaffLoginPage() {
           navigate(`/staff/${restaurantSlug}`, { replace: true });
           return;
         }
+        setAccessDenied(true);
         setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
       })
       .catch((caught) => {
@@ -82,11 +85,12 @@ export function StaffLoginPage() {
     if (!restaurantSlug || !restaurantName) return;
     setSubmitting(true);
     setError(null);
+    setAccessDenied(false);
     try {
       await signIn(email, password);
       const access = await resolveMyStaffRestaurantAccess(restaurantSlug);
       if (!access.success || access.restaurant_slug !== restaurantSlug) {
-        await signOut();
+        setAccessDenied(true);
         setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
         return;
       }
@@ -115,6 +119,16 @@ export function StaffLoginPage() {
   }
 
   const unavailable = !supabase || contextLoading || !restaurantSlug || !restaurantName;
+
+  if (user && accessDenied) {
+    return (
+      <WrongPortalNotice
+        description="Dieses Konto hat keinen Mitarbeiterzugang zu diesem Restaurant."
+        portal="staff"
+        staffSlug={restaurantSlug}
+      />
+    );
+  }
 
   return (
     <PublicPageShell

@@ -12,9 +12,10 @@ import {
 } from "../public/PublicPageComponents";
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { Link } from "react-router-dom";
+import { WrongPortalNotice } from "./WrongPortalNotice";
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { loading: authLoading, portalAccess, signIn, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -48,6 +49,10 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!authLoading && user && !portalAccess.owner_access) {
+    return <WrongPortalNotice portal="owner" />;
   }
 
   return (

@@ -15,6 +15,8 @@ import { registerCustomerAuthAccount, resendCustomerConfirmation } from "./custo
 import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import { AppShell, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
+import { useAuth } from "../auth/AuthProvider";
+import { WrongPortalNotice } from "../auth/WrongPortalNotice";
 
 type CustomerAuthMode = "login" | "register";
 
@@ -22,6 +24,7 @@ const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
+  const { loading: authLoading, portalAccess, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = safeCustomerReturnPath(searchParams.get("returnTo"));
@@ -57,6 +60,10 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     const timer = window.setInterval(() => setResendCooldown((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
+
+  if (!authLoading && user && !portalAccess.customer_access) {
+    return <WrongPortalNotice portal="customer" />;
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();

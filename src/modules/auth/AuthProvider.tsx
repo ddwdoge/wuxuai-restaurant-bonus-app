@@ -12,6 +12,7 @@ import {
 import { classifyOwnerAuthError, isOwnerEmailConfirmed, ownerAuthErrorMessage } from "./ownerAuthFlow.mjs";
 import { isPlatformAdminRole } from "../platform/platformAdminAuthorization.mjs";
 import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.mjs";
+import { emptyPortalAccess, type PortalAccess } from "./portalAccessUx.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -19,6 +20,8 @@ type AuthContextValue = {
   role: UserRole | null;
   restaurantRole: RestaurantUserRole | null;
   platformRole: PlatformRole | null;
+  portalAccess: PortalAccess;
+  portalAccessError: boolean;
   restaurantAuthorizationError: boolean;
   loading: boolean;
   lastAuthEvent: AuthChangeEvent | null;
@@ -76,6 +79,13 @@ async function readVerifiedPlatformRole(): Promise<PlatformRole | null> {
   return isPlatformAdminRole(data) ? data : null;
 }
 
+async function readVerifiedPortalAccess(): Promise<PortalAccess> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("get_current_portal_access");
+  if (error) throw error;
+  return { ...emptyPortalAccess, ...(data as Partial<PortalAccess> | null) };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -91,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [roleLoading, setRoleLoading] = useState(Boolean(supabase && authSessionRequired));
   const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
+  const [portalAccess, setPortalAccess] = useState<PortalAccess>({ ...emptyPortalAccess });
+  const [portalAccessError, setPortalAccessError] = useState(false);
   const [restaurantAuthorizationError, setRestaurantAuthorizationError] = useState(false);
   const [authorizationRevision, setAuthorizationRevision] = useState(0);
   const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | null>(null);
@@ -100,6 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setRestaurantRole(null);
     setPlatformRole(null);
+    setPortalAccess({ ...emptyPortalAccess });
+    setPortalAccessError(false);
     setRestaurantAuthorizationError(false);
     setLastAuthEvent("SIGNED_OUT");
     setAuthLoading(false);
@@ -147,6 +161,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setRestaurantRole(null);
       setPlatformRole(null);
+      setPortalAccess({ ...emptyPortalAccess });
+      setPortalAccessError(false);
       setRoleLoading(false);
     }
 
@@ -221,6 +237,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
         setRestaurantRole(null);
         setPlatformRole(null);
+        setPortalAccess({ ...emptyPortalAccess });
+        setPortalAccessError(false);
         setRestaurantAuthorizationError(false);
         setRoleLoading(false);
         return;
@@ -228,20 +246,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setRoleLoading(true);
       try {
-        const [restaurantResolution, nextPlatformRole] = await Promise.all([
+        const [restaurantResolution, nextPlatformRole, nextPortalAccess] = await Promise.all([
           readVerifiedRestaurantRole(user),
           readVerifiedPlatformRole(),
+          readVerifiedPortalAccess(),
         ]);
         if (!cancelled) {
           setRestaurantRole(restaurantResolution.role);
           setRestaurantAuthorizationError(restaurantResolution.unavailable);
           setPlatformRole(nextPlatformRole);
+          setPortalAccess(nextPortalAccess);
+          setPortalAccessError(false);
         }
       } catch {
         if (!cancelled) {
           setRestaurantRole(null);
           setRestaurantAuthorizationError(true);
           setPlatformRole(null);
+          setPortalAccess({ ...emptyPortalAccess });
+          setPortalAccessError(true);
         }
       } finally {
         if (!cancelled) {
@@ -265,6 +288,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: restaurantRole,
       restaurantRole,
       platformRole,
+      portalAccess,
+      portalAccessError,
       restaurantAuthorizationError,
       retryAuthorization: () => setAuthorizationRevision((current) => current + 1),
       loading: authLoading || roleLoading,
@@ -290,6 +315,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         setRestaurantRole(null);
         setPlatformRole(null);
+        setPortalAccess({ ...emptyPortalAccess });
+        setPortalAccessError(false);
         setRestaurantAuthorizationError(false);
         setAuthLoading(false);
         setRoleLoading(true);
@@ -318,7 +345,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [authLoading, lastAuthEvent, platformRole, restaurantAuthorizationError, restaurantRole, roleLoading, session, user],
+    [authLoading, lastAuthEvent, platformRole, portalAccess, portalAccessError, restaurantAuthorizationError, restaurantRole, roleLoading, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

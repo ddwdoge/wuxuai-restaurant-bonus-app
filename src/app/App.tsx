@@ -15,6 +15,7 @@ import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundar
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
 import { useTenant } from "../modules/tenant/TenantProvider";
 import { useAuth } from "../modules/auth/AuthProvider";
+import { WrongPortalNotice } from "../modules/auth/WrongPortalNotice";
 import { PLATFORM_ADMIN_ROLES } from "../modules/platform/platformAdminAuthorization.mjs";
 import {
   customerPortalInstanceKey,
@@ -125,6 +126,7 @@ function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading /
 }
 
 function CustomerPortalRoute() {
+  const { loading, portalAccess, portalAccessError, retryAuthorization, user } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const customerToken = searchParams.get("token") ?? "";
@@ -141,6 +143,9 @@ function CustomerPortalRoute() {
   }, []);
 
   if (!scanContext) return <Navigate to="/customer" replace />;
+  if (loading) return <CustomerLoading />;
+  if (user && portalAccessError) return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={retryAuthorization} type="button">Erneut versuchen</button></main>;
+  if (user && !portalAccess.customer_access) return <WrongPortalNotice portal="customer" />;
 
   return withFallback(
     <CustomerRestaurantAccess
@@ -153,10 +158,12 @@ function CustomerPortalRoute() {
 }
 
 function CustomerCentralRoute({ children }: { children: ReactNode }) {
-  const { loading, user } = useAuth();
+  const { loading, portalAccess, portalAccessError, retryAuthorization, user } = useAuth();
   const location = useLocation();
   if (loading) return <CustomerLoading />;
   if (!user) return <Navigate replace to={`/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  if (portalAccessError) return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={retryAuthorization} type="button">Erneut versuchen</button></main>;
+  if (!portalAccess.customer_access) return <WrongPortalNotice portal="customer" />;
   return <>{children}</>;
 }
 
@@ -202,7 +209,7 @@ export function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={["owner", "admin", "manager"]} requireConfirmedEmail>
+          <ProtectedRoute allowedRoles={["owner", "admin", "manager"]} requireConfirmedEmail portalKind="owner">
             <RestaurantSetupGate>{withFallback(<AdminLayout />, <AdminLoading />)}</RestaurantSetupGate>
           </ProtectedRoute>
         }
@@ -228,6 +235,7 @@ export function App() {
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -239,6 +247,7 @@ export function App() {
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
             roleScope="platform"
           >
             {withFallback(<PlatformAuditPage />, <PlatformLoading />)}
@@ -250,6 +259,7 @@ export function App() {
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -261,6 +271,7 @@ export function App() {
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
@@ -272,6 +283,7 @@ export function App() {
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
             roleScope="platform"
           >
             {withFallback(<PlatformAdminPage />, <PlatformLoading />)}
