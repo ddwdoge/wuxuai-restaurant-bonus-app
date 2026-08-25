@@ -1346,7 +1346,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
   return (
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
-      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}`}>
+      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}${customer && !isBonusCollection && activeView === "redemptions" ? " premium-redemption-page" : ""}`}>
         <CustomerHeader
           compact
           logoUrl={branding.logo_url}
@@ -2020,7 +2020,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
             ) : null}
 
             {activeView === "redemptions" ? (
-              <section className="premium-view-stack" aria-labelledby="redemptions-title">
+              <section className="premium-view-stack premium-redemption-content" aria-labelledby="redemptions-title">
                 <div className="premium-page-heading">
                   <span><Gift aria-hidden="true" size={20} /></span>
                   <div><h1 id="redemptions-title">Einlösen</h1><p>Wähle deinen nächsten Vorteil.</p></div>

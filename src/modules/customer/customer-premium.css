@@ -390,12 +390,21 @@
 }
 .premium-segmented-control button.active { background: var(--premium-surface); box-shadow: 0 3px 10px rgba(80, 60, 30, 0.055); color: var(--premium-gold-dark); }
 .premium-segmented-control button:focus-visible { outline: 3px solid color-mix(in srgb, var(--premium-gold) 30%, transparent); outline-offset: 2px; }
+.premium-redemption-page > .premium-customer-header,
+.premium-redemption-content,
+.premium-redemption-content > * {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+.premium-redemption-content { gap: 16px; }
 .premium-redemption-summary { align-items: end; display: flex; gap: 16px; justify-content: space-between; }
 .premium-redemption-summary > div { display: grid; gap: 2px; }
 .premium-redemption-summary span, .premium-redemption-summary p { color: var(--premium-text-secondary); font-size: 13px; margin: 0; }
 .premium-redemption-summary strong { color: var(--premium-gold-dark); font-family: var(--premium-display-font); font-size: 30px; line-height: 1; }
 .premium-redemption-summary p { max-width: 52%; text-align: right; }
-.premium-redemption-grid { gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-bottom: 8px; }
+.premium-redemption-grid { gap: 12px; grid-template-columns: minmax(0, 1fr); padding-bottom: 8px; width: 100%; }
 
 .premium-reward-card { align-content: start; gap: 11px; padding: 0 0 14px; overflow: hidden; }
 .premium-reward-media { aspect-ratio: 16 / 9; background: var(--premium-gold-soft); overflow: hidden; position: relative; }
@@ -1185,6 +1194,7 @@
 @media (min-width: 768px) {
   .customer-page-container { max-width: 720px; padding-left: 24px; padding-right: 24px; }
   .premium-reward-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .premium-redemption-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .premium-customer-header { padding: 12px 14px; }
 }
 
@@ -1220,11 +1230,12 @@
   .premium-account-grid { grid-template-columns: 1fr; }
   .premium-section-header { align-items: flex-start; flex-wrap: wrap; }
   .premium-section-header > :last-child:not(:first-child) { margin-left: auto; }
+  .premium-redemption-summary { align-items: start; flex-direction: column; gap: 8px; }
+  .premium-redemption-summary p { max-width: none; text-align: left; }
 }
 
 @media (max-width: 340px) {
   .premium-home-reward-grid,
-  .premium-redemption-grid,
   .premium-birthday-fields { grid-template-columns: 1fr; }
   .premium-benefit-grid { gap: 8px; }
   .premium-benefit-tile { padding: 10px; }
