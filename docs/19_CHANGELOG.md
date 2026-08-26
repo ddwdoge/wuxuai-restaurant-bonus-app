@@ -3014,3 +3014,20 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Manuelle Suche und QR-Scan verwenden dieselbe Kundenkarte und denselben
   Gastwechsel. Der aktive Freundschaftsbonus erscheint dort, sobald ihn die
   bestehende serverseitige Punkte-Vorschau bestätigt.
+
+## 2026-08-26 – Alte Deployment-Chunks ohne White Screen abgefangen
+
+- Cloudflare liefert für fehlende Dateien unter `/assets/*` eine echte
+  `404`-Antwort statt der HTML-SPA-Seite.
+- Hash-basierte Vite-Assets werden ein Jahr unveränderlich gecacht; HTML- und
+  SPA-Dokumente bleiben revalidierungspflichtig.
+- `vite:preloadError` und bekannte Dynamic-Import-Fehler lösen genau einen
+  kontrollierten Reload aus.
+- Ein kurzlebiger, buildbezogener Session-Guard verhindert Reload-Schleifen
+  und zeigt bei wiederholtem Fehler eine verständliche Aktualisierungsseite.
+- BFCache-Wiederherstellungen vergleichen den geladenen Entry-Build mit dem
+  aktuellen Dokument, ohne bei normalen Netzwerkfehlern blind neu zu laden.
+- Der bestehende Auth-Refresh- und lokale Logout-Cleanup blieb unverändert.
+- Der echte Staging-Alt-Tab-Test wechselte ohne manuellen Refresh vom nicht
+  mehr vorhandenen Lazy-Chunk auf den aktuellen Build; Production blieb
+  gesperrt.
