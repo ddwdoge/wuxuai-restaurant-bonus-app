@@ -616,10 +616,10 @@ a {
 .branding-logo-section-heading h3, .branding-logo-section-heading p { margin: 0; }
 .branding-logo-section-heading p { align-items: center; color: #756b5f; display: inline-flex; font-size: 13px; gap: 6px; }
 .branding-logo-live { display: grid; gap: 8px; }
-.branding-logo-live-stage { align-items: center; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: flex; height: clamp(132px, 18vh, 190px); min-height: 0; padding: 8px 16px; position: relative; }
-.branding-logo-safe-area { align-items: center; border: 1px dashed color-mix(in srgb, #4f9b68 62%, #d8e8dc); border-radius: 8px; display: flex; height: 100%; justify-content: center; min-height: 0; padding: 8px; width: 100%; }
-.branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main { aspect-ratio: auto; height: 100%; max-height: 120px; max-width: 100%; min-height: 0; width: min(100%, 520px); }
-.branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main img { padding: 4px 18px; }
+.branding-logo-live-stage { align-items: center; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: flex; height: clamp(190px, 24vh, 220px); justify-content: center; min-height: 0; padding: 10px 16px 18px; position: relative; }
+.branding-logo-safe-area { align-items: center; aspect-ratio: var(--branding-logo-source-ratio, 2); border: 1px dashed color-mix(in srgb, #4f9b68 62%, #d8e8dc); border-radius: 8px; display: flex; height: 100%; justify-content: center; max-width: 92%; min-height: 0; padding: 8px; width: auto; }
+.branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main { aspect-ratio: var(--branding-logo-source-ratio, 2); height: 100%; max-height: 100%; max-width: 100%; min-height: 0; width: 100%; }
+.branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main img { padding: 7%; }
 .branding-logo-live-stage > span { background: #fbfaf7; bottom: 5px; color: #4f8c61; font-size: 11px; font-weight: 700; left: 50%; padding: 0 6px; position: absolute; transform: translateX(-50%); }
 .branding-logo-adjustments { display: grid; gap: 7px; }
 .branding-logo-adjustments > h3 { margin: 0; }
@@ -636,20 +636,27 @@ a {
 .branding-logo-contexts > div:first-child { align-items: baseline; display: flex; gap: 12px; justify-content: space-between; }
 .branding-logo-contexts p { font-size: 13px; }
 .branding-logo-context-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.branding-logo-context-grid article { align-content: space-between; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; gap: 3px; min-height: 68px; min-width: 0; padding: 5px; }
+.branding-logo-context-grid article { align-content: space-between; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; gap: 6px; min-height: 116px; min-width: 0; padding: 9px; }
 .branding-logo-context-grid article > span { color: #756b5f; font-size: 11px; font-weight: 700; text-align: center; }
-.branding-context-header { align-items: center; display: flex; gap: 10px; min-width: 0; }
-.branding-context-header strong { font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.branding-context-detail { align-items: center; display: flex; justify-content: center; min-height: 42px; overflow: hidden; }
-.branding-context-detail .restaurant-logo-stage { max-height: 42px; }
-.branding-context-print { align-items: center; display: flex; gap: 6px; justify-content: center; min-height: 42px; text-align: center; }
-.branding-context-print .restaurant-logo-stage { max-width: 100%; }
+.branding-logo-context-grid .restaurant-logo-stage img { padding: 4%; }
+.branding-context-header { align-items: center; display: flex; gap: 10px; min-height: 72px; min-width: 0; }
+.branding-context-header .restaurant-logo-stage.size-header { height: 64px; width: 108px; }
+.branding-context-header .restaurant-logo-stage.size-header.aspect-square { width: 64px; }
+.branding-context-header .restaurant-logo-stage.size-header.aspect-tall { width: 52px; }
+.branding-context-header > div { display: grid; gap: 2px; min-width: 0; }
+.branding-context-header small { color: #8a641e; font-size: 9px; text-transform: uppercase; }
+.branding-context-header strong, .branding-context-detail strong, .branding-context-print strong { font-size: 12px; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+.branding-context-detail { align-items: center; display: flex; gap: 10px; justify-content: flex-start; min-height: 72px; overflow: hidden; }
+.branding-context-detail .restaurant-logo-stage { flex: 0 0 120px; max-height: 76px; }
+.branding-context-print { align-items: center; display: flex; gap: 10px; justify-content: space-between; min-height: 72px; text-align: left; }
+.branding-context-print > div { display: grid; gap: 4px; min-width: 0; }
+.branding-context-print .restaurant-logo-stage { height: 94px; max-width: 210px; width: 210px; }
 .branding-logo-save { min-width: 230px; }
 
 @media (max-width: 600px) {
   .branding-logo-context-grid { grid-template-columns: 1fr; }
   .branding-logo-control-grid { grid-template-columns: 1fr; }
-  .branding-logo-live-stage { min-height: 180px; }
+  .branding-logo-live-stage { height: 200px; min-height: 200px; }
   .branding-logo-section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
 

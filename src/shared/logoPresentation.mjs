@@ -42,6 +42,24 @@ export function logoImageStyle(input = {}) {
   };
 }
 
+export function relativeLogoScale(input = {}, baselineInput = {}) {
+  const presentation = clampLogoPresentation(input);
+  const baseline = clampLogoPresentation(baselineInput);
+  if (presentation.fitMode === "auto") return 1;
+  return presentation.scale / baseline.scale;
+}
+
+export function logoPresentationAtRelativeScale(input = {}, baselineInput = {}, factor = 1) {
+  const presentation = clampLogoPresentation(input);
+  const baseline = clampLogoPresentation(baselineInput);
+  const relativeFactor = Math.max(0.01, finiteNumber(factor, 1));
+  return clampLogoPresentation({
+    ...presentation,
+    fitMode: "manual",
+    scale: Math.round(baseline.scale * relativeFactor * 1000) / 1000,
+  });
+}
+
 export function logoCanvasPlacement(imageWidth, imageHeight, area, input = {}) {
   const presentation = clampLogoPresentation(input);
   const aspect = logoAspectKind(imageWidth, imageHeight);

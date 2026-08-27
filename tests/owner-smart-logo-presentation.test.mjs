@@ -6,6 +6,8 @@ import {
   logoAspectKind,
   logoCanvasPlacement,
   logoImageStyle,
+  logoPresentationAtRelativeScale,
+  relativeLogoScale,
   transparentContentAdjustment,
 } from "../src/shared/logoPresentation.mjs";
 
@@ -16,6 +18,16 @@ test("Smart Logo erkennt quadratische, breite, sehr breite und hohe Formate", ()
   assert.equal(logoAspectKind(1600, 700), "wide");
   assert.equal(logoAspectKind(3200, 500), "wide");
   assert.equal(logoAspectKind(600, 1200), "tall");
+});
+
+test("Editor-Skalierung ist relativ zur berechneten Auto-Fit-Basis", () => {
+  const baseline = { fitMode: "manual", positionX: 0.55, positionY: 0.45, scale: 1.25 };
+  assert.equal(relativeLogoScale(baseline, baseline), 1);
+  assert.equal(relativeLogoScale({ ...baseline, scale: 1.5 }, baseline), 1.2);
+  assert.equal(relativeLogoScale({ ...baseline, fitMode: "auto", scale: 2 }, baseline), 1);
+  assert.deepEqual(logoPresentationAtRelativeScale(baseline, baseline, 0.8), {
+    fitMode: "manual", positionX: 0.55, positionY: 0.45, scale: 1,
+  });
 });
 
 test("Auto-Fit bewahrt das Seitenverhältnis und nutzt formatabhängigen Sicherheitsabstand", () => {
@@ -76,6 +88,8 @@ test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukont
   assert.match(settings, /branding-logo-safe-area/);
   assert.match(settings, /Sicherheitsbereich/);
   assert.match(settings, /Automatisch einpassen/);
+  assert.match(settings, /relativeLogoScale/);
+  assert.match(settings, /logoPresentationAtRelativeScale/);
   assert.match(settings, /Zurücksetzen/);
   assert.match(settings, /Logo verkleinern/);
   assert.match(settings, /Logo nach links verschieben/);
@@ -89,6 +103,8 @@ test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukont
   assert.match(styles, /app-drawer-workspace[\s\S]*height: min\(90dvh, 820px\)/);
   assert.match(styles, /branding-logo-control-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(styles, /branding-logo-context-grid[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /--branding-logo-source-ratio/);
+  assert.match(styles, /min-height: 116px/);
   assert.match(drawer, /app-drawer-overlay-\$\{size\}/);
   assert.match(settings, /image\/webp/);
   assert.match(settings, /5 \* 1024 \* 1024/);

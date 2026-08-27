@@ -35,6 +35,8 @@ import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import {
   defaultLogoPresentation,
+  logoPresentationAtRelativeScale,
+  relativeLogoScale,
   transparentContentAdjustment,
   type LogoPresentation,
 } from "../../../shared/logoPresentation.mjs";
@@ -179,8 +181,8 @@ function fileExtension(file: File) {
   return "jpg";
 }
 
-async function inspectLogoFile(file: File) {
-  const url = URL.createObjectURL(file);
+async function inspectLogoBlob(blob: Blob, enforceMinimumSize: boolean) {
+  const url = URL.createObjectURL(blob);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const nextImage = new Image();
@@ -188,12 +190,8 @@ async function inspectLogoFile(file: File) {
       nextImage.onerror = () => reject(new Error("Das Logo konnte nicht gelesen werden."));
       nextImage.src = url;
     });
-    if (image.naturalWidth < 512 && image.naturalHeight < 512) {
+    if (enforceMinimumSize && image.naturalWidth < 512 && image.naturalHeight < 512) {
       throw new Error("Bitte verwende ein Logo mit mindestens 512 Pixeln Breite oder Höhe.");
-    }
-
-    if (file.type !== "image/png" && file.type !== "image/webp") {
-      return { adjustment: null, height: image.naturalHeight, width: image.naturalWidth };
     }
 
     const maxDimension = 420;
@@ -210,12 +208,30 @@ async function inspectLogoFile(file: File) {
     let top = canvas.height;
     let bottom = -1;
     let transparentPixelFound = false;
+    const cornerIndexes = [0, canvas.width - 1, (canvas.height - 1) * canvas.width, canvas.width * canvas.height - 1];
+    const cornerColors = cornerIndexes.map((index) => {
+      const offset = index * 4;
+      return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
+    });
+    const background = cornerColors[0];
+    const lightNeutralBackground = background.every((channel) => channel >= 235)
+      && Math.max(...background) - Math.min(...background) <= 14
+      && cornerColors.every((color) => color.every((channel, index) => Math.abs(channel - background[index]) <= 18));
     for (let y = 0; y < canvas.height; y += 1) {
       for (let x = 0; x < canvas.width; x += 1) {
-        const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+        const offset = (y * canvas.width + x) * 4;
+        const alpha = pixels[offset + 3];
         if (alpha <= 10) {
           transparentPixelFound = true;
           continue;
+        }
+        if (lightNeutralBackground) {
+          const distance = Math.max(
+            Math.abs(pixels[offset] - background[0]),
+            Math.abs(pixels[offset + 1] - background[1]),
+            Math.abs(pixels[offset + 2] - background[2]),
+          );
+          if (distance <= 24) continue;
         }
         left = Math.min(left, x);
         right = Math.max(right, x);
@@ -223,13 +239,23 @@ async function inspectLogoFile(file: File) {
         bottom = Math.max(bottom, y);
       }
     }
-    const adjustment = transparentPixelFound && right >= left && bottom >= top
+    const adjustment = (transparentPixelFound || lightNeutralBackground) && right >= left && bottom >= top
       ? transparentContentAdjustment({ bottom, left, right, top }, canvas.width, canvas.height)
       : null;
     return { adjustment, height: image.naturalHeight, width: image.naturalWidth };
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+async function inspectLogoFile(file: File) {
+  return inspectLogoBlob(file, true);
+}
+
+async function inspectLogoUrl(url: string) {
+  const response = await fetch(url, { cache: "force-cache" });
+  if (!response.ok) throw new Error("Das gespeicherte Logo konnte nicht geprüft werden.");
+  return inspectLogoBlob(await response.blob(), false);
 }
 
 type BrandingLogoEditorProps = {
@@ -270,13 +296,37 @@ function LogoEditorControl({ decreaseLabel, increaseLabel, label, onDecrease, on
 function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
   const openingPresentationRef = useRef(presentation);
   const wasOpenRef = useRef(false);
+  const [autoFitBaseline, setAutoFitBaseline] = useState<LogoPresentation>(adjustment ?? { ...defaultLogoPresentation });
+  const [imageMetrics, setImageMetrics] = useState({ aspect: "wide" as "wide" | "tall" | "square", ratio: 2 });
 
   useEffect(() => {
     if (open && !wasOpenRef.current) openingPresentationRef.current = presentation;
     wasOpenRef.current = open;
   }, [open, presentation]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (adjustment) {
+      setAutoFitBaseline(adjustment);
+      return;
+    }
+    setAutoFitBaseline({ ...defaultLogoPresentation });
+    if (!logoUrl || logoUrl.startsWith("blob:")) return;
+    let cancelled = false;
+    void inspectLogoUrl(logoUrl)
+      .then((inspection) => {
+        if (!cancelled) setAutoFitBaseline(inspection.adjustment ?? { ...defaultLogoPresentation });
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [adjustment, logoUrl, open]);
+
   const setManual = (patch: Partial<LogoPresentation>) => onChange({ ...presentation, ...patch, fitMode: "manual" });
+  const relativeScale = relativeLogoScale(presentation, autoFitBaseline);
+  const adjustRelativeScale = (delta: number) => {
+    const nextFactor = Math.max(0.01, Math.round((relativeScale + delta) * 20) / 20);
+    onChange(logoPresentationAtRelativeScale(presentation, autoFitBaseline, nextFactor));
+  };
   const previewProps = { logoUrl, name, presentation, primaryColor };
   const cancelEditor = () => {
     onChange(openingPresentationRef.current);
@@ -304,8 +354,8 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
             <p><Info aria-hidden="true" size={16} /> Das Logo wird proportional dargestellt.</p>
           </header>
           <div className="branding-logo-live-stage">
-            <div className="branding-logo-safe-area">
-              <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" size="preview" />
+            <div className={`branding-logo-safe-area aspect-${imageMetrics.aspect}`} style={{ "--branding-logo-source-ratio": imageMetrics.ratio } as React.CSSProperties}>
+              <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" onImageMetrics={setImageMetrics} size="preview" />
             </div>
             <span>Sicherheitsbereich</span>
           </div>
@@ -318,9 +368,9 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
               decreaseLabel="Logo verkleinern"
               increaseLabel="Logo vergrößern"
               label="Größe"
-              onDecrease={() => setManual({ scale: Math.max(0.75, presentation.scale - 0.05) })}
-              onIncrease={() => setManual({ scale: Math.min(3, presentation.scale + 0.05) })}
-              value={`${Math.round(presentation.scale * 100)} %`}
+              onDecrease={() => adjustRelativeScale(-0.05)}
+              onIncrease={() => adjustRelativeScale(0.05)}
+              value={`${Math.round(relativeScale * 100)} %`}
             />
             <LogoEditorControl
               decreaseLabel="Logo nach links verschieben"
@@ -340,7 +390,7 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
             />
           </div>
           <div className="branding-logo-editor-actions">
-            <button className="button secondary" onClick={() => onChange({ ...defaultLogoPresentation })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
+            <button className="button secondary" onClick={() => onChange({ ...autoFitBaseline })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
             <button className="button secondary" onClick={() => onChange(openingPresentationRef.current)} type="button"><RotateCcw size={18} /> Zurücksetzen</button>
             {adjustment ? <button className="button secondary" onClick={() => onChange(adjustment)} type="button">Transparente Ränder einpassen</button> : null}
           </div>
@@ -349,10 +399,10 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
         <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
           <div><h3 id="logo-context-preview-title">3. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
           <div className="branding-logo-context-grid">
-            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div><span>Gäste-Header</span></article>
-            <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /></div><span>Restaurantdetails</span></article>
-            <article><div className="branding-context-print"><RestaurantLogoStage {...previewProps} size="print" /><QrCode aria-hidden="true" size={30} /></div><span>QR Starter Kit</span></article>
-            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div><span>Mitarbeiter-Header</span></article>
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong></div></div><span>Gäste-Header</span></article>
+            <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /><strong>{name}</strong></div><span>Restaurantdetails</span></article>
+            <article><div className="branding-context-print"><div><RestaurantLogoStage {...previewProps} size="print" /><strong>{name}</strong></div><QrCode aria-hidden="true" size={42} /></div><span>QR Starter Kit</span></article>
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>Mitarbeiterbereich</small><strong>{name}</strong></div></div><span>Mitarbeiter-Header</span></article>
           </div>
         </section>
       </div>

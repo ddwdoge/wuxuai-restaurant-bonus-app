@@ -11,6 +11,15 @@ export const defaultLogoPresentation: Readonly<LogoPresentation>;
 export function clampLogoPresentation(input?: Partial<LogoPresentation> & Record<string, unknown>): LogoPresentation;
 export function logoAspectKind(width: number, height: number): "wide" | "tall" | "square" | "unknown";
 export function logoImageStyle(input?: Partial<LogoPresentation> & Record<string, unknown>): { objectPosition: string; transform: string };
+export function relativeLogoScale(
+  input?: Partial<LogoPresentation> & Record<string, unknown>,
+  baselineInput?: Partial<LogoPresentation> & Record<string, unknown>,
+): number;
+export function logoPresentationAtRelativeScale(
+  input?: Partial<LogoPresentation> & Record<string, unknown>,
+  baselineInput?: Partial<LogoPresentation> & Record<string, unknown>,
+  factor?: number,
+): LogoPresentation;
 export function logoCanvasPlacement(
   imageWidth: number,
   imageHeight: number,

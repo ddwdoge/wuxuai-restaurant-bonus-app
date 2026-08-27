@@ -11,12 +11,13 @@ type RestaurantLogoStageProps = {
   className?: string;
   logoUrl?: string | null;
   name: string;
+  onImageMetrics?: (metrics: { aspect: "wide" | "tall" | "square"; ratio: number }) => void;
   presentation?: RestaurantLogoPresentation | null;
   primaryColor?: string | null;
   size?: "compact" | "header" | "detail" | "preview" | "print";
 };
 
-export function RestaurantLogoStage({ alt, className = "", logoUrl, name, presentation, primaryColor, size = "header" }: RestaurantLogoStageProps) {
+export function RestaurantLogoStage({ alt, className = "", logoUrl, name, onImageMetrics, presentation, primaryColor, size = "header" }: RestaurantLogoStageProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [aspect, setAspect] = useState<"wide" | "tall" | "square" | "unknown">("unknown");
   const normalizedUrl = logoUrl?.trim() || null;
@@ -36,7 +37,13 @@ export function RestaurantLogoStage({ alt, className = "", logoUrl, name, presen
         <img
           alt={alt ?? `${name} Logo`}
           onError={() => setFailedUrl(normalizedUrl)}
-          onLoad={(event) => setAspect(logoAspectKind(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))}
+          onLoad={(event) => {
+            const nextAspect = logoAspectKind(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
+            setAspect(nextAspect);
+            if (nextAspect !== "unknown") {
+              onImageMetrics?.({ aspect: nextAspect, ratio: event.currentTarget.naturalWidth / event.currentTarget.naturalHeight });
+            }
+          }}
           src={normalizedUrl ?? undefined}
           style={logoImageStyle(config)}
         />

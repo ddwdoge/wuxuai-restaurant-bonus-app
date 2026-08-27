@@ -3164,3 +3164,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   speichert nur Fit-Modus, Skalierung und normalisierte Position.
 - Punkte-, Rewards-, Referral-, Auth-, Tenant- und QR-Payload-Logik blieben
   unverändert.
+
+## 2026-08-27 - Smart Logo Editor Auto-Fit-Basis korrigiert
+
+- 100 Prozent im Owner-Editor bezeichnet jetzt die empfohlene Auto-Fit-Basis;
+  manuelle Größenänderungen werden relativ dazu dargestellt.
+- Die Sicherheitsfläche folgt dem echten Bildformat und zeigt breite,
+  quadratische und hohe Logos ohne eine irreführende große Leerfläche.
+- Die vier Programmvorschauen fokussieren die jeweilige Logo- und Namenszone
+  und bleiben von 390 bis 1440 Pixel ohne globalen horizontalen Überlauf.
+- Gespeicherte Logo-Präsentationswerte, Customer-/Staff-Ausgabe, Starter Kit,
+  RLS und Businesslogik blieben unverändert.
