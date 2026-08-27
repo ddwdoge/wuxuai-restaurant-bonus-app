@@ -87,7 +87,7 @@ test("Gemeinsame LogoStage behandelt defekte Quellen ohne sichtbaren Browser-Fal
   assert.doesNotMatch(component, /dangerouslySetInnerHTML/);
 });
 
-test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukontexte", async () => {
+test("Owner-Editor unterstützt direkte Manipulation und fünf reale Vorschaukontexte", async () => {
   const [settings, styles, drawer] = await Promise.all([
     read("src/modules/admin/pages/SettingsPage.tsx"),
     read("src/styles.css"),
@@ -111,9 +111,11 @@ test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukont
   assert.match(settings, /onKeyDown=\{handleEditorKeys\}/);
   assert.match(settings, /Mit zwei Fingern kannst du zoomen/);
   assert.match(settings, /Gäste-Header/);
+  assert.match(settings, /Restaurant-Portal/);
   assert.match(settings, /Restaurantdetails/);
   assert.match(settings, /QR Starter Kit/);
   assert.match(settings, /Mitarbeiter-Header/);
+  assert.equal((settings.match(/<article>/g) ?? []).length, 5);
   assert.match(settings, /footer=\{\(/);
   assert.match(settings, /openingPresentationRef/);
   assert.match(styles, /app-drawer-workspace[\s\S]*height: min\(90dvh, 820px\)/);
@@ -133,7 +135,7 @@ test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukont
   assert.match(settings, /logo_scale: initialPresentation\.scale/);
 });
 
-test("Customer, Staff, QR Center und Onboarding verwenden die gemeinsame LogoStage", async () => {
+test("Aktive Restaurant-Brandingflächen verwenden die gemeinsame LogoStage", async () => {
   const paths = [
     "src/modules/admin/AdminLayout.tsx",
     "src/modules/staff/StaffTablet.tsx",
@@ -144,8 +146,20 @@ test("Customer, Staff, QR Center und Onboarding verwenden die gemeinsame LogoSta
   ];
   const sources = await Promise.all(paths.map(read));
   sources.forEach((source, index) => assert.match(source, /RestaurantLogoStage/, paths[index]));
+  assert.match(sources[0], /presentation=\{branding\}/);
+  assert.doesNotMatch(sources[5], /<img alt=\{`\$\{form\.restaurantName/);
   assert.match(sources[4], /logoCanvasPlacement/);
   assert.match(sources[5], /logoCanvasPlacement/);
+});
+
+test("Owner-Header lässt die kanonische Smart-Logo-Geometrie unverändert", async () => {
+  const [layout, premiumStyles] = await Promise.all([
+    read("src/modules/admin/AdminLayout.tsx"),
+    read("src/modules/admin/admin-premium.css"),
+  ]);
+  assert.match(layout, /<RestaurantLogoStage[\s\S]*presentation=\{branding\}/);
+  assert.match(premiumStyles, /admin-restaurant-brand \.restaurant-logo-frame \{[\s\S]*border-color: transparent;[\s\S]*box-shadow: none;[\s\S]*padding: 0;/);
+  assert.doesNotMatch(layout, /<img[^>]+logo/i);
 });
 
 test("Additive Migration persistiert nur sichere Darstellungsmetadaten und hält den Portal-Guard", async () => {

@@ -646,6 +646,7 @@ a {
 .branding-context-header .restaurant-logo-stage.size-header.aspect-tall { width: 52px; }
 .branding-context-header > div { display: grid; gap: 2px; min-width: 0; }
 .branding-context-header small { color: #8a641e; font-size: 9px; text-transform: uppercase; }
+.branding-context-owner em { color: #756b5f; font-size: 10px; font-style: normal; }
 .branding-context-header strong, .branding-context-detail strong, .branding-context-print strong { font-size: 12px; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
 .branding-context-detail { align-items: center; display: flex; gap: 10px; justify-content: flex-start; min-height: 72px; overflow: hidden; }
 .branding-context-detail .restaurant-logo-stage { flex: 0 0 120px; max-height: 76px; }

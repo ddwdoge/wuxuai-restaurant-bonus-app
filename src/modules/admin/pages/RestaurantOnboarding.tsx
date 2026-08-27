@@ -1728,7 +1728,13 @@ export function RestaurantOnboarding() {
                 />
                 <div className="logo-preview-box">
                   {visibleLogoUrl ? (
-                    <img alt={`${form.restaurantName || "Restaurant"} Logo`} src={visibleLogoUrl} />
+                    <RestaurantLogoStage
+                      alt={`${form.restaurantName || "Restaurant"} Logo`}
+                      logoUrl={visibleLogoUrl}
+                      name={form.restaurantName || "Restaurant"}
+                      primaryColor={form.primaryColor}
+                      size="header"
+                    />
                   ) : (
                     <ImagePlus size={36} />
                   )}

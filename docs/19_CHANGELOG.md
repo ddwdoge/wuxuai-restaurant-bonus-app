@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-28 - Smart Logo im Restaurant-Portal vereinheitlicht
+
+- Den Restaurant-Portal-Header von einer zusaetzlichen historischen Rahmen-,
+  Schatten- und Innenabstandsregel befreit, damit er die gespeicherte Smart-
+  Logo-Skalierung und -Position unveraendert wie der Editor rendert.
+- Den Branding-Editor um die echte Vorschau `Restaurant-Portal` erweitert und
+  die fuenf Vorschauen in die Produktreihenfolge Gaeste, Restaurant-Portal,
+  Mitarbeiter, Restaurantdetails und QR Starter Kit gebracht.
+- Die verbliebene rohe Logo-Vorschau im Onboarding auf die gemeinsame
+  `RestaurantLogoStage` umgestellt; Logo-Dateien, Persistenzvertrag,
+  Bonuslogik und Datenbank bleiben unveraendert.
+
 ## 2026-08-27 - Smart-Logo-Editor direkt bedienbar gemacht
 
 - Den Owner-Logo-Editor auf direkte Manipulation in der Live-Vorschau

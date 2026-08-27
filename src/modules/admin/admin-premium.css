@@ -40,12 +40,11 @@
 }
 
 .premium-owner-shell .admin-restaurant-brand .restaurant-logo-frame {
-  border-color: var(--owner-border);
-  border-radius: 12px;
-  box-shadow: 0 7px 20px rgba(45, 38, 25, 0.08);
+  border-color: transparent;
+  box-shadow: none;
   min-height: 50px;
   min-width: 50px;
-  padding: 6px;
+  padding: 0;
 }
 
 .premium-owner-shell .admin-restaurant-brand .restaurant-logo-image {

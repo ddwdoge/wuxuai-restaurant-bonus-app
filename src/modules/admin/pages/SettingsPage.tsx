@@ -494,9 +494,10 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
           <div><h3 id="logo-context-preview-title">2. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
           <div className="branding-logo-context-grid">
             <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong></div></div><span>Gäste-Header</span></article>
+            <article><div className="branding-context-header branding-context-owner"><RestaurantLogoStage {...previewProps} className="restaurant-logo-frame" size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong><em>Restaurant Portal</em></div></div><span>Restaurant-Portal</span></article>
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>Mitarbeiterbereich</small><strong>{name}</strong></div></div><span>Mitarbeiter-Header</span></article>
             <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /><strong>{name}</strong></div><span>Restaurantdetails</span></article>
             <article><div className="branding-context-print"><div><RestaurantLogoStage {...previewProps} size="print" /><strong>{name}</strong></div><QrCode aria-hidden="true" size={42} /></div><span>QR Starter Kit</span></article>
-            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>Mitarbeiterbereich</small><strong>{name}</strong></div></div><span>Mitarbeiter-Header</span></article>
           </div>
         </section>
       </div>
