@@ -4,13 +4,14 @@ import test from "node:test";
 
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [centralCss, finderCss, premiumCss, centralPage, finderPage, restaurantImage] = await Promise.all([
+const [centralCss, finderCss, premiumCss, centralPage, finderPage, restaurantImage, logoStage] = await Promise.all([
   read("../src/modules/customer/central-customer.css"),
   read("../src/modules/customer/partner-restaurant-finder.css"),
   read("../src/modules/customer/customer-premium.css"),
   read("../src/modules/customer/CentralCustomerPage.tsx"),
   read("../src/modules/customer/PartnerRestaurantFinderPage.tsx"),
   read("../src/modules/customer/components/RestaurantHeroImage.tsx"),
+  read("../src/shared/components/RestaurantLogoStage.tsx"),
 ]);
 
 test("Customer-Filterleisten bleiben horizontal scrollbar und der letzte Chip erreichbar", () => {
@@ -50,10 +51,11 @@ test("Restaurantkarten begrenzen ihre Breite und lassen lange Inhalte umbrechen"
 });
 
 test("fehlende Logos behalten in Liste, Karte und Kundenportal einen sichtbaren Fallback", () => {
-  assert.match(centralPage, /membership\.logo_url[\s\S]{0,180}<Store aria-hidden="true"/);
+  assert.match(centralPage, /<RestaurantLogoStage[^>]+logoUrl=\{membership\.logo_url\}/);
   assert.equal((finderPage.match(/<RestaurantLogoImage/g) ?? []).length, 2);
-  assert.match(restaurantImage, /<Store size=\{22\} \/>/);
-  assert.match(premiumCss, /premium-restaurant-logo > span/);
+  assert.match(restaurantImage, /<RestaurantLogoStage/);
+  assert.match(logoStage, /className="restaurant-logo-fallback"/);
+  assert.match(logoStage, /<Store aria-hidden="true"/);
 });
 
 test("Bottom-Navigation behält ihre Safe-Area- und Inhaltsreserve", () => {

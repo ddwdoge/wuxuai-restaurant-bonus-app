@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { CheckCircle2, ChevronDown, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
@@ -37,21 +38,12 @@ export function PageContainer({ children, className = "" }: { children: ReactNod
 type RestaurantLogoProps = {
   logoUrl?: string | null;
   name: string;
+  presentation?: RestaurantLogoPresentation | null;
   primaryColor?: string | null;
 };
 
-export function RestaurantLogo({ logoUrl, name, primaryColor }: RestaurantLogoProps) {
-  return (
-    <span className="premium-restaurant-logo">
-      {logoUrl ? (
-        <img alt={`${name} Logo`} src={logoUrl} />
-      ) : (
-        <span aria-hidden="true" style={{ background: primaryColor ?? "#b88a3b" }}>
-          {(name.trim().charAt(0) || "W").toUpperCase()}
-        </span>
-      )}
-    </span>
-  );
+export function RestaurantLogo({ logoUrl, name, presentation, primaryColor }: RestaurantLogoProps) {
+  return <RestaurantLogoStage className="premium-restaurant-logo" logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} size="compact" />;
 }
 
 type CustomerHeaderProps = RestaurantLogoProps & {
@@ -62,12 +54,12 @@ type CustomerHeaderProps = RestaurantLogoProps & {
   subtitle?: string;
 };
 
-export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, presentation, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
       {onSwitchRestaurant ? (
         <button aria-label="Aktuelles Restaurant wechseln" className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
-          <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
+          <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
           <span className="premium-customer-header-copy">
             {!compact ? <span>{subtitle}</span> : null}
             <strong>{name}</strong>
@@ -76,7 +68,7 @@ export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitc
         </button>
       ) : (
         <>
-          <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
+          <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
           <span className="premium-customer-header-copy">
             {!compact ? <span>{subtitle}</span> : null}
             <strong>{name}</strong>

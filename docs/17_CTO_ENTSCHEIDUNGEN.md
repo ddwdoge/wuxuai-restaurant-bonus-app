@@ -2204,3 +2204,18 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
 - Punkte, Rewards, Geschenke, Angebote, Referral, 2×-Status, Einlösungen und
   Restaurantinformation bleiben strikt restaurantbezogen. RLS und bestehende
   Geschäftslogik werden nicht verändert.
+
+## CTO-Entscheidung 2026-08-27: Restaurantlogos adaptiv und nicht-destruktiv darstellen
+
+🟢 **LOCKED / V1**
+
+- Restaurantlogos behalten ihr originales Seitenverhältnis. Auto-Fit erkennt
+  quadratische, breite und hohe Dateien und verwendet eine passende Ruhezone.
+- Owner ändern ausschließlich Darstellungsmetadaten für Größe und Position.
+  Die Originaldatei wird weder beschnitten noch überschrieben.
+- Transparente Innenabstände können nach ausdrücklicher Auswahl korrigiert
+  werden; Hintergrundentfernung und KI-Bildbearbeitung sind nicht Teil von V1.
+- Customer-, Owner-, Staff- und QR-Starter-Kit-Oberflächen verwenden dieselbe
+  Darstellungslogik und denselben sicheren Fehlerfallback.
+- Auth-, Punkte-, Reward-, Referral- und sonstige Geschäftslogik bleiben
+  unverändert.

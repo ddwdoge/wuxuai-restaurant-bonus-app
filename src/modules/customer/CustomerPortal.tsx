@@ -112,6 +112,7 @@ import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanne
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
 import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
 import { CustomerRestaurantSwitcher } from "./components/CustomerRestaurantSwitcher";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -243,7 +244,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
   const [activeView, setActiveView] = useState<CustomerView>("home");
   const [restaurant, setRestaurant] = useState<Pick<Restaurant, "name" | "slug" | "status"> | null>(null);
-  const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
+  const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "logo_fit_mode" | "logo_scale" | "logo_position_x" | "logo_position_y" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
   const [settings, setSettings] = useState<PublicLoyaltySettings | null>(null);
   const [customer, setCustomer] = useState<PublicPortalCustomer | null>(null);
   const [rewards, setRewards] = useState<PublicCustomerOfferView[]>([]);
@@ -1356,6 +1357,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           name={restaurant.name}
           onInfo={() => setInfoOpen(true)}
           onSwitchRestaurant={customer ? () => setRestaurantSwitcherOpen(true) : undefined}
+          presentation={branding}
           primaryColor={branding.primary_color}
           subtitle="Bonus für Gäste"
         />
@@ -2118,11 +2120,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
 
                 <article className="premium-member-card" aria-label="Digitale Kundenkarte">
                   <div className="premium-member-card-top">
-                    <span className="premium-member-card-logo">
-                      {branding.logo_url
-                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
-                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
-                    </span>
+                    <RestaurantLogoStage className="premium-member-card-logo" logoUrl={branding.logo_url} name={restaurant.name} presentation={branding} primaryColor={branding.primary_color} size="header" />
                     <div><span>Bonus-Mitglied</span><strong>{restaurant.name}</strong></div>
                     <IdCard aria-hidden="true" size={24} />
                   </div>
@@ -2468,11 +2466,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 ) : null}
                 {accountSheet === "restaurant" ? (
                   <div className="premium-restaurant-detail">
-                    <span className="premium-account-sheet-logo">
-                      {branding.logo_url
-                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
-                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
-                    </span>
+                    <RestaurantLogoStage className="premium-account-sheet-logo" logoUrl={branding.logo_url} name={restaurant.name} presentation={branding} primaryColor={branding.primary_color} size="detail" />
                     <h3>{restaurant.name}</h3>
                     <StatusBadge tone="success">Bonusprogramm aktiv</StatusBadge>
                     <p>Du bist in diesem Restaurant als Bonus-Mitglied gespeichert.</p>

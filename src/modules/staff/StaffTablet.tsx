@@ -24,6 +24,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useAuth } from "../auth/AuthProvider";
 import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
@@ -946,19 +947,7 @@ export function StaffTablet() {
     <main className="tablet-shell staff-premium-shell">
       <header className="staff-premium-header">
         <div className="restaurant-brand-header staff-premium-brand">
-          <span className="restaurant-logo-frame">
-            {staffBranding?.logo_url ? (
-              <img
-                alt={`${staffRestaurant?.name ?? "Restaurant"} Logo`}
-                className="restaurant-logo-image"
-                src={staffBranding.logo_url}
-              />
-            ) : (
-              <span className="restaurant-logo-placeholder">
-                {(staffRestaurant?.name.trim().charAt(0) || "R").toUpperCase()}
-              </span>
-            )}
-          </span>
+          <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={staffBranding?.logo_url} name={staffRestaurant?.name ?? "Restaurant"} presentation={staffBranding} primaryColor={staffBranding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="staff-premium-kicker">WUXUAI Bonus</span>
             <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"}</h1>

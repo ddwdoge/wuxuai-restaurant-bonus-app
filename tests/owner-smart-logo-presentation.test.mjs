@@ -1,0 +1,102 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import {
+  clampLogoPresentation,
+  logoAspectKind,
+  logoCanvasPlacement,
+  logoImageStyle,
+  transparentContentAdjustment,
+} from "../src/shared/logoPresentation.mjs";
+
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("Smart Logo erkennt quadratische, breite, sehr breite und hohe Formate", () => {
+  assert.equal(logoAspectKind(1000, 1000), "square");
+  assert.equal(logoAspectKind(1600, 700), "wide");
+  assert.equal(logoAspectKind(3200, 500), "wide");
+  assert.equal(logoAspectKind(600, 1200), "tall");
+});
+
+test("Auto-Fit bewahrt das Seitenverhältnis und nutzt formatabhängigen Sicherheitsabstand", () => {
+  const square = logoCanvasPlacement(1000, 1000, { x: 0, y: 0, width: 400, height: 200 });
+  const wide = logoCanvasPlacement(3000, 500, { x: 0, y: 0, width: 400, height: 200 });
+  const tall = logoCanvasPlacement(500, 2000, { x: 0, y: 0, width: 400, height: 200 });
+  assert.equal(square.width / square.height, 1);
+  assert.equal(wide.width / wide.height, 6);
+  assert.equal(tall.width / tall.height, 0.25);
+  assert.ok(square.width <= 400 && square.height <= 200);
+  assert.ok(wide.width <= 400 && wide.height <= 200);
+  assert.ok(tall.width <= 400 && tall.height <= 200);
+});
+
+test("Owner-Anpassungen werden begrenzt und bleiben reine Präsentationsdaten", () => {
+  assert.deepEqual(clampLogoPresentation({ fitMode: "manual", positionX: -4, positionY: 8, scale: 99 }), {
+    fitMode: "manual", positionX: 0, positionY: 1, scale: 3,
+  });
+  assert.match(logoImageStyle({ fitMode: "manual", positionX: 0.75, positionY: 0.25, scale: 1.4 }).transform, /scale\(1\.4\)/);
+});
+
+test("Transparenter Innenabstand kann sicher vorgeschlagen, aber nicht destruktiv entfernt werden", () => {
+  const adjustment = transparentContentAdjustment({ left: 200, right: 799, top: 200, bottom: 799 }, 1000, 1000);
+  assert.equal(adjustment?.fitMode, "manual");
+  assert.ok((adjustment?.scale ?? 0) > 1);
+  const leftWeighted = transparentContentAdjustment({ left: 50, right: 449, top: 300, bottom: 699 }, 1000, 1000);
+  assert.ok((leftWeighted?.positionX ?? 0) > 0.5);
+  assert.equal(transparentContentAdjustment({ left: 10, right: 989, top: 10, bottom: 989 }, 1000, 1000), null);
+});
+
+test("Gemeinsame LogoStage behandelt defekte Quellen ohne sichtbaren Browser-Fallback", async () => {
+  const [component, css] = await Promise.all([
+    read("src/shared/components/RestaurantLogoStage.tsx"),
+    read("src/shared/components/restaurant-logo-stage.css"),
+  ]);
+  assert.match(component, /onError=\{\(\) => setFailedUrl\(normalizedUrl\)\}/);
+  assert.match(component, /showImage \? \(/);
+  assert.match(component, /className="restaurant-logo-fallback"/);
+  assert.match(component, /naturalWidth/);
+  assert.match(css, /object-fit: contain/);
+  assert.match(css, /aspect-wide img \{ padding: 13% 5%; \}/);
+  assert.doesNotMatch(component, /dangerouslySetInnerHTML/);
+});
+
+test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukontexte", async () => {
+  const settings = await read("src/modules/admin/pages/SettingsPage.tsx");
+  assert.match(settings, /title="Logo anpassen"/);
+  assert.match(settings, /Automatisch einpassen/);
+  assert.match(settings, /Logogröße/);
+  assert.match(settings, /Logo horizontal positionieren/);
+  assert.match(settings, /Logo vertikal positionieren/);
+  assert.match(settings, /Gäste-Header/);
+  assert.match(settings, /Restaurantdetails/);
+  assert.match(settings, /QR Starter Kit/);
+  assert.match(settings, /Mitarbeiter-Header/);
+  assert.match(settings, /image\/webp/);
+  assert.match(settings, /5 \* 1024 \* 1024/);
+});
+
+test("Customer, Staff, QR Center und Onboarding verwenden die gemeinsame LogoStage", async () => {
+  const paths = [
+    "src/modules/admin/AdminLayout.tsx",
+    "src/modules/staff/StaffTablet.tsx",
+    "src/modules/customer/components/PremiumCustomerUi.tsx",
+    "src/modules/customer/CustomerPortal.tsx",
+    "src/modules/admin/pages/QrCenterPage.tsx",
+    "src/modules/admin/pages/RestaurantOnboarding.tsx",
+  ];
+  const sources = await Promise.all(paths.map(read));
+  sources.forEach((source, index) => assert.match(source, /RestaurantLogoStage/, paths[index]));
+  assert.match(sources[4], /logoCanvasPlacement/);
+  assert.match(sources[5], /logoCanvasPlacement/);
+});
+
+test("Additive Migration persistiert nur sichere Darstellungsmetadaten und hält den Portal-Guard", async () => {
+  const migration = await read("supabase/migrations/20260827001000_restaurant_logo_presentation.sql");
+  assert.match(migration, /add column if not exists logo_fit_mode/);
+  assert.match(migration, /check \(logo_scale between 0\.75 and 3\)/);
+  assert.match(migration, /security definer\s+set search_path = public/s);
+  assert.match(migration, /CUSTOMER_ACCESS_TOKEN_INVALID/);
+  assert.match(migration, /CUSTOMER_MEMBERSHIP_INACTIVE/);
+  assert.match(migration, /revoke execute .* from public/);
+  assert.doesNotMatch(migration, /disable row level security|grant all|service_role/i);
+});

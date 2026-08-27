@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Gift, LogIn, UserPlus } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
 import {
   legalCenterStateFromResponse,
@@ -112,7 +113,7 @@ export function ReferralLanding() {
       <div className="central-auth-page referral-invite-page">
         <PremiumCard className="central-auth-card referral-invite-card">
           <div className="referral-restaurant-brand">
-            {data.branding.logo_url ? <img alt={`Logo von ${data.restaurant.name}`} src={data.branding.logo_url} /> : <Gift aria-hidden="true" size={28} />}
+            <RestaurantLogoStage alt={`Logo von ${data.restaurant.name}`} logoUrl={data.branding.logo_url} name={data.restaurant.name} primaryColor={data.branding.primary_color} size="header" />
             <div><span>Einladung von {data.restaurant.name}</span><h1>{invitationTitle}</h1></div>
           </div>
 

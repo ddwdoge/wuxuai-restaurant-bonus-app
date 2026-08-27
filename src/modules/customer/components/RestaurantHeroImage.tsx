@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Store } from "lucide-react";
+import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
 
 type ImageState = "loading" | "valid" | "error" | "missing";
 
@@ -7,49 +7,20 @@ function normalizedImageUrl(value: string | null | undefined) {
   return value?.trim() || null;
 }
 
-function restaurantInitial(name: string) {
-  return name.trim().charAt(0).toLocaleUpperCase("de-AT") || "W";
-}
-
 export function RestaurantLogoImage({
   alt,
   className,
   logoUrl,
   name,
+  presentation,
 }: {
   alt: string;
   className?: string;
   logoUrl: string | null;
   name: string;
+  presentation?: RestaurantLogoPresentation | null;
 }) {
-  const source = normalizedImageUrl(logoUrl);
-  const [state, setState] = useState<ImageState>(source ? "loading" : "missing");
-
-  useEffect(() => {
-    setState(source ? "loading" : "missing");
-  }, [source]);
-
-  return (
-    <span className={className} data-image-state={state}>
-      {source && state !== "error" ? (
-        <img
-          alt={alt}
-          className={state === "valid" ? "is-loaded" : undefined}
-          key={source}
-          loading="lazy"
-          onError={() => setState("error")}
-          onLoad={() => setState("valid")}
-          src={source}
-        />
-      ) : null}
-      {state !== "valid" ? (
-        <span aria-hidden="true" className="restaurant-logo-placeholder">
-          <Store size={22} />
-          <strong>{restaurantInitial(name)}</strong>
-        </span>
-      ) : null}
-    </span>
-  );
+  return <RestaurantLogoStage alt={alt} className={className} logoUrl={logoUrl} name={name} presentation={presentation} size="header" />;
 }
 
 export function RestaurantHeroImage({

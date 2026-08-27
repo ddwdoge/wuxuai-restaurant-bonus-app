@@ -14,14 +14,18 @@ test("Restaurantdetails verwenden einen gemeinsamen sicheren Hero statt eines na
 });
 
 test("Hero entfernt fehlerhafte Bilder, zeigt einen Logo-Fallback und setzt sich nur bei neuer Quelle zurück", async () => {
-  const component = await readFile(componentUrl, "utf8");
+  const [component, logoStage] = await Promise.all([
+    readFile(componentUrl, "utf8"),
+    readFile(new URL("../src/shared/components/RestaurantLogoStage.tsx", import.meta.url), "utf8"),
+  ]);
   assert.match(component, /source && state !== "error"/);
   assert.match(component, /onError=\{\(\) => setState\("error"\)\}/);
   assert.match(component, /onLoad=\{\(\) => setState\("valid"\)\}/);
   assert.match(component, /useEffect\(\(\) => \{\s*setState\(source \? "loading" : "missing"\);\s*\}, \[source\]\)/);
   assert.match(component, /<RestaurantLogoImage[^>]+logoUrl=\{logoUrl\}/);
-  assert.match(component, /restaurantInitial\(name\)/);
-  assert.match(component, /<Store size=\{22\} \/>/);
+  assert.match(component, /<RestaurantLogoStage/);
+  assert.match(logoStage, /onError=\{\(\) => setFailedUrl\(normalizedUrl\)\}/);
+  assert.match(logoStage, /className="restaurant-logo-fallback"/);
   assert.doesNotMatch(component, /setInterval|setTimeout|retry/i);
 });
 
@@ -43,8 +47,13 @@ test("Hero und Fallback besitzen identische feste Abmessungen ohne horizontalen 
 });
 
 test("Auch Listen- und Detail-Logos haben einen neutralen Fehlerzustand", async () => {
-  const [component, page] = await Promise.all([readFile(componentUrl, "utf8"), readFile(pageUrl, "utf8")]);
+  const [component, page, logoStage] = await Promise.all([
+    readFile(componentUrl, "utf8"),
+    readFile(pageUrl, "utf8"),
+    readFile(new URL("../src/shared/components/RestaurantLogoStage.tsx", import.meta.url), "utf8"),
+  ]);
   assert.equal((page.match(/<RestaurantLogoImage/g) ?? []).length, 2);
-  assert.match(component, /className="restaurant-logo-placeholder"/);
-  assert.match(component, /state !== "valid"/);
+  assert.match(component, /<RestaurantLogoStage/);
+  assert.match(logoStage, /className="restaurant-logo-fallback"/);
+  assert.match(logoStage, /failedUrl !== normalizedUrl/);
 });

@@ -311,7 +311,7 @@ export async function loadCustomers(restaurantId: string): Promise<Customer[]> {
 
 export type CustomerPortalData = {
   restaurant: Pick<Restaurant, "name" | "slug" | "status">;
-  branding: Pick<RestaurantBranding, "logo_url" | "primary_color" | "secondary_color" | "button_color" | "font_family">;
+  branding: Pick<RestaurantBranding, "logo_url" | "logo_fit_mode" | "logo_scale" | "logo_position_x" | "logo_position_y" | "primary_color" | "secondary_color" | "button_color" | "font_family">;
   settings: PublicLoyaltySettings;
   customer: PublicPortalCustomer | null;
   campaigns: Pick<Campaign, "title" | "slug" | "description" | "status" | "start_date" | "end_date">[];

@@ -188,7 +188,7 @@
 .premium-customer-restaurant-selector > svg { color: var(--premium-gold-dark); flex: 0 0 auto; }
 .premium-customer-restaurant-selector:focus-visible { border-radius: 12px; outline: 3px solid rgba(191, 143, 54, .34); outline-offset: 2px; }
 
-.premium-restaurant-logo {
+.premium-restaurant-logo:not(.restaurant-logo-stage) {
   align-items: center;
   background: var(--premium-surface);
   border: 1px solid var(--premium-border);
@@ -199,8 +199,8 @@
   width: 50px;
 }
 
-.premium-restaurant-logo img { display: block; height: auto; max-height: 100%; max-width: 100%; object-fit: contain; padding: 5px; width: auto; box-sizing: border-box; }
-.premium-restaurant-logo > span { align-items: center; color: #fff; display: flex; font-size: 20px; font-weight: 900; height: 100%; justify-content: center; width: 100%; }
+.premium-restaurant-logo:not(.restaurant-logo-stage) img { display: block; height: auto; max-height: 100%; max-width: 100%; object-fit: contain; padding: 5px; width: auto; box-sizing: border-box; }
+.premium-restaurant-logo:not(.restaurant-logo-stage) > span { align-items: center; color: #fff; display: flex; font-size: 20px; font-weight: 900; height: 100%; justify-content: center; width: 100%; }
 
 .premium-icon-button {
   align-items: center;

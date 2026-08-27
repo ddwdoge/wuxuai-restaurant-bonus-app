@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
@@ -227,19 +228,7 @@ export function AdminLayout() {
     <div className="app-shell premium-owner-shell">
       <header className="topbar premium-owner-topbar">
         <div className="restaurant-brand-header admin-restaurant-brand">
-          <span className="restaurant-logo-frame">
-            {branding?.logo_url ? (
-              <img
-                alt={`${activeRestaurant?.name ?? "Restaurant"} Logo`}
-                className="restaurant-logo-image"
-                src={branding.logo_url}
-              />
-            ) : (
-              <span className="restaurant-logo-placeholder">
-                {(activeRestaurant?.name.trim().charAt(0) || "W").toUpperCase()}
-              </span>
-            )}
-          </span>
+          <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={activeRestaurant?.name ?? "Restaurant"} presentation={branding} primaryColor={branding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="admin-brand-kicker">WUXUAI Bonus</span>
             <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant Portal"}</span>

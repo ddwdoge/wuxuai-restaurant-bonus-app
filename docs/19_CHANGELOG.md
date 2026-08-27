@@ -3100,3 +3100,16 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   verhindert gemischte Punkte-, Reward-, Gift-, Offer- oder Referral-Zustände.
 - Die mobile Darstellung wurde mit langen Namen und 20 Restaurants von 320 bis
   1440 Pixel ohne horizontalen Seiten-Overflow geprüft.
+
+## 2026-08-27 - Adaptive Restaurantlogo-Darstellung ergänzt
+
+- Eine gemeinsame Smart LogoStage ersetzt unterschiedliche feste Logo-Rahmen
+  in Owner-, Customer-, Staff-, Onboarding- und QR-Starter-Kit-Oberflächen.
+- Auto-Fit behandelt quadratische, breite und hohe Logos proportional; defekte
+  oder fehlende Dateien wechseln auf den kanonischen Restaurant-Fallback.
+- Der Owner kann Zoom und Position nicht-destruktiv anpassen und die Wirkung in
+  vier realen Kontexten prüfen.
+- Die additive Migration `20260827001000_restaurant_logo_presentation.sql`
+  speichert nur Fit-Modus, Skalierung und normalisierte Position.
+- Punkte-, Rewards-, Referral-, Auth-, Tenant- und QR-Payload-Logik blieben
+  unverändert.

@@ -10,12 +10,15 @@ import {
   KeyRound,
   LoaderCircle,
   MapPinned,
+  Minus,
   Scale,
   Palette,
+  Plus,
   QrCode,
   ScanLine,
   Save,
   ShoppingBag,
+  RotateCcw,
   Users,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
@@ -27,6 +30,13 @@ import type { PartnerRestaurant } from "../../customer/partnerRestaurantService"
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
+import {
+  defaultLogoPresentation,
+  transparentContentAdjustment,
+  type LogoPresentation,
+} from "../../../shared/logoPresentation.mjs";
 import { loadLoyaltySettings, updatePointsCollectionSettings } from "../../loyalty/loyaltyService";
 import {
   geocodeOwnerLocation,
@@ -168,6 +178,104 @@ function fileExtension(file: File) {
   return "jpg";
 }
 
+async function inspectLogoFile(file: File) {
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () => reject(new Error("Das Logo konnte nicht gelesen werden."));
+      nextImage.src = url;
+    });
+    if (image.naturalWidth < 512 && image.naturalHeight < 512) {
+      throw new Error("Bitte verwende ein Logo mit mindestens 512 Pixeln Breite oder Höhe.");
+    }
+
+    if (file.type !== "image/png" && file.type !== "image/webp") {
+      return { adjustment: null, height: image.naturalHeight, width: image.naturalWidth };
+    }
+
+    const maxDimension = 420;
+    const ratio = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return { adjustment: null, height: image.naturalHeight, width: image.naturalWidth };
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let left = canvas.width;
+    let right = -1;
+    let top = canvas.height;
+    let bottom = -1;
+    let transparentPixelFound = false;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+        if (alpha <= 10) {
+          transparentPixelFound = true;
+          continue;
+        }
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+    const adjustment = transparentPixelFound && right >= left && bottom >= top
+      ? transparentContentAdjustment({ bottom, left, right, top }, canvas.width, canvas.height)
+      : null;
+    return { adjustment, height: image.naturalHeight, width: image.naturalWidth };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+type BrandingLogoEditorProps = {
+  adjustment: LogoPresentation | null;
+  logoUrl: string;
+  name: string;
+  onChange: (presentation: LogoPresentation) => void;
+  onClose: () => void;
+  onSave: () => void;
+  open: boolean;
+  presentation: LogoPresentation;
+  primaryColor: string;
+  saving: boolean;
+};
+
+function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
+  const setManual = (patch: Partial<LogoPresentation>) => onChange({ ...presentation, ...patch, fitMode: "manual" });
+  const previewProps = { logoUrl, name, presentation, primaryColor };
+  return (
+    <AppDrawer description="Passe Größe und Position an, ohne das Originalbild zu verändern." onClose={onClose} open={open} size="large" title="Logo anpassen">
+      <div className="branding-logo-editor">
+        <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" size="preview" />
+        <div className="branding-logo-editor-controls">
+          <label><span>Größe</span><output>{Math.round(presentation.scale * 100)} %</output><input aria-label="Logogröße" max="300" min="75" onChange={(event) => setManual({ scale: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.scale * 100)} /></label>
+          <div className="branding-logo-editor-stepper"><button aria-label="Logo verkleinern" onClick={() => setManual({ scale: Math.max(0.75, presentation.scale - 0.05) })} type="button"><Minus size={18} /></button><button aria-label="Logo vergrößern" onClick={() => setManual({ scale: Math.min(3, presentation.scale + 0.05) })} type="button"><Plus size={18} /></button></div>
+          <label><span>Horizontal</span><output>{Math.round(presentation.positionX * 100)} %</output><input aria-label="Logo horizontal positionieren" max="100" min="0" onChange={(event) => setManual({ positionX: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.positionX * 100)} /></label>
+          <label><span>Vertikal</span><output>{Math.round(presentation.positionY * 100)} %</output><input aria-label="Logo vertikal positionieren" max="100" min="0" onChange={(event) => setManual({ positionY: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.positionY * 100)} /></label>
+        </div>
+        <div className="branding-logo-editor-actions">
+          <button className="button secondary" onClick={() => onChange({ ...defaultLogoPresentation })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
+          {adjustment ? <button className="button secondary" onClick={() => onChange(adjustment)} type="button">Automatisch zuschneiden</button> : null}
+        </div>
+        <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
+          <div><h3 id="logo-context-preview-title">Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
+          <div className="branding-logo-context-grid">
+            <article><span>Gäste-Header</span><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div></article>
+            <article><span>Restaurantdetails</span><RestaurantLogoStage {...previewProps} size="detail" /></article>
+            <article><span>QR Starter Kit</span><div className="branding-context-print"><RestaurantLogoStage {...previewProps} size="print" /><strong>{name}</strong></div></article>
+            <article><span>Mitarbeiter-Header</span><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div></article>
+          </div>
+        </section>
+        <button className="button branding-logo-save" disabled={saving} onClick={onSave} type="button"><Save size={18} /> {saving ? "Wird gespeichert…" : "Anpassung speichern"}</button>
+      </div>
+    </AppDrawer>
+  );
+}
+
 async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
   if (!supabase || !restaurant?.id) return null;
 
@@ -230,11 +338,17 @@ export function SettingsPage() {
   const [openingHours, setOpeningHours] = useState<Record<Weekday, OpeningDay>>(() => normalizeOpeningHours(null));
   const [brandingForm, setBrandingForm] = useState({
     logoUrl: "",
+    logoFitMode: "auto" as "auto" | "manual",
+    logoScale: 1,
+    logoPositionX: 0.5,
+    logoPositionY: 0.5,
     primaryColor: "#0f766e",
     secondaryColor: "#f4a261",
     buttonColor: "#0f766e",
   });
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
+  const [transparentLogoAdjustment, setTransparentLogoAdjustment] = useState<LogoPresentation | null>(null);
   const [subscription, setSubscription] = useState<BranchSubscription | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocationForm | null>(null);
   const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>("idle");
@@ -357,11 +471,15 @@ export function SettingsPage() {
   useEffect(() => {
     setBrandingForm({
       logoUrl: branding?.logo_url ?? "",
+      logoFitMode: branding?.logo_fit_mode ?? "auto",
+      logoScale: branding?.logo_scale ?? 1,
+      logoPositionX: branding?.logo_position_x ?? 0.5,
+      logoPositionY: branding?.logo_position_y ?? 0.5,
       primaryColor: branding?.primary_color ?? "#0f766e",
       secondaryColor: branding?.secondary_color ?? "#f4a261",
       buttonColor: branding?.button_color ?? "#0f766e",
     });
-  }, [branding?.button_color, branding?.logo_url, branding?.primary_color, branding?.secondary_color]);
+  }, [branding?.button_color, branding?.logo_fit_mode, branding?.logo_position_x, branding?.logo_position_y, branding?.logo_scale, branding?.logo_url, branding?.primary_color, branding?.secondary_color]);
 
   async function saveRestaurantData(event: FormEvent) {
     event.preventDefault();
@@ -587,6 +705,10 @@ export function SettingsPage() {
           {
             restaurant_id: details.id,
             logo_url: brandingForm.logoUrl || null,
+            logo_fit_mode: brandingForm.logoFitMode,
+            logo_scale: brandingForm.logoScale,
+            logo_position_x: brandingForm.logoPositionX,
+            logo_position_y: brandingForm.logoPositionY,
             primary_color: brandingForm.primaryColor,
             secondary_color: brandingForm.secondaryColor,
             button_color: brandingForm.buttonColor,
@@ -600,6 +722,7 @@ export function SettingsPage() {
 
       await refreshTenants();
       setStatus("Branding gespeichert.");
+      setLogoEditorOpen(false);
     } catch (error) {
       console.error("Branding konnte nicht gespeichert werden.", error);
       setErrorMessage("Branding konnte nicht gespeichert werden.");
@@ -610,14 +733,14 @@ export function SettingsPage() {
 
   async function uploadLogo(file: File) {
     if (!details?.id) return;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"];
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
     const maxSize = 5 * 1024 * 1024;
 
     setStatus(null);
     setErrorMessage(null);
 
     if (!allowedTypes.includes(file.type)) {
-      setErrorMessage("Bitte wähle PNG, JPG, JPEG oder SVG.");
+      setErrorMessage("Bitte wähle PNG, JPG, JPEG, WebP oder SVG.");
       return;
     }
 
@@ -626,11 +749,28 @@ export function SettingsPage() {
       return;
     }
 
+    let inspection: Awaited<ReturnType<typeof inspectLogoFile>>;
+    try {
+      inspection = await inspectLogoFile(file);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Das Logo konnte nicht geprüft werden.");
+      return;
+    }
+
     const previewUrl = URL.createObjectURL(file);
     setLogoPreviewUrl((current) => {
       if (current.startsWith("blob:")) URL.revokeObjectURL(current);
       return previewUrl;
     });
+    setBrandingForm((current) => ({
+      ...current,
+      logoFitMode: "auto",
+      logoPositionX: 0.5,
+      logoPositionY: 0.5,
+      logoScale: 1,
+    }));
+    setTransparentLogoAdjustment(inspection.adjustment);
+    setLogoEditorOpen(true);
     setStatus("Logo ausgewählt. Vorschau ist sofort aktiv.");
 
     if (!supabase) return;
@@ -652,6 +792,10 @@ export function SettingsPage() {
         {
           restaurant_id: details.id,
           logo_url: data.publicUrl,
+          logo_fit_mode: "auto",
+          logo_scale: 1,
+          logo_position_x: 0.5,
+          logo_position_y: 0.5,
           primary_color: brandingForm.primaryColor,
           secondary_color: brandingForm.secondaryColor,
           button_color: brandingForm.buttonColor,
@@ -690,6 +834,12 @@ export function SettingsPage() {
   }
 
   const currentLogoUrl = logoPreviewUrl || brandingForm.logoUrl;
+  const currentLogoPresentation: LogoPresentation = {
+    fitMode: brandingForm.logoFitMode,
+    positionX: brandingForm.logoPositionX,
+    positionY: brandingForm.logoPositionY,
+    scale: brandingForm.logoScale,
+  };
   const trialDays = remainingTrialDays(subscription?.trial_ends_at);
   const currentSubscriptionStatus = subscription?.subscription_status ?? subscription?.status ?? null;
   const trialExpired = currentSubscriptionStatus === "trialing" && isDatePast(subscription?.trial_ends_at);
@@ -774,23 +924,24 @@ export function SettingsPage() {
               >
                 <input
                   ref={logoInputRef}
-                  accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
                   className="visually-hidden"
                   onChange={handleLogoInputChange}
                   type="file"
                 />
-                <div className="logo-preview-box settings-logo-preview">
-                  {currentLogoUrl ? <img alt={`${details.name} Logo`} src={currentLogoUrl} /> : <span>{details.name.charAt(0)}</span>}
-                </div>
+                <RestaurantLogoStage className="settings-logo-preview" logoUrl={currentLogoUrl} name={details.name} presentation={currentLogoPresentation} primaryColor={brandingForm.primaryColor} size="preview" />
                 <button className="button secondary" onClick={() => logoInputRef.current?.click()} type="button">
                   <ImageUp size={18} />
                   Logo auswählen
                 </button>
-                <p className="muted">PNG, JPG, JPEG oder SVG. Maximal 5 MB.</p>
+                {currentLogoUrl ? <button className="button secondary" onClick={() => setLogoEditorOpen(true)} type="button"><Scale size={18} /> Logo anpassen</button> : null}
+                {currentLogoUrl && brandingForm.logoFitMode === "manual" ? <button className="button secondary" onClick={() => setBrandingForm((current) => ({ ...current, logoFitMode: "auto", logoPositionX: 0.5, logoPositionY: 0.5, logoScale: 1 }))} type="button"><RotateCcw size={18} /> Zurücksetzen</button> : null}
+                <p className="muted">PNG, JPG, JPEG, WebP oder SVG. Maximal 5 MB.</p>
+                <p className="muted">Empfohlen: 1024 × 1024 Pixel. Mindestens 512 Pixel Breite oder Höhe.</p>
               </div>
               <div className="settings-info-card">
                 <h2>Aktuelles Branding</h2>
-                <p className="muted">Diese Darstellung wird für Gäste-App, QR-Material und Highlights verwendet.</p>
+                <p className="muted">Das Logo wird automatisch passend dargestellt. Du kannst Größe und Position bei Bedarf anpassen.</p>
               </div>
             </div>
             <div className="grid two">
@@ -822,6 +973,24 @@ export function SettingsPage() {
             <FormActions saving={saving} submitLabel="Branding speichern" />
           </form>
         </section>
+        <BrandingLogoEditor
+          adjustment={transparentLogoAdjustment}
+          logoUrl={currentLogoUrl}
+          name={details.name}
+          onChange={(presentation) => setBrandingForm((current) => ({
+            ...current,
+            logoFitMode: presentation.fitMode,
+            logoPositionX: presentation.positionX,
+            logoPositionY: presentation.positionY,
+            logoScale: presentation.scale,
+          }))}
+          onClose={() => setLogoEditorOpen(false)}
+          onSave={() => void saveBranding()}
+          open={logoEditorOpen && Boolean(currentLogoUrl)}
+          presentation={currentLogoPresentation}
+          primaryColor={brandingForm.primaryColor}
+          saving={saving}
+        />
         <StatusMessages errorMessage={errorMessage} status={status} />
       </>
     );

@@ -30,7 +30,7 @@ async function loadBrandingForRestaurant(restaurantId: string) {
 
   const { data, error } = await supabase
     .from("restaurant_branding")
-    .select("id, restaurant_id, logo_url, primary_color, secondary_color, button_color, font_family, created_at")
+    .select("id, restaurant_id, logo_url, logo_fit_mode, logo_scale, logo_position_x, logo_position_y, primary_color, secondary_color, button_color, font_family, created_at")
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 

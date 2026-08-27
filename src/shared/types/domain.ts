@@ -77,6 +77,10 @@ export type RestaurantBranding = {
   organization_id?: string;
   branch_id?: string;
   logo_url: string | null;
+  logo_fit_mode: "auto" | "manual";
+  logo_scale: number;
+  logo_position_x: number;
+  logo_position_y: number;
   primary_color: string;
   secondary_color: string;
   button_color: string;

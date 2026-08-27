@@ -23,7 +23,9 @@ import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
+import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
+import { logoCanvasPlacement } from "../../../shared/logoPresentation.mjs";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
@@ -612,13 +614,15 @@ function drawRestaurantBrand(
   context.stroke();
 
   if (logoImage) {
-    const padding = Math.min(width, height) * 0.12;
-    const availableWidth = width - padding * 2;
-    const availableHeight = height - padding * 2;
-    const ratio = Math.min(availableWidth / logoImage.width, availableHeight / logoImage.height);
-    const imageWidth = logoImage.width * ratio;
-    const imageHeight = logoImage.height * ratio;
-    context.drawImage(logoImage, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2, imageWidth, imageHeight);
+    const placement = logoCanvasPlacement(
+      logoImage.naturalWidth || logoImage.width,
+      logoImage.naturalHeight || logoImage.height,
+      { height, width, x: 0, y: 0 },
+    );
+    context.beginPath();
+    context.rect(x, y, width, height);
+    context.clip();
+    context.drawImage(logoImage, x + placement.x, y + placement.y, placement.width, placement.height);
   } else {
     context.fillStyle = primaryColor;
     roundedRect(context, x + width * 0.08, y + height * 0.16, width * 0.84, height * 0.68, Math.min(width, height) * 0.11);
@@ -1778,19 +1782,7 @@ export function RestaurantOnboarding() {
               <section className="brand-live-preview">
                 <article className="customer-app-preview" style={{ borderColor: form.primaryColor }}>
                   <div className="customer-brand-header restaurant-brand-header">
-                    <span className="restaurant-logo-frame">
-                      {visibleLogoUrl ? (
-                        <img
-                          className="customer-logo restaurant-logo-image"
-                          alt={`${form.restaurantName || "Restaurant"} Logo`}
-                          src={visibleLogoUrl}
-                        />
-                      ) : (
-                        <span className="restaurant-logo-placeholder" style={{ background: bonusCardColor }}>
-                          {(form.restaurantName.trim().charAt(0) || "R").toUpperCase()}
-                        </span>
-                      )}
-                    </span>
+                    <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={visibleLogoUrl} name={form.restaurantName || "Restaurant"} primaryColor={form.primaryColor} size="header" />
                     <div className="restaurant-brand-copy">
                       <h3 className="restaurant-brand-title">{form.restaurantName || "Dein Restaurant"}</h3>
                       <p className="restaurant-brand-subtitle">Meine Vorteile</p>
@@ -2188,14 +2180,7 @@ function QrLaunchCard({
   return (
     <article className="card qr-box-large starter-qr-card">
       <div className="starter-qr-logo">
-        {logoUrl ? (
-          <img alt={`${restaurantName || "Restaurant"} Logo`} src={logoUrl} />
-        ) : (
-          <span>
-            WUXUAI
-            <small>Bonus</small>
-          </span>
-        )}
+        <RestaurantLogoStage logoUrl={logoUrl} name={restaurantName || "Restaurant"} size="print" />
       </div>
       <span className="starter-qr-icon" aria-hidden="true">{icon}</span>
       <div className="starter-qr-heading">

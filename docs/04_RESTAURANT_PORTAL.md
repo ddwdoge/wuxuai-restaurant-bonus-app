@@ -772,3 +772,17 @@ korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
 - Manager, Staff, Customer und Anon dürfen Teamzugänge nicht verwalten.
 - Der Mitarbeiter-QR öffnet ausschließlich den Login-Einstieg und verleiht
   weder Rolle noch Restaurantzugriff.
+
+## Smart Logo Darstellung V1
+
+- Der Owner lädt unter `Einstellungen → Aussehen` PNG, JPG, WebP oder SVG bis
+  maximal 5 MB hoch. Empfohlen sind mindestens 1024 Pixel; sehr breite Logos
+  werden nicht allein wegen einer geringen Höhe abgelehnt.
+- Logos werden proportional, formatabhängig und mit sicherer Ruhezone
+  eingepasst. Das Originalbild wird nicht zugeschnitten oder verändert.
+- Bei Bedarf passt der Owner Größe sowie horizontale und vertikale Position an
+  und kann jederzeit zu `Automatisch einpassen` zurückkehren.
+- Transparente Innenabstände dürfen als nicht-destruktiver Vorschlag korrigiert
+  werden. Ein vorhandener Bildhintergrund wird niemals automatisch entfernt.
+- Customer-, Staff- und QR-Starter-Kit-Flächen nutzen dieselbe LogoStage und
+  denselben stabilen Fehlerfallback.

@@ -1147,3 +1147,17 @@ Wenn Codex UI baut:
 ---
 
 Endstatus: **LOCK**
+
+## Gemeinsame Smart LogoStage
+
+- Alle aktiven V1-Portale verwenden `RestaurantLogoStage` als gemeinsame
+  Darstellung für Restaurantlogos.
+- Auto-Fit ist proportional (`contain`) und setzt je nach Seitenverhältnis etwa
+  8 bis 12 Prozent optische Ruhezone. Ein starrer quadratischer weißer Rahmen
+  darf nicht erzwungen werden.
+- Manuelle Darstellung speichert nur Fit-Modus, Skalierung und normalisierte
+  X-/Y-Position. Die Originaldatei bleibt erhalten.
+- Transparente Dateien liegen direkt auf einer neutralen warmen Fläche. Eigene
+  feste Bildhintergründe bleiben Teil des Logos.
+- Ein Ladefehler behält die Abmessungen und wechselt genau einmal auf den
+  Restaurant-Fallback, ohne Retry-Schleife, Fehlerbild oder sichtbaren Alttext.

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
 import {
   AppShell,
@@ -78,9 +79,7 @@ function MembershipCard({ membership, onOpen }: { membership: CustomerAccountMem
   return (
     <PremiumCard className="central-location-card">
       <div className="central-location-heading">
-        <span className="central-location-logo">
-          {membership.logo_url ? <img alt={`${membership.name} Logo`} src={membership.logo_url} /> : <Store aria-hidden="true" size={24} />}
-        </span>
+        <RestaurantLogoStage className="central-location-logo" logoUrl={membership.logo_url} name={membership.name} size="header" />
         <div>
           <h2>{membership.name}</h2>
           <p><MapPin aria-hidden="true" size={15} /> {locationAddress(membership) || "Adresse nicht veröffentlicht"}</p>

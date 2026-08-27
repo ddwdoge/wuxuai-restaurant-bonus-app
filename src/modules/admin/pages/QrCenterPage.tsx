@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
+import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
+import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logoPresentation.mjs";
 import type { PointsCollectionMode } from "../../../shared/types/domain";
 import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
@@ -267,6 +269,7 @@ function drawLogo(
   options: {
     logoImage: HTMLImageElement | null;
     primaryColor: string;
+    presentation?: Partial<LogoPresentation> | null;
     restaurantName: string;
     x: number;
     y: number;
@@ -274,13 +277,19 @@ function drawLogo(
     height: number;
   },
 ) {
-  const { height, logoImage, primaryColor, restaurantName, width, x, y } = options;
+  const { height, logoImage, presentation, primaryColor, restaurantName, width, x, y } = options;
   context.save();
   if (logoImage) {
-    const ratio = Math.min(width / logoImage.width, height / logoImage.height);
-    const imageWidth = logoImage.width * ratio;
-    const imageHeight = logoImage.height * ratio;
-    context.drawImage(logoImage, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2, imageWidth, imageHeight);
+    const placement = logoCanvasPlacement(
+      logoImage.naturalWidth || logoImage.width,
+      logoImage.naturalHeight || logoImage.height,
+      { height, width, x: 0, y: 0 },
+      presentation ?? {},
+    );
+    context.beginPath();
+    context.rect(x, y, width, height);
+    context.clip();
+    context.drawImage(logoImage, x + placement.x, y + placement.y, placement.width, placement.height);
   } else {
     roundedRect(context, x + width * 0.18, y, width * 0.64, height, 30);
     context.fillStyle = primaryColor;
@@ -303,6 +312,7 @@ function drawBonusBoostHint(
   options: {
     accentColor: string;
     primaryColor: string;
+    presentation?: Partial<LogoPresentation> | null;
     width: number;
     x: number;
     y: number;
@@ -342,6 +352,7 @@ function drawQrPrintPage(
     accentColor: string;
     logoImage: HTMLImageElement | null;
     primaryColor: string;
+    presentation?: Partial<LogoPresentation> | null;
     restaurantName: string;
   },
 ) {
@@ -369,6 +380,7 @@ function drawQrPrintPage(
     height: 118,
     logoImage: branding.logoImage,
     primaryColor: branding.primaryColor,
+    presentation: branding.presentation,
     restaurantName: branding.restaurantName,
     width: 360,
     x: (canvas.width - 360) / 2,
@@ -438,6 +450,7 @@ async function buildQrCenterStarterKitPdf(input: {
   bonusQrId?: string;
   includeCustomerCollectCompatibility: boolean;
   logoUrl: string | null;
+  logoPresentation?: Partial<LogoPresentation> | null;
   primaryColor: string;
   restaurantName: string;
   restaurantQrId: string;
@@ -456,6 +469,7 @@ async function buildQrCenterStarterKitPdf(input: {
     accentColor: safeColor(input.secondaryColor, "#f4a261"),
     logoImage: loadedLogoImage,
     primaryColor: safeColor(input.primaryColor, "#0f766e"),
+    presentation: input.logoPresentation,
     restaurantName: input.restaurantName || "Dein Restaurant",
   };
   const pageSpecs: QrPrintPage[] = [
@@ -585,6 +599,12 @@ export function QrCenterPage() {
         bonusQrId: showCustomerCollectCompatibility ? "qr-bonus" : undefined,
         includeCustomerCollectCompatibility: showCustomerCollectCompatibility,
         logoUrl: branding?.logo_url ?? null,
+        logoPresentation: branding ? {
+          fitMode: branding.logo_fit_mode,
+          positionX: branding.logo_position_x,
+          positionY: branding.logo_position_y,
+          scale: branding.logo_scale,
+        } : null,
         primaryColor,
         restaurantName,
         restaurantQrId: "qr-restaurant",
@@ -601,13 +621,7 @@ export function QrCenterPage() {
 
   const renderQrBrandBlock = () => (
     <div className="restaurant-brand-header qr-preview-brand">
-      <span className="restaurant-logo-frame">
-        {branding?.logo_url ? (
-          <img alt={`${restaurantName} Logo`} className="restaurant-logo-image" src={branding.logo_url} />
-        ) : (
-          <span className="restaurant-logo-placeholder">{(restaurantName.trim().charAt(0) || "R").toUpperCase()}</span>
-        )}
-      </span>
+      <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={branding?.primary_color} size="header" />
       <div className="restaurant-brand-copy">
         <span className="restaurant-brand-title">{restaurantName}</span>
         <span className="restaurant-brand-subtitle">Bonus für Gäste</span>

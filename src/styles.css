@@ -88,7 +88,7 @@ a {
   min-width: 0;
 }
 
-.restaurant-logo-frame {
+.restaurant-logo-frame:not(.restaurant-logo-stage) {
   align-items: center;
   background: #ffffff;
   border: 1px solid #dde3ea;
@@ -607,7 +607,34 @@ a {
 }
 
 .settings-logo-preview {
-  min-height: 130px;
+  min-height: 180px;
+  max-width: 420px;
+}
+
+.branding-logo-editor { display: grid; gap: 20px; min-width: 0; }
+.branding-logo-editor-main { min-height: 210px; }
+.branding-logo-editor-controls { display: grid; gap: 14px; }
+.branding-logo-editor-controls label { display: grid; gap: 7px; grid-template-columns: minmax(0, 1fr) auto; }
+.branding-logo-editor-controls label span { font-weight: 700; }
+.branding-logo-editor-controls output { color: #8a641e; font-variant-numeric: tabular-nums; }
+.branding-logo-editor-controls input[type="range"] { accent-color: #b88a3b; grid-column: 1 / -1; min-height: 44px; width: 100%; }
+.branding-logo-editor-stepper { display: flex; gap: 8px; }
+.branding-logo-editor-stepper button { align-items: center; background: #f8f5ef; border: 1px solid #e7ddcd; border-radius: 50%; display: inline-flex; height: 44px; justify-content: center; width: 44px; }
+.branding-logo-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.branding-logo-contexts { border-top: 1px solid #e7ddcd; display: grid; gap: 14px; padding-top: 18px; }
+.branding-logo-contexts h3, .branding-logo-contexts p { margin: 0; }
+.branding-logo-context-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.branding-logo-context-grid article { background: #f8f5ef; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; gap: 10px; min-width: 0; padding: 12px; }
+.branding-logo-context-grid article > span { color: #756b5f; font-size: 12px; font-weight: 700; }
+.branding-context-header { align-items: center; display: flex; gap: 10px; min-width: 0; }
+.branding-context-header strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branding-context-print { align-items: center; display: grid; gap: 8px; justify-items: center; text-align: center; }
+.branding-context-print .restaurant-logo-stage { max-width: 100%; }
+.branding-logo-save { justify-self: stretch; width: 100%; }
+
+@media (max-width: 600px) {
+  .branding-logo-context-grid { grid-template-columns: 1fr; }
+  .branding-logo-editor-main { min-height: 170px; }
 }
 
 .settings-hours-grid {
