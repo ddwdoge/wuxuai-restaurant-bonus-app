@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Smart-Logo-Autoanpassung dauerhaft gespeichert
+
+- Logo-Darstellung fuer Owner, Customer, Staff und Starter Kit ueber gemeinsame
+  Praesentationswerte fuer Skalierung und Position vereinheitlicht.
+- Bei PNG-/WebP-Logos erkannte transparente Innenabstaende werden beim Upload
+  jetzt sofort zusammen mit der Bildadresse gespeichert und nicht mehr durch
+  den anschliessenden Tenant-Refresh auf Standardwerte zurueckgesetzt.
+- Die Originaldatei bleibt unveraendert; bestehende Logo-Adressen, RLS,
+  QR-Payloads und fachliche Bonuslogik bleiben unberuehrt.
+
 ## 2026-08-27 - Kunden-Abmeldung beendet zentrale Sitzung
 
 - Den restaurantbezogenen Abmeldeweg an die zentrale Supabase-Kundensitzung

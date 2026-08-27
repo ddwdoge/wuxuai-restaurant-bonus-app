@@ -73,6 +73,9 @@ test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukont
   assert.match(settings, /Mitarbeiter-Header/);
   assert.match(settings, /image\/webp/);
   assert.match(settings, /5 \* 1024 \* 1024/);
+  assert.match(settings, /initialPresentation = inspection\.adjustment \?\? defaultLogoPresentation/);
+  assert.match(settings, /logo_fit_mode: initialPresentation\.fitMode/);
+  assert.match(settings, /logo_scale: initialPresentation\.scale/);
 });
 
 test("Customer, Staff, QR Center und Onboarding verwenden die gemeinsame LogoStage", async () => {

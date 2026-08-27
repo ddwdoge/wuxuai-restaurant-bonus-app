@@ -757,6 +757,7 @@ export function SettingsPage() {
       return;
     }
 
+    const initialPresentation = inspection.adjustment ?? defaultLogoPresentation;
     const previewUrl = URL.createObjectURL(file);
     setLogoPreviewUrl((current) => {
       if (current.startsWith("blob:")) URL.revokeObjectURL(current);
@@ -764,10 +765,10 @@ export function SettingsPage() {
     });
     setBrandingForm((current) => ({
       ...current,
-      logoFitMode: "auto",
-      logoPositionX: 0.5,
-      logoPositionY: 0.5,
-      logoScale: 1,
+      logoFitMode: initialPresentation.fitMode,
+      logoPositionX: initialPresentation.positionX,
+      logoPositionY: initialPresentation.positionY,
+      logoScale: initialPresentation.scale,
     }));
     setTransparentLogoAdjustment(inspection.adjustment);
     setLogoEditorOpen(true);
@@ -792,10 +793,10 @@ export function SettingsPage() {
         {
           restaurant_id: details.id,
           logo_url: data.publicUrl,
-          logo_fit_mode: "auto",
-          logo_scale: 1,
-          logo_position_x: 0.5,
-          logo_position_y: 0.5,
+          logo_fit_mode: initialPresentation.fitMode,
+          logo_scale: initialPresentation.scale,
+          logo_position_x: initialPresentation.positionX,
+          logo_position_y: initialPresentation.positionY,
           primary_color: brandingForm.primaryColor,
           secondary_color: brandingForm.secondaryColor,
           button_color: brandingForm.buttonColor,
