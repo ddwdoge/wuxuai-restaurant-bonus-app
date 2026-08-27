@@ -65,16 +65,31 @@ test("Gemeinsame LogoStage behandelt defekte Quellen ohne sichtbaren Browser-Fal
 });
 
 test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukontexte", async () => {
-  const settings = await read("src/modules/admin/pages/SettingsPage.tsx");
+  const [settings, styles, drawer] = await Promise.all([
+    read("src/modules/admin/pages/SettingsPage.tsx"),
+    read("src/styles.css"),
+    read("src/shared/components/AppDrawer.tsx"),
+  ]);
   assert.match(settings, /title="Logo anpassen"/);
+  assert.match(settings, /size="workspace"/);
+  assert.match(settings, /1\. Live-Vorschau/);
+  assert.match(settings, /branding-logo-safe-area/);
+  assert.match(settings, /Sicherheitsbereich/);
   assert.match(settings, /Automatisch einpassen/);
-  assert.match(settings, /Logogröße/);
-  assert.match(settings, /Logo horizontal positionieren/);
-  assert.match(settings, /Logo vertikal positionieren/);
+  assert.match(settings, /Zurücksetzen/);
+  assert.match(settings, /Logo verkleinern/);
+  assert.match(settings, /Logo nach links verschieben/);
+  assert.match(settings, /Logo nach oben verschieben/);
   assert.match(settings, /Gäste-Header/);
   assert.match(settings, /Restaurantdetails/);
   assert.match(settings, /QR Starter Kit/);
   assert.match(settings, /Mitarbeiter-Header/);
+  assert.match(settings, /footer=\{\(/);
+  assert.match(settings, /openingPresentationRef/);
+  assert.match(styles, /app-drawer-workspace[\s\S]*height: min\(90dvh, 820px\)/);
+  assert.match(styles, /branding-logo-control-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /branding-logo-context-grid[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(drawer, /app-drawer-overlay-\$\{size\}/);
   assert.match(settings, /image\/webp/);
   assert.match(settings, /5 \* 1024 \* 1024/);
   assert.match(settings, /initialPresentation = inspection\.adjustment \?\? defaultLogoPresentation/);

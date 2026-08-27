@@ -7,6 +7,7 @@ import {
   CreditCard,
   Gift,
   ImageUp,
+  Info,
   KeyRound,
   LoaderCircle,
   MapPinned,
@@ -244,33 +245,116 @@ type BrandingLogoEditorProps = {
   saving: boolean;
 };
 
-function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
+type LogoEditorControlProps = {
+  decreaseLabel: string;
+  increaseLabel: string;
+  label: string;
+  onDecrease: () => void;
+  onIncrease: () => void;
+  value: string;
+};
+
+function LogoEditorControl({ decreaseLabel, increaseLabel, label, onDecrease, onIncrease, value }: LogoEditorControlProps) {
+  return (
+    <div className="branding-logo-control">
+      <span>{label}</span>
+      <div className="branding-logo-control-row">
+        <button aria-label={decreaseLabel} onClick={onDecrease} type="button"><Minus aria-hidden="true" size={17} /></button>
+        <output>{value}</output>
+        <button aria-label={increaseLabel} onClick={onIncrease} type="button"><Plus aria-hidden="true" size={17} /></button>
+      </div>
+    </div>
+  );
+}
+
+export function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
+  const openingPresentationRef = useRef(presentation);
+  const wasOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) openingPresentationRef.current = presentation;
+    wasOpenRef.current = open;
+  }, [open, presentation]);
+
   const setManual = (patch: Partial<LogoPresentation>) => onChange({ ...presentation, ...patch, fitMode: "manual" });
   const previewProps = { logoUrl, name, presentation, primaryColor };
+  const cancelEditor = () => {
+    onChange(openingPresentationRef.current);
+    onClose();
+  };
+
   return (
-    <AppDrawer description="Passe Größe und Position an, ohne das Originalbild zu verändern." onClose={onClose} open={open} size="large" title="Logo anpassen">
+    <AppDrawer
+      description="Passe Größe und Position an, ohne das Originalbild zu verändern."
+      footer={(
+        <>
+          <button className="button secondary" disabled={saving} onClick={cancelEditor} type="button">Abbrechen</button>
+          <button className="button branding-logo-save" disabled={saving} onClick={onSave} type="button"><Save size={18} /> {saving ? "Wird gespeichert…" : "Anpassung speichern"}</button>
+        </>
+      )}
+      onClose={cancelEditor}
+      open={open}
+      size="workspace"
+      title="Logo anpassen"
+    >
       <div className="branding-logo-editor">
-        <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" size="preview" />
-        <div className="branding-logo-editor-controls">
-          <label><span>Größe</span><output>{Math.round(presentation.scale * 100)} %</output><input aria-label="Logogröße" max="300" min="75" onChange={(event) => setManual({ scale: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.scale * 100)} /></label>
-          <div className="branding-logo-editor-stepper"><button aria-label="Logo verkleinern" onClick={() => setManual({ scale: Math.max(0.75, presentation.scale - 0.05) })} type="button"><Minus size={18} /></button><button aria-label="Logo vergrößern" onClick={() => setManual({ scale: Math.min(3, presentation.scale + 0.05) })} type="button"><Plus size={18} /></button></div>
-          <label><span>Horizontal</span><output>{Math.round(presentation.positionX * 100)} %</output><input aria-label="Logo horizontal positionieren" max="100" min="0" onChange={(event) => setManual({ positionX: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.positionX * 100)} /></label>
-          <label><span>Vertikal</span><output>{Math.round(presentation.positionY * 100)} %</output><input aria-label="Logo vertikal positionieren" max="100" min="0" onChange={(event) => setManual({ positionY: Number(event.target.value) / 100 })} type="range" value={Math.round(presentation.positionY * 100)} /></label>
-        </div>
-        <div className="branding-logo-editor-actions">
-          <button className="button secondary" onClick={() => onChange({ ...defaultLogoPresentation })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
-          {adjustment ? <button className="button secondary" onClick={() => onChange(adjustment)} type="button">Automatisch zuschneiden</button> : null}
-        </div>
-        <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
-          <div><h3 id="logo-context-preview-title">Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
-          <div className="branding-logo-context-grid">
-            <article><span>Gäste-Header</span><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div></article>
-            <article><span>Restaurantdetails</span><RestaurantLogoStage {...previewProps} size="detail" /></article>
-            <article><span>QR Starter Kit</span><div className="branding-context-print"><RestaurantLogoStage {...previewProps} size="print" /><strong>{name}</strong></div></article>
-            <article><span>Mitarbeiter-Header</span><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div></article>
+        <section className="branding-logo-live" aria-labelledby="branding-logo-live-title">
+          <header className="branding-logo-section-heading">
+            <h3 id="branding-logo-live-title">1. Live-Vorschau</h3>
+            <p><Info aria-hidden="true" size={16} /> Das Logo wird proportional dargestellt.</p>
+          </header>
+          <div className="branding-logo-live-stage">
+            <div className="branding-logo-safe-area">
+              <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" size="preview" />
+            </div>
+            <span>Sicherheitsbereich</span>
           </div>
         </section>
-        <button className="button branding-logo-save" disabled={saving} onClick={onSave} type="button"><Save size={18} /> {saving ? "Wird gespeichert…" : "Anpassung speichern"}</button>
+
+        <section className="branding-logo-adjustments" aria-labelledby="branding-logo-adjustments-title">
+          <h3 id="branding-logo-adjustments-title">2. Anpassungen</h3>
+          <div className="branding-logo-control-grid">
+            <LogoEditorControl
+              decreaseLabel="Logo verkleinern"
+              increaseLabel="Logo vergrößern"
+              label="Größe"
+              onDecrease={() => setManual({ scale: Math.max(0.75, presentation.scale - 0.05) })}
+              onIncrease={() => setManual({ scale: Math.min(3, presentation.scale + 0.05) })}
+              value={`${Math.round(presentation.scale * 100)} %`}
+            />
+            <LogoEditorControl
+              decreaseLabel="Logo nach links verschieben"
+              increaseLabel="Logo nach rechts verschieben"
+              label="Horizontal"
+              onDecrease={() => setManual({ positionX: Math.max(0, presentation.positionX - 0.05) })}
+              onIncrease={() => setManual({ positionX: Math.min(1, presentation.positionX + 0.05) })}
+              value={`${Math.round(presentation.positionX * 100)} %`}
+            />
+            <LogoEditorControl
+              decreaseLabel="Logo nach oben verschieben"
+              increaseLabel="Logo nach unten verschieben"
+              label="Vertikal"
+              onDecrease={() => setManual({ positionY: Math.max(0, presentation.positionY - 0.05) })}
+              onIncrease={() => setManual({ positionY: Math.min(1, presentation.positionY + 0.05) })}
+              value={`${Math.round(presentation.positionY * 100)} %`}
+            />
+          </div>
+          <div className="branding-logo-editor-actions">
+            <button className="button secondary" onClick={() => onChange({ ...defaultLogoPresentation })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
+            <button className="button secondary" onClick={() => onChange(openingPresentationRef.current)} type="button"><RotateCcw size={18} /> Zurücksetzen</button>
+            {adjustment ? <button className="button secondary" onClick={() => onChange(adjustment)} type="button">Transparente Ränder einpassen</button> : null}
+          </div>
+        </section>
+
+        <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
+          <div><h3 id="logo-context-preview-title">3. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
+          <div className="branding-logo-context-grid">
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div><span>Gäste-Header</span></article>
+            <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /></div><span>Restaurantdetails</span></article>
+            <article><div className="branding-context-print"><RestaurantLogoStage {...previewProps} size="print" /><QrCode aria-hidden="true" size={30} /></div><span>QR Starter Kit</span></article>
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><strong>{name}</strong></div><span>Mitarbeiter-Header</span></article>
+          </div>
+        </section>
       </div>
     </AppDrawer>
   );

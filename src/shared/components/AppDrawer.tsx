@@ -9,7 +9,7 @@ type AppDrawerProps = {
   footer?: ReactNode;
   onClose: () => void;
   open: boolean;
-  size?: "compact" | "standard" | "large";
+  size?: "compact" | "standard" | "large" | "workspace";
   title: string;
 };
 
@@ -99,7 +99,7 @@ export function AppDrawer({
 
   return createPortal(
     <div
-      className="app-drawer-overlay"
+      className={`app-drawer-overlay app-drawer-overlay-${size}`}
       onClick={(event) => {
         if (dismissOnOverlay && event.target === event.currentTarget) closeRef.current();
       }}
