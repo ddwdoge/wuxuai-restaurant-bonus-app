@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Kunden-Abmeldung beendet zentrale Sitzung
+
+- Den restaurantbezogenen Abmeldeweg an die zentrale Supabase-Kundensitzung
+  angebunden, statt nur den lokal gespeicherten Restaurantzugang zu entfernen.
+- Nach der Abmeldung wird die Kunden-Loginseite geöffnet; Reload und direktes
+  erneutes Öffnen eines Restaurants stellen keine Kundendaten automatisch
+  wieder her.
+- Membership, Punkte, Restaurantzuordnung, RLS und Datenbankverträge bleiben
+  unverändert.
+
 ## 2026-08-27 - Customer-Angebote und Belohnungen horizontal durchsuchbar
 
 - Einen gemeinsamen barrierefreien Horizontal-Carousel-Baustein für

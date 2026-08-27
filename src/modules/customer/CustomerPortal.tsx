@@ -113,6 +113,7 @@ import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/Restaur
 import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
 import { CustomerRestaurantSwitcher } from "./components/CustomerRestaurantSwitcher";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
+import { useAuth } from "../auth/AuthProvider";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -239,6 +240,7 @@ type CustomerPortalProps = {
 };
 
 export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPortalProps) {
+  const { signOut } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
@@ -1202,7 +1204,11 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         customerToken: activeToken,
       });
     }
-    window.location.assign(`/customer/${restaurantSlug}`);
+    try {
+      await signOut();
+    } finally {
+      window.location.assign("/customer/login");
+    }
   }
 
   function openRewardRedemption(reward: PublicCustomerOfferView) {
