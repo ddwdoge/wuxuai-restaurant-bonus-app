@@ -95,6 +95,7 @@ test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukont
   ]);
   assert.match(settings, /title="Logo anpassen"/);
   assert.match(settings, /size="workspace"/);
+  assert.match(settings, /className="branding-logo-drawer"/);
   assert.match(settings, /1\. Live-Vorschau/);
   assert.match(settings, /branding-logo-safe-area/);
   assert.match(settings, /Sicherheitsbereich/);
@@ -116,6 +117,7 @@ test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukont
   assert.match(settings, /footer=\{\(/);
   assert.match(settings, /openingPresentationRef/);
   assert.match(styles, /app-drawer-workspace[\s\S]*height: min\(90dvh, 820px\)/);
+  assert.match(styles, /app-drawer-workspace\.branding-logo-drawer \{ height: min\(90dvh, 680px\); \}/);
   assert.doesNotMatch(settings, /2\. Anpassungen/);
   assert.doesNotMatch(settings, /branding-logo-control-grid/);
   assert.match(styles, /branding-logo-safe-area[\s\S]*touch-action: none/);

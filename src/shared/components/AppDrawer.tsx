@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 
 type AppDrawerProps = {
   children: ReactNode;
+  className?: string;
   description?: string;
   dismissOnOverlay?: boolean;
   footer?: ReactNode;
@@ -24,6 +25,7 @@ const focusableSelector = [
 
 export function AppDrawer({
   children,
+  className = "",
   description,
   dismissOnOverlay = true,
   footer,
@@ -109,7 +111,7 @@ export function AppDrawer({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`app-drawer-panel app-drawer-${size}`}
+        className={`app-drawer-panel app-drawer-${size}${className ? ` ${className}` : ""}`}
         ref={panelRef}
         role="dialog"
         tabIndex={-1}

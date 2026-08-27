@@ -440,6 +440,7 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
 
   return (
     <AppDrawer
+      className="branding-logo-drawer"
       description="Positioniere dein Logo direkt in der Vorschau."
       footer={(
         <>

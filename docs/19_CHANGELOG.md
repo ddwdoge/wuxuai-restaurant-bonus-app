@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Smart-Logo-Editor direkt bedienbar gemacht
+
+- Den Owner-Logo-Editor auf direkte Manipulation in der Live-Vorschau
+  umgestellt: Ziehen positioniert das Logo, Zwei-Finger-Geste und Mausrad zoomen.
+- Den großen Reglerbereich entfernt und nur kompakte Plus-/Minus-Aktionen,
+  automatische Anpassung, Zurücksetzen und vier horizontal durchsuchbare
+  Kontextvorschauen beibehalten.
+- Tastatursteuerung, Bewegungs- und Zoomgrenzen sowie synchrone Live-Vorschauen
+  ergänzt; Smart-Logo-Algorithmus, Persistenzvertrag und Bonuslogik bleiben
+  unverändert.
+
 ## 2026-08-27 - Smart-Logo-Editor als kompakter Workspace umgesetzt
 
 - Den Owner-Editor auf einen zentrierten Arbeitsbereich mit maximal 90 Prozent

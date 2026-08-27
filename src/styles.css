@@ -612,6 +612,7 @@ a {
 }
 
 .branding-logo-editor { display: grid; gap: 8px; min-width: 0; }
+.app-drawer-workspace.branding-logo-drawer { height: min(90dvh, 680px); }
 .branding-logo-section-heading { align-items: center; display: flex; gap: 16px; justify-content: space-between; }
 .branding-logo-section-heading h3, .branding-logo-section-heading p { margin: 0; }
 .branding-logo-section-heading p { align-items: center; color: #756b5f; display: inline-flex; font-size: 13px; gap: 6px; }
@@ -634,7 +635,8 @@ a {
 .branding-logo-contexts h3, .branding-logo-contexts p { margin: 0; }
 .branding-logo-contexts > div:first-child { align-items: baseline; display: flex; gap: 12px; justify-content: space-between; }
 .branding-logo-contexts p { font-size: 13px; }
-.branding-logo-context-grid { display: flex; gap: 10px; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 1px 1px 5px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.branding-logo-context-grid { display: flex; gap: 10px; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 1px 1px 5px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.branding-logo-context-grid::-webkit-scrollbar { display: none; }
 .branding-logo-context-grid article { align-content: space-between; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; flex: 1 1 0; gap: 6px; min-height: 116px; min-width: 190px; padding: 9px; scroll-snap-align: start; }
 .branding-logo-context-grid article > span { color: #756b5f; font-size: 11px; font-weight: 700; text-align: center; }
 .branding-logo-context-grid .restaurant-logo-stage img { padding: 4%; }
@@ -653,6 +655,7 @@ a {
 .branding-logo-save { min-width: 230px; }
 
 @media (max-width: 600px) {
+  .app-drawer-workspace.branding-logo-drawer { height: auto; }
   .branding-logo-context-grid article { flex: 0 0 min(76vw, 270px); }
   .branding-logo-live-stage { height: 200px; min-height: 200px; }
   .branding-logo-section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
