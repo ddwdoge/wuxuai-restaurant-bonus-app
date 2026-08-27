@@ -20,6 +20,13 @@ export function logoPresentationAtRelativeScale(
   baselineInput?: Partial<LogoPresentation> & Record<string, unknown>,
   factor?: number,
 ): LogoPresentation;
+export function logoPresentationAfterEditorDrag(
+  input?: Partial<LogoPresentation> & Record<string, unknown>,
+  deltaX?: number,
+  deltaY?: number,
+  stageWidth?: number,
+  stageHeight?: number,
+): LogoPresentation;
 export function logoCanvasPlacement(
   imageWidth: number,
   imageHeight: number,

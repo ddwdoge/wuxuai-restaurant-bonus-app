@@ -1,4 +1,14 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -35,6 +45,7 @@ import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import {
   defaultLogoPresentation,
+  logoPresentationAfterEditorDrag,
   logoPresentationAtRelativeScale,
   relativeLogoScale,
   transparentContentAdjustment,
@@ -271,38 +282,40 @@ type BrandingLogoEditorProps = {
   saving: boolean;
 };
 
-type LogoEditorControlProps = {
-  decreaseLabel: string;
-  increaseLabel: string;
-  label: string;
-  onDecrease: () => void;
-  onIncrease: () => void;
-  value: string;
-};
-
-function LogoEditorControl({ decreaseLabel, increaseLabel, label, onDecrease, onIncrease, value }: LogoEditorControlProps) {
-  return (
-    <div className="branding-logo-control">
-      <span>{label}</span>
-      <div className="branding-logo-control-row">
-        <button aria-label={decreaseLabel} onClick={onDecrease} type="button"><Minus aria-hidden="true" size={17} /></button>
-        <output>{value}</output>
-        <button aria-label={increaseLabel} onClick={onIncrease} type="button"><Plus aria-hidden="true" size={17} /></button>
-      </div>
-    </div>
-  );
-}
-
 function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
   const openingPresentationRef = useRef(presentation);
   const wasOpenRef = useRef(false);
+  const presentationRef = useRef(presentation);
+  const autoFitBaselineRef = useRef(adjustment ?? { ...defaultLogoPresentation });
+  const activePointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const gestureRef = useRef<
+    | { mode: "drag"; pointerId: number; startX: number; startY: number; presentation: LogoPresentation }
+    | { mode: "pinch"; startDistance: number; startRelativeScale: number }
+    | null
+  >(null);
   const [autoFitBaseline, setAutoFitBaseline] = useState<LogoPresentation>(adjustment ?? { ...defaultLogoPresentation });
   const [imageMetrics, setImageMetrics] = useState({ aspect: "wide" as "wide" | "tall" | "square", ratio: 2 });
+  const [interacting, setInteracting] = useState(false);
 
   useEffect(() => {
     if (open && !wasOpenRef.current) openingPresentationRef.current = presentation;
     wasOpenRef.current = open;
   }, [open, presentation]);
+
+  useEffect(() => {
+    presentationRef.current = presentation;
+  }, [presentation]);
+
+  useEffect(() => {
+    autoFitBaselineRef.current = autoFitBaseline;
+  }, [autoFitBaseline]);
+
+  useEffect(() => {
+    if (open) return;
+    activePointersRef.current.clear();
+    gestureRef.current = null;
+    setInteracting(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -327,6 +340,98 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
     const nextFactor = Math.max(0.01, Math.round((relativeScale + delta) * 20) / 20);
     onChange(logoPresentationAtRelativeScale(presentation, autoFitBaseline, nextFactor));
   };
+  const applyAutoFit = () => onChange({ ...autoFitBaselineRef.current });
+  const beginPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    setInteracting(true);
+    const pointers = [...activePointersRef.current.entries()];
+    if (pointers.length === 1) {
+      gestureRef.current = {
+        mode: "drag",
+        pointerId: event.pointerId,
+        presentation: presentationRef.current,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
+      return;
+    }
+    const [, first] = pointers[0];
+    const [, second] = pointers[1];
+    gestureRef.current = {
+      mode: "pinch",
+      startDistance: Math.max(1, Math.hypot(second.x - first.x, second.y - first.y)),
+      startRelativeScale: relativeLogoScale(presentationRef.current, autoFitBaselineRef.current),
+    };
+  };
+  const movePointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!activePointersRef.current.has(event.pointerId)) return;
+    event.preventDefault();
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const gesture = gestureRef.current;
+    const pointers = [...activePointersRef.current.values()];
+    if (gesture?.mode === "pinch" && pointers.length >= 2) {
+      const distance = Math.max(1, Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y));
+      onChange(logoPresentationAtRelativeScale(
+        presentationRef.current,
+        autoFitBaselineRef.current,
+        gesture.startRelativeScale * (distance / gesture.startDistance),
+      ));
+      return;
+    }
+    if (gesture?.mode === "drag" && gesture.pointerId === event.pointerId) {
+      const bounds = event.currentTarget.getBoundingClientRect();
+      onChange(logoPresentationAfterEditorDrag(
+        gesture.presentation,
+        event.clientX - gesture.startX,
+        event.clientY - gesture.startY,
+        bounds.width,
+        bounds.height,
+      ));
+    }
+  };
+  const finishPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const remaining = [...activePointersRef.current.entries()];
+    if (remaining.length === 1) {
+      const [pointerId, pointer] = remaining[0];
+      gestureRef.current = {
+        mode: "drag",
+        pointerId,
+        presentation: presentationRef.current,
+        startX: pointer.x,
+        startY: pointer.y,
+      };
+      return;
+    }
+    if (remaining.length === 0) {
+      gestureRef.current = null;
+      setInteracting(false);
+    }
+  };
+  const zoomWithWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const direction = event.deltaY > 0 || event.deltaX > 0 ? -0.05 : 0.05;
+    const currentScale = relativeLogoScale(presentationRef.current, autoFitBaselineRef.current);
+    onChange(logoPresentationAtRelativeScale(
+      presentationRef.current,
+      autoFitBaselineRef.current,
+      currentScale + direction,
+    ));
+  };
+  const handleEditorKeys = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 0.05 : 0.01;
+    const deltaX = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
+    const deltaY = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+    setManual({
+      positionX: Math.min(1, Math.max(0, presentationRef.current.positionX + deltaX)),
+      positionY: Math.min(1, Math.max(0, presentationRef.current.positionY + deltaY)),
+    });
+  };
   const previewProps = { logoUrl, name, presentation, primaryColor };
   const cancelEditor = () => {
     onChange(openingPresentationRef.current);
@@ -335,7 +440,7 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
 
   return (
     <AppDrawer
-      description="Passe Größe und Position an, ohne das Originalbild zu verändern."
+      description="Positioniere dein Logo direkt in der Vorschau."
       footer={(
         <>
           <button className="button secondary" disabled={saving} onClick={cancelEditor} type="button">Abbrechen</button>
@@ -351,53 +456,41 @@ function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSa
         <section className="branding-logo-live" aria-labelledby="branding-logo-live-title">
           <header className="branding-logo-section-heading">
             <h3 id="branding-logo-live-title">1. Live-Vorschau</h3>
-            <p><Info aria-hidden="true" size={16} /> Das Logo wird proportional dargestellt.</p>
+            <p id="branding-logo-gesture-help"><Info aria-hidden="true" size={16} /><span className="branding-logo-help-desktop">Ziehe das Logo zum Positionieren. Zoome mit Trackpad/Maus oder +/−.</span><span className="branding-logo-help-mobile">Ziehe das Logo. Mit zwei Fingern kannst du zoomen.</span></p>
           </header>
           <div className="branding-logo-live-stage">
-            <div className={`branding-logo-safe-area aspect-${imageMetrics.aspect}`} style={{ "--branding-logo-source-ratio": imageMetrics.ratio } as React.CSSProperties}>
+            <div
+              aria-describedby="branding-logo-gesture-help"
+              aria-label="Logo positionieren"
+              className={`branding-logo-safe-area aspect-${imageMetrics.aspect}${interacting ? " is-interacting" : ""}`}
+              onDoubleClick={applyAutoFit}
+              onKeyDown={handleEditorKeys}
+              onPointerCancel={finishPointerGesture}
+              onPointerDown={beginPointerGesture}
+              onPointerMove={movePointerGesture}
+              onPointerUp={finishPointerGesture}
+              onWheel={zoomWithWheel}
+              role="group"
+              style={{ "--branding-logo-source-ratio": imageMetrics.ratio } as React.CSSProperties}
+              tabIndex={0}
+            >
               <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" onImageMetrics={setImageMetrics} size="preview" />
+              <div className="branding-logo-zoom-controls" onPointerDown={(event) => event.stopPropagation()}>
+                <button aria-label="Logo verkleinern" onClick={() => adjustRelativeScale(-0.05)} type="button"><Minus aria-hidden="true" size={17} /></button>
+                <output aria-live="polite">Zoom {Math.round(relativeScale * 100)} %</output>
+                <button aria-label="Logo vergrößern" onClick={() => adjustRelativeScale(0.05)} type="button"><Plus aria-hidden="true" size={17} /></button>
+              </div>
             </div>
-            <span>Sicherheitsbereich</span>
-          </div>
-        </section>
-
-        <section className="branding-logo-adjustments" aria-labelledby="branding-logo-adjustments-title">
-          <h3 id="branding-logo-adjustments-title">2. Anpassungen</h3>
-          <div className="branding-logo-control-grid">
-            <LogoEditorControl
-              decreaseLabel="Logo verkleinern"
-              increaseLabel="Logo vergrößern"
-              label="Größe"
-              onDecrease={() => adjustRelativeScale(-0.05)}
-              onIncrease={() => adjustRelativeScale(0.05)}
-              value={`${Math.round(relativeScale * 100)} %`}
-            />
-            <LogoEditorControl
-              decreaseLabel="Logo nach links verschieben"
-              increaseLabel="Logo nach rechts verschieben"
-              label="Horizontal"
-              onDecrease={() => setManual({ positionX: Math.max(0, presentation.positionX - 0.05) })}
-              onIncrease={() => setManual({ positionX: Math.min(1, presentation.positionX + 0.05) })}
-              value={`${Math.round(presentation.positionX * 100)} %`}
-            />
-            <LogoEditorControl
-              decreaseLabel="Logo nach oben verschieben"
-              increaseLabel="Logo nach unten verschieben"
-              label="Vertikal"
-              onDecrease={() => setManual({ positionY: Math.max(0, presentation.positionY - 0.05) })}
-              onIncrease={() => setManual({ positionY: Math.min(1, presentation.positionY + 0.05) })}
-              value={`${Math.round(presentation.positionY * 100)} %`}
-            />
+            <span className="branding-logo-safe-area-label">Sicherheitsbereich</span>
           </div>
           <div className="branding-logo-editor-actions">
-            <button className="button secondary" onClick={() => onChange({ ...autoFitBaseline })} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
+            <button className="button secondary" onClick={applyAutoFit} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
             <button className="button secondary" onClick={() => onChange(openingPresentationRef.current)} type="button"><RotateCcw size={18} /> Zurücksetzen</button>
-            {adjustment ? <button className="button secondary" onClick={() => onChange(adjustment)} type="button">Transparente Ränder einpassen</button> : null}
           </div>
         </section>
 
         <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
-          <div><h3 id="logo-context-preview-title">3. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
+          <div><h3 id="logo-context-preview-title">2. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
           <div className="branding-logo-context-grid">
             <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong></div></div><span>Gäste-Header</span></article>
             <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /><strong>{name}</strong></div><span>Restaurantdetails</span></article>

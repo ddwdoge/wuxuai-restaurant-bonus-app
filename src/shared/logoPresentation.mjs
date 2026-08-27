@@ -60,6 +60,19 @@ export function logoPresentationAtRelativeScale(input = {}, baselineInput = {}, 
   });
 }
 
+export function logoPresentationAfterEditorDrag(input = {}, deltaX = 0, deltaY = 0, stageWidth = 1, stageHeight = 1) {
+  const presentation = clampLogoPresentation(input);
+  const safeWidth = Math.max(1, finiteNumber(stageWidth, 1));
+  const safeHeight = Math.max(1, finiteNumber(stageHeight, 1));
+  const translationRange = 0.34;
+  return clampLogoPresentation({
+    ...presentation,
+    fitMode: "manual",
+    positionX: presentation.positionX + finiteNumber(deltaX, 0) / (safeWidth * translationRange),
+    positionY: presentation.positionY + finiteNumber(deltaY, 0) / (safeHeight * translationRange),
+  });
+}
+
 export function logoCanvasPlacement(imageWidth, imageHeight, area, input = {}) {
   const presentation = clampLogoPresentation(input);
   const aspect = logoAspectKind(imageWidth, imageHeight);

@@ -6,6 +6,7 @@ import {
   logoAspectKind,
   logoCanvasPlacement,
   logoImageStyle,
+  logoPresentationAfterEditorDrag,
   logoPresentationAtRelativeScale,
   relativeLogoScale,
   transparentContentAdjustment,
@@ -49,6 +50,16 @@ test("Owner-Anpassungen werden begrenzt und bleiben reine Präsentationsdaten", 
   assert.match(logoImageStyle({ fitMode: "manual", positionX: 0.75, positionY: 0.25, scale: 1.4 }).transform, /scale\(1\.4\)/);
 });
 
+test("Direktes Ziehen schreibt nur begrenzte bestehende Positionswerte", () => {
+  const start = { fitMode: "manual", positionX: 0.5, positionY: 0.5, scale: 1.2 };
+  assert.deepEqual(logoPresentationAfterEditorDrag(start, 34, -17, 200, 100), {
+    fitMode: "manual", positionX: 1, positionY: 0, scale: 1.2,
+  });
+  assert.deepEqual(logoPresentationAfterEditorDrag(start, 9999, 9999, 200, 100), {
+    fitMode: "manual", positionX: 1, positionY: 1, scale: 1.2,
+  });
+});
+
 test("Transparenter Innenabstand kann sicher vorgeschlagen, aber nicht destruktiv entfernt werden", () => {
   const adjustment = transparentContentAdjustment({ left: 200, right: 799, top: 200, bottom: 799 }, 1000, 1000);
   assert.equal(adjustment?.fitMode, "manual");
@@ -76,7 +87,7 @@ test("Gemeinsame LogoStage behandelt defekte Quellen ohne sichtbaren Browser-Fal
   assert.doesNotMatch(component, /dangerouslySetInnerHTML/);
 });
 
-test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukontexte", async () => {
+test("Owner-Editor unterstützt direkte Manipulation und vier reale Vorschaukontexte", async () => {
   const [settings, styles, drawer] = await Promise.all([
     read("src/modules/admin/pages/SettingsPage.tsx"),
     read("src/styles.css"),
@@ -90,10 +101,14 @@ test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukont
   assert.match(settings, /Automatisch einpassen/);
   assert.match(settings, /relativeLogoScale/);
   assert.match(settings, /logoPresentationAtRelativeScale/);
+  assert.match(settings, /logoPresentationAfterEditorDrag/);
   assert.match(settings, /Zurücksetzen/);
   assert.match(settings, /Logo verkleinern/);
-  assert.match(settings, /Logo nach links verschieben/);
-  assert.match(settings, /Logo nach oben verschieben/);
+  assert.match(settings, /onPointerDown=\{beginPointerGesture\}/);
+  assert.match(settings, /onPointerMove=\{movePointerGesture\}/);
+  assert.match(settings, /onWheel=\{zoomWithWheel\}/);
+  assert.match(settings, /onKeyDown=\{handleEditorKeys\}/);
+  assert.match(settings, /Mit zwei Fingern kannst du zoomen/);
   assert.match(settings, /Gäste-Header/);
   assert.match(settings, /Restaurantdetails/);
   assert.match(settings, /QR Starter Kit/);
@@ -101,8 +116,11 @@ test("Owner-Editor unterstützt Auto, Zoom, Position und vier reale Vorschaukont
   assert.match(settings, /footer=\{\(/);
   assert.match(settings, /openingPresentationRef/);
   assert.match(styles, /app-drawer-workspace[\s\S]*height: min\(90dvh, 820px\)/);
-  assert.match(styles, /branding-logo-control-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(styles, /branding-logo-context-grid[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(settings, /2\. Anpassungen/);
+  assert.doesNotMatch(settings, /branding-logo-control-grid/);
+  assert.match(styles, /branding-logo-safe-area[\s\S]*touch-action: none/);
+  assert.match(styles, /branding-logo-context-grid[\s\S]*overflow-x: auto/);
+  assert.match(styles, /scroll-snap-type: x mandatory/);
   assert.match(styles, /--branding-logo-source-ratio/);
   assert.match(styles, /min-height: 116px/);
   assert.match(drawer, /app-drawer-overlay-\$\{size\}/);

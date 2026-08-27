@@ -617,26 +617,25 @@ a {
 .branding-logo-section-heading p { align-items: center; color: #756b5f; display: inline-flex; font-size: 13px; gap: 6px; }
 .branding-logo-live { display: grid; gap: 8px; }
 .branding-logo-live-stage { align-items: center; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: flex; height: clamp(190px, 24vh, 220px); justify-content: center; min-height: 0; padding: 10px 16px 18px; position: relative; }
-.branding-logo-safe-area { align-items: center; aspect-ratio: var(--branding-logo-source-ratio, 2); border: 1px dashed color-mix(in srgb, #4f9b68 62%, #d8e8dc); border-radius: 8px; display: flex; height: 100%; justify-content: center; max-width: 92%; min-height: 0; padding: 8px; width: auto; }
+.branding-logo-safe-area { align-items: center; aspect-ratio: var(--branding-logo-source-ratio, 2); border: 1px dashed color-mix(in srgb, #4f9b68 62%, #d8e8dc); border-radius: 8px; cursor: grab; display: flex; height: 100%; justify-content: center; max-width: 92%; min-height: 0; padding: 8px; position: relative; touch-action: none; user-select: none; width: auto; }
+.branding-logo-safe-area:focus-visible { outline: 3px solid color-mix(in srgb, #9a6b1f 48%, transparent); outline-offset: 3px; }
+.branding-logo-safe-area.is-interacting { cursor: grabbing; }
 .branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main { aspect-ratio: var(--branding-logo-source-ratio, 2); height: 100%; max-height: 100%; max-width: 100%; min-height: 0; width: 100%; }
 .branding-logo-safe-area .restaurant-logo-stage.branding-logo-editor-main img { padding: 7%; }
-.branding-logo-live-stage > span { background: #fbfaf7; bottom: 5px; color: #4f8c61; font-size: 11px; font-weight: 700; left: 50%; padding: 0 6px; position: absolute; transform: translateX(-50%); }
-.branding-logo-adjustments { display: grid; gap: 7px; }
-.branding-logo-adjustments > h3 { margin: 0; }
-.branding-logo-control-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.branding-logo-control { border: 1px solid #e7ddcd; border-radius: 8px; display: grid; gap: 5px; min-width: 0; padding: 7px 9px; }
-.branding-logo-control > span { font-size: 13px; font-weight: 700; }
-.branding-logo-control-row { align-items: center; display: grid; gap: 8px; grid-template-columns: 44px minmax(52px, 1fr) 44px; }
-.branding-logo-control-row button { align-items: center; background: #f8f5ef; border: 1px solid #e7ddcd; border-radius: 8px; display: inline-flex; height: 44px; justify-content: center; width: 44px; }
-.branding-logo-control-row output { color: #8a641e; font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 800; text-align: center; }
+.branding-logo-safe-area.is-interacting img { transition: none; }
+.branding-logo-safe-area-label { background: #fbfaf7; bottom: 5px; color: #4f8c61; font-size: 11px; font-weight: 700; left: 50%; padding: 0 6px; position: absolute; transform: translateX(-50%); }
+.branding-logo-zoom-controls { align-items: center; background: rgb(255 255 255 / 94%); border: 1px solid #e7ddcd; border-radius: 8px; bottom: 7px; box-shadow: 0 5px 18px rgb(39 30 18 / 10%); cursor: default; display: flex; gap: 5px; padding: 3px; position: absolute; right: 7px; z-index: 2; }
+.branding-logo-zoom-controls button { align-items: center; background: #f8f5ef; border: 0; border-radius: 6px; display: inline-flex; height: 40px; justify-content: center; width: 40px; }
+.branding-logo-zoom-controls output { color: #8a641e; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 800; min-width: 76px; text-align: center; }
+.branding-logo-help-mobile { display: none; }
 .branding-logo-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .branding-logo-editor-actions .button { min-height: 42px; }
 .branding-logo-contexts { border-top: 1px solid #e7ddcd; display: grid; gap: 5px; padding-top: 7px; }
 .branding-logo-contexts h3, .branding-logo-contexts p { margin: 0; }
 .branding-logo-contexts > div:first-child { align-items: baseline; display: flex; gap: 12px; justify-content: space-between; }
 .branding-logo-contexts p { font-size: 13px; }
-.branding-logo-context-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.branding-logo-context-grid article { align-content: space-between; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; gap: 6px; min-height: 116px; min-width: 0; padding: 9px; }
+.branding-logo-context-grid { display: flex; gap: 10px; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 1px 1px 5px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.branding-logo-context-grid article { align-content: space-between; background: #fbfaf7; border: 1px solid #e7ddcd; border-radius: 8px; display: grid; flex: 1 1 0; gap: 6px; min-height: 116px; min-width: 190px; padding: 9px; scroll-snap-align: start; }
 .branding-logo-context-grid article > span { color: #756b5f; font-size: 11px; font-weight: 700; text-align: center; }
 .branding-logo-context-grid .restaurant-logo-stage img { padding: 4%; }
 .branding-context-header { align-items: center; display: flex; gap: 10px; min-height: 72px; min-width: 0; }
@@ -654,10 +653,12 @@ a {
 .branding-logo-save { min-width: 230px; }
 
 @media (max-width: 600px) {
-  .branding-logo-context-grid { grid-template-columns: 1fr; }
-  .branding-logo-control-grid { grid-template-columns: 1fr; }
+  .branding-logo-context-grid article { flex: 0 0 min(76vw, 270px); }
   .branding-logo-live-stage { height: 200px; min-height: 200px; }
   .branding-logo-section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .branding-logo-help-desktop { display: none; }
+  .branding-logo-help-mobile { display: inline; }
+  .branding-logo-zoom-controls output { min-width: 68px; }
 }
 
 .settings-hours-grid {
