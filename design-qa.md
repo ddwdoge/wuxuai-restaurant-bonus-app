@@ -51,3 +51,34 @@ Neue Vergleichsaufnahmen:
 - Globaler horizontaler Overflow: keiner
 - Tabwechsel-Layout-Shift: keiner
 - final result: passed
+
+---
+
+# Design QA - Compact Smart Logo Editor V2
+
+## Referenz
+
+- `ChatGPT Image 27. Aug. 2026, 22_05_34.png`
+- Vergleichszustand: reales breites Logo mit internem Weissraum, 125 Prozent,
+  X/Y zentriert
+
+## Vergleich
+
+- P0: keine
+- P1: keine
+- P2: keine
+- P3: Die Verwendungsvorschauen sind bewusst kompakter als in der konzeptionellen
+  Referenz, damit der gesamte Ablauf bei 1280 x 720 und 1366 x 768 ohne Scrollen
+  im Editorinhalt sichtbar bleibt.
+- Zentrierter Workspace, kompakter Kopf und fest sichtbarer Footer stimmen mit
+  dem ausgewaehlten Zielbild ueberein.
+- Das reale Logo ist im gestrichelten Bearbeitungs-Sicherheitsrahmen sichtbar.
+- Groesse und X-/Y-Position aktualisieren alle fuenf LogoStage-Instanzen sofort.
+- Vier gleich grosse Vorschaukarten verwenden den gemeinsamen Produktiv-Renderer.
+- 390 und 430 Pixel stapeln Steuerungen und Vorschauen mit festem Footer.
+- 768 und 1024 Pixel behalten drei Steuerungen und vier Vorschauen pro Zeile.
+- Keine Browserfehler; nur bestehende React-Router-v7-Zukunftswarnungen.
+
+## Ergebnis
+
+- final result: passed

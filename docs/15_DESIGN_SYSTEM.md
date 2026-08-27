@@ -1180,3 +1180,12 @@ Endstatus: **LOCK**
   feste Bildhintergründe bleiben Teil des Logos.
 - Ein Ladefehler behält die Abmessungen und wechselt genau einmal auf den
   Restaurant-Fallback, ohne Retry-Schleife, Fehlerbild oder sichtbaren Alttext.
+- Der Owner-Editor verwendet einen zentrierten Workspace mit maximal 90 Prozent
+  Viewporthöhe, kompaktem Kopf und festem Aktionsbereich. Nur der mittlere
+  Inhalt darf auf kleinen Höhen scrollen.
+- Die Bearbeitungsansicht zeigt einen gestrichelten Sicherheitsrahmen, drei
+  gleichwertige 44-Pixel-Schrittsteuerungen und vier kompakte Vorschauen über
+  die gemeinsame `RestaurantLogoStage`. Der Rahmen gehört ausschließlich zum
+  Editor und erscheint nie in Customer-, Staff- oder Druckansichten.
+- Unter 600 Pixel werden Steuerungen und Vorschauen einspaltig angeordnet;
+  Speichern und Abbrechen bleiben am unteren Rand erreichbar.

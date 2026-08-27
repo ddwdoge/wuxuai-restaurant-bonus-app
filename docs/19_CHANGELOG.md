@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Smart-Logo-Editor als kompakter Workspace umgesetzt
+
+- Den Owner-Editor auf einen zentrierten Arbeitsbereich mit maximal 90 Prozent
+  Viewporthöhe, kompaktem Kopf und fest sichtbarem Aktionsbereich umgestellt.
+- Live-Vorschau mit Bearbeitungs-Sicherheitsrahmen, drei kompakten
+  Schrittsteuerungen und vier echten `RestaurantLogoStage`-Kontexten gemeinsam
+  sichtbar gemacht.
+- Mobile Steuerungen und Vorschauen einspaltig angeordnet; Smart-Logo-
+  Algorithmus, Bilddateien, Persistenzvertrag und Bonuslogik unverändert gelassen.
+
 ## 2026-08-27 - A6-Starter-Kit gegen physische Druckraender abgesichert
 
 - Beide Starter-Kit-Generatoren auf eine echte A6-MediaBox von `105 x 148 mm`

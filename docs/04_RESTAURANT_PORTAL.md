@@ -782,6 +782,12 @@ korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
   eingepasst. Das Originalbild wird nicht zugeschnitten oder verändert.
 - Bei Bedarf passt der Owner Größe sowie horizontale und vertikale Position an
   und kann jederzeit zu `Automatisch einpassen` zurückkehren.
+- Der Editor öffnet als kompakter, zentrierter Arbeitsbereich. Live-Vorschau,
+  Sicherheitsrahmen, die drei Anpassungen, vier reale Verwendungsvorschauen
+  und die fest erreichbare Speicheraktion bleiben auf üblichen Desktop- und
+  Tabletgrößen gemeinsam sichtbar. Auf Mobile scrollt nur der Editorinhalt.
+- `Zurücksetzen` stellt den beim Öffnen gespeicherten Stand wieder her;
+  `Automatisch einpassen` setzt dagegen die empfohlene Standarddarstellung.
 - Transparente Innenabstände dürfen als nicht-destruktiver Vorschlag korrigiert
   werden. Ein vorhandener Bildhintergrund wird niemals automatisch entfernt.
 - Customer-, Staff- und QR-Starter-Kit-Flächen nutzen dieselbe LogoStage und

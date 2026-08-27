@@ -267,7 +267,7 @@ function LogoEditorControl({ decreaseLabel, increaseLabel, label, onDecrease, on
   );
 }
 
-export function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
+function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
   const openingPresentationRef = useRef(presentation);
   const wasOpenRef = useRef(false);
 
