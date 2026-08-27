@@ -40,10 +40,15 @@ aktive Navigation begrenzt. Lucide-Icons ersetzen Emoji-Icons in der
 eigentlichen Kundenoberfläche.
 
 Horizontale Customer-Discovery-Flächen verwenden einen gemeinsamen nativen
-Swipe-Baustein. Auf Mobile belegt eine Karte rund 86 Prozent der verfügbaren
-Breite und lässt einen Teil der nächsten Karte sichtbar. Pfeile besitzen
+Swipe-Baustein. Auf Mobile belegt eine Karte 83 Prozent der verfügbaren
+Breite und lässt 12 bis 15 Prozent der nächsten Karte sichtbar. Pfeile besitzen
 mindestens 44 Pixel Touchfläche; die Position bleibt sekundär, und es gibt
 keine automatische Rotation.
+
+Offers, Punkteeinlösungen, Willkommens- und Geburtstagsgeschenke verwenden die
+kanonischen Customer-Card-Tokens für Breite, 13-Pixel-Abstand, 18-Pixel-Radius,
+12-Pixel-Innenabstand und 16:9-Medien. Lange Inhalte dürfen die Kartenhöhe leicht
+variieren, die Module bleiben jedoch sichtbar in derselben kompakten Größenklasse.
 
 Das Design soll nicht wie ein technisches Admin-System wirken.
 
@@ -1063,6 +1068,25 @@ Verboten:
 - technische Begriffe wie `Slug`, `RPC`, `Token` oder `API`
 
 Wenn Daten fehlen, zeigt die UI einen ruhigen deutschen Status statt Demo-Daten.
+
+---
+
+## 23.1 Customer Restaurant-Schnellwechsel
+
+- Der kompakte Restaurant-Header bleibt eine gemeinsame Komponente auf allen
+  restaurantbezogenen Customer-Seiten. Logo, einzeilig gekürzter Name und
+  Chevron bilden zusammen ein mindestens 44 Pixel hohes Auswahlziel.
+- Die Informationstaste bleibt ein separates 44-Pixel-Ziel und darf auch bei
+  langen Restaurantnamen nicht verdrängt werden.
+- Der Switcher verwendet den bestehenden Premium-Drawer. Auf Mobile ist er
+  höchstens 76 dVH hoch; bei vielen Memberships scrollt nur die Restaurantliste.
+- Das aktuelle Restaurant steht zuerst. Zeilen enthalten ausschließlich Logo,
+  Name, optional Ort, Punktestand und den Status `Aktuell`.
+- Lange Namen werden innerhalb der verfügbaren Breite gekürzt. Header, Drawer
+  und Zeilen dürfen keine horizontale Seitenbreite erzeugen.
+- Während des serverseitigen Wechsels ersetzt ein ruhiger Status
+  `Restaurant wird gewechselt…` die Liste. Ein Fehler bleibt im Drawer und
+  bietet eine klar beschriftete Wiederholung an.
 
 ---
 

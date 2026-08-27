@@ -111,6 +111,7 @@ import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
 import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanner";
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
 import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
+import { CustomerRestaurantSwitcher } from "./components/CustomerRestaurantSwitcher";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -279,6 +280,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const [collecting, setCollecting] = useState(false);
   const [creatingReferral, setCreatingReferral] = useState(false);
   const [restaurantScannerOpen, setRestaurantScannerOpen] = useState(false);
+  const [restaurantSwitcherOpen, setRestaurantSwitcherOpen] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
   const [pointsQr, setPointsQr] = useState<CustomerPointsQr | null>(null);
@@ -1353,8 +1355,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           logoUrl={branding.logo_url}
           name={restaurant.name}
           onInfo={() => setInfoOpen(true)}
+          onSwitchRestaurant={customer ? () => setRestaurantSwitcherOpen(true) : undefined}
           primaryColor={branding.primary_color}
           subtitle="Bonus für Gäste"
+        />
+
+        <CustomerRestaurantSwitcher
+          currentSlug={restaurant.slug}
+          onClose={() => setRestaurantSwitcherOpen(false)}
+          open={restaurantSwitcherOpen}
         />
 
         <AppDrawer
@@ -1924,7 +1933,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     title="Mit Punkten einlösbar"
                   />
                   {previewRedemptions.length ? (
-                    <div className="premium-reward-grid premium-home-reward-grid">
+                    <PremiumHorizontalCarousel label="Mit Punkten einlösbar">
                       {previewRedemptions.map((reward) => (
                         <RewardCard
                           category={reward.category ?? reward.product_group}
@@ -1938,7 +1947,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                           title={reward.title}
                         />
                       ))}
-                    </div>
+                    </PremiumHorizontalCarousel>
                   ) : (
                     <EmptyState description="Sobald das Restaurant eine Punkteeinlösung aktiviert, erscheint sie hier." title="Noch keine Punkteeinlösungen" />
                   )}

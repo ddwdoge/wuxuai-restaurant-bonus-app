@@ -25,6 +25,13 @@
   leerer persönlicher Bereich zeigt weiterhin den synchronisierten Empty State.
 - Swipe öffnet oder verwendet keine Belohnung. Detailansicht, Eligibility und
   serverzeitgebundene 15-Minuten-Präsentation bleiben unverändert.
+- Angebote, Punkteeinlösungen, Willkommensgeschenke und Geburtstagsgeschenke
+  gehören mobil zu derselben kompakten Kartenfamilie. Gemeinsame Tokens steuern
+  83 Prozent Kartenbreite, 13 Pixel Abstand, Radius, Innenabstand und 16:9-Medien.
+- Die Customer-Startseite zeigt mehrere Punkteeinlösungen ebenfalls horizontal;
+  zwei kleine vollständige Reward-Karten nebeneinander sind mobil nicht erlaubt.
+- Offer-Karten behalten Titel, Kurzbeschreibung, Gültigkeit, Zeitplan, Zeitraum,
+  Preis und Aktion, verdichten diese Angaben aber zu einem kompakten Rhythmus.
 
 ## Persönlicher Punkte-QR
 
@@ -915,3 +922,25 @@ Geburtstagsauslosung als primären V1-Kundenflow:
   halbe, der Referrer die volle aktuelle Owner-Dauer.
 - Nach Ablauf gibt es kein aktives Badge. Einladungs-CTA und restaurantbezogene
   Punktetrennung bleiben bestehen.
+
+## Globaler Restaurant-Schnellwechsel
+
+- Im authentifizierten Restaurantkontext öffnet Logo, Restaurantname und
+  Chevron im gemeinsamen Customer-Header den Dialog `Restaurant wechseln`.
+  Die separate Informationstaste behält ihre bisherige Funktion.
+- Die Liste stammt ausschließlich aus `get_customer_account()` und enthält nur
+  aktive Memberships des angemeldeten zentralen Kundenkontos. Null Punkte
+  bleiben sichtbar; Suche filtert nur diese bereits verbundenen Restaurants.
+- Ein manueller Wechsel verwendet `open_customer_account_membership(...)`.
+  Dadurch werden Membership und Restaurant serverseitig validiert, bevor der
+  kanonische Pfad `/customer/:slug` geladen wird.
+- QR und manueller Wechsel enden im selben `CustomerRestaurantAccess`. Es gibt
+  keinen zweiten clientseitigen Restaurantzustand und keinen Browser-Reload.
+- Beim Pfadwechsel wird der bisherige Portalinhalt sofort entfernt. Der neue
+  `CustomerPortal` erscheint erst nach dem validierten Öffnen des neuen
+  Restaurantkontexts, damit Header, Punkte, Rewards, Geschenke, Angebote,
+  Referral und 2×-Status nicht restaurantübergreifend gemischt werden.
+- Schlägt das Öffnen fehl, bleibt der bisherige Restaurantkontext bestehen und
+  der Dialog bietet `Erneut versuchen` an.
+- `Konto → Restaurants` und `Restaurants entdecken` bleiben als sekundäre
+  Verwaltung beziehungsweise Discovery erhalten.

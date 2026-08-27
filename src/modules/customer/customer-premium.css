@@ -24,6 +24,12 @@
   --premium-radius: 20px;
   --premium-shadow: 0 8px 30px rgba(50, 40, 25, 0.06);
   --premium-display-font: Georgia, "Times New Roman", serif;
+  --customer-card-mobile-width: 83%;
+  --customer-card-gap: 13px;
+  --customer-card-radius: 18px;
+  --customer-card-padding: 12px;
+  --customer-card-inline-inset: 24px;
+  --customer-card-media-ratio: 16 / 9;
   background: var(--premium-background);
   color: var(--premium-text);
   min-height: 100dvh;
@@ -172,11 +178,15 @@
   z-index: 10;
 }
 
-.premium-customer-header > div { display: grid; gap: 3px; min-width: 0; }
-.premium-customer-header > div span { color: var(--premium-text-secondary); font-size: 13px; }
-.premium-customer-header > div strong { font-size: 16px; line-height: 1.2; overflow-wrap: anywhere; }
-.premium-customer-header.compact > div { display: block; }
-.premium-customer-header.compact > div strong { font-weight: 600; }
+.premium-customer-header-copy { display: grid; gap: 3px; min-width: 0; }
+.premium-customer-header-copy > span { color: var(--premium-text-secondary); font-size: 13px; }
+.premium-customer-header-copy strong { display: block; font-size: 16px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.premium-customer-header.compact .premium-customer-header-copy { display: block; }
+.premium-customer-header.compact .premium-customer-header-copy strong { font-weight: 600; }
+.premium-customer-header:has(.premium-customer-restaurant-selector) { grid-template-columns: minmax(0, 1fr) auto; }
+.premium-customer-restaurant-selector { align-items: center; background: transparent; color: inherit; display: grid; gap: 10px; grid-column: 1; grid-template-columns: auto minmax(0, 1fr) auto; max-width: 100%; min-height: 44px; min-width: 0; padding: 0; text-align: left; width: 100%; }
+.premium-customer-restaurant-selector > svg { color: var(--premium-gold-dark); flex: 0 0 auto; }
+.premium-customer-restaurant-selector:focus-visible { border-radius: 12px; outline: 3px solid rgba(191, 143, 54, .34); outline-offset: 2px; }
 
 .premium-restaurant-logo {
   align-items: center;
@@ -407,24 +417,25 @@
 .premium-redemption-summary p { max-width: 52%; text-align: right; }
 .premium-redemption-rewards { min-width: 0; padding-bottom: 8px; width: 100%; }
 
-.premium-reward-card { align-content: start; gap: 11px; padding: 0 0 14px; overflow: hidden; }
-.premium-reward-media { aspect-ratio: 16 / 9; background: var(--premium-gold-soft); overflow: hidden; position: relative; }
+.premium-compact-customer-card { border-radius: var(--customer-card-radius); }
+.premium-reward-card { align-content: start; gap: 9px; padding: 0 0 var(--customer-card-padding); overflow: hidden; }
+.premium-reward-media { aspect-ratio: var(--customer-card-media-ratio); background: var(--premium-gold-soft); overflow: hidden; position: relative; }
 .premium-reward-image, .premium-reward-image img { height: 100%; width: 100%; }
 .premium-reward-image { align-items: center; color: var(--premium-gold-dark); display: flex; justify-content: center; }
 .premium-reward-image > svg { height: 44px; width: 44px; }
 .premium-reward-image > .reward-image-frame { height: 100%; }
 .premium-lock-badge { align-items: center; backdrop-filter: blur(8px); background: rgba(255, 255, 255, 0.88); border: 1px solid var(--premium-border); border-radius: 50%; color: var(--premium-text-secondary); display: flex; height: 42px; justify-content: center; position: absolute; right: 12px; top: 12px; width: 42px; }
-.premium-reward-copy { display: grid; gap: 5px; padding: 0 16px; }
+.premium-reward-copy { display: grid; gap: 4px; padding: 0 var(--customer-card-padding); }
 .premium-reward-copy > span { color: var(--premium-text-muted); font-size: 12px; font-weight: 600; }
 .premium-reward-copy h3 { font-size: 17px; font-weight: 600; line-height: 1.24; margin: 0; overflow-wrap: anywhere; }
 .premium-reward-copy strong { color: var(--premium-gold-dark); font-weight: 600; }
-.premium-reward-copy p { color: var(--premium-text-secondary); line-height: 1.45; margin: 0; }
+.premium-reward-copy p { color: var(--premium-text-secondary); line-height: 1.35; margin: 0; }
 .premium-reward-status { align-items: flex-start; display: flex; font-size: 13px; gap: 5px; }
 .premium-reward-status svg { flex: 0 0 auto; margin-top: 2px; }
 .premium-reward-status.state-available, .premium-reward-card.state-available .premium-reward-copy strong { color: var(--premium-success); }
 .premium-reward-status.state-expired, .premium-reward-status.state-redeemed { color: var(--premium-text-muted); }
 .premium-reward-card.state-expired .premium-reward-media, .premium-reward-card.state-redeemed .premium-reward-media { filter: saturate(0.3); opacity: 0.72; }
-.premium-reward-card > .premium-button { align-self: end; margin: 0 16px; min-height: 44px; width: calc(100% - 32px); }
+.premium-reward-card > .premium-button { align-self: end; margin: 0 var(--customer-card-padding); min-height: 44px; width: calc(100% - var(--customer-card-inline-inset)); }
 .premium-gift-preview .premium-reward-grid { grid-template-columns: 1fr; }
 .premium-gift-preview .premium-reward-media { aspect-ratio: 16 / 9; height: auto; }
 .premium-gift-preview .premium-reward-card { gap: 10px; }
@@ -753,7 +764,7 @@
   color: #fff;
 }
 
-.premium-collect-page .premium-customer-header > div span { color: #aaa39a; }
+.premium-collect-page .premium-customer-header-copy > span { color: #aaa39a; }
 .premium-collect-page .premium-icon-button { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.08); color: #ddd5c9; }
 .premium-collect-loading-page { align-content: center; }
 .premium-collect-loading-page .premium-loading-state { color: #b8b0a5; }
@@ -1199,7 +1210,7 @@
 }
 
 @media (max-width: 767px) {
-  .premium-home-reward-grid { gap: 10px; }
+  .premium-home-reward-grid { gap: var(--customer-card-gap); }
   .premium-redemption-rewards .premium-reward-card { gap: 9px; padding-bottom: 12px; }
   .premium-redemption-rewards .premium-reward-media { aspect-ratio: 16 / 9; }
   .premium-redemption-rewards .premium-reward-copy { padding: 0 12px; }

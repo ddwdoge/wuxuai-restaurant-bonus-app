@@ -237,9 +237,9 @@ test("Customer-Angebote zeigen Gültigkeitsstatus und kompakten Zeitplan", async
 
 test("Mobile Customer-Angebotskarten halten 16:9, Textgrenzen und volle CTA-Breite", async () => {
   const css = await readFile(customerOfferCssUrl, "utf8");
-  assert.match(css, /aspect-ratio: 16 \/ 9/);
+  assert.match(css, /aspect-ratio: var\(--customer-card-media-ratio, 16 \/ 9\)/);
   assert.match(css, /object-fit: cover/);
-  assert.match(css, /-webkit-line-clamp: 3/);
+  assert.match(css, /-webkit-line-clamp: 2/);
   assert.match(css, /customer-offer-card \.premium-button \{ min-height: 44px; width: 100%; \}/);
   assert.match(css, /@media \(max-width: 560px\)/);
   assert.match(css, /grid-template-columns: minmax\(0, 1fr\)/);

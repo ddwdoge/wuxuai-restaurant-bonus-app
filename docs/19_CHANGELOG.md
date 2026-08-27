@@ -3075,3 +3075,28 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   wurden durch einen kompakten, laufzeitneutralen Hinweis ersetzt.
 - QR-Groesse, Ruhezone, Typografie und Footer-Lesbarkeit wurden fuer A6
   verbessert, ohne QR-Payload, Route oder Bonuslogik zu veraendern.
+## 2026-08-27 - Customer Premium Cards kompakt vereinheitlicht
+
+- Angebote, Punkteeinlösungen und persönliche Geschenke verwenden eine gemeinsame
+  kompakte Customer-Kartenklasse und zentrale Geometrie-Tokens.
+- Mobile Carousel-Karten belegen 83 Prozent der Contentbreite und zeigen bei
+  13 Pixel Abstand 12 bis 15 Prozent der nächsten Karte.
+- Offer-Metadaten wurden ohne Informationsverlust verdichtet; Beschreibung und
+  Titel bleiben auf jeweils maximal zwei Zeilen begrenzt.
+- Die Punkteeinlösungen der Customer-Startseite verwenden statt des mobilen
+  Zwei-Spalten-Rasters den bestehenden horizontalen Discovery-Baustein.
+- Offer-Sichtbarkeit, Reward-/Gift-Eligibility, Punkte und Einlösung blieben
+  unverändert.
+
+## 2026-08-27 - Globalen Customer-Restaurantwechsel ergänzt
+
+- Logo, Restaurantname und Chevron im gemeinsamen Customer-Header öffnen einen
+  kompakten Restaurant-Switcher; die Informationstaste bleibt unabhängig.
+- Der Switcher lädt ausschließlich aktive Memberships aus dem autoritativen
+  zentralen Kundenkonto und zeigt Restaurantpunktestände einschließlich null.
+- Manuelle Auswahl und Restaurant-QR verwenden denselben servervalidierten
+  Restaurantzugang und denselben kanonischen URL-Kontext.
+- Ein atomarer Route-Guard entfernt alten Portalinhalt vor dem Wechsel und
+  verhindert gemischte Punkte-, Reward-, Gift-, Offer- oder Referral-Zustände.
+- Die mobile Darstellung wurde mit langen Namen und 20 Restaurants von 320 bis
+  1440 Pixel ohne horizontalen Seiten-Overflow geprüft.

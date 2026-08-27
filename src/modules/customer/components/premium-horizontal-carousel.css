@@ -6,7 +6,7 @@
 
 .premium-horizontal-carousel-viewport {
   display: flex;
-  gap: 12px;
+  gap: var(--customer-card-gap, 13px);
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
@@ -29,7 +29,7 @@
 
 .premium-horizontal-carousel-item {
   align-self: stretch;
-  flex: 0 0 86%;
+  flex: 0 0 var(--customer-card-mobile-width, 83%);
   min-width: 0;
   scroll-snap-align: start;
   scroll-snap-stop: always;
@@ -43,8 +43,8 @@
   display: flex;
   gap: 10px;
   justify-content: center;
-  min-height: 48px;
-  padding-top: 2px;
+  min-height: 44px;
+  padding-top: 0;
 }
 
 .premium-horizontal-carousel-controls button {

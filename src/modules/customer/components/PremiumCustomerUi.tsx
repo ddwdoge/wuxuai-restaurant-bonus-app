@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CheckCircle2, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
@@ -58,17 +58,31 @@ type CustomerHeaderProps = RestaurantLogoProps & {
   compact?: boolean;
   customerName?: string | null;
   onInfo: () => void;
+  onSwitchRestaurant?: () => void;
   subtitle?: string;
 };
 
-export function CustomerHeader({ compact = false, logoUrl, name, onInfo, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
-      <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
-      <div>
-        {!compact ? <span>{subtitle}</span> : null}
-        <strong>{name}</strong>
-      </div>
+      {onSwitchRestaurant ? (
+        <button aria-label="Aktuelles Restaurant wechseln" className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
+          <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
+          <span className="premium-customer-header-copy">
+            {!compact ? <span>{subtitle}</span> : null}
+            <strong>{name}</strong>
+          </span>
+          <ChevronDown aria-hidden="true" size={18} />
+        </button>
+      ) : (
+        <>
+          <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
+          <span className="premium-customer-header-copy">
+            {!compact ? <span>{subtitle}</span> : null}
+            <strong>{name}</strong>
+          </span>
+        </>
+      )}
       <button aria-label="So funktioniert's öffnen" className="premium-icon-button" onClick={onInfo} type="button">
         <Info aria-hidden="true" size={21} />
       </button>
@@ -240,7 +254,7 @@ export function RewardCard({ actionLabel = "Details ansehen", category, imageCro
   const StateIcon = stateMeta.icon;
 
   return (
-    <PremiumCard className={`premium-reward-card state-${state}`}>
+    <PremiumCard className={`premium-compact-customer-card premium-reward-card state-${state}`}>
       <div className="premium-reward-media">
         <RewardImage crop={imageCrop} imageUrl={imageUrl} title={title} />
         {state !== "available" ? (

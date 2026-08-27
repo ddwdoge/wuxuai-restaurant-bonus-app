@@ -15,8 +15,8 @@ const [premiumCss, centralCss, finderCss, mapCss, portal, finder, navigation] = 
 ]);
 
 test("Customer-Shell verwendet normalen Seitenfluss statt verschachteltem Viewport-Lock", () => {
-  assert.match(premiumCss, /\.customer-premium-shell[\s\S]{0,1200}min-height: 100dvh;[\s\S]{0,80}overflow-x: clip/);
-  assert.doesNotMatch(premiumCss, /\.customer-premium-shell[\s\S]{0,1200}height: 100dvh;[\s\S]{0,80}overflow: hidden/);
+  assert.match(premiumCss, /\.customer-premium-shell[\s\S]{0,1600}min-height: 100dvh;[\s\S]{0,80}overflow-x: clip/);
+  assert.doesNotMatch(premiumCss, /\.customer-premium-shell[\s\S]{0,1600}height: 100dvh;[\s\S]{0,80}overflow: hidden/);
   assert.match(premiumCss, /\.customer-page-container[\s\S]{0,420}min-height: 100dvh/);
   assert.doesNotMatch(premiumCss, /\.customer-page-container[\s\S]{0,500}overflow-y: auto/);
 });

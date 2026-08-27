@@ -2186,3 +2186,21 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   verborgen. Tenant-Grenzen und öffentliche Feldbegrenzung bleiben unverändert.
 - Diese Entscheidung betrifft Marketingdarstellung und keine Reward-, Claim-
   oder Einlöseberechtigung.
+
+## CTO-Entscheidung 2026-08-27: Globaler Restaurant-Schnellwechsel im Kundenportal
+
+🟢 **LOCKED / V1**
+
+- Der aktuelle Restaurantname im authentifizierten Customer-Header ist der
+  primäre manuelle Restaurantwechsel. `Konto → Restaurants` bleibt sekundär.
+- Angezeigt werden ausschließlich aktive, serverseitig autorisierte
+  Memberships des zentralen Kundenkontos. Browserhistorie, Local Storage,
+  E-Mail und Auth-Metadaten sind keine Quelle für diese Auswahl.
+- QR- und manueller Wechsel enden im selben kanonischen
+  `CustomerRestaurantAccess` und im URL-Pfad `/customer/:slug`.
+- Ein anderer Restaurantkontext wird erst sichtbar, nachdem die Membership
+  serverseitig validiert und der restaurantbezogene Zugang geöffnet wurde.
+  Alte und neue Restaurantdaten dürfen nie gemeinsam gerendert werden.
+- Punkte, Rewards, Geschenke, Angebote, Referral, 2×-Status, Einlösungen und
+  Restaurantinformation bleiben strikt restaurantbezogen. RLS und bestehende
+  Geschäftslogik werden nicht verändert.

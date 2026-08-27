@@ -30,7 +30,7 @@ export function RestaurantOfferCard({
 }) {
   const validity = restaurantOfferValidityPresentation(offer);
   return (
-    <article className="customer-offer-card">
+    <article className="customer-offer-card premium-compact-customer-card">
       <div className="customer-offer-card-media">
         <OfferImage offer={offer} />
         <small>{restaurantOfferTypeLabels[offer.offer_type]}</small>
@@ -39,8 +39,10 @@ export function RestaurantOfferCard({
         {showRestaurant ? <span className="customer-offer-restaurant">{offer.restaurant_name}</span> : null}
         <h3>{offer.title}</h3>
         <p>{offer.short_description}</p>
-        <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
-        <span className="customer-offer-schedule">{formatRestaurantOfferSchedule(offer)}</span>
+        <div className="customer-offer-card-validity-row">
+          <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
+          <span className="customer-offer-schedule">{formatRestaurantOfferSchedule(offer)}</span>
+        </div>
         <div className="customer-offer-card-meta">
           <span><CalendarDays aria-hidden="true" size={16} />{formatRestaurantOfferPeriod(offer)}</span>
           {offer.current_price != null ? <strong>{formatRestaurantOfferPrice(offer.current_price)}</strong> : null}

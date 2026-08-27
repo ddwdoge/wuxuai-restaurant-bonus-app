@@ -13,7 +13,7 @@ import "./central-customer.css";
 export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: { isBonusCollection: boolean; restaurantSlug: string }) {
   const { loading: authLoading, user } = useAuth();
   const [context, setContext] = useState<CustomerRestaurantContext | null>(null);
-  const [portalReady, setPortalReady] = useState(false);
+  const [portalRestaurantSlug, setPortalRestaurantSlug] = useState<string | null>(null);
   const [legalReady, setLegalReady] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
@@ -24,13 +24,13 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   const loadContext = useCallback(async () => {
     if (!user) return;
     setError(null);
-    setPortalReady(false);
+    setPortalRestaurantSlug(null);
     try {
       const nextContext = await loadCustomerRestaurantContext(restaurantSlug);
       setContext(nextContext);
       if (nextContext.membership_exists) {
         await openCustomerMembership(nextContext.restaurant_id);
-        setPortalReady(true);
+        setPortalRestaurantSlug(restaurantSlug);
       } else {
         const legal = legalCenterStateFromResponse(await loadPublicLegalCenter(restaurantSlug));
         setLegalReady(legal.status === "ready");
@@ -54,7 +54,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
         deviceId: getWebDeviceId(),
         existingCustomerToken: readStoredCustomerToken(restaurantSlug),
       });
-      setPortalReady(true);
+      setPortalRestaurantSlug(restaurantSlug);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");
     } finally {
@@ -70,7 +70,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
       <div className="central-auth-actions"><Link className="premium-button premium-button-primary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={19} /> Mit bestehendem Kundenkonto anmelden</Link><Link className="premium-button premium-button-secondary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}><UserPlus aria-hidden="true" size={19} /> Neues Kundenkonto erstellen</Link></div>
     </PremiumCard></div></AppShell>
   );
-  if (portalReady) return <CustomerPortal isBonusCollection={isBonusCollection} restaurantSlug={restaurantSlug} />;
+  if (portalRestaurantSlug === restaurantSlug) return <CustomerPortal isBonusCollection={isBonusCollection} restaurantSlug={restaurantSlug} />;
   if (error && !context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><ErrorState action={<SecondaryButton onClick={() => void loadContext()}>Erneut versuchen</SecondaryButton>} description={error} title="Bonusprogramm konnte nicht geöffnet werden" /></div></AppShell>;
   if (!context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><LoadingState description="Das Restaurant wird geladen." /></div></AppShell>;
 

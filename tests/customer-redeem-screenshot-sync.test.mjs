@@ -46,7 +46,8 @@ test("kurze Tab-Inhalte duerfen die gemeinsame Kopfgeometrie nicht strecken", ()
 });
 
 test("Einloesen bleibt fuer Mobile und Desktop in derselben Carousel-Geometrie", () => {
-  assert.match(carouselCss, /\.premium-horizontal-carousel-item[^}]*flex: 0 0 86%/);
+  assert.match(carouselCss, /\.premium-horizontal-carousel-item[^}]*flex: 0 0 var\(--customer-card-mobile-width, 83%\)/);
+  assert.match(premiumCss, /--customer-card-mobile-width: 83%/);
   assert.match(carouselCss, /@media \(min-width: 768px\)[\s\S]*flex-basis: 58%/);
   assert.match(carouselCss, /@media \(min-width: 1024px\)[\s\S]*flex-basis: 46%/);
   assert.match(premiumCss, /@media \(max-width: 380px\)/);
