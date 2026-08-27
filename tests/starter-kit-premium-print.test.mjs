@@ -53,6 +53,30 @@ test("A6 PDF logo gains adaptive visual presence and keeps Smart Logo metadata",
   assert.match(onboarding, /logoPresentation: tenantBranding \? \{/);
 });
 
+test("both Starter Kit generators enforce the canonical A6 print-safe geometry", () => {
+  assert.match(qrCenter, /const a6PageWidthPt = 297\.64/);
+  assert.match(qrCenter, /const a6PageHeightPt = 419\.53/);
+  assert.match(qrCenterPrint, /const margin = 96/);
+  assert.match(qrCenterPrint, /y: 106/);
+  assert.match(qrCenterPrint, /canvas\.height - 98/);
+  assert.doesNotMatch(qrCenterPrint, /fillRect\(0, 0, canvas\.width, 22\)/);
+
+  assert.match(onboarding, /const starterKitA6PageWidthPt = 297\.64/);
+  assert.match(onboarding, /const starterKitA6PageHeightPt = 419\.53/);
+  assert.match(onboardingPrint, /const margin = 200/);
+  assert.match(onboardingPrint, /const logoY = 236/);
+  assert.match(onboardingPrint, /canvas\.height - 220/);
+  assert.match(onboardingPrint, /pageHeight: starterKitA6PageHeightPt/);
+  assert.match(onboardingPrint, /pageWidth: starterKitA6PageWidthPt/);
+  assert.doesNotMatch(onboardingPrint, /fillRect\(0, 0, canvas\.width, 46\)/);
+  assert.doesNotMatch(onboardingPrint, /pageHeight: 842|pageWidth: 595/);
+
+  const qrCenterLogoTopMm = 106 * 148 / 1748;
+  const onboardingLogoTopMm = 236 * 148 / 3508;
+  assert.ok(qrCenterLogoTopMm >= 8 && qrCenterLogoTopMm <= 10);
+  assert.ok(onboardingLogoTopMm >= 8 && onboardingLogoTopMm <= 10);
+});
+
 test("QR frames preserve white quiet space, crisp modules and larger QR output", () => {
   assert.match(qrCenter, /const qrSize = 680/);
   assert.match(onboarding, /const qrSize = 1120/);

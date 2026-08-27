@@ -792,3 +792,7 @@ korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
   bleiben unveraendert.
 - Das A6-Starter-Kit verwendet dieselben Fit-, Skalierungs- und X-/Y-Werte. Die
   groessere Markenpraesenz darf QR-Groesse und QR-Ruhezone nicht verkleinern.
+- Beide Exportwege erzeugen echte A6-Seiten (`105 x 148 mm`) mit mindestens
+  8 mm Druck-Sicherheitsabstand. Logo und Restaurantidentitaet beginnen auf
+  allen Seiten einheitlich bei etwa 9 bis 10 mm; kein Element setzt
+  randlosen Druck voraus.

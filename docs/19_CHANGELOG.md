@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - A6-Starter-Kit gegen physische Druckraender abgesichert
+
+- Beide Starter-Kit-Generatoren auf eine echte A6-MediaBox von `105 x 148 mm`
+  und einen kanonischen Sicherheitsabstand von mindestens 8 mm vereinheitlicht.
+- Logo und Restaurantidentitaet auf allen Seiten bei rund 9 bis 10 mm
+  Oberkantenabstand ausgerichtet, ohne Smart-Logo- oder QR-Groesse zu reduzieren.
+- Die randabhaengige obere Farblinie entfernt und den Footer innerhalb des
+  unteren Druckbereichs positioniert; Referral-, Staff- und QR-Vertraege bleiben
+  unveraendert.
+
 ## 2026-08-27 - Starter-Kit-Logo und Referral-Druckvertrag finalisiert
 
 - Die A6-LogoStage adaptiv um rund 35 Prozent vergroessert, ohne QR-Groesse,

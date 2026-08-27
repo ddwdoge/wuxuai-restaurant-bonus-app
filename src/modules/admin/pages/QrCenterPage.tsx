@@ -389,16 +389,14 @@ function drawQrPrintPage(
     throw new Error("Druckvorlage konnte nicht gezeichnet werden.");
   }
 
-  const margin = 72;
+  const margin = 96;
   const contentWidth = canvas.width - margin * 2;
   const qrSize = 680;
   const qrX = (canvas.width - qrSize) / 2;
-  const qrY = 548;
+  const qrY = 610;
 
   context.fillStyle = "#fbf8f1";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = branding.primaryColor;
-  context.fillRect(0, 0, canvas.width, 22);
 
   drawLogo(context, {
     height: 160,
@@ -408,28 +406,28 @@ function drawQrPrintPage(
     restaurantName: branding.restaurantName,
     width: 460,
     x: (canvas.width - 460) / 2,
-    y: 34,
+    y: 106,
   });
 
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
   context.font = "600 38px Inter, Arial, sans-serif";
-  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 200, contentWidth - 40, 44);
+  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 278, contentWidth - 40, 44);
 
   if (page.audienceLabel) {
     context.fillStyle = branding.primaryColor;
     context.font = "600 23px Inter, Arial, sans-serif";
-    context.fillText(page.audienceLabel, canvas.width / 2, 280);
+    context.fillText(page.audienceLabel, canvas.width / 2, 374);
   }
 
   context.fillStyle = "#17202a";
   context.font = "800 64px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.headline, canvas.width / 2, 320, contentWidth, 72);
+  drawWrappedText(context, page.headline, canvas.width / 2, 410, contentWidth, 72);
 
   context.fillStyle = "#465463";
   context.font = "400 28px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.subheadline, canvas.width / 2, 414, contentWidth - 90, 35);
+  drawWrappedText(context, page.subheadline, canvas.width / 2, 494, contentWidth - 90, 35);
 
   roundedRect(context, qrX - 44, qrY - 44, qrSize + 88, qrSize + 88, 30);
   context.fillStyle = "#ffffff";
@@ -443,7 +441,7 @@ function drawQrPrintPage(
   if (page.secondaryNote) {
     context.fillStyle = "#344251";
     context.font = "400 23px Inter, Arial, sans-serif";
-    drawWrappedText(context, page.secondaryNote, canvas.width / 2, 1324, contentWidth - 80, 30);
+    drawWrappedText(context, page.secondaryNote, canvas.width / 2, 1360, contentWidth - 80, 30);
   }
 
   if (page.referralHint) {
@@ -452,14 +450,14 @@ function drawQrPrintPage(
       primaryColor: branding.primaryColor,
       width: contentWidth,
       x: margin,
-      y: 1316,
+      y: 1352,
     });
   }
 
   context.fillStyle = "#8a96a3";
   context.font = "400 26px Inter, Arial, sans-serif";
   context.textBaseline = "alphabetic";
-  context.fillText(footerText, canvas.width / 2, canvas.height - 28);
+  context.fillText(footerText, canvas.width / 2, canvas.height - 98);
 
   return {
     imageBytes: canvasToJpegBytes(canvas),

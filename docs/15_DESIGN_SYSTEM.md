@@ -619,6 +619,13 @@ Kein fester quadratischer Zwang.
 - Transparente Logos liegen direkt auf dem warmen Seitenhintergrund. Die
   LogoStage erzeugt keine zusaetzliche weisse oder graue Bildbox.
 - Eine groessere LogoStage darf weder QR-Groesse noch QR-Ruhezone reduzieren.
+- Starter-Kit-Seiten verwenden eine echte A6-MediaBox von `105 x 148 mm`.
+  Wichtige Inhalte bleiben mindestens 8 mm von jeder Papierkante entfernt.
+- Die LogoStage beginnt auf allen Seiten bei etwa 9 bis 10 mm Abstand zur
+  physischen Oberkante. Das Logo wird fuer den Druckrand nicht verkleinert.
+- Vollflaechige Linien oder andere wichtige Gestaltungselemente direkt an der
+  Papierkante sind nicht Bestandteil des A6-Druckvertrags. Der Footer bleibt
+  mindestens 8 mm oberhalb der unteren Papierkante.
 
 Technische Regel:
 

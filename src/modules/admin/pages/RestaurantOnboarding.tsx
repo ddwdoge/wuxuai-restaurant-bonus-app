@@ -497,6 +497,8 @@ type StarterKitPageSpec = {
 };
 
 const starterKitFooterText = "Powered by WUXUAI Bonus • www.wuxuaisbi.com";
+const starterKitA6PageWidthPt = 297.64;
+const starterKitA6PageHeightPt = 419.53;
 
 function buildStarterKitPdf(pages: StarterKitPdfPage[]) {
   const encoder = new TextEncoder();
@@ -751,17 +753,17 @@ function drawStarterKitPage(
     throw new Error("Starter Kit konnte nicht gezeichnet werden.");
   }
 
-  const margin = 188;
+  const margin = 200;
   const logoWidth = 984;
   const logoHeight = 276;
   const qrSize = 1120;
   const qrX = (canvas.width - qrSize) / 2;
   const qrY = 1080;
   const cardPadding = 104;
-  const cardTop = 130;
-  const cardBottom = 185;
+  const cardTop = 190;
+  const cardBottom = 190;
   const cardHeight = canvas.height - cardTop - cardBottom;
-  const logoY = cardTop + 120;
+  const logoY = 236;
   const nameY = logoY + logoHeight + 40;
   const audienceY = nameY + 100;
   const headlineY = nameY + 180;
@@ -772,8 +774,6 @@ function drawStarterKitPage(
 
   context.fillStyle = "#fbf8f1";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = branding.secondaryColor;
-  context.fillRect(0, 0, canvas.width, 46);
 
   roundedRect(context, margin, cardTop, canvas.width - margin * 2, cardHeight, 66);
   context.fillStyle = "#ffffff";
@@ -858,14 +858,14 @@ function drawStarterKitPage(
   context.font = "600 30px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "alphabetic";
-  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 54);
+  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 220);
 
   return {
     imageBytes: canvasToJpegBytes(canvas),
     imageHeight: canvas.height,
     imageWidth: canvas.width,
-    pageHeight: 842,
-    pageWidth: 595,
+    pageHeight: starterKitA6PageHeightPt,
+    pageWidth: starterKitA6PageWidthPt,
   };
 }
 
