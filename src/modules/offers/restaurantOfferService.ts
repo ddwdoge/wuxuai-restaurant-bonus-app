@@ -31,6 +31,11 @@ export type RestaurantOffer = {
   short_description: string;
   description: string | null;
   image_url: string | null;
+  image_zoom?: number | null;
+  image_position_x?: number | null;
+  image_position_y?: number | null;
+  image_aspect_ratio?: string | null;
+  image_crop_version?: number | null;
   current_price: number | null;
   previous_price: number | null;
   currency: "EUR";
@@ -81,6 +86,9 @@ export type RestaurantOfferInput = {
   shortDescription: string;
   description?: string | null;
   imageUrl?: string | null;
+  imageZoom?: number | null;
+  imagePositionX?: number | null;
+  imagePositionY?: number | null;
   currentPrice?: number | null;
   previousPrice?: number | null;
   validFrom: string;
@@ -213,7 +221,19 @@ export async function saveRestaurantOffer(input: RestaurantOfferInput): Promise<
     input_button_label: input.buttonLabel || "Angebot ansehen",
   });
   if (error) throw offerError(error);
-  return data as RestaurantOffer;
+  const saved = data as RestaurantOffer;
+  if (input.imageUrl && input.imageZoom != null && input.imagePositionX != null && input.imagePositionY != null) {
+    const { data: presented, error: presentationError } = await requireClient().rpc("save_restaurant_offer_image_presentation", {
+      input_restaurant_id: input.restaurantId,
+      input_offer_id: saved.id,
+      input_image_zoom: input.imageZoom,
+      input_image_position_x: input.imagePositionX,
+      input_image_position_y: input.imagePositionY,
+    });
+    if (presentationError) throw offerError(presentationError);
+    return presented as RestaurantOffer;
+  }
+  return saved;
 }
 
 export async function changeRestaurantOfferStatus(

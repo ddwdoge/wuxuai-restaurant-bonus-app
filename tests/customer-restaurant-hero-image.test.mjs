@@ -8,7 +8,7 @@ const cssUrl = new URL("../src/modules/customer/partner-restaurant-finder.css", 
 
 test("Restaurantdetails verwenden einen gemeinsamen sicheren Hero statt eines nackten Cover-Bilds", async () => {
   const [component, page] = await Promise.all([readFile(componentUrl, "utf8"), readFile(pageUrl, "utf8")]);
-  assert.match(page, /<RestaurantHeroImage coverImageUrl=\{location\.cover_image_url\} logoUrl=\{location\.logo_url\} name=\{location\.name\} \/>/);
+  assert.match(page, /<RestaurantHeroImage[\s\S]*coverImageUrl=\{location\.cover_image_url\}[\s\S]*presentation=\{\{/);
   assert.doesNotMatch(page, /<img alt=\{`\$\{location\.name\} Titelbild`\}/);
   assert.match(component, /type ImageState = "loading" \| "valid" \| "error" \| "missing"/);
 });
@@ -18,9 +18,9 @@ test("Hero entfernt fehlerhafte Bilder, zeigt einen Logo-Fallback und setzt sich
     readFile(componentUrl, "utf8"),
     readFile(new URL("../src/shared/components/RestaurantLogoStage.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(component, /source && state !== "error"/);
-  assert.match(component, /onError=\{\(\) => setState\("error"\)\}/);
-  assert.match(component, /onLoad=\{\(\) => setState\("valid"\)\}/);
+  assert.match(component, /imageUrl=\{state === "error" \? null : source\}/);
+  assert.match(component, /onImageError=\{\(\) => setState\("error"\)\}/);
+  assert.match(component, /onImageLoad=\{\(\) => setState\("valid"\)\}/);
   assert.match(component, /useEffect\(\(\) => \{\s*setState\(source \? "loading" : "missing"\);\s*\}, \[source\]\)/);
   assert.match(component, /<RestaurantLogoImage[^>]+logoUrl=\{logoUrl\}/);
   assert.match(component, /<RestaurantLogoStage/);
@@ -32,7 +32,8 @@ test("Hero entfernt fehlerhafte Bilder, zeigt einen Logo-Fallback und setzt sich
 test("Valides Cover behält semantischen Alt-Text, während Lade- und Fehlerzustände unsichtbar bleiben", async () => {
   const component = await readFile(componentUrl, "utf8");
   assert.match(component, /alt=\{`\$\{name\} Titelbild`\}/);
-  assert.match(component, /className=\{`partner-detail-cover\$\{state === "valid" \? " is-loaded" : ""\}`\}/);
+  assert.match(component, /className="partner-detail-cover"/);
+  assert.match(component, /presentation=\{presentation\}/);
   assert.match(component, /role=\{state === "valid" \? undefined : "img"\}/);
 });
 

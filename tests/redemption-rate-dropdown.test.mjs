@@ -43,12 +43,12 @@ test("jeder Dropdownwert verwendet die verbindliche Punkteformel", () => {
   }
 });
 
-test("Owner-Oberflächen verwenden eine native Tastaturauswahl statt freier Quote", () => {
+test("aktive Punkteeinlösungs-Oberfläche verwendet eine native Tastaturauswahl statt freier Quote", () => {
   assert.match(selector, /<select/);
   assert.match(selector, /REDEMPTION_RATE_PERCENT_OPTIONS\.map/);
   assert.doesNotMatch(selector, /<input/);
   assert.match(rewardsPage, /<RedemptionRateSelect/);
-  assert.match(loyaltyPage, /<RedemptionRateSelect/);
+  assert.doesNotMatch(loyaltyPage, /<RedemptionRateSelect/);
   assert.match(selector, /min-height: 44px|redemption-rate-select/);
 });
 
@@ -58,7 +58,7 @@ test("Legacy-Werte bleiben sichtbar und blockieren unbemerkte Speicherung", () =
   assert.match(selector, /Der bisherige Wert bleibt erhalten/);
   assert.match(selector, /<option disabled value="legacy">/);
   assert.match(rewardsPage, /redemptionRatePercent === null/);
-  assert.match(loyaltyPage, /validRedemptionRatePercent === null/);
+  assert.doesNotMatch(loyaltyPage, /validRedemptionRatePercent/);
 });
 
 test("Datenbankdefault ist 3 Prozent und Altwerte werden nicht überschrieben", () => {

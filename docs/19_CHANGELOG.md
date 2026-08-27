@@ -1,6 +1,36 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-28 - Owner-Bonusprogramm auf V1-Referral reduziert
+
+- Die Owner-Seite `Bonusprogramm` zeigt nur noch `Freunde einladen & 2× Bonus`
+  mit Aktivierung, festem Multiplikator, Dauer und monatlichem Einladungslimit.
+- Historische Modus-, Einlösequoten-, Stempel-, Bonstufen- und Regel-Editoren
+  sowie der technische Aktivstatus wurden aus dieser Oberfläche entfernt.
+- Punkte-, Einlösungs-, Tages-PIN-, Referral- und Datenbankverträge bleiben
+  unverändert; Legacy-Tabellen und Services wurden nicht gelöscht.
+
+## 2026-08-28 - Restaurantbilder direkt positionierbar gemacht
+
+- Ein gemeinsamer Smart-Media-Kern steuert 16:9-Bilder fuer Angebote,
+  Punkteeinloesungen, Willkommens- und Geburtstagsgeschenke sowie Titelbilder.
+- Owner koennen Fotos direkt ziehen, per Zwei-Finger-Geste oder Trackpad zoomen
+  und zwischen gespeichertem Ausschnitt und zentriertem Auto-Fit wechseln.
+- Die additive Migration
+  `20260828001000_global_restaurant_media_presentation.sql` ergaenzt nur
+  normalisierte Darstellungswerte fuer Angebote und Branch-Titelbilder.
+- Originaldateien, Logo-Vertrag, Sichtbarkeit, Punkte, Eligibility, Einloesung,
+  Referral und bestehende Tenant-RLS bleiben unveraendert.
+
+## 2026-08-28 - Cloudflare-Build gegen fehlende Supabase-Variablen gesperrt
+
+- Den Repository-Build um einen Fail-Closed-Guard fuer
+  `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` erweitert; fehlende Werte
+  stoppen den Build vor TypeScript und Vite, ohne Inhalte auszugeben.
+- Tests fuer vollstaendige, teilweise und fehlende Buildvariablen ergaenzt.
+- Die automatische GitHub-Cloudflare-Verbindung bleibt bis zur autorisierten
+  Neuinstallation der GitHub App fuer das tatsaechliche Repository gesperrt.
+
 ## 2026-08-28 - Smart Logo im Restaurant-Portal vereinheitlicht
 
 - Den Restaurant-Portal-Header von einer zusaetzlichen historischen Rahmen-,

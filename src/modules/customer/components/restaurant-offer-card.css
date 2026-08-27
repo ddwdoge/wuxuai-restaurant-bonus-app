@@ -1,7 +1,7 @@
 .customer-offer-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .customer-offer-card { background: #fff; border: 1px solid rgba(91, 71, 36, .13); border-radius: var(--customer-card-radius, 18px); box-shadow: 0 9px 24px rgba(59, 44, 21, .07); min-width: 0; overflow: hidden; }
 .customer-offer-card-media { aspect-ratio: var(--customer-card-media-ratio, 16 / 9); background: #f2ece1; overflow: hidden; position: relative; }
-.customer-offer-card-media img { height: 100%; object-fit: cover; width: 100%; }
+.customer-offer-card-media > .smart-media-frame { height: 100%; }
 .customer-offer-card-fallback { align-items: center; color: #a27a28; display: flex; height: 100%; justify-content: center; width: 100%; }
 .customer-offer-card-media small { background: rgba(28, 24, 18, .86); bottom: 10px; color: #fff; font-size: .7rem; font-weight: 750; left: 10px; padding: 5px 8px; position: absolute; }
 .customer-offer-card-body { display: grid; gap: 5px; padding: var(--customer-card-padding, 12px); }
@@ -22,7 +22,7 @@
 .customer-offer-card .premium-button { min-height: 44px; width: 100%; }
 .customer-offer-detail { color: #332c23; display: grid; gap: 11px; }
 .customer-offer-detail-media { aspect-ratio: 16 / 9; background: #f2ece1; border-radius: 8px; overflow: hidden; width: 100%; }
-.customer-offer-detail-media img { height: 100%; object-fit: cover; width: 100%; }
+.customer-offer-detail-media > .smart-media-frame { height: 100%; }
 .customer-offer-detail-fallback { align-items: center; color: #a27a28; display: flex; height: 100%; justify-content: center; width: 100%; }
 .customer-offer-detail > span { color: #9b741e; font-size: .76rem; font-weight: 800; text-transform: uppercase; }
 .customer-offer-detail > small { color: #6b6257; }

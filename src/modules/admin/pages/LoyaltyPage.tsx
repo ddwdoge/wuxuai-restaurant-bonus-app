@@ -1,18 +1,11 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Edit3, Plus, Power, Save } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { Save } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import type { LoyaltyMode, LoyaltyRule, LoyaltySettings } from "../../../shared/types/domain";
+import type { LoyaltySettings } from "../../../shared/types/domain";
 import {
   defaultSettingsForMode,
-  loadLoyaltyRules,
   loadLoyaltySettings,
-  loyaltyModeLabels,
-  menuPointPresets,
-  rulesForMode,
-  saveLoyaltyRule,
-  saveLoyaltySettings,
   saveReferralBonusSettings,
-  setLoyaltyRuleActive,
   validateReferralBonusDuration,
   validateReferralMonthlyInviteLimit,
 } from "../../loyalty/loyaltyService";
@@ -26,41 +19,7 @@ import {
   referralBonusMaxDurationDays,
   referralBonusMinDurationDays,
 } from "../../loyalty/referralBonusSettings.mjs";
-import {
-  isAllowedRedemptionRatePercent,
-  redemptionRateToPercent,
-} from "../../loyalty/redemptionRate.mjs";
-import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
-
-type RuleForm = {
-  id?: string;
-  title: string;
-  points: number;
-  stamps: number;
-  min_amount: number;
-  active: boolean;
-};
-
-const emptyRuleForm: RuleForm = {
-  title: "",
-  points: 0,
-  stamps: 0,
-  min_amount: 0,
-  active: true,
-};
-
-function formForMode(mode: LoyaltyMode): RuleForm {
-  if (mode === "stamp_based") {
-    return { ...emptyRuleForm, title: "1 Besuch = 1 Stempel", stamps: 1 };
-  }
-
-  if (mode === "amount_based") {
-    return { ...emptyRuleForm, title: "1 Euro = 1 Punkt", points: 1, min_amount: 1 };
-  }
-
-  return { ...emptyRuleForm, title: "Besuch", points: 10 };
-}
 
 export function LoyaltyPage() {
   const location = useLocation();
@@ -69,8 +28,6 @@ export function LoyaltyPage() {
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
     defaultSettingsForMode(restaurantId, "menu_points"),
   );
-  const [rules, setRules] = useState<LoyaltyRule[]>([]);
-  const [ruleForm, setRuleForm] = useState<RuleForm>(() => formForMode("menu_points"));
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [savingReferralBonus, setSavingReferralBonus] = useState(false);
@@ -80,29 +37,21 @@ export function LoyaltyPage() {
 
     let cancelled = false;
 
-    async function loadLoyaltyCore() {
+    async function loadReferralSettings() {
       setLoading(true);
       try {
-        const [nextSettings, nextRules] = await Promise.all([
-          loadLoyaltySettings(restaurantId),
-          loadLoyaltyRules(restaurantId),
-        ]);
-
-        if (!cancelled) {
-          setSettings(nextSettings);
-          setRules(nextRules);
-          setRuleForm(formForMode(nextSettings.loyalty_mode));
-        }
+        const nextSettings = await loadLoyaltySettings(restaurantId);
+        if (!cancelled) setSettings(nextSettings);
       } catch (error) {
         if (!cancelled) {
-          setStatus(error instanceof Error ? error.message : "Loyalty konnte nicht geladen werden.");
+          setStatus(error instanceof Error ? error.message : "Bonusprogramm konnte nicht geladen werden.");
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    loadLoyaltyCore();
+    loadReferralSettings();
 
     return () => {
       cancelled = true;
@@ -115,54 +64,6 @@ export function LoyaltyPage() {
     section?.scrollIntoView({ block: "start" });
     section?.focus({ preventScroll: true });
   }, [location.hash]);
-
-  const visibleRules = useMemo(
-    () => rulesForMode(rules, settings.loyalty_mode),
-    [rules, settings.loyalty_mode],
-  );
-  const redemptionRatePercent = redemptionRateToPercent(settings.redemption_return_rate);
-  const validRedemptionRatePercent = redemptionRatePercent !== null
-    && isAllowedRedemptionRatePercent(redemptionRatePercent)
-    ? redemptionRatePercent
-    : null;
-
-  async function handleSaveSettings(event: FormEvent) {
-    event.preventDefault();
-    if (!restaurantId) return;
-    if (validRedemptionRatePercent === null) {
-      setStatus("Bitte wähle eine Einlösequote zwischen 1 und 10 Prozent.");
-      return;
-    }
-
-    setStatus(null);
-    const saved = await saveLoyaltySettings({ ...settings, restaurant_id: restaurantId });
-    setSettings(saved);
-    setStatus(`Aktiver Modus: ${loyaltyModeLabels[saved.loyalty_mode]}`);
-  }
-
-  async function handleSaveRule(event: FormEvent) {
-    event.preventDefault();
-    if (!restaurantId || !ruleForm.title.trim()) return;
-
-    setStatus(null);
-    const savedRule = await saveLoyaltyRule({
-      ...ruleForm,
-      restaurant_id: restaurantId,
-      title: ruleForm.title.trim(),
-      points: Math.max(0, Number(ruleForm.points) || 0),
-      stamps: Math.max(0, Number(ruleForm.stamps) || 0),
-      min_amount: Math.max(0, Number(ruleForm.min_amount) || 0),
-    });
-
-    setRules((currentRules) => {
-      const exists = currentRules.some((rule) => rule.id === savedRule.id);
-      return exists
-        ? currentRules.map((rule) => (rule.id === savedRule.id ? savedRule : rule))
-        : [...currentRules, savedRule];
-    });
-    setRuleForm(formForMode(settings.loyalty_mode));
-    setStatus("Regel gespeichert.");
-  }
 
   async function handleSaveReferralBonus(event: FormEvent) {
     event.preventDefault();
@@ -197,198 +98,21 @@ export function LoyaltyPage() {
     }
   }
 
-  async function handleToggleRule(rule: LoyaltyRule) {
-    const updatedRule = await setLoyaltyRuleActive(rule, !rule.active);
-    setRules((currentRules) => currentRules.map((item) => (item.id === updatedRule.id ? updatedRule : item)));
-    setStatus(updatedRule.active ? "Regel aktiviert." : "Regel deaktiviert.");
-  }
-
-  async function handleAddPreset(preset: (typeof menuPointPresets)[number]) {
-    if (!restaurantId) return;
-    const savedRule = await saveLoyaltyRule({
-      ...preset,
-      restaurant_id: restaurantId,
-      active: true,
-    });
-    setRules((currentRules) => [...currentRules, savedRule]);
-    setStatus(`${savedRule.title} gespeichert.`);
-  }
-
   return (
     <>
       <header className="page-header">
         <div>
           <h1>Bonusprogramm</h1>
-          <p className="muted">Ein aktiver Modus pro Restaurant. Alle Regeln bleiben dem Restaurant zugeordnet.</p>
+          <p className="muted">Lege fest, wie dein Freunde-einladen-Bonus funktioniert.</p>
         </div>
-        <span className="pill">Aktiv: {loyaltyModeLabels[settings.loyalty_mode]}</span>
       </header>
-
-      <section className="grid two">
-        <article className="card">
-          <h2>Modus</h2>
-          <form className="form" onSubmit={handleSaveSettings}>
-            <RequiredFieldsNote />
-            <div className="field">
-              <FormLabel htmlFor="loyalty-mode" required>Bonusmodus</FormLabel>
-              <select
-                aria-required="true"
-                className="select"
-                id="loyalty-mode"
-                required
-                value={settings.loyalty_mode}
-                onChange={(event) => {
-                  const nextMode = event.target.value as LoyaltyMode;
-                  setSettings((current) => ({
-                    ...defaultSettingsForMode(current.restaurant_id, nextMode),
-                    id: current.id,
-                    restaurant_id: current.restaurant_id,
-                    created_at: current.created_at,
-                  }));
-                  setRuleForm(formForMode(nextMode));
-                }}
-              >
-                <option value="amount_based">Betragsbasiert</option>
-                <option value="stamp_based">Stempelkarte</option>
-                <option value="menu_points">Punkte nach Bonstufe</option>
-              </select>
-            </div>
-
-            <div className="grid two">
-              <div className="field">
-                <FormLabel htmlFor="amount-per-point" required>Euro pro Punkt</FormLabel>
-                <input
-                  aria-required="true"
-                  className="input"
-                  id="amount-per-point"
-                  min="0.01"
-                  required
-                  step="0.01"
-                  type="number"
-                  value={settings.amount_per_point}
-                  onChange={(event) =>
-                    setSettings((current) => ({
-                      ...current,
-                      amount_per_point: Number(event.target.value) || 1,
-                    }))
-                  }
-                />
-              </div>
-              <RedemptionRateSelect
-                id="loyalty-redemption-rate"
-                legacyValue={redemptionRatePercent}
-                onChange={(percent) => setSettings((current) => ({
-                  ...current,
-                  redemption_return_rate: percent / 100,
-                }))}
-                value={validRedemptionRatePercent}
-              />
-              <div className="field">
-                <FormLabel htmlFor="stamps-required" required>Stempel bis Punkteeinlösung</FormLabel>
-                <input
-                  aria-required="true"
-                  className="input"
-                  id="stamps-required"
-                  min="1"
-                  required
-                  type="number"
-                  value={settings.stamps_required}
-                  onChange={(event) =>
-                    setSettings((current) => ({
-                      ...current,
-                      stamps_required: Math.max(1, Number(event.target.value) || 10),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <button className="button" disabled={loading || validRedemptionRatePercent === null} type="submit">
-              <Save size={18} />
-              Einstellungen speichern
-            </button>
-          </form>
-        </article>
-
-        <article className="card">
-          <h2>Regel speichern</h2>
-          <form className="form" onSubmit={handleSaveRule}>
-            <RequiredFieldsNote />
-            <div className="field">
-              <FormLabel htmlFor="rule-title" required>Titel</FormLabel>
-              <input
-                aria-required="true"
-                className="input"
-                id="rule-title"
-                required
-                value={ruleForm.title}
-                onChange={(event) => setRuleForm((current) => ({ ...current, title: event.target.value }))}
-              />
-            </div>
-            <div className="grid three">
-              <div className="field">
-                <FormLabel htmlFor="rule-points" required>Punkte</FormLabel>
-                <input
-                  aria-required="true"
-                  className="input"
-                  id="rule-points"
-                  min="0"
-                  required
-                  type="number"
-                  value={ruleForm.points}
-                  onChange={(event) =>
-                    setRuleForm((current) => ({ ...current, points: Number(event.target.value) || 0 }))
-                  }
-                />
-              </div>
-              <div className="field">
-                <FormLabel htmlFor="rule-stamps" required>Stempel</FormLabel>
-                <input
-                  aria-required="true"
-                  className="input"
-                  id="rule-stamps"
-                  min="0"
-                  required
-                  type="number"
-                  value={ruleForm.stamps}
-                  onChange={(event) =>
-                    setRuleForm((current) => ({ ...current, stamps: Number(event.target.value) || 0 }))
-                  }
-                />
-              </div>
-              <div className="field">
-                <FormLabel htmlFor="rule-min-amount" required>Mindestbetrag</FormLabel>
-                <input
-                  aria-required="true"
-                  className="input"
-                  id="rule-min-amount"
-                  min="0"
-                  required
-                  step="0.01"
-                  type="number"
-                  value={ruleForm.min_amount}
-                  onChange={(event) =>
-                    setRuleForm((current) => ({ ...current, min_amount: Number(event.target.value) || 0 }))
-                  }
-                />
-              </div>
-            </div>
-            <button className="button" type="submit">
-              <Plus size={18} />
-              {ruleForm.id ? "Regel aktualisieren" : "Regel hinzufügen"}
-            </button>
-          </form>
-        </article>
-      </section>
 
       <section
         className="card referral-bonus-settings"
         id="freundschaftsbonus"
-        style={{ marginTop: 16 }}
         tabIndex={-1}
       >
         <div>
-          <p className="premium-owner-kicker">Bonusprogramm</p>
           <h2>Freunde einladen & 2× Bonus</h2>
           <p className="muted">
             Nach einer erfolgreichen Einladung erhalten beide Gäste für die gewählte Dauer den 2× Bonus.
@@ -500,7 +224,8 @@ export function LoyaltyPage() {
 
           <button
             className="button"
-            disabled={savingReferralBonus
+            disabled={loading
+              || savingReferralBonus
               || !validateReferralBonusDuration(Number(settings.referral_boost_duration_days))
               || !validateReferralMonthlyInviteLimit(Number(settings.referral_monthly_invite_limit ?? 5))}
             type="submit"
@@ -509,48 +234,6 @@ export function LoyaltyPage() {
             {savingReferralBonus ? "Wird gespeichert …" : "Freundschaftsbonus speichern"}
           </button>
         </form>
-      </section>
-
-      {settings.loyalty_mode === "menu_points" ? (
-        <section className="card" style={{ marginTop: 16 }}>
-          <h2>Vorlagen für Bonstufen</h2>
-          <div className="tablet-actions" style={{ marginTop: 12 }}>
-            {menuPointPresets.map((preset) => (
-              <button className="large-action compact" key={preset.title} onClick={() => handleAddPreset(preset)} type="button">
-                <Plus size={24} />
-                {preset.title}
-                <span className="muted">{preset.points} Punkte</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2>Aktive Regeln</h2>
-        <div className="rule-list">
-          {visibleRules.map((rule) => (
-            <article className={`rule-row${rule.active ? "" : " inactive"}`} key={rule.id}>
-              <div>
-                <strong>{rule.title}</strong>
-                <p className="muted">
-                  {rule.points} Punkte · {rule.stamps} Stempel · Mindestbetrag {rule.min_amount} €
-                </p>
-              </div>
-              <div className="row-actions">
-                <button className="button secondary" onClick={() => setRuleForm(rule)} type="button">
-                  <Edit3 size={16} />
-                  Bearbeiten
-                </button>
-                <button className="button secondary" onClick={() => handleToggleRule(rule)} type="button">
-                  <Power size={16} />
-                  {rule.active ? "Deaktivieren" : "Aktivieren"}
-                </button>
-              </div>
-            </article>
-          ))}
-          {visibleRules.length === 0 ? <p className="muted">Noch keine Regel für diesen Modus.</p> : null}
-        </div>
       </section>
 
       {status ? <p className="status-message">{status}</p> : null}

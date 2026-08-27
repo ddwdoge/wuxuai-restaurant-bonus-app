@@ -32,6 +32,9 @@ export type PartnerRestaurant = {
   longitude: number;
   logo_url: string | null;
   cover_image_url: string | null;
+  cover_image_zoom?: number | null;
+  cover_image_position_x?: number | null;
+  cover_image_position_y?: number | null;
   short_description: string | null;
   opening_hours: unknown;
   special_days?: unknown;

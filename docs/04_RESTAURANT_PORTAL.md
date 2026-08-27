@@ -13,6 +13,18 @@ Druckformaten verwendet werden. Ein separater Kassa-Aufsteller existiert nicht
 mehr. Der historische Kassa-QR wird nur für Restaurants mit aktivem
 kundeninitiiertem Sammelmodus als Kompatibilitätsweg angezeigt.
 
+## Owner-Bonusprogramm V1
+
+Die Owner-Seite `Bonusprogramm` zeigt ausschließlich die freigegebene
+Konfiguration `Freunde einladen & 2× Bonus`: Aktivierung, den festen
+Multiplikator 2x, 7/14/28/eigene Dauer und das monatliche Einladungslimit.
+
+Historische Modus-, Einlösequoten-, Stempel-, Bonstufen- und Regel-Editoren
+sind keine Owner-Funktionen in V1 und werden dort nicht angezeigt. Die
+zugrunde liegenden Datenbankobjekte und Punkteverträge bleiben aus
+Kompatibilitätsgründen bestehen und dürfen durch diese UI-Regel nicht verändert
+oder gelöscht werden.
+
 ## Dynamischer Dashboard-Schritt
 
 Das Dashboard zeigt oberhalb der Kennzahlen maximal einen priorisierten
@@ -26,7 +38,10 @@ direkt auf die Dashboard-Überschrift.
 
 ## Punkte sammeln konfigurieren
 
-Unter Bonusprogramm legt der Owner den erlaubten Sammelweg und den Maximalbetrag pro Buchung fest. Änderungen sind tenantgebunden und auditpflichtig. Der Standard für neue Restaurants ist „Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
+Der erlaubte Sammelweg und der Maximalbetrag bleiben tenantgebundene,
+auditpflichtige Systemwerte. Sie sind nicht Bestandteil der reduzierten
+Owner-Seite `Bonusprogramm`. Der Standard für neue Restaurants ist
+„Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
 
 V1 besitzt keine Owner-Einstellung fuer Bonnummern oder Kassenbelege. Historische
 Belegfelder sind nicht Teil der aktiven Konfiguration und duerfen nicht als

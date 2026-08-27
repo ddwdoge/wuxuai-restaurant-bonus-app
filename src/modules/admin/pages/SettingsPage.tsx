@@ -43,6 +43,8 @@ import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEdito
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
+import { SmartMediaEditor } from "../../../shared/components/SmartMediaEditor";
+import { DEFAULT_MEDIA_PRESENTATION, type MediaPresentation } from "../../../shared/mediaPresentation";
 import {
   defaultLogoPresentation,
   logoPresentationAfterEditorDrag,
@@ -87,6 +89,7 @@ type PartnerLocationForm = {
   isDiscoverable: boolean;
   shortDescription: string;
   coverImageUrl: string;
+  coverImagePresentation: MediaPresentation;
 };
 
 type GeocodingStatus = "idle" | "searching" | "found" | "ambiguous" | "not_found" | "stale" | "error" | "rate_limited";
@@ -639,7 +642,7 @@ export function SettingsPage() {
         if (supabase) {
           const { data: locationData, error: locationError } = await supabase
             .from("branches")
-            .select("id, address, postal_code, city, country, latitude, longitude, is_discoverable, public_short_description, public_cover_image_url")
+            .select("id, address, postal_code, city, country, latitude, longitude, is_discoverable, public_short_description, public_cover_image_url, public_cover_image_zoom, public_cover_image_position_x, public_cover_image_position_y")
             .eq("restaurant_id", nextDetails.id)
             .limit(1)
             .maybeSingle();
@@ -655,6 +658,11 @@ export function SettingsPage() {
             isDiscoverable: Boolean(locationData.is_discoverable),
             shortDescription: locationData.public_short_description ?? "",
             coverImageUrl: locationData.public_cover_image_url ?? "",
+            coverImagePresentation: {
+              zoom: Number(locationData.public_cover_image_zoom ?? 1),
+              positionX: Number(locationData.public_cover_image_position_x ?? 0.5),
+              positionY: Number(locationData.public_cover_image_position_y ?? 0.5),
+            },
           } : null;
           setPartnerLocation(nextLocation);
           setGeocodingCandidates([]);
@@ -841,6 +849,11 @@ export function SettingsPage() {
           is_discoverable: partnerLocation.isDiscoverable,
           public_short_description: partnerLocation.shortDescription.trim() || null,
           public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
+          public_cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
+          public_cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
+          public_cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
+          public_cover_image_aspect_ratio: "16:9",
+          public_cover_image_crop_version: 1,
         })
         .eq("id", partnerLocation.id)
         .eq("restaurant_id", details.id);
@@ -1265,6 +1278,9 @@ export function SettingsPage() {
       longitude,
       logo_url: branding?.logo_url ?? null,
       cover_image_url: partnerLocation.coverImageUrl || null,
+      cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
+      cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
+      cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
       short_description: partnerLocation.shortDescription || null,
       opening_hours: details.opening_hours,
       welcome_reward_available: false,
@@ -1311,7 +1327,15 @@ export function SettingsPage() {
               </div>
               {previewLocation ? <details className="settings-location-advanced"><summary>Erweiterte Einstellungen</summary><dl><div><dt>Breitengrad</dt><dd>{latitude.toFixed(6)}</dd></div><div><dt>Längengrad</dt><dd>{longitude.toFixed(6)}</dd></div></dl></details> : null}
               <div className="field"><FormLabel htmlFor="location-description" optional>Öffentliche Kurzbeschreibung</FormLabel><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
-              <div className="field"><FormLabel htmlFor="location-cover" optional>Öffentliches Bild (HTTPS-Adresse)</FormLabel><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
+              <div className="field"><FormLabel htmlFor="location-cover" optional>Öffentliches Bild (HTTPS-Adresse)</FormLabel><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value, coverImagePresentation: DEFAULT_MEDIA_PRESENTATION } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
+              {partnerLocation.coverImageUrl.trim() ? (
+                <SmartMediaEditor
+                  imageUrl={partnerLocation.coverImageUrl.trim()}
+                  label={`${details.name} Titelbild`}
+                  onPresentationChange={(coverImagePresentation) => setPartnerLocation((current) => current ? { ...current, coverImagePresentation } : current)}
+                  presentation={partnerLocation.coverImagePresentation}
+                />
+              ) : null}
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>

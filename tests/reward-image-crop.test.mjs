@@ -3,14 +3,15 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import ts from "typescript";
 
-const cropSource = readFileSync(new URL("../src/shared/rewardImageCrop.ts", import.meta.url), "utf8");
+const cropSource = readFileSync(new URL("../src/shared/mediaPresentation.ts", import.meta.url), "utf8");
 const cropJavaScript = ts.transpileModule(cropSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const crop = await import(`data:text/javascript;base64,${Buffer.from(cropJavaScript).toString("base64")}`);
 
 const frame = readFileSync(new URL("../src/shared/components/RewardImageFrame.tsx", import.meta.url), "utf8");
-const frameStyles = readFileSync(new URL("../src/shared/components/reward-image-frame.css", import.meta.url), "utf8");
+const frameStyles = readFileSync(new URL("../src/shared/components/smart-media.css", import.meta.url), "utf8");
+const smartEditor = readFileSync(new URL("../src/shared/components/SmartMediaEditor.tsx", import.meta.url), "utf8");
 const editor = readFileSync(new URL("../src/modules/admin/components/OwnerRewardImageEditor.tsx", import.meta.url), "utf8");
 const rewardsPage = readFileSync(new URL("../src/modules/admin/pages/RewardsPage.tsx", import.meta.url), "utf8");
 const welcomePage = readFileSync(new URL("../src/modules/admin/pages/WelcomeGiftsPage.tsx", import.meta.url), "utf8");
@@ -19,48 +20,51 @@ const rewardService = readFileSync(new URL("../src/modules/rewards/rewardService
 const migration = readFileSync(new URL("../supabase/migrations/20260726002000_reward_image_crop_metadata.sql", import.meta.url), "utf8");
 
 test("alte Bilder erhalten einen stabilen zentrierten Default-Ausschnitt", () => {
-  assert.deepEqual(crop.rewardImageCropFromRecord(null), { zoom: 1, positionX: 0.5, positionY: 0.5 });
-  assert.deepEqual(crop.normalizeRewardImageCrop({ zoom: 99, positionX: -2, positionY: 3 }), { zoom: 4, positionX: 0, positionY: 1 });
-  assert.equal(crop.normalizeRewardImageCrop({ zoom: 0 }).zoom, 0.1);
+  assert.deepEqual(crop.mediaPresentationFromRecord(null), { zoom: 1, positionX: 0.5, positionY: 0.5 });
+  assert.deepEqual(crop.normalizeMediaPresentation({ zoom: 99, positionX: -2, positionY: 3 }), { zoom: 4, positionX: 0, positionY: 1 });
+  assert.equal(crop.normalizeMediaPresentation({ zoom: 0 }).zoom, 0.1);
 });
 
 test("Einpassen berechnet das Mindestzoom aus dem echten Bildformat", () => {
-  assert.equal(crop.calculateRewardImageFitZoom(1600, 900), 1);
-  assert.equal(crop.calculateRewardImageFitZoom(1000, 1000), 0.5625);
-  assert.equal(crop.calculateRewardImageFitZoom(900, 1600), 0.31640625);
-  assert.equal(crop.calculateRewardImageCoverScale(1000, 1000), 16 / 9);
+  assert.equal(crop.calculateMediaFitZoom(1600, 900), 1);
+  assert.equal(crop.calculateMediaFitZoom(1000, 1000), 0.5625);
+  assert.equal(crop.calculateMediaFitZoom(900, 1600), 0.31640625);
+  assert.equal(crop.calculateMediaCoverScale(1000, 1000), 16 / 9);
 });
 
 test("responsive Crop-Werte bleiben normalisiert und pixelunabhängig", () => {
-  const saved = crop.normalizeRewardImageCrop({ zoom: 1.35, positionX: 0.42, positionY: 0.58 });
+  const saved = crop.normalizeMediaPresentation({ zoom: 1.35, positionX: 0.42, positionY: 0.58 });
   assert.deepEqual(saved, { zoom: 1.35, positionX: 0.42, positionY: 0.58 });
-  assert.match(frameStyles, /aspect-ratio: 16 \/ 9/);
-  assert.match(frameStyles, /object-position: var\(--reward-image-position-x/);
+  assert.match(frameStyles, /aspect-ratio: var\(--smart-media-aspect-ratio/);
+  assert.match(frameStyles, /object-position: var\(--smart-media-position-x/);
   assert.match(frameStyles, /object-fit: contain/);
-  assert.match(frameStyles, /transform: scale\(var\(--reward-image-render-scale/);
+  assert.match(frameStyles, /transform: scale\(var\(--smart-media-render-scale/);
 });
 
 test("Owner und Kundenportal verwenden dieselbe RewardImageFrame-Darstellung", () => {
   assert.match(rewardsPage, /RewardImageFrame/);
   assert.match(welcomePage, /RewardImageFrame/);
   assert.match(customerUi, /RewardImageFrame/);
-  assert.match(frame, /normalizeRewardImageCrop/);
+  assert.match(frame, /SmartMediaFrame/);
 });
 
-test("Editor unterstützt Zoom, Drag, Tastatur und Reset", () => {
-  assert.match(editor, /type="range"/);
-  assert.match(editor, /onPointerDown/);
-  assert.match(editor, /ArrowLeft/);
-  assert.match(editor, /ArrowRight/);
-  assert.match(editor, /ArrowUp/);
-  assert.match(editor, /ArrowDown/);
-  assert.match(editor, /Ausschnitt zurücksetzen/);
+test("Editor unterstützt Zoom, Drag, Pinch, Trackpad, Tastatur und getrennten Reset", () => {
+  assert.match(editor, /SmartMediaEditor/);
+  assert.match(smartEditor, /onPointerDown/);
+  assert.match(smartEditor, /pointersRef/);
+  assert.match(smartEditor, /pointerDistance/);
+  assert.match(smartEditor, /onWheel/);
+  assert.match(smartEditor, /ArrowLeft/);
+  assert.match(smartEditor, /ArrowRight/);
+  assert.match(smartEditor, /ArrowUp/);
+  assert.match(smartEditor, /ArrowDown/);
+  assert.match(smartEditor, /Zurücksetzen/);
   assert.match(editor, /Anderes Foto wählen/);
-  assert.match(editor, /Einpassen/);
-  assert.match(editor, /calculateRewardImageFitZoom/);
-  assert.match(editor, /initialCropState/);
-  assert.match(editor, /autoFitImageRef/);
-  assert.match(frame, /naturalWidth/);
+  assert.match(smartEditor, /Automatisch einpassen/);
+  assert.match(smartEditor, /calculateMediaFitZoom/);
+  assert.match(smartEditor, /savedState/);
+  assert.match(smartEditor, /autoFitImageRef/);
+  assert.match(frameStyles, /touch-action: none/);
 });
 
 test("Crop und Bild-URL werden gemeinsam tenantgebunden gespeichert", () => {

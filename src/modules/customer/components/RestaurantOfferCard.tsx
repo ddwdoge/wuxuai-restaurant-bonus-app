@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, Image as ImageIcon } from "lucide-react";
+import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
+import { mediaPresentationFromRecord } from "../../../shared/mediaPresentation";
 import {
   formatRestaurantOfferPrice,
   formatRestaurantOfferPeriod,
@@ -16,7 +18,7 @@ function OfferImage({ offer, detail = false }: { offer: RestaurantOffer; detail?
   if (!offer.image_url || failed) {
     return <div aria-hidden="true" className={detail ? "customer-offer-detail-fallback" : "customer-offer-card-fallback"}><ImageIcon size={detail ? 40 : 31} /></div>;
   }
-  return <img alt={`Bild zu ${offer.title}`} loading={detail ? undefined : "lazy"} onError={() => setFailed(true)} src={offer.image_url} />;
+  return <SmartMediaFrame alt={`Bild zu ${offer.title}`} imageUrl={offer.image_url} onImageError={() => setFailed(true)} presentation={mediaPresentationFromRecord(offer)} />;
 }
 
 export function RestaurantOfferCard({

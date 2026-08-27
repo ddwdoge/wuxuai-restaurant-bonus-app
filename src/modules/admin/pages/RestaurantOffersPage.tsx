@@ -15,9 +15,12 @@ import {
   XCircle,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { DEFAULT_REWARD_IMAGE_CROP, rewardImageCropFromRecord, type RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { useTenant } from "../../tenant/TenantProvider";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
+import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import {
   removeOwnerRewardImageUpload,
   uploadOwnerRewardImage,
@@ -54,6 +57,7 @@ type OfferForm = {
   shortDescription: string;
   description: string;
   imageUrl: string | null;
+  imageCrop: RewardImageCrop;
   currentPrice: string;
   previousPrice: string;
   validFrom: string;
@@ -92,6 +96,7 @@ function newOfferForm(branchId = ""): OfferForm {
     shortDescription: "",
     description: "",
     imageUrl: null,
+    imageCrop: DEFAULT_REWARD_IMAGE_CROP,
     currentPrice: "",
     previousPrice: "",
     validFrom: localDateTime(start),
@@ -112,6 +117,7 @@ function offerToForm(offer: RestaurantOffer): OfferForm {
     shortDescription: offer.short_description,
     description: offer.description ?? "",
     imageUrl: offer.image_url,
+    imageCrop: rewardImageCropFromRecord(offer),
     currentPrice: offer.current_price == null ? "" : String(offer.current_price),
     previousPrice: offer.previous_price == null ? "" : String(offer.previous_price),
     validFrom: localDateTime(new Date(offer.valid_from)),
@@ -219,6 +225,7 @@ export function RestaurantOffersPage() {
     resetPhoto();
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
+    setForm((current) => ({ ...current, imageCrop: DEFAULT_REWARD_IMAGE_CROP }));
   }
 
   function validateForm() {
@@ -273,6 +280,9 @@ export function RestaurantOffersPage() {
         shortDescription: form.shortDescription.trim(),
         description: form.description.trim() || null,
         imageUrl,
+        imageZoom: form.imageCrop.zoom,
+        imagePositionX: form.imageCrop.positionX,
+        imagePositionY: form.imageCrop.positionY,
         currentPrice: form.currentPrice ? Number(form.currentPrice.replace(",", ".")) : null,
         previousPrice: form.previousPrice ? Number(form.previousPrice.replace(",", ".")) : null,
         validFrom: new Date(form.validFrom).toISOString(),
@@ -385,7 +395,7 @@ export function RestaurantOffersPage() {
             return (
               <article className="restaurant-offer-card" key={offer.id}>
                 <div className="restaurant-offer-media">
-                  {offer.image_url ? <img alt={`Bild zu ${offer.title}`} loading="lazy" src={offer.image_url} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}
+                  {offer.image_url ? <SmartMediaFrame alt={`Bild zu ${offer.title}`} imageUrl={offer.image_url} presentation={rewardImageCropFromRecord(offer)} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}
                   <span className={`restaurant-offer-status ${statusTone(displayStatus)}`}>{displayStatus}</span>
                 </div>
                 <div className="restaurant-offer-body">
@@ -428,16 +438,37 @@ export function RestaurantOffersPage() {
       >
         <form className="restaurant-offer-form" onSubmit={(event) => { event.preventDefault(); void saveForm(); }}>
           <RequiredFieldsNote />
-          <OwnerRewardImageUploader
-            ariaLabel={form.imageUrl || photoPreview ? "Foto für das Angebot ändern" : "Foto für das Angebot hinzufügen"}
-            categoryIcon={<ImageIcon aria-hidden="true" size={34} />}
-            imageUrl={form.imageUrl}
-            label="Angebot"
-            loading={saving && Boolean(photoFile)}
-            onFileSelected={selectPhoto}
-            onRemove={() => { resetPhoto(); setForm((current) => ({ ...current, imageUrl: null })); }}
-            previewUrl={photoPreview}
-          />
+          {photoPreview || form.imageUrl ? (
+            <div className="restaurant-offer-media-editor-block">
+              <OwnerRewardImageEditor
+                crop={form.imageCrop}
+                disabled={saving}
+                imageUrl={photoPreview ?? form.imageUrl ?? ""}
+                label={form.title || "Angebot"}
+                onCropChange={(imageCrop) => setForm((current) => ({ ...current, imageCrop }))}
+                onFileSelected={selectPhoto}
+              />
+              <button
+                className="button secondary restaurant-offer-remove-photo"
+                disabled={saving}
+                onClick={() => { resetPhoto(); setForm((current) => ({ ...current, imageUrl: null, imageCrop: DEFAULT_REWARD_IMAGE_CROP })); }}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={18} />Foto entfernen
+              </button>
+            </div>
+          ) : (
+            <OwnerRewardImageUploader
+              ariaLabel="Foto für das Angebot hinzufügen"
+              categoryIcon={<ImageIcon aria-hidden="true" size={34} />}
+              imageUrl={null}
+              crop={form.imageCrop}
+              label="Angebot"
+              loading={saving && Boolean(photoFile)}
+              onFileSelected={selectPhoto}
+              previewUrl={null}
+            />
+          )}
           <div className="field"><FormLabel htmlFor="offer-title" required>Titel</FormLabel><input aria-required="true" id="offer-title" maxLength={120} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} ref={firstInvalidRef} required value={form.title} /></div>
           <div className="field"><FormLabel htmlFor="offer-type" required>Art des Beitrags</FormLabel><select aria-required="true" id="offer-type" onChange={(event) => setForm((current) => ({ ...current, offerType: event.target.value as RestaurantOfferType }))} required value={form.offerType}>{restaurantOfferTypes.map((type) => <option key={type} value={type}>{restaurantOfferTypeLabels[type]}</option>)}</select></div>
           <div className="field"><FormLabel htmlFor="offer-short" required>Kurzbeschreibung</FormLabel><textarea aria-required="true" id="offer-short" maxLength={240} onChange={(event) => setForm((current) => ({ ...current, shortDescription: event.target.value }))} required rows={3} value={form.shortDescription} /><small>{form.shortDescription.length}/240 Zeichen</small></div>
@@ -460,7 +491,7 @@ export function RestaurantOffersPage() {
       </AppDrawer>
 
       <AppDrawer description="So sehen Gäste den Beitrag." onClose={() => setPreviewOffer(null)} open={Boolean(previewOffer)} size="standard" title="Vorschau">
-        {previewOffer ? <article className="restaurant-offer-customer-preview">{previewOffer.image_url ? <img alt={`Bild zu ${previewOffer.title}`} src={previewOffer.image_url} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}<div><small>{restaurantOfferTypeLabels[previewOffer.offer_type]}</small><h2>{previewOffer.title}</h2><p>{previewOffer.short_description}</p>{previewOffer.current_price != null ? <strong>{formatRestaurantOfferPrice(previewOffer.current_price)}</strong> : null}<button className="button" type="button">{previewOffer.button_label}</button></div></article> : null}
+        {previewOffer ? <article className="restaurant-offer-customer-preview">{previewOffer.image_url ? <SmartMediaFrame alt={`Bild zu ${previewOffer.title}`} imageUrl={previewOffer.image_url} presentation={rewardImageCropFromRecord(previewOffer)} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}<div><small>{restaurantOfferTypeLabels[previewOffer.offer_type]}</small><h2>{previewOffer.title}</h2><p>{previewOffer.short_description}</p>{previewOffer.current_price != null ? <strong>{formatRestaurantOfferPrice(previewOffer.current_price)}</strong> : null}<button className="button" type="button">{previewOffer.button_label}</button></div></article> : null}
       </AppDrawer>
     </div>
   );

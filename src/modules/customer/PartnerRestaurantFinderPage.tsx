@@ -120,7 +120,16 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
   return (
     <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
       <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
-      <RestaurantHeroImage coverImageUrl={location.cover_image_url} logoUrl={location.logo_url} name={location.name} />
+      <RestaurantHeroImage
+        coverImageUrl={location.cover_image_url}
+        logoUrl={location.logo_url}
+        name={location.name}
+        presentation={{
+          zoom: location.cover_image_zoom ?? 1,
+          positionX: location.cover_image_position_x ?? 0.5,
+          positionY: location.cover_image_position_y ?? 0.5,
+        }}
+      />
       <div className="partner-detail-heading">
         <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
         <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : membership?.registered ? "Dein Bonus" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>

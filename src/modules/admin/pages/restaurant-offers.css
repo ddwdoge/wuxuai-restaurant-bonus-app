@@ -27,7 +27,7 @@
 .restaurant-offers-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .restaurant-offer-card { background: #fff; border: 1px solid #e9e2d8; border-radius: 8px; box-shadow: 0 10px 28px rgba(45, 37, 26, .07); min-width: 0; overflow: hidden; }
 .restaurant-offer-media { aspect-ratio: 16 / 9; background: #f1ece3; overflow: hidden; position: relative; }
-.restaurant-offer-media > img { height: 100%; object-fit: cover; width: 100%; }
+.restaurant-offer-media > .smart-media-frame { height: 100%; }
 .restaurant-offer-media > span:not(.restaurant-offer-status) { align-items: center; color: #a98a4b; display: flex; height: 100%; justify-content: center; }
 .restaurant-offer-status { background: #eee; border-radius: 999px; font-size: .76rem; font-weight: 700; left: 12px; padding: 6px 9px; position: absolute; top: 12px; }
 .restaurant-offer-status.active { background: #e5f4e8; color: #28643a; }
@@ -52,6 +52,8 @@
 .restaurant-offers-empty h2 { margin: 12px 0 4px; }
 .restaurant-offers-empty p { color: #6c655c; margin: 0 0 18px; }
 .restaurant-offer-form { display: grid; gap: 17px; padding-bottom: 10px; }
+.restaurant-offer-media-editor-block { display: grid; gap: 10px; min-width: 0; }
+.restaurant-offer-remove-photo { justify-self: start; }
 .restaurant-offer-form .field { min-width: 0; }
 .restaurant-offer-form input, .restaurant-offer-form select, .restaurant-offer-form textarea { box-sizing: border-box; min-height: 48px; width: 100%; }
 .restaurant-offer-form textarea { resize: vertical; }
@@ -64,7 +66,7 @@
 .restaurant-offer-weekdays input { min-height: auto; width: auto; }
 .restaurant-offer-form-error { background: #fff0ee; border-left: 3px solid #b65b4e; color: #74392f; margin: 0; padding: 11px 13px; }
 .restaurant-offer-customer-preview { background: #fff; border: 1px solid #e6ded1; border-radius: 8px; overflow: hidden; }
-.restaurant-offer-customer-preview > img, .restaurant-offer-customer-preview > span { align-items: center; aspect-ratio: 16 / 9; background: #f0eadf; display: flex; justify-content: center; object-fit: cover; width: 100%; }
+.restaurant-offer-customer-preview > .smart-media-frame, .restaurant-offer-customer-preview > span { align-items: center; aspect-ratio: 16 / 9; background: #f0eadf; display: flex; justify-content: center; width: 100%; }
 .restaurant-offer-customer-preview > div { display: grid; gap: 10px; padding: 18px; }
 .restaurant-offer-customer-preview h2, .restaurant-offer-customer-preview p { margin: 0; }
 .restaurant-offer-customer-preview small { color: #9a711c; font-weight: 800; text-transform: uppercase; }
@@ -78,6 +80,7 @@
   .restaurant-offers-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .restaurant-offers-grid { grid-template-columns: minmax(0, 1fr); }
   .restaurant-offer-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .restaurant-offer-remove-photo { justify-content: center; width: 100%; }
   .restaurant-offer-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .restaurant-offer-email-summary-heading { align-items: flex-start; flex-wrap: wrap; }
   .restaurant-offer-email-summary-heading > strong { margin-left: 32px; }

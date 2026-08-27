@@ -1,0 +1,43 @@
+.smart-media-frame {
+  align-items: center;
+  aspect-ratio: var(--smart-media-aspect-ratio, 1.77778);
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.smart-media-frame > img {
+  display: block;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: var(--smart-media-position-x, 50%) var(--smart-media-position-y, 50%);
+  transform: scale(var(--smart-media-render-scale, 1));
+  transform-origin: var(--smart-media-position-x, 50%) var(--smart-media-position-y, 50%);
+  user-select: none;
+  width: 100%;
+}
+
+.smart-media-editor { display: grid; gap: 10px; max-width: 560px; min-width: 0; width: 100%; }
+.smart-media-editor-heading { align-items: center; display: flex; justify-content: space-between; }
+.smart-media-editor-heading strong { color: #252018; font-size: 1rem; }
+.smart-media-editor-heading span { color: #956820; font-size: .88rem; font-weight: 750; }
+.smart-media-editor-helper { color: #6b6257; font-size: .84rem; line-height: 1.4; margin: 0; }
+.smart-media-editor-quality { background: #fff7e2; color: #72561d; font-size: .8rem; line-height: 1.4; margin: 0; padding: 9px 11px; }
+.smart-media-editor-stage { background: #eee6d9; border: 1px solid rgba(149, 104, 32, .2); border-radius: 8px; cursor: grab; overflow: hidden; touch-action: none; }
+.smart-media-editor-stage:active { cursor: grabbing; }
+.smart-media-editor-stage:focus-visible { outline: 3px solid rgba(191, 143, 54, .4); outline-offset: 3px; }
+.smart-media-editor-controls { align-items: center; display: grid; gap: 10px; grid-template-columns: 44px minmax(64px, auto) 44px; justify-content: center; }
+.smart-media-editor-controls button { align-items: center; background: #fff; border: 1px solid rgba(34, 31, 26, .13); border-radius: 8px; color: #956820; display: flex; height: 44px; justify-content: center; width: 44px; }
+.smart-media-editor-controls button:disabled { cursor: not-allowed; opacity: .45; }
+.smart-media-editor-controls span { color: #514c45; font-variant-numeric: tabular-nums; min-width: 64px; text-align: center; }
+.smart-media-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.smart-media-editor-actions .button { min-height: 44px; }
+
+@media (max-width: 520px) {
+  .smart-media-editor-actions { display: grid; grid-template-columns: 1fr; }
+  .smart-media-editor-actions .button { width: 100%; }
+}

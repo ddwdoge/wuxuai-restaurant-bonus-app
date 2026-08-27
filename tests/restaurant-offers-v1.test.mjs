@@ -232,13 +232,18 @@ test("Customer-Angebote zeigen Gültigkeitsstatus und kompakten Zeitplan", async
   }
   assert.match(card, /formatRestaurantOfferSchedule/);
   assert.match(card, /formatRestaurantOfferPeriod/);
-  assert.match(card, /onError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(card, /onImageError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(card, /SmartMediaFrame/);
 });
 
 test("Mobile Customer-Angebotskarten halten 16:9, Textgrenzen und volle CTA-Breite", async () => {
-  const css = await readFile(customerOfferCssUrl, "utf8");
+  const [css, mediaCss] = await Promise.all([
+    readFile(customerOfferCssUrl, "utf8"),
+    readFile(new URL("../src/shared/components/smart-media.css", import.meta.url), "utf8"),
+  ]);
   assert.match(css, /aspect-ratio: var\(--customer-card-media-ratio, 16 \/ 9\)/);
-  assert.match(css, /object-fit: cover/);
+  assert.match(mediaCss, /object-fit: contain/);
+  assert.match(mediaCss, /transform: scale\(var\(--smart-media-render-scale/);
   assert.match(css, /-webkit-line-clamp: 2/);
   assert.match(css, /customer-offer-card \.premium-button \{ min-height: 44px; width: 100%; \}/);
   assert.match(css, /@media \(max-width: 560px\)/);

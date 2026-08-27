@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
+import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
+import type { MediaPresentation } from "../../../shared/mediaPresentation";
 
 type ImageState = "loading" | "valid" | "error" | "missing";
 
@@ -27,10 +29,12 @@ export function RestaurantHeroImage({
   coverImageUrl,
   logoUrl,
   name,
+  presentation,
 }: {
   coverImageUrl: string | null;
   logoUrl: string | null;
   name: string;
+  presentation?: Partial<MediaPresentation> | null;
 }) {
   const source = normalizedImageUrl(coverImageUrl);
   const [state, setState] = useState<ImageState>(source ? "loading" : "missing");
@@ -46,20 +50,15 @@ export function RestaurantHeroImage({
       data-image-state={state}
       role={state === "valid" ? undefined : "img"}
     >
-      <div aria-hidden={state === "valid"} className="partner-detail-hero-fallback">
-        <RestaurantLogoImage alt={`${name} Logo`} className="partner-detail-hero-logo" logoUrl={logoUrl} name={name} />
-      </div>
-      {source && state !== "error" ? (
-        <img
-          alt={`${name} Titelbild`}
-          className={`partner-detail-cover${state === "valid" ? " is-loaded" : ""}`}
-          key={source}
-          loading="lazy"
-          onError={() => setState("error")}
-          onLoad={() => setState("valid")}
-          src={source}
-        />
-      ) : null}
+      <SmartMediaFrame
+        alt={`${name} Titelbild`}
+        className="partner-detail-cover"
+        fallback={<div className="partner-detail-hero-fallback"><RestaurantLogoImage alt={`${name} Logo`} className="partner-detail-hero-logo" logoUrl={logoUrl} name={name} /></div>}
+        imageUrl={state === "error" ? null : source}
+        onImageError={() => setState("error")}
+        onImageLoad={() => setState("valid")}
+        presentation={presentation}
+      />
     </div>
   );
 }
