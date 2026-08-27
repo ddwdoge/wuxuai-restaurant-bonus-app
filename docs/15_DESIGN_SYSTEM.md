@@ -608,9 +608,17 @@ Regeln:
 
 ### 9.4 Logo
 
-Logo proportional.
+Logo proportional und mit derselben Smart-Logo-Praesentation wie in Owner-,
+Customer- und Staff-Oberflaechen.
 
 Kein fester quadratischer Zwang.
+
+- Fit-Modus, Skalierung und normalisierte X-/Y-Position gelten auch im PDF.
+- Quadratische Logos erhalten im A6-Header eine kompakte Stage mit klarer
+  Markenpraesenz; breite und hohe Logos werden adaptiv eingepasst.
+- Transparente Logos liegen direkt auf dem warmen Seitenhintergrund. Die
+  LogoStage erzeugt keine zusaetzliche weisse oder graue Bildbox.
+- Eine groessere LogoStage darf weder QR-Groesse noch QR-Ruhezone reduzieren.
 
 Technische Regel:
 
@@ -632,16 +640,20 @@ Nicht als Werbung.
 
 ### 9.6 Freundschaftsbonus-Hinweis
 
-Die erste Gaesteseite darf einen kompakten Hinweis enthalten:
+Beide Gaesteseiten duerfen denselben kompakten Hinweis enthalten:
 
 ```text
 Freunde einladen lohnt sich
 
-Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.
+🔥 Du bekommst          👥 Dein Freund bekommt
+   2× Punkte               2× Punkte
+
+Aktiv nach dem ersten qualifizierten Besuch deines Freundes.
 ```
 
-Keine feste Laufzeit im Druck. Die konfigurierte Dauer wird nur dynamisch in
-der Anwendung angezeigt.
+Keine dritte Laufzeit-Zelle und keine feste Laufzeit im Druck. Die konfigurierte
+Dauer wird nur dynamisch in der Anwendung angezeigt. Die Staff-Seite enthaelt
+keinen Freundschaftsbonus-Hinweis.
 
 ---
 

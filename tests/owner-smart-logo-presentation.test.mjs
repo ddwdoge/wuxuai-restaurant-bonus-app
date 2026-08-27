@@ -57,6 +57,10 @@ test("Gemeinsame LogoStage behandelt defekte Quellen ohne sichtbaren Browser-Fal
   assert.match(component, /naturalWidth/);
   assert.match(css, /object-fit: contain/);
   assert.match(css, /aspect-wide img \{ padding: 13% 5%; \}/);
+  assert.match(css, /restaurant-logo-stage\.has-image \{[\s\S]*background: transparent;[\s\S]*border-color: transparent;/);
+  assert.match(css, /has-image\.size-header\.aspect-square \{ width: 48px; \}/);
+  assert.match(css, /has-image\.size-header\.aspect-tall \{ width: 40px; \}/);
+  assert.match(css, /has-image\.size-print\.aspect-square \{ width: 82px; \}/);
   assert.doesNotMatch(component, /dangerouslySetInnerHTML/);
 });
 

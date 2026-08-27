@@ -23,11 +23,27 @@
   padding: 0;
 }
 
+.restaurant-logo-stage.has-image {
+  background: transparent;
+  border-color: transparent;
+}
+
 .restaurant-logo-stage.size-compact { height: 42px; width: 48px; }
 .restaurant-logo-stage.size-header { height: 48px; width: clamp(52px, 10vw, 86px); }
 .restaurant-logo-stage.size-detail { aspect-ratio: 16 / 9; max-width: 280px; width: 100%; }
 .restaurant-logo-stage.size-preview { aspect-ratio: 16 / 9; width: 100%; }
 .restaurant-logo-stage.size-print { height: 82px; width: 184px; }
+
+.restaurant-logo-stage.has-image.size-compact.aspect-square { width: 42px; }
+.restaurant-logo-stage.has-image.size-compact.aspect-tall { width: 34px; }
+.restaurant-logo-stage.has-image.size-header.aspect-square { width: 48px; }
+.restaurant-logo-stage.has-image.size-header.aspect-tall { width: 40px; }
+.restaurant-logo-stage.has-image.size-detail.aspect-square { aspect-ratio: 1; max-width: 180px; }
+.restaurant-logo-stage.has-image.size-detail.aspect-tall { aspect-ratio: 3 / 4; max-width: 160px; }
+.restaurant-logo-stage.has-image.size-preview.aspect-square { aspect-ratio: 1; }
+.restaurant-logo-stage.has-image.size-preview.aspect-tall { aspect-ratio: 3 / 4; }
+.restaurant-logo-stage.has-image.size-print.aspect-square { width: 82px; }
+.restaurant-logo-stage.has-image.size-print.aspect-tall { width: 66px; }
 
 .restaurant-logo-stage img {
   box-sizing: border-box;
@@ -55,4 +71,6 @@
 
 @media (max-width: 430px) {
   .restaurant-logo-stage.size-header { height: 44px; width: 54px; }
+  .restaurant-logo-stage.has-image.size-header.aspect-square { width: 44px; }
+  .restaurant-logo-stage.has-image.size-header.aspect-tall { width: 36px; }
 }

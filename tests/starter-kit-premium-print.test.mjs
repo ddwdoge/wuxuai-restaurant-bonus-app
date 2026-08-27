@@ -32,14 +32,25 @@ test("three core print pages use the approved content hierarchy", () => {
   assert.doesNotMatch(onboarding, /drawStarterKitInfoPage/);
 });
 
-test("Referral print message is one dynamic premium block without stale duration", () => {
+test("both guest sheets use two evergreen 2x benefit cells without printed duration", () => {
   for (const source of [qrCenter, onboarding]) {
     assert.match(source, /Freunde einladen lohnt sich/);
-    assert.match(source, /Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten\./);
-    assert.doesNotMatch(source, /\+30 Tage|30 Tage[^\n]*(Bonus Boost|2×)|15 Tage[^\n]*(Bonus Boost|2×)/i);
+    assert.match(source, /icon: "🔥", label: "Du bekommst", value: "2× Punkte"/);
+    assert.match(source, /icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte"/);
+    assert.match(source, /Aktiv nach dem ersten qualifizierten Besuch deines Freundes\./);
+    assert.doesNotMatch(source, /\b(?:7|14|15|28|30)\s*Tage\b/i);
   }
-  assert.equal((qrCenter.match(/referralHint: true/g) ?? []).length, 1);
-  assert.equal((onboarding.match(/referralHint: true/g) ?? []).length, 1);
+  assert.equal((qrCenter.match(/referralHint: true/g) ?? []).length, 2);
+  assert.equal((onboarding.match(/referralHint: true/g) ?? []).length, 2);
+});
+
+test("A6 PDF logo gains adaptive visual presence and keeps Smart Logo metadata", () => {
+  assert.match(qrCenter, /height: 160,[\s\S]{0,240}presentation: branding\.presentation[\s\S]{0,240}width: 460/);
+  assert.ok(160 / 118 >= 1.3 && 160 / 118 <= 1.4);
+  for (const source of [qrCenter, onboarding]) {
+    assert.match(source, /logoCanvasPlacement\([\s\S]{0,260}presentation \?\? \{\}/);
+  }
+  assert.match(onboarding, /logoPresentation: tenantBranding \? \{/);
 });
 
 test("QR frames preserve white quiet space, crisp modules and larger QR output", () => {

@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Starter-Kit-Logo und Referral-Druckvertrag finalisiert
+
+- Die A6-LogoStage adaptiv um rund 35 Prozent vergroessert, ohne QR-Groesse,
+  Ruhezone, Payload oder vertikale QR-Position zu veraendern.
+- Beide Gaesteseiten zeigen zwei kompakte 2x-Vorteilszellen und den kurzen
+  Qualifikationshinweis; feste oder konfigurierbare Laufzeiten werden nicht
+  gedruckt, die Staff-Seite bleibt referralfrei.
+- Geladene Logos zeigen in Headern, Karten und Listen keinen kuenstlichen
+  grauen Stage-Hintergrund mehr; die Stage-Breite folgt quadratischem, breitem
+  oder hohem Seitenverhaeltnis, ohne die Originaldatei zu veraendern.
+
 ## 2026-08-27 - Smart-Logo-Autoanpassung dauerhaft gespeichert
 
 - Logo-Darstellung fuer Owner, Customer, Staff und Starter Kit ueber gemeinsame

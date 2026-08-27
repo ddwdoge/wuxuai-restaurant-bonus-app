@@ -321,7 +321,12 @@ function drawBonusBoostHint(
   const { accentColor, primaryColor, width, x, y } = options;
 
   context.save();
-  roundedRect(context, x, y, width, 176, 28);
+  const cellGap = 24;
+  const cellInset = 28;
+  const cellWidth = (width - cellInset * 2 - cellGap) / 2;
+  const cellY = y + 66;
+
+  roundedRect(context, x, y, width, 240, 28);
   context.fillStyle = colorWithAlpha(accentColor, 0.12);
   context.fill();
   context.strokeStyle = colorWithAlpha(accentColor, 0.42);
@@ -332,16 +337,35 @@ function drawBonusBoostHint(
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
   context.font = "700 29px Inter, Arial, sans-serif";
-  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 28);
+  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 22);
+
+  [
+    { icon: "🔥", label: "Du bekommst", value: "2× Punkte" },
+    { icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte" },
+  ].forEach((benefit, index) => {
+    const cellX = x + cellInset + index * (cellWidth + cellGap);
+    roundedRect(context, cellX, cellY, cellWidth, 112, 20);
+    context.fillStyle = "rgba(255, 255, 255, 0.78)";
+    context.fill();
+    context.strokeStyle = colorWithAlpha(accentColor, 0.32);
+    context.lineWidth = 2;
+    context.stroke();
+    context.fillStyle = "#17202a";
+    context.font = "400 30px Apple Color Emoji, Segoe UI Emoji, sans-serif";
+    context.fillText(benefit.icon, cellX + cellWidth / 2, cellY + 8);
+    context.font = "600 22px Inter, Arial, sans-serif";
+    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 48);
+    context.fillStyle = primaryColor;
+    context.font = "800 28px Inter, Arial, sans-serif";
+    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 76);
+  });
+
   context.fillStyle = "#465463";
-  context.font = "400 22px Inter, Arial, sans-serif";
-  drawWrappedText(
-    context,
-    "Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.",
+  context.font = "400 21px Inter, Arial, sans-serif";
+  context.fillText(
+    "Aktiv nach dem ersten qualifizierten Besuch deines Freundes.",
     x + width / 2,
-    y + 78,
-    width - 80,
-    29,
+    y + 198,
   );
   context.restore();
 }
@@ -377,35 +401,35 @@ function drawQrPrintPage(
   context.fillRect(0, 0, canvas.width, 22);
 
   drawLogo(context, {
-    height: 118,
+    height: 160,
     logoImage: branding.logoImage,
     primaryColor: branding.primaryColor,
     presentation: branding.presentation,
     restaurantName: branding.restaurantName,
-    width: 360,
-    x: (canvas.width - 360) / 2,
-    y: 52,
+    width: 460,
+    x: (canvas.width - 460) / 2,
+    y: 34,
   });
 
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
   context.font = "600 38px Inter, Arial, sans-serif";
-  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 188, contentWidth - 40, 44);
+  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 200, contentWidth - 40, 44);
 
   if (page.audienceLabel) {
     context.fillStyle = branding.primaryColor;
     context.font = "600 23px Inter, Arial, sans-serif";
-    context.fillText(page.audienceLabel, canvas.width / 2, 278);
+    context.fillText(page.audienceLabel, canvas.width / 2, 280);
   }
 
   context.fillStyle = "#17202a";
   context.font = "800 64px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.headline, canvas.width / 2, 326, contentWidth, 72);
+  drawWrappedText(context, page.headline, canvas.width / 2, 320, contentWidth, 72);
 
   context.fillStyle = "#465463";
   context.font = "400 28px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.subheadline, canvas.width / 2, 418, contentWidth - 90, 35);
+  drawWrappedText(context, page.subheadline, canvas.width / 2, 414, contentWidth - 90, 35);
 
   roundedRect(context, qrX - 44, qrY - 44, qrSize + 88, qrSize + 88, 30);
   context.fillStyle = "#ffffff";
@@ -428,7 +452,7 @@ function drawQrPrintPage(
       primaryColor: branding.primaryColor,
       width: contentWidth,
       x: margin,
-      y: 1332,
+      y: 1316,
     });
   }
 
@@ -484,6 +508,7 @@ async function buildQrCenterStarterKitPdf(input: {
       audienceLabel: "Bonus für Gäste",
       headline: "Bonusprogramm entdecken",
       qrCanvas: restaurantQr,
+      referralHint: true,
       subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
     },
     {

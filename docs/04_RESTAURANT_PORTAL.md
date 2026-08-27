@@ -786,3 +786,9 @@ korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
   werden. Ein vorhandener Bildhintergrund wird niemals automatisch entfernt.
 - Customer-, Staff- und QR-Starter-Kit-Flächen nutzen dieselbe LogoStage und
   denselben stabilen Fehlerfallback.
+- Eine geladene LogoStage zeigt keinen kuenstlichen grauen oder weissen
+  Seitenbereich. Header- und Printflaechen passen ihre Breite an quadratische,
+  breite und hohe Logos an; feste Bildhintergruende in der Originaldatei
+  bleiben unveraendert.
+- Das A6-Starter-Kit verwendet dieselben Fit-, Skalierungs- und X-/Y-Werte. Die
+  groessere Markenpraesenz darf QR-Groesse und QR-Ruhezone nicht verkleinern.

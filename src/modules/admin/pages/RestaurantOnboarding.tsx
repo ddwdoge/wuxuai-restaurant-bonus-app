@@ -25,7 +25,7 @@ import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
-import { logoCanvasPlacement } from "../../../shared/logoPresentation.mjs";
+import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logoPresentation.mjs";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
@@ -598,26 +598,21 @@ function drawRestaurantBrand(
     height: number;
     logoImage: HTMLImageElement | null;
     name: string;
+    presentation?: Partial<LogoPresentation> | null;
     primaryColor: string;
     width: number;
     x: number;
     y: number;
   },
 ) {
-  const { accentColor, height, logoImage, primaryColor, width, x, y } = options;
+  const { height, logoImage, presentation, primaryColor, width, x, y } = options;
   context.save();
-  roundedRect(context, x, y, width, height, Math.min(width, height) * 0.14);
-  context.fillStyle = "#ffffff";
-  context.fill();
-  context.strokeStyle = accentColor;
-  context.lineWidth = Math.max(3, Math.min(width, height) * 0.035);
-  context.stroke();
-
   if (logoImage) {
     const placement = logoCanvasPlacement(
       logoImage.naturalWidth || logoImage.width,
       logoImage.naturalHeight || logoImage.height,
       { height, width, x: 0, y: 0 },
+      presentation ?? {},
     );
     context.beginPath();
     context.rect(x, y, width, height);
@@ -688,7 +683,12 @@ function drawBonusBoostKpiBox(
   const { accentColor, primaryColor, width, x, y } = options;
 
   context.save();
-  roundedRect(context, x, y, width, 350, 48);
+  const cellGap = 48;
+  const cellInset = 56;
+  const cellWidth = (width - cellInset * 2 - cellGap) / 2;
+  const cellY = y + 132;
+
+  roundedRect(context, x, y, width, 480, 48);
   context.fillStyle = colorWithAlpha(accentColor, 0.12);
   context.fill();
   context.strokeStyle = colorWithAlpha(accentColor, 0.42);
@@ -699,23 +699,48 @@ function drawBonusBoostKpiBox(
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
   context.font = "700 62px Inter, Arial, sans-serif";
-  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 62);
+  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 44);
+
+  [
+    { icon: "🔥", label: "Du bekommst", value: "2× Punkte" },
+    { icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte" },
+  ].forEach((benefit, index) => {
+    const cellX = x + cellInset + index * (cellWidth + cellGap);
+    roundedRect(context, cellX, cellY, cellWidth, 224, 36);
+    context.fillStyle = "rgba(255, 255, 255, 0.78)";
+    context.fill();
+    context.strokeStyle = colorWithAlpha(accentColor, 0.32);
+    context.lineWidth = 4;
+    context.stroke();
+    context.fillStyle = "#17202a";
+    context.font = "400 60px Apple Color Emoji, Segoe UI Emoji, sans-serif";
+    context.fillText(benefit.icon, cellX + cellWidth / 2, cellY + 16);
+    context.font = "600 44px Inter, Arial, sans-serif";
+    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 96);
+    context.fillStyle = primaryColor;
+    context.font = "800 56px Inter, Arial, sans-serif";
+    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 152);
+  });
+
   context.fillStyle = "#465463";
-  context.font = "400 45px Inter, Arial, sans-serif";
-  drawWrappedText(
-    context,
-    "Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.",
+  context.font = "400 42px Inter, Arial, sans-serif";
+  context.fillText(
+    "Aktiv nach dem ersten qualifizierten Besuch deines Freundes.",
     x + width / 2,
-    y + 160,
-    width - 180,
-    58,
+    y + 396,
   );
   context.restore();
 }
 
 function drawStarterKitPage(
   spec: StarterKitPageSpec,
-  branding: { logoImage: HTMLImageElement | null; name: string; primaryColor: string; secondaryColor: string },
+  branding: {
+    logoImage: HTMLImageElement | null;
+    name: string;
+    presentation?: Partial<LogoPresentation> | null;
+    primaryColor: string;
+    secondaryColor: string;
+  },
 ): StarterKitPdfPage {
   const canvas = document.createElement("canvas");
   canvas.width = 2480;
@@ -766,6 +791,7 @@ function drawStarterKitPage(
     height: logoHeight,
     logoImage: branding.logoImage,
     name: branding.name,
+    presentation: branding.presentation,
     primaryColor: branding.primaryColor,
     width: logoWidth,
     x: (canvas.width - logoWidth) / 2,
@@ -845,6 +871,7 @@ function drawStarterKitPage(
 
 async function downloadRestaurantStarterKit(input: {
   logoUrl: string;
+  logoPresentation?: Partial<LogoPresentation> | null;
   primaryColor: string;
   restaurantName: string;
   restaurantQrId: string;
@@ -859,6 +886,7 @@ async function downloadRestaurantStarterKit(input: {
   const branding = {
     logoImage,
     name: input.restaurantName || "Dein Restaurant",
+    presentation: input.logoPresentation,
     primaryColor: input.primaryColor,
     secondaryColor: input.secondaryColor,
   };
@@ -874,6 +902,7 @@ async function downloadRestaurantStarterKit(input: {
       audienceLabel: "Bonus für Gäste",
       headline: "Bonusprogramm entdecken",
       qrCanvas: restaurantQr,
+      referralHint: true,
       subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
     },
     {
@@ -1091,7 +1120,7 @@ function getStepBlocker(
 export function RestaurantOnboarding() {
   const navigate = useNavigate();
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
-  const { activeRestaurant, loading: tenantLoading, refreshTenants } = useTenant();
+  const { activeRestaurant, branding: tenantBranding, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
@@ -2033,6 +2062,12 @@ export function RestaurantOnboarding() {
                   onClick={() => {
                     downloadRestaurantStarterKit({
                       logoUrl: visibleLogoUrl,
+                      logoPresentation: tenantBranding ? {
+                        fitMode: tenantBranding.logo_fit_mode,
+                        positionX: tenantBranding.logo_position_x,
+                        positionY: tenantBranding.logo_position_y,
+                        scale: tenantBranding.logo_scale,
+                      } : null,
                       primaryColor: form.primaryColor,
                       restaurantName: form.restaurantName,
                       restaurantQrId: "restaurant-qr",
