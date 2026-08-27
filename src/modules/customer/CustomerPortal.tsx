@@ -110,6 +110,7 @@ import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
 import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
 import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanner";
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
+import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -1850,7 +1851,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       subtitle="Neuigkeiten direkt von deinem Restaurant."
                       title="Aktuelles & Angebote"
                     />
-                    <div className="customer-offer-grid">{restaurantOffers.slice(0, 3).map((offer) => <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />)}</div>
+                    <PremiumHorizontalCarousel
+                      label="Aktuelles und Angebote"
+                      nextLabel="Nächstes Angebot"
+                      previousLabel="Vorheriges Angebot"
+                    >
+                      {restaurantOffers.slice(0, 3).map((offer) => (
+                        <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />
+                      ))}
+                    </PremiumHorizontalCarousel>
                   </section>
                 ) : null}
 
@@ -2054,31 +2063,31 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                 <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
                 <div
                   aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
-                  className="premium-reward-grid premium-redemption-grid"
+                  className="premium-redemption-rewards"
                   id="reward-overview"
                   role="tabpanel"
                 >
                   {filteredRedemptions.length ? (
-                    <>
-                    {filteredRedemptions.map((reward) => {
-                      const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
-                      return (
-                      <RewardCard
-                        category={reward.category ?? reward.product_group}
-                        imageUrl={reward.image_url}
-                        imageCrop={rewardImageCropFromRecord(reward)}
-                        key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
-                        meta={reward.is_starter_reward
-                          ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
-                          : `${reward.required_points} Punkte`}
-                        onOpen={() => openRewardRedemption(reward)}
-                        state={state}
-                        status={rewardStatusText(reward, state)}
-                        title={reward.title}
-                      />
-                      );
-                    })}
-                    </>
+                    <PremiumHorizontalCarousel key={rewardFilter} label="Belohnungen">
+                      {filteredRedemptions.map((reward) => {
+                        const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
+                        return (
+                          <RewardCard
+                            category={reward.category ?? reward.product_group}
+                            imageUrl={reward.image_url}
+                            imageCrop={rewardImageCropFromRecord(reward)}
+                            key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
+                            meta={reward.is_starter_reward
+                              ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
+                              : `${reward.required_points} Punkte`}
+                            onOpen={() => openRewardRedemption(reward)}
+                            state={state}
+                            status={rewardStatusText(reward, state)}
+                            title={reward.title}
+                          />
+                        );
+                      })}
+                    </PremiumHorizontalCarousel>
                   ) : (
                     <EmptyState
                       description={rewardFilter === "all"

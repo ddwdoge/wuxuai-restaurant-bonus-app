@@ -536,10 +536,12 @@ Er lädt das Starter Kit herunter.
 
 Das PDF enthält:
 
--   Infoseite für Restaurantbesitzer
 -   Neue-Gäste-QR für Eingang oder Aufsteller
 -   derselbe Neue-Gäste-QR als alternatives Tisch-/Flyerformat
 -   Mitarbeiter-QR für den internen Bereich
+
+Die drei Druckseiten bilden eine einheitliche A6-Familie. Operative
+Platzierungshinweise stehen nicht in oder direkt unter dem QR-Rahmen.
 
 ### PDF Regeln
 
@@ -557,20 +559,22 @@ contain-scaling - Querformat, Hochformat, Quadrat funktionieren
 
 QR: - schwarz - groß - zentriert - gleiche Größe - gut scanbar
 
-### KPI-Infobox
+### Referral-Infobox
 
 🟢 **FIX**
 
-In der freien Fläche darf eine KPI-Box für Bonus Boost erscheinen.
+Auf der ersten Gaesteseite darf ein kompakter Hinweis fuer den
+Freundschaftsbonus erscheinen.
 
-Titel: **💡 Freunde einladen**
+Titel: **Freunde einladen lohnt sich**
 
-Karten: - 🔥 Du 2× Punkte - 👥 Freund 2× Punkte - 📅 +30 Tage Bonus
-Boost
+Text: **Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus
+erhalten.**
 
-Keine Fließtexte.
+Keine feste Tageszahl im Druck. Die restaurantbezogene Laufzeit wird in der
+Anwendung dynamisch angezeigt.
 
-Ziel: Gast versteht Bonus Boost in 1 Sekunde.
+Ziel: Gast versteht den Vorteil ohne kleinteilige Erklaerkarten.
 
 ### Nach Onboarding
 

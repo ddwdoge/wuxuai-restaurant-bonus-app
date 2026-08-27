@@ -486,9 +486,12 @@ type StarterKitPdfPage = {
 };
 
 type StarterKitPageSpec = {
+  audienceLabel?: string;
   headline: string;
   qrCanvas: HTMLCanvasElement;
-  shortNote: string;
+  referralHint?: boolean;
+  secondaryNote?: string;
+  subheadline: string;
 };
 
 const starterKitFooterText = "Powered by WUXUAI Bonus • www.wuxuaisbi.com";
@@ -679,45 +682,30 @@ function drawBonusBoostKpiBox(
   },
 ) {
   const { accentColor, primaryColor, width, x, y } = options;
-  const gap = 34;
-  const cardWidth = (width - gap * 2) / 3;
-  const cardHeight = 300;
-  const titleY = y;
-  const cardsY = y + 110;
-  const cards = [
-    { icon: "🔥", label: "Du", value: "2× Punkte" },
-    { icon: "👥", label: "Freund", value: "2× Punkte" },
-    { icon: "📅", label: "+30 Tage", value: "Bonus Boost" },
-  ];
 
   context.save();
+  roundedRect(context, x, y, width, 350, 48);
+  context.fillStyle = colorWithAlpha(accentColor, 0.12);
+  context.fill();
+  context.strokeStyle = colorWithAlpha(accentColor, 0.42);
+  context.lineWidth = 5;
+  context.stroke();
+
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
-  context.font = "900 64px Inter, Arial, sans-serif";
-  context.fillText("💡 Freunde einladen", x + width / 2, titleY);
-
-  cards.forEach((card, index) => {
-    const cardX = x + index * (cardWidth + gap);
-    roundedRect(context, cardX, cardsY, cardWidth, cardHeight, 42);
-    context.fillStyle = colorWithAlpha(index === 2 ? accentColor : primaryColor, 0.08);
-    context.fill();
-    context.strokeStyle = index === 2 ? accentColor : primaryColor;
-    context.lineWidth = 5;
-    context.stroke();
-
-    context.fillStyle = "#17202a";
-    context.font = "900 70px Inter, Arial, sans-serif";
-    context.fillText(card.icon, cardX + cardWidth / 2, cardsY + 34);
-
-    context.fillStyle = "#344251";
-    context.font = "900 46px Inter, Arial, sans-serif";
-    context.fillText(card.label, cardX + cardWidth / 2, cardsY + 140);
-
-    context.fillStyle = primaryColor;
-    context.font = "900 48px Inter, Arial, sans-serif";
-    context.fillText(card.value, cardX + cardWidth / 2, cardsY + 208);
-  });
+  context.font = "700 62px Inter, Arial, sans-serif";
+  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 62);
+  context.fillStyle = "#465463";
+  context.font = "400 45px Inter, Arial, sans-serif";
+  drawWrappedText(
+    context,
+    "Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.",
+    x + width / 2,
+    y + 160,
+    width - 180,
+    58,
+  );
   context.restore();
 }
 
@@ -737,21 +725,23 @@ function drawStarterKitPage(
   const margin = 188;
   const logoWidth = 984;
   const logoHeight = 276;
-  const qrSize = 900;
+  const qrSize = 1120;
   const qrX = (canvas.width - qrSize) / 2;
-  const qrY = 1010;
+  const qrY = 1080;
   const cardPadding = 104;
   const cardTop = 130;
   const cardBottom = 185;
   const cardHeight = canvas.height - cardTop - cardBottom;
   const logoY = cardTop + 120;
   const nameY = logoY + logoHeight + 40;
-  const headlineY = nameY + 108;
-  const noteY = qrY + qrSize + 98;
+  const audienceY = nameY + 100;
+  const headlineY = nameY + 180;
+  const descriptionY = headlineY + 150;
+  const noteY = qrY + qrSize + 104;
   const kpiBoxWidth = 1760;
-  const kpiBoxY = noteY + 260;
+  const kpiBoxY = noteY + 40;
 
-  context.fillStyle = "#ffffff";
+  context.fillStyle = "#fbf8f1";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = branding.secondaryColor;
   context.fillRect(0, 0, canvas.width, 46);
@@ -779,7 +769,7 @@ function drawStarterKitPage(
   });
 
   context.fillStyle = "#17202a";
-  context.font = "800 66px Inter, Arial, sans-serif";
+  context.font = "600 66px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
   drawWrappedText(
@@ -791,137 +781,48 @@ function drawStarterKitPage(
     76,
   );
 
+  if (spec.audienceLabel) {
+    context.fillStyle = branding.primaryColor;
+    context.font = "600 46px Inter, Arial, sans-serif";
+    drawWrappedText(context, spec.audienceLabel, canvas.width / 2, audienceY, canvas.width - margin * 2 - cardPadding, 56);
+  }
+
   context.fillStyle = branding.primaryColor;
-  context.font = "900 116px Inter, Arial, sans-serif";
+  context.font = "800 104px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
   drawWrappedText(context, spec.headline, canvas.width / 2, headlineY, canvas.width - margin * 2 - cardPadding, 132);
 
-  roundedRect(context, qrX - 36, qrY - 36, qrSize + 72, qrSize + 72, 42);
+  context.fillStyle = "#465463";
+  context.font = "400 50px Inter, Arial, sans-serif";
+  drawWrappedText(context, spec.subheadline, canvas.width / 2, descriptionY, canvas.width - margin * 2 - cardPadding - 100, 62);
+
+  roundedRect(context, qrX - 64, qrY - 64, qrSize + 128, qrSize + 128, 48);
   context.fillStyle = "#ffffff";
   context.fill();
-  context.strokeStyle = branding.secondaryColor;
-  context.lineWidth = 8;
+  context.strokeStyle = colorWithAlpha(branding.secondaryColor, 0.46);
+  context.lineWidth = 5;
   context.stroke();
   context.imageSmoothingEnabled = false;
   context.drawImage(spec.qrCanvas, qrX, qrY, qrSize, qrSize);
 
-  context.fillStyle = "#344251";
-  context.font = "800 54px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "top";
-  drawWrappedText(context, spec.shortNote, canvas.width / 2, noteY, canvas.width - margin * 2 - cardPadding, 68);
-
-  drawBonusBoostKpiBox(context, {
-    accentColor: branding.secondaryColor,
-    primaryColor: branding.primaryColor,
-    width: kpiBoxWidth,
-    x: (canvas.width - kpiBoxWidth) / 2,
-    y: kpiBoxY,
-  });
-
-  context.fillStyle = "#8a96a3";
-  context.font = "600 30px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "alphabetic";
-  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 54);
-
-  return {
-    imageBytes: canvasToJpegBytes(canvas),
-    imageHeight: canvas.height,
-    imageWidth: canvas.width,
-    pageHeight: 842,
-    pageWidth: 595,
-  };
-}
-
-function drawStarterKitInfoPage(
-  branding: { logoImage: HTMLImageElement | null; name: string; primaryColor: string; secondaryColor: string },
-): StarterKitPdfPage {
-  const canvas = document.createElement("canvas");
-  canvas.width = 2480;
-  canvas.height = 3508;
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("Starter Kit konnte nicht gezeichnet werden.");
+  if (spec.secondaryNote) {
+    context.fillStyle = "#344251";
+    context.font = "400 46px Inter, Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    drawWrappedText(context, spec.secondaryNote, canvas.width / 2, noteY, canvas.width - margin * 2 - cardPadding, 58);
   }
 
-  const margin = 188;
-  const cardTop = 130;
-  const cardBottom = 185;
-  const cardHeight = canvas.height - cardTop - cardBottom;
-  const logoWidth = 984;
-  const logoHeight = 276;
-  const logoY = cardTop + 150;
-  const nameY = logoY + logoHeight + 40;
-  const titleY = nameY + 150;
-  const subtitleY = titleY + 150;
-  const listX = margin + 360;
-  const listY = subtitleY + 260;
-
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = branding.secondaryColor;
-  context.fillRect(0, 0, canvas.width, 46);
-
-  roundedRect(context, margin, cardTop, canvas.width - margin * 2, cardHeight, 66);
-  context.fillStyle = "#ffffff";
-  context.fill();
-  context.shadowColor = "rgba(23, 32, 42, 0.14)";
-  context.shadowBlur = 42;
-  context.shadowOffsetY = 18;
-  context.strokeStyle = "#dde3ea";
-  context.lineWidth = 6;
-  context.stroke();
-  context.shadowColor = "transparent";
-
-  drawRestaurantBrand(context, {
-    accentColor: branding.secondaryColor,
-    height: logoHeight,
-    logoImage: branding.logoImage,
-    name: branding.name,
-    primaryColor: branding.primaryColor,
-    width: logoWidth,
-    x: (canvas.width - logoWidth) / 2,
-    y: logoY,
-  });
-
-  context.fillStyle = "#17202a";
-  context.font = "800 66px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "top";
-  drawWrappedText(context, branding.name || "Dein Restaurant", canvas.width / 2, nameY, canvas.width - margin * 2 - 104, 76);
-
-  context.fillStyle = branding.primaryColor;
-  context.font = "900 122px Inter, Arial, sans-serif";
-  drawWrappedText(context, "Restaurant Starter Kit", canvas.width / 2, titleY, canvas.width - margin * 2 - 104, 140);
-
-  context.fillStyle = "#344251";
-  context.font = "800 58px Inter, Arial, sans-serif";
-  drawWrappedText(context, "So startest du dein Bonusprogramm.", canvas.width / 2, subtitleY, canvas.width - margin * 2 - 180, 72);
-
-  const items = [
-    "Drucke alle Seiten aus.",
-    "Für längere Haltbarkeit empfehlen wir Laminieren.",
-    'Seite "Mitglied werden" am Eingang aufstellen.',
-    'Seite "Bonusprogramm entdecken" für Tisch oder Flyer verwenden.',
-    'Seite "Mitarbeiterbereich" nur intern verwenden.',
-    "Teste beide QR-Code-Arten einmal.",
-    "Danach ist dein Bonusprogramm einsatzbereit.",
-  ];
-
-  context.textAlign = "left";
-  context.textBaseline = "top";
-  items.forEach((item, index) => {
-    const y = listY + index * 170;
-    context.fillStyle = branding.primaryColor;
-    context.font = "900 58px Inter, Arial, sans-serif";
-    context.fillText("✓", listX, y);
-    context.fillStyle = "#17202a";
-    context.font = "800 52px Inter, Arial, sans-serif";
-    drawWrappedText(context, item, listX + 90, y + 4, canvas.width - listX - margin - 180, 66);
-  });
+  if (spec.referralHint) {
+    drawBonusBoostKpiBox(context, {
+      accentColor: branding.secondaryColor,
+      primaryColor: branding.primaryColor,
+      width: kpiBoxWidth,
+      x: (canvas.width - kpiBoxWidth) / 2,
+      y: kpiBoxY,
+    });
+  }
 
   context.fillStyle = "#8a96a3";
   context.font = "600 30px Inter, Arial, sans-serif";
@@ -959,26 +860,27 @@ async function downloadRestaurantStarterKit(input: {
   };
   const pageSpecs: StarterKitPageSpec[] = [
     {
-      headline: "Mitglied werden",
-      shortNote: "Mitglied werden\nBonuspunkte sammeln\nPunkteeinlösung nutzen",
+      audienceLabel: "Bonus für Gäste",
+      headline: "Neu hier?",
       qrCanvas: restaurantQr,
+      referralHint: true,
+      subheadline: "Scanne den QR-Code und sichere dir dein Willkommensgeschenk.",
     },
     {
+      audienceLabel: "Bonus für Gäste",
       headline: "Bonusprogramm entdecken",
-      shortNote: "Für Tisch oder Flyer\nNeue Gäste starten hier.",
       qrCanvas: restaurantQr,
+      subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
     },
     {
       headline: "Mitarbeiterbereich",
-      shortNote: "Nur für dein Team\nAnmeldung erforderlich.",
       qrCanvas: staffQr,
+      secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste",
+      subheadline: "Persönlich anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service.",
     },
   ];
 
-  const pdf = buildStarterKitPdf([
-    drawStarterKitInfoPage(branding),
-    ...pageSpecs.map((page) => drawStarterKitPage(page, branding)),
-  ]);
+  const pdf = buildStarterKitPdf(pageSpecs.map((page) => drawStarterKitPage(page, branding)));
   triggerDownload(pdf, "restaurant-starter-kit.pdf");
 }
 

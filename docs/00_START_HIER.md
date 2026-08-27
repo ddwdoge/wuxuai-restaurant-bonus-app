@@ -575,11 +575,11 @@ Bonus Boost ist in V1 ein sichtbarer emotionaler Kern:
 - mit „Heute sammelst du 2× Punkte“
 - im Starter Kit als KPI-Kommunikation
 
-Starter Kit KPI-Box:
+Starter-Kit-Hinweis:
 
-- 🔥 Du 2× Punkte
-- 👥 Freund 2× Punkte
-- 📅 +30 Tage Bonus Boost
+- Freunde einladen lohnt sich
+- Nach dem ersten Besuch koennen Gaeste Freunde einladen und 2× Bonus erhalten
+- keine feste Laufzeit im Druck; die restaurantbezogene Dauer bleibt dynamisch
 
 ---
 

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Carousel Fixture</title>
+  <link rel="stylesheet" href="../src/modules/customer/customer-premium.css" />
+  <link rel="stylesheet" href="../src/modules/customer/components/premium-horizontal-carousel.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .fixture-title { font: 600 24px/1.2 system-ui, sans-serif; margin: 0; }
+    .fixture-copy { color: #6f6a63; font: 14px/1.4 system-ui, sans-serif; margin: 0; }
+    .premium-reward-card { font-family: system-ui, sans-serif; }
+    .premium-reward-media { align-items: center; display: flex; justify-content: center; }
+    .premium-reward-media span { color: #956820; font-size: 34px; }
+  </style>
+</head>
+<body class="customer-premium-shell">
+  <main class="customer-page-container">
+    <h1 class="fixture-title">Einlösen</h1>
+    <p class="fixture-copy">Wähle deinen nächsten Vorteil.</p>
+    <section class="premium-horizontal-carousel is-multiple" aria-label="Belohnungen">
+      <div class="premium-horizontal-carousel-viewport" tabindex="0">
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-reward-card state-available">
+            <div class="premium-reward-media"><span>01</span></div>
+            <div class="premium-reward-copy"><span>Vorspeise</span><h3>Doppelespressomitkaramellsirupundwillkommensüberraschung</h3><strong>148 Punkte</strong><p class="premium-reward-status state-available">Jetzt einlösbar</p></div>
+            <button class="premium-button premium-button-primary" type="button">Details ansehen</button>
+          </article>
+        </div>
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-reward-card state-locked">
+            <div class="premium-reward-media"><span>02</span></div>
+            <div class="premium-reward-copy"><span>Dessert</span><h3>Hausgemachte Überraschung</h3><strong>300 Punkte</strong><p class="premium-reward-status state-locked">Noch 207 Punkte</p></div>
+            <button class="premium-button premium-button-secondary" type="button">Details ansehen</button>
+          </article>
+        </div>
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-reward-card state-locked">
+            <div class="premium-reward-media"><span>03</span></div>
+            <div class="premium-reward-copy"><span>Getränk</span><h3>Lieblingsgetränk</h3><strong>420 Punkte</strong><p class="premium-reward-status state-locked">Noch 327 Punkte</p></div>
+            <button class="premium-button premium-button-secondary" type="button">Details ansehen</button>
+          </article>
+        </div>
+      </div>
+      <div class="premium-horizontal-carousel-controls"><button aria-label="Vorherige Belohnung" disabled>‹</button><span class="premium-horizontal-carousel-position"><strong>1</strong> / 3</span><button aria-label="Nächste Belohnung">›</button></div>
+    </section>
+  </main>
+</body>
+</html>

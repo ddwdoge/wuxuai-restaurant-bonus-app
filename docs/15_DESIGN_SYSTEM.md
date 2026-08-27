@@ -39,6 +39,12 @@ Staff- oder Plattform-Portal. Gold bleibt auf Hauptaktionen, Fortschritt und
 aktive Navigation begrenzt. Lucide-Icons ersetzen Emoji-Icons in der
 eigentlichen Kundenoberfläche.
 
+Horizontale Customer-Discovery-Flächen verwenden einen gemeinsamen nativen
+Swipe-Baustein. Auf Mobile belegt eine Karte rund 86 Prozent der verfügbaren
+Breite und lässt einen Teil der nächsten Karte sichtbar. Pfeile besitzen
+mindestens 44 Pixel Touchfläche; die Position bleibt sekundär, und es gibt
+keine automatische Rotation.
+
 Das Design soll nicht wie ein technisches Admin-System wirken.
 
 Es soll wirken wie:
@@ -619,19 +625,18 @@ Klein, grau, dezent.
 
 Nicht als Werbung.
 
-### 9.6 Bonus Boost KPI-Box
+### 9.6 Freundschaftsbonus-Hinweis
 
-PDF darf eine kurze KPI-Box enthalten:
+Die erste Gaesteseite darf einen kompakten Hinweis enthalten:
 
 ```text
-💡 Freunde einladen
+Freunde einladen lohnt sich
 
-🔥 Du 2× Punkte
-👥 Freund 2× Punkte
-📅 +30 Tage Bonus Boost
+Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.
 ```
 
-Keine langen Texte.
+Keine feste Laufzeit im Druck. Die konfigurierte Dauer wird nur dynamisch in
+der Anwendung angezeigt.
 
 ---
 

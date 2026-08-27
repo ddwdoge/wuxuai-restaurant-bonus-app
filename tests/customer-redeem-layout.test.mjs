@@ -24,9 +24,8 @@ test("Tabs sind gleich breit und haben ausreichend grosse Touchziele", () => {
   assert.match(styles, /\.premium-segmented-control button[\s\S]{0,220}min-height: 44px/);
 });
 
-test("Reward-Grid ist mobil einspaltig und ab Tablet zweispaltig", () => {
-  assert.match(styles, /\.premium-redemption-grid \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(styles, /@media \(min-width: 768px\)[\s\S]{0,260}\.premium-redemption-grid \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+test("Reward-Inhalt bleibt in der synchronisierten Seitenbreite", () => {
+  assert.match(styles, /\.premium-redemption-rewards \{[^}]*min-width: 0[^}]*width: 100%/);
   assert.match(styles, /\.premium-reward-media \{ aspect-ratio: 16 \/ 9/);
   assert.match(styles, /\.premium-reward-card > \.premium-button[^}]*min-height: 44px/);
 });

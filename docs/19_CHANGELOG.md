@@ -1,6 +1,40 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-27 - Customer-Angebote und Belohnungen horizontal durchsuchbar
+
+- Einen gemeinsamen barrierefreien Horizontal-Carousel-Baustein für
+  `Aktuelles & Angebote` auf der Customer-Startseite und beide Reward-Tabs
+  eingeführt.
+- Nativen Touch-Swipe, Scroll Snap, Einzelschritt-Pfeile, Tastaturnavigation
+  und kompakte Positionsanzeige ohne automatische Rotation umgesetzt.
+- Einzelkarten bleiben vollbreit; leere persönliche Belohnungen behalten den
+  bestehenden synchronisierten Empty State.
+- Eligibility, Detailansicht, Tenant-Scope und serverseitigen
+  15-Minuten-Einlöseflow unverändert gelassen.
+
+## 2026-08-27 - Globale Staging-Supabase-Verbindung wiederhergestellt
+
+- Einen Cloudflare-Staging-Build ohne exportierte `VITE_SUPABASE_URL` und
+  `VITE_SUPABASE_ANON_KEY` als Ursache des globalen Live-Daten-Ausfalls
+  nachgewiesen; dadurch wurde im Browser kein Supabase-Client erzeugt.
+- Den unveränderten autoritativen App-Stand mit der bestätigten
+  Staging-Konfiguration neu gebaut und ausschließlich auf Staging ausgerollt.
+- Supabase Auth, PostgREST, Datenbankerreichbarkeit, Staff-Restaurantkontext und
+  die öffentlichen Login-Einstiege nach dem Rollout geprüft.
+- Keine Code-, Datenbank-, RLS-, Rollen- oder Tenantdatenänderung vorgenommen.
+
+## 2026-08-26 - Starter Kit QR-Druckseiten vereinheitlicht
+
+- Drei A6-Druckseiten im QR Center und Onboarding auf eine gemeinsame ruhige
+  Gestaltung mit großen, unverzerrten QR-Codes und konsistenten Abständen
+  vereinheitlicht.
+- Operative Platzierungslabels aus den Gastseiten entfernt; die Staff-Seite
+  kennzeichnet den internen Zweck außerhalb der QR-Fläche.
+- Den kleinteiligen Referral-Bereich durch einen kompakten Hinweis ohne feste
+  oder veraltete Laufzeit ersetzt.
+- QR-Payloads, Routen, Rollen- und Businesslogik unverändert gelassen.
+
 ## 2026-08-26 - Angebots-Sichtbarkeit von Gültigkeit getrennt
 
 - Veröffentlichte aktive Restaurantangebote bleiben bis zum finalen Ablauf im
@@ -3031,3 +3065,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Der echte Staging-Alt-Tab-Test wechselte ohne manuellen Refresh vom nicht
   mehr vorhandenen Lazy-Chunk auf den aktuellen Build; Production blieb
   gesperrt.
+# 2026-08-26 - Starter Kit Premium QR Print Cleanup
+
+- QR-Center und Onboarding erzeugen dieselbe dreiseitige Starter-Kit-Familie
+  fuer zwei Gaesteseiten und den internen Mitarbeiterbereich.
+- Operative Platzierungslabels wurden aus den QR-Druckseiten entfernt; die
+  QR-Rahmen enthalten nur den unveraenderten QR auf weissem Hintergrund.
+- Der bisherige kleinteilige Referral-Block und die feste 30-Tage-Aussage
+  wurden durch einen kompakten, laufzeitneutralen Hinweis ersetzt.
+- QR-Groesse, Ruhezone, Typografie und Footer-Lesbarkeit wurden fuer A6
+  verbessert, ohne QR-Payload, Route oder Bonuslogik zu veraendern.

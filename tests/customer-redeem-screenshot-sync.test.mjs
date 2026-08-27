@@ -4,9 +4,10 @@ import test from "node:test";
 
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [portal, premiumCss] = await Promise.all([
+const [portal, premiumCss, carouselCss] = await Promise.all([
   read("../src/modules/customer/CustomerPortal.tsx"),
   read("../src/modules/customer/customer-premium.css"),
+  read("../src/modules/customer/components/premium-horizontal-carousel.css"),
 ]);
 
 const redeemSection = portal.slice(
@@ -24,17 +25,17 @@ test("beide Einloesen-Tabs verwenden eine gemeinsame unveraenderliche Seitenscha
     assert.equal((redeemSection.match(new RegExp(sharedPart, "g")) ?? []).length, 1);
   }
 
-  assert.equal((redeemSection.match(/premium-reward-grid premium-redemption-grid/g) ?? []).length, 1);
-  assert.ok(redeemSection.indexOf("premium-redemption-grid") < redeemSection.indexOf("filteredRedemptions.length"));
+  assert.equal((redeemSection.match(/premium-redemption-rewards/g) ?? []).length, 1);
+  assert.ok(redeemSection.indexOf("premium-redemption-rewards") < redeemSection.indexOf("filteredRedemptions.length"));
 });
 
-test("Reward-Karten und Empty State liegen im selben kanonischen Content-Grid", () => {
-  const gridStart = redeemSection.indexOf('className="premium-reward-grid premium-redemption-grid"');
-  const gridEnd = redeemSection.indexOf("</div>", gridStart);
+test("Reward-Carousel und Empty State liegen im selben kanonischen Contentbereich", () => {
+  const contentStart = redeemSection.indexOf('className="premium-redemption-rewards"');
 
-  assert.ok(gridStart >= 0);
-  assert.ok(redeemSection.indexOf("<RewardCard", gridStart) < gridEnd);
-  assert.ok(redeemSection.indexOf("<EmptyState", gridStart) < gridEnd);
+  assert.ok(contentStart >= 0);
+  assert.ok(redeemSection.indexOf("<PremiumHorizontalCarousel", contentStart) > contentStart);
+  assert.ok(redeemSection.indexOf("<RewardCard", contentStart) > contentStart);
+  assert.ok(redeemSection.indexOf("<EmptyState", contentStart) > contentStart);
 });
 
 test("kurze Tab-Inhalte duerfen die gemeinsame Kopfgeometrie nicht strecken", () => {
@@ -44,9 +45,10 @@ test("kurze Tab-Inhalte duerfen die gemeinsame Kopfgeometrie nicht strecken", ()
   assert.doesNotMatch(premiumCss, /premium-redemption-(?:content|grid)[^{]*\.(?:all|mine)/);
 });
 
-test("Einloesen bleibt fuer Mobile und Desktop in derselben Grid-Geometrie", () => {
-  assert.match(premiumCss, /\.premium-redemption-grid[^}]*grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(premiumCss, /@media \(min-width: 768px\)[\s\S]*\.premium-redemption-grid[^}]*repeat\(2, minmax\(0, 1fr\)\)/);
+test("Einloesen bleibt fuer Mobile und Desktop in derselben Carousel-Geometrie", () => {
+  assert.match(carouselCss, /\.premium-horizontal-carousel-item[^}]*flex: 0 0 86%/);
+  assert.match(carouselCss, /@media \(min-width: 768px\)[\s\S]*flex-basis: 58%/);
+  assert.match(carouselCss, /@media \(min-width: 1024px\)[\s\S]*flex-basis: 46%/);
   assert.match(premiumCss, /@media \(max-width: 380px\)/);
-  assert.doesNotMatch(premiumCss, /width:\s*100vw/);
+  assert.doesNotMatch(`${premiumCss}\n${carouselCss}`, /width:\s*100vw/);
 });

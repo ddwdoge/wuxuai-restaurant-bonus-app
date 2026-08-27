@@ -12,6 +12,20 @@
 - Widersprechende ältere Abschnitte sind historisch und im
   `docs/LEGACY_DOCUMENT_INDEX.md` erfasst.
 
+## Horizontaler Discovery-Standard 2026-08-27
+
+- `Aktuelles & Angebote` auf der Customer-Startseite und die Belohnungskarten
+  in `Alle Belohnungen` sowie `Meine Belohnungen` verwenden denselben
+  horizontalen Carousel-Baustein.
+- Die Tabs bleiben die einzige Umschaltung zwischen allen und persönlichen
+  Belohnungen; Swipe navigiert ausschließlich innerhalb des aktiven Tabs.
+- Mehrere Karten unterstützen nativen Swipe, Scroll Snap, Einzelschritt-Pfeile
+  und eine kompakte Positionsanzeige ohne automatische Rotation.
+- Eine einzelne Karte bleibt vollbreit ohne künstliche Bedienelemente. Ein
+  leerer persönlicher Bereich zeigt weiterhin den synchronisierten Empty State.
+- Swipe öffnet oder verwendet keine Belohnung. Detailansicht, Eligibility und
+  serverzeitgebundene 15-Minuten-Präsentation bleiben unverändert.
+
 ## Persönlicher Punkte-QR
 
 Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.

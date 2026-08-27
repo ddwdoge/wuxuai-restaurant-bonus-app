@@ -10,12 +10,12 @@ import { getQrCenterPurposes } from "../qrCenterFlow.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
 type QrPrintPage = {
-  boostHint?: boolean;
+  audienceLabel?: string;
   headline: string;
-  note?: string;
+  referralHint?: boolean;
   qrCanvas: HTMLCanvasElement;
+  secondaryNote?: string;
   subheadline: string;
-  usage: string;
 };
 
 type PdfPage = {
@@ -309,45 +309,30 @@ function drawBonusBoostHint(
   },
 ) {
   const { accentColor, primaryColor, width, x, y } = options;
-  const cards = [
-    { icon: "🔥", label: "Du bekommst", value: "2× Punkte" },
-    { icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte" },
-    { icon: "📅", label: "30 Tage", value: "Bonus Boost" },
-  ];
-  const gap = 12;
-  const cardWidth = (width - gap * 2) / 3;
 
   context.save();
+  roundedRect(context, x, y, width, 176, 28);
+  context.fillStyle = colorWithAlpha(accentColor, 0.12);
+  context.fill();
+  context.strokeStyle = colorWithAlpha(accentColor, 0.42);
+  context.lineWidth = 3;
+  context.stroke();
+
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
-  context.font = "900 32px Inter, Arial, sans-serif";
-  context.fillText("Freunde einladen lohnt sich", x + width / 2, y);
-
-  cards.forEach((card, index) => {
-    const cardX = x + index * (cardWidth + gap);
-    const cardY = y + 50;
-    roundedRect(context, cardX, cardY, cardWidth, 118, 22);
-    context.fillStyle = colorWithAlpha(index === 2 ? accentColor : primaryColor, 0.08);
-    context.fill();
-    context.strokeStyle = colorWithAlpha(index === 2 ? accentColor : primaryColor, 0.25);
-    context.lineWidth = 3;
-    context.stroke();
-
-    context.fillStyle = "#17202a";
-    context.font = "900 27px Inter, Arial, sans-serif";
-    context.fillText(card.icon, cardX + cardWidth / 2, cardY + 12);
-    context.fillStyle = "#465463";
-    context.font = "800 15px Inter, Arial, sans-serif";
-    drawWrappedText(context, card.label, cardX + cardWidth / 2, cardY + 48, cardWidth - 18, 19);
-    context.fillStyle = primaryColor;
-    context.font = "900 18px Inter, Arial, sans-serif";
-    drawWrappedText(context, card.value, cardX + cardWidth / 2, cardY + 84, cardWidth - 18, 20);
-  });
-
-  context.fillStyle = "#66717d";
-  context.font = "800 20px Inter, Arial, sans-serif";
-  context.fillText("Aktiv nach dem ersten Besuch deines Freundes.", x + width / 2, y + 186);
+  context.font = "700 29px Inter, Arial, sans-serif";
+  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 28);
+  context.fillStyle = "#465463";
+  context.font = "400 22px Inter, Arial, sans-serif";
+  drawWrappedText(
+    context,
+    "Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus erhalten.",
+    x + width / 2,
+    y + 78,
+    width - 80,
+    29,
+  );
   context.restore();
 }
 
@@ -371,74 +356,72 @@ function drawQrPrintPage(
 
   const margin = 72;
   const contentWidth = canvas.width - margin * 2;
-  const qrSize = 630;
+  const qrSize = 680;
   const qrX = (canvas.width - qrSize) / 2;
-  const qrY = 612;
+  const qrY = 548;
 
-  context.fillStyle = "#ffffff";
+  context.fillStyle = "#fbf8f1";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = branding.primaryColor;
   context.fillRect(0, 0, canvas.width, 22);
 
   drawLogo(context, {
-    height: 150,
+    height: 118,
     logoImage: branding.logoImage,
     primaryColor: branding.primaryColor,
     restaurantName: branding.restaurantName,
-    width: 420,
-    x: (canvas.width - 420) / 2,
-    y: 66,
+    width: 360,
+    x: (canvas.width - 360) / 2,
+    y: 52,
   });
 
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
-  context.font = "900 42px Inter, Arial, sans-serif";
-  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 230, contentWidth, 48);
+  context.font = "600 38px Inter, Arial, sans-serif";
+  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 188, contentWidth - 40, 44);
 
-  context.fillStyle = branding.primaryColor;
-  context.font = "900 24px Inter, Arial, sans-serif";
-  context.fillText("Bonus für Gäste", canvas.width / 2, 284);
+  if (page.audienceLabel) {
+    context.fillStyle = branding.primaryColor;
+    context.font = "600 23px Inter, Arial, sans-serif";
+    context.fillText(page.audienceLabel, canvas.width / 2, 278);
+  }
 
   context.fillStyle = "#17202a";
-  context.font = "900 72px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.headline, canvas.width / 2, 345, contentWidth, 80);
+  context.font = "800 64px Inter, Arial, sans-serif";
+  drawWrappedText(context, page.headline, canvas.width / 2, 326, contentWidth, 72);
 
   context.fillStyle = "#465463";
-  context.font = "800 31px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.subheadline, canvas.width / 2, 448, contentWidth - 70, 38);
+  context.font = "400 28px Inter, Arial, sans-serif";
+  drawWrappedText(context, page.subheadline, canvas.width / 2, 418, contentWidth - 90, 35);
 
-  roundedRect(context, qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 34);
+  roundedRect(context, qrX - 44, qrY - 44, qrSize + 88, qrSize + 88, 30);
   context.fillStyle = "#ffffff";
   context.fill();
-  context.strokeStyle = branding.accentColor;
-  context.lineWidth = 6;
+  context.strokeStyle = colorWithAlpha(branding.accentColor, 0.46);
+  context.lineWidth = 3;
   context.stroke();
   context.imageSmoothingEnabled = false;
   context.drawImage(page.qrCanvas, qrX, qrY, qrSize, qrSize);
 
-  context.fillStyle = branding.primaryColor;
-  context.font = "900 34px Inter, Arial, sans-serif";
-  context.fillText(page.usage, canvas.width / 2, 1262);
-
-  if (page.note) {
+  if (page.secondaryNote) {
     context.fillStyle = "#344251";
-    context.font = "800 25px Inter, Arial, sans-serif";
-    drawWrappedText(context, page.note, canvas.width / 2, 1310, contentWidth - 80, 33);
+    context.font = "400 23px Inter, Arial, sans-serif";
+    drawWrappedText(context, page.secondaryNote, canvas.width / 2, 1324, contentWidth - 80, 30);
   }
 
-  if (page.boostHint) {
+  if (page.referralHint) {
     drawBonusBoostHint(context, {
       accentColor: branding.accentColor,
       primaryColor: branding.primaryColor,
       width: contentWidth,
       x: margin,
-      y: 1400,
+      y: 1332,
     });
   }
 
   context.fillStyle = "#8a96a3";
-  context.font = "700 17px Inter, Arial, sans-serif";
+  context.font = "400 26px Inter, Arial, sans-serif";
   context.textBaseline = "alphabetic";
   context.fillText(footerText, canvas.width / 2, canvas.height - 28);
 
@@ -477,36 +460,33 @@ async function buildQrCenterStarterKitPdf(input: {
   };
   const pageSpecs: QrPrintPage[] = [
     {
-      boostHint: true,
+      audienceLabel: "Bonus für Gäste",
       headline: "Neu hier?",
       qrCanvas: restaurantQr,
+      referralHint: true,
       subheadline: "Scanne den QR-Code und sichere dir dein Willkommensgeschenk.",
-      usage: "Für den Eingang",
     },
     {
-      boostHint: true,
+      audienceLabel: "Bonus für Gäste",
       headline: "Bonusprogramm entdecken",
       qrCanvas: restaurantQr,
       subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
-      usage: "Für Tisch oder Flyer",
     },
     {
       headline: "Mitarbeiterbereich",
-      note: "Nicht für Gäste bestimmt.",
       qrCanvas: staffQr,
-      subheadline: "Für Tages-PIN, Gästeprüfung und Restaurant-Service.",
-      usage: "Für dein Team",
+      secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste",
+      subheadline: "Persönlich anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service.",
     },
   ];
 
   if (input.includeCustomerCollectCompatibility && bonusQr) {
     pageSpecs.splice(2, 0, {
-      boostHint: true,
+      audienceLabel: "Bonus für Gäste",
       headline: "Punkte sammeln",
-      note: "Bitte Mitarbeiter um die Tages-PIN.",
       qrCanvas: bonusQr,
+      secondaryNote: "Tages-PIN erforderlich.",
       subheadline: "Nach dem Bezahlen scannen und Bonuspunkte sichern.",
-      usage: "Für bestehende Sammelwege",
     });
   }
 

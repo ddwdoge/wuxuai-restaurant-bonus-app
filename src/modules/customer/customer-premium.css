@@ -405,7 +405,7 @@
 .premium-redemption-summary span, .premium-redemption-summary p { color: var(--premium-text-secondary); font-size: 13px; margin: 0; }
 .premium-redemption-summary strong { color: var(--premium-gold-dark); font-family: var(--premium-display-font); font-size: 30px; line-height: 1; }
 .premium-redemption-summary p { max-width: 52%; text-align: right; }
-.premium-redemption-grid { gap: 12px; grid-template-columns: minmax(0, 1fr); padding-bottom: 8px; width: 100%; }
+.premium-redemption-rewards { min-width: 0; padding-bottom: 8px; width: 100%; }
 
 .premium-reward-card { align-content: start; gap: 11px; padding: 0 0 14px; overflow: hidden; }
 .premium-reward-media { aspect-ratio: 16 / 9; background: var(--premium-gold-soft); overflow: hidden; position: relative; }
@@ -1195,19 +1195,18 @@
 @media (min-width: 768px) {
   .customer-page-container { max-width: 720px; padding-left: 24px; padding-right: 24px; }
   .premium-reward-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .premium-redemption-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .premium-customer-header { padding: 12px 14px; }
 }
 
 @media (max-width: 767px) {
   .premium-home-reward-grid { gap: 10px; }
-  .premium-redemption-grid .premium-reward-card { gap: 9px; padding-bottom: 12px; }
-  .premium-redemption-grid .premium-reward-media { aspect-ratio: 16 / 9; }
-  .premium-redemption-grid .premium-reward-copy { padding: 0 12px; }
-  .premium-redemption-grid .premium-reward-copy h3 { font-size: 15px; }
-  .premium-redemption-grid .premium-reward-copy p { font-size: 12px; }
-  .premium-redemption-grid .premium-reward-card > .premium-button { font-size: 13px; margin: 0 12px; padding: 0 8px; width: calc(100% - 24px); }
-  .premium-redemption-grid .premium-lock-badge { height: 36px; right: 9px; top: 9px; width: 36px; }
+  .premium-redemption-rewards .premium-reward-card { gap: 9px; padding-bottom: 12px; }
+  .premium-redemption-rewards .premium-reward-media { aspect-ratio: 16 / 9; }
+  .premium-redemption-rewards .premium-reward-copy { padding: 0 12px; }
+  .premium-redemption-rewards .premium-reward-copy h3 { font-size: 15px; }
+  .premium-redemption-rewards .premium-reward-copy p { font-size: 12px; }
+  .premium-redemption-rewards .premium-reward-card > .premium-button { font-size: 13px; margin: 0 12px; padding: 0 8px; width: calc(100% - 24px); }
+  .premium-redemption-rewards .premium-lock-badge { height: 36px; right: 9px; top: 9px; width: 36px; }
   .app-drawer-overlay:has(.premium-redemption-sheet-content) { align-items: flex-end; }
   .app-drawer-panel:has(.premium-redemption-sheet-content) { border-radius: 26px 26px 0 0; height: min(88dvh, 760px); }
   .app-drawer-panel:has(.premium-redemption-sheet-content) .app-drawer-header { padding: 16px 16px 13px; }
