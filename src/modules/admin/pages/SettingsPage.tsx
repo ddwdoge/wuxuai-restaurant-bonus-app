@@ -92,6 +92,17 @@ type PartnerLocationForm = {
   coverImagePresentation: MediaPresentation;
 };
 
+function coverImagePersistenceFields(location: PartnerLocationForm) {
+  return {
+    public_cover_image_url: location.coverImageUrl.trim() || null,
+    public_cover_image_zoom: location.coverImagePresentation.zoom,
+    public_cover_image_position_x: location.coverImagePresentation.positionX,
+    public_cover_image_position_y: location.coverImagePresentation.positionY,
+    public_cover_image_aspect_ratio: "16:9",
+    public_cover_image_crop_version: 1,
+  };
+}
+
 type GeocodingStatus = "idle" | "searching" | "found" | "ambiguous" | "not_found" | "stale" | "error" | "rate_limited";
 
 const weekdays: { key: Weekday; label: string }[] = [
@@ -565,6 +576,7 @@ export function SettingsPage() {
   const { section } = useParams();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingCoverUploadPathRef = useRef<string | null>(null);
   const geocodingRequestRef = useRef(0);
   const [details, setDetails] = useState<RestaurantDetails | null>(null);
   const [restaurantForm, setRestaurantForm] = useState({ name: "", ownerPhone: "" });
@@ -595,6 +607,11 @@ export function SettingsPage() {
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
   const [pointsCollectionMode, setPointsCollectionMode] = useState<PointsCollectionMode>("customer_initiated_only");
   const [pointsCollectionLimit, setPointsCollectionLimit] = useState("300");
+
+  useEffect(() => () => {
+    const pendingPath = pendingCoverUploadPathRef.current;
+    if (pendingPath && supabase) void supabase.storage.from("restaurant-media").remove([pendingPath]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -849,12 +866,7 @@ export function SettingsPage() {
           longitude,
           is_discoverable: partnerLocation.isDiscoverable,
           public_short_description: partnerLocation.shortDescription.trim() || null,
-          public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
-          public_cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
-          public_cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
-          public_cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
-          public_cover_image_aspect_ratio: "16:9",
-          public_cover_image_crop_version: 1,
+          ...coverImagePersistenceFields(partnerLocation),
         })
         .eq("id", partnerLocation.id)
         .eq("restaurant_id", details.id);
@@ -965,14 +977,7 @@ export function SettingsPage() {
         if (partnerLocation) {
           const { error: coverError } = await supabase
             .from("branches")
-            .update({
-              public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
-              public_cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
-              public_cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
-              public_cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
-              public_cover_image_aspect_ratio: "16:9",
-              public_cover_image_crop_version: 1,
-            })
+            .update(coverImagePersistenceFields(partnerLocation))
             .eq("id", partnerLocation.id)
             .eq("restaurant_id", details.id);
 
@@ -980,6 +985,7 @@ export function SettingsPage() {
         }
       }
 
+      pendingCoverUploadPathRef.current = null;
       await refreshTenants();
       setStatus("Branding gespeichert.");
       setLogoEditorOpen(false);
@@ -1023,26 +1029,16 @@ export function SettingsPage() {
       if (uploadError) throw uploadError;
 
       const publicUrl = supabase.storage.from("restaurant-media").getPublicUrl(path).data.publicUrl;
-      const { error: coverError } = await supabase
-        .from("branches")
-        .update({
-          public_cover_image_url: publicUrl,
-          public_cover_image_zoom: DEFAULT_MEDIA_PRESENTATION.zoom,
-          public_cover_image_position_x: DEFAULT_MEDIA_PRESENTATION.positionX,
-          public_cover_image_position_y: DEFAULT_MEDIA_PRESENTATION.positionY,
-          public_cover_image_aspect_ratio: "16:9",
-          public_cover_image_crop_version: 1,
-        })
-        .eq("id", partnerLocation.id)
-        .eq("restaurant_id", details.id);
-      if (coverError) throw coverError;
+      const previousPendingPath = pendingCoverUploadPathRef.current;
+      pendingCoverUploadPathRef.current = path;
 
       setPartnerLocation((current) => current ? {
         ...current,
-        coverImagePresentation: DEFAULT_MEDIA_PRESENTATION,
+        coverImagePresentation: { ...DEFAULT_MEDIA_PRESENTATION },
         coverImageUrl: publicUrl,
       } : current);
-      setStatus("Restaurantbild gespeichert.");
+      if (previousPendingPath) await supabase.storage.from("restaurant-media").remove([previousPendingPath]);
+      setStatus("Restaurantbild hochgeladen. Passe den Ausschnitt an und speichere das Branding.");
     } catch (error) {
       console.error("Restaurantbild konnte nicht gespeichert werden.", error);
       setErrorMessage("Das Restaurantbild konnte nicht gespeichert werden.");
