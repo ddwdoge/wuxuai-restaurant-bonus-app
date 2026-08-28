@@ -217,9 +217,10 @@ test("Owner-Seite bietet vollständige Aktionen und sicheren bestehenden Bildupl
   assert.match(page, /JPG|PNG|WebP|ownerRewardImageService/);
 });
 
-test("CustomerPortal zeigt höchstens drei aktuelle Beiträge und verändert keine Bonuslogik", async () => {
+test("CustomerPortal zeigt alle aktuellen Beiträge im Carousel und verändert keine Bonuslogik", async () => {
   const page = await readFile(customerPortalUrl, "utf8");
-  assert.match(page, /restaurantOffers\.slice\(0, 3\)/);
+  assert.match(page, /restaurantOffers\.map\(\(offer\) =>/);
+  assert.doesNotMatch(page, /restaurantOffers\.slice\(0, 3\)/);
   assert.match(page, /title="Aktuelles & Angebote"/);
   const offersSection = page.slice(page.indexOf("restaurantOffers.length"), page.indexOf("restaurantOffers.length") + 1800);
   assert.doesNotMatch(offersSection, /collectBonusPoints|startCustomerRedemption|setStoredCustomerToken|registerRestaurantGuest/);

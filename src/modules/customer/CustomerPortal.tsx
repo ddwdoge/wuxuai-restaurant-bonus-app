@@ -467,12 +467,15 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
       setRestaurantOffers([]);
       return;
     }
+    setRestaurantOffers([]);
+    setSelectedRestaurantOffer(null);
     let cancelled = false;
-    loadPublicRestaurantOffers(restaurantSlug, 5)
+    loadPublicRestaurantOffers(restaurantSlug, 100)
       .then((nextOffers) => {
         if (cancelled) return;
         setRestaurantOffers(nextOffers);
-        nextOffers.slice(0, 3).forEach((offer) => { void recordRestaurantOfferEvent(offer.id, "OFFER_VIEWED"); });
+        const firstOffer = nextOffers[0];
+        if (firstOffer) void recordRestaurantOfferEvent(firstOffer.id, "OFFER_VIEWED");
       })
       .catch(() => { if (!cancelled) setRestaurantOffers([]); });
     return () => { cancelled = true; };
@@ -1872,7 +1875,7 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                       nextLabel="Nächstes Angebot"
                       previousLabel="Vorheriges Angebot"
                     >
-                      {restaurantOffers.slice(0, 3).map((offer) => (
+                      {restaurantOffers.map((offer) => (
                         <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />
                       ))}
                     </PremiumHorizontalCarousel>
