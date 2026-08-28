@@ -30,6 +30,11 @@
   83 Prozent Kartenbreite, 13 Pixel Abstand, Radius, Innenabstand und 16:9-Medien.
 - Die Customer-Startseite zeigt mehrere Punkteeinlösungen ebenfalls horizontal;
   zwei kleine vollständige Reward-Karten nebeneinander sind mobil nicht erlaubt.
+- `Mit Punkten einlösbar` zeigt auf der Customer-Startseite den vollständigen
+  aktuell sichtbaren Punkte-Rewards-Katalog des aktiven Restaurants. Es gibt
+  keine Vorschaugrenze von zwei Karten; alle Einträge bleiben in derselben
+  horizontalen Carousel-Höhe per Swipe, Pfeilen und echter Positionsanzeige
+  erreichbar.
 - Offer-Karten behalten Titel, Kurzbeschreibung, Gültigkeit, Zeitplan, Zeitraum,
   Preis und Aktion, verdichten diese Angaben aber zu einem kompakten Rhythmus.
 

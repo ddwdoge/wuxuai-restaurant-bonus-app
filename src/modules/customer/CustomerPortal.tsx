@@ -583,7 +583,6 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
   const filteredRedemptions = rewardFilter === "mine" ? myRedemptions : redemptionCatalog;
   const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
   const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
-  const previewRedemptions = pointRedemptions.slice(0, 2);
   const nextPointRedemption = [...pointRedemptions].sort((left, right) => left.remaining_points - right.remaining_points)[0] ?? null;
   const nextRedemptionProgress = nextPointRedemption?.required_points
     ? clampPercent(((nextPointRedemption.required_points - nextPointRedemption.remaining_points) / nextPointRedemption.required_points) * 100)
@@ -1940,9 +1939,9 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                     subtitle="Deine nächsten Möglichkeiten auf einen Blick."
                     title="Mit Punkten einlösbar"
                   />
-                  {previewRedemptions.length ? (
+                  {pointRedemptions.length ? (
                     <PremiumHorizontalCarousel label="Mit Punkten einlösbar">
-                      {previewRedemptions.map((reward) => (
+                      {pointRedemptions.map((reward) => (
                         <RewardCard
                           category={reward.category ?? reward.product_group}
                           imageUrl={reward.image_url}

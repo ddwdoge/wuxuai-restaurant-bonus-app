@@ -3238,3 +3238,12 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Der V1-fremde Restaurant-/Filialwähler bei Angeboten ist verborgen, während
   die bestehende interne Branch-Zuordnung unverändert gespeichert wird.
 - Titelbilddaten, Finder-Ausgabe, RLS, RPCs und Businesslogik blieben erhalten.
+
+## 2026-08-28 - Vollständigen Reward-Katalog auf Customer Home freigegeben
+
+- `Mit Punkten einlösbar` zeigt nicht mehr nur zwei Vorschaukarten, sondern
+  alle bereits customer-sichtbaren Punktebelohnungen des aktiven Restaurants.
+- Das bestehende Premium-Carousel übernimmt Swipe, Einzelschritt-Pfeile,
+  echte Positionszählung sowie Ein- und Leerzustände ohne zusätzliche Query.
+- Restaurantkontext, Sichtbarkeit, Eligibility, Punkte und der bestehende
+  15-Minuten-Einlöseflow blieben unverändert.
