@@ -90,7 +90,7 @@ test("Owner UI sucht nur auf Klick und verwirft Koordinaten nach Adressänderung
   assert.match(page, /Welche Adresse meinst du\?/);
   assert.match(page, /✓ Standort gefunden/);
   assert.match(page, /Erneut suchen/);
-  assert.match(page, /Erweiterte Einstellungen/);
+  assert.doesNotMatch(page, /Breitengrad|Längengrad|Erweiterte Einstellungen/);
   assert.doesNotMatch(page, /id="location-latitude"|id="location-longitude"/);
   assert.doesNotMatch(page, /onChange=\{[^}]*findPartnerLocation/);
 });

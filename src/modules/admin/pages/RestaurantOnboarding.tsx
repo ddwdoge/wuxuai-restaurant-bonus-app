@@ -1757,20 +1757,6 @@ export function RestaurantOnboarding() {
                 </div>
               ) : null}
 
-              <details className="advanced-panel">
-                <summary>Erweitert</summary>
-                <div className="field">
-                  <FormLabel htmlFor="logo-url" optional>Logo-Link manuell einfügen</FormLabel>
-                  <input
-                    className="input"
-                    id="logo-url"
-                    placeholder="https://..."
-                    value={form.logoUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))}
-                  />
-                </div>
-              </details>
-
               <div className="grid two">
                 <div className="field">
                   <FormLabel htmlFor="primary-color" required>Deine Markenfarbe</FormLabel>

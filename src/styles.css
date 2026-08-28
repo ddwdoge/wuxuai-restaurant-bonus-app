@@ -476,6 +476,17 @@ a {
 }
 
 .settings-location-description { min-height: 110px; padding-block: 12px; resize: vertical; }
+.settings-cover-section {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding-top: 22px;
+}
+.settings-cover-section > div:first-child { display: grid; gap: 5px; }
+.settings-cover-section h2,
+.settings-cover-section p { margin: 0; }
+.settings-cover-section > .button { justify-self: start; }
 .settings-location-toggle { align-items: start; background: #fbf7ef; border: 1px solid #eadfcf; border-radius: 16px; display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr); min-height: 64px; padding: 14px; }
 .settings-location-toggle input { height: 22px; margin-top: 2px; width: 22px; }
 .settings-location-toggle > span { display: grid; gap: 4px; }
@@ -498,6 +509,7 @@ a {
 .settings-location-advanced dt { color: var(--muted); font-size: 12px; }
 .settings-location-advanced dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 @media (max-width: 520px) {
+  .settings-cover-section > .button { justify-self: stretch; width: 100%; }
   .settings-location-geocode-button { justify-self: stretch; width: 100%; }
   .settings-location-advanced dl { grid-template-columns: 1fr; }
 }

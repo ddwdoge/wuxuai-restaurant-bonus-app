@@ -564,6 +564,7 @@ export function SettingsPage() {
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
   const { section } = useParams();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
   const geocodingRequestRef = useRef(0);
   const [details, setDetails] = useState<RestaurantDetails | null>(null);
   const [restaurantForm, setRestaurantForm] = useState({ name: "", ownerPhone: "" });
@@ -960,6 +961,23 @@ export function SettingsPage() {
         );
 
         if (error) throw error;
+
+        if (partnerLocation) {
+          const { error: coverError } = await supabase
+            .from("branches")
+            .update({
+              public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
+              public_cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
+              public_cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
+              public_cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
+              public_cover_image_aspect_ratio: "16:9",
+              public_cover_image_crop_version: 1,
+            })
+            .eq("id", partnerLocation.id)
+            .eq("restaurant_id", details.id);
+
+          if (coverError) throw coverError;
+        }
       }
 
       await refreshTenants();
@@ -971,6 +989,72 @@ export function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function uploadCoverImage(file: File) {
+    if (!details?.id || !partnerLocation) return;
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+    const maxSize = 5 * 1024 * 1024;
+
+    setStatus(null);
+    setErrorMessage(null);
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage("Bitte wähle PNG, JPG oder WebP.");
+      return;
+    }
+    if (file.size > maxSize) {
+      setErrorMessage("Das Restaurantbild darf maximal 5 MB groß sein.");
+      return;
+    }
+    if (!supabase) {
+      setErrorMessage("Das Restaurantbild kann gerade nicht gespeichert werden.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${details.id}/branding/cover-${Date.now()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("restaurant-media").upload(path, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const publicUrl = supabase.storage.from("restaurant-media").getPublicUrl(path).data.publicUrl;
+      const { error: coverError } = await supabase
+        .from("branches")
+        .update({
+          public_cover_image_url: publicUrl,
+          public_cover_image_zoom: DEFAULT_MEDIA_PRESENTATION.zoom,
+          public_cover_image_position_x: DEFAULT_MEDIA_PRESENTATION.positionX,
+          public_cover_image_position_y: DEFAULT_MEDIA_PRESENTATION.positionY,
+          public_cover_image_aspect_ratio: "16:9",
+          public_cover_image_crop_version: 1,
+        })
+        .eq("id", partnerLocation.id)
+        .eq("restaurant_id", details.id);
+      if (coverError) throw coverError;
+
+      setPartnerLocation((current) => current ? {
+        ...current,
+        coverImagePresentation: DEFAULT_MEDIA_PRESENTATION,
+        coverImageUrl: publicUrl,
+      } : current);
+      setStatus("Restaurantbild gespeichert.");
+    } catch (error) {
+      console.error("Restaurantbild konnte nicht gespeichert werden.", error);
+      setErrorMessage("Das Restaurantbild konnte nicht gespeichert werden.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCoverInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void uploadCoverImage(file);
   }
 
   async function uploadLogo(file: File) {
@@ -1136,7 +1220,6 @@ export function SettingsPage() {
               />
             </div>
             <div className="settings-meta-grid">
-              <InfoValue label="Restaurant-Link" value={details.slug} />
               <InfoValue label="Status" value={details.status === "active" ? "Aktiv" : details.status === "draft" ? "Entwurf" : "Pausiert"} />
               <InfoValue label="Sprache" value={details.language === "de" ? "Deutsch" : details.language ?? "Deutsch"} />
             </div>
@@ -1213,6 +1296,34 @@ export function SettingsPage() {
                 />
               </div>
             </div>
+            <section className="settings-cover-section" aria-labelledby="restaurant-cover-title">
+              <div>
+                <h2 id="restaurant-cover-title">Restaurantbild / Titelbild</h2>
+                <p className="muted">Dieses Bild erscheint in der Restaurantsuche und in deinen Restaurantdetails.</p>
+              </div>
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                className="visually-hidden"
+                onChange={handleCoverInputChange}
+                ref={coverInputRef}
+                type="file"
+              />
+              <button className="button secondary" disabled={saving} onClick={() => coverInputRef.current?.click()} type="button">
+                <ImageUp aria-hidden="true" size={18} />
+                {partnerLocation?.coverImageUrl ? "Restaurantbild ändern" : "Restaurantbild auswählen"}
+              </button>
+              {partnerLocation?.coverImageUrl.trim() ? (
+                <SmartMediaEditor
+                  disabled={saving}
+                  imageUrl={partnerLocation.coverImageUrl.trim()}
+                  label={`${details.name} Titelbild`}
+                  onPresentationChange={(coverImagePresentation) => setPartnerLocation((current) => current ? { ...current, coverImagePresentation } : current)}
+                  presentation={partnerLocation.coverImagePresentation}
+                />
+              ) : (
+                <p className="muted">JPG, PNG oder WebP. Maximal 5 MB.</p>
+              )}
+            </section>
             <FormActions saving={saving} submitLabel="Branding speichern" />
           </form>
         </section>
@@ -1325,17 +1436,7 @@ export function SettingsPage() {
                   </div>
                 ) : null}
               </div>
-              {previewLocation ? <details className="settings-location-advanced"><summary>Erweiterte Einstellungen</summary><dl><div><dt>Breitengrad</dt><dd>{latitude.toFixed(6)}</dd></div><div><dt>Längengrad</dt><dd>{longitude.toFixed(6)}</dd></div></dl></details> : null}
               <div className="field"><FormLabel htmlFor="location-description" optional>Öffentliche Kurzbeschreibung</FormLabel><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
-              <div className="field"><FormLabel htmlFor="location-cover" optional>Öffentliches Bild (HTTPS-Adresse)</FormLabel><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value, coverImagePresentation: DEFAULT_MEDIA_PRESENTATION } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
-              {partnerLocation.coverImageUrl.trim() ? (
-                <SmartMediaEditor
-                  imageUrl={partnerLocation.coverImageUrl.trim()}
-                  label={`${details.name} Titelbild`}
-                  onPresentationChange={(coverImagePresentation) => setPartnerLocation((current) => current ? { ...current, coverImagePresentation } : current)}
-                  presentation={partnerLocation.coverImagePresentation}
-                />
-              ) : null}
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>

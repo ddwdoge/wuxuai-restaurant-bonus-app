@@ -3228,3 +3228,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   und bleiben von 390 bis 1440 Pixel ohne globalen horizontalen Überlauf.
 - Gespeicherte Logo-Präsentationswerte, Customer-/Staff-Ausgabe, Starter Kit,
   RLS und Businesslogik blieben unverändert.
+
+## 2026-08-28 - Owner-Standort und Medienverwaltung bereinigt
+
+- Der Owner bearbeitet das Restaurant-Titelbild nur noch unter Branding; der
+  Standortbereich enthält keinen zweiten Medieneditor und keine rohe Bild-URL.
+- Technische Koordinaten, der bloße Restaurant-Slug und der manuelle
+  Onboarding-Logo-Link wurden aus der normalen Owner-Oberfläche entfernt.
+- Der V1-fremde Restaurant-/Filialwähler bei Angeboten ist verborgen, während
+  die bestehende interne Branch-Zuordnung unverändert gespeichert wird.
+- Titelbilddaten, Finder-Ausgabe, RLS, RPCs und Businesslogik blieben erhalten.
