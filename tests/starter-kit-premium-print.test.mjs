@@ -86,8 +86,14 @@ test("Staff description has a bounded multilingual block above the protected QR 
   const staffPage = corePages.find((page) => page.id === "staff");
   assert.ok(staffPage);
   const staffLayout = getStarterKitPageLayout(staffPage);
-  const qrFrameTop = STARTER_KIT_LAYOUT.qr.y - STARTER_KIT_LAYOUT.qr.frameInset;
-  assert.ok(staffLayout.description.y + staffLayout.description.lineHeight * staffLayout.description.maxLines < qrFrameTop);
+  const descriptionBottom = staffLayout.description.y + staffLayout.description.reservedHeight;
+  const qrFrameTop = staffLayout.qr.y - staffLayout.qr.frameInset;
+  assert.equal(staffLayout.description.reservedHeight, staffLayout.description.lineHeight * staffLayout.description.maxLines);
+  assert.equal(qrFrameTop, descriptionBottom + staffLayout.descriptionToQrGap);
+  assert.equal(staffLayout.descriptionToQrGap, 50);
+  assert.ok(staffLayout.descriptionToQrGap / STARTER_KIT_LAYOUT.canvas.height * 148 >= 3);
+  assert.ok(staffLayout.descriptionToQrGap / STARTER_KIT_LAYOUT.canvas.height * 148 <= 5);
+  assert.equal(staffLayout.qr.y, STARTER_KIT_LAYOUT.qr.y);
   assert.equal(staffPage.subheadline, "Anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service.");
 
   const translations = [
@@ -107,6 +113,8 @@ test("Staff description has a bounded multilingual block above the protected QR 
     assert.ok(fontSize >= staffLayout.description.minFontSize);
     assert.ok(starterKitEstimatedLineCount(copy, { fontSize, maxWidth: maxWidth / staffLayout.description.maxLines }) <= staffLayout.description.maxLines);
   }
+  assert.match(qrCenterPrint, /const \{ size: qrSize, x: qrX, y: qrY \} = pageLayout\.qr/);
+  assert.match(qrCenter, /pageLayout\.qr\.y - pageLayout\.qr\.frameInset/);
 });
 
 test("long Restaurant names remain on one bounded A6 line", () => {
@@ -125,7 +133,7 @@ test("QR frame keeps canonical size, quiet space and crisp PDF modules", () => {
   assert.equal(STARTER_KIT_LAYOUT.qr.size, 680);
   assert.equal(STARTER_KIT_LAYOUT.qr.frameInset, 44);
   assert.match(qrCenterPrint, /context\.imageSmoothingEnabled = false/);
-  assert.match(qrCenterPrint, /STARTER_KIT_LAYOUT\.qr\.frameInset/);
+  assert.match(qrCenterPrint, /pageLayout\.qr\.frameInset/);
   assert.match(styles, /\.starter-kit-a6-qr-frame\s*\{[\s\S]*padding:\s*5\.73%/);
   assert.match(styles, /\.starter-kit-a6-qr-frame \.operational-qr-code\s*\{[\s\S]*height:\s*100%[\s\S]*width:\s*100%/);
 });

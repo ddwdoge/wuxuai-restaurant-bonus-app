@@ -30,8 +30,10 @@ export const STARTER_KIT_REFERRAL: {
   readonly note: string;
 };
 export function getStarterKitPageLayout(page: StarterKitPageDefinition): {
-  readonly description: typeof STARTER_KIT_LAYOUT.description;
+  readonly description: typeof STARTER_KIT_LAYOUT.description & { readonly reservedHeight?: number };
+  readonly descriptionToQrGap?: number;
   readonly headline: typeof STARTER_KIT_LAYOUT.headline;
+  readonly qr: typeof STARTER_KIT_LAYOUT.qr;
 };
 export function starterKitSingleLineFontSize(text: string, options: { fontSize: number; maxWidth: number; minFontSize: number }): number;
 export function starterKitEstimatedLineCount(text: string, options: { fontSize: number; maxWidth: number }): number;

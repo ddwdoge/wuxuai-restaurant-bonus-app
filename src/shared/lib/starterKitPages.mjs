@@ -15,8 +15,24 @@ export const STARTER_KIT_LAYOUT = Object.freeze({
 });
 
 const STAFF_TEXT_LAYOUT = Object.freeze({
-  description: { ...STARTER_KIT_LAYOUT.description, fontSize: 29, lineHeight: 34, maxLines: 2, y: 448 },
+  description: {
+    ...STARTER_KIT_LAYOUT.description,
+    fontSize: 29,
+    lineHeight: 34,
+    maxLines: 2,
+    reservedHeight: 68,
+    y: 448,
+  },
+  descriptionToQrGap: 50,
   headline: { ...STARTER_KIT_LAYOUT.headline, y: 378 },
+});
+
+const STAFF_QR_LAYOUT = Object.freeze({
+  ...STARTER_KIT_LAYOUT.qr,
+  y: STAFF_TEXT_LAYOUT.description.y
+    + STAFF_TEXT_LAYOUT.description.reservedHeight
+    + STAFF_TEXT_LAYOUT.descriptionToQrGap
+    + STARTER_KIT_LAYOUT.qr.frameInset,
 });
 
 export function getStarterKitPageLayout(page) {
@@ -24,9 +40,10 @@ export function getStarterKitPageLayout(page) {
     return {
       description: STARTER_KIT_LAYOUT.description,
       headline: STARTER_KIT_LAYOUT.headline,
+      qr: STARTER_KIT_LAYOUT.qr,
     };
   }
-  return STAFF_TEXT_LAYOUT;
+  return { ...STAFF_TEXT_LAYOUT, qr: STAFF_QR_LAYOUT };
 }
 
 export function starterKitSingleLineFontSize(text, options) {

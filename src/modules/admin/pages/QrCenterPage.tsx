@@ -375,8 +375,8 @@ function drawQrPrintPage(
 
   const margin = STARTER_KIT_LAYOUT.contentMargin;
   const contentWidth = canvas.width - margin * 2;
-  const { size: qrSize, x: qrX, y: qrY } = STARTER_KIT_LAYOUT.qr;
   const pageLayout = getStarterKitPageLayout(page);
+  const { size: qrSize, x: qrX, y: qrY } = pageLayout.qr;
   const restaurantNameFontSize = starterKitSingleLineFontSize(branding.restaurantName, {
     fontSize: STARTER_KIT_LAYOUT.restaurantName.fontSize,
     maxWidth: contentWidth - 40,
@@ -427,7 +427,7 @@ function drawQrPrintPage(
   context.font = `400 ${descriptionFontSize}px Inter, Arial, sans-serif`;
   drawWrappedText(context, page.subheadline, canvas.width / 2, pageLayout.description.y, contentWidth - 90, pageLayout.description.lineHeight, pageLayout.description.maxLines);
 
-  roundedRect(context, qrX - STARTER_KIT_LAYOUT.qr.frameInset, qrY - STARTER_KIT_LAYOUT.qr.frameInset, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, STARTER_KIT_LAYOUT.qr.frameRadius);
+  roundedRect(context, qrX - pageLayout.qr.frameInset, qrY - pageLayout.qr.frameInset, qrSize + pageLayout.qr.frameInset * 2, qrSize + pageLayout.qr.frameInset * 2, pageLayout.qr.frameRadius);
   context.fillStyle = "#ffffff";
   context.fill();
   context.strokeStyle = colorWithAlpha(branding.accentColor, 0.46);
@@ -596,10 +596,10 @@ function StarterKitPagePreview({
     minFontSize: pageLayout.description.minFontSize,
   });
   const qrFrame = {
-    height: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
-    width: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
-    x: STARTER_KIT_LAYOUT.qr.x - STARTER_KIT_LAYOUT.qr.frameInset,
-    y: STARTER_KIT_LAYOUT.qr.y - STARTER_KIT_LAYOUT.qr.frameInset,
+    height: pageLayout.qr.size + pageLayout.qr.frameInset * 2,
+    width: pageLayout.qr.size + pageLayout.qr.frameInset * 2,
+    x: pageLayout.qr.x - pageLayout.qr.frameInset,
+    y: pageLayout.qr.y - pageLayout.qr.frameInset,
   };
 
   return (
