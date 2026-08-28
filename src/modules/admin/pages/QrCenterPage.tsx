@@ -1,12 +1,14 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
-import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
+import { RestaurantBrandIdentity } from "../../../shared/components/RestaurantBrandIdentity";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.mjs";
 import {
   getStarterKitPageDefinitions,
+  getStarterKitPageLayout,
+  starterKitSingleLineFontSize,
   STARTER_KIT_FOOTER,
   STARTER_KIT_LAYOUT,
   STARTER_KIT_REFERRAL,
@@ -107,7 +109,9 @@ function drawWrappedText(
   y: number,
   maxWidth: number,
   lineHeight: number,
+  maxLines = Number.POSITIVE_INFINITY,
 ) {
+  const lines: string[] = [];
   let nextY = y;
 
   text.split("\n").forEach((paragraph) => {
@@ -117,18 +121,22 @@ function drawWrappedText(
     words.forEach((word) => {
       const testLine = line ? `${line} ${word}` : word;
       if (context.measureText(testLine).width > maxWidth && line) {
-        context.fillText(line, x, nextY);
+        lines.push(line);
         line = word;
-        nextY += lineHeight;
         return;
       }
       line = testLine;
     });
 
     if (line) {
-      context.fillText(line, x, nextY);
-      nextY += lineHeight;
+      lines.push(line);
     }
+  });
+
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const isTruncated = index === maxLines - 1 && lines.length > maxLines;
+    context.fillText(isTruncated ? `${line.replace(/[.,;:!?]?$/, "")}…` : line, x, nextY);
+    nextY += lineHeight;
   });
 }
 
@@ -368,6 +376,22 @@ function drawQrPrintPage(
   const margin = STARTER_KIT_LAYOUT.contentMargin;
   const contentWidth = canvas.width - margin * 2;
   const { size: qrSize, x: qrX, y: qrY } = STARTER_KIT_LAYOUT.qr;
+  const pageLayout = getStarterKitPageLayout(page);
+  const restaurantNameFontSize = starterKitSingleLineFontSize(branding.restaurantName, {
+    fontSize: STARTER_KIT_LAYOUT.restaurantName.fontSize,
+    maxWidth: contentWidth - 40,
+    minFontSize: STARTER_KIT_LAYOUT.restaurantName.minFontSize,
+  });
+  const headlineFontSize = starterKitSingleLineFontSize(page.headline, {
+    fontSize: pageLayout.headline.fontSize,
+    maxWidth: contentWidth,
+    minFontSize: pageLayout.headline.minFontSize,
+  });
+  const descriptionFontSize = starterKitSingleLineFontSize(page.subheadline, {
+    fontSize: pageLayout.description.fontSize,
+    maxWidth: (contentWidth - 90) * pageLayout.description.maxLines,
+    minFontSize: pageLayout.description.minFontSize,
+  });
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -386,7 +410,7 @@ function drawQrPrintPage(
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
-  context.font = `600 ${STARTER_KIT_LAYOUT.restaurantName.fontSize}px Inter, Arial, sans-serif`;
+  context.font = `600 ${restaurantNameFontSize}px Inter, Arial, sans-serif`;
   drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, STARTER_KIT_LAYOUT.restaurantName.y, contentWidth - 40, STARTER_KIT_LAYOUT.restaurantName.lineHeight);
 
   if (page.audienceLabel) {
@@ -396,12 +420,12 @@ function drawQrPrintPage(
   }
 
   context.fillStyle = "#17202a";
-  context.font = `800 ${STARTER_KIT_LAYOUT.headline.fontSize}px Inter, Arial, sans-serif`;
-  drawWrappedText(context, page.headline, canvas.width / 2, STARTER_KIT_LAYOUT.headline.y, contentWidth, STARTER_KIT_LAYOUT.headline.lineHeight);
+  context.font = `800 ${headlineFontSize}px Inter, Arial, sans-serif`;
+  drawWrappedText(context, page.headline, canvas.width / 2, pageLayout.headline.y, contentWidth, pageLayout.headline.lineHeight, pageLayout.headline.maxLines);
 
   context.fillStyle = "#465463";
-  context.font = `400 ${STARTER_KIT_LAYOUT.description.fontSize}px Inter, Arial, sans-serif`;
-  drawWrappedText(context, page.subheadline, canvas.width / 2, STARTER_KIT_LAYOUT.description.y, contentWidth - 90, STARTER_KIT_LAYOUT.description.lineHeight);
+  context.font = `400 ${descriptionFontSize}px Inter, Arial, sans-serif`;
+  drawWrappedText(context, page.subheadline, canvas.width / 2, pageLayout.description.y, contentWidth - 90, pageLayout.description.lineHeight, pageLayout.description.maxLines);
 
   roundedRect(context, qrX - STARTER_KIT_LAYOUT.qr.frameInset, qrY - STARTER_KIT_LAYOUT.qr.frameInset, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, STARTER_KIT_LAYOUT.qr.frameRadius);
   context.fillStyle = "#ffffff";
@@ -559,6 +583,18 @@ function StarterKitPagePreview({
   qrValue: string;
   restaurantName: string;
 }) {
+  const contentWidth = STARTER_KIT_LAYOUT.canvas.width - STARTER_KIT_LAYOUT.contentMargin * 2;
+  const pageLayout = getStarterKitPageLayout(page);
+  const headlineFontSize = starterKitSingleLineFontSize(page.headline, {
+    fontSize: pageLayout.headline.fontSize,
+    maxWidth: contentWidth,
+    minFontSize: pageLayout.headline.minFontSize,
+  });
+  const descriptionFontSize = starterKitSingleLineFontSize(page.subheadline, {
+    fontSize: pageLayout.description.fontSize,
+    maxWidth: (contentWidth - 90) * pageLayout.description.maxLines,
+    minFontSize: pageLayout.description.minFontSize,
+  });
   const qrFrame = {
     height: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
     width: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
@@ -569,13 +605,10 @@ function StarterKitPagePreview({
   return (
     <article className="starter-kit-preview-item">
       <div className="starter-kit-a6-sheet" aria-label={`A6-Vorschau: ${page.headline}`}>
-        <div className="starter-kit-a6-logo" style={previewBoxStyle(STARTER_KIT_LAYOUT.logo)}>
-          <RestaurantLogoStage logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={primaryColor} size="print" />
-        </div>
-        <div className="starter-kit-a6-name" style={previewTextStyle(STARTER_KIT_LAYOUT.restaurantName.y, STARTER_KIT_LAYOUT.restaurantName.fontSize)}>{restaurantName}</div>
+        <RestaurantBrandIdentity logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={primaryColor} variant="a6" />
         {page.audienceLabel ? <div className="starter-kit-a6-audience" style={{ ...previewTextStyle(STARTER_KIT_LAYOUT.audience.y, STARTER_KIT_LAYOUT.audience.fontSize), color: primaryColor }}>{page.audienceLabel}</div> : null}
-        <div className="starter-kit-a6-headline" style={previewTextStyle(STARTER_KIT_LAYOUT.headline.y, STARTER_KIT_LAYOUT.headline.fontSize)}>{page.headline}</div>
-        <div className="starter-kit-a6-description" style={previewTextStyle(STARTER_KIT_LAYOUT.description.y, STARTER_KIT_LAYOUT.description.fontSize)}>{page.subheadline}</div>
+        <div className="starter-kit-a6-headline" style={{ ...previewTextStyle(pageLayout.headline.y, headlineFontSize), WebkitLineClamp: pageLayout.headline.maxLines }}>{page.headline}</div>
+        <div className="starter-kit-a6-description" style={{ ...previewTextStyle(pageLayout.description.y, descriptionFontSize), WebkitLineClamp: pageLayout.description.maxLines }}>{page.subheadline}</div>
         <div className="starter-kit-a6-qr-frame" style={{ ...previewBoxStyle(qrFrame), borderColor: colorWithAlpha(accentColor, 0.46) }}>
           <OperationalQrCode id={`starter-kit-preview-${page.id}`} title={`QR-Code: ${page.headline}`} value={qrValue} />
         </div>
@@ -677,14 +710,8 @@ export function QrCenterPage() {
     }
   }
 
-  const renderQrBrandBlock = () => (
-    <div className="restaurant-brand-header qr-preview-brand">
-      <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={branding?.primary_color} size="header" />
-      <div className="restaurant-brand-copy">
-        <span className="restaurant-brand-title">{restaurantName}</span>
-        <span className="restaurant-brand-subtitle">Bonus für Gäste</span>
-      </div>
-    </div>
+  const renderQrBrandBlock = (contextLabel: string) => (
+    <RestaurantBrandIdentity contextLabel={contextLabel} logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={branding?.primary_color} variant="qr-card" />
   );
 
   return (
@@ -743,7 +770,7 @@ export function QrCenterPage() {
         </div>
         <section className="grid two qr-center-grid">
           <article className="card qr-box-large">
-            {renderQrBrandBlock()}
+            {renderQrBrandBlock("Bonus für Gäste")}
             <h2>Neue Gäste QR</h2>
             <p className="muted">Für Eingang, Tischaufsteller, Kassa, Rechnung, Flyer oder Werbung.</p>
             <OperationalQrCode id="qr-restaurant" title="QR-Code für neue Gäste" value={restaurantQrUrl} />
@@ -761,7 +788,7 @@ export function QrCenterPage() {
           </article>
 
           <article className="card qr-box-large">
-            {renderQrBrandBlock()}
+            {renderQrBrandBlock("Mitarbeiter")}
             <h2>Mitarbeiter QR</h2>
             <p className="muted">Nur für dein Team.</p>
             <OperationalQrCode id="qr-staff" title="QR-Code für den Mitarbeiterbereich" value={staffTabletUrl} />
@@ -787,7 +814,7 @@ export function QrCenterPage() {
             <p className="muted">Nur sichtbar, weil dein Restaurant den kundeninitiierten Sammelweg verwendet.</p>
           </div>
           <article className="card qr-box-large">
-            {renderQrBrandBlock()}
+            {renderQrBrandBlock("Bonus für Gäste")}
             <h3>Kassa QR</h3>
             <p className="muted">Für Bonuspunkte nach dem Bezahlen.</p>
             <OperationalQrCode id="qr-bonus" title="QR-Code für den bestehenden Sammelweg" value={bonusQrUrl} />

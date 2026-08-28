@@ -54,6 +54,27 @@
   width: 100%;
 }
 
+.restaurant-logo-stage.placement-canonical img {
+  transition: none;
+}
+
+.restaurant-logo-stage.placement-canonical.is-fallback {
+  background: transparent;
+  border-color: transparent;
+}
+
+.restaurant-logo-stage .canonical-logo-fallback {
+  background: var(--restaurant-logo-fallback, #9a6b1f);
+  border-radius: 12px;
+  color: #ffffff;
+  height: 100%;
+  width: 64%;
+}
+
+.restaurant-logo-stage .canonical-logo-fallback > span {
+  font-size: 18px;
+}
+
 .restaurant-logo-stage.aspect-square img { padding: 9%; }
 .restaurant-logo-stage.aspect-wide img { padding: 13% 5%; }
 .restaurant-logo-stage.aspect-tall img { padding: 5% 16%; }

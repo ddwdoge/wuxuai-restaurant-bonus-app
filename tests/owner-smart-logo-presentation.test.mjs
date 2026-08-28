@@ -145,7 +145,7 @@ test("Aktive Restaurant-Brandingflächen verwenden die gemeinsame LogoStage", as
     "src/modules/admin/pages/RestaurantOnboarding.tsx",
   ];
   const sources = await Promise.all(paths.map(read));
-  sources.forEach((source, index) => assert.match(source, /RestaurantLogoStage/, paths[index]));
+  sources.forEach((source, index) => assert.match(source, /RestaurantLogoStage|RestaurantBrandIdentity/, paths[index]));
   assert.match(sources[0], /presentation=\{branding\}/);
   assert.doesNotMatch(sources[5], /<img alt=\{`\$\{form\.restaurantName/);
   assert.match(sources[4], /logoCanvasPlacement/);

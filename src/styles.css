@@ -4541,6 +4541,10 @@ a {
   width: 100%;
 }
 
+.starter-kit-a6-logo .canonical-logo-fallback > span {
+  font-size: 3.55cqw;
+}
+
 .starter-kit-a6-name,
 .starter-kit-a6-audience,
 .starter-kit-a6-headline,
@@ -4557,6 +4561,12 @@ a {
 .starter-kit-a6-name { color: #17202a; font-weight: 600; }
 .starter-kit-a6-audience { font-weight: 600; }
 .starter-kit-a6-headline { color: #17202a; font-weight: 800; }
+.starter-kit-a6-headline,
+.starter-kit-a6-description {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+}
 .starter-kit-a6-description { color: #465463; font-weight: 400; }
 .starter-kit-a6-note { color: #344251; font-weight: 400; }
 .starter-kit-a6-footer { color: #8a96a3; font-weight: 400; }
