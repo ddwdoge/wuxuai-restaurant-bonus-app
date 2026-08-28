@@ -1,111 +1,108 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import {
+  getStarterKitPageDefinitions,
+  STARTER_KIT_FOOTER,
+  STARTER_KIT_LAYOUT,
+  STARTER_KIT_REFERRAL,
+} from "../src/shared/lib/starterKitPages.mjs";
 
 const qrCenter = await readFile(new URL("../src/modules/admin/pages/QrCenterPage.tsx", import.meta.url), "utf8");
 const onboarding = await readFile(new URL("../src/modules/admin/pages/RestaurantOnboarding.tsx", import.meta.url), "utf8");
+const styles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+const pageModel = await readFile(new URL("../src/shared/lib/starterKitPages.mjs", import.meta.url), "utf8");
 const qrCenterPrint = qrCenter.slice(qrCenter.indexOf("function drawBonusBoostHint"), qrCenter.indexOf("function downloadQrPng"));
-const onboardingPrint = onboarding.slice(
-  onboarding.indexOf("function drawBonusBoostKpiBox"),
-  onboarding.indexOf("function linesToList"),
-);
-const printSources = `${qrCenterPrint}\n${onboardingPrint}`;
+const onboardingPrint = onboarding.slice(onboarding.indexOf("function drawBonusBoostKpiBox"), onboarding.indexOf("function linesToList"));
+const corePages = getStarterKitPageDefinitions();
 
-test("Starter Kit removes operational labels from every QR sheet", () => {
-  for (const removedLabel of ["Für den Eingang", "Für Tisch oder Flyer", "Für den Team", "Für dein Team"]) {
-    assert.doesNotMatch(printSources, new RegExp(removedLabel, "i"));
-  }
-  assert.match(qrCenter, /secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste"/);
-  assert.match(onboarding, /secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste"/);
+test("canonical Starter Kit model defines the three approved A6 pages", () => {
+  assert.deepEqual(corePages.map(({ headline, qrKind }) => ({ headline, qrKind })), [
+    { headline: "Neu hier?", qrKind: "restaurant" },
+    { headline: "Bonusprogramm entdecken", qrKind: "restaurant" },
+    { headline: "Mitarbeiterbereich", qrKind: "staff" },
+  ]);
+  assert.equal(corePages[0].referralHint, true);
+  assert.equal(corePages[1].referralHint, true);
+  assert.equal(corePages[2].referralHint, undefined);
+  assert.equal(corePages[2].secondaryNote, "Nur für Mitarbeiter · Nicht für Gäste");
 });
 
-test("three core print pages use the approved content hierarchy", () => {
-  for (const source of [qrCenter, onboarding]) {
-    assert.match(source, /audienceLabel: "Bonus für Gäste"/);
-    assert.match(source, /headline: "Neu hier\?"/);
-    assert.match(source, /Scanne den QR-Code und sichere dir dein Willkommensgeschenk\./);
-    assert.match(source, /headline: "Bonusprogramm entdecken"/);
-    assert.match(source, /Scanne den QR-Code und werde Gast in unserem Bonusprogramm\./);
-    assert.match(source, /headline: "Mitarbeiterbereich"/);
-    assert.match(source, /Persönlich anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service\./);
+test("preview and both PDF generators consume one canonical page model", () => {
+  assert.match(qrCenter, /const starterKitPages = getStarterKitPageDefinitions\(showCustomerCollectCompatibility\)/);
+  assert.match(qrCenterPrint, /getStarterKitPageDefinitions\(input\.includeCustomerCollectCompatibility\)/);
+  assert.match(onboardingPrint, /getStarterKitPageDefinitions\(\)/);
+  assert.match(qrCenter, /starterKitPages\.map\(\(page\) =>/);
+  for (const legacyTree of [qrCenterPrint, onboardingPrint]) {
+    assert.doesNotMatch(legacyTree, /headline: "Neu hier\?"|headline: "Bonusprogramm entdecken"|headline: "Mitarbeiterbereich"/);
   }
-  assert.doesNotMatch(onboarding, /drawStarterKitInfoPage/);
 });
 
-test("both guest sheets use two evergreen 2x benefit cells without printed duration", () => {
-  for (const source of [qrCenter, onboarding]) {
-    assert.match(source, /Freunde einladen lohnt sich/);
-    assert.match(source, /icon: "🔥", label: "Du bekommst", value: "2× Punkte"/);
-    assert.match(source, /icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte"/);
-    assert.match(source, /Aktiv nach dem ersten qualifizierten Besuch deines Freundes\./);
-    assert.doesNotMatch(source, /\b(?:7|14|15|28|30)\s*Tage\b/i);
-  }
-  assert.equal((qrCenter.match(/referralHint: true/g) ?? []).length, 2);
-  assert.equal((onboarding.match(/referralHint: true/g) ?? []).length, 2);
+test("A6 geometry is canonical and preview scales the same model", () => {
+  assert.deepEqual(STARTER_KIT_LAYOUT.canvas, { height: 1748, width: 1240 });
+  assert.deepEqual(STARTER_KIT_LAYOUT.logo, { height: 208, width: 598, x: 321, y: 106 });
+  assert.deepEqual(STARTER_KIT_LAYOUT.qr, { frameInset: 44, frameRadius: 30, size: 680, x: 280, y: 610 });
+  assert.equal(STARTER_KIT_LAYOUT.contentMargin, 96);
+  assert.match(qrCenterPrint, /canvas\.width = STARTER_KIT_LAYOUT\.canvas\.width/);
+  assert.match(qrCenterPrint, /canvas\.height = STARTER_KIT_LAYOUT\.canvas\.height/);
+  assert.match(qrCenter, /previewBoxStyle\(STARTER_KIT_LAYOUT\.logo\)/);
+  assert.match(qrCenter, /previewBoxStyle\(qrFrame\)/);
+  assert.match(styles, /\.starter-kit-a6-sheet\s*\{[\s\S]*aspect-ratio:\s*105 \/ 148/);
 });
 
-test("A6 PDF logo gains adaptive visual presence and keeps Smart Logo metadata", () => {
-  assert.match(qrCenter, /height: 160,[\s\S]{0,240}presentation: branding\.presentation[\s\S]{0,240}width: 460/);
-  assert.ok(160 / 118 >= 1.3 && 160 / 118 <= 1.4);
-  for (const source of [qrCenter, onboarding]) {
-    assert.match(source, /logoCanvasPlacement\([\s\S]{0,260}presentation \?\? \{\}/);
-  }
+test("preview and PDF preserve Smart Logo presentation", () => {
+  assert.match(qrCenter, /const placement = logoCanvasPlacement\([\s\S]{0,260}presentation \?\? \{\}/);
+  assert.match(qrCenterPrint, /drawLogo\(context, \{[\s\S]{0,360}presentation: branding\.presentation/);
+  assert.match(qrCenter, /<RestaurantLogoStage[\s\S]{0,220}presentation=\{branding\}[\s\S]{0,160}size="print"/);
   assert.match(onboarding, /logoPresentation: tenantBranding \? \{/);
 });
 
-test("both Starter Kit generators enforce the canonical A6 print-safe geometry", () => {
-  assert.match(qrCenter, /const a6PageWidthPt = 297\.64/);
-  assert.match(qrCenter, /const a6PageHeightPt = 419\.53/);
-  assert.match(qrCenterPrint, /const margin = 96/);
-  assert.match(qrCenterPrint, /y: 106/);
-  assert.match(qrCenterPrint, /canvas\.height - 98/);
-  assert.doesNotMatch(qrCenterPrint, /fillRect\(0, 0, canvas\.width, 22\)/);
-
-  assert.match(onboarding, /const starterKitA6PageWidthPt = 297\.64/);
-  assert.match(onboarding, /const starterKitA6PageHeightPt = 419\.53/);
-  assert.match(onboardingPrint, /const margin = 200/);
-  assert.match(onboardingPrint, /const logoY = 236/);
-  assert.match(onboardingPrint, /canvas\.height - 220/);
-  assert.match(onboardingPrint, /pageHeight: starterKitA6PageHeightPt/);
-  assert.match(onboardingPrint, /pageWidth: starterKitA6PageWidthPt/);
-  assert.doesNotMatch(onboardingPrint, /fillRect\(0, 0, canvas\.width, 46\)/);
-  assert.doesNotMatch(onboardingPrint, /pageHeight: 842|pageWidth: 595/);
-
-  const qrCenterLogoTopMm = 106 * 148 / 1748;
-  const onboardingLogoTopMm = 236 * 148 / 3508;
-  assert.ok(qrCenterLogoTopMm >= 8 && qrCenterLogoTopMm <= 10);
-  assert.ok(onboardingLogoTopMm >= 8 && onboardingLogoTopMm <= 10);
+test("QR frame keeps canonical size, quiet space and crisp PDF modules", () => {
+  assert.equal(STARTER_KIT_LAYOUT.qr.size, 680);
+  assert.equal(STARTER_KIT_LAYOUT.qr.frameInset, 44);
+  assert.match(qrCenterPrint, /context\.imageSmoothingEnabled = false/);
+  assert.match(qrCenterPrint, /STARTER_KIT_LAYOUT\.qr\.frameInset/);
+  assert.match(styles, /\.starter-kit-a6-qr-frame\s*\{[\s\S]*padding:\s*5\.73%/);
+  assert.match(styles, /\.starter-kit-a6-qr-frame \.operational-qr-code\s*\{[\s\S]*height:\s*100%[\s\S]*width:\s*100%/);
 });
 
-test("QR frames preserve white quiet space, crisp modules and larger QR output", () => {
-  assert.match(qrCenter, /const qrSize = 680/);
-  assert.match(onboarding, /const qrSize = 1120/);
-  for (const source of [qrCenter, onboarding]) {
-    assert.match(source, /context\.fillStyle = "#ffffff";\s*context\.fill\(\);[\s\S]*?context\.imageSmoothingEnabled = false;\s*context\.drawImage\([^;]+\);/);
+test("paper and preview backgrounds are pure white", () => {
+  for (const source of [qrCenterPrint, onboardingPrint]) {
+    assert.match(source, /context\.fillStyle = "#ffffff";\s*context\.fillRect\(0, 0, canvas\.width, canvas\.height\);/);
+    assert.doesNotMatch(source, /context\.fillStyle = "#fbf8f1";/);
   }
+  assert.match(styles, /\.starter-kit-a6-sheet\s*\{[\s\S]*background:\s*#ffffff/);
 });
 
-test("all sheets share fixed brand, headline, QR and footer positions", () => {
-  for (const source of [qrCenter, onboarding]) {
-    assert.match(source, /context\.font = "600 [^\n]+Inter/);
-    assert.match(source, /context\.font = "800 [^\n]+Inter/);
-    assert.match(source, /context\.font = "400 [^\n]+Inter/);
-    assert.match(source, /Powered by WUXUAI Bonus/);
-  }
+test("referral content is shared, evergreen and absent from Staff", () => {
+  assert.equal(STARTER_KIT_REFERRAL.title, "Freunde einladen lohnt sich");
+  assert.deepEqual(STARTER_KIT_REFERRAL.benefits.map(({ label, value }) => ({ label, value })), [
+    { label: "Du bekommst", value: "2× Punkte" },
+    { label: "Dein Freund bekommt", value: "2× Punkte" },
+  ]);
+  assert.doesNotMatch(pageModel, /\b(?:7|14|15|28|30)\s*Tage\b/i);
+  for (const source of [qrCenter, onboarding]) assert.match(source, /STARTER_KIT_REFERRAL/);
 });
 
-test("guest and staff QR payload canvases remain unchanged", () => {
-  const qrCenterSpecs = qrCenter.slice(
-    qrCenter.indexOf("const pageSpecs: QrPrintPage[]"),
-    qrCenter.indexOf("if (input.includeCustomerCollectCompatibility", qrCenter.indexOf("const pageSpecs: QrPrintPage[]")),
-  );
-  const onboardingSpecs = onboarding.slice(
-    onboarding.indexOf("const pageSpecs: StarterKitPageSpec[]"),
-    onboarding.indexOf("const pdf = buildStarterKitPdf", onboarding.indexOf("const pageSpecs: StarterKitPageSpec[]")),
-  );
+test("typography and footer hierarchy use canonical values", () => {
+  assert.deepEqual(STARTER_KIT_LAYOUT.restaurantName, { fontSize: 44, lineHeight: 50, y: 326 });
+  assert.deepEqual(STARTER_KIT_LAYOUT.headline, { fontSize: 70, lineHeight: 78, y: 428 });
+  assert.deepEqual(STARTER_KIT_LAYOUT.description, { fontSize: 31, lineHeight: 38, y: 512 });
+  assert.equal(STARTER_KIT_FOOTER, "Powered by WUXUAI Bonus");
+  assert.match(qrCenter, /STARTER_KIT_FOOTER/);
+  assert.match(onboarding, /STARTER_KIT_FOOTER/);
+});
 
-  assert.equal((qrCenterSpecs.match(/qrCanvas: restaurantQr/g) ?? []).length, 2);
-  assert.equal((qrCenterSpecs.match(/qrCanvas: staffQr/g) ?? []).length, 1);
-  assert.equal((onboardingSpecs.match(/qrCanvas: restaurantQr/g) ?? []).length, 2);
-  assert.equal((onboardingSpecs.match(/qrCanvas: staffQr/g) ?? []).length, 1);
+test("raw QR actions are explicitly distinguished from the A6 Starter Kit", () => {
+  assert.equal((qrCenter.match(/QR-Code als PNG herunterladen/g) ?? []).length, 2);
+  assert.match(qrCenter, /Nur der jeweilige QR-Code als PNG, ohne A6-Druckseite\./);
+  assert.match(qrCenter, /Starter Kit herunterladen/);
+});
+
+test("guest and staff QR payload mappings remain unchanged", () => {
+  assert.equal(corePages.filter((page) => page.qrKind === "restaurant").length, 2);
+  assert.equal(corePages.filter((page) => page.qrKind === "staff").length, 1);
+  assert.match(qrCenter, /restaurantQrId: "qr-restaurant"/);
+  assert.match(qrCenter, /staffQrId: "qr-staff"/);
+  assert.match(onboarding, /staffQrId: "staff-qr"/);
 });

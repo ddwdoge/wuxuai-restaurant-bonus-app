@@ -4475,6 +4475,129 @@ a {
   align-items: stretch;
 }
 
+.starter-kit-preview-section,
+.qr-individual-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.starter-kit-preview-section h2,
+.qr-individual-section h2 {
+  margin: 0 0 4px;
+}
+
+.starter-kit-preview-strip {
+  display: grid;
+  gap: 14px;
+  grid-auto-columns: minmax(250px, min(78vw, 300px));
+  grid-auto-flow: column;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 2px 2px 10px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.starter-kit-preview-item {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.starter-kit-preview-label {
+  color: #344251;
+  font-size: 14px;
+  text-align: center;
+}
+
+.starter-kit-a6-sheet {
+  aspect-ratio: 105 / 148;
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  box-shadow: 0 8px 24px rgb(23 32 42 / 10%);
+  container-type: inline-size;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.starter-kit-a6-logo,
+.starter-kit-a6-name,
+.starter-kit-a6-audience,
+.starter-kit-a6-headline,
+.starter-kit-a6-description,
+.starter-kit-a6-qr-frame,
+.starter-kit-a6-note,
+.starter-kit-a6-referral,
+.starter-kit-a6-footer {
+  position: absolute;
+}
+
+.starter-kit-a6-logo .restaurant-logo-stage {
+  height: 100%;
+  max-width: none;
+  width: 100%;
+}
+
+.starter-kit-a6-name,
+.starter-kit-a6-audience,
+.starter-kit-a6-headline,
+.starter-kit-a6-description,
+.starter-kit-a6-note,
+.starter-kit-a6-footer {
+  left: 7.75%;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  text-align: center;
+  width: 84.5%;
+}
+
+.starter-kit-a6-name { color: #17202a; font-weight: 600; }
+.starter-kit-a6-audience { font-weight: 600; }
+.starter-kit-a6-headline { color: #17202a; font-weight: 800; }
+.starter-kit-a6-description { color: #465463; font-weight: 400; }
+.starter-kit-a6-note { color: #344251; font-weight: 400; }
+.starter-kit-a6-footer { color: #8a96a3; font-weight: 400; }
+
+.starter-kit-a6-qr-frame {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid;
+  border-radius: 2.4cqw;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 5.73%;
+}
+
+.starter-kit-a6-qr-frame .operational-qr-code {
+  height: 100%;
+  max-height: none;
+  max-width: none;
+  width: 100%;
+}
+
+.starter-kit-a6-referral {
+  border: 1px solid;
+  border-radius: 2.25cqw;
+  box-sizing: border-box;
+  color: #465463;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 1.25cqw 2.55cqw 1cqw;
+  text-align: center;
+}
+
+.starter-kit-a6-referral > strong { font-size: 2.66cqw; line-height: 1.15; }
+.starter-kit-a6-referral > small { font-size: 1.85cqw; line-height: 1.15; }
+.starter-kit-a6-benefits { display: grid; gap: 2.55cqw; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: .65cqw 0; }
+.starter-kit-a6-benefits > span { align-items: center; background: rgb(255 255 255 / 78%); border: 1px solid rgb(23 32 42 / 9%); border-radius: 1.6cqw; display: grid; grid-template-rows: auto auto auto; min-width: 0; padding: .35cqw; }
+.starter-kit-a6-benefits b { font-size: 2.75cqw; line-height: 1; }
+.starter-kit-a6-benefits small { color: #17202a; font-size: 1.92cqw; font-weight: 600; line-height: 1.1; }
+.starter-kit-a6-benefits em { font-size: 2.7cqw; font-style: normal; font-weight: 800; line-height: 1.1; }
+
 .qr-card-actions {
   display: grid;
   gap: 8px;
@@ -4605,6 +4728,12 @@ a {
 }
 
 @media (min-width: 1120px) {
+  .starter-kit-preview-strip {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+
   .dashboard-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

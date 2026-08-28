@@ -20,6 +20,8 @@ import {
 } from "../../onboarding/pilotOnboardingService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
+import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.mjs";
+import { getStarterKitPageDefinitions, STARTER_KIT_FOOTER, STARTER_KIT_REFERRAL, type StarterKitPageDefinition } from "../../../shared/lib/starterKitPages.mjs";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
@@ -487,16 +489,10 @@ type StarterKitPdfPage = {
   pageWidth: number;
 };
 
-type StarterKitPageSpec = {
-  audienceLabel?: string;
-  headline: string;
+type StarterKitPageSpec = StarterKitPageDefinition & {
   qrCanvas: HTMLCanvasElement;
-  referralHint?: boolean;
-  secondaryNote?: string;
-  subheadline: string;
 };
 
-const starterKitFooterText = "Powered by WUXUAI Bonus • www.wuxuaisbi.com";
 const starterKitA6PageWidthPt = 297.64;
 const starterKitA6PageHeightPt = 419.53;
 
@@ -685,12 +681,12 @@ function drawBonusBoostKpiBox(
   const { accentColor, primaryColor, width, x, y } = options;
 
   context.save();
-  const cellGap = 48;
-  const cellInset = 56;
+  const cellGap = 72;
+  const cellInset = 64;
   const cellWidth = (width - cellInset * 2 - cellGap) / 2;
-  const cellY = y + 132;
+  const cellY = y + 146;
 
-  roundedRect(context, x, y, width, 480, 48);
+  roundedRect(context, x, y, width, 560, 48);
   context.fillStyle = colorWithAlpha(accentColor, 0.12);
   context.fill();
   context.strokeStyle = colorWithAlpha(accentColor, 0.42);
@@ -700,36 +696,33 @@ function drawBonusBoostKpiBox(
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
-  context.font = "700 62px Inter, Arial, sans-serif";
-  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 44);
+  context.font = "700 70px Inter, Arial, sans-serif";
+  context.fillText(STARTER_KIT_REFERRAL.title, x + width / 2, y + 44);
 
-  [
-    { icon: "🔥", label: "Du bekommst", value: "2× Punkte" },
-    { icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte" },
-  ].forEach((benefit, index) => {
+  STARTER_KIT_REFERRAL.benefits.forEach((benefit, index) => {
     const cellX = x + cellInset + index * (cellWidth + cellGap);
-    roundedRect(context, cellX, cellY, cellWidth, 224, 36);
+    roundedRect(context, cellX, cellY, cellWidth, 258, 36);
     context.fillStyle = "rgba(255, 255, 255, 0.78)";
     context.fill();
     context.strokeStyle = colorWithAlpha(accentColor, 0.32);
     context.lineWidth = 4;
     context.stroke();
     context.fillStyle = "#17202a";
-    context.font = "400 60px Apple Color Emoji, Segoe UI Emoji, sans-serif";
+    context.font = "400 68px Apple Color Emoji, Segoe UI Emoji, sans-serif";
     context.fillText(benefit.icon, cellX + cellWidth / 2, cellY + 16);
-    context.font = "600 44px Inter, Arial, sans-serif";
-    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 96);
+    context.font = "600 50px Inter, Arial, sans-serif";
+    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 106);
     context.fillStyle = primaryColor;
-    context.font = "800 56px Inter, Arial, sans-serif";
-    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 152);
+    context.font = "800 66px Inter, Arial, sans-serif";
+    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 170);
   });
 
   context.fillStyle = "#465463";
-  context.font = "400 42px Inter, Arial, sans-serif";
+  context.font = "400 46px Inter, Arial, sans-serif";
   context.fillText(
-    "Aktiv nach dem ersten qualifizierten Besuch deines Freundes.",
+    STARTER_KIT_REFERRAL.note,
     x + width / 2,
-    y + 396,
+    y + 472,
   );
   context.restore();
 }
@@ -754,8 +747,8 @@ function drawStarterKitPage(
   }
 
   const margin = 200;
-  const logoWidth = 984;
-  const logoHeight = 276;
+  const logoWidth = 1279;
+  const logoHeight = 359;
   const qrSize = 1120;
   const qrX = (canvas.width - qrSize) / 2;
   const qrY = 1080;
@@ -764,15 +757,15 @@ function drawStarterKitPage(
   const cardBottom = 190;
   const cardHeight = canvas.height - cardTop - cardBottom;
   const logoY = 236;
-  const nameY = logoY + logoHeight + 40;
-  const audienceY = nameY + 100;
-  const headlineY = nameY + 180;
-  const descriptionY = headlineY + 150;
+  const nameY = 620;
+  const audienceY = 716;
+  const headlineY = 790;
+  const descriptionY = 926;
   const noteY = qrY + qrSize + 104;
   const kpiBoxWidth = 1760;
   const kpiBoxY = noteY + 40;
 
-  context.fillStyle = "#fbf8f1";
+  context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   roundedRect(context, margin, cardTop, canvas.width - margin * 2, cardHeight, 66);
@@ -799,7 +792,7 @@ function drawStarterKitPage(
   });
 
   context.fillStyle = "#17202a";
-  context.font = "600 66px Inter, Arial, sans-serif";
+  context.font = "600 78px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
   drawWrappedText(
@@ -808,24 +801,24 @@ function drawStarterKitPage(
     canvas.width / 2,
     nameY,
     canvas.width - margin * 2 - cardPadding,
-    76,
+    88,
   );
 
   if (spec.audienceLabel) {
     context.fillStyle = branding.primaryColor;
-    context.font = "600 46px Inter, Arial, sans-serif";
-    drawWrappedText(context, spec.audienceLabel, canvas.width / 2, audienceY, canvas.width - margin * 2 - cardPadding, 56);
+    context.font = "600 52px Inter, Arial, sans-serif";
+    drawWrappedText(context, spec.audienceLabel, canvas.width / 2, audienceY, canvas.width - margin * 2 - cardPadding, 62);
   }
 
   context.fillStyle = branding.primaryColor;
-  context.font = "800 104px Inter, Arial, sans-serif";
+  context.font = "800 112px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
-  drawWrappedText(context, spec.headline, canvas.width / 2, headlineY, canvas.width - margin * 2 - cardPadding, 132);
+  drawWrappedText(context, spec.headline, canvas.width / 2, headlineY, canvas.width - margin * 2 - cardPadding, 140);
 
   context.fillStyle = "#465463";
-  context.font = "400 50px Inter, Arial, sans-serif";
-  drawWrappedText(context, spec.subheadline, canvas.width / 2, descriptionY, canvas.width - margin * 2 - cardPadding - 100, 62);
+  context.font = "400 56px Inter, Arial, sans-serif";
+  drawWrappedText(context, spec.subheadline, canvas.width / 2, descriptionY, canvas.width - margin * 2 - cardPadding - 100, 68);
 
   roundedRect(context, qrX - 64, qrY - 64, qrSize + 128, qrSize + 128, 48);
   context.fillStyle = "#ffffff";
@@ -858,7 +851,7 @@ function drawStarterKitPage(
   context.font = "600 30px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "alphabetic";
-  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 220);
+  context.fillText(STARTER_KIT_FOOTER, canvas.width / 2, canvas.height - 220);
 
   return {
     imageBytes: canvasToJpegBytes(canvas),
@@ -890,31 +883,14 @@ async function downloadRestaurantStarterKit(input: {
     primaryColor: input.primaryColor,
     secondaryColor: input.secondaryColor,
   };
-  const pageSpecs: StarterKitPageSpec[] = [
-    {
-      audienceLabel: "Bonus für Gäste",
-      headline: "Neu hier?",
-      qrCanvas: restaurantQr,
-      referralHint: true,
-      subheadline: "Scanne den QR-Code und sichere dir dein Willkommensgeschenk.",
-    },
-    {
-      audienceLabel: "Bonus für Gäste",
-      headline: "Bonusprogramm entdecken",
-      qrCanvas: restaurantQr,
-      referralHint: true,
-      subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
-    },
-    {
-      headline: "Mitarbeiterbereich",
-      qrCanvas: staffQr,
-      secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste",
-      subheadline: "Persönlich anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service.",
-    },
-  ];
+  const pageSpecs: StarterKitPageSpec[] = getStarterKitPageDefinitions().map((page) => ({
+    ...page,
+    qrCanvas: page.qrKind === "staff" ? staffQr : restaurantQr,
+  }));
 
   const pdf = buildStarterKitPdf(pageSpecs.map((page) => drawStarterKitPage(page, branding)));
-  triggerDownload(pdf, "restaurant-starter-kit.pdf");
+  const filename = buildStarterKitFilename(input.restaurantName);
+  triggerDownload(new File([pdf], filename, { type: "application/pdf" }), filename);
 }
 
 function linesToList(value: string) {

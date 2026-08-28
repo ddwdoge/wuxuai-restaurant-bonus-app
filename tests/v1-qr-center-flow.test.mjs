@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { getQrCenterPurposes, requiresCustomerInitiatedQr } from "../src/modules/admin/qrCenterFlow.mjs";
+import { getStarterKitPageDefinitions } from "../src/shared/lib/starterKitPages.mjs";
 
 const qrCenter = await readFile(new URL("../src/modules/admin/pages/QrCenterPage.tsx", import.meta.url), "utf8");
 const onboarding = await readFile(new URL("../src/modules/admin/pages/RestaurantOnboarding.tsx", import.meta.url), "utf8");
@@ -32,11 +33,10 @@ test("onboarding starter kit uses guest and protected staff QR only", () => {
 });
 
 test("alternate guest print reuses the same technical guest QR", () => {
-  const pageSpecsStart = onboarding.indexOf("const pageSpecs: StarterKitPageSpec[]");
-  const pageSpecsEnd = onboarding.indexOf("const pdf = buildStarterKitPdf", pageSpecsStart);
-  const pageSpecs = onboarding.slice(pageSpecsStart, pageSpecsEnd);
-  assert.equal((pageSpecs.match(/qrCanvas: restaurantQr/g) ?? []).length, 2);
-  assert.equal((pageSpecs.match(/qrCanvas: staffQr/g) ?? []).length, 1);
+  const pages = getStarterKitPageDefinitions();
+  assert.equal(pages.filter((page) => page.qrKind === "restaurant").length, 2);
+  assert.equal(pages.filter((page) => page.qrKind === "staff").length, 1);
+  assert.match(onboarding, /qrCanvas: page\.qrKind === "staff" \? staffQr : restaurantQr/);
 });
 
 test("QR Center actions remain touch friendly and starter kit stacks on mobile", () => {

@@ -1,9 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Download, FileText, QrCode } from "lucide-react";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
+import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.mjs";
+import {
+  getStarterKitPageDefinitions,
+  STARTER_KIT_FOOTER,
+  STARTER_KIT_LAYOUT,
+  STARTER_KIT_REFERRAL,
+  type StarterKitPageDefinition,
+  type StarterKitQrKind,
+} from "../../../shared/lib/starterKitPages.mjs";
 import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logoPresentation.mjs";
 import type { PointsCollectionMode } from "../../../shared/types/domain";
 import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
@@ -11,13 +20,8 @@ import { useTenant } from "../../tenant/TenantProvider";
 import { getQrCenterPurposes } from "../qrCenterFlow.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
-type QrPrintPage = {
-  audienceLabel?: string;
-  headline: string;
-  referralHint?: boolean;
+type QrPrintPage = StarterKitPageDefinition & {
   qrCanvas: HTMLCanvasElement;
-  secondaryNote?: string;
-  subheadline: string;
 };
 
 type PdfPage = {
@@ -28,11 +32,8 @@ type PdfPage = {
   pageWidth: number;
 };
 
-const footerText = "Powered by WUXUAI Bonus";
 const a6PageWidthPt = 297.64;
 const a6PageHeightPt = 419.53;
-const activePdfUrls = new Set<string>();
-let pdfCleanupRegistered = false;
 
 function base64ToBytes(value: string) {
   const binary = window.atob(value);
@@ -61,28 +62,6 @@ function triggerDownload(blob: Blob, filename: string) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
-}
-
-function openPdfBlob(blob: Blob, fallbackFilename: string) {
-  const url = URL.createObjectURL(blob);
-  activePdfUrls.add(url);
-
-  if (!pdfCleanupRegistered) {
-    pdfCleanupRegistered = true;
-    window.addEventListener("pagehide", () => {
-      activePdfUrls.forEach((activeUrl) => URL.revokeObjectURL(activeUrl));
-      activePdfUrls.clear();
-      pdfCleanupRegistered = false;
-    }, { once: true });
-  }
-
-  const openedWindow = window.open(url, "_blank", "noopener,noreferrer");
-  if (!openedWindow) {
-    triggerDownload(blob, fallbackFilename);
-    URL.revokeObjectURL(url);
-    activePdfUrls.delete(url);
-    return;
-  }
 }
 
 function roundedRect(
@@ -321,12 +300,12 @@ function drawBonusBoostHint(
   const { accentColor, primaryColor, width, x, y } = options;
 
   context.save();
-  const cellGap = 24;
-  const cellInset = 28;
+  const cellGap = 32;
+  const cellInset = 32;
   const cellWidth = (width - cellInset * 2 - cellGap) / 2;
-  const cellY = y + 66;
+  const cellY = y + 72;
 
-  roundedRect(context, x, y, width, 240, 28);
+  roundedRect(context, x, y, width, 260, 28);
   context.fillStyle = colorWithAlpha(accentColor, 0.12);
   context.fill();
   context.strokeStyle = colorWithAlpha(accentColor, 0.42);
@@ -336,36 +315,33 @@ function drawBonusBoostHint(
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
-  context.font = "700 29px Inter, Arial, sans-serif";
-  context.fillText("Freunde einladen lohnt sich", x + width / 2, y + 22);
+  context.font = "700 33px Inter, Arial, sans-serif";
+  context.fillText(STARTER_KIT_REFERRAL.title, x + width / 2, y + 22);
 
-  [
-    { icon: "🔥", label: "Du bekommst", value: "2× Punkte" },
-    { icon: "👥", label: "Dein Freund bekommt", value: "2× Punkte" },
-  ].forEach((benefit, index) => {
+  STARTER_KIT_REFERRAL.benefits.forEach((benefit, index) => {
     const cellX = x + cellInset + index * (cellWidth + cellGap);
-    roundedRect(context, cellX, cellY, cellWidth, 112, 20);
+    roundedRect(context, cellX, cellY, cellWidth, 126, 20);
     context.fillStyle = "rgba(255, 255, 255, 0.78)";
     context.fill();
     context.strokeStyle = colorWithAlpha(accentColor, 0.32);
     context.lineWidth = 2;
     context.stroke();
     context.fillStyle = "#17202a";
-    context.font = "400 30px Apple Color Emoji, Segoe UI Emoji, sans-serif";
+    context.font = "400 34px Apple Color Emoji, Segoe UI Emoji, sans-serif";
     context.fillText(benefit.icon, cellX + cellWidth / 2, cellY + 8);
-    context.font = "600 22px Inter, Arial, sans-serif";
-    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 48);
+    context.font = "600 24px Inter, Arial, sans-serif";
+    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 52);
     context.fillStyle = primaryColor;
-    context.font = "800 28px Inter, Arial, sans-serif";
-    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 76);
+    context.font = "800 34px Inter, Arial, sans-serif";
+    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 84);
   });
 
   context.fillStyle = "#465463";
-  context.font = "400 21px Inter, Arial, sans-serif";
+  context.font = "400 23px Inter, Arial, sans-serif";
   context.fillText(
-    "Aktiv nach dem ersten qualifizierten Besuch deines Freundes.",
+    STARTER_KIT_REFERRAL.note,
     x + width / 2,
-    y + 198,
+    y + 222,
   );
   context.restore();
 }
@@ -381,55 +357,53 @@ function drawQrPrintPage(
   },
 ) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1240;
-  canvas.height = 1748;
+  canvas.width = STARTER_KIT_LAYOUT.canvas.width;
+  canvas.height = STARTER_KIT_LAYOUT.canvas.height;
   const context = canvas.getContext("2d");
 
   if (!context) {
     throw new Error("Druckvorlage konnte nicht gezeichnet werden.");
   }
 
-  const margin = 96;
+  const margin = STARTER_KIT_LAYOUT.contentMargin;
   const contentWidth = canvas.width - margin * 2;
-  const qrSize = 680;
-  const qrX = (canvas.width - qrSize) / 2;
-  const qrY = 610;
+  const { size: qrSize, x: qrX, y: qrY } = STARTER_KIT_LAYOUT.qr;
 
-  context.fillStyle = "#fbf8f1";
+  context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   drawLogo(context, {
-    height: 160,
+    height: STARTER_KIT_LAYOUT.logo.height,
     logoImage: branding.logoImage,
     primaryColor: branding.primaryColor,
     presentation: branding.presentation,
     restaurantName: branding.restaurantName,
-    width: 460,
-    x: (canvas.width - 460) / 2,
-    y: 106,
+    width: STARTER_KIT_LAYOUT.logo.width,
+    x: STARTER_KIT_LAYOUT.logo.x,
+    y: STARTER_KIT_LAYOUT.logo.y,
   });
 
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = "#17202a";
-  context.font = "600 38px Inter, Arial, sans-serif";
-  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, 278, contentWidth - 40, 44);
+  context.font = `600 ${STARTER_KIT_LAYOUT.restaurantName.fontSize}px Inter, Arial, sans-serif`;
+  drawWrappedText(context, branding.restaurantName || "Dein Restaurant", canvas.width / 2, STARTER_KIT_LAYOUT.restaurantName.y, contentWidth - 40, STARTER_KIT_LAYOUT.restaurantName.lineHeight);
 
   if (page.audienceLabel) {
     context.fillStyle = branding.primaryColor;
-    context.font = "600 23px Inter, Arial, sans-serif";
-    context.fillText(page.audienceLabel, canvas.width / 2, 374);
+    context.font = `600 ${STARTER_KIT_LAYOUT.audience.fontSize}px Inter, Arial, sans-serif`;
+    context.fillText(page.audienceLabel, canvas.width / 2, STARTER_KIT_LAYOUT.audience.y);
   }
 
   context.fillStyle = "#17202a";
-  context.font = "800 64px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.headline, canvas.width / 2, 410, contentWidth, 72);
+  context.font = `800 ${STARTER_KIT_LAYOUT.headline.fontSize}px Inter, Arial, sans-serif`;
+  drawWrappedText(context, page.headline, canvas.width / 2, STARTER_KIT_LAYOUT.headline.y, contentWidth, STARTER_KIT_LAYOUT.headline.lineHeight);
 
   context.fillStyle = "#465463";
-  context.font = "400 28px Inter, Arial, sans-serif";
-  drawWrappedText(context, page.subheadline, canvas.width / 2, 494, contentWidth - 90, 35);
+  context.font = `400 ${STARTER_KIT_LAYOUT.description.fontSize}px Inter, Arial, sans-serif`;
+  drawWrappedText(context, page.subheadline, canvas.width / 2, STARTER_KIT_LAYOUT.description.y, contentWidth - 90, STARTER_KIT_LAYOUT.description.lineHeight);
 
-  roundedRect(context, qrX - 44, qrY - 44, qrSize + 88, qrSize + 88, 30);
+  roundedRect(context, qrX - STARTER_KIT_LAYOUT.qr.frameInset, qrY - STARTER_KIT_LAYOUT.qr.frameInset, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, qrSize + STARTER_KIT_LAYOUT.qr.frameInset * 2, STARTER_KIT_LAYOUT.qr.frameRadius);
   context.fillStyle = "#ffffff";
   context.fill();
   context.strokeStyle = colorWithAlpha(branding.accentColor, 0.46);
@@ -440,8 +414,8 @@ function drawQrPrintPage(
 
   if (page.secondaryNote) {
     context.fillStyle = "#344251";
-    context.font = "400 23px Inter, Arial, sans-serif";
-    drawWrappedText(context, page.secondaryNote, canvas.width / 2, 1360, contentWidth - 80, 30);
+    context.font = `400 ${STARTER_KIT_LAYOUT.secondaryNote.fontSize}px Inter, Arial, sans-serif`;
+    drawWrappedText(context, page.secondaryNote, canvas.width / 2, STARTER_KIT_LAYOUT.secondaryNote.y, contentWidth - 80, STARTER_KIT_LAYOUT.secondaryNote.lineHeight);
   }
 
   if (page.referralHint) {
@@ -450,14 +424,14 @@ function drawQrPrintPage(
       primaryColor: branding.primaryColor,
       width: contentWidth,
       x: margin,
-      y: 1352,
+      y: STARTER_KIT_LAYOUT.referral.y,
     });
   }
 
   context.fillStyle = "#8a96a3";
-  context.font = "400 26px Inter, Arial, sans-serif";
+  context.font = `400 ${STARTER_KIT_LAYOUT.footer.fontSize}px Inter, Arial, sans-serif`;
   context.textBaseline = "alphabetic";
-  context.fillText(footerText, canvas.width / 2, canvas.height - 98);
+  context.fillText(STARTER_KIT_FOOTER, canvas.width / 2, STARTER_KIT_LAYOUT.footer.y);
 
   return {
     imageBytes: canvasToJpegBytes(canvas),
@@ -494,38 +468,14 @@ async function buildQrCenterStarterKitPdf(input: {
     presentation: input.logoPresentation,
     restaurantName: input.restaurantName || "Dein Restaurant",
   };
-  const pageSpecs: QrPrintPage[] = [
-    {
-      audienceLabel: "Bonus für Gäste",
-      headline: "Neu hier?",
-      qrCanvas: restaurantQr,
-      referralHint: true,
-      subheadline: "Scanne den QR-Code und sichere dir dein Willkommensgeschenk.",
-    },
-    {
-      audienceLabel: "Bonus für Gäste",
-      headline: "Bonusprogramm entdecken",
-      qrCanvas: restaurantQr,
-      referralHint: true,
-      subheadline: "Scanne den QR-Code und werde Gast in unserem Bonusprogramm.",
-    },
-    {
-      headline: "Mitarbeiterbereich",
-      qrCanvas: staffQr,
-      secondaryNote: "Nur für Mitarbeiter · Nicht für Gäste",
-      subheadline: "Persönlich anmelden für Tages-PIN, Gästeprüfung und Restaurant-Service.",
-    },
-  ];
-
-  if (input.includeCustomerCollectCompatibility && bonusQr) {
-    pageSpecs.splice(2, 0, {
-      audienceLabel: "Bonus für Gäste",
-      headline: "Punkte sammeln",
-      qrCanvas: bonusQr,
-      secondaryNote: "Tages-PIN erforderlich.",
-      subheadline: "Nach dem Bezahlen scannen und Bonuspunkte sichern.",
-    });
-  }
+  const qrCanvases: Partial<Record<StarterKitQrKind, HTMLCanvasElement>> = {
+    bonus: bonusQr ?? undefined,
+    restaurant: restaurantQr,
+    staff: staffQr,
+  };
+  const pageSpecs: QrPrintPage[] = getStarterKitPageDefinitions(input.includeCustomerCollectCompatibility)
+    .map((page) => ({ ...page, qrCanvas: qrCanvases[page.qrKind] }))
+    .filter((page): page is QrPrintPage => Boolean(page.qrCanvas));
 
   try {
     return buildPdf(pageSpecs.map((page) => drawQrPrintPage(page, branding)));
@@ -578,6 +528,84 @@ function downloadQrPng(svgId: string, filename: string) {
   image.src = url;
 }
 
+function previewBoxStyle(box: { height: number; width: number; x: number; y: number }): CSSProperties {
+  return {
+    height: `${box.height / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+    left: `${box.x / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+    top: `${box.y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+    width: `${box.width / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+  };
+}
+
+function previewTextStyle(y: number, fontSize: number): CSSProperties {
+  return {
+    fontSize: `${fontSize / STARTER_KIT_LAYOUT.canvas.width * 100}cqw`,
+    top: `${y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+  };
+}
+
+function StarterKitPagePreview({
+  accentColor,
+  branding,
+  page,
+  primaryColor,
+  qrValue,
+  restaurantName,
+}: {
+  accentColor: string;
+  branding: ReturnType<typeof useTenant>["branding"];
+  page: StarterKitPageDefinition;
+  primaryColor: string;
+  qrValue: string;
+  restaurantName: string;
+}) {
+  const qrFrame = {
+    height: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
+    width: STARTER_KIT_LAYOUT.qr.size + STARTER_KIT_LAYOUT.qr.frameInset * 2,
+    x: STARTER_KIT_LAYOUT.qr.x - STARTER_KIT_LAYOUT.qr.frameInset,
+    y: STARTER_KIT_LAYOUT.qr.y - STARTER_KIT_LAYOUT.qr.frameInset,
+  };
+
+  return (
+    <article className="starter-kit-preview-item">
+      <div className="starter-kit-a6-sheet" aria-label={`A6-Vorschau: ${page.headline}`}>
+        <div className="starter-kit-a6-logo" style={previewBoxStyle(STARTER_KIT_LAYOUT.logo)}>
+          <RestaurantLogoStage logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={primaryColor} size="print" />
+        </div>
+        <div className="starter-kit-a6-name" style={previewTextStyle(STARTER_KIT_LAYOUT.restaurantName.y, STARTER_KIT_LAYOUT.restaurantName.fontSize)}>{restaurantName}</div>
+        {page.audienceLabel ? <div className="starter-kit-a6-audience" style={{ ...previewTextStyle(STARTER_KIT_LAYOUT.audience.y, STARTER_KIT_LAYOUT.audience.fontSize), color: primaryColor }}>{page.audienceLabel}</div> : null}
+        <div className="starter-kit-a6-headline" style={previewTextStyle(STARTER_KIT_LAYOUT.headline.y, STARTER_KIT_LAYOUT.headline.fontSize)}>{page.headline}</div>
+        <div className="starter-kit-a6-description" style={previewTextStyle(STARTER_KIT_LAYOUT.description.y, STARTER_KIT_LAYOUT.description.fontSize)}>{page.subheadline}</div>
+        <div className="starter-kit-a6-qr-frame" style={{ ...previewBoxStyle(qrFrame), borderColor: colorWithAlpha(accentColor, 0.46) }}>
+          <OperationalQrCode id={`starter-kit-preview-${page.id}`} title={`QR-Code: ${page.headline}`} value={qrValue} />
+        </div>
+        {page.secondaryNote ? <div className="starter-kit-a6-note" style={previewTextStyle(STARTER_KIT_LAYOUT.secondaryNote.y, STARTER_KIT_LAYOUT.secondaryNote.fontSize)}>{page.secondaryNote}</div> : null}
+        {page.referralHint ? (
+          <div
+            className="starter-kit-a6-referral"
+            style={{
+              backgroundColor: colorWithAlpha(accentColor, 0.12),
+              borderColor: colorWithAlpha(accentColor, 0.42),
+              height: `${STARTER_KIT_LAYOUT.referral.height / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+              left: `${STARTER_KIT_LAYOUT.contentMargin / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+              top: `${STARTER_KIT_LAYOUT.referral.y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+              width: `${(STARTER_KIT_LAYOUT.canvas.width - STARTER_KIT_LAYOUT.contentMargin * 2) / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+            }}
+          >
+            <strong style={{ color: primaryColor }}>{STARTER_KIT_REFERRAL.title}</strong>
+            <div className="starter-kit-a6-benefits">
+              {STARTER_KIT_REFERRAL.benefits.map((benefit) => <span key={benefit.label}><b>{benefit.icon}</b><small>{benefit.label}</small><em style={{ color: primaryColor }}>{benefit.value}</em></span>)}
+            </div>
+            <small>{STARTER_KIT_REFERRAL.note}</small>
+          </div>
+        ) : null}
+        <div className="starter-kit-a6-footer" style={previewTextStyle(STARTER_KIT_LAYOUT.footer.y, STARTER_KIT_LAYOUT.footer.fontSize)}>{STARTER_KIT_FOOTER}</div>
+      </div>
+      <strong className="starter-kit-preview-label">{page.headline}</strong>
+    </article>
+  );
+}
+
 export function QrCenterPage() {
   const { activeRestaurant, branding } = useTenant();
   const [downloadError, setDownloadError] = useState("");
@@ -593,6 +621,12 @@ export function QrCenterPage() {
   const secondaryColor = safeColor(branding?.secondary_color, "#f4a261");
   const qrPurposes = pointsCollectionMode ? getQrCenterPurposes(pointsCollectionMode) : [];
   const showCustomerCollectCompatibility = qrPurposes.includes("customer_collect_compatibility");
+  const starterKitPages = getStarterKitPageDefinitions(showCustomerCollectCompatibility);
+  const starterKitQrValues: Record<StarterKitQrKind, string> = {
+    bonus: bonusQrUrl,
+    restaurant: restaurantQrUrl,
+    staff: staffTabletUrl,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -634,7 +668,8 @@ export function QrCenterPage() {
         secondaryColor,
         staffQrId: "qr-staff",
       });
-      openPdfBlob(pdf, "restaurant-starter-kit-a6.pdf");
+      const filename = buildStarterKitFilename(restaurantName);
+      triggerDownload(new File([pdf], filename, { type: "application/pdf" }), filename);
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : "Restaurant Starter Kit konnte nicht erstellt werden.");
     } finally {
@@ -675,48 +710,74 @@ export function QrCenterPage() {
           {starterKitLoading
             ? "Starter Kit wird erstellt..."
             : pointsCollectionMode
-              ? "Starter Kit als PDF öffnen"
+              ? "Starter Kit herunterladen"
               : "QR-Daten werden geladen..."}
         </button>
         {downloadError ? <p className="form-error">{downloadError}</p> : null}
       </section>
 
-      <section className="grid two qr-center-grid">
-        <article className="card qr-box-large">
-          {renderQrBrandBlock()}
-          <h2>Neue Gäste QR</h2>
-          <p className="muted">Für Eingang, Tischaufsteller, Kassa, Rechnung, Flyer oder Werbung.</p>
-          <OperationalQrCode id="qr-restaurant" title="QR-Code für neue Gäste" value={restaurantQrUrl} />
-          <p className="muted">Neue Gäste werden Mitglied und erhalten ihr Willkommensgeschenk.</p>
-          <div className="qr-card-actions">
-            <a className="button secondary" href={restaurantQrUrl}>
-              <QrCode size={18} />
-              Neue Gäste QR öffnen
-            </a>
-            <button className="button ghost" onClick={() => downloadQrPng("qr-restaurant", "neue-gaeste-qr.png")} type="button">
-              <Download size={18} />
-              QR herunterladen
-            </button>
-          </div>
-        </article>
+      <section className="starter-kit-preview-section" aria-labelledby="starter-kit-preview-title">
+        <div>
+          <h2 id="starter-kit-preview-title">Druckvorschau</h2>
+          <p className="muted">So sehen die vollständigen A6-Seiten im Starter Kit aus.</p>
+        </div>
+        <div className="starter-kit-preview-strip">
+          {starterKitPages.map((page) => (
+            <StarterKitPagePreview
+              accentColor={secondaryColor}
+              branding={branding}
+              key={page.id}
+              page={page}
+              primaryColor={primaryColor}
+              qrValue={starterKitQrValues[page.qrKind]}
+              restaurantName={restaurantName}
+            />
+          ))}
+        </div>
+      </section>
 
-        <article className="card qr-box-large">
-          {renderQrBrandBlock()}
-          <h2>Mitarbeiter QR</h2>
-          <p className="muted">Nur für dein Team.</p>
-          <OperationalQrCode id="qr-staff" title="QR-Code für den Mitarbeiterbereich" value={staffTabletUrl} />
-          <p className="muted">Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.</p>
-          <div className="qr-card-actions">
-            <a className="button secondary" href={staffTabletUrl}>
-              <QrCode size={18} />
-              Mitarbeiter QR öffnen
-            </a>
-            <button className="button ghost" onClick={() => downloadQrPng("qr-staff", "mitarbeiter-qr.png")} type="button">
-              <Download size={18} />
-              QR herunterladen
-            </button>
-          </div>
-        </article>
+      <section className="qr-individual-section" aria-labelledby="qr-individual-title">
+        <div>
+          <h2 id="qr-individual-title">Einzelne QR-Codes</h2>
+          <p className="muted">Nur der jeweilige QR-Code als PNG, ohne A6-Druckseite.</p>
+        </div>
+        <section className="grid two qr-center-grid">
+          <article className="card qr-box-large">
+            {renderQrBrandBlock()}
+            <h2>Neue Gäste QR</h2>
+            <p className="muted">Für Eingang, Tischaufsteller, Kassa, Rechnung, Flyer oder Werbung.</p>
+            <OperationalQrCode id="qr-restaurant" title="QR-Code für neue Gäste" value={restaurantQrUrl} />
+            <p className="muted">Neue Gäste werden Mitglied und erhalten ihr Willkommensgeschenk.</p>
+            <div className="qr-card-actions">
+              <a className="button secondary" href={restaurantQrUrl}>
+                <QrCode size={18} />
+                Neue Gäste QR öffnen
+              </a>
+              <button className="button ghost" onClick={() => downloadQrPng("qr-restaurant", "neue-gaeste-qr.png")} type="button">
+                <Download size={18} />
+                QR-Code als PNG herunterladen
+              </button>
+            </div>
+          </article>
+
+          <article className="card qr-box-large">
+            {renderQrBrandBlock()}
+            <h2>Mitarbeiter QR</h2>
+            <p className="muted">Nur für dein Team.</p>
+            <OperationalQrCode id="qr-staff" title="QR-Code für den Mitarbeiterbereich" value={staffTabletUrl} />
+            <p className="muted">Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.</p>
+            <div className="qr-card-actions">
+              <a className="button secondary" href={staffTabletUrl}>
+                <QrCode size={18} />
+                Mitarbeiter QR öffnen
+              </a>
+              <button className="button ghost" onClick={() => downloadQrPng("qr-staff", "mitarbeiter-qr.png")} type="button">
+                <Download size={18} />
+                QR-Code als PNG herunterladen
+              </button>
+            </div>
+          </article>
+        </section>
       </section>
 
       {showCustomerCollectCompatibility ? (
@@ -733,7 +794,7 @@ export function QrCenterPage() {
             <p className="muted">Bestandsgäste scannen und fragen nach der Tages-PIN.</p>
             <button className="button secondary" onClick={() => downloadQrPng("qr-bonus", "kassa-qr.png")} type="button">
               <Download size={18} />
-              Kassa QR herunterladen
+              Kassa-QR als PNG herunterladen
             </button>
           </article>
         </section>
