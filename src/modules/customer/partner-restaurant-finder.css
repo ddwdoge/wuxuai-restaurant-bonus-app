@@ -135,7 +135,7 @@
 .partner-detail-card { background: var(--wux-surface, var(--premium-surface)); border: 1px solid var(--wux-border, var(--premium-border)); border-radius: var(--wux-radius-card, 20px); box-shadow: var(--wux-shadow-card, var(--premium-shadow)); display: grid; gap: 15px; overflow: hidden; padding: 16px; position: relative; }
 .partner-detail-close { align-items: center; background: var(--wux-background, var(--premium-background-soft)); border-radius: 50%; color: var(--premium-text); display: none; height: 44px; justify-content: center; position: absolute; right: 10px; top: 10px; width: 44px; z-index: 2; }
 .partner-detail-close:focus-visible { outline: 3px solid color-mix(in srgb, var(--wux-gold, var(--premium-gold)) 32%, transparent); outline-offset: 2px; }
-.partner-detail-hero { background: #f3e6cc; height: 112px; isolation: isolate; margin: -16px -16px 0; overflow: hidden; position: relative; width: calc(100% + 32px); }
+.partner-detail-hero { aspect-ratio: 16 / 9; background: #f3e6cc; isolation: isolate; margin: -16px -16px 0; overflow: hidden; position: relative; width: calc(100% + 32px); }
 .partner-detail-cover { height: 100%; inset: 0; position: absolute; width: 100%; z-index: 1; }
 .partner-detail-hero-fallback { align-items: center; background: #f3e6cc; display: flex; inset: 0; justify-content: center; position: absolute; }
 .partner-detail-hero-logo { align-items: center; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--premium-border); border-radius: 16px; color: var(--premium-gold-dark); display: flex; height: 72px; justify-content: center; overflow: hidden; position: relative; width: 96px; }
@@ -187,6 +187,10 @@
   overscroll-behavior-y: contain;
   touch-action: pan-y;
 }
+.app-drawer-panel.partner-detail-responsive-drawer {
+  max-width: 560px;
+  width: min(560px, calc(100vw - 48px));
+}
 .partner-detail-drawer-content .partner-detail-card { border: 0; box-shadow: none; overflow: visible; padding: 0; }
 .partner-detail-drawer-content .partner-detail-hero { margin: 0; width: 100%; }
 
@@ -200,6 +204,7 @@
   .partner-finder-content.view-list .partner-list-panel { overflow: visible; }
   .partner-finder-content.view-map .partner-list-panel { overflow: visible; }
   .app-drawer-panel:has(.partner-detail-drawer-content) { max-height: calc(100dvh - env(safe-area-inset-top)); }
+  .app-drawer-panel.partner-detail-responsive-drawer { max-width: none; width: 100%; }
   .app-drawer-panel:has(.partner-detail-drawer-content) .app-drawer-body { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
 

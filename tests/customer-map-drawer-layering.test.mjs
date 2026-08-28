@@ -13,10 +13,11 @@ const [finderPage, finderCss, mapCss, drawer, globalCss, centralCss] = await Pro
   read("../src/modules/customer/central-customer.css"),
 ]);
 
-test("mobiler Restaurantdetailbereich verwendet den bestehenden Body-Portal-Drawer", () => {
+test("Restaurantdetails verwenden mobil und am Desktop denselben Body-Portal-Drawer", () => {
   assert.match(finderPage, /import \{ AppDrawer \} from "\.\.\/\.\.\/shared\/components\/AppDrawer"/);
-  assert.match(finderPage, /mobileDetailDrawer && view === "map" && Boolean\(selected\)/);
+  assert.match(finderPage, /const detailOpenInDrawer = Boolean\(selected\)/);
   assert.match(finderPage, /<AppDrawer[\s\S]*open=\{detailOpenInDrawer\}[\s\S]*title="Restaurantdetails"/);
+  assert.doesNotMatch(finderPage, /selected && !detailOpenInDrawer/);
   assert.match(drawer, /createPortal\([\s\S]*document\.body/);
 });
 
@@ -38,6 +39,12 @@ test("Drawer besitzt iOS-tauglichen internen Scroll und sichere dynamische Höhe
   assert.match(finderCss, /partner-detail-drawer-content\) \.app-drawer-body[\s\S]{0,180}-webkit-overflow-scrolling: touch[\s\S]{0,140}touch-action: pan-y/);
   assert.match(finderCss, /max-height: calc\(100dvh - env\(safe-area-inset-top\)\)/);
   assert.match(finderCss, /padding-bottom: calc\(18px \+ env\(safe-area-inset-bottom\)\)/);
+});
+
+test("Desktop-Details besitzen eine begrenzte Seitenbreite und eigenen internen Scroll", () => {
+  assert.match(finderCss, /partner-detail-responsive-drawer[^}]*max-width: 560px[^}]*width: min\(560px, calc\(100vw - 48px\)\)/);
+  assert.match(globalCss, /app-drawer-panel[^}]*height: 100dvh/);
+  assert.match(globalCss, /app-drawer-body[^}]*overflow-y: auto/);
 });
 
 test("langer Detailinhalt und CTAs bleiben im scrollbaren Drawer zugänglich", () => {

@@ -39,12 +39,23 @@ test("Valides Cover behält semantischen Alt-Text, während Lade- und Fehlerzust
 
 test("Hero und Fallback besitzen identische feste Abmessungen ohne horizontalen Überlauf", async () => {
   const css = await readFile(cssUrl, "utf8");
-  assert.match(css, /\.partner-detail-hero \{[^}]*height: 112px[^}]*overflow: hidden[^}]*position: relative[^}]*width: calc\(100% \+ 32px\)/s);
+  assert.match(css, /\.partner-detail-hero \{[^}]*aspect-ratio: 16 \/ 9[^}]*overflow: hidden[^}]*position: relative[^}]*width: calc\(100% \+ 32px\)/s);
   assert.match(css, /\.partner-detail-cover \{[^}]*height: 100%[^}]*inset: 0[^}]*position: absolute[^}]*width: 100%/s);
   assert.match(css, /\.partner-detail-hero-fallback \{[^}]*inset: 0[^}]*position: absolute/s);
   assert.match(css, /\.partner-detail-drawer-content \.partner-detail-hero \{ margin: 0; width: 100%; \}/);
   assert.match(css, /\.partner-finder-shell \{[^}]*overflow-x: hidden/s);
   assert.doesNotMatch(css, /\.partner-detail-hero[^}]*100vw/s);
+});
+
+test("gespeicherter Cover-Ausschnitt wird über den kanonischen Smart-Media-Renderer gefüllt", async () => {
+  const [component, frame, css] = await Promise.all([
+    readFile(componentUrl, "utf8"),
+    readFile(new URL("../src/shared/components/SmartMediaFrame.tsx", import.meta.url), "utf8"),
+    readFile(cssUrl, "utf8"),
+  ]);
+  assert.match(component, /presentation=\{presentation\}/);
+  assert.match(frame, /coverScale \* normalized\.zoom/);
+  assert.match(css, /\.partner-detail-hero \{[^}]*aspect-ratio: 16 \/ 9/);
 });
 
 test("Auch Listen- und Detail-Logos haben einen neutralen Fehlerzustand", async () => {

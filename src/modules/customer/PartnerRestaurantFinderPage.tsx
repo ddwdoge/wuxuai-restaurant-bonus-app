@@ -45,20 +45,6 @@ const partnerFilters: Array<{ key: PartnerFilter; label: string }> = [
   { key: "open", label: "Jetzt geöffnet" },
 ];
 
-function useMobileDetailDrawer() {
-  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 767px)");
-    const update = () => setMobile(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  return mobile;
-}
-
 function formatDistance(value: number | null) {
   if (value === null) return null;
   return value < 10 ? `${value.toLocaleString("de-AT", { maximumFractionDigits: 1 })} km entfernt` : `${Math.round(value)} km entfernt`;
@@ -185,7 +171,6 @@ export function PartnerRestaurantFinderPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasCustomerAccess, setHasCustomerAccess] = useState(false);
   const [total, setTotal] = useState(0);
-  const mobileDetailDrawer = useMobileDetailDrawer();
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -222,7 +207,7 @@ export function PartnerRestaurantFinderPage() {
   }, [filter, locations, query, userLocation]);
 
   const selected = selectedId ? filteredLocations.find((location) => location.branch_id === selectedId) ?? null : null;
-  const detailOpenInDrawer = mobileDetailDrawer && view === "map" && Boolean(selected);
+  const detailOpenInDrawer = Boolean(selected);
 
   function requestLocation() {
     setLocationMessage("Dein Standort wird nur für diese Suche verwendet.");
@@ -313,7 +298,6 @@ export function PartnerRestaurantFinderPage() {
                   <PartnerResultCard key={location.branch_id} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
                 ))}
               </div>
-              {selected && !detailOpenInDrawer ? <PartnerDetail current={selected.slug === currentSlug} location={selected} onClose={() => setSelectedId(null)} /> : null}
             </section>
           </div>
         ) : null}
@@ -321,6 +305,7 @@ export function PartnerRestaurantFinderPage() {
       <CentralCustomerNavigation />
       <AppDrawer
         description="Punkte, Punkteeinlösungen und Informationen dieses Lokals."
+        className="partner-detail-responsive-drawer"
         onClose={() => setSelectedId(null)}
         open={detailOpenInDrawer}
         size="large"
