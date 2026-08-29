@@ -1,6 +1,42 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-29 - Legal Operator von Restaurantmarke getrennt
+
+- Die bestehende Organization-Ebene als kanonischen rechtlichen Betreiber
+  festgelegt und strukturierte Angaben in `organization_legal_profiles`
+  gebündelt.
+- Restaurantmarke und Branch-/Standortkontext unverändert gelassen; keine
+  Multi-Location-UI eingeführt.
+- Restaurantadresse nur noch nach ausdrücklicher Owner-Auswahl als
+  Geschäftsanschrift referenziert; andernfalls separate rechtliche Adresse.
+- Bestehendes `restaurant_legal_profiles` als explizit verknüpfte
+  Kompatibilitätsprojektion erhalten und den alten direkten Save-RPC für
+  Browserrollen geschlossen.
+- Legal-Dokumentgenerator und Public Legal Center verwenden den kanonischen
+  Unternehmensnamen als Programmbetreiber, ohne neue Rechtstexte zu erfinden
+  oder Dokumente automatisch zu veröffentlichen.
+- Keine Stripe-, Subscription- oder externe Billing-Aktion ergänzt.
+
+## 2026-08-29 - Owner Onboarding und rechtliche Freigabe vereinheitlicht
+
+- Die Owner-Legal-Seite verwendet für Unternehmensdaten, Pflichtdokumente,
+  Veröffentlichung, Programmstatus und Kundenregistrierung einen zentralen
+  Darstellungsresolver auf Basis des bestehenden serverseitigen
+  `get_restaurant_legal_setup`-Vertrags.
+- Eine blockierte Kundenregistrierung wegen fehlender aktiver Pflichtdokumente
+  kann nicht mehr gleichzeitig als abgeschlossene Veröffentlichung erscheinen.
+- Die Owner-Reise zeigt kompakt die drei Schritte Unternehmensdaten,
+  Dokumentprüfung und Veröffentlichung sowie die separate Freigabe der
+  Kundenregistrierung.
+- Publikationsfehler benennen fehlendes Gültigkeitsdatum, fehlende
+  Teilnahmebedingungen, fehlende Datenschutzerklärung oder unvollständige
+  Vorschau verständlich, ohne interne RPC-Fehler anzuzeigen.
+- Die Willkommensgeschenk-Auswahl ist bis 699 Pixel einspaltig; Auswahlregeln
+  und zufällige spätere Zuteilung bleiben unverändert.
+- Keine Migration, RLS-, Audit-, Legal-Versionierungs- oder Businesslogik wurde
+  geändert.
+
 ## 2026-08-28 - Owner-Bonusprogramm auf V1-Referral reduziert
 
 - Die Owner-Seite `Bonusprogramm` zeigt nur noch `Freunde einladen & 2× Bonus`
@@ -3179,6 +3215,21 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   wurden durch einen kompakten, laufzeitneutralen Hinweis ersetzt.
 - QR-Groesse, Ruhezone, Typografie und Footer-Lesbarkeit wurden fuer A6
   verbessert, ohne QR-Payload, Route oder Bonuslogik zu veraendern.
+
+## 2026-08-29 - Optionale Betreiberdaten im Onboarding vereinheitlicht
+
+- Der erste Onboarding-Schritt erfasst den rechtlichen Unternehmensnamen und
+  bietet Firmenbuchnummer, UID sowie vertretungsberechtigte Person als
+  optionale Zusatzangaben an.
+- Onboarding und `Unternehmensdaten & Rechtliches` schreiben dieselbe
+  restaurantgebundene Legal-Profilquelle; es wurde keine zweite
+  Unternehmensdaten-Tabelle eingeführt.
+- FN und UID werden für Österreich zurückhaltend normalisiert und bleiben aus
+  Checklist, Readiness und Aktivierungs-Gate ausgeschlossen.
+- Die additive Migration `20260829001000` übernimmt vorhandene optionale Werte
+  in zukünftige Impressumsentwürfe und auditiert nur geänderte Feldnamen.
+- Bestehende Restaurants und veröffentlichte Dokumentversionen bleiben
+  unverändert; automatische Veröffentlichung wurde nicht ergänzt.
 ## 2026-08-27 - Customer Premium Cards kompakt vereinheitlicht
 
 - Angebote, Punkteeinlösungen und persönliche Geschenke verwenden eine gemeinsame
@@ -3247,3 +3298,18 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   echte Positionszählung sowie Ein- und Leerzustände ohne zusätzliche Query.
 - Restaurantkontext, Sichtbarkeit, Eligibility, Punkte und der bestehende
   15-Minuten-Einlöseflow blieben unverändert.
+
+## 2026-08-29 - Atomare Live-Swipe-Einlösung vorbereitet
+
+- Das Öffnen einer 15-Minuten-Präsentation verbraucht bei neuen Vorgängen weder
+  Punkte noch Welcome-/Birthday-Geschenke.
+- Eine gemeinsame serverseitige Bestätigungs-RPC führt den finalen Verbrauch
+  mit Tenantprüfung, Row Locks, Compare-and-Set, Idempotenz, Audit und Journal
+  in einer Transaktion aus.
+- Der Customer-Drawer zeigt vor dem Swipe eine eindeutige Warnung und danach
+  einen visuell getrennten Erfolg mit autoritativem Serverzeitpunkt.
+- Parallele Geräte, Doppelswipes, Reload und Netzwerkunsicherheit werden über
+  den gespeicherten Präsentationsstatus aufgelöst; genau ein Request gewinnt.
+- Die additive Migration
+  `20260829002000_customer_swipe_redemption_atomic_confirmation.sql` ist lokal
+  vorbereitet und noch nicht auf Staging oder Production angewendet.

@@ -1596,10 +1596,10 @@ export function SettingsPage() {
 
       <section className="grid two">
         <SettingsLinkCard
-          description="Impressum, Teilnahmebedingungen, Datenschutz und Programmende."
+          description="Unternehmensdaten, Impressum, Teilnahmebedingungen und Datenschutz."
           icon={Scale}
-          label="Rechtliche Bereitschaft prüfen"
-          title="Rechtliches & Datenschutz"
+          label="Unternehmensdaten und Dokumente prüfen"
+          title="Unternehmensdaten & Rechtliches"
           to="/admin/legal"
         />
         <SettingsLinkCard

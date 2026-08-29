@@ -2617,6 +2617,31 @@ a {
   }
 }
 
+@media (max-width: 699px) {
+  .starter-reward-counter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .starter-reward-counter > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .starter-reward-counter > .muted {
+    margin: 0;
+  }
+
+  .template-selection-grid {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .template-selection-card {
+    min-height: 132px;
+  }
+}
+
 .standard-asset {
   align-items: center;
   background: #eef8f5;

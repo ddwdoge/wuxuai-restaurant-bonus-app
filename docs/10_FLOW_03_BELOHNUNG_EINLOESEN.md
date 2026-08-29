@@ -8,6 +8,32 @@ Punkte-, Welcome- und Birthday-Einlösungen. Die normale Staff-Oberfläche besit
 keine sechsstellige Codeprüfung. Historische Codes bleiben ausschließlich als
 Legacy-Kompatibilität bestehen und werden nicht für neue Einlösungen erzeugt.
 
+## Current Contract 2026-08-29: Live-Swipe und Exactly Once
+
+Diese Produktentscheidung ersetzt ausschließlich den Zeitpunkt der finalen
+Einlösung in den Präsentationsentscheidungen vom 03.08. und 09.08.:
+
+1. Das Öffnen der 15-Minuten-Präsentation bereitet eine Einlösung nur vor.
+2. Punkte, Geschenkzuteilung, Journal und Redemption-Historie bleiben dabei
+   unverändert.
+3. Direkt vor dem Mitarbeiter bestätigt der Kunde mit einem bewussten
+   Links-nach-rechts-Swipe.
+4. Erst dieser Swipe ruft die gemeinsame atomare Serverbestätigung auf.
+5. Der Server sperrt Präsentation und Kundenzustand, prüft Kunde, Restaurant,
+   Filiale, Reward, Gültigkeit und Berechtigung und führt den Übergang
+   `REDEMPTION_STARTED -> REDEEMED` bedingt genau einmal aus.
+6. Zwei Geräte oder parallele Requests können deshalb höchstens einen
+   erfolgreichen Vorgang erzeugen. Ein anderer zweiter Request erhält
+   `Bereits eingelöst` und den autoritativen Serverzeitpunkt.
+7. Läuft das Fenster vor dem Swipe ab, wird nichts eingelöst. Punkte bleiben
+   erhalten; ein noch gültiges Welcome- oder Birthday-Geschenk wird wieder
+   verfügbar.
+8. Bei unsicherer Netzwerkantwort fragt der Client zuerst den Serverstatus ab
+   und zeigt niemals optimistisch einen Erfolg.
+
+Der Swipe ist nur die sichtbare Kundeninteraktion. Tabellenzugriff,
+Single-Use-Schutz und Serverzeit bleiben ausschließlich serverseitig.
+
 # WUXUAI Bonus V1 – Flow 03: Punkteeinlösung verwenden
 
 Status: **LOCK**

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   AlertCircle,
   Building2,
@@ -17,7 +17,19 @@ import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel
 import { useTenant } from "../tenant/TenantProvider";
 import { getLegalDocumentContent, getPointsValidityState, ownerLegalLoadErrorMessage } from "./legalDocumentState.mjs";
 import { safeLegalRpcError, viennaCalendarDate } from "./legalPublicationDate.mjs";
-import { requiredLegalDocumentStatus } from "./legalReadiness.mjs";
+import {
+  companyRegistrationLabel,
+  legalFormSuggestions,
+  normalizeCompanyRegistrationNumber,
+  normalizeVatId,
+  optionalCompanyIdentifierHint,
+  vatIdLabel,
+} from "./legalCompanyData.mjs";
+import {
+  legalPublicationErrorMessage,
+  resolveOwnerLegalReadiness,
+  validateLegalPublication,
+} from "./ownerLegalReadiness.mjs";
 import {
   generateRestaurantLegalPackage,
   loadRestaurantLegalSetup,
@@ -38,18 +50,23 @@ const requiredProfileFields = [
 
 const optionalProfileFields = [
   ["phone", "Telefonnummer"],
-  ["commercial_register_number", "Firmenbuchnummer"],
+  ["commercial_register_number", "Unternehmensregistrierungsnummer"],
   ["commercial_register_court", "Firmenbuchgericht"],
-  ["vat_id", "UID-Nummer"],
+  ["vat_id", "Umsatzsteuer-ID"],
   ["chamber_membership", "Kammerzugehörigkeit"],
   ["supervisory_authority", "Aufsichtsbehörde"],
   ["accessibility_contact", "Barrierefreiheitskontakt"],
   ["complaint_contact", "Beschwerdekontakt"],
-  ["responsible_person", "Verantwortliche Person"],
-  ["restaurant_operator", "Restaurantbetreiber"],
+  ["responsible_person", "Vertretungsberechtigte Person / Geschäftsführung"],
 ] as const;
 
 const allProfileFields = [...requiredProfileFields, ...optionalProfileFields] as const;
+
+function profileFieldLabel(key: string, fallback: string, country: string | null | undefined) {
+  if (key === "commercial_register_number") return companyRegistrationLabel(country);
+  if (key === "vat_id") return vatIdLabel(country);
+  return fallback;
+}
 
 const requestTypeLabels: Record<string, string> = {
   access: "Auskunft",
@@ -139,21 +156,26 @@ export function OwnerLegalSettingsPage() {
   const pointsValidity = getPointsValidityState(terms);
   const privacy = document(setup, "privacy");
   const imprint = document(setup, "imprint");
-  const documentReadiness = useMemo(
-    () => requiredLegalDocumentStatus(setup?.documents ?? [], viennaCalendarDate()),
-    [setup?.documents],
-  );
   const missingProfileFields = requiredProfileFields.filter(([key]) => !profile[key]?.trim());
   const registration = setup?.readiness.registration;
   const registrationReady = registration?.registration_allowed ?? false;
   const bonusProgramIncomplete = registration?.program_active === false;
   const complaintUsesFallback = !profile.complaint_contact?.trim() && Boolean(profile.email?.trim());
+  const useRestaurantAddress = profile.registered_address_source === "restaurant";
+  const restaurantAddressComplete = Boolean(
+    activeRestaurant?.address?.trim()
+    && activeRestaurant.postal_code?.trim()
+    && activeRestaurant.city?.trim()
+    && activeRestaurant.country?.trim(),
+  );
   const publicLegalPath = activeRestaurant?.slug ? `/legal/${activeRestaurant.slug}` : "/admin/legal";
 
   const changedFields = allProfileFields
     .filter(([key]) => (profile[key] ?? "").trim() !== (originalProfile[key] ?? "").trim())
-    .map(([, label]) => label);
+    .map(([key, label]) => profileFieldLabel(key, label, profile.country))
+    .concat(profile.registered_address_source !== originalProfile.registered_address_source ? ["Geschäftsanschrift"] : []);
   const hasDrafts = setup?.documents.some((item) => Boolean(item.draft_version_id)) ?? false;
+  const readiness = resolveOwnerLegalReadiness(registration, { hasDrafts, publicationConfirmed });
 
   async function handlePrepare(event: FormEvent) {
     event.preventDefault();
@@ -164,6 +186,8 @@ export function OwnerLegalSettingsPage() {
     try {
       const nextProfile = {
         ...profile,
+        commercial_register_number: normalizeCompanyRegistrationNumber(profile.commercial_register_number, profile.country),
+        vat_id: normalizeVatId(profile.vat_id, profile.country),
         complaint_contact: profile.complaint_contact?.trim() || profile.email?.trim() || "",
       };
       const next = await generateRestaurantLegalPackage({
@@ -184,8 +208,27 @@ export function OwnerLegalSettingsPage() {
     }
   }
 
+  function setAddressSource(useRestaurant: boolean) {
+    if (useRestaurant && !restaurantAddressComplete) return;
+    setProfile((current) => ({
+      ...current,
+      registered_address_source: useRestaurant ? "restaurant" : "separate",
+      ...(useRestaurant ? {
+        street: activeRestaurant?.address ?? "",
+        postal_code: activeRestaurant?.postal_code ?? "",
+        city: activeRestaurant?.city ?? "",
+        country: activeRestaurant?.country ?? "AT",
+      } : {}),
+    }));
+  }
+
   async function handleConfirmedPublication() {
     if (!activeRestaurant?.id || !publicationConfirmed || saving) return;
+    const validationError = validateLegalPublication(setup?.documents ?? [], effectiveDate, publicationConfirmed);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -204,8 +247,8 @@ export function OwnerLegalSettingsPage() {
       setReacceptanceRequired(false);
       setMessage("Die geprüften Dokumentversionen wurden veröffentlicht.");
     } catch (publicationError: unknown) {
-      console.error("Legal-Veröffentlichung fehlgeschlagen.", safeLegalRpcError(publicationError));
-      setError("Die Dokumentversionen konnten nicht veröffentlicht werden. Bitte prüfe Vorschau und Gültigkeitsdatum.");
+      const safeError = safeLegalRpcError(publicationError);
+      setError(legalPublicationErrorMessage(safeError));
     } finally {
       setSaving(false);
     }
@@ -257,6 +300,30 @@ export function OwnerLegalSettingsPage() {
         <span className={`owner-legal-readable-status ${registration?.status ?? "red"}`}>{registration?.status === "green" ? "Bereit" : registration?.status === "yellow" ? "Prüfung erforderlich" : "Blockiert"}</span>
       </section>
 
+      <section className="card owner-legal-readiness" aria-labelledby="legal-checklist-title">
+        <div><FileCheck2 aria-hidden="true" size={23} /><div><h2 id="legal-checklist-title">Rechtliche Freigabe</h2><p>Drei Schritte führen von den Unternehmensdaten zur Kundenregistrierung.</p></div></div>
+        <ol className="owner-legal-journey" aria-label="Einrichtungsschritte">
+          <li className={readiness.companyDataReady ? "complete" : "open"}><span>1</span><div><strong>Unternehmensdaten</strong><small>{readiness.companyDataReady ? "Erledigt" : "Angaben vervollständigen"}</small></div></li>
+          <li className={readiness.documentsPublished && !hasDrafts ? "complete" : "open"}><span>2</span><div><strong>Dokumente prüfen</strong><small>{hasDrafts ? "Prüfung erforderlich" : readiness.documentsPublished ? "Erledigt" : "Offen"}</small></div></li>
+          <li className={readiness.documentsPublished && !hasDrafts ? "complete" : "open"}><span>3</span><div><strong>Veröffentlichen</strong><small>{readiness.documentsPublished && !hasDrafts ? "Erledigt" : "Offen"}</small></div></li>
+        </ol>
+        <div className="owner-legal-checklist">
+          {readiness.statuses.map((item) => (
+            <p className={item.state} key={item.id}>
+              {item.state === "complete" ? <CheckCircle2 aria-hidden="true" size={18} /> : item.state === "warning" ? <Clock3 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />}
+              <span>{item.label}</span><strong>{item.value}</strong>
+            </p>
+          ))}
+        </div>
+        <div className="owner-legal-readiness-action">
+          {readiness.action.kind === "company" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "prepare" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "review" ? <a className="button" href="#legal-publication">{readiness.action.label}</a> : null}
+          {readiness.action.kind === "publish" ? <button className="button" disabled={saving} onClick={() => void handleConfirmedPublication()} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "view" ? <Link className="button secondary" to={publicLegalPath}>{readiness.action.label}</Link> : null}
+        </div>
+      </section>
+
       {bonusProgramIncomplete ? (
         <section className="owner-legal-update-note" role="status">
           <AlertCircle aria-hidden="true" size={20} />
@@ -265,19 +332,18 @@ export function OwnerLegalSettingsPage() {
         </section>
       ) : null}
 
-      {terms && !termsContent ? (
+      {!readiness.documentsPublished ? (
         <section className="owner-legal-update-note" role="status">
           <Clock3 aria-hidden="true" size={20} />
-          <div><strong>Bonusregeln noch nicht veröffentlicht</strong><p>Eine vorbereitete Dokumenthülle ist vorhanden, aber es gibt noch keine aktive Teilnahmebedingungen-Version. Es wird kein rechtlicher Standardwert angezeigt.</p></div>
+          <div><strong>Dokumente noch nicht veröffentlicht</strong><p>{hasDrafts ? "Deine Dokumente wurden vorbereitet. Prüfe und veröffentliche sie, damit sich neue Kunden registrieren können." : "Bereite deine Dokumente vor und prüfe sie, damit sich neue Kunden registrieren können."}</p></div>
           {hasDrafts ? <a className="button secondary" href="#legal-publication">Dokumente prüfen</a> : <button className="button secondary" onClick={() => setEditing(true)} type="button">Dokumente vorbereiten</button>}
         </section>
       ) : null}
 
-      <section className="owner-legal-automation-note" aria-labelledby="legal-automation-title">
-        <Info aria-hidden="true" size={21} />
-        <div><strong id="legal-automation-title">Automatisch erstellt von WUXUAI</strong><p>Die Dokumente wurden auf Basis deiner Unternehmens- und Bonusprogrammdaten automatisch erstellt. Prüfe alle Angaben vor der Veröffentlichung. Automatisch erstellte Vorlagen ersetzen keine individuelle Rechtsberatung.</p></div>
-        <span>Rechtliche Prüfung empfohlen</span>
-      </section>
+      <details className="owner-legal-automation-note">
+        <summary><Info aria-hidden="true" size={21} /><strong>Hinweis zu den Dokumentvorlagen</strong></summary>
+        <p>WUXUAI erstellt die Dokumente aus deinen Unternehmens- und Bonusprogrammdaten. Prüfe alle Angaben vor der Veröffentlichung. Die Vorlagen ersetzen keine individuelle Rechtsberatung.</p>
+      </details>
 
       {setup.legal_update_required ? (
         <section className="owner-legal-update-note" role="status">
@@ -287,7 +353,9 @@ export function OwnerLegalSettingsPage() {
         </section>
       ) : null}
 
-      <section className="owner-legal-overview" aria-label="Rechtliche Dokumente">
+      <details className="owner-legal-document-details">
+        <summary>Dokumentdetails anzeigen</summary>
+        <section className="owner-legal-overview" aria-label="Rechtliche Dokumente">
         {cards.map(({ title, icon: Icon, value, anchor }) => (
           <article className="card owner-legal-document-card" key={title}>
             <div className="owner-legal-document-icon"><Icon aria-hidden="true" size={21} /></div>
@@ -326,38 +394,67 @@ export function OwnerLegalSettingsPage() {
           <p>WUXUAI dokumentiert Bonuspunkte und Einlösungen. Das Restaurant erfasst relevante Vorgänge im eigenen Kassensystem.</p>
           <Link className="owner-legal-card-link" to="/admin/reports">Bonus-Aktivitätsberichte öffnen <ChevronRight aria-hidden="true" size={18} /></Link>
         </article>
-      </section>
-
-      <section className="card owner-legal-readiness" aria-labelledby="legal-checklist-title">
-        <div><FileCheck2 aria-hidden="true" size={23} /><div><h2 id="legal-checklist-title">Legal Readiness</h2><p>Der Status wird serverseitig aus Restaurant, Pflichtangaben, aktiven Versionen und Programmstatus berechnet.</p></div></div>
-        <div className="owner-legal-checklist">
-          <p className={missingProfileFields.length === 0 ? "complete" : "missing"}>{missingProfileFields.length === 0 ? <CheckCircle2 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />} Unternehmensdaten: {missingProfileFields.length === 0 ? "Erledigt" : "Offen"}</p>
-          <p className={documentReadiness.every((item) => item.ready) ? "complete" : "missing"}>{documentReadiness.every((item) => item.ready) ? <CheckCircle2 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />} Pflichtdokumente: {documentReadiness.every((item) => item.ready) ? "Aktiv" : "Offen"}</p>
-          <p className={hasDrafts ? "missing" : "complete"}>{hasDrafts ? <Clock3 aria-hidden="true" size={18} /> : <CheckCircle2 aria-hidden="true" size={18} />} Veröffentlichung: {hasDrafts ? "Prüfung erforderlich" : "Erledigt"}</p>
-          <p className={registration?.program_active ? "complete" : "missing"}>{registration?.program_active ? <CheckCircle2 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />} Bonusprogramm: {registration?.program_active ? "Aktiv" : "Blockiert"}</p>
-        </div>
-      </section>
+        </section>
+      </details>
 
       <div className="owner-legal-actions">
         <button className="button secondary" onClick={() => setEditing((current) => !current)} type="button">Unternehmensdaten bearbeiten</button>
-        <Link className="button secondary" to={publicLegalPath}>Dokumente ansehen</Link>
       </div>
 
       {editing ? (
         <form className="owner-legal-company-form card" onSubmit={handlePrepare}>
-          <div><h2>Unternehmensdaten</h2><p className="muted">Änderungen erzeugen eine neue Version. Die bisher veröffentlichte Version bleibt erhalten.</p></div>
+          <div><h2>Unternehmensdaten</h2><p className="muted">Diese Angaben werden für rechtliche Dokumente und das Impressum verwendet. FN und UID sind optional. Änderungen erzeugen eine neue Dokumentversion; die bisher veröffentlichte Version bleibt erhalten.</p></div>
           <RequiredFieldsNote />
+          <label className="legal-address-source-toggle" htmlFor="owner-legal-address-source">
+            <input
+              checked={useRestaurantAddress}
+              disabled={!restaurantAddressComplete}
+              id="owner-legal-address-source"
+              onChange={(event) => setAddressSource(event.target.checked)}
+              type="checkbox"
+            />
+            <span>Geschäftsanschrift entspricht Restaurantadresse</span>
+          </label>
+          {!restaurantAddressComplete ? <p className="field-hint">Die Restaurantadresse ist noch nicht vollständig. Verwende eine separate Geschäftsanschrift.</p> : null}
           <div className="owner-legal-grid">
-            {requiredProfileFields.map(([key, label]) => (
-              <div className="field" key={key}><FormLabel htmlFor={`legal-profile-${key}`} required>{label}</FormLabel><input aria-required="true" className="input" id={`legal-profile-${key}`} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required value={profile[key] ?? ""} /></div>
-            ))}
+            {requiredProfileFields.map(([key, label]) => {
+              const addressField = ["street", "postal_code", "city", "country"].includes(key);
+              return (
+                <div className="field" key={key}>
+                  <FormLabel htmlFor={`legal-profile-${key}`} required>{label}</FormLabel>
+                  <input aria-required={!addressField || !useRestaurantAddress} className="input" disabled={addressField && useRestaurantAddress} id={`legal-profile-${key}`} list={key === "legal_form" ? "owner-legal-form-options" : undefined} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required={!addressField || !useRestaurantAddress} value={profile[key] ?? ""} />
+                  {key === "legal_form" ? <datalist id="owner-legal-form-options">{legalFormSuggestions.map((legalForm) => <option key={legalForm} value={legalForm} />)}</datalist> : null}
+                </div>
+              );
+            })}
           </div>
           <details className="owner-legal-advanced">
             <summary>Weitere Unternehmensangaben</summary>
             <div className="owner-legal-grid">
-              {optionalProfileFields.map(([key, label]) => (
-                <div className="field" key={key}><FormLabel htmlFor={`legal-profile-${key}`} optional>{label}</FormLabel><input className="input" id={`legal-profile-${key}`} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} placeholder={key === "complaint_contact" ? "Kontakt-E-Mail wird verwendet" : undefined} value={profile[key] ?? ""} /></div>
-              ))}
+              {optionalProfileFields.map(([key, label]) => {
+                const identifierKind = key === "commercial_register_number" ? "registration" : key === "vat_id" ? "vat" : null;
+                const hint = identifierKind ? optionalCompanyIdentifierHint(identifierKind, profile[key], profile.country) : null;
+                return (
+                  <div className="field" key={key}>
+                    <FormLabel htmlFor={`legal-profile-${key}`} optional>{profileFieldLabel(key, label, profile.country)}</FormLabel>
+                    <input
+                      autoCapitalize={key === "vat_id" ? "characters" : undefined}
+                      className="input"
+                      id={`legal-profile-${key}`}
+                      onBlur={identifierKind ? (event) => setProfile((current) => ({
+                        ...current,
+                        [key]: identifierKind === "registration"
+                          ? normalizeCompanyRegistrationNumber(event.target.value, current.country)
+                          : normalizeVatId(event.target.value, current.country),
+                      })) : undefined}
+                      onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))}
+                      placeholder={key === "complaint_contact" ? "Kontakt-E-Mail wird verwendet" : undefined}
+                      value={profile[key] ?? ""}
+                    />
+                    {hint ? <p className="field-hint warning">{hint}</p> : null}
+                  </div>
+                );
+              })}
             </div>
             {complaintUsesFallback ? <p className="muted">Für Beschwerden wird derzeit die Kontakt-E-Mail verwendet.</p> : null}
           </details>

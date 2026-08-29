@@ -108,13 +108,12 @@ test("Browserrollen haben keinen direkten Tabellenzugriff und nur enge RPC-Recht
 
 test("die Kundenoberfläche zeigt Bestätigung, Countdown und bewegte Sicherheitsmerkmale", () => {
   assert.match(customerPortal, /Jetzt einlösen/);
-  assert.match(customerPortal, /Die benötigten Punkte werden sofort endgültig abgezogen/);
-  assert.match(customerPortal, /Diese Aktion kann nicht selbst rückgängig gemacht werden/);
-  assert.match(customerPortal, /Danach hast du 15 Minuten Zeit, diese Einlösung dem Team zu zeigen/);
+  assert.match(customerPortal, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(customerPortal, /Punkte werden erst nach dem Wischen abgezogen/);
+  assert.match(customerPortal, /<SwipeToRedeem/);
   assert.match(customerPortal, /Verbleibende Zeit/);
   assert.match(customerPortal, /Serverzeit/);
   assert.match(customerPortal, /Gültig bis/);
-  assert.match(customerPortal, /Sicherheit/);
   assert.match(customerPortal, /wakeLock/);
   assert.match(customerCss, /premium-presentation-shine/);
   assert.match(customerCss, /prefers-reduced-motion: reduce/);

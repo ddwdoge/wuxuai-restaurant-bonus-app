@@ -60,7 +60,7 @@ test("Loader verwendet den geschützten RPC und akzeptiert kein leeres Payload",
 test("Owner-Seite besitzt Loading, Empty State, Retry und Einrichtungs-CTA", () => {
   assert.match(ownerPage, /Dokumente werden geladen/);
   assert.match(ownerPage, /Bonusprogramm noch nicht vollständig eingerichtet/);
-  assert.match(ownerPage, /Bonusregeln noch nicht veröffentlicht/);
+  assert.match(ownerPage, /Dokumente noch nicht veröffentlicht/);
   assert.match(ownerPage, /setRetryRevision/);
   assert.match(ownerPage, />Erneut versuchen</);
   assert.match(ownerPage, /to="\/admin\/onboarding">Zum Onboarding/);

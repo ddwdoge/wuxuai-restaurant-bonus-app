@@ -1,6 +1,33 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-08-29 - Rechtlicher Betreiber auf Organization-Ebene
+
+Die bestehende `organizations`-Entität ist der kanonische Beziehungsknoten für
+den rechtlichen Betreiber. Strukturierte rechtliche Angaben liegen in
+`organization_legal_profiles` und sind nicht Teil von Restaurant-Branding oder
+Branch-Marketingdaten.
+
+```text
+organizations
+  -> organization_legal_profiles
+  -> restaurants
+       -> branches
+```
+
+`restaurant_legal_profiles` bleibt vorübergehend als explizit über
+`operator_profile_id` verknüpfte Kompatibilitätsprojektion für bestehende
+restaurantbezogene Dokument- und Readiness-Verträge. Owner-Schreibvorgänge
+gehen ausschließlich über den organisationsgebundenen Legal-Generator.
+
+Die Geschäftsanschrift besitzt eine explizite Quelle:
+
+- `restaurant`: Referenz auf die vorhandene Restaurantadresse
+- `separate`: eigene rechtliche Anschrift im Operator-Profil
+
+Stripe-, Subscription- oder externe Billing-Datensätze werden dadurch nicht
+erzeugt.
+
 ## Platform Admin Foundation
 
 `platform_admins` ist die einzige Laufzeitautoritaet fuer interne

@@ -26,6 +26,10 @@ export type Restaurant = {
   owner_phone?: string | null;
   restaurant_type?: string | null;
   language?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
   opening_hours?: unknown;
   smart_open_enabled?: boolean;
   onboarding_status?: "draft" | "ready" | "completed";

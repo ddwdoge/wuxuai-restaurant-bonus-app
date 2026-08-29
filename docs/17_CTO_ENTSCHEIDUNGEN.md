@@ -3,6 +3,33 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-29 - Kanonische optionale Betreiberdaten im Owner-Onboarding
+
+- Die bestehende `organizations`-Ebene ist der kanonische rechtliche
+  Betreiber. Strukturierte Angaben liegen in `organization_legal_profiles`;
+  Restaurant und Branch bleiben Marke beziehungsweise Standort.
+- `restaurant_legal_profiles` ist nur eine explizit über
+  `operator_profile_id` verknüpfte Kompatibilitätsprojektion für bestehende
+  restaurantbezogene Legal-Dokumente und Readiness-Verträge.
+- Die Geschäftsanschrift referenziert entweder ausdrücklich die vorhandene
+  Restaurantadresse oder wird als separate Operator-Anschrift gespeichert.
+- Rechtlicher Unternehmensname, Rechtsform, Geschäftsanschrift und
+  Kontakt-E-Mail bleiben wegen des bestehenden Legal-Pakets Pflichtangaben.
+- Firmenbuchnummer, UID und vertretungsberechtigte Person sind optional; ihr
+  Fehlen blockiert Onboarding, Legal Readiness und Kundenregistrierung nicht.
+- Österreichische FN/UID werden nur bei eindeutig erkennbarem Format
+  normalisiert. Unklare optionale Werte werden verständlich markiert, aber
+  nicht als Pflichtfehler behandelt; andere Länder verwenden generische
+  Bezeichnungen.
+- Neue Dokumententwürfe übernehmen vorhandene optionale Betreiberangaben.
+  Bestehende veröffentlichte Versionen bleiben unveränderlich und werden nie
+  automatisch neu veröffentlicht.
+- Audit-Ereignisse nennen nur geänderte Feldnamen, nicht die betreffenden
+  Unternehmenswerte.
+- Die Struktur ist für spätere Billing-Nutzung wiederverwendbar, erzeugt aber
+  weder Stripe-Customer noch Subscription- oder externe Billing-Daten.
+
+
 ## 2026-08-24 - QR Center: zwei aktive Zwecke, ein Kompatibilitaetsweg
 
 - Aktive V1-QR-Zwecke sind der oeffentliche Neue-Gaeste-QR und der geschuetzte
@@ -2219,3 +2246,25 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   Darstellungslogik und denselben sicheren Fehlerfallback.
 - Auth-, Punkte-, Reward-, Referral- und sonstige Geschäftslogik bleiben
   unverändert.
+
+## CTO-Entscheidung 2026-08-29: Finale Kundenbestätigung per Live-Swipe
+
+🟢 **APPROVED / V1 / VORRANG VOR AUTOMATISCHER PRÄSENTATIONS-EINLÖSUNG**
+
+- Punktebelohnungen, Willkommensgeschenke und Geburtstagsgeschenke verwenden
+  denselben finalen Swipe-Vertrag.
+- Das 15-Minuten-Fenster ist `REDEMPTION_STARTED` und verbraucht noch keinen
+  Wert. Erst die atomare Server-RPC setzt `REDEEMED`, zieht Punkte ab oder
+  verbraucht die einmalige Geschenkzuteilung und schreibt Audit sowie Journal.
+- Präsentationszeile und Kundenzustand werden in derselben Transaktion gesperrt.
+  Eine bedingte Zustandsänderung und die bestehende Eindeutigkeit erlauben bei
+  parallelen Geräten exakt einen Erfolg.
+- Derselbe Bestätigungs-Retry ist idempotent. Ein anderes Gerät erhält nach dem
+  ersten Erfolg `ALREADY_REDEEMED` mit dem gespeicherten Serverzeitpunkt.
+- Ablauf vor dem Swipe bedeutet `EXPIRED` ohne Punkteabzug und ohne
+  Geschenkverbrauch. Netzwerkunsicherheit wird durch anschließende
+  Serverstatusprüfung aufgelöst; der Client zeigt keinen optimistischen Erfolg.
+- Customer Undo bleibt verboten. Ein operatives Storno bleibt ein gesonderter,
+  autorisierter und auditierter Owner-/Supportprozess.
+- RLS, Restaurant-/Filialbindung, Reward-Eligibility und Punkteberechnung
+  werden nicht gelockert oder clientseitig entschieden.

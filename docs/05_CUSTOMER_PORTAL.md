@@ -12,6 +12,16 @@
 - Widersprechende ältere Abschnitte sind historisch und im
   `docs/LEGACY_DOCUMENT_INDEX.md` erfasst.
 
+### Einlösebestätigung 2026-08-29
+
+Die 15-Minuten-Präsentation ist ab jetzt ein Vorbereitungsfenster. Das bloße
+Öffnen zieht keine Punkte ab und verbraucht kein Geschenk. Der Kunde wischt
+direkt vor dem Mitarbeiter bewusst von links nach rechts; erst danach bestätigt
+der Server die konkrete Präsentation atomar. Der Erfolg zeigt Restaurant,
+Benefit und den autoritativen Serverzeitpunkt. Ein zweites Gerät, ein alter
+Screenshot oder ein paralleler Request kann dieselbe Präsentation nicht erneut
+einlösen. Ein abgelaufenes Fenster verbraucht keinen Benefit.
+
 ## Horizontaler Discovery-Standard 2026-08-27
 
 - `Aktuelles & Angebote` auf der Customer-Startseite und die Belohnungskarten

@@ -32,6 +32,14 @@ import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { onboardingCompletionErrorMessage, safeLegalRpcError } from "../../legal/legalPublicationDate.mjs";
+import {
+  companyRegistrationLabel,
+  legalFormSuggestions,
+  normalizeCompanyRegistrationNumber,
+  normalizeVatId,
+  optionalCompanyIdentifierHint,
+  vatIdLabel,
+} from "../../legal/legalCompanyData.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -84,12 +92,17 @@ type OnboardingForm = {
   restaurantName: string;
   restaurantType: string;
   language: string;
+  legalCompanyName: string;
   legalForm: string;
+  legalAddressMatchesRestaurant: boolean;
   legalStreet: string;
   legalPostalCode: string;
   legalCity: string;
   legalCountry: string;
   legalEmail: string;
+  legalCompanyRegistrationNumber: string;
+  legalVatId: string;
+  legalAuthorizedRepresentative: string;
   legalComplaintContact: string;
   logoUrl: string;
   primaryColor: string;
@@ -305,12 +318,17 @@ function createDefaultForm(): OnboardingForm {
     restaurantName: "",
     restaurantType: "Restaurant",
     language: "Deutsch",
+    legalCompanyName: "",
     legalForm: "",
+    legalAddressMatchesRestaurant: false,
     legalStreet: "",
     legalPostalCode: "",
     legalCity: "",
     legalCountry: "Österreich",
     legalEmail: "",
+    legalCompanyRegistrationNumber: "",
+    legalVatId: "",
+    legalAuthorizedRepresentative: "",
     legalComplaintContact: "",
     logoUrl: "",
     primaryColor: "#0f766e",
@@ -1038,11 +1056,14 @@ function buildChecklist(form: OnboardingForm, step: number) {
       form.restaurantName.trim()
       && form.restaurantType
       && form.language
+      && form.legalCompanyName.trim()
       && form.legalForm.trim()
-      && form.legalStreet.trim()
-      && form.legalPostalCode.trim()
-      && form.legalCity.trim()
-      && form.legalCountry.trim()
+      && (form.legalAddressMatchesRestaurant || (
+        form.legalStreet.trim()
+        && form.legalPostalCode.trim()
+        && form.legalCity.trim()
+        && form.legalCountry.trim()
+      ))
       && form.legalEmail.trim(),
     ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
@@ -1121,6 +1142,12 @@ export function RestaurantOnboarding() {
   const staffTabletUrl = `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
+  const restaurantAddressComplete = Boolean(
+    activeRestaurant?.address?.trim()
+    && activeRestaurant.postal_code?.trim()
+    && activeRestaurant.city?.trim()
+    && activeRestaurant.country?.trim(),
+  );
 
   const checklist = useMemo(() => buildChecklist(form, step), [form, step]);
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
@@ -1167,7 +1194,16 @@ export function RestaurantOnboarding() {
           return;
         }
 
-        setForm(restoreForm(draft.draftData));
+        const restoredForm = restoreForm(draft.draftData);
+        setForm(restoredForm.legalAddressMatchesRestaurant && activeRestaurant
+          ? {
+              ...restoredForm,
+              legalStreet: activeRestaurant.address ?? "",
+              legalPostalCode: activeRestaurant.postal_code ?? "",
+              legalCity: activeRestaurant.city ?? "",
+              legalCountry: activeRestaurant.country ?? "AT",
+            }
+          : restoredForm);
         setStep(draft.currentStep);
       } catch (error) {
         if (!cancelled) {
@@ -1185,7 +1221,7 @@ export function RestaurantOnboarding() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant?.id, navigate, tenantLoading]);
+  }, [activeRestaurant, navigate, tenantLoading]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1399,6 +1435,20 @@ export function RestaurantOnboarding() {
     });
   }
 
+  function setLegalAddressMatchesRestaurant(checked: boolean) {
+    if (checked && !restaurantAddressComplete) return;
+    setForm((current) => ({
+      ...current,
+      legalAddressMatchesRestaurant: checked,
+      ...(checked ? {
+        legalStreet: activeRestaurant?.address ?? "",
+        legalPostalCode: activeRestaurant?.postal_code ?? "",
+        legalCity: activeRestaurant?.city ?? "",
+        legalCountry: activeRestaurant?.country ?? "AT",
+      } : {}),
+    }));
+  }
+
   function closeHowItWorks() {
     if (explanationDismissedKey) {
       window.localStorage.setItem(explanationDismissedKey, "true");
@@ -1426,7 +1476,7 @@ export function RestaurantOnboarding() {
     if (stepBlocker) {
       setStatus(stepBlocker);
       const firstInvalidId = step === 0
-        ? ["restaurant-name", "restaurant-type", "language", "legal-form", "legal-email", "legal-street", "legal-postal-code", "legal-city", "legal-country"].find((id) => {
+        ? ["restaurant-name", "restaurant-type", "language", "legal-company-name", "legal-form", "legal-email", "legal-street", "legal-postal-code", "legal-city", "legal-country"].find((id) => {
             const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
             return field && !field.checkValidity();
           })
@@ -1509,14 +1559,18 @@ export function RestaurantOnboarding() {
         })),
         staffName: form.staffName,
         staffPin: form.staffPin,
-        legalProfile: {
-          company_name: form.restaurantName.trim(),
-          legal_form: form.legalForm.trim(),
-          street: form.legalStreet.trim(),
+          legalProfile: {
+            company_name: form.legalCompanyName.trim(),
+            legal_form: form.legalForm.trim(),
+            registered_address_matches_restaurant: form.legalAddressMatchesRestaurant,
+            street: form.legalStreet.trim(),
           postal_code: form.legalPostalCode.trim(),
           city: form.legalCity.trim(),
           country: form.legalCountry.trim(),
           email: form.legalEmail.trim(),
+          commercial_register_number: normalizeCompanyRegistrationNumber(form.legalCompanyRegistrationNumber, form.legalCountry),
+          vat_id: normalizeVatId(form.legalVatId, form.legalCountry),
+          responsible_person: form.legalAuthorizedRepresentative.trim(),
           complaint_contact: form.legalComplaintContact.trim() || form.legalEmail.trim(),
         },
         legalPublicationConfirmed: form.legalPublicationConfirmed,
@@ -1639,42 +1693,74 @@ export function RestaurantOnboarding() {
               </div>
               <div className="onboarding-legal-fields">
                 <div>
-                  <span className="premium-dashboard-kicker">Rechtliche Angaben</span>
-                  <h3>Damit dein Bonusprogramm direkt starten kann</h3>
-                  <p className="muted">Aus diesen Stammdaten erstellt WUXUAI automatisch deine rechtlichen Dokumente. Eigene Rechtstexte musst du hier nicht schreiben.</p>
+                  <span className="premium-dashboard-kicker">Unternehmensdaten</span>
+                  <h3>Rechtliche Angaben zu deinem Betrieb</h3>
+                  <p className="muted">Diese Angaben werden später für rechtliche Dokumente, Impressum und Abrechnungsdaten verwendet. FN und UID kannst du auch später ergänzen.</p>
                 </div>
                 <div className="grid two">
                   <div className="field">
+                    <FormLabel htmlFor="legal-company-name" required>Rechtlicher Unternehmensname</FormLabel>
+                    <input aria-required="true" className="input" id="legal-company-name" onChange={(event) => setForm((current) => ({ ...current, legalCompanyName: event.target.value }))} placeholder="z. B. Muster Gastro GmbH" required value={form.legalCompanyName} />
+                  </div>
+                  <div className="field">
                     <FormLabel htmlFor="legal-form" required>Rechtsform</FormLabel>
-                    <input aria-required="true" className="input" id="legal-form" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" required value={form.legalForm} />
+                    <input aria-required="true" className="input" id="legal-form" list="legal-form-options" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" required value={form.legalForm} />
+                    <datalist id="legal-form-options">{legalFormSuggestions.map((legalForm) => <option key={legalForm} value={legalForm} />)}</datalist>
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-email" required>Kontakt-E-Mail</FormLabel>
                     <input aria-required="true" className="input" id="legal-email" onChange={(event) => setForm((current) => ({ ...current, legalEmail: event.target.value }))} required type="email" value={form.legalEmail} />
                   </div>
+                  <label className="legal-address-source-toggle" htmlFor="legal-address-matches-restaurant">
+                    <input
+                      checked={form.legalAddressMatchesRestaurant}
+                      disabled={!restaurantAddressComplete}
+                      id="legal-address-matches-restaurant"
+                      onChange={(event) => setLegalAddressMatchesRestaurant(event.target.checked)}
+                      type="checkbox"
+                    />
+                    <span>Geschäftsanschrift entspricht Restaurantadresse</span>
+                  </label>
+                  {!restaurantAddressComplete ? <p className="field-hint">Die Restaurantadresse ist noch nicht vollständig. Trage deshalb hier eine separate Geschäftsanschrift ein.</p> : null}
                   <div className="field">
                     <FormLabel htmlFor="legal-street" required>Straße und Hausnummer</FormLabel>
-                    <input aria-required="true" className="input" id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required value={form.legalStreet} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalStreet} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-postal-code" required>Postleitzahl</FormLabel>
-                    <input aria-required="true" className="input" id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required value={form.legalPostalCode} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalPostalCode} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-city" required>Ort</FormLabel>
-                    <input aria-required="true" className="input" id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required value={form.legalCity} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalCity} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-country" required>Land</FormLabel>
-                    <input aria-required="true" className="input" id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required value={form.legalCountry} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalCountry} />
                   </div>
                 </div>
                 <details className="advanced-panel">
-                  <summary>Beschwerdekontakt optional anpassen</summary>
-                  <div className="field">
-                    <FormLabel htmlFor="legal-complaint-contact" optional>Beschwerdekontakt</FormLabel>
-                    <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />
-                    <p className="muted">Wenn du nichts einträgst, verwenden wir deine Kontakt-E-Mail.</p>
+                  <summary>Weitere Unternehmensangaben (optional)</summary>
+                  <div className="grid two">
+                    <div className="field">
+                      <FormLabel htmlFor="legal-company-registration" optional>{companyRegistrationLabel(form.legalCountry)}</FormLabel>
+                      <input className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} value={form.legalCompanyRegistrationNumber} />
+                      {optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry)}</p> : null}
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-vat-id" optional>{vatIdLabel(form.legalCountry)}</FormLabel>
+                      <input autoCapitalize="characters" className="input" id="legal-vat-id" onBlur={(event) => setForm((current) => ({ ...current, legalVatId: normalizeVatId(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalVatId: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. ATU12345678" : undefined} value={form.legalVatId} />
+                      {optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry)}</p> : null}
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-authorized-representative" optional>Vertretungsberechtigte Person / Geschäftsführung</FormLabel>
+                      <input className="input" id="legal-authorized-representative" onChange={(event) => setForm((current) => ({ ...current, legalAuthorizedRepresentative: event.target.value }))} value={form.legalAuthorizedRepresentative} />
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-complaint-contact" optional>Beschwerdekontakt</FormLabel>
+                      <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />
+                      <p className="muted">Wenn du nichts einträgst, verwenden wir deine Kontakt-E-Mail.</p>
+                    </div>
                   </div>
                 </details>
               </div>

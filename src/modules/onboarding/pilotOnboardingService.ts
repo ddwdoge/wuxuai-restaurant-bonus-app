@@ -32,7 +32,7 @@ export type PilotOnboardingInput = {
   starterRewards: StarterRewardInput[];
   staffName: string;
   staffPin: string;
-  legalProfile: Record<string, string | null>;
+  legalProfile: Record<string, string | boolean | null>;
   legalPublicationConfirmed: boolean;
 };
 

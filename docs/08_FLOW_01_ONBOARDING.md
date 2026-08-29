@@ -190,12 +190,41 @@ Optional:
 - Telefonnummer
 - Firmenbuchnummer und Firmenbuchgericht
 - UID-Nummer
+- vertretungsberechtigte Person / Geschäftsführung
 - Kammerzugehörigkeit
 - Aufsichtsbehörde
 - Barrierefreiheitskontakt
 - abweichender Beschwerdekontakt
 
 Ist kein Beschwerdekontakt angegeben, wird die Kontakt-E-Mail verwendet.
+
+Die rechtliche Betreiberidentität liegt auf der bestehenden
+`organization`-Ebene. Restaurantname und Branding bleiben davon getrennt;
+der V1-Standort bleibt über Restaurant und primäre Branch-Beziehung
+zugeordnet. Damit gilt strukturell:
+
+```text
+Legal Operator / Organization
+-> Restaurant / Marke
+-> Branch / Standort
+```
+
+Die Geschäftsanschrift kann ausdrücklich auf die vorhandene
+Restaurantadresse verweisen. Ist die Option nicht gewählt, wird eine separate
+rechtliche Anschrift gespeichert. Eine fehlende oder unvollständige
+Restaurantadresse darf nicht stillschweigend als Geschäftsanschrift verwendet
+werden.
+
+Firmenbuchnummer und UID sind in V1 optionale strukturierte Betreiberangaben.
+Ihr Fehlen blockiert weder den Onboarding-Schritt noch die Kundenregistrierung.
+Der rechtliche Unternehmensname, die Rechtsform, die Geschäftsanschrift und die
+Kontakt-E-Mail bleiben Bestandteil des bestehenden Legal-Veröffentlichungsvertrags.
+Österreichische FN- und UID-Werte werden zurückhaltend normalisiert; Angaben
+anderer Länder behalten ihre generische Form. Dieselben Daten werden nach dem
+Onboarding unter `Einstellungen -> Unternehmensdaten & Rechtliches` bearbeitet.
+Es gibt keine parallele Betreiberquelle in Restaurantprofil, Branding oder
+Abrechnung. Stripe bleibt außerhalb des Flows; die strukturierten Daten sind
+lediglich für eine spätere Billing-Anbindung wiederverwendbar.
 
 V1 Sprache: - Deutsch
 

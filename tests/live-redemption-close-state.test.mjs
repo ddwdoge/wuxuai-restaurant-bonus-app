@@ -29,7 +29,7 @@ test("hydration and polling update the presentation without reopening the drawer
   assert.ok(customerPortal.match(/applyPointsPresentation\(presentation\);/g)?.length >= 2);
   assert.match(applyBlock, /if \(options\.openDrawer\) setRedemptionDrawerOpen\(true\)/);
   const openingLines = applyBlock.split("\n").filter((line) => line.includes("setRedemptionDrawerOpen(true)"));
-  assert.equal(openingLines.length, 2);
+  assert.equal(openingLines.length, 3);
   assert.ok(openingLines.every((line) => line.includes("options.openDrawer")));
 });
 
@@ -40,7 +40,7 @@ test("closing keeps the active server presentation and only closes its UI", () =
 });
 
 test("server completion cannot force a consciously closed drawer open", () => {
-  assert.match(applyBlock, /presentation\.status === "REDEEMED_COMPLETED"/);
+  assert.match(applyBlock, /presentation\.status === "REDEEMED"/);
   assert.match(applyBlock, /if \(options\.openDrawer\) setRedemptionDrawerOpen\(true\)/);
 });
 

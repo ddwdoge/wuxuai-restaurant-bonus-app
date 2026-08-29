@@ -152,11 +152,17 @@ export type CustomerPointsPresentation = {
   found: boolean;
   success?: boolean;
   already_started?: boolean;
+  already_confirmed?: boolean;
+  error_code?: string | null;
+  error_message?: string | null;
   presentation_id: string;
-  status: "REDEEMED_ACTIVE" | "REDEEMED_COMPLETED" | "CANCELLED";
+  presentation_type: "points" | "gift";
+  status: "REDEMPTION_STARTED" | "REDEEMED" | "EXPIRED" | "CANCELLED";
   active: boolean;
   activated_at: string;
   expires_at: string;
+  redeemed_at: string | null;
+  expired_at: string | null;
   completed_at: string | null;
   server_now: string;
   visual_code: string;
@@ -178,7 +184,7 @@ export type CustomerPointsPresentation = {
   stamps_spent: number;
   points_balance?: number;
   stamp_balance?: number;
-  confirmation_method: "CUSTOMER_PRESENTATION_WINDOW";
+  confirmation_method: "CUSTOMER_SWIPE";
 };
 
 export type RewardKpis = {
@@ -679,6 +685,23 @@ export async function loadCustomerGiftPresentation(input: {
   if (error) throw error;
   const payload = data as CustomerPointsPresentation;
   return payload?.found ? payload : null;
+}
+
+export async function confirmCustomerRedemptionSwipe(input: {
+  customerToken: string;
+  presentationType: "points" | "gift";
+  presentationId: string;
+  idempotencyKey: string;
+}): Promise<CustomerPointsPresentation> {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const { data, error } = await supabase.rpc("confirm_customer_redemption_swipe", {
+    input_customer_token: input.customerToken,
+    input_presentation_type: input.presentationType,
+    input_presentation_id: input.presentationId,
+    input_idempotency_key: input.idempotencyKey,
+  });
+  if (error) throw error;
+  return data as CustomerPointsPresentation;
 }
 
 export async function consumeRedemptionCode(

@@ -62,8 +62,8 @@ test("Customer-Portal verwendet das 15-Minuten-Präsentationsfenster auch für G
   assert.match(customerPortal, /startCustomerPointsPresentation/);
   assert.match(customerPortal, /startCustomerGiftPresentation/);
   assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)/);
-  assert.match(customerPortal, /Nach der Bestätigung hast du 15 Minuten Zeit/);
-  assert.match(customerPortal, /Jetzt dem Restaurantpersonal zeigen/);
+  assert.match(customerPortal, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(customerPortal, /<SwipeToRedeem/);
   assert.match(releaseMigration, /status = 'redemption_started'/);
   assert.match(releaseMigration, /status = 'redeemed', redeemed_at = input_now/);
   assert.match(releaseMigration, /grant execute on function public\.start_customer_gift_presentation/);

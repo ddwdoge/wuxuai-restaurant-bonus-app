@@ -39,7 +39,8 @@ test("customer uses the same live display for points welcome and birthday gifts"
   assert.match(portal, /loadCustomerGiftPresentation/);
   assert.match(portal, /startCustomerGiftPresentation/);
   assert.match(portal, /activePointsPresentation\.gift_type/);
-  assert.match(portal, /Jetzt dem Restaurantpersonal zeigen/);
+  assert.match(portal, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(portal, /<SwipeToRedeem/);
 });
 
 test("birthday assignment is exactly fourteen days early and annual-idempotent", () => {

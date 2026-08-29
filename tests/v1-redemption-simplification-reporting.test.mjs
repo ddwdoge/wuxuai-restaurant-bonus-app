@@ -15,7 +15,8 @@ test("primary customer flow starts presentations instead of six-digit codes", ()
   assert.match(customer, /startCustomerPointsPresentation/);
   assert.match(customer, /startCustomerGiftPresentation/);
   assert.doesNotMatch(customer, /startCustomerRedemption\(/);
-  assert.match(customer, /Jetzt dem Restaurantpersonal zeigen/);
+  assert.match(customer, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(customer, /<SwipeToRedeem/);
 });
 
 test("staff primary flow contains no code verification", () => {

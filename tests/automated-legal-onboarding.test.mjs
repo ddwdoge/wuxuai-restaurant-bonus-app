@@ -52,7 +52,7 @@ const ownerCss = await readFile(
 );
 
 test("Onboarding erfasst nur Stammdaten und keine juristischen Freitexte", () => {
-  for (const field of ["legalForm", "legalStreet", "legalPostalCode", "legalCity", "legalCountry", "legalEmail"]) {
+  for (const field of ["legalCompanyName", "legalForm", "legalStreet", "legalPostalCode", "legalCity", "legalCountry", "legalEmail"]) {
     assert.match(onboarding, new RegExp(field));
   }
   assert.doesNotMatch(onboarding, /fraud_and_blocking_rule|program_termination_rule|privacyText/);
@@ -249,8 +249,8 @@ test("Legal-Fehler löschen weder Kundentoken noch Sitzung", () => {
 });
 
 test("Legal Center zeigt Readiness-Checkliste und automatisierten Hinweis", () => {
-  assert.match(ownerLegal, /Legal Readiness/);
-  assert.match(ownerLegal, /Automatisch erstellt von WUXUAI/);
+  assert.match(ownerLegal, /Rechtliche Freigabe/);
+  assert.match(ownerLegal, /Hinweis zu den Dokumentvorlagen/);
   assert.match(ownerLegal, /ersetzen keine individuelle Rechtsberatung/);
 });
 
