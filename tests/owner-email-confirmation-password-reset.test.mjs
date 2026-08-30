@@ -83,7 +83,7 @@ test("erneutes Senden bleibt generisch und besitzt einen Cooldown", () => {
 
 test("Passwort-vergessen gibt keinen Kontobestand preis", () => {
   assert.match(ownerAuthService, /resetPasswordForEmail/);
-  assert.match(forgotPassword, /Falls ein Konto mit dieser E-Mail-Adresse existiert/);
+  assert.match(forgotPassword, /Wenn ein Konto mit dieser E-Mail-Adresse existiert/);
   assert.doesNotMatch(forgotPassword, /nicht registriert|unbekannte E-Mail/);
 });
 

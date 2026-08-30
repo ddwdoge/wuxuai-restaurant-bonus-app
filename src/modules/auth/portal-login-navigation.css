@@ -1,0 +1,46 @@
+.portal-login-navigation {
+  border-top: 1px solid var(--wux-border, #e5d7bf);
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 14px;
+  text-align: center;
+}
+
+.portal-login-navigation h2 {
+  color: var(--wux-text-secondary, #665f56);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.portal-login-navigation > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  justify-content: center;
+}
+
+.portal-login-navigation a {
+  align-items: center;
+  color: var(--wux-gold-dark, #765418);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px 2px;
+  text-align: center;
+}
+
+.portal-login-navigation a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--wux-gold, #c7972e) 36%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 430px) {
+  .portal-login-navigation > div {
+    gap: 2px 12px;
+  }
+}

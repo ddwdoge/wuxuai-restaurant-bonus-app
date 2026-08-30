@@ -17,6 +17,8 @@ import { AppShell, PremiumCard, PrimaryButton, SecondaryButton } from "./compone
 import "./central-customer.css";
 import { useAuth } from "../auth/AuthProvider";
 import { WrongPortalNotice } from "../auth/WrongPortalNotice";
+import { PortalLoginNavigation } from "../auth/PortalLoginNavigation";
+import { buildPasswordRecoveryPath } from "../auth/portalRecoveryUx.mjs";
 
 type CustomerAuthMode = "login" | "register";
 
@@ -221,7 +223,9 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
             ) : null}
             <PrimaryButton disabled={submitting || (mode === "register" && !registrationValid)} type="submit"><CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Bitte warten …" : mode === "login" ? "Anmelden" : activatingExistingAccount ? "Kundenbereich aktivieren" : "Konto erstellen"}</PrimaryButton>
           </form>
+          {mode === "login" ? <p className="central-auth-switch"><Link to={buildPasswordRecoveryPath("customer")}>Passwort vergessen?</Link></p> : null}
           {!activatingExistingAccount ? <p className="central-auth-switch">{mode === "login" ? "Noch kein Kundenkonto?" : "Du hast bereits ein Kundenkonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p> : null}
+          {mode === "login" ? <PortalLoginNavigation currentPortal="customer" /> : null}
         </PremiumCard>
       </div>
     </AppShell>

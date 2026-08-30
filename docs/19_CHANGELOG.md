@@ -771,6 +771,19 @@
 
 # WUXUAI Bonus V1 – Changelog
 
+## 2026-08-30 - Einheitlicher Login und Passwortwiederherstellung integriert
+
+- Customer-, Staff- und Restaurant-Login verwenden denselben kontextgebundenen
+  Supabase-Passwortwiederherstellungsflow und dieselbe Passwortidentitaet.
+- Alle drei Loginseiten verlinken kompakt auf die jeweils anderen oeffentlichen
+  Bereiche; der private Plattformzugang wird nicht beworben.
+- Bestehende Mitarbeiter koennen den Mitarbeiter-Login ohne QR direkt oeffnen;
+  vorhandener Restaurantkontext wird weiterhin exakt serverseitig geprueft.
+- Anti-Enumeration, Recovery-Session-Isolation, E-Mail-Bestaetigung,
+  Rollenautoritaet und Tenantgrenzen bleiben unveraendert.
+- Keine Migration; echte Reset-Mail-, Callback-, Rollen- und iPhone-Gates sind
+  bis zum Development/Test-Deployment offen.
+
 ## 2026-08-19 - Offers-Audit-400 auf Staging behoben
 
 - reproduzierbaren `save_restaurant_offer`-Fehler auf den unzulässigen Audit-Akteurstyp `restaurant_user` eingegrenzt

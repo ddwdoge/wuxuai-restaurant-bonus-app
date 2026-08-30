@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { LogIn, ShieldCheck } from "lucide-react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import {
@@ -13,9 +13,11 @@ import { useAuth } from "./AuthProvider";
 import { normalizeStaffRestaurantSlug } from "./staffLoginFlow.mjs";
 import { loadPublicStaffLoginContext, resolveMyStaffRestaurantAccess } from "./staffLoginService";
 import { WrongPortalNotice } from "./WrongPortalNotice";
+import { PortalLoginNavigation } from "./PortalLoginNavigation";
+import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
 
 export function StaffLoginPage() {
-  const { loading: authLoading, signIn, signOut, user } = useAuth();
+  const { loading: authLoading, portalAccess, signIn, signOut, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -35,7 +37,6 @@ export function StaffLoginPage() {
     let cancelled = false;
     if (!restaurantSlug) {
       setContextLoading(false);
-      setError("Dieser Mitarbeiter-QR ist ungültig. Bitte scanne den QR-Code deines Restaurants erneut.");
       return () => { cancelled = true; };
     }
     setContextLoading(true);
@@ -59,7 +60,16 @@ export function StaffLoginPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (authLoading || !user || !restaurantSlug || contextLoading) return () => { cancelled = true; };
+    if (authLoading || !user || contextLoading) return () => { cancelled = true; };
+    if (!restaurantSlug) {
+      if (portalAccess.staff_access) {
+        navigate("/staff", { replace: true });
+      } else {
+        setAccessDenied(true);
+        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich.");
+      }
+      return () => { cancelled = true; };
+    }
     setSubmitting(true);
     resolveMyStaffRestaurantAccess(restaurantSlug)
       .then((access) => {
@@ -78,16 +88,20 @@ export function StaffLoginPage() {
         if (!cancelled) setSubmitting(false);
       });
     return () => { cancelled = true; };
-  }, [authLoading, contextLoading, navigate, restaurantSlug, user]);
+  }, [authLoading, contextLoading, navigate, portalAccess.staff_access, restaurantSlug, user]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!restaurantSlug || !restaurantName) return;
+    if (restaurantSlug && !restaurantName) return;
     setSubmitting(true);
     setError(null);
     setAccessDenied(false);
     try {
       await signIn(email, password);
+      if (!restaurantSlug) {
+        navigate("/staff", { replace: true });
+        return;
+      }
       const access = await resolveMyStaffRestaurantAccess(restaurantSlug);
       if (!access.success || access.restaurant_slug !== restaurantSlug) {
         setAccessDenied(true);
@@ -118,7 +132,7 @@ export function StaffLoginPage() {
     }
   }
 
-  const unavailable = !supabase || contextLoading || !restaurantSlug || !restaurantName;
+  const unavailable = !supabase || contextLoading || Boolean(restaurantSlug && !restaurantName);
 
   if (user && accessDenied) {
     return (
@@ -153,8 +167,12 @@ export function StaffLoginPage() {
             <PublicFormField autoComplete="current-password" disabled={submitting} id="staff-login-password" label="Passwort" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
             {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
             <PublicPrimaryButton disabled={unavailable} icon={<LogIn size={18} />} loading={submitting} loadingLabel="Anmeldung läuft …" type="submit">Anmelden</PublicPrimaryButton>
+            <div className="public-premium-secondary-actions">
+              <Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath("staff", restaurantSlug)}>Passwort vergessen?</Link>
+            </div>
           </form>
         )}
+        <PortalLoginNavigation currentPortal="staff" />
       </PublicContentCard>
     </PublicPageShell>
   );

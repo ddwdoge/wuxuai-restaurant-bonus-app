@@ -11,6 +11,7 @@ import {
   createOwnerRecoveryLifecycle,
   createOwnerRecoverySessionEstablisher,
 } from "./ownerRecoveryFlow.mjs";
+import type { PasswordRecoveryContext } from "./portalRecoveryUx.mjs";
 
 function requireAuthClient() {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
@@ -46,10 +47,17 @@ export async function resendOwnerConfirmation(email: string) {
   if (error) throw new Error(ownerAuthErrorMessage(error));
 }
 
-export async function requestOwnerPasswordReset(email: string) {
+export async function requestPasswordReset(
+  email: string,
+  context: PasswordRecoveryContext = { portal: "owner", staffSlug: null },
+) {
   const auth = requireAuthClient();
   const recoveryRedirect = new URL(buildOwnerAuthRedirect(window.location.origin, OWNER_AUTH_PATHS.updatePassword));
   recoveryRedirect.searchParams.set("flow", "recovery");
+  recoveryRedirect.searchParams.set("portal", context.portal);
+  if (context.portal === "staff" && context.staffSlug) {
+    recoveryRedirect.searchParams.set("restaurant", context.staffSlug);
+  }
   const { error } = await auth.resetPasswordForEmail(email.trim().toLowerCase(), {
     redirectTo: recoveryRedirect.toString(),
   });

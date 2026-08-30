@@ -13,6 +13,8 @@ import {
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { Link } from "react-router-dom";
 import { WrongPortalNotice } from "./WrongPortalNotice";
+import { PortalLoginNavigation } from "./PortalLoginNavigation";
+import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
 
 export function LoginPage() {
   const { loading: authLoading, portalAccess, signIn, user } = useAuth();
@@ -97,11 +99,12 @@ export function LoginPage() {
             Anmelden
           </PublicPrimaryButton>
           <div className="public-premium-secondary-actions">
-            <Link className="public-premium-secondary-link" to="/auth/forgot-password">Passwort vergessen?</Link>
+            <Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath("owner")}>Passwort vergessen?</Link>
             <Link className="public-premium-secondary-link" to="/">Zurück zur Startseite</Link>
             <Link className="public-premium-secondary-link" to="/register">Noch nicht registriert?</Link>
           </div>
         </form>
+        <PortalLoginNavigation currentPortal="owner" />
       </PublicContentCard>
     </PublicPageShell>
   );

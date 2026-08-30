@@ -11,6 +11,11 @@
   width: 100%;
 }
 
+.public-premium-shell,
+.public-premium-shell * {
+  box-sizing: border-box;
+}
+
 .public-premium-page {
   display: grid;
   gap: 22px;
@@ -58,6 +63,12 @@
   line-height: 1.55;
   margin: 0;
   max-width: 55ch;
+}
+
+@media (max-width: 340px) {
+  .public-premium-hero h1 {
+    font-size: 1.8rem;
+  }
 }
 
 .public-premium-card {

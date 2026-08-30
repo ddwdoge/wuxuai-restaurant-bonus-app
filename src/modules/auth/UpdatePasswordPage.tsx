@@ -15,9 +15,11 @@ import {
   establishOwnerRecoverySession,
   updateOwnerPassword,
 } from "./ownerAuthService";
+import { buildPasswordRecoveryPath, readPasswordRecoveryContext, recoveryLoginPath } from "./portalRecoveryUx.mjs";
 
 export function UpdatePasswordPage() {
   const navigate = useNavigate();
+  const [recoveryContext] = useState(() => readPasswordRecoveryContext(window.location.search));
   const isMountedRef = useRef(false);
   const passwordUpdateCompletedRef = useRef(false);
   const recoverySessionEstablishedRef = useRef(false);
@@ -69,7 +71,7 @@ export function UpdatePasswordPage() {
       await updateOwnerPassword(password);
       passwordUpdateCompletedRef.current = true;
       if (!isMountedRef.current) return;
-      navigate("/restaurant/login", {
+      navigate(recoveryLoginPath(recoveryContext), {
         replace: true,
         state: { logoutMessage: "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden." },
       });
@@ -84,8 +86,8 @@ export function UpdatePasswordPage() {
 
   return (
     <PublicPageShell
-      description="Lege ein neues Passwort für deinen Restaurantzugang fest."
-      eyebrow="Sicherer Restaurantzugang"
+      description="Lege ein neues Passwort für dein WUXUAI Konto fest. Es gilt für alle deine freigegebenen Bereiche."
+      eyebrow="Sicheres WUXUAI Konto"
       title="Neues Passwort festlegen"
     >
       <PublicContentCard>
@@ -103,7 +105,7 @@ export function UpdatePasswordPage() {
             <p className={`public-premium-alert${error ? " public-premium-alert-error" : ""}`} role={error ? "alert" : "status"}>
               {error ?? "Der sichere Link wird geprüft …"}
             </p>
-            {error ? <div className="public-premium-secondary-actions"><Link className="public-premium-secondary-link" to="/auth/forgot-password">Neuen Reset-Link anfordern</Link><Link className="public-premium-secondary-link" to="/restaurant/login">Zurück zum Login</Link></div> : null}
+            {error ? <div className="public-premium-secondary-actions"><Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath(recoveryContext.portal, recoveryContext.staffSlug)}>Neuen Reset-Link anfordern</Link><Link className="public-premium-secondary-link" to={recoveryLoginPath(recoveryContext)}>Zurück zum Login</Link></div> : null}
           </>
         )}
       </PublicContentCard>
