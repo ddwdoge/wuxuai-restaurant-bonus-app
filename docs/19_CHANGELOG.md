@@ -10,6 +10,8 @@
 - Nach erfolgreichem Join wird derselbe servervalidierte Restaurant-Opener wie
   beim globalen Schnellwechsel verwendet und der neue Kontext ohne Reload
   angezeigt.
+- Die sichtbare Join-Bestätigung hängt nicht vom internen Idempotenzfeld ab und
+  bleibt dadurch auch bei einem serverseitig bereits vollzogenen Retry klar.
 - Join erzeugt keine Punkte, keinen Besuch und keine Referral-Zuordnung;
   Willkommensgeschenk-, Punkte- und Visit-Verträge bleiben unverändert.
 - Keine Datenbankmigration, keine RLS- oder Businesslogikänderung.

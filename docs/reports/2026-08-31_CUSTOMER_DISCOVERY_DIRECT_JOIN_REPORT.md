@@ -39,6 +39,9 @@ klarer, ausdrücklicher Beitritt dargestellt.
   Restaurant-Schnellwechsel geöffnet.
 - Der Server-Slug ist die maßgebliche Navigationsantwort. Der neue Kontext wird
   ohne Browser-Reload geöffnet und zeigt eine barrierefreie Erfolgsmeldung.
+- Die Erfolgsmeldung folgt dem erfolgreichen Nichtmitglied-Flow und ist nicht
+  vom internen Idempotenzfeld `joined` abhängig. Auch ein serverseitig bereits
+  vollzogener Parallel-/Retry-Join endet damit verständlich im neuen Kontext.
 - Mobile CTAs behalten mindestens 48 Pixel Höhe und die Drawer-Safe-Area.
 
 ## Was wurde nicht geändert

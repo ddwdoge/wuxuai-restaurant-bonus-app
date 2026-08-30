@@ -49,7 +49,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     setJoining(true);
     setError(null);
     try {
-      const result = await joinCustomerRestaurant({
+      await joinCustomerRestaurant({
         restaurantSlug,
         termsAccepted,
         privacyAcknowledged,
@@ -57,9 +57,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
         existingCustomerToken: readStoredCustomerToken(restaurantSlug),
       });
       const activeSlug = await openCustomerMembership(context.restaurant_id);
-      if (result.joined) {
-        setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
-      }
+      setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
       setPortalRestaurantSlug(activeSlug);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");

@@ -47,6 +47,7 @@ test("Beitritt wechselt anschließend über denselben kanonischen Membership-Ope
   assert.match(joinHandler, /await joinCustomerRestaurant\(/);
   assert.match(joinHandler, /await openCustomerMembership\(context\.restaurant_id\)/);
   assert.ok(joinHandler.indexOf("joinCustomerRestaurant") < joinHandler.indexOf("openCustomerMembership"));
+  assert.doesNotMatch(joinHandler, /result\.joined/);
   assert.match(access, /Du bist jetzt im Bonusprogramm von \$\{context\.restaurant_name\}/);
   assert.match(access, /<CustomerPortal entryMessage=\{joinSuccessMessage\}/);
   assert.match(access, /restaurantSlug=\{portalRestaurantSlug\}/);
