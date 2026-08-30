@@ -10,10 +10,12 @@ import {
 } from "../public/PublicPageComponents";
 import { clearPendingOwnerRegistration, readPendingOwnerEmail } from "./registerOwnerService";
 import { resendOwnerConfirmation } from "./ownerAuthService";
+import { useAuth } from "./AuthProvider";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function ConfirmEmailPage() {
+  const { loading: authLoading, portalAccess, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const stateEmail = typeof (location.state as { email?: unknown } | null)?.email === "string"
@@ -50,6 +52,21 @@ export function ConfirmEmailPage() {
   function correctEmail() {
     clearPendingOwnerRegistration();
     navigate("/register", { replace: true, state: { email } });
+  }
+
+  if (!authLoading && user?.email_confirmed_at) {
+    return (
+      <PublicPageShell
+        description="Deine E-Mail-Adresse ist bestätigt. Eine weitere Bestätigungs-E-Mail ist nicht erforderlich."
+        eyebrow="Sicherer Restaurantzugang"
+        title="E-Mail-Adresse bereits bestätigt"
+      >
+        <PublicContentCard>
+          <p className="public-premium-alert public-premium-alert-success" role="status">E-Mail-Adresse bereits bestätigt. Bitte fahre mit deinem bestehenden Konto fort.</p>
+          <Link className="public-premium-secondary-link" to={portalAccess.owner_access ? "/admin" : "/register"}>{portalAccess.owner_access ? "Restaurant-Portal öffnen" : "Restaurantbereich aktivieren"}</Link>
+        </PublicContentCard>
+      </PublicPageShell>
+    );
   }
 
   return (

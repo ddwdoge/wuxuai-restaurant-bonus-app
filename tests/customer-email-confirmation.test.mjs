@@ -99,9 +99,11 @@ test("Payload-Schlüssel unterscheidet TokenHash PKCE und Legacy", () => {
   );
 });
 
-test("Customer-Callback zeigt bewusste Bestätigung Resend und neuesten Link", async () => {
+test("Customer-Callback bestätigt automatisch und zeigt Resend nur zur Fehlerbehebung", async () => {
   const callback = await read("../src/modules/customer/CustomerAuthCallbackPage.tsx");
-  assert.match(callback, /E-Mail jetzt bestätigen/);
+  assert.match(callback, /void confirmEmail\(\)/);
+  assert.match(callback, /E-Mail-Adresse erfolgreich bestätigt/);
+  assert.doesNotMatch(callback, /onClick=\{confirmEmail\}/);
   assert.match(callback, /Neue Bestätigungs-E-Mail senden/);
   assert.match(callback, /Verwende immer den neuesten Link/);
   assert.match(callback, /RESEND_COOLDOWN_SECONDS = 60/);

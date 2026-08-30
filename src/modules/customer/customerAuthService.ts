@@ -54,3 +54,16 @@ export async function resendCustomerConfirmation(
   });
   if (error) throw error;
 }
+
+export async function activateAuthenticatedCustomerAccount(
+  input: { birthday: string | null; firstName: string; phone: string },
+  client: SupabaseClient | null = supabase,
+) {
+  const authClient = requireCustomerAuthClient(client);
+  const { error } = await authClient.rpc("activate_authenticated_customer_account", {
+    input_birthday: input.birthday || null,
+    input_first_name: input.firstName.trim(),
+    input_phone: input.phone,
+  });
+  if (error) throw error;
+}

@@ -30,7 +30,7 @@ import "./central-customer.css";
 
 export function ReferralLanding() {
   const { restaurantSlug = "", referralToken = "" } = useParams();
-  const { loading: authLoading, user } = useAuth();
+  const { loading: authLoading, portalAccess, user } = useAuth();
   const [data, setData] = useState<PublicReferralData | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -145,6 +145,14 @@ export function ReferralLanding() {
                 <LogIn aria-hidden="true" size={19} /> Mit bestehendem Konto anmelden
               </Link>
               <small>Die Einladung wird sicher über die E-Mail-Bestätigung hinweg erhalten.</small>
+            </div>
+          ) : !portalAccess.customer_access ? (
+            <div className="central-auth-actions referral-auth-actions">
+              <h2>Kundenbereich aktivieren</h2>
+              <p>Du bist bereits mit deinem WUXUAI-Konto angemeldet. Ergänze einmalig deine Kundenangaben, um diese Einladung anzunehmen.</p>
+              <Link className="premium-button premium-button-primary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}>
+                <UserPlus aria-hidden="true" size={19} /> Kundenbereich aktivieren
+              </Link>
             </div>
           ) : (
             <div className="referral-acceptance">

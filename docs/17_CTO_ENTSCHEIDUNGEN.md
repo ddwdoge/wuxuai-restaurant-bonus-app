@@ -3,6 +3,28 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-30 - Eine Auth-Identitaet mit additiven Portalrollen
+
+- Eine E-Mail-Adresse gehoert zu genau einer Supabase-Auth-Identitaet. Customer,
+  Owner/Admin, Staff und Platform Admin sind additive Profile beziehungsweise
+  Tenantbeziehungen und keine exklusiven Auth-Benutzertypen.
+- Bereits bestaetigte und angemeldete Benutzer aktivieren weitere Bereiche mit
+  derselben Session und demselben Passwort. Anonyme Antworten bleiben
+  anti-enumerationssicher.
+- Staff-Einladungen koennen eine bestehende Customer-, Plattform- oder
+  fremdrestaurantbezogene Owner-Rolle wiederverwenden. Im selben Restaurant
+  bleibt Owner/Admin/Manager vom persoenlichen Staff-Modell getrennt und nutzt
+  den bestehenden autoritativen Betreiberzugriff ohne Impersonation.
+- Portalwechsel zeigt nur serververifizierte Bereiche; alle Tenant-, RLS- und
+  Auditgrenzen bleiben bestehen.
+- E-Mail-Bestaetigungslinks zeigen nach dem Oeffnen einen automatischen,
+  eindeutigen Erfolgs- oder Recovery-Zustand. Resend bleibt bei 60 Sekunden
+  Frontend-Cooldown und den unveraenderten Supabase-/Providerlimits.
+- Referral verwendet die native Web-Share-Schnittstelle mit Clipboard-Fallback
+  und teilt ausschliesslich die bestehende kanonische Referral-URL.
+- Sichtbare V1-Texte bleiben gemaess dem aktiven Sprachvertrag Deutsch. Eine
+  Erweiterung auf EN/FR/IT/ES ist damit nicht Bestandteil dieses V1-Changes.
+
 ## 2026-08-29 - Kanonische optionale Betreiberdaten im Owner-Onboarding
 
 - Die bestehende `organizations`-Ebene ist der kanonische rechtliche

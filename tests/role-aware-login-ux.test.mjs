@@ -81,10 +81,10 @@ test("Portal access RPC is authenticated-only and relationship authoritative", (
   assert.match(migration, /grant execute on function public\.get_current_portal_access\(\)[\s\S]*to authenticated/);
 });
 
-test("Customer data routes stop before portal RPC components on wrong role", () => {
+test("Customer data routes activate an additional Customer role before portal RPC components", () => {
   assert.match(authProvider, /rpc\("get_current_portal_access"\)/);
-  assert.match(app, /if \(user && !portalAccess\.customer_access\) return <WrongPortalNotice portal="customer"/);
-  assert.match(app, /if \(!portalAccess\.customer_access\) return <WrongPortalNotice portal="customer"/);
+  assert.match(app, /if \(user && !portalAccess\.customer_access\) return <Navigate replace to=\{`\/customer\/register\?returnTo=/);
+  assert.match(app, /if \(!portalAccess\.customer_access\) return <Navigate replace to=\{`\/customer\/register\?returnTo=/);
   assert.ok(app.indexOf("!portalAccess.customer_access") < app.indexOf("<CentralCustomerPage view=\"home\""));
 });
 

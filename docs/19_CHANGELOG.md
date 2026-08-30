@@ -1,6 +1,27 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-30 - Referral-Freigabe, E-Mail-Callback und Multi-Role vorbereitet
+
+- Referral-Karten um native Web-Share-Freigabe, sicheren Clipboard-Fallback
+  und bestaetigtes Kopierfeedback ergaenzt; QR, Referral-URL, Attribution und
+  Bonuslogik bleiben unveraendert.
+- Customer- und Owner-Bestaetigungsseiten verarbeiten gueltige Supabase-
+  Callbackdaten automatisch, zeigen Erfolg sichtbar und behalten sichere
+  Resend-/Recovery-Zustaende mit 60-Sekunden-Clientcooldown.
+- Bestehende bestaetigte Auth-Benutzer koennen Customer- oder Owner-Zugriff
+  additiv aktivieren; Bereichswechsel zeigt nur serververifizierte Rollen.
+- Additive Migration `20260830002000_multi_role_account_foundation.sql`
+  ergaenzt eine transaktionsgesperrte Customer-Aktivierung und entfernt nur den
+  globalen Staff-Konflikt mit anderen Rollen. Same-Restaurant-Ownerkonflikt,
+  Tenantpruefung, RLS, Grants und Audit bleiben erhalten.
+- Migration `20260830002000_multi_role_account_foundation.sql` kontrolliert auf
+  Development/Test-Supabase `bwhvfjuwixgwduoeqaya` angewendet; Migration
+  History ist synchron, der anschliessende Dry-Run leer und der DB-Linter bei
+  0 Fehlern. Frontend-Deployment, Mailzustellung, reale Mehrfachrollen-Flows
+  und physische Mobile-Gates bleiben offen; Production bleibt gesperrt und
+  Stripe aufgeschoben.
+
 ## 2026-08-30 - A6-Vorschau auf eine kanonische Seitenskalierung umgestellt
 
 - Die QR-Center-Druckvorschau rendert Logo, Restaurantname, Texte, QR-Code,

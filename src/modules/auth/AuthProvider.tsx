@@ -106,6 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const authSessionRequired = requiresAuthenticatedSession(location.pathname);
+  const sessionHydrationEnabled = authSessionRequired || [
+    "/register",
+    "/customer/login",
+    "/customer/register",
+  ].includes(location.pathname);
   const invalidSessionRedirect = location.pathname.startsWith("/customer")
     ? `/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
     : location.pathname.startsWith("/staff")
@@ -113,8 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       : "/restaurant/login";
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(Boolean(supabase && authSessionRequired));
-  const [roleLoading, setRoleLoading] = useState(Boolean(supabase && authSessionRequired));
+  const [authLoading, setAuthLoading] = useState(Boolean(supabase && sessionHydrationEnabled));
+  const [roleLoading, setRoleLoading] = useState(Boolean(supabase && sessionHydrationEnabled));
   const [restaurantRole, setRestaurantRole] = useState<RestaurantUserRole | null>(null);
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
   const [portalAccess, setPortalAccess] = useState<PortalAccess>({ ...emptyPortalAccess });
@@ -231,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRoleLoading(false);
     }
 
-    if (!authSessionRequired) {
+    if (!sessionHydrationEnabled) {
       refreshController.stop();
       setAuthLoading(false);
       setRoleLoading(false);
@@ -265,7 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = authClient.onAuthStateChange((event, nextSession) => {
-      if (!authSessionRequired && event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
+      if (!sessionHydrationEnabled && event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
       if (event === "SIGNED_IN") invalidSessionHandler.reset();
       if (nextSession) {
         refreshController.start(nextSession);
@@ -284,7 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     async function revalidateStoredSession() {
-      if (!authSessionRequired || sessionRevalidationRef.current) return sessionRevalidationRef.current;
+      if (!sessionHydrationEnabled || sessionRevalidationRef.current) return sessionRevalidationRef.current;
       sessionRevalidationRef.current = (async () => {
         await refreshController.refreshIfNeeded();
         const { data, error } = await authClient.getSession();
@@ -328,7 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       refreshController.stop();
     };
-  }, [authSessionRequired, invalidSessionRedirect, navigate, resolveAndCommitAuthorization]);
+  }, [invalidSessionRedirect, navigate, resolveAndCommitAuthorization, sessionHydrationEnabled]);
 
   useEffect(() => {
     async function resolveRole() {

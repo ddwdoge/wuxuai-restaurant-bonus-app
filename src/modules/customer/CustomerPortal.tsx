@@ -19,6 +19,7 @@ import {
   ReceiptText,
   ScanLine,
   ShieldCheck,
+  Share2,
   Sparkles,
   Store,
   UserRound,
@@ -86,6 +87,7 @@ import {
   type ScopedActiveRedemption,
 } from "./customerRedemptionSession.mjs";
 import { createReferralCreationToken } from "./referralInviteFlow.mjs";
+import { referralSharePayload, supportsNativeReferralShare } from "./referralShare.mjs";
 import { formatReferralBoostExpiry, formatReferralBoostRemaining } from "./referralLifecycle.mjs";
 import {
   AppShell,
@@ -254,7 +256,7 @@ type CustomerPortalProps = {
 };
 
 export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPortalProps) {
-  const { signOut } = useAuth();
+  const { portalAccess, signOut } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
@@ -1131,6 +1133,26 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
         .catch(() => undefined);
     } finally {
       setCreatingReferral(false);
+    }
+  }
+
+  async function shareReferralLink() {
+    if (!referralLink || !restaurant || !supportsNativeReferralShare(navigator)) return;
+    try {
+      await navigator.share(referralSharePayload(restaurant.name, referralLink));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setMessage("Die Einladung konnte gerade nicht geteilt werden. Du kannst den Link stattdessen kopieren.");
+    }
+  }
+
+  async function copyReferralLink() {
+    if (!referralLink) return;
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setMessage("Einladungslink kopiert");
+    } catch {
+      setMessage("Der Einladungslink konnte nicht kopiert werden. Bitte öffne ihn und kopiere die Browseradresse.");
     }
   }
 
@@ -2110,6 +2132,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
+                      <div className="referral-share-actions">
+                        {supportsNativeReferralShare(navigator) ? (
+                          <PrimaryButton onClick={() => void shareReferralLink()}><Share2 aria-hidden="true" size={18} /> Einladung teilen</PrimaryButton>
+                        ) : null}
+                        <SecondaryButton onClick={() => void copyReferralLink()}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                      </div>
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
                       <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
@@ -2198,6 +2226,16 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   <span aria-hidden="true" className="premium-customer-avatar">{customer.name.trim().charAt(0).toUpperCase()}</span>
                   <div><span>Dein Konto</span><h1 id="account-title">{customer.name}</h1><p>Bonus-Mitglied bei {restaurant.name}</p></div>
                 </div>
+                {portalAccess.owner_access || portalAccess.staff_access || portalAccess.platform_access ? (
+                  <PremiumCard className="premium-role-switch" variant="information">
+                    <h2>Bereich wechseln</h2>
+                    <div className="referral-share-actions">
+                      {portalAccess.owner_access ? <a className="premium-button premium-button-secondary" href="/admin">Restaurant-Portal</a> : null}
+                      {portalAccess.staff_access ? <a className="premium-button premium-button-secondary" href={portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff"}>Mitarbeiterbereich</a> : null}
+                      {portalAccess.platform_access ? <a className="premium-button premium-button-secondary" href="/platform-admin">WUXUAI Admin</a> : null}
+                    </div>
+                  </PremiumCard>
+                ) : null}
 
                 <article className="premium-member-card" aria-label="Digitale Kundenkarte">
                   <div className="premium-member-card-top">
@@ -2241,6 +2279,12 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
                   </div>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
+                      <div className="referral-share-actions">
+                        {supportsNativeReferralShare(navigator) ? (
+                          <PrimaryButton onClick={() => void shareReferralLink()}><Share2 aria-hidden="true" size={18} /> Einladung teilen</PrimaryButton>
+                        ) : null}
+                        <SecondaryButton onClick={() => void copyReferralLink()}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                      </div>
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
                       <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>

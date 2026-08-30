@@ -1,7 +1,7 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-Status: **CODE INTEGRATED / STAGING VERIFIED**
-Stand: 2026-08-24
+Status: **CODE INTEGRATED / AUTH MIGRATION STAGING APPLIED / LIVE GATES PENDING**
+Stand: 2026-08-30
 Authoritative Base: `919141181223aa414ef004a09aa3f02637f2b7fd`
 Recovery Branch: `codex/v1-canonical-recovery`
 
@@ -28,11 +28,38 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   gesendet.
 - E-Mail-Bestaetigung, Callback, Anti-Enumeration-Antwort und Resend mit
   60-Sekunden-Cooldown sind implementiert.
+- Customer- und Owner-Callbacks verarbeiten gueltige Supabase-TokenHash-,
+  PKCE- und Legacy-Sessiondaten automatisch, zeigen einen eindeutigen
+  Erfolgszustand und leiten danach rollengerecht weiter. Abgelaufene oder
+  ungueltige Links erhalten einen Resend-/Login-Weg ohne rohe Providerfehler.
 - Restaurantkontext bleibt ueber den sicheren Return-/Membership-Flow erhalten.
 - Restaurantbezogene Registrierung verwendet
   `register_restaurant_customer_legal`; Referral verwendet
   `register_referral_customer_legal`.
 - Aktive Client-Aufrufe der alten Registration-RPCs: null.
+
+## Multi-Role Account - CODE INTEGRATED, STAGING APPLIED, LIVE PENDING
+
+- Eine bestaetigte Supabase-Auth-Identitaet repraesentiert eine Person und kann
+  unabhaengige Customer-, Owner-/Admin-, Staff- und Plattformbeziehungen tragen.
+- Rollen und Tenantzugriffe bleiben additive, serververifizierte Beziehungen;
+  weder E-Mail noch `user_metadata` sind Rollenautoritaet.
+- Bestehende angemeldete Benutzer aktivieren einen weiteren Customer- oder
+  Owner-Bereich ohne zweiten Auth-Benutzer, neues Passwort oder erneute
+  E-Mail-Bestaetigung.
+- Staff-Einladungen duerfen bestehende Customer-, Plattform- oder
+  fremdrestaurantbezogene Owner-Beziehungen nicht global blockieren. Eine
+  Owner-/Admin-/Manager-Beziehung im selben Restaurant bleibt ein Konflikt;
+  der bestehende operative Betreiberzugriff wird nicht in Staff-Impersonation
+  umgewandelt.
+- Bereichswechsel zeigt nur autoritativ bestaetigte Zugriffe. Jeder Zugriff
+  bleibt restaurant-, organization- beziehungsweise plattformbezogen.
+- Die additive Migration
+  `20260830002000_multi_role_account_foundation.sql` ist auf dem verknuepften
+  Development/Test-Supabase-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Local/
+  Remote Migration History sind synchron, der anschliessende Dry-Run ist leer
+  und der DB-Linter meldet 0 Fehler. Reale Mehrfachrollen-Sitzungen und
+  Cross-Tenant-Negativproben bleiben ein separates Live-Gate.
 
 ## Redemption - IMPLEMENTED
 
@@ -91,6 +118,10 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Aktive Referrer sehen die volle, eingeladene Freunde die halbe konfigurierte
   Dauer; mehrere Grants zeigen das kombinierte serverseitige Enddatum bei
   unveraendert maximal 2x.
+- Der Referral-Link kann ueber die native Web-Share-Schnittstelle geteilt
+  werden. Wo sie fehlt, bleibt die Zwischenablage der primaere Fallback; QR und
+  sekundaeres Linkoeffnen bleiben erhalten. Geteilt wird ausschliesslich die
+  bestehende kanonische oeffentliche Referral-URL.
 
 ## Geocoding - IMPLEMENTED
 
@@ -172,6 +203,8 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Referral Welcome/Eligibility/Monatslimit: `STAGING VERIFIED`.
 - Der physische Referral-Pilot mit echter E-Mail-Bestaetigung und iPhone Safari
   bleibt ein offenes manuelles Release-Gate.
+- Native Referral-Freigabe, automatische Callback-Fortsetzung und Multi-Role-
+  Aktivierung sind noch nicht deployed oder physisch/live verifiziert.
 - Production: `DEFERRED / LOCKED`.
 - Stripe: `DEFERRED`.
 

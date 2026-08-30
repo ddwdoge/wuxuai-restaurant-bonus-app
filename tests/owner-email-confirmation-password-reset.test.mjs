@@ -175,7 +175,9 @@ test("Bestätigungs-Callback verarbeitet weiterhin PKCE und vollständigen Hash"
   assert.match(emailConfirmationService, /auth\.setSession\(\{[\s\S]*access_token: payload\.accessToken,[\s\S]*refresh_token: payload\.refreshToken/);
   assert.match(emailConfirmationService, /verifyOtp\(\{[\s\S]*token_hash: payload\.tokenHash,[\s\S]*type: "email"/);
   assert.match(callback, /completeConfirmedOwnerRegistration\(session\.user\)/);
-  assert.match(callback, /E-Mail jetzt bestätigen/);
+  assert.match(callback, /void completeCallback\(\)/);
+  assert.match(callback, /E-Mail-Adresse erfolgreich bestätigt/);
+  assert.doesNotMatch(callback, /onClick=\{completeCallback\}/);
 });
 
 test("sensitive Callback-Werte werden aus der URL entfernt", () => {
@@ -184,9 +186,9 @@ test("sensitive Callback-Werte werden aus der URL entfernt", () => {
   assert.doesNotMatch(updatePassword, /console\./);
 });
 
-test("Owner-Callback verifiziert nicht automatisch beim ersten GET", () => {
-  assert.match(callback, /onClick=\{completeCallback\}/);
-  assert.match(callback, /useEffect\(\(\) => \{\s*clearSensitiveAuthUrl\(\);\s*\}, \[\]\);/);
+test("Owner-Callback verarbeitet den bestätigten Link automatisch und genau einmal", () => {
+  assert.doesNotMatch(callback, /onClick=\{completeCallback\}/);
+  assert.match(callback, /useEffect\(\(\) => \{[\s\S]*clearSensitiveAuthUrl\(\);[\s\S]*void completeCallback\(\)/);
   assert.match(callback, /async function completeCallback\(\)[\s\S]*establishOwnerAuthSession\(payload\)/);
 });
 

@@ -11,7 +11,7 @@ import {
   customerPasswordConfirmationError,
   isCustomerPasswordConfirmationValid,
 } from "./customerAuthFlow.mjs";
-import { registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
+import { activateAuthenticatedCustomerAccount, registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
 import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import { AppShell, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
@@ -24,7 +24,7 @@ const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
-  const { loading: authLoading, portalAccess, signIn, user } = useAuth();
+  const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, signIn, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = safeCustomerReturnPath(searchParams.get("returnTo"));
@@ -49,11 +49,23 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const confirmPasswordError = mode === "register"
     ? customerPasswordConfirmationError(password, confirmPassword, confirmPasswordTouched || submitAttempted)
     : null;
+  const activatingExistingAccount = mode === "register"
+    && Boolean(user)
+    && !portalAccessError
+    && !portalAccess.customer_access;
   const registrationValid = isValidCustomerFirstName(firstName)
     && Boolean(customerPhoneValidation(phoneCountryCode, phone).e164)
-    && /^\S+@\S+\.\S+$/.test(email.trim())
-    && password.length >= 8
-    && passwordConfirmationValid;
+    && (activatingExistingAccount || (
+      /^\S+@\S+\.\S+$/.test(email.trim())
+      && password.length >= 8
+      && passwordConfirmationValid
+    ));
+
+  useEffect(() => {
+    if (!authLoading && user && portalAccess.customer_access) {
+      navigate(returnTo, { replace: true });
+    }
+  }, [authLoading, navigate, portalAccess.customer_access, returnTo, user]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -61,7 +73,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
 
-  if (!authLoading && user && !portalAccess.customer_access) {
+  if (!authLoading && user && !portalAccess.customer_access && mode === "login") {
     return <WrongPortalNotice portal="customer" />;
   }
 
@@ -83,6 +95,16 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
       if (!registrationValid || !phoneResult.e164) {
         setMessageKind("error");
         setMessage("Bitte fülle alle Pflichtfelder korrekt aus.");
+        return;
+      }
+      if (activatingExistingAccount) {
+        await activateAuthenticatedCustomerAccount({
+          birthday: birthday || null,
+          firstName,
+          phone: phoneResult.e164,
+        });
+        retryAuthorization();
+        window.location.assign(returnTo);
         return;
       }
       window.sessionStorage.setItem(RETURN_STORAGE_KEY, returnTo);
@@ -117,6 +139,20 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     }
   }
 
+  if (!authLoading && user && portalAccessError) {
+    return (
+      <AppShell className="central-auth-shell">
+        <div className="central-auth-page">
+          <PremiumCard className="central-auth-card central-auth-status">
+            <h1>Zugriff wird geprüft</h1>
+            <p className="central-status-message error" role="alert">Deine vorhandenen Bereiche konnten gerade nicht sicher geprüft werden. Es wurde nichts angelegt.</p>
+            <SecondaryButton onClick={retryAuthorization} type="button">Erneut prüfen</SecondaryButton>
+          </PremiumCard>
+        </div>
+      </AppShell>
+    );
+  }
+
   async function resendConfirmation() {
     if (resending || resendCooldown > 0 || !/^\S+@\S+\.\S+$/.test(email.trim())) return;
     setResending(true);
@@ -140,9 +176,9 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         <PremiumCard className="central-auth-card">
           <div className="central-icon-heading">
             {mode === "login" ? <LogIn aria-hidden="true" size={23} /> : <UserPlus aria-hidden="true" size={23} />}
-            <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Kundenkonto öffnen" : "Kundenkonto erstellen"}</h1></div>
+            <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Kundenkonto öffnen" : activatingExistingAccount ? "Kundenbereich aktivieren" : "Kundenkonto erstellen"}</h1></div>
           </div>
-          <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
+          <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : activatingExistingAccount ? "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für deinen persönlichen Kundenbereich." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
           <form className="central-auth-form" onSubmit={submit}>
             <RequiredFieldsNote />
             {mode === "register" ? <>
@@ -150,9 +186,15 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
               <CustomerPhoneField countryCode={phoneCountryCode} idPrefix="central-customer-phone" localNumber={phone} onCountryCodeChange={setPhoneCountryCode} onLocalNumberChange={(value) => setPhone(normalizeCustomerLocalPhoneInput(value))} required showError={Boolean(phone)} />
               <div className="central-auth-field"><FormLabel htmlFor="customer-birthday" optional>Geburtstag</FormLabel><input autoComplete="bday" id="customer-birthday" onChange={(event) => setBirthday(event.target.value)} type="date" value={birthday} /></div>
             </> : null}
-            <div className="central-auth-field"><FormLabel htmlFor="customer-email" required>E-Mail-Adresse</FormLabel><input autoComplete="email" id="customer-email" inputMode="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
-            <div className="central-auth-field"><FormLabel htmlFor="customer-password" required>Passwort</FormLabel><input autoComplete={mode === "login" ? "current-password" : "new-password"} id="customer-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /><small>Mindestens 8 Zeichen</small></div>
-            {mode === "register" ? (
+            {activatingExistingAccount ? (
+              <div className="central-auth-field"><FormLabel htmlFor="customer-existing-email">Bestätigte E-Mail-Adresse</FormLabel><input disabled id="customer-existing-email" type="email" value={user?.email ?? ""} /></div>
+            ) : (
+              <>
+                <div className="central-auth-field"><FormLabel htmlFor="customer-email" required>E-Mail-Adresse</FormLabel><input autoComplete="email" id="customer-email" inputMode="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
+                <div className="central-auth-field"><FormLabel htmlFor="customer-password" required>Passwort</FormLabel><input autoComplete={mode === "login" ? "current-password" : "new-password"} id="customer-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /><small>Mindestens 8 Zeichen</small></div>
+              </>
+            )}
+            {mode === "register" && !activatingExistingAccount ? (
               <div className="central-auth-field">
                 <FormLabel htmlFor="customer-confirm-password" required>Passwort bestätigen</FormLabel>
                 <input
@@ -171,15 +213,15 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
               </div>
             ) : null}
             {message ? <p className={`central-status-message ${messageKind}`} role={messageKind === "error" ? "alert" : "status"}>{message}</p> : null}
-            {mode === "register" && confirmationPending ? (
+            {mode === "register" && !activatingExistingAccount && confirmationPending ? (
               <SecondaryButton disabled={resending || resendCooldown > 0} onClick={resendConfirmation} type="button">
                 <RotateCw aria-hidden="true" size={18} />
                 {resendCooldown > 0 ? `Erneut senden in ${resendCooldown} Sekunden` : resending ? "E-Mail wird angefordert …" : "Bestätigungs-E-Mail erneut senden"}
               </SecondaryButton>
             ) : null}
-            <PrimaryButton disabled={submitting || (mode === "register" && !registrationValid)} type="submit"><CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Bitte warten …" : mode === "login" ? "Anmelden" : "Konto erstellen"}</PrimaryButton>
+            <PrimaryButton disabled={submitting || (mode === "register" && !registrationValid)} type="submit"><CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Bitte warten …" : mode === "login" ? "Anmelden" : activatingExistingAccount ? "Kundenbereich aktivieren" : "Konto erstellen"}</PrimaryButton>
           </form>
-          <p className="central-auth-switch">{mode === "login" ? "Noch kein Kundenkonto?" : "Du hast bereits ein Kundenkonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p>
+          {!activatingExistingAccount ? <p className="central-auth-switch">{mode === "login" ? "Noch kein Kundenkonto?" : "Du hast bereits ein Kundenkonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p> : null}
         </PremiumCard>
       </div>
     </AppShell>

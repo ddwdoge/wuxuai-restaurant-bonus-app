@@ -332,6 +332,8 @@
 .premium-referral-share a { color: var(--premium-primary-dark); }
 .premium-referral-share.compact { gap: 4px; padding: 10px 12px; }
 .premium-referral-share.compact p { margin: 0; }
+.referral-share-actions { display: grid; gap: 8px; width: 100%; }
+.referral-share-actions button { min-height: 44px; width: 100%; }
 
 .premium-points-card {
   background: linear-gradient(

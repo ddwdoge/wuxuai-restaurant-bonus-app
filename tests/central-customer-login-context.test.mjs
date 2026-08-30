@@ -41,7 +41,8 @@ test("Bestätigungs-Callback stellt die Auth-Session her und kehrt zum QR-Kontex
   assert.match(service, /exchangeCodeForSession/);
   assert.match(callback, /ensure_authenticated_customer_account/);
   assert.match(callback, /safeCustomerReturnPath/);
-  assert.match(callback, /E-Mail jetzt bestätigen/);
+  assert.match(callback, /void confirmEmail\(\)/);
+  assert.match(callback, /E-Mail-Adresse erfolgreich bestätigt/);
   assert.match(callback, /customer_return_to/);
   assert.match(callback, /Neue Bestätigungs-E-Mail senden/);
   assert.doesNotMatch(callback, /useEffect\([\s\S]{0,260}establishEmailConfirmationSession/);

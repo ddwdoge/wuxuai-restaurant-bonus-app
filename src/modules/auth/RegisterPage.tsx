@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { registerRestaurantOwner } from "./registerOwnerService";
+import { activateRestaurantOwnerForCurrentUser, registerRestaurantOwner } from "./registerOwnerService";
 import {
   PublicContentCard,
   PublicFormField,
@@ -16,7 +16,7 @@ import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
 export function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading: authLoading, user } = useAuth();
+  const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, user } = useAuth();
   const [ownerName, setOwnerName] = useState("");
   const initialEmail = typeof (location.state as { email?: unknown } | null)?.email === "string"
     ? (location.state as { email: string }).email
@@ -40,24 +40,29 @@ export function RegisterPage() {
         ? null
         : "Passwörter stimmen nicht überein."
     : null;
+  const activatingExistingAccount = Boolean(
+    user && isOwnerEmailConfirmed(user) && !portalAccessError && !portalAccess.owner_access,
+  );
   const formValid = Boolean(
     ownerName.trim()
-    && /^\S+@\S+\.\S+$/.test(email.trim())
     && restaurantName.trim()
-    && passwordValidation.valid
-    && passwordsMatch
+    && (activatingExistingAccount || (
+      /^\S+@\S+\.\S+$/.test(email.trim())
+      && passwordValidation.valid
+      && passwordsMatch
+    ))
   );
 
   useEffect(() => {
-    if (!authLoading && user && isOwnerEmailConfirmed(user)) {
+    if (!authLoading && user && portalAccess.owner_access) {
       navigate("/admin", { replace: true });
     }
-  }, [authLoading, navigate, user]);
+  }, [authLoading, navigate, portalAccess.owner_access, user]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitAttempted(true);
-    if (authLoading || user) {
+    if (authLoading || (user && !activatingExistingAccount)) {
       navigate("/admin", { replace: true });
       return;
     }
@@ -65,17 +70,23 @@ export function RegisterPage() {
     setMessage(null);
 
     try {
-      if (!passwordValidation.valid) {
+      if (!activatingExistingAccount && !passwordValidation.valid) {
         setError(passwordValidation.message);
         return;
       }
-      if (!confirmPassword) {
+      if (!activatingExistingAccount && !confirmPassword) {
         return;
       }
-      if (!passwordsMatch) {
+      if (!activatingExistingAccount && !passwordsMatch) {
         return;
       }
       setLoading(true);
+      if (activatingExistingAccount) {
+        await activateRestaurantOwnerForCurrentUser({ ownerName, restaurantName, phone });
+        retryAuthorization();
+        window.location.assign("/admin/onboarding");
+        return;
+      }
       const result = await registerRestaurantOwner({
         ownerName,
         email,
@@ -97,10 +108,21 @@ export function RegisterPage() {
     }
   }
 
-  if (authLoading || (user && isOwnerEmailConfirmed(user))) {
+  if (authLoading || (user && portalAccess.owner_access)) {
     return (
       <PublicPageShell description="Dein Restaurantbereich wird vorbereitet." eyebrow="WUXUAI Bonus" title="Restaurant Portal wird geöffnet …">
         <PublicContentCard><p className="public-premium-alert" role="status">Bitte einen Moment warten.</p></PublicContentCard>
+      </PublicPageShell>
+    );
+  }
+
+  if (user && portalAccessError) {
+    return (
+      <PublicPageShell description="Deine vorhandenen Bereiche konnten gerade nicht sicher geprüft werden." eyebrow="WUXUAI Bonus" title="Zugriff wird geprüft">
+        <PublicContentCard>
+          <p className="public-premium-alert public-premium-alert-error" role="alert">Bitte prüfe deinen Zugriff erneut. Es wurde nichts angelegt.</p>
+          <PublicPrimaryButton onClick={retryAuthorization} type="button">Erneut prüfen</PublicPrimaryButton>
+        </PublicContentCard>
       </PublicPageShell>
     );
   }
@@ -115,21 +137,27 @@ export function RegisterPage() {
         <form className="public-premium-form" onSubmit={handleSubmit}>
           <RequiredFieldsNote />
           <PublicFormField autoComplete="name" disabled={loading} id="owner-name" label="Dein Name" onChange={(event) => setOwnerName(event.target.value)} required value={ownerName} />
-          <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-          <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-          <PublicFormField
-            autoComplete="new-password"
-            disabled={loading}
-            error={confirmPasswordError}
-            id="register-password-confirmation"
-            label="Passwort bestätigen"
-            minLength={8}
-            onBlur={() => setConfirmPasswordTouched(true)}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-            type="password"
-            value={confirmPassword}
-          />
+          {activatingExistingAccount ? (
+            <PublicFormField disabled id="register-existing-email" label="Bestätigte E-Mail" type="email" value={user?.email ?? ""} />
+          ) : (
+            <>
+              <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+              <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              <PublicFormField
+                autoComplete="new-password"
+                disabled={loading}
+                error={confirmPasswordError}
+                id="register-password-confirmation"
+                label="Passwort bestätigen"
+                minLength={8}
+                onBlur={() => setConfirmPasswordTouched(true)}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                type="password"
+                value={confirmPassword}
+              />
+            </>
+          )}
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
           <PublicFormField autoComplete="tel" disabled={loading} id="phone" label="Telefon" onChange={(event) => setPhone(event.target.value)} optional type="tel" value={phone} />
 
@@ -137,12 +165,11 @@ export function RegisterPage() {
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
-            {V1_COMMERCIAL_COPY.registrationCta}
+            {activatingExistingAccount ? "Restaurantbereich aktivieren" : V1_COMMERCIAL_COPY.registrationCta}
           </PublicPrimaryButton>
           <p className="public-premium-trust-note">{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
           <div className="public-premium-secondary-actions">
-            <span>Bereits registriert?</span>
-            <Link className="public-premium-secondary-link" to="/login">Zum Login</Link>
+            {activatingExistingAccount ? <span>Deine bestehende Anmeldung wird weiterverwendet.</span> : <><span>Bereits registriert?</span><Link className="public-premium-secondary-link" to="/login">Zum Login</Link></>}
           </div>
         </form>
       </PublicContentCard>

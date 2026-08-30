@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  ArrowRight,
   ChevronDown,
   Gift,
   Home,
@@ -47,7 +48,7 @@ export function AdminLayout() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const { restaurantRole, signOut, user } = useAuth();
+  const { portalAccess, restaurantRole, signOut, user } = useAuth();
   const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
   const restaurantStatus = activeRestaurant?.status ?? "draft";
   const restaurantStatusLabel =
@@ -155,6 +156,9 @@ export function AdminLayout() {
       </button>
       {profileMenuOpen ? (
         <div className="profile-menu-popover" role="menu">
+          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Kundenbereich</button> : null}
+          {portalAccess.staff_access ? <button onClick={() => navigate(portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Mitarbeiterbereich</button> : null}
+          {portalAccess.platform_access ? <button onClick={() => navigate("/platform-admin")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />WUXUAI Admin</button> : null}
           <button disabled={loggingOut} onClick={handleLogout} role="menuitem" type="button">
             <LogOut aria-hidden="true" size={18} />
             {loggingOut ? "Abmeldung läuft..." : "Abmelden"}

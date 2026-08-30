@@ -225,6 +225,15 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
   return { requiresEmailConfirmation: true };
 }
 
+export async function activateRestaurantOwnerForCurrentUser(input: Omit<RegisterOwnerInput, "email" | "password">) {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const session = await waitForReadySession(2);
+  if (!session?.user || !isOwnerEmailConfirmed(session.user)) {
+    throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+  }
+  await startOwnerTrial({ ...input, email: session.user.email ?? "", password: "" }, 2);
+}
+
 export async function completePendingOwnerRegistration(email: string): Promise<boolean> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
