@@ -57,6 +57,16 @@ Geschäftsadressfelder anbot. Dadurch entstand ein Kreiszustand.
 - Getrennter Draft: Deaktivieren, Weiter, Reload, Zurück – weiterhin deaktiviert.
 - Gewünschter gemeinsamer Modus anschließend wiederhergestellt; Onboarding steht
   auf Schritt 2.
+- Founder hat das vollständige Onboarding anschließend abgeschlossen.
+- Owner-Portal hydratisiert ohne manuellen Refresh mit bestätigtem Owner,
+  Restaurant und aktivem Portalstatus.
+- Primär-Branch enthält nach Abschluss dieselbe vollständige Adresse.
+- Einstellungen zeigen die gemeinsame Adressquelle aktiviert; die Branch-Adresse
+  wird dort kanonisch und read-only wiederverwendet.
+- Legal Readiness: Unternehmensdaten, Dokumente und Veröffentlichung erledigt;
+  Kundenregistrierung freigegeben.
+- Trial: 30.08.2026 bis 30.11.2026; WUXUAI Bonus V1 zu 59 EUR pro Monat exkl. USt.;
+  automatische Abrechnung nicht aktiv.
 - Tests: 1132/1132 PASS.
 - Typecheck: PASS.
 - Lint: 0 Fehler; bestehende Warnungen außerhalb des Scopes.
@@ -66,12 +76,10 @@ Geschäftsadressfelder anbot. Dadurch entstand ein Kreiszustand.
 
 ## Offene Live-Prüfungen
 
-- Physischer iPhone-Tap auf 390/430 px durch Founder.
-- Vollständiger Onboarding-Abschluss und Prüfung des finalen Branch- und
-  Operator-Profils.
-- Live-Test der späteren Einstellungen nach abgeschlossenem Onboarding.
-- Separater Keyboard-Endgerätetest; die Struktur ist nativ tastaturfähig, die
-  Browser-Plugin-Tastatursimulation war nicht belastbar.
+Keine. Founder-Bestätigung:
+
+- iPhone Touch: PASS.
+- iPhone Keyboard: PASS.
 
 ## Repository-/Contract-Problem
 
@@ -80,5 +88,5 @@ Founder-Anweisung weder rekonstruiert noch erfunden.
 
 ## Status
 
-CODE LOCK / LIVE DRAFT PASS. Kein FINAL LOCK, bis physischer iPhone-Test und
-vollständiger Owner-Onboarding-Abschluss bestätigt sind.
+FINAL LOCK. Owner Registration, Legal Company Data und Commercial Contract sind
+im vollständigen Live-Flow einschließlich physischem iPhone bestätigt.
