@@ -278,7 +278,7 @@
 .bonus-annual-overview span { display: grid; justify-items: center; gap: 4px; min-width: 0; padding: 9px 3px; border-radius: 7px; background: #f8f3e9; }
 .bonus-annual-overview small { color: #756b5f; font-size: .64rem; text-transform: uppercase; }
 
-.bonus-report-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid #e9e1d6; border-radius: 10px; background: #fff; }
+.bonus-report-table-wrap { contain: inline-size; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; border: 1px solid #e9e1d6; border-radius: 10px; background: #fff; }
 .bonus-report-table-wrap table { width: 100%; min-width: 850px; border-collapse: collapse; }
 .bonus-report-table-wrap th,
 .bonus-report-table-wrap td { padding: 12px 10px; border-bottom: 1px solid #eee8df; text-align: left; vertical-align: middle; font-size: .8rem; }

@@ -7,6 +7,7 @@ const legacyMigration = readFileSync("supabase/migrations/20260728001000_v1_bonu
 const customer = readFileSync("src/modules/customer/CustomerPortal.tsx", "utf8");
 const staff = readFileSync("src/modules/staff/StaffTablet.tsx", "utf8");
 const reportPage = readFileSync("src/modules/reports/BonusActivityReportsPage.tsx", "utf8");
+const reportStyles = readFileSync("src/modules/reports/bonus-activity-reports.css", "utf8");
 const reportService = readFileSync("src/modules/reports/bonusActivityService.ts", "utf8");
 const pointsPresentation = readFileSync("supabase/migrations/20260803007000_points_redemption_presentation_window.sql", "utf8");
 const giftPresentation = readFileSync("supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", "utf8");
@@ -89,6 +90,11 @@ test("owner UI provides every V1 period and restaurant report table", () => {
   for (const heading of ["Datum", "Zeit", "Belohnung", "Typ", "Punkte", "Referenzwert", "Status"]) {
     assert.match(reportPage, new RegExp(`>${heading}<`));
   }
+});
+
+test("mobile report table scroll stays contained inside the report", () => {
+  assert.match(reportStyles, /\.bonus-report-table-wrap\s*\{[^}]*contain:\s*inline-size/);
+  assert.match(reportStyles, /\.bonus-report-table-wrap\s*\{[^}]*overflow-x:\s*auto/);
 });
 
 test("CSV contains no direct customer identity", () => {
