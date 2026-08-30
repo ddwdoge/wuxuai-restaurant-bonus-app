@@ -13,6 +13,9 @@ import {
 
 const onboarding = await readFile(new URL("../src/modules/admin/pages/RestaurantOnboarding.tsx", import.meta.url), "utf8");
 const ownerLegal = await readFile(new URL("../src/modules/legal/OwnerLegalSettingsPage.tsx", import.meta.url), "utf8");
+const legalService = await readFile(new URL("../src/modules/legal/legalService.ts", import.meta.url), "utf8");
+const legalAddressService = await readFile(new URL("../src/modules/legal/legalAddressSourceService.ts", import.meta.url), "utf8");
+const onboardingService = await readFile(new URL("../src/modules/onboarding/pilotOnboardingService.ts", import.meta.url), "utf8");
 const settings = await readFile(new URL("../src/modules/admin/pages/SettingsPage.tsx", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/20260829001000_optional_legal_company_data_foundation.sql", import.meta.url), "utf8");
 const branchAddressFix = await readFile(new URL("../supabase/migrations/20260829001500_legal_company_branch_address_forward_fix.sql", import.meta.url), "utf8");
@@ -91,7 +94,24 @@ test("Restaurantadresse wird nur über eine ausdrückliche Quelle wiederverwende
   assert.match(migration, /LEGAL_RESTAURANT_ADDRESS_INCOMPLETE/);
   assert.match(migration, /case when use_restaurant_address then null else resolved_street end/);
   assert.match(onboarding, /legal-address-matches-restaurant/);
-  assert.match(onboarding, /disabled=\{form\.legalAddressMatchesRestaurant\}/);
+  assert.doesNotMatch(onboarding, /disabled=\{!restaurantAddressComplete\}/);
+  assert.doesNotMatch(ownerLegal, /disabled=\{!restaurantAddressComplete\}/);
+  assert.match(onboarding, /disabled=\{form\.legalAddressMatchesRestaurant && restaurantAddressComplete\}/);
+  assert.match(ownerLegal, /restaurantAddressReadOnly = useRestaurantAddress && restaurantAddressComplete/);
+  assert.match(onboarding, /Die eingegebene Adresse wird zugleich als Restaurant- und Geschäftsanschrift gespeichert/);
+  assert.match(ownerLegal, /Diese Geschäftsanschrift bleibt von späteren Änderungen der Restaurantadresse getrennt/);
+});
+
+test("Onboarding und Einstellungen speichern denselben Branch-Adressvertrag", () => {
+  assert.match(legalAddressService, /export async function syncRestaurantAddressFromLegalProfile/);
+  assert.match(legalAddressService, /profile\.registered_address_source === "restaurant"/);
+  assert.match(legalAddressService, /\.from\("branches"\)[\s\S]*\.update\(\{ address, postal_code: postalCode, city, country \}\)/);
+  assert.match(legalAddressService, /\.eq\("restaurant_id", restaurantId\)[\s\S]*\.eq\("organization_id", restaurant\.organization_id\)/);
+  assert.match(legalAddressService, /if \(!profileUsesRestaurantAddress\(profile\)\) return/);
+  assert.match(legalService, /generateRestaurantLegalPackage[\s\S]*syncRestaurantAddressFromLegalProfile/);
+  assert.match(onboardingService, /syncRestaurantAddressFromLegalProfile\(restaurantId, input\.legalProfile\)/);
+  assert.doesNotMatch(onboarding, /if \(checked && !restaurantAddressComplete\) return/);
+  assert.doesNotMatch(ownerLegal, /if \(useRestaurant && !restaurantAddressComplete\) return/);
 });
 
 test("Restaurantadresse stammt kanonisch vom Branch und nicht aus einer Restaurant-Spalte", () => {

@@ -1058,12 +1058,10 @@ function buildChecklist(form: OnboardingForm, step: number) {
       && form.language
       && form.legalCompanyName.trim()
       && form.legalForm.trim()
-      && (form.legalAddressMatchesRestaurant || (
-        form.legalStreet.trim()
-        && form.legalPostalCode.trim()
-        && form.legalCity.trim()
-        && form.legalCountry.trim()
-      ))
+      && form.legalStreet.trim()
+      && form.legalPostalCode.trim()
+      && form.legalCity.trim()
+      && form.legalCountry.trim()
       && form.legalEmail.trim(),
     ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
@@ -1195,7 +1193,7 @@ export function RestaurantOnboarding() {
         }
 
         const restoredForm = restoreForm(draft.draftData);
-        setForm(restoredForm.legalAddressMatchesRestaurant && activeRestaurant
+        setForm(restoredForm.legalAddressMatchesRestaurant && restaurantAddressComplete
           ? {
               ...restoredForm,
               legalStreet: activeRestaurant.address ?? "",
@@ -1221,7 +1219,7 @@ export function RestaurantOnboarding() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant, navigate, tenantLoading]);
+  }, [activeRestaurant, navigate, restaurantAddressComplete, tenantLoading]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1436,11 +1434,10 @@ export function RestaurantOnboarding() {
   }
 
   function setLegalAddressMatchesRestaurant(checked: boolean) {
-    if (checked && !restaurantAddressComplete) return;
     setForm((current) => ({
       ...current,
       legalAddressMatchesRestaurant: checked,
-      ...(checked ? {
+      ...(checked && restaurantAddressComplete ? {
         legalStreet: activeRestaurant?.address ?? "",
         legalPostalCode: activeRestaurant?.postal_code ?? "",
         legalCity: activeRestaurant?.city ?? "",
@@ -1714,29 +1711,29 @@ export function RestaurantOnboarding() {
                   <label className="legal-address-source-toggle" htmlFor="legal-address-matches-restaurant">
                     <input
                       checked={form.legalAddressMatchesRestaurant}
-                      disabled={!restaurantAddressComplete}
                       id="legal-address-matches-restaurant"
                       onChange={(event) => setLegalAddressMatchesRestaurant(event.target.checked)}
                       type="checkbox"
                     />
                     <span>Geschäftsanschrift entspricht Restaurantadresse</span>
                   </label>
-                  {!restaurantAddressComplete ? <p className="field-hint">Die Restaurantadresse ist noch nicht vollständig. Trage deshalb hier eine separate Geschäftsanschrift ein.</p> : null}
+                  {form.legalAddressMatchesRestaurant && !restaurantAddressComplete ? <p className="field-hint">Die eingegebene Adresse wird zugleich als Restaurant- und Geschäftsanschrift gespeichert.</p> : null}
+                  {!form.legalAddressMatchesRestaurant ? <p className="field-hint">Diese Geschäftsanschrift bleibt von späteren Änderungen der Restaurantadresse getrennt.</p> : null}
                   <div className="field">
                     <FormLabel htmlFor="legal-street" required>Straße und Hausnummer</FormLabel>
-                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalStreet} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalStreet} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-postal-code" required>Postleitzahl</FormLabel>
-                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalPostalCode} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalPostalCode} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-city" required>Ort</FormLabel>
-                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalCity} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalCity} />
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-country" required>Land</FormLabel>
-                    <input aria-required={!form.legalAddressMatchesRestaurant} className="input" disabled={form.legalAddressMatchesRestaurant} id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required={!form.legalAddressMatchesRestaurant} value={form.legalCountry} />
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalCountry} />
                   </div>
                 </div>
                 <details className="advanced-panel">

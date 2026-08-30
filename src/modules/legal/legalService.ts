@@ -1,6 +1,7 @@
 import { supabase } from "../../shared/lib/supabase";
 import { accountingRowsToCsv } from "./legalCompliance";
 import { isLegalBundleReady } from "./legalReadiness.mjs";
+import { syncRestaurantAddressFromLegalProfile } from "./legalAddressSourceService";
 
 export type ConsentType = "marketing_push" | "marketing_sms" | "marketing_email" | "personalized_recommendations" | "birthday_processing";
 export type ConsentStatus = "granted" | "withdrawn" | "denied";
@@ -229,6 +230,7 @@ export async function generateRestaurantLegalPackage(input: {
   profile: Record<string, string | null>;
   reacceptanceRequired?: boolean;
 }) {
+  await syncRestaurantAddressFromLegalProfile(input.restaurantId, input.profile);
   const client = requireSupabase();
   const { data, error } = await client.rpc("generate_restaurant_legal_package", {
     input_restaurant_id: input.restaurantId,

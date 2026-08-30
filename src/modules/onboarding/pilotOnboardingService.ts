@@ -6,6 +6,7 @@ import {
   requireExistingRestaurantId,
   shouldSkipCompletedOnboarding,
 } from "./restaurantOnboardingActivation.mjs";
+import { syncRestaurantAddressFromLegalProfile } from "../legal/legalAddressSourceService";
 
 export type PilotOnboardingInput = {
   restaurantId: string;
@@ -247,6 +248,8 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
 
     if (staffError) throw staffError;
   }
+
+  await syncRestaurantAddressFromLegalProfile(restaurantId, input.legalProfile);
 
   const { data: completion, error: completionError } = await supabase.rpc("complete_restaurant_onboarding", {
     input_restaurant_id: restaurantId,

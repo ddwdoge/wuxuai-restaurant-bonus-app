@@ -168,6 +168,7 @@ export function OwnerLegalSettingsPage() {
     && activeRestaurant.city?.trim()
     && activeRestaurant.country?.trim(),
   );
+  const restaurantAddressReadOnly = useRestaurantAddress && restaurantAddressComplete;
   const publicLegalPath = activeRestaurant?.slug ? `/legal/${activeRestaurant.slug}` : "/admin/legal";
 
   const changedFields = allProfileFields
@@ -209,11 +210,10 @@ export function OwnerLegalSettingsPage() {
   }
 
   function setAddressSource(useRestaurant: boolean) {
-    if (useRestaurant && !restaurantAddressComplete) return;
     setProfile((current) => ({
       ...current,
       registered_address_source: useRestaurant ? "restaurant" : "separate",
-      ...(useRestaurant ? {
+      ...(useRestaurant && restaurantAddressComplete ? {
         street: activeRestaurant?.address ?? "",
         postal_code: activeRestaurant?.postal_code ?? "",
         city: activeRestaurant?.city ?? "",
@@ -408,21 +408,21 @@ export function OwnerLegalSettingsPage() {
           <label className="legal-address-source-toggle" htmlFor="owner-legal-address-source">
             <input
               checked={useRestaurantAddress}
-              disabled={!restaurantAddressComplete}
               id="owner-legal-address-source"
               onChange={(event) => setAddressSource(event.target.checked)}
               type="checkbox"
             />
             <span>Geschäftsanschrift entspricht Restaurantadresse</span>
           </label>
-          {!restaurantAddressComplete ? <p className="field-hint">Die Restaurantadresse ist noch nicht vollständig. Verwende eine separate Geschäftsanschrift.</p> : null}
+          {useRestaurantAddress && !restaurantAddressComplete ? <p className="field-hint">Die eingegebene Adresse wird zugleich als Restaurant- und Geschäftsanschrift gespeichert.</p> : null}
+          {!useRestaurantAddress ? <p className="field-hint">Diese Geschäftsanschrift bleibt von späteren Änderungen der Restaurantadresse getrennt.</p> : null}
           <div className="owner-legal-grid">
             {requiredProfileFields.map(([key, label]) => {
               const addressField = ["street", "postal_code", "city", "country"].includes(key);
               return (
                 <div className="field" key={key}>
                   <FormLabel htmlFor={`legal-profile-${key}`} required>{label}</FormLabel>
-                  <input aria-required={!addressField || !useRestaurantAddress} className="input" disabled={addressField && useRestaurantAddress} id={`legal-profile-${key}`} list={key === "legal_form" ? "owner-legal-form-options" : undefined} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required={!addressField || !useRestaurantAddress} value={profile[key] ?? ""} />
+                  <input aria-required={!addressField || !restaurantAddressReadOnly} className="input" disabled={addressField && restaurantAddressReadOnly} id={`legal-profile-${key}`} list={key === "legal_form" ? "owner-legal-form-options" : undefined} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} required={!addressField || !restaurantAddressReadOnly} value={profile[key] ?? ""} />
                   {key === "legal_form" ? <datalist id="owner-legal-form-options">{legalFormSuggestions.map((legalForm) => <option key={legalForm} value={legalForm} />)}</datalist> : null}
                 </div>
               );
