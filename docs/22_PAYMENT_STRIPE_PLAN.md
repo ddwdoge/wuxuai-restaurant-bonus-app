@@ -256,7 +256,7 @@ Ablauf:
 → Branch
 → restaurant_members role owner
 → branch_subscriptions status trialing
-→ trial_ends_at = now + 30 Tage
+→ trial_ends_at = derselbe Kalendertag drei Monate nach Trial-Start
 ```
 
 ### 8.2 RPC
@@ -1005,7 +1005,7 @@ kein rückwirkendes Zahlen
 
 Payment & Stripe Plan gilt als LOCK, wenn:
 
-- 30 Tage Trial klar definiert
+- drei Kalendermonate Trial klar definiert
 - keine rückwirkende Zahlung klar definiert
 - ein Paket V1 klar definiert
 - branch_subscriptions Logik dokumentiert

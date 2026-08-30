@@ -356,7 +356,7 @@ Für V1 gilt:
 ``` text
 Ein einfaches Paket
 monatlich kündbar
-ca. 59 € bis 69 € pro Monat
+59 € pro Monat exkl. USt.
 ```
 
 Keine komplizierten Tarife in V1.

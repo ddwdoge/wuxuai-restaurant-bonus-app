@@ -288,7 +288,7 @@ Pflichten:
 - branch_subscriptions per Insert/Upsert sicherstellen
 - subscription_record darf nicht NULL sein
 - keine doppelten Restaurants durch normalen Flow
-- 30 Tage Trial setzen
+- Trial-Ende auf exakt drei Kalendermonate nach Trial-Start setzen
 - keine Kreditkarte verlangen
 - Audit schreiben
 

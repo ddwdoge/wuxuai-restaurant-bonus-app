@@ -150,7 +150,7 @@ V1 enthält:
 - Willkommensgeschenke
 - Bonus Boost
 - QR / Starter Kit
-- 30 Tage Trial
+- 3 Kalendermonate kostenlos
 - Deutsch
 - Mobile First
 

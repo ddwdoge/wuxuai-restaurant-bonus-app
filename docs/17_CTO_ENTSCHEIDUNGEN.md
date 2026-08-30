@@ -462,7 +462,7 @@ Rückwirkende Zahlung erzeugt psychologischen Widerstand.
 
 Besser:
 
-- 30 Tage Wert beweisen
+- drei Kalendermonate Wert beweisen
 - Erfolgsbericht zeigen
 - Restaurant entscheidet freiwillig
 

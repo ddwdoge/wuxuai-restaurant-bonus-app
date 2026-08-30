@@ -906,7 +906,7 @@ Fragen:
 5. Welche Funktion wurde genutzt?
 6. Welche Funktion wurde ignoriert?
 7. Wo entstand Supportbedarf?
-8. Würde Restaurant nach 30 Tagen zahlen?
+8. Würde Restaurant nach drei Kalendermonaten 59 € pro Monat exkl. USt. zahlen?
 9. Welche V1-Fixes sind Pflicht?
 10. Welche Ideen gehören V2?
 
