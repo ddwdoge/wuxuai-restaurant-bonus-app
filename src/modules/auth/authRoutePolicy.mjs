@@ -17,6 +17,19 @@ const PUBLIC_CUSTOMER_PATHS = Object.freeze([
   "/customer/email/unsubscribe",
 ]);
 
+const OPTIONAL_AUTH_SESSION_PATHS = Object.freeze([
+  "/register",
+  "/customer/login",
+  "/customer/register",
+]);
+
+const PUBLIC_REFERRAL_PATH = /^\/r\/[a-z0-9]+(?:-[a-z0-9]+)*\/[A-Za-z0-9_-]{20,256}$/;
+
+export function isPublicReferralPath(pathname) {
+  const normalizedPath = typeof pathname === "string" ? pathname.trim() : "";
+  return PUBLIC_REFERRAL_PATH.test(normalizedPath);
+}
+
 export function requiresAuthenticatedSession(pathname) {
   const normalizedPath = typeof pathname === "string" ? pathname.trim() : "";
   if (PUBLIC_CUSTOMER_PATHS.includes(normalizedPath)) return false;
@@ -25,4 +38,11 @@ export function requiresAuthenticatedSession(pathname) {
       ? normalizedPath.startsWith(prefix)
       : normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
   ));
+}
+
+export function shouldHydrateAuthSession(pathname) {
+  const normalizedPath = typeof pathname === "string" ? pathname.trim() : "";
+  return requiresAuthenticatedSession(normalizedPath)
+    || OPTIONAL_AUTH_SESSION_PATHS.includes(normalizedPath)
+    || isPublicReferralPath(normalizedPath);
 }

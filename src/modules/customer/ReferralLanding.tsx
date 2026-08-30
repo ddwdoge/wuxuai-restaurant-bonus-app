@@ -181,6 +181,9 @@ export function ReferralLanding() {
               <PrimaryButton disabled={!legalReady || !termsAccepted || !privacyAcknowledged || submitting} onClick={() => void acceptInvitation()}>
                 <CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Einladung wird gespeichert …" : "Einladung annehmen"}
               </PrimaryButton>
+              <Link className="premium-button premium-button-secondary" to={`/customer/${encodeURIComponent(restaurantSlug)}`}>
+                Einladung nicht annehmen
+              </Link>
             </div>
           )}
         </PremiumCard>

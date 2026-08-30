@@ -147,6 +147,23 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Betreiberaktionen behalten `auth.uid()` als Akteur und werden im Audit als
   Admin-Aktion mit der konkreten Restaurantrolle gekennzeichnet.
 
+## Point Anomaly Monitoring - CODE INTEGRATED
+
+- Das bestehende harte Limit von zwei erfolgreichen Punktebuchungen je Gast,
+  Restaurant und lokalem Kalendertag bleibt unveraendert.
+- Es gibt kein Staff-Tageslimit, keine Staff-Buchungsanzahlwarnung, kein
+  Staff-Tagesbetragslimit und kein Restaurant-Tageslimit.
+- Einziger V1-Anomaliehinweis ist eine erfolgreiche einzelne Punktebuchung ab
+  80 Prozent des restaurantbezogenen konfigurierten Maximalbetrags.
+- Das Owner-Dashboard liest dafuer ausschließlich das bestehende tenantgebundene
+  Audit Event `HIGH_POINTS_AMOUNT_REVIEW` und zeigt Betrag, Punkte, Gast,
+  kanonischen Actor, Restaurant und eine gekuerzte Buchungsreferenz.
+- Owner-/Admin-/Manager-Aktionen bleiben im Audit Betreiberaktionen; es wird
+  keine Staff-Identitaet erzeugt. Staff-Aktionen bleiben Staff-Aktionen.
+- Der Hinweis ist rein informativ. Er veraendert keine Punkte, Einloesungen,
+  Kunden- oder Staff-Zugaenge und fuehrt weder automatische Rueckbuchung noch
+  automatische Sperre aus.
+
 ## QR Center und Starter Kit - IMPLEMENTED
 
 - Der Neue-Gaeste-QR `/customer/:slug` ist der einzige aktive oeffentliche

@@ -191,6 +191,65 @@
 .dashboard-next-step-dismiss:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.35); outline-offset: 1px; }
 .dashboard-next-step:has(.dashboard-next-step-dismiss) { padding-right: 48px; }
 
+.dashboard-point-anomaly {
+  align-items: center;
+  background: #fffaf0;
+  border-color: rgba(168, 112, 22, 0.28);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.dashboard-point-anomaly-icon {
+  align-items: center;
+  align-self: start;
+  background: var(--owner-gold-soft);
+  border-radius: 10px;
+  color: var(--owner-gold-dark);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.dashboard-point-anomaly h2 {
+  color: var(--owner-ink);
+  font-size: 18px;
+  letter-spacing: 0;
+  line-height: 1.25;
+  margin: 4px 0 5px;
+}
+
+.dashboard-point-anomaly p {
+  color: var(--owner-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.dashboard-point-anomaly .button { min-height: 44px; }
+
+.point-anomaly-detail {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.point-anomaly-detail > div {
+  align-items: start;
+  border-bottom: 1px solid var(--owner-border);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  padding: 13px 0;
+}
+
+.point-anomaly-detail > div:last-child { border-bottom: 0; }
+.point-anomaly-detail dt { color: var(--owner-muted); font-size: 13px; }
+.point-anomaly-detail dd { color: var(--owner-ink); font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+
 .premium-owner-shell .dashboard-page-header {
   align-items: flex-end;
   margin-bottom: 26px;
@@ -686,6 +745,19 @@
   .premium-owner-shell .dashboard-page-header {
     margin-bottom: 16px;
   }
+
+  .dashboard-point-anomaly {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 15px;
+  }
+
+  .dashboard-point-anomaly .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .point-anomaly-detail > div { grid-template-columns: minmax(0, 1fr); }
 
   .premium-owner-shell .dashboard-page-header h1 {
     font-size: 31px;

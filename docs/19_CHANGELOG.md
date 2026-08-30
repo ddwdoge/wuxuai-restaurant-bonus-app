@@ -3424,3 +3424,28 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Nicht nachweisbare historische Regeln wurden nicht als Projektwahrheit
   rekonstruiert. Anwendungscode, Businesslogik, Datenbank und Production
   blieben unveraendert.
+
+## 2026-08-30 - Referral-Rueckweg nach Customer-Aktivierung fortgesetzt
+
+- Oeffentliche Referral-Routen hydratisieren jetzt eine vorhandene Supabase-
+  Session, ohne selbst zu geschuetzten Routen zu werden.
+- Bestehende Customer sowie neu aktivierte Staff-/Owner-Mehrfachrollen gelangen
+  nach Login oder Aktivierung direkt zur servervalidierten Einladungsannahme.
+- Der E-Mail-Callback verwendet weiterhin nur den validierten Referral-
+  Rueckweg; eine alte ungueltige Session laesst die oeffentliche Einladung als
+  anonymen Einstieg offen und erzeugt keine Redirect-Schleife.
+- AGB- und Datenschutzbestaetigung bleiben explizit. Referral-Attribution,
+  Qualifikation, 2x-Bonus, Duplikatschutz, Monatslimit, Tenantgrenzen und
+  Datenbank wurden nicht geaendert.
+
+## 2026-08-30 - Owner-Hinweis fuer hohe einzelne Punktebuchungen
+
+- Das Owner-Dashboard zeigt bestehende `HIGH_POINTS_AMOUNT_REVIEW` Events als
+  kompakten Hinweis mit pruefbarer Buchungsdetailansicht.
+- Einziger V1-Warnwert bleibt 80 Prozent des restaurantbezogenen konfigurierten
+  Maximalbetrags. Es wurden keine Staff-, Customer- oder Restaurant-
+  Tageswarnungen und keine neuen Limits eingefuehrt.
+- Die bestehende serverseitige Owner-/Staff-Attribution wird uebernommen; die
+  Warnung ist tenantgebunden und veraendert weder Punkte noch Zugaenge.
+- Keine Migration, keine automatische Rueckbuchung und keine automatische
+  Sperre.

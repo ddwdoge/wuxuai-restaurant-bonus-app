@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { requiresAuthenticatedSession } from "../src/modules/auth/authRoutePolicy.mjs";
+import { requiresAuthenticatedSession, shouldHydrateAuthSession } from "../src/modules/auth/authRoutePolicy.mjs";
 
 const authProvider = readFileSync(new URL("../src/modules/auth/AuthProvider.tsx", import.meta.url), "utf8");
 const supabaseClient = readFileSync(new URL("../src/shared/lib/supabase.ts", import.meta.url), "utf8");
@@ -12,8 +12,14 @@ test("öffentliche Seiten initialisieren nur für additive Rollenaktivierung ein
   for (const path of ["/", "/customer/login", "/customer/register", "/customer/auth/callback", "/customer/email/confirm", "/customer/email/unsubscribe", "/w/cafe", "/legal/cafe", "/login", "/restaurant/login", "/register", "/r/cafe/referral"]) {
     assert.equal(requiresAuthenticatedSession(path), false, path);
   }
+  for (const path of ["/register", "/customer/login", "/customer/register", "/r/cafe/abcdefghijklmnopqrstuvwxyz123456"]) {
+    assert.equal(shouldHydrateAuthSession(path), true, path);
+  }
+  for (const path of ["/", "/w/cafe", "/legal/cafe", "/restaurant/login", "/r/cafe/referral"]) {
+    assert.equal(shouldHydrateAuthSession(path), false, path);
+  }
   assert.match(supabaseClient, /autoRefreshToken:\s*false/);
-  assert.match(authProvider, /const sessionHydrationEnabled = authSessionRequired \|\| \[[\s\S]*"\/register"[\s\S]*"\/customer\/login"[\s\S]*"\/customer\/register"/);
+  assert.match(authProvider, /const sessionHydrationEnabled = shouldHydrateAuthSession\(location\.pathname\)/);
   assert.match(authProvider, /if \(!sessionHydrationEnabled\)[\s\S]*refreshController\.stop\(\)/);
 });
 

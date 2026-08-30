@@ -3,7 +3,7 @@ import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { liveDataUnavailableMessage, supabase, supabaseAuthStorageKey } from "../../shared/lib/supabase";
 import type { PlatformRole, RestaurantUserRole, UserRole } from "../../shared/types/domain";
-import { requiresAuthenticatedSession } from "./authRoutePolicy.mjs";
+import { isPublicReferralPath, shouldHydrateAuthSession } from "./authRoutePolicy.mjs";
 import {
   clearSupabaseAuthStorage,
   createAuthRefreshController,
@@ -105,13 +105,11 @@ async function readVerifiedAuthorization(user: User): Promise<VerifiedAuthorizat
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const authSessionRequired = requiresAuthenticatedSession(location.pathname);
-  const sessionHydrationEnabled = authSessionRequired || [
-    "/register",
-    "/customer/login",
-    "/customer/register",
-  ].includes(location.pathname);
-  const invalidSessionRedirect = location.pathname.startsWith("/customer")
+  const sessionHydrationEnabled = shouldHydrateAuthSession(location.pathname);
+  const referralContinuationPath = isPublicReferralPath(location.pathname);
+  const invalidSessionRedirect = referralContinuationPath
+    ? `${location.pathname}${location.search}`
+    : location.pathname.startsWith("/customer")
     ? `/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
     : location.pathname.startsWith("/staff")
       ? buildStaffLoginPath(staffSlugFromLegacyPath(location.pathname) ?? new URLSearchParams(location.search).get("restaurant"))
