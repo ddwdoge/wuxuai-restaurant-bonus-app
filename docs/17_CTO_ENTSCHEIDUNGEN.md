@@ -320,7 +320,7 @@ V1 dient dazu, erste zahlende Restaurants zu gewinnen.
 - keine unnötigen Features
 - schnelle Einrichtung
 - ein Paket
-- 30 Tage kostenlos
+- 3 Kalendermonate kostenlos
 - einfache Bedienung
 - klare Restaurant-Sprache
 - keine komplexe Abrechnung vor Pilot
@@ -422,8 +422,8 @@ V1 startet mit einem einfachen Paket.
 Empfehlung:
 
 ```text
-30 Tage kostenlos
-danach ca. 59–69 € / Monat
+3 Kalendermonate kostenlos
+danach 59 € / Monat exkl. USt.
 ```
 
 Keine komplizierten Tarife in V1.
@@ -450,7 +450,7 @@ Restaurants zahlen nicht rückwirkend für kostenlose Testzeit.
 V1-Regel:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte
 Keine Nachzahlung
 Danach normales Monatsabo
@@ -1567,7 +1567,7 @@ Logikregeln:
 - Multi-Branch-Fan-out in der Restaurantliste ist verboten.
 - Restaurant Settings zeigen Abo/Testphase mit echten `branch_subscriptions`-Daten.
 - Die Restaurant-Settings-Seite muss auch mit der einfachen V1-Basistabelle funktionieren und darf nicht an fehlenden Stripe-/Payment-Spalten scheitern.
-- V1 Trial: 30 Tage kostenlos, keine Kreditkarte, danach Monatsabo.
+- V1 Trial: 3 Kalendermonate kostenlos, kein Zahlungsmittel erforderlich, danach 59 EUR pro Monat exkl. USt.
 - Keine Fake-Zahlung, kein Dummy-Checkout und kein Fake-Abo-Erfolg vor echter Stripe-Anbindung.
 
 ---
@@ -2268,3 +2268,21 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   autorisierter und auditierter Owner-/Supportprozess.
 - RLS, Restaurant-/Filialbindung, Reward-Eligibility und Punkteberechnung
   werden nicht gelockert oder clientseitig entschieden.
+
+## CTO-Entscheidung 2026-08-30: V1 Commercial Contract
+
+🟢 **APPROVED / V1 / ERSETZT FRÜHERE TRIAL- UND PREISANGABEN**
+
+- Die V1-Testphase beträgt drei Kalendermonate. Neue Vertragszeiträume werden
+  kalenderbasiert und nicht als feste Tagesanzahl berechnet.
+- Danach kostet das Basispaket `WUXUAI Bonus V1` verbindlich 59 EUR pro Monat
+  exkl. USt. Das Abrechnungsintervall ist monatlich.
+- Aktuell wird kein Zahlungsmittel erhoben. Stripe und automatische Abrechnung
+  bleiben `DEFERRED`; die Anwendung darf keinen automatischen Zahlungserfolg
+  vortäuschen.
+- Bestehende Trial-Enddaten werden nicht rückwirkend verändert.
+- Zukünftige Zusatzpakete dürfen den V1-Basispreis nicht automatisch erhöhen.
+  Die Konfiguration darf einen leeren Erweiterungspunkt besitzen, aber keine
+  unfertigen Pakete im Owner-Portal anzeigen oder aktivieren.
+- Diese Entscheidung ersetzt frühere aktive Aussagen zu `30 Tage kostenlos`
+  und zur Preisrange `59–69 EUR` im V1-Vertrag.

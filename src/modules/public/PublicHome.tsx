@@ -5,6 +5,7 @@ import {
   PublicPageShell,
   PublicPrimaryLink,
 } from "./PublicPageComponents";
+import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
 
 export function PublicHome() {
   return (
@@ -16,7 +17,7 @@ export function PublicHome() {
     >
       <div className="public-premium-entry-grid">
         <PublicEntryCard action="Öffnen" description="Für Restaurantbesitzer und Manager." icon={Store} title="Restaurant Login" to="/login" />
-        <PublicEntryCard action="Kostenlos starten" description="Bonusprogramm in wenigen Minuten einrichten und 30 Tage kostenlos testen." icon={Sparkles} title="Restaurant registrieren" to="/register" />
+        <PublicEntryCard action="Kostenlos starten" description={`Bonusprogramm in wenigen Minuten einrichten. ${V1_COMMERCIAL_COPY.trial}. ${V1_COMMERCIAL_COPY.price}`} icon={Sparkles} title="Restaurant registrieren" to="/register" />
         <PublicEntryCard action="Öffnen" description="Bonuskonto öffnen oder den QR-Code im Restaurant scannen." icon={QrCode} title="Gast-Bonus öffnen" to="/customer" />
       </div>
     </PublicPageShell>

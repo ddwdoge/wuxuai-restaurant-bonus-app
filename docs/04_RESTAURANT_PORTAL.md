@@ -612,7 +612,7 @@ Regel:
 - Punkteeinlösung, Willkommensgeschenke, Mitarbeiter/Tages-PIN und QR Center sind echte Links.
 - Abo & Testphase zeigt echte Subscription-Daten oder einen klaren Nicht-verfügbar-Zustand.
 - Abo & Testphase darf keine kaputten DB-Spalten abfragen. Wenn Stripe-/Payment-Felder noch fehlen, zeigt die Seite einen ruhigen V1-Status.
-- V1 Testphase: 30 Tage kostenlos, keine Kreditkarte, danach Monatsabo.
+- V1 Testphase: 3 Kalendermonate kostenlos, kein Zahlungsmittel erforderlich, danach 59 EUR pro Monat exkl. USt.; automatische Abrechnung bleibt bis zur Stripe-Freigabe deaktiviert.
 - Solange Stripe Checkout/Webhooks nicht echt aktiv sind, gibt es keine Fake-Zahlung und keinen Fake-Erfolg.
 - Keine klickbare Karte darf ins Leere führen.
 - Keine Karte darf wie eine Funktion wirken, wenn dahinter keine echte Funktion steht.

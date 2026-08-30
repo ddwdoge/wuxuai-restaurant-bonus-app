@@ -174,3 +174,16 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   bleibt ein offenes manuelles Release-Gate.
 - Production: `DEFERRED / LOCKED`.
 - Stripe: `DEFERRED`.
+
+## Commercial Contract - APPROVED
+
+- Trial: 3 Kalendermonate kostenlos.
+- Basispaket: `WUXUAI Bonus V1` fuer 59 EUR pro Monat exkl. USt.
+- Abrechnung: monatlich; automatische Abrechnung noch nicht aktiv.
+- Zahlungsmittel: aktuell nicht erforderlich.
+- Neue Trials verwenden eine kalenderbasierte Dreimonatsfrist. Bestehende
+  Vertragsdaten werden nicht rueckwirkend umgeschrieben.
+- Die zentrale Produktkonfiguration enthaelt einen leeren Add-on-Katalog als
+  Erweiterungspunkt. Unfertige Zusatzpakete sind fuer Owner nicht sichtbar.
+- Stripe bleibt `DEFERRED`; es gibt keinen Fake-Checkout und keine vorgetaeuschte
+  automatische Umwandlung in ein bezahltes Abo.

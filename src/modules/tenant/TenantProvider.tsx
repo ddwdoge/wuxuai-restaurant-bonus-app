@@ -21,7 +21,16 @@ type RestaurantMembership = {
 };
 
 const restaurantSelect =
-  "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, address, postal_code, city, country, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
+  "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
+
+type RestaurantBranchAddress = {
+  id: string;
+  restaurant_id: string;
+  address: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+};
 
 async function loadBrandingForRestaurant(restaurantId: string) {
   if (!supabase) {
@@ -135,7 +144,36 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const nextRestaurants = [...uniqueRestaurants.values()].sort((left, right) =>
+    const branchAddresses = new Map<string, RestaurantBranchAddress>();
+    if (uniqueRestaurants.size > 0) {
+      const { data: branches, error: branchError } = await supabase!
+        .from("branches")
+        .select("id, restaurant_id, address, postal_code, city, country")
+        .in("restaurant_id", [...uniqueRestaurants.keys()]);
+
+      if (branchError) {
+        console.error("Restaurant-Standorte konnten nicht geladen werden.", branchError);
+      } else {
+        ((branches ?? []) as RestaurantBranchAddress[]).forEach((branch) => {
+          const restaurant = uniqueRestaurants.get(branch.restaurant_id);
+          const currentBranch = branchAddresses.get(branch.restaurant_id);
+          if (!currentBranch || branch.id === restaurant?.primary_branch_id) {
+            branchAddresses.set(branch.restaurant_id, branch);
+          }
+        });
+      }
+    }
+
+    const nextRestaurants = [...uniqueRestaurants.values()].map((restaurant) => {
+      const branch = branchAddresses.get(restaurant.id);
+      return {
+        ...restaurant,
+        address: branch?.address ?? null,
+        postal_code: branch?.postal_code ?? null,
+        city: branch?.city ?? null,
+        country: branch?.country ?? null,
+      };
+    }).sort((left, right) =>
       new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
     );
     replaceTenantState(nextRestaurants);

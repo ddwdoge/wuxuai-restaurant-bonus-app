@@ -307,7 +307,7 @@ kompletter V1-Feature-Block gebaut.
 Jedes Restaurant erhält:
 
 ``` text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte erforderlich
 Jederzeit kündbar
 Kein rückwirkendes Nachzahlen

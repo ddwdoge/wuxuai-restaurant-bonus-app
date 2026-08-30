@@ -46,6 +46,11 @@ import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoSt
 import { SmartMediaEditor } from "../../../shared/components/SmartMediaEditor";
 import { DEFAULT_MEDIA_PRESENTATION, type MediaPresentation } from "../../../shared/mediaPresentation";
 import {
+  addV1TrialMonthsIso,
+  V1_COMMERCIAL_CONTRACT,
+  V1_COMMERCIAL_COPY,
+} from "../../../shared/commercialContract.mjs";
+import {
   defaultLogoPresentation,
   logoPresentationAfterEditorDrag,
   logoPresentationAtRelativeScale,
@@ -165,19 +170,12 @@ function isDatePast(value?: string | null) {
   return new Date(value).getTime() < Date.now();
 }
 
-function addDaysIso(value: string | null | undefined, days: number) {
-  const base = value ? new Date(value) : new Date();
-  if (Number.isNaN(base.getTime())) return null;
-  base.setDate(base.getDate() + days);
-  return base.toISOString();
-}
-
 function normalizeSubscription(record: Partial<BranchSubscription> | null): BranchSubscription | null {
   if (!record?.id || !record.branch_id || !record.organization_id) return null;
   const status = record.subscription_status ?? record.status ?? "trialing";
   const createdAt = record.created_at ?? new Date().toISOString();
   const trialStartedAt = record.trial_started_at ?? createdAt;
-  const trialEndsAt = record.trial_ends_at ?? record.current_period_ends_at ?? addDaysIso(trialStartedAt, 30);
+  const trialEndsAt = record.trial_ends_at ?? record.current_period_ends_at ?? addV1TrialMonthsIso(trialStartedAt);
 
   return {
     id: record.id,
@@ -554,7 +552,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
   if (!branchOrganizationId) return null;
 
   const trialStartedAt = new Date().toISOString();
-  const trialEndsAt = addDaysIso(trialStartedAt, 30);
+  const trialEndsAt = addV1TrialMonthsIso(trialStartedAt);
   const { data: created, error: createError } = await supabase
     .from("branch_subscriptions")
     .insert({
@@ -1547,7 +1545,7 @@ export function SettingsPage() {
                 {trialActive ? (
                   <p>Noch {trialDays ?? 0} Tage kostenlos.</p>
                 ) : trialExpired ? (
-                  <p>Nach der Testphase kannst du dein Monatsabo aktivieren.</p>
+                  <p>{V1_COMMERCIAL_COPY.price}</p>
                 ) : (
                   <p>Plan: WUXUAI Bonus</p>
                 )}
@@ -1556,16 +1554,16 @@ export function SettingsPage() {
                 <InfoValue label="Abo-Status" value={subscriptionLabels[currentSubscriptionStatus ?? ""] ?? "Nicht gesetzt"} />
                 <InfoValue
                   label="Zahlungsstatus"
-                  value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Zahlung wird bald aktiviert"}
+                  value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Automatische Abrechnung nicht aktiv"}
                 />
-                <InfoValue label="Plan" value={subscription.plan_key === "pilot" ? "Monatsabo nach Testphase" : subscription.plan_key || "Monatsabo nach Testphase"} />
+                <InfoValue label="Plan" value={`${V1_COMMERCIAL_CONTRACT.productName} · ${V1_COMMERCIAL_COPY.price.replace("Danach ", "")}`} />
                 <InfoValue label="Testphase Start" value={formatDate(subscription.trial_started_at)} />
                 <InfoValue label="Testphase Ende" value={formatDate(subscription.trial_ends_at)} />
                 <InfoValue label="Verbleibende Tage" value={trialDays === null ? "Nicht gesetzt" : `${trialDays} Tage`} />
               </div>
               <div className="settings-subscription-note">
-                <p>Keine Kreditkarte in der Testphase.</p>
-                <p>Zahlung wird bald aktiviert.</p>
+                <p>{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
+                <p>Automatische Abrechnung ist noch nicht aktiv.</p>
               </div>
               {trialExpired ? (
                 <button className="button secondary" disabled type="button">
@@ -1577,7 +1575,7 @@ export function SettingsPage() {
             <div className="settings-info-card">
               <h2>Kein Abo eingerichtet</h2>
               <p className="muted">Die Testphase wird automatisch eingerichtet, sobald dein Restaurantkonto bereit ist.</p>
-              <p className="muted">Zahlung wird bald aktiviert.</p>
+              <p className="muted">{V1_COMMERCIAL_COPY.price} Automatische Abrechnung ist noch nicht aktiv.</p>
             </div>
           )}
         </section>

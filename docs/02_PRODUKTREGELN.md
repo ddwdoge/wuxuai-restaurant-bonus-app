@@ -79,6 +79,21 @@ Bonus V1.
 
 Status: LOCK
 
+## LOCK-Ergänzung 2026-08-30: V1 Commercial Contract
+
+- Die kostenlose Testphase beträgt drei Kalendermonate.
+- Danach kostet das Basispaket `WUXUAI Bonus V1` 59 EUR pro Monat exkl. USt.
+- Das Abrechnungsintervall ist monatlich; automatische Abrechnung ist noch
+  nicht aktiv und Stripe bleibt `DEFERRED`.
+- Solange kein Zahlungsmittel erhoben wird, muss die Akquise dies klar als
+  `Kein Zahlungsmittel erforderlich` ausweisen.
+- Neue Trial-Enddaten werden kalenderbasiert berechnet. Bereits gespeicherte
+  Trial-Enddaten werden nicht rückwirkend verändert.
+- Zukünftige Zusatzpakete bleiben technisch als leerer, deaktivierter Katalog
+  vorbereitbar. Sie werden in V1 weder angezeigt, verkauft noch aktiviert.
+- Diese Entscheidung ersetzt alle früheren aktiven V1-Aussagen zu 30 Tagen
+  kostenlos oder einer Preisrange von 59 bis 69 EUR.
+
 ## LOCK-Ergänzung 2026-08-04: Aktuelles & Angebote
 
 - Restaurants dürfen Wochenangebote, Monatsangebote, Mittagsmenüs, neue

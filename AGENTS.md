@@ -83,7 +83,7 @@ V1 bleibt fokussiert:
 
 - Restaurant/Café
 - ein Standort
-- 30 Tage kostenlos
+- 3 Kalendermonate kostenlos
 - keine SMS
 - kein WhatsApp
 - keine Kassa-Integration

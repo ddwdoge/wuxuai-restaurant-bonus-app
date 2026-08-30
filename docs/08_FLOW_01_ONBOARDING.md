@@ -54,7 +54,7 @@ Flow 01 dient direkt dem Cashflow-Ziel der Plattform.
 
 Ein Restaurant soll die Software schnell testen können.\
 Je schneller ein Restaurant starten kann, desto höher ist die
-Wahrscheinlichkeit, dass es die 30 Tage Testphase aktiv nutzt und später
+Wahrscheinlichkeit, dass es die drei Kalendermonate Testphase aktiv nutzt und später
 bezahlt.
 
 Deshalb gilt:

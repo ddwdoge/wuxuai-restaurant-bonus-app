@@ -11,6 +11,7 @@ import {
 } from "../public/PublicPageComponents";
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { isOwnerEmailConfirmed, validateOwnerPassword } from "./ownerAuthFlow.mjs";
+import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -106,8 +107,8 @@ export function RegisterPage() {
 
   return (
     <PublicPageShell
-      description="Richte dein Bonusprogramm in wenigen Minuten ein. Kein Zahlungsmittel erforderlich."
-      eyebrow="30 Tage kostenlos"
+      description={`Richte dein Bonusprogramm in wenigen Minuten ein. ${V1_COMMERCIAL_COPY.price} ${V1_COMMERCIAL_COPY.noPaymentMethod}`}
+      eyebrow={V1_COMMERCIAL_COPY.trial}
       title="Restaurant starten"
     >
       <PublicContentCard>
@@ -136,9 +137,9 @@ export function RegisterPage() {
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
-            30 Tage kostenlos starten
+            {V1_COMMERCIAL_COPY.registrationCta}
           </PublicPrimaryButton>
-          <p className="public-premium-trust-note">Kein Zahlungsmittel erforderlich.</p>
+          <p className="public-premium-trust-note">{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
           <div className="public-premium-secondary-actions">
             <span>Bereits registriert?</span>
             <Link className="public-premium-secondary-link" to="/login">Zum Login</Link>

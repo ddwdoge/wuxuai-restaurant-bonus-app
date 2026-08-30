@@ -622,7 +622,7 @@ Prüfen:
 Regel:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte
 Keine Nachzahlung
 ```
@@ -633,7 +633,7 @@ Nach Registrierung:
 
 - status = trialing
 - trial_started_at gesetzt
-- trial_ends_at = now + 30 Tage
+- trial_ends_at = now + 3 Kalendermonate
 - branch_id vorhanden
 - organization_id vorhanden
 

@@ -3313,3 +3313,33 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Die additive Migration
   `20260829002000_customer_swipe_redemption_atomic_confirmation.sql` ist lokal
   vorbereitet und noch nicht auf Staging oder Production angewendet.
+
+## 2026-08-30 - Legal-Operator-Adressquelle auf Staging repariert
+
+- Die Legal-Company-Foundation `20260829001000` wurde kontrolliert auf Staging
+  angewendet.
+- Ein realer DB-Lint-Lauf zeigte, dass die neue Legal-Funktion die Anschrift
+  fälschlich auf `restaurants` statt aus dem kanonischen `branches`-Datensatz
+  las.
+- Der additive Forward-Fix `20260829001500` ergänzt die explizite Branch-
+  Beziehung und bindet die Adressquelle an dasselbe Restaurant und dieselbe
+  Organisation.
+- Der Tenant-Kontext lädt die Standortadresse nun RLS-geschützt aus `branches`
+  und bevorzugt bei mehreren Standorten den kanonischen Primary Branch.
+- Staging DB-Linter, 1126 Tests, 126 Legal-Tests, Typecheck, Lint und Build sind
+  grün. Production und Stripe blieben unangetastet; `20260829002000` bleibt
+  offen.
+
+## 2026-08-30 - V1 Commercial Contract auf drei Monate und 59 EUR vereinheitlicht
+
+- Eine zentrale Produktkonfiguration definiert Trial, Basispaket, Währung,
+  USt.-Darstellung, Abrechnungsintervall, Stripe-Status und den leeren
+  Erweiterungspunkt für spätere Zusatzpakete.
+- Startseite, Owner-Registrierung und Aboansicht verwenden dieselbe Copy:
+  drei Monate kostenlos, danach 59 EUR pro Monat exkl. USt.
+- Die additive Migration
+  `20260830001000_v1_commercial_contract_three_month_trial.sql` setzt neue
+  Owner-Trials auf drei Kalendermonate und bewahrt Idempotenz, Grants, Audit
+  und vorhandene Subscription-Daten.
+- Bestehende Trial-Enddaten werden nicht rückwirkend geändert. Stripe,
+  automatische Abrechnung und Zusatzpakete bleiben deaktiviert.

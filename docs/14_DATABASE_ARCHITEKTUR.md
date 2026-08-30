@@ -502,7 +502,7 @@ V1 Status:
 
 Regeln:
 
-- Registrierung startet 30 Tage Testphase.
+- Registrierung startet eine Testphase von 3 Kalendermonaten.
 - Keine Kreditkarte erforderlich.
 - Keine rückwirkende Zahlung.
 - RPC `start_restaurant_owner_trial` muss Branch Subscription sicher per `INSERT ... ON CONFLICT` erzeugen.

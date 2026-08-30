@@ -15,6 +15,8 @@ const onboarding = await readFile(new URL("../src/modules/admin/pages/Restaurant
 const ownerLegal = await readFile(new URL("../src/modules/legal/OwnerLegalSettingsPage.tsx", import.meta.url), "utf8");
 const settings = await readFile(new URL("../src/modules/admin/pages/SettingsPage.tsx", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/20260829001000_optional_legal_company_data_foundation.sql", import.meta.url), "utf8");
+const branchAddressFix = await readFile(new URL("../supabase/migrations/20260829001500_legal_company_branch_address_forward_fix.sql", import.meta.url), "utf8");
+const tenantProvider = await readFile(new URL("../src/modules/tenant/TenantProvider.tsx", import.meta.url), "utf8");
 const legalFoundation = await readFile(new URL("../supabase/migrations/20260724001000_legal_compliance_layer.sql", import.meta.url), "utf8");
 
 test("österreichische FN und UID werden zurückhaltend normalisiert", () => {
@@ -90,6 +92,19 @@ test("Restaurantadresse wird nur über eine ausdrückliche Quelle wiederverwende
   assert.match(migration, /case when use_restaurant_address then null else resolved_street end/);
   assert.match(onboarding, /legal-address-matches-restaurant/);
   assert.match(onboarding, /disabled=\{form\.legalAddressMatchesRestaurant\}/);
+});
+
+test("Restaurantadresse stammt kanonisch vom Branch und nicht aus einer Restaurant-Spalte", () => {
+  assert.match(branchAddressFix, /branch_record public\.branches%rowtype/);
+  assert.match(branchAddressFix, /b\.restaurant_id = restaurant_record\.id/);
+  assert.match(branchAddressFix, /b\.organization_id = restaurant_record\.organization_id/);
+  assert.match(branchAddressFix, /resolved_street := nullif\(trim\(branch_record\.address\), ''\)/);
+  assert.match(branchAddressFix, /address_source_branch_id uuid[\s\S]*references public\.branches/);
+  assert.match(branchAddressFix, /update public\.organization_legal_profiles op[\s\S]*set address_source_branch_id = b\.id/);
+  assert.doesNotMatch(branchAddressFix, /restaurant_record\.(address|postal_code|city|country)/);
+  assert.doesNotMatch(tenantProvider, /language, address, postal_code, city, country, opening_hours/);
+  assert.match(tenantProvider, /\.from\("branches"\)[\s\S]*\.select\("id, restaurant_id, address, postal_code, city, country"\)/);
+  assert.match(tenantProvider, /branch\.id === restaurant\?\.primary_branch_id/);
 });
 
 test("Rechtstexte und Public Legal Center verwenden den Operator statt der Marke", () => {

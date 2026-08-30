@@ -87,7 +87,7 @@ V1 ist:
 Ein Restaurant
 Ein Standort
 Deutsch
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 QR-basiert
 ohne Kassensystem
 ohne SMS/WhatsApp
@@ -969,7 +969,7 @@ Entscheidung:
 V1 Testphase:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte
 Keine Nachzahlung
 ```
