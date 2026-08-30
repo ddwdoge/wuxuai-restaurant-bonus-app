@@ -3343,3 +3343,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   und vorhandene Subscription-Daten.
 - Bestehende Trial-Enddaten werden nicht rückwirkend geändert. Stripe,
   automatische Abrechnung und Zusatzpakete bleiben deaktiviert.
+
+## 2026-08-30 - Mobile A6-Druckvorschau als kontrolliertes Carousel
+
+- Das QR Center zeigt auf 320 bis 430 Pixel genau eine vollständige, einheitlich
+  skalierte A6-Seite und rund zehn Prozent der nächsten Seite.
+- Native horizontale Navigation verwendet verpflichtendes Scroll-Snap,
+  Einzelschritt-Pfeile mit 44-Pixel-Touchfläche und eine aktuelle Seitenanzeige.
+- Ab 768 Pixel bleiben die vollständigen Druckseiten als Drei-Spalten-Grid
+  sichtbar; die einzelne QR-Sektion wurde nicht umgebaut.
+- Kanonisches A6-Modell, PDF-Renderer, Smart-Media-Ausschnitt, QR-Payload,
+  QR-Ruhezone, Referral, Staff-Seite und Businesslogik blieben unverändert.

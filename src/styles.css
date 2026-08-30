@@ -4513,28 +4513,61 @@ a {
 }
 
 .starter-kit-preview-strip {
-  display: grid;
-  gap: 14px;
-  grid-auto-columns: minmax(250px, min(78vw, 300px));
-  grid-auto-flow: column;
+  contain: inline-size paint;
+  display: flex;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   padding: 2px 2px 10px;
+  scroll-padding-inline: 2px;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
+  width: 100%;
 }
 
 .starter-kit-preview-item {
   display: grid;
+  flex: 0 0 87%;
   gap: 8px;
   min-width: 0;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .starter-kit-preview-label {
   color: #344251;
   font-size: 14px;
   text-align: center;
+}
+
+.starter-kit-preview-controls {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.starter-kit-preview-controls > span {
+  color: #596674;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 64px;
+  text-align: center;
+}
+
+.starter-kit-preview-arrow.button {
+  align-items: center;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  margin: 0;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  width: 44px;
 }
 
 .starter-kit-a6-sheet {
@@ -4762,11 +4795,28 @@ a {
   }
 }
 
-@media (min-width: 1120px) {
+@media (min-width: 768px) {
   .starter-kit-preview-strip {
-    grid-auto-flow: row;
+    display: grid;
+    gap: 14px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     overflow-x: visible;
+    padding: 2px;
+    scroll-snap-type: none;
+  }
+
+  .starter-kit-preview-item {
+    min-width: 0;
+  }
+
+  .starter-kit-preview-controls {
+    display: none;
+  }
+}
+
+@media (min-width: 1120px) {
+  .starter-kit-preview-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .dashboard-kpi-grid {

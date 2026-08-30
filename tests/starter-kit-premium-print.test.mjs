@@ -55,6 +55,18 @@ test("A6 geometry is canonical and preview scales the same model", () => {
   assert.match(styles, /\.starter-kit-a6-sheet\s*\{[\s\S]*aspect-ratio:\s*105 \/ 148/);
 });
 
+test("mobile print preview pages use a stable one-page carousel without changing A6 geometry", () => {
+  assert.match(styles, /\.starter-kit-preview-strip\s*\{[\s\S]*display:\s*flex[\s\S]*scroll-snap-type:\s*x mandatory/);
+  assert.match(styles, /\.starter-kit-preview-item\s*\{[\s\S]*flex:\s*0 0 87%[\s\S]*scroll-snap-align:\s*start[\s\S]*scroll-snap-stop:\s*always/);
+  assert.match(styles, /@media \(min-width:\s*768px\)[\s\S]*\.starter-kit-preview-strip\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(qrCenter, /aria-label="Vorherige Druckseite"/);
+  assert.match(qrCenter, /aria-label="Nächste Druckseite"/);
+  assert.match(qrCenter, /\{activePreviewIndex \+ 1\} \/ \{starterKitPages\.length\}/);
+  assert.match(qrCenter, /onKeyDown=\{handlePreviewKeyDown\}/);
+  assert.doesNotMatch(qrCenter, /setInterval|autoPlay|autoRotate/);
+  assert.match(styles, /\.starter-kit-a6-sheet\s*\{[\s\S]*aspect-ratio:\s*105 \/ 148/);
+});
+
 test("preview and PDF preserve Smart Logo presentation", () => {
   assert.match(qrCenter, /const placement = logoCanvasPlacement\([\s\S]{0,260}presentation \?\? \{\}/);
   assert.match(qrCenterPrint, /drawLogo\(context, \{[\s\S]{0,360}presentation: branding\.presentation/);

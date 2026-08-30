@@ -1,5 +1,5 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { Download, FileText, QrCode } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { ChevronLeft, ChevronRight, Download, FileText, QrCode } from "lucide-react";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
 import { RestaurantBrandIdentity } from "../../../shared/components/RestaurantBrandIdentity";
 import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
@@ -642,8 +642,10 @@ function StarterKitPagePreview({
 export function QrCenterPage() {
   const { activeRestaurant, branding } = useTenant();
   const [downloadError, setDownloadError] = useState("");
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [starterKitLoading, setStarterKitLoading] = useState(false);
   const [pointsCollectionMode, setPointsCollectionMode] = useState<PointsCollectionMode | null>(null);
+  const previewStripRef = useRef<HTMLDivElement>(null);
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const restaurantName = activeRestaurant?.name ?? "Restaurant";
   const publicBaseUrl = getPublicAppBaseUrl();
@@ -680,6 +682,49 @@ export function QrCenterPage() {
       cancelled = true;
     };
   }, [restaurantSlug]);
+
+  useEffect(() => {
+    setActivePreviewIndex(0);
+    previewStripRef.current?.scrollTo({ behavior: "auto", left: 0 });
+  }, [restaurantSlug, starterKitPages.length]);
+
+  function scrollToPreview(index: number) {
+    const strip = previewStripRef.current;
+    const target = strip?.children.item(index);
+    if (!(strip instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
+
+    const stripRect = strip.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    strip.scrollTo({
+      behavior: "smooth",
+      left: strip.scrollLeft + targetRect.left - stripRect.left,
+    });
+    setActivePreviewIndex(index);
+  }
+
+  function updateActivePreview() {
+    const strip = previewStripRef.current;
+    if (!strip) return;
+
+    const stripLeft = strip.getBoundingClientRect().left;
+    const nextIndex = Array.from(strip.children).reduce((closestIndex, child, index) => {
+      const closest = strip.children.item(closestIndex);
+      if (!(child instanceof HTMLElement) || !(closest instanceof HTMLElement)) return closestIndex;
+      return Math.abs(child.getBoundingClientRect().left - stripLeft)
+        < Math.abs(closest.getBoundingClientRect().left - stripLeft)
+        ? index
+        : closestIndex;
+    }, 0);
+    setActivePreviewIndex(nextIndex);
+  }
+
+  function handlePreviewKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex = Math.min(Math.max(activePreviewIndex + direction, 0), starterKitPages.length - 1);
+    scrollToPreview(nextIndex);
+  }
 
   async function downloadStarterKit() {
     setDownloadError("");
@@ -748,7 +793,15 @@ export function QrCenterPage() {
           <h2 id="starter-kit-preview-title">Druckvorschau</h2>
           <p className="muted">So sehen die vollständigen A6-Seiten im Starter Kit aus.</p>
         </div>
-        <div className="starter-kit-preview-strip">
+        <div
+          aria-label="Druckseiten"
+          className="starter-kit-preview-strip"
+          onKeyDown={handlePreviewKeyDown}
+          onScroll={updateActivePreview}
+          ref={previewStripRef}
+          role="region"
+          tabIndex={0}
+        >
           {starterKitPages.map((page) => (
             <StarterKitPagePreview
               accentColor={secondaryColor}
@@ -761,6 +814,27 @@ export function QrCenterPage() {
             />
           ))}
         </div>
+        <nav aria-label="Druckseiten-Navigation" className="starter-kit-preview-controls">
+          <button
+            aria-label="Vorherige Druckseite"
+            className="button ghost starter-kit-preview-arrow"
+            disabled={activePreviewIndex === 0}
+            onClick={() => scrollToPreview(activePreviewIndex - 1)}
+            type="button"
+          >
+            <ChevronLeft aria-hidden="true" size={20} />
+          </button>
+          <span aria-live="polite">{activePreviewIndex + 1} / {starterKitPages.length}</span>
+          <button
+            aria-label="Nächste Druckseite"
+            className="button ghost starter-kit-preview-arrow"
+            disabled={activePreviewIndex === starterKitPages.length - 1}
+            onClick={() => scrollToPreview(activePreviewIndex + 1)}
+            type="button"
+          >
+            <ChevronRight aria-hidden="true" size={20} />
+          </button>
+        </nav>
       </section>
 
       <section className="qr-individual-section" aria-labelledby="qr-individual-title">
