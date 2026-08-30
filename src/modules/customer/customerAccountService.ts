@@ -1,6 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 import type { RestaurantOffer } from "../offers/restaurantOfferService";
-import { saveStoredCustomerToken } from "./customerTokenStorage";
+import { removeStoredCustomerToken, saveStoredCustomerToken } from "./customerTokenStorage";
 
 export type CustomerAccountReward = {
   id: string;
@@ -110,13 +110,25 @@ export async function joinCustomerRestaurant(input: {
   deviceId: string;
   existingCustomerToken?: string | null;
 }) {
-  const { data, error } = await requireClient().rpc("join_customer_account_restaurant", {
+  const join = (existingCustomerToken: string | null) => requireClient().rpc("join_customer_account_restaurant", {
     input_restaurant_slug: input.restaurantSlug,
     input_terms_accepted: input.termsAccepted,
     input_privacy_acknowledged: input.privacyAcknowledged,
     input_device_id: input.deviceId,
-    input_existing_customer_token: input.existingCustomerToken ?? null,
+    input_existing_customer_token: existingCustomerToken,
   });
+
+  let { data, error } = await join(input.existingCustomerToken ?? null);
+  const staleAccess = Boolean(input.existingCustomerToken) && Boolean(error) && [
+    "CUSTOMER_ACCESS_TOKEN_INVALID",
+    "CUSTOMER_MEMBERSHIP_ALREADY_LINKED",
+  ].some((reason) => error?.message.includes(reason));
+
+  if (staleAccess) {
+    removeStoredCustomerToken(input.restaurantSlug);
+    ({ data, error } = await join(null));
+  }
+
   if (error) {
     if (error.message.includes("CUSTOMER_ACCOUNT_RECOVERY_REQUIRED")) {
       throw new Error("Für diese Telefonnummer besteht bereits eine Mitgliedschaft. Bitte wende dich an den Support, um sie sicher zu verbinden.");

@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-30 - Restaurantbeitritt nach kontofremdem lokalem Zugang wiederhergestellt
+
+- Der zentrale Customer-Beitritt erkennt einen lokal gespeicherten
+  Restaurantzugang, der ungültig oder bereits mit einer anderen
+  Auth-Identität verbunden ist.
+- Nur in diesen beiden serverseitig bestätigten Fehlerfällen wird der lokale
+  Zugang entfernt und der Join genau einmal ohne den fremden Token wiederholt.
+- Tenant-, Telefon-, Legal- und Membership-Prüfungen bleiben vollständig beim
+  bestehenden RPC; es gibt weder eine Token-Übernahme noch eine zweite
+  Auth-Identität oder eine Datenbankmigration.
+
 ## 2026-08-30 - Referral-Freigabe, E-Mail-Callback und Multi-Role vorbereitet
 
 - Referral-Karten um native Web-Share-Freigabe, sicheren Clipboard-Fallback

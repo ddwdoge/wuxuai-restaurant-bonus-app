@@ -81,6 +81,19 @@ test("bestehender Restaurantkunde wird nur mit gültigem Restauranttoken verknü
   assert.match(join, /CUSTOMER_ACCOUNT_RECOVERY_REQUIRED/);
 });
 
+test("fremd gebundener lokaler Restaurantzugang blockiert keinen neuen Auth-Account dauerhaft", async () => {
+  const service = await read("../src/modules/customer/customerAccountService.ts");
+  const join = service.slice(
+    service.indexOf("export async function joinCustomerRestaurant"),
+    service.indexOf("export async function joinCustomerReferral"),
+  );
+  assert.match(join, /CUSTOMER_ACCESS_TOKEN_INVALID/);
+  assert.match(join, /CUSTOMER_MEMBERSHIP_ALREADY_LINKED/);
+  assert.match(join, /removeStoredCustomerToken\(input\.restaurantSlug\)/);
+  assert.match(join, /\(\{ data, error \} = await join\(null\)\)/);
+  assert.doesNotMatch(join, /while\s*\(/);
+});
+
 test("Punkte und Belohnungen werden je Membership und Restaurant geladen", async () => {
   const migration = await read("../supabase/migrations/20260804003000_central_customer_login_restaurant_context.sql");
   assert.match(migration, /customer\.restaurant_id = membership\.restaurant_id/);
