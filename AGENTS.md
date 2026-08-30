@@ -11,6 +11,7 @@ Codex darf nicht frei planen, nicht frei interpretieren und nicht aus alten Chat
 Die Engineering Bible im Ordner `/docs` ist die verbindliche Wahrheit für dieses Projekt.
 
 Aktueller Produktvertrag: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+Verbindliche Implementierungsgrenzen: `docs/AI_IMPLEMENTATION_GUARDRAILS.md`.
 Historische, widersprechende Regeln sind in `docs/LEGACY_DOCUMENT_INDEX.md`
 eingefroren und nicht mehr als aktive Implementierungsanweisung zu verwenden.
 

@@ -19,11 +19,14 @@ Rollenblockaden wurden live geprueft. Der beim Gate reproduzierte mobile
 Report-Overflow wurde minimal behoben und auf den Development/Test-Worker
 deployt.
 
-Ein Repository-/Contract-Blocker bleibt offen:
-`docs/AI_IMPLEMENTATION_GUARDRAILS.md` ist nicht vorhanden, obwohl `AGENTS.md`
-die Datei als Pflichtvertrag verlangt. Die Datei wurde entsprechend der
-Founder-Anweisung nicht rekonstruiert oder erfunden. Deshalb ist trotz gruenem
-Anwendungs-Gate kein formaler `FINAL LOCK` und kein Merge nach `main` zulaessig.
+Der bisherige Repository-/Contract-Blocker wurde mit dem P0-Vertrag
+`docs/AI_IMPLEMENTATION_GUARDRAILS.md` geschlossen. Der Vertrag konsolidiert
+nur nachweisbare aktive Regeln; `AGENTS.md` verweist nun explizit darauf.
+
+Ein nach diesem Audit implementierter QR-Center-Mobile-Preview-Fix ist noch
+nicht auf Development/Test deployt und noch nicht physisch auf dem Founder-
+iPhone bestaetigt. Deshalb bleibt der Gesamtstatus bis zu diesem echten Gate
+`NOT READY`; der Guardrails-Vertrag selbst ist kein offener Blocker mehr.
 
 Status: **NOT READY**
 
@@ -117,7 +120,8 @@ Gepruefte Datei:
 
 ## Quality und Sicherheit
 
-- Tests: `1133/1133 PASS`.
+- Tests: `1137/1137 PASS` nach Guardrails-Contract-Test und aktuellem
+  QR-Preview-Regressionstest.
 - Typecheck: PASS.
 - Lint: PASS, 0 Fehler und 7 bekannte Warnungen.
 - Build: PASS, 2061 Module transformiert.
@@ -146,10 +150,9 @@ Gepruefte Datei:
 
 ### Release-Blocker
 
-1. `docs/AI_IMPLEMENTATION_GUARDRAILS.md` fehlt, obwohl es laut `AGENTS.md`
-   Pflichtlekture und Bestandteil des aktuellen Implementierungsvertrags ist.
-   Bis der Founder den kanonischen Inhalt bereitstellt oder die Pflichtregel
-   bewusst aendert, bleibt der formale Release-Status `NOT READY`.
+1. QR-Center Mobile A6 Preview: Development/Test-Deployment und physische
+   Founder-iPhone-Bestaetigung fuer Swipe, Pfeile, Seitenanzeige und fehlenden
+   globalen Overflow stehen noch aus.
 
 ## Final Output
 
@@ -181,7 +184,7 @@ PRICE: 59 EUR PRO MONAT EXKL. UST. / PASS
 STRIPE: DEFERRED
 MIGRATION HISTORY: PASS
 DB LINTER: PASS
-TESTS: 1133/1133 PASS
+TESTS: 1137/1137 PASS
 TYPECHECK: PASS
 LINT: PASS
 BUILD: PASS
@@ -204,6 +207,6 @@ PRODUCTION: LOCKED
 - Alte Logik geprueft: Ja
 - Report: `docs/reports/2026-08-30_V1_FINAL_END_TO_END_RELEASE_READINESS_AUDIT_REPORT.md`
 - Pruef-ZIP: `exports/2026-08-30_V1_FINAL_END_TO_END_RELEASE_READINESS_AUDIT.zip`
-- Offene Risiken: fehlender verpflichtender Guardrails-Vertrag; kontrollierte
+- Offene Risiken: QR-Center-Mobile-Preview-Live-/Physical-Gate; kontrollierte
   Dependency-Upgrade-Pruefung
 - Status: NOT READY

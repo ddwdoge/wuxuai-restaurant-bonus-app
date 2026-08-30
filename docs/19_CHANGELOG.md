@@ -3354,3 +3354,14 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   sichtbar; die einzelne QR-Sektion wurde nicht umgebaut.
 - Kanonisches A6-Modell, PDF-Renderer, Smart-Media-Ausschnitt, QR-Payload,
   QR-Ruhezone, Referral, Staff-Seite und Businesslogik blieben unverändert.
+
+## 2026-08-30 - AI Implementation Guardrails formalisiert
+
+- Der fehlende Pflichtvertrag `docs/AI_IMPLEMENTATION_GUARDRAILS.md` wurde
+  ausschliesslich aus aktiven Repository-, Security-, Datenbank-, Deployment-
+  und Commercial-Vertraegen konsolidiert.
+- `AGENTS.md` verweist nun explizit auf den Guardrails-Vertrag; ein
+  Contract-Test sichert Referenz, Pflichtbereiche und kommerzielle Werte.
+- Nicht nachweisbare historische Regeln wurden nicht als Projektwahrheit
+  rekonstruiert. Anwendungscode, Businesslogik, Datenbank und Production
+  blieben unveraendert.
