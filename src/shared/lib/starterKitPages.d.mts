@@ -37,4 +37,5 @@ export function getStarterKitPageLayout(page: StarterKitPageDefinition): {
 };
 export function starterKitSingleLineFontSize(text: string, options: { fontSize: number; maxWidth: number; minFontSize: number }): number;
 export function starterKitEstimatedLineCount(text: string, options: { fontSize: number; maxWidth: number }): number;
+export function starterKitPreviewScale(visiblePreviewWidth: number): number;
 export function getStarterKitPageDefinitions(includeCustomerCollectCompatibility?: boolean): StarterKitPageDefinition[];

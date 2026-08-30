@@ -14,6 +14,11 @@ export const STARTER_KIT_LAYOUT = Object.freeze({
   footer: { fontSize: 26, y: 1650 },
 });
 
+export function starterKitPreviewScale(visiblePreviewWidth) {
+  if (!Number.isFinite(visiblePreviewWidth) || visiblePreviewWidth <= 0) return 0;
+  return visiblePreviewWidth / STARTER_KIT_LAYOUT.canvas.width;
+}
+
 const STAFF_TEXT_LAYOUT = Object.freeze({
   description: {
     ...STARTER_KIT_LAYOUT.description,

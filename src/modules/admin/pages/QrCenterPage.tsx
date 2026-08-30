@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight, Download, FileText, QrCode } from "lucide-react";
 import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
 import { RestaurantBrandIdentity } from "../../../shared/components/RestaurantBrandIdentity";
@@ -8,6 +8,7 @@ import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.
 import {
   getStarterKitPageDefinitions,
   getStarterKitPageLayout,
+  starterKitPreviewScale,
   starterKitSingleLineFontSize,
   STARTER_KIT_FOOTER,
   STARTER_KIT_LAYOUT,
@@ -554,17 +555,17 @@ function downloadQrPng(svgId: string, filename: string) {
 
 function previewBoxStyle(box: { height: number; width: number; x: number; y: number }): CSSProperties {
   return {
-    height: `${box.height / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-    left: `${box.x / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
-    top: `${box.y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-    width: `${box.width / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+    height: box.height,
+    left: box.x,
+    top: box.y,
+    width: box.width,
   };
 }
 
 function previewTextStyle(y: number, fontSize: number): CSSProperties {
   return {
-    fontSize: `${fontSize / STARTER_KIT_LAYOUT.canvas.width * 100}cqw`,
-    top: `${y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+    fontSize,
+    top: y,
   };
 }
 
@@ -583,6 +584,8 @@ function StarterKitPagePreview({
   qrValue: string;
   restaurantName: string;
 }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
   const contentWidth = STARTER_KIT_LAYOUT.canvas.width - STARTER_KIT_LAYOUT.contentMargin * 2;
   const pageLayout = getStarterKitPageLayout(page);
   const headlineFontSize = starterKitSingleLineFontSize(page.headline, {
@@ -602,37 +605,61 @@ function StarterKitPagePreview({
     y: pageLayout.qr.y - pageLayout.qr.frameInset,
   };
 
+  useLayoutEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    const updateScale = () => {
+      const nextScale = starterKitPreviewScale(sheet.clientWidth);
+      if (nextScale > 0) setPreviewScale(nextScale);
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(sheet);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <article className="starter-kit-preview-item">
-      <div className="starter-kit-a6-sheet" aria-label={`A6-Vorschau: ${page.headline}`}>
-        <RestaurantBrandIdentity logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={primaryColor} variant="a6" />
-        {page.audienceLabel ? <div className="starter-kit-a6-audience" style={{ ...previewTextStyle(STARTER_KIT_LAYOUT.audience.y, STARTER_KIT_LAYOUT.audience.fontSize), color: primaryColor }}>{page.audienceLabel}</div> : null}
-        <div className="starter-kit-a6-headline" style={{ ...previewTextStyle(pageLayout.headline.y, headlineFontSize), WebkitLineClamp: pageLayout.headline.maxLines }}>{page.headline}</div>
-        <div className="starter-kit-a6-description" style={{ ...previewTextStyle(pageLayout.description.y, descriptionFontSize), WebkitLineClamp: pageLayout.description.maxLines }}>{page.subheadline}</div>
-        <div className="starter-kit-a6-qr-frame" style={{ ...previewBoxStyle(qrFrame), borderColor: colorWithAlpha(accentColor, 0.46) }}>
-          <OperationalQrCode id={`starter-kit-preview-${page.id}`} title={`QR-Code: ${page.headline}`} value={qrValue} />
-        </div>
-        {page.secondaryNote ? <div className="starter-kit-a6-note" style={previewTextStyle(STARTER_KIT_LAYOUT.secondaryNote.y, STARTER_KIT_LAYOUT.secondaryNote.fontSize)}>{page.secondaryNote}</div> : null}
-        {page.referralHint ? (
-          <div
-            className="starter-kit-a6-referral"
-            style={{
-              backgroundColor: colorWithAlpha(accentColor, 0.12),
-              borderColor: colorWithAlpha(accentColor, 0.42),
-              height: `${STARTER_KIT_LAYOUT.referral.height / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-              left: `${STARTER_KIT_LAYOUT.contentMargin / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
-              top: `${STARTER_KIT_LAYOUT.referral.y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-              width: `${(STARTER_KIT_LAYOUT.canvas.width - STARTER_KIT_LAYOUT.contentMargin * 2) / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
-            }}
-          >
-            <strong style={{ color: primaryColor }}>{STARTER_KIT_REFERRAL.title}</strong>
-            <div className="starter-kit-a6-benefits">
-              {STARTER_KIT_REFERRAL.benefits.map((benefit) => <span key={benefit.label}><b>{benefit.icon}</b><small>{benefit.label}</small><em style={{ color: primaryColor }}>{benefit.value}</em></span>)}
-            </div>
-            <small>{STARTER_KIT_REFERRAL.note}</small>
+      <div className="starter-kit-a6-sheet" aria-label={`A6-Vorschau: ${page.headline}`} ref={sheetRef}>
+        <div
+          className="starter-kit-a6-canvas"
+          style={{
+            height: STARTER_KIT_LAYOUT.canvas.height,
+            transform: `scale(${previewScale})`,
+            width: STARTER_KIT_LAYOUT.canvas.width,
+          }}
+        >
+          <RestaurantBrandIdentity logoUrl={branding?.logo_url} name={restaurantName} presentation={branding} primaryColor={primaryColor} variant="a6" />
+          {page.audienceLabel ? <div className="starter-kit-a6-audience" style={{ ...previewTextStyle(STARTER_KIT_LAYOUT.audience.y, STARTER_KIT_LAYOUT.audience.fontSize), color: primaryColor }}>{page.audienceLabel}</div> : null}
+          <div className="starter-kit-a6-headline" style={{ ...previewTextStyle(pageLayout.headline.y, headlineFontSize), WebkitLineClamp: pageLayout.headline.maxLines }}>{page.headline}</div>
+          <div className="starter-kit-a6-description" style={{ ...previewTextStyle(pageLayout.description.y, descriptionFontSize), WebkitLineClamp: pageLayout.description.maxLines }}>{page.subheadline}</div>
+          <div className="starter-kit-a6-qr-frame" style={{ ...previewBoxStyle(qrFrame), borderColor: colorWithAlpha(accentColor, 0.46) }}>
+            <OperationalQrCode id={`starter-kit-preview-${page.id}`} title={`QR-Code: ${page.headline}`} value={qrValue} />
           </div>
-        ) : null}
-        <div className="starter-kit-a6-footer" style={previewTextStyle(STARTER_KIT_LAYOUT.footer.y, STARTER_KIT_LAYOUT.footer.fontSize)}>{STARTER_KIT_FOOTER}</div>
+          {page.secondaryNote ? <div className="starter-kit-a6-note" style={previewTextStyle(STARTER_KIT_LAYOUT.secondaryNote.y, STARTER_KIT_LAYOUT.secondaryNote.fontSize)}>{page.secondaryNote}</div> : null}
+          {page.referralHint ? (
+            <div
+              className="starter-kit-a6-referral"
+              style={{
+                backgroundColor: colorWithAlpha(accentColor, 0.12),
+                borderColor: colorWithAlpha(accentColor, 0.42),
+                height: STARTER_KIT_LAYOUT.referral.height,
+                left: STARTER_KIT_LAYOUT.contentMargin,
+                top: STARTER_KIT_LAYOUT.referral.y,
+                width: STARTER_KIT_LAYOUT.canvas.width - STARTER_KIT_LAYOUT.contentMargin * 2,
+              }}
+            >
+              <strong style={{ color: primaryColor }}>{STARTER_KIT_REFERRAL.title}</strong>
+              <div className="starter-kit-a6-benefits">
+                {STARTER_KIT_REFERRAL.benefits.map((benefit) => <span key={benefit.label}><b>{benefit.icon}</b><small>{benefit.label}</small><em style={{ color: primaryColor }}>{benefit.value}</em></span>)}
+              </div>
+              <small>{STARTER_KIT_REFERRAL.note}</small>
+            </div>
+          ) : null}
+          <div className="starter-kit-a6-footer" style={previewTextStyle(STARTER_KIT_LAYOUT.footer.y, STARTER_KIT_LAYOUT.footer.fontSize)}>{STARTER_KIT_FOOTER}</div>
+        </div>
       </div>
       <strong className="starter-kit-preview-label">{page.headline}</strong>
     </article>

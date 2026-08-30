@@ -5,6 +5,7 @@ import {
   getStarterKitPageDefinitions,
   getStarterKitPageLayout,
   starterKitEstimatedLineCount,
+  starterKitPreviewScale,
   starterKitSingleLineFontSize,
   STARTER_KIT_FOOTER,
   STARTER_KIT_LAYOUT,
@@ -53,6 +54,13 @@ test("A6 geometry is canonical and preview scales the same model", () => {
   assert.match(brandIdentity, /previewBoxStyle\(STARTER_KIT_LAYOUT\.logo\)/);
   assert.match(qrCenter, /previewBoxStyle\(qrFrame\)/);
   assert.match(styles, /\.starter-kit-a6-sheet\s*\{[\s\S]*aspect-ratio:\s*105 \/ 148/);
+  assert.match(qrCenter, /className="starter-kit-a6-canvas"[\s\S]{0,220}transform: `scale\(\$\{previewScale\}\)`/);
+  assert.match(qrCenter, /starterKitPreviewScale\(sheet\.clientWidth\)/);
+  assert.match(styles, /\.starter-kit-a6-canvas\s*\{[\s\S]*transform-origin:\s*left top/);
+  assert.doesNotMatch(brandIdentity, /cqw/);
+  assert.match(brandIdentity, /style=\{\{ height: "100%", maxWidth: "none", width: "100%" \}\}/);
+  assert.match(logoStage, /const width = stage\.clientWidth;[\s\S]{0,100}const height = stage\.clientHeight;/);
+  assert.doesNotMatch(logoStage, /const bounds = stage\.getBoundingClientRect\(\)/);
 });
 
 test("mobile print preview pages use a stable one-page carousel without changing A6 geometry", () => {
@@ -92,6 +100,59 @@ test("preview and PDF use identical normalized A6 brand and QR geometry", () => 
   assert.match(qrCenterPrint, /STARTER_KIT_LAYOUT\.logo\.y/);
   assert.match(brandIdentity, /STARTER_KIT_LAYOUT\.logo/);
   assert.match(qrCenter, /previewBoxStyle\(qrFrame\)/);
+});
+
+test("one A6 scale preserves normalized brand, text and QR geometry at every target width", () => {
+  const geometry = {
+    brandHeight: STARTER_KIT_LAYOUT.logo.height / STARTER_KIT_LAYOUT.canvas.height,
+    brandTop: STARTER_KIT_LAYOUT.logo.y / STARTER_KIT_LAYOUT.canvas.height,
+    brandWidth: STARTER_KIT_LAYOUT.logo.width / STARTER_KIT_LAYOUT.canvas.width,
+    headlineTop: STARTER_KIT_LAYOUT.headline.y / STARTER_KIT_LAYOUT.canvas.height,
+    qrTop: STARTER_KIT_LAYOUT.qr.y / STARTER_KIT_LAYOUT.canvas.height,
+    qrWidth: STARTER_KIT_LAYOUT.qr.size / STARTER_KIT_LAYOUT.canvas.width,
+    restaurantNameTop: STARTER_KIT_LAYOUT.restaurantName.y / STARTER_KIT_LAYOUT.canvas.height,
+  };
+  const mobileViewports = [320, 375, 390, 414, 430];
+  const desktopViewports = [768, 1024, 1366, 1440];
+  const previewWidths = [
+    ...mobileViewports.map((viewport) => (viewport - 32) * 0.87),
+    ...desktopViewports.map((viewport) => (viewport - 64) / 3),
+  ];
+
+  for (const visibleWidth of previewWidths) {
+    const scale = starterKitPreviewScale(visibleWidth);
+    const displayedHeight = STARTER_KIT_LAYOUT.canvas.height * scale;
+    const displayedWidth = STARTER_KIT_LAYOUT.canvas.width * scale;
+    const matches = (actual, expected) => Math.abs(actual - expected) < 1e-12;
+    assert.ok(scale > 0);
+    assert.ok(matches(STARTER_KIT_LAYOUT.logo.width * scale / displayedWidth, geometry.brandWidth));
+    assert.ok(matches(STARTER_KIT_LAYOUT.logo.height * scale / displayedHeight, geometry.brandHeight));
+    assert.ok(matches(STARTER_KIT_LAYOUT.logo.y * scale / displayedHeight, geometry.brandTop));
+    assert.ok(matches(STARTER_KIT_LAYOUT.restaurantName.y * scale / displayedHeight, geometry.restaurantNameTop));
+    assert.ok(matches(STARTER_KIT_LAYOUT.headline.y * scale / displayedHeight, geometry.headlineTop));
+    assert.ok(matches(STARTER_KIT_LAYOUT.qr.y * scale / displayedHeight, geometry.qrTop));
+    assert.ok(matches(STARTER_KIT_LAYOUT.qr.size * scale / displayedWidth, geometry.qrWidth));
+  }
+});
+
+test("all three canonical A6 pages keep brand, text and QR areas collision-free", () => {
+  const logoBottom = STARTER_KIT_LAYOUT.logo.y + STARTER_KIT_LAYOUT.logo.height;
+  const restaurantNameBottom = STARTER_KIT_LAYOUT.restaurantName.y + STARTER_KIT_LAYOUT.restaurantName.fontSize;
+  assert.ok(logoBottom < STARTER_KIT_LAYOUT.restaurantName.y);
+
+  for (const page of corePages) {
+    const layout = getStarterKitPageLayout(page);
+    const firstContentTop = page.audienceLabel ? STARTER_KIT_LAYOUT.audience.y : layout.headline.y;
+    assert.ok(restaurantNameBottom < firstContentTop, `${page.id}: Restaurantname überlappt den Folgeinhalt`);
+    if (page.audienceLabel) {
+      assert.ok(STARTER_KIT_LAYOUT.audience.y + STARTER_KIT_LAYOUT.audience.fontSize < layout.headline.y);
+    }
+    assert.ok(layout.headline.y + layout.headline.fontSize <= layout.description.y, `${page.id}: Überschrift überlappt Beschreibung`);
+    const descriptionLines = layout.description.maxLines;
+    const descriptionBottom = layout.description.y + layout.description.fontSize * descriptionLines;
+    const qrFrameTop = layout.qr.y - layout.qr.frameInset;
+    assert.ok(descriptionBottom < qrFrameTop, `${page.id}: Beschreibung überlappt QR-Ruhezone`);
+  }
 });
 
 test("Staff description has a bounded multilingual block above the protected QR area", () => {

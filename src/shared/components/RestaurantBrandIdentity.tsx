@@ -13,17 +13,17 @@ type RestaurantBrandIdentityProps = {
 
 function previewBoxStyle(box: { height: number; width: number; x: number; y: number }): CSSProperties {
   return {
-    height: `${box.height / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-    left: `${box.x / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
-    top: `${box.y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
-    width: `${box.width / STARTER_KIT_LAYOUT.canvas.width * 100}%`,
+    height: box.height,
+    left: box.x,
+    top: box.y,
+    width: box.width,
   };
 }
 
 function previewTextStyle(y: number, fontSize: number): CSSProperties {
   return {
-    fontSize: `${fontSize / STARTER_KIT_LAYOUT.canvas.width * 100}cqw`,
-    top: `${y / STARTER_KIT_LAYOUT.canvas.height * 100}%`,
+    fontSize,
+    top: y,
   };
 }
 
@@ -37,7 +37,7 @@ export function RestaurantBrandIdentity({ contextLabel, logoUrl, name, presentat
     return (
       <>
         <div className="starter-kit-a6-logo" style={previewBoxStyle(STARTER_KIT_LAYOUT.logo)}>
-          <RestaurantLogoStage logoUrl={logoUrl} name={name} placementMode="canonical" presentation={presentation} primaryColor={primaryColor} size="print" />
+          <RestaurantLogoStage logoUrl={logoUrl} name={name} placementMode="canonical" presentation={presentation} primaryColor={primaryColor} size="print" style={{ height: "100%", maxWidth: "none", width: "100%" }} />
         </div>
         <div className="starter-kit-a6-name" style={previewTextStyle(STARTER_KIT_LAYOUT.restaurantName.y, nameFontSize)}>{name}</div>
       </>

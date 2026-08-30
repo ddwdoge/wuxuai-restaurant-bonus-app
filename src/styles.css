@@ -4575,10 +4575,16 @@ a {
   background: #ffffff;
   border: 1px solid #d9dee5;
   box-shadow: 0 8px 24px rgb(23 32 42 / 10%);
-  container-type: inline-size;
   overflow: hidden;
   position: relative;
   width: 100%;
+}
+
+.starter-kit-a6-canvas {
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform-origin: left top;
 }
 
 .starter-kit-a6-logo,
@@ -4600,7 +4606,7 @@ a {
 }
 
 .starter-kit-a6-logo .canonical-logo-fallback > span {
-  font-size: 3.55cqw;
+  font-size: 44px;
 }
 
 .starter-kit-a6-name,
@@ -4610,7 +4616,7 @@ a {
 .starter-kit-a6-note,
 .starter-kit-a6-footer {
   left: 7.75%;
-  line-height: 1.18;
+  line-height: 1;
   overflow-wrap: anywhere;
   text-align: center;
   width: 84.5%;
@@ -4633,7 +4639,7 @@ a {
   align-items: center;
   background: #ffffff;
   border: 1px solid;
-  border-radius: 2.4cqw;
+  border-radius: 30px;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
@@ -4649,22 +4655,22 @@ a {
 
 .starter-kit-a6-referral {
   border: 1px solid;
-  border-radius: 2.25cqw;
+  border-radius: 28px;
   box-sizing: border-box;
   color: #465463;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  padding: 1.25cqw 2.55cqw 1cqw;
+  padding: 16px 32px 12px;
   text-align: center;
 }
 
-.starter-kit-a6-referral > strong { font-size: 2.66cqw; line-height: 1.15; }
-.starter-kit-a6-referral > small { font-size: 1.85cqw; line-height: 1.15; }
-.starter-kit-a6-benefits { display: grid; gap: 2.55cqw; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: .65cqw 0; }
-.starter-kit-a6-benefits > span { align-items: center; background: rgb(255 255 255 / 78%); border: 1px solid rgb(23 32 42 / 9%); border-radius: 1.6cqw; display: grid; grid-template-rows: auto auto auto; min-width: 0; padding: .35cqw; }
-.starter-kit-a6-benefits b { font-size: 2.75cqw; line-height: 1; }
-.starter-kit-a6-benefits small { color: #17202a; font-size: 1.92cqw; font-weight: 600; line-height: 1.1; }
-.starter-kit-a6-benefits em { font-size: 2.7cqw; font-style: normal; font-weight: 800; line-height: 1.1; }
+.starter-kit-a6-referral > strong { font-size: 33px; line-height: 1.15; }
+.starter-kit-a6-referral > small { font-size: 23px; line-height: 1.15; }
+.starter-kit-a6-benefits { display: grid; gap: 32px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 8px 0; }
+.starter-kit-a6-benefits > span { align-items: center; background: rgb(255 255 255 / 78%); border: 1px solid rgb(23 32 42 / 9%); border-radius: 20px; display: grid; grid-template-rows: auto auto auto; min-width: 0; padding: 4px; }
+.starter-kit-a6-benefits b { font-size: 34px; line-height: 1; }
+.starter-kit-a6-benefits small { color: #17202a; font-size: 24px; font-weight: 600; line-height: 1.1; }
+.starter-kit-a6-benefits em { font-size: 33px; font-style: normal; font-weight: 800; line-height: 1.1; }
 
 .qr-card-actions {
   display: grid;

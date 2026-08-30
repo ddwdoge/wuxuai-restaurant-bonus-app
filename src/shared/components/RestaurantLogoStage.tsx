@@ -16,9 +16,10 @@ type RestaurantLogoStageProps = {
   presentation?: RestaurantLogoPresentation | null;
   primaryColor?: string | null;
   size?: "compact" | "header" | "detail" | "preview" | "print";
+  style?: CSSProperties;
 };
 
-export function RestaurantLogoStage({ alt, className = "", logoUrl, name, onImageMetrics, placementMode = "default", presentation, primaryColor, size = "header" }: RestaurantLogoStageProps) {
+export function RestaurantLogoStage({ alt, className = "", logoUrl, name, onImageMetrics, placementMode = "default", presentation, primaryColor, size = "header", style }: RestaurantLogoStageProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [aspect, setAspect] = useState<"wide" | "tall" | "square" | "unknown">("unknown");
   const [imageSize, setImageSize] = useState({ height: 0, width: 0 });
@@ -41,12 +42,13 @@ export function RestaurantLogoStage({ alt, className = "", logoUrl, name, onImag
 
     const stage = stageRef.current;
     const updatePlacement = () => {
-      const bounds = stage.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      if (!width || !height) return;
       const placement = logoCanvasPlacement(
         imageSize.width,
         imageSize.height,
-        { height: bounds.height, width: bounds.width, x: 0, y: 0 },
+        { height, width, x: 0, y: 0 },
         config,
       );
       setCanonicalStyle({
@@ -72,7 +74,7 @@ export function RestaurantLogoStage({ alt, className = "", logoUrl, name, onImag
     <span
       className={`restaurant-logo-stage size-${size} aspect-${aspect}${showImage ? " has-image" : " is-fallback"}${placementMode === "canonical" ? " placement-canonical" : ""}${className ? ` ${className}` : ""}`}
       ref={stageRef}
-      style={{ "--restaurant-logo-fallback": primaryColor ?? "#9a6b1f" } as CSSProperties}
+      style={{ ...style, "--restaurant-logo-fallback": primaryColor ?? "#9a6b1f" } as CSSProperties}
     >
       {showImage ? (
         <img

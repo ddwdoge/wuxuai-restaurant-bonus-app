@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-30 - A6-Vorschau auf eine kanonische Seitenskalierung umgestellt
+
+- Die QR-Center-Druckvorschau rendert Logo, Restaurantname, Texte, QR-Code,
+  Empfehlungsblock und Footer gemeinsam im kanonischen `1240 × 1748`-Raster.
+- Die vollständige A6-Seite erhält nur noch einen gemeinsamen, aus der
+  sichtbaren Seitenbreite abgeleiteten Skalierungsfaktor.
+- Die Smart-Logo-Platzierung verwendet vor der äußeren Skalierung die
+  unskalierten Stage-Maße; gespeicherte Zoom-, X-, Y- und Crop-Werte bleiben
+  erhalten.
+- Normalisierte Geometrietests decken 320 bis 1440 Pixel sowie alle drei
+  Druckseiten und die Abstände zwischen Brand, Text und QR-Ruhezone ab.
+- PDF-Geometrie, QR-Payloads, Carousel, Businesslogik und Datenbank bleiben
+  unverändert.
+
 ## 2026-08-29 - Legal Operator von Restaurantmarke getrennt
 
 - Die bestehende Organization-Ebene als kanonischen rechtlichen Betreiber
