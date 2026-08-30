@@ -18,19 +18,21 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [joinSuccessMessage, setJoinSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const returnTo = `${isBonusCollection ? "/w" : "/customer"}/${encodeURIComponent(restaurantSlug)}`;
 
   const loadContext = useCallback(async () => {
     if (!user) return;
     setError(null);
+    setJoinSuccessMessage(null);
     setPortalRestaurantSlug(null);
     try {
       const nextContext = await loadCustomerRestaurantContext(restaurantSlug);
       setContext(nextContext);
       if (nextContext.membership_exists) {
-        await openCustomerMembership(nextContext.restaurant_id);
-        setPortalRestaurantSlug(restaurantSlug);
+        const activeSlug = await openCustomerMembership(nextContext.restaurant_id);
+        setPortalRestaurantSlug(activeSlug);
       } else {
         const legal = legalCenterStateFromResponse(await loadPublicLegalCenter(restaurantSlug));
         setLegalReady(legal.status === "ready");
@@ -47,14 +49,18 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     setJoining(true);
     setError(null);
     try {
-      await joinCustomerRestaurant({
+      const result = await joinCustomerRestaurant({
         restaurantSlug,
         termsAccepted,
         privacyAcknowledged,
         deviceId: getWebDeviceId(),
         existingCustomerToken: readStoredCustomerToken(restaurantSlug),
       });
-      setPortalRestaurantSlug(restaurantSlug);
+      const activeSlug = await openCustomerMembership(context.restaurant_id);
+      if (result.joined) {
+        setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
+      }
+      setPortalRestaurantSlug(activeSlug);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");
     } finally {
@@ -70,7 +76,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
       <div className="central-auth-actions"><Link className="premium-button premium-button-primary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={19} /> Mit bestehendem Kundenkonto anmelden</Link><Link className="premium-button premium-button-secondary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}><UserPlus aria-hidden="true" size={19} /> Neues Kundenkonto erstellen</Link></div>
     </PremiumCard></div></AppShell>
   );
-  if (portalRestaurantSlug === restaurantSlug) return <CustomerPortal isBonusCollection={isBonusCollection} restaurantSlug={restaurantSlug} />;
+  if (portalRestaurantSlug) return <CustomerPortal entryMessage={joinSuccessMessage} isBonusCollection={isBonusCollection} restaurantSlug={portalRestaurantSlug} />;
   if (error && !context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><ErrorState action={<SecondaryButton onClick={() => void loadContext()}>Erneut versuchen</SecondaryButton>} description={error} title="Bonusprogramm konnte nicht geöffnet werden" /></div></AppShell>;
   if (!context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><LoadingState description="Das Restaurant wird geladen." /></div></AppShell>;
 
@@ -80,8 +86,8 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     <p>Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Kundenkonto erstellt.</p>
     {!legalReady ? <p className="central-status-message" role="alert">Dieses Restaurant hat die erforderlichen rechtlichen Dokumente noch nicht vollständig veröffentlicht.</p> : <div className="central-join-consents">
       <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
-      <label><input checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} type="checkbox" /> <span>Ich akzeptiere die Teilnahmebedingungen. *</span></label>
-      <label><input checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} type="checkbox" /> <span>Ich habe die Datenschutzerklärung zur Kenntnis genommen. *</span></label>
+      <label><input aria-required="true" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} required type="checkbox" /> <span>Ich akzeptiere die Teilnahmebedingungen. *</span></label>
+      <label><input aria-required="true" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} required type="checkbox" /> <span>Ich habe die Datenschutzerklärung zur Kenntnis genommen. *</span></label>
     </div>}
     {error ? <p className="central-status-message" role="alert">{error}</p> : null}
     <div className="central-auth-actions"><Link className="premium-button premium-button-secondary" to="/customer">Abbrechen</Link><PrimaryButton disabled={!legalReady || !termsAccepted || !privacyAcknowledged || joining} onClick={() => void join()}><CheckCircle2 aria-hidden="true" size={19} /> {joining ? "Beitritt wird gespeichert …" : "Bonusprogramm beitreten"}</PrimaryButton></div>

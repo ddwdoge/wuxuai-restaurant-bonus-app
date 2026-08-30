@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-31 - Direkter Customer-Beitritt aus Restaurant Discovery
+
+- Restaurantdetails unterscheiden jetzt zwischen bestehenden Mitgliedern mit
+  `Restaurant öffnen` und Nichtmitgliedern mit `Bonusprogramm beitreten`.
+- Der direkte Beitritt verwendet den bestehenden Legal-Consent-Flow und den
+  authentifizierten, tenantgebundenen, idempotenten Membership-RPC.
+- Nach erfolgreichem Join wird derselbe servervalidierte Restaurant-Opener wie
+  beim globalen Schnellwechsel verwendet und der neue Kontext ohne Reload
+  angezeigt.
+- Join erzeugt keine Punkte, keinen Besuch und keine Referral-Zuordnung;
+  Willkommensgeschenk-, Punkte- und Visit-Verträge bleiben unverändert.
+- Keine Datenbankmigration, keine RLS- oder Businesslogikänderung.
+
 ## 2026-08-30 - Restaurantbeitritt nach kontofremdem lokalem Zugang wiederhergestellt
 
 - Der zentrale Customer-Beitritt erkennt einen lokal gespeicherten

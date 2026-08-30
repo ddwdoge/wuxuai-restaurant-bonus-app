@@ -184,6 +184,7 @@
 .premium-customer-header.compact .premium-customer-header-copy { display: block; }
 .premium-customer-header.compact .premium-customer-header-copy strong { font-weight: 600; }
 .premium-customer-header:has(.premium-customer-restaurant-selector) { grid-template-columns: minmax(0, 1fr) auto; }
+.customer-join-success { margin: 0; padding: 11px 13px; border-left: 3px solid #3d8a62; border-radius: 6px; background: #edf8f1; color: #285f44; font-weight: 700; }
 .premium-customer-restaurant-selector { align-items: center; background: transparent; color: inherit; display: grid; gap: 10px; grid-column: 1; grid-template-columns: auto minmax(0, 1fr) auto; max-width: 100%; min-height: 44px; min-width: 0; padding: 0; text-align: left; width: 100%; }
 .premium-customer-restaurant-selector > svg { color: var(--premium-gold-dark); flex: 0 0 auto; }
 .premium-customer-restaurant-selector:focus-visible { border-radius: 12px; outline: 3px solid rgba(191, 143, 54, .34); outline-offset: 2px; }

@@ -32,7 +32,7 @@ test("ein neuer QR-Slug erzeugt eine neue CustomerPortal-Instanz", () => {
 test("der aktuelle URL-Slug ist die einzige Restaurantquelle", () => {
   assert.match(app, /const scanContext = readCustomerScanContext\(location\.pathname\);/);
   assert.match(app, /restaurantSlug=\{scanContext\.restaurantSlug\}/);
-  assert.match(portal, /export function CustomerPortal\(\{ isBonusCollection, restaurantSlug \}: CustomerPortalProps\)/);
+  assert.match(portal, /export function CustomerPortal\(\{ entryMessage, isBonusCollection, restaurantSlug \}: CustomerPortalProps\)/);
   assert.doesNotMatch(portal, /useParams|useLocation/);
   assert.doesNotMatch(portal, /slug \?\? restaurant\?\.slug/);
   assert.match(portal, /loadPortalForRestaurant\(\{[\s\S]*?restaurantSlug,[\s\S]*?customerToken: activeToken,[\s\S]*?loadPortal: loadCustomerPortalData/);

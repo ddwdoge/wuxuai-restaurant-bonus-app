@@ -52,7 +52,8 @@ test("langer Detailinhalt und CTAs bleiben im scrollbaren Drawer zugänglich", (
     assert.ok(finderPage.includes(content));
   }
   assert.match(finderCss, /partner-detail-actions \.premium-button[^}]*min-height: 48px/);
-  assert.match(finderPage, />Bonus öffnen</);
+  assert.match(finderPage, /Restaurant öffnen/);
+  assert.match(finderPage, /Bonusprogramm beitreten/);
   assert.match(finderPage, /> Route starten/);
 });
 

@@ -140,9 +140,10 @@ test("Kundenseite verwendet V1-Titel, sechs Filter und sichere Aktionen", async 
   for (const label of ["Lokale entdecken", "In meiner Nähe", "Bereits besucht", "Meine Punkte", "Belohnung bald erreichbar", "Jetzt geöffnet", "Alle Partner"]) {
     assert.match(page, new RegExp(label));
   }
-  assert.match(page, />Bonus öffnen</);
+  assert.match(page, /Restaurant öffnen/);
+  assert.match(page, /Bonusprogramm beitreten/);
   assert.match(page, /Route starten/);
-  assert.match(page, /Melde dich an, um deine Punkte bei teilnehmenden Lokalen zu sehen/);
+  assert.match(page, /Wähle ein Lokal und tritt dem Bonusprogramm direkt bei/);
   assert.doesNotMatch(page, /result\.locations\[0\]\?\.branch_id/);
 });
 

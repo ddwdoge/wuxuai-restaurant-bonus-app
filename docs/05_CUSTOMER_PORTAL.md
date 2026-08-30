@@ -959,3 +959,21 @@ Geburtstagsauslosung als primären V1-Kundenflow:
   der Dialog bietet `Erneut versuchen` an.
 - `Konto → Restaurants` und `Restaurants entdecken` bleiben als sekundäre
   Verwaltung beziehungsweise Discovery erhalten.
+
+## CTO-Ergänzung 2026-08-31: Direkter Beitritt aus Restaurant Discovery
+
+- Ein angemeldeter Kunde kann in `Entdecken → Restaurantdetails` einem noch
+  nicht verbundenen Bonusprogramm direkt beitreten.
+- Nichtmitglieder sehen `Bonusprogramm beitreten`; bestehende Mitglieder sehen
+  `Restaurant öffnen`. `Route starten` bleibt die sekundäre Aktion.
+- Vor dem Beitritt müssen die aktiven Teilnahmebedingungen ausdrücklich
+  akzeptiert und die Datenschutzerklärung zur Kenntnis genommen werden.
+- Der Beitritt verwendet ausschließlich den bestehenden authentifizierten,
+  tenantgebundenen und idempotenten Server-RPC. Danach öffnet derselbe
+  servervalidierte Membership-Opener wie beim Restaurant-Schnellwechsel den
+  neuen aktiven Restaurantkontext.
+- Der Beitritt erzeugt genau eine Membership, aber keinen Besuch, keine Punkte
+  und keine Referral-Zuordnung. Ein Besuch entsteht weiterhin erst nach einer
+  erfolgreichen Punktebuchung.
+- Bestehende Willkommensgeschenk-Regeln bleiben maßgeblich; Reload oder ein
+  wiederholter Beitritt dürfen keine zweite Zuteilung erzeugen.

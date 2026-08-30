@@ -10,7 +10,9 @@ import {
   MapPin,
   Newspaper,
   Search,
+  Store,
   Trophy,
+  UserPlus,
   X,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -100,6 +102,7 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
 
 function PartnerDetail({ current, location, onClose }: { current: boolean; location: PartnerRestaurant; onClose: () => void }) {
   const membership = location.membership;
+  const isMember = membership?.registered === true;
   const customerToken = readStoredCustomerToken(location.slug);
   const portalUrl = `/customer/${encodeURIComponent(location.slug)}${customerToken ? `?token=${encodeURIComponent(customerToken)}` : ""}`;
 
@@ -118,7 +121,7 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
       />
       <div className="partner-detail-heading">
         <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
-        <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : membership?.registered ? "Dein Bonus" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>
+        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : isMember ? "Dein Bonus" : "Noch kein Bonus-Mitglied"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description">{location.short_description}</p> : null}
       {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{location.opening_status.message}{location.opening_status.todayHours && location.opening_status.message !== location.opening_status.todayHours ? ` · ${location.opening_status.todayHours}` : ""}</p> : null}
@@ -146,9 +149,11 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
         </div>
       ) : null}
-      {!membership ? <p className="partner-detail-note">Besuche das Restaurant und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
+      {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}
       <div className="partner-detail-actions">
-        <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>Bonus öffnen</Link>
+        <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>
+          {isMember ? <><Store aria-hidden="true" size={18} /> Restaurant öffnen</> : <><UserPlus aria-hidden="true" size={18} /> Bonusprogramm beitreten</>}
+        </Link>
         <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_ROUTE_CLICKED"); }} rel="noreferrer" target="_blank">
           <ExternalLink aria-hidden="true" size={18} /> Route starten
         </a>
@@ -266,7 +271,7 @@ export function PartnerRestaurantFinderPage() {
         </div>
 
         {!loading && !hasCustomerAccess ? (
-          <p className="partner-customer-access-note">Melde dich an, um deine Punkte bei teilnehmenden Lokalen zu sehen.</p>
+          <p className="partner-customer-access-note">Wähle ein Lokal und tritt dem Bonusprogramm direkt bei.</p>
         ) : null}
 
         {loading ? <LoadingState description="Partnerrestaurants werden geladen …" /> : null}

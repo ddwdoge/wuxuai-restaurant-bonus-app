@@ -60,6 +60,7 @@ test("Customer Business-Handler und sichere Finder-Aktionen bleiben erhalten", (
   }
   assert.match(finder, /navigator\.geolocation\.getCurrentPosition/);
   assert.match(finder, /<LazyPartnerRestaurantMap/);
-  assert.match(finder, />Bonus öffnen</);
+  assert.match(finder, /Restaurant öffnen/);
+  assert.match(finder, /Bonusprogramm beitreten/);
   assert.match(finder, /Route starten/);
 });

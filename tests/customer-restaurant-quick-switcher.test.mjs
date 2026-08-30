@@ -74,8 +74,10 @@ test("ein, fünf und zwanzig Restaurants bleiben deterministisch filterbar", () 
 test("Slug-Wechsel zeigt erst nach serverseitigem Open den neuen Portalinhalt", () => {
   assert.match(access, /setPortalRestaurantSlug\(null\)/);
   assert.match(access, /await openCustomerMembership\(nextContext\.restaurant_id\)/);
-  assert.match(access, /setPortalRestaurantSlug\(restaurantSlug\)/);
-  assert.match(access, /portalRestaurantSlug === restaurantSlug/);
+  assert.match(access, /const activeSlug = await openCustomerMembership/);
+  assert.match(access, /setPortalRestaurantSlug\(activeSlug\)/);
+  assert.match(access, /if \(portalRestaurantSlug\) return <CustomerPortal/);
+  assert.match(access, /restaurantSlug=\{portalRestaurantSlug\}/);
   assert.match(switcher, /Restaurant wird gewechselt…/);
   assert.match(switcher, /Restaurant konnte nicht gewechselt werden\./);
 });

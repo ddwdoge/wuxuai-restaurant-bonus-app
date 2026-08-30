@@ -873,6 +873,25 @@ Wenn Codex an Flow 02 arbeitet:
 ---
 
 Endstatus: **LOCK**
+
+## CTO-Ergänzung 2026-08-31: Discovery als zusätzlicher Beitrittseinstieg
+
+Diese spätere V1-Entscheidung ersetzt das frühere Verbot der Restaurantsuche
+nur für bereits angemeldete zentrale Kunden:
+
+- `Entdecken → Restaurantdetails → Bonusprogramm beitreten` ist ein erlaubter
+  zusätzlicher Einstieg neben dem Restaurant-QR.
+- Der bestehende Legal-Consent- und Server-Join-Vertrag wird wiederverwendet;
+  es gibt keinen zweiten Join- oder Kundenidentitäts-Flow.
+- Ein direkter Beitritt erzeugt weder Besuch noch Punkte, Referral oder
+  `Bereits besucht`. Die erste erfolgreiche Punktebuchung bleibt dafür
+  maßgeblich.
+- Nach erfolgreichem Beitritt wird der Restaurantkontext über
+  `open_customer_account_membership(...)` aktiviert. Header, Punkte,
+  Belohnungen, Angebote, Geschenke und Referral bleiben dadurch strikt an die
+  neue Membership gebunden.
+- Wiederholung ist idempotent und darf weder eine zweite Membership noch ein
+  zweites Willkommensgeschenk erzeugen.
 ## CTO-Ergänzung 2026-07-14: Eindeutige Geschenkzuteilung
 
 🟢 **FIX / V1**

@@ -251,11 +251,12 @@ function standardRewardAsset(category: string | null | undefined, title: string)
 }
 
 type CustomerPortalProps = {
+  entryMessage?: string | null;
   isBonusCollection: boolean;
   restaurantSlug: string;
 };
 
-export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPortalProps) {
+export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug }: CustomerPortalProps) {
   const { portalAccess, signOut } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
@@ -1464,6 +1465,8 @@ export function CustomerPortal({ isBonusCollection, restaurantSlug }: CustomerPo
           primaryColor={branding.primary_color}
           subtitle="Bonus für Gäste"
         />
+
+        {entryMessage ? <p aria-live="polite" className="customer-join-success" role="status">{entryMessage}</p> : null}
 
         <CustomerRestaurantSwitcher
           currentSlug={restaurant.slug}

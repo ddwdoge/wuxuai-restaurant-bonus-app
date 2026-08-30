@@ -138,7 +138,7 @@ export async function joinCustomerRestaurant(input: {
     }
     throw new Error("Der Beitritt konnte gerade nicht abgeschlossen werden.");
   }
-  const result = data as { restaurant_slug: string; customer_token: string };
+  const result = data as { joined: boolean; restaurant_slug: string; customer_token: string };
   saveStoredCustomerToken(result.restaurant_slug, {
     customer_token: result.customer_token,
     device_id: input.deviceId,
