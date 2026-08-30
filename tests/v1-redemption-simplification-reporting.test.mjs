@@ -93,7 +93,7 @@ test("owner UI provides every V1 period and restaurant report table", () => {
 });
 
 test("mobile report table scroll stays contained inside the report", () => {
-  assert.match(reportStyles, /\.bonus-report-table-wrap\s*\{[^}]*contain:\s*inline-size/);
+  assert.match(reportStyles, /\.bonus-report-table-wrap\s*\{[^}]*contain:\s*inline-size paint/);
   assert.match(reportStyles, /\.bonus-report-table-wrap\s*\{[^}]*overflow-x:\s*auto/);
 });
 
