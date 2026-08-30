@@ -77,8 +77,18 @@ einer äußeren Seitenskalierung eine zweite Skalierung erzeugt hätte.
 
 ## Risiken
 
-Die physische iPhone-Abnahme bleibt ausschließlich dem Founder vorbehalten und
-ist bis zum Live-Test `PENDING`.
+Die ausschließlich dem Founder vorbehaltene physische iPhone-Abnahme wurde am
+30.08.2026 nach dem Development/Test-Deployment bestätigt:
 
-Status: CODE LOCK - Development/Test-Deploy und physische iPhone-Abnahme stehen
-noch aus.
+- Seite 1: PASS
+- Seite 2: PASS
+- Seite 3: PASS
+- Physical iPhone: PASS
+
+Development/Test-Deployment:
+`52aa8425-18fd-4480-bc44-1b2076bbfb21`
+
+Deployed Commit:
+`435a0c2273fcfebdf400d5b8e66b2c13f04ad20f`
+
+Status: FINAL LOCK
