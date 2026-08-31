@@ -1,6 +1,37 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## V1 Final Security Contract 2026-08-31
+
+- Eine E-Mail entspricht genau einer Supabase-Auth-Identitaet. Customer-,
+  Staff-, Owner- und Platform-Beziehungen sind additive, serververifizierte
+  Rollen; `user_metadata`, URL und Frontendzustand sind keine Autoritaet.
+- RLS bleibt auf sensiblen Tabellen aktiv. Alle schreibenden Business-RPCs
+  pruefen Actor, Organization, Restaurant, Branch und Membership explizit.
+- `SECURITY DEFINER` verwendet einen festen `search_path`, minimale
+  `EXECUTE`-Grants und gibt keine Token-, PIN- oder Secret-Hashes zurueck.
+- Browserrollen besitzen keine direkte DML-Autoritaet ueber Punktejournal,
+  Reward-/Gift-Zuweisung, Redemption, Legal-Veroeffentlichung oder Rollen.
+- Customer-Punkte-QRs sind einmalig und fuenf Minuten gueltig. Die Tages-PIN
+  bleibt serverkontrolliert; fuenf falsche Versuche sperren den Customer bis
+  zum naechsten lokalen Tag. Actor-Rate-Limit: 30 Versuche in fuenf Minuten.
+- Erfolgreiche Punktebuchungen sind auf zwei je Customer, Restaurant und
+  lokalem Tag begrenzt. Fehlgeschlagene PIN- und abgebrochene Vorgaenge zaehlen
+  nicht als Erfolg. Idempotenz und Rapid-Repeat-Schutz bleiben serverseitig.
+- Gift- und Reward-Einloesungen verwenden die 15-Minuten-Live-Praesentation
+  mit serverseitiger Eligibility, Einmalverwendung, Zeit und Audit. Aeltere
+  sechsstellige Codes sind nur historische Kompatibilitaet, kein V1-
+  Primaerflow.
+- Legal Operator, Dokumente und Registrierungsfreigabe sind
+  organizationgebunden. Unveroeffentlichte Pflichtdokumente blockieren neue
+  Customer-Registrierung; kein Client darf diesen Gate umgehen.
+- Cross-Tenant-Zugriff, willkuerliche Owner-Eskalation, Staff-
+  Selbstregistrierung und Platform-Zugriff aus Restaurantrollen bleiben
+  blockiert.
+
+Bei Widerspruch zu spaeteren historischen Ergaenzungen in dieser Datei gilt
+dieser Abschnitt zusammen mit dem Canonical Product Contract.
+
 ## Platform Admin Isolation
 
 - Plattformzugriff folgt nicht aus Restaurant-Ownership oder Membership.

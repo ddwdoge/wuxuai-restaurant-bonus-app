@@ -313,7 +313,8 @@ Jederzeit kündbar
 Kein rückwirkendes Nachzahlen
 ```
 
-Nach 30 Tagen entscheidet das Restaurant, ob es weiter nutzen möchte.
+Nach drei Kalendermonaten entscheidet das Restaurant, ob es weiter nutzen
+moechte.
 
 ### 7.2 Keine rückwirkende Zahlung
 

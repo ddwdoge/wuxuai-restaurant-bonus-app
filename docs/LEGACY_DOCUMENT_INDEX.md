@@ -16,6 +16,12 @@ nicht als aktuelle Implementierungsanweisung verwendet werden.
 | Multiplikator 3x oder stapelbare Multiplikatoren | maximal 2x; weitere Referrals verlaengern nur Zeit | alte Referral-Migrationen und historische Reports |
 | Manuelle Latitude/Longitude als Pflicht | Address-only Owner-Flow, serverseitiges Nominatim | alte Standortberichte und Screenshots |
 | Staff-Codepruefung als normale Hauptaktion | QR primaer, Navigation Start/QR/Tages-PIN/Suchen/Mehr | alte Staff-Abschnitte und Reports |
+| V1 Trial 30 Tage kostenlos | exakt 3 Kalendermonate kostenlos | alte Trial-, Admin-, Payment-, V2- und Onboarding-Abschnitte vor 2026-08-30 |
+| V1 Basistarif 149 EUR oder Preisband 59-69 EUR | 59 EUR pro Monat exkl. USt. | alte Pricing-, Payment- und V2-Abschnitte |
+| Nur ein sichtbares persoenliches Geschenk auf Customer Home | alle aktiven Welcome-/Birthday-Geschenke im Multi-Gift-Carousel | alte Customer-Home- und Reward-Abschnitte |
+| Birthday-Zuweisung nur exakt 14 Tage vorher oder manueller Draw | inklusives lokales Fenster Geburtstag heute bis +14 Tage, sofort bei Membership und taeglicher Cron | alte Birthday-, Retention- und Reward-Abschnitte |
+| Exklusive globale Owner-/Staff-/Customer-Rolle je E-Mail | eine Auth-Identitaet mit additiven tenantgebundenen Rollen | alte Rollen-, Invite- und Login-Abschnitte |
+| Manuelle Birthday-Zuweisung als V1-Hauptflow | automatische kanonische, deduplizierte Assignment-Engine | alte Birthday-Draw- und Release-Finishing-Abschnitte |
 
 ## Aktive Fachdateien mit historischen Abschnitten
 
@@ -25,6 +31,11 @@ Die Dateien `docs/05_CUSTOMER_PORTAL.md`, `docs/06_STAFF_PORTAL.md`,
 `docs/24_SECURITY_PRIVACY.md` enthalten historische Entscheidungen. Bei jedem
 Widerspruch gilt zuerst der Canonical Contract und danach der neueste deutlich
 als CURRENT LOCK gekennzeichnete Abschnitt.
+
+Alle Dateien mit dem Namenssuffix ` 2.md` sind eingefrorene lokale
+Dokumentkopien beziehungsweise historische Snapshots. Sie sind keine aktive
+Spezifikation und duerfen weder Canonical Contract noch die gleichnamige
+aktuelle Datei ueberschreiben.
 
 ## Historische Artefakte
 

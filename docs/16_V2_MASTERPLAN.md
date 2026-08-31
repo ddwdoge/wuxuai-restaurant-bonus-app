@@ -723,7 +723,7 @@ Drei Sprachen würden jede Änderung vervielfachen.
 
 ### 19.1 V1 Testphase
 
-30 Tage kostenlos.
+3 Kalendermonate kostenlos.
 
 Keine Kreditkarte.
 
@@ -733,11 +733,11 @@ Keine Nachzahlung.
 
 Monatsabo.
 
-Empfehlung V1:
+Kanonischer V1-Vertrag:
 
 ```text
-ein Paket
-ca. 59–69 €/Monat
+WUXUAI Bonus V1
+59 EUR/Monat exkl. USt.
 ```
 
 ### 19.3 V2

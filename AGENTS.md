@@ -37,11 +37,17 @@ Wenn eine Aufgabe einen bestimmten Bereich betrifft, muss Codex zusätzlich die 
 Codex entscheidet immer in dieser Reihenfolge:
 
 1. `AGENTS.md`
-2. Engineering Bible in `/docs`
-3. konkrete aktuelle Aufgabe des Founders
-4. bestehender Code
-5. Build- und Testergebnis
-6. eigene technische Einschätzung
+2. `docs/AI_IMPLEMENTATION_GUARDRAILS.md`
+3. `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+4. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege in `/docs`
+5. `docs/V1_FINAL_RELEASE_STATUS.md`
+6. historische Reports und `docs/19_CHANGELOG.md`
+
+Die konkrete aktuelle Founder-Aufgabe bestimmt den erlaubten Scope. Bestehender
+Code, Datenbankzustand sowie Build-, Test- und Live-Evidenz entscheiden, ob der
+Vertrag tatsaechlich implementiert und belastbar ist. Historische Reports,
+Changelog-Eintraege, Screenshots und Pruef-ZIPs duerfen eine spaetere
+kanonische Regel nicht ueberschreiben.
 
 Wenn Code und Engineering Bible widersprechen:
 

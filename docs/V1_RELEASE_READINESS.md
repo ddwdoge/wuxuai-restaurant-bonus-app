@@ -4,6 +4,10 @@ Stand: 2026-08-31
 
 Branch: `codex/v1-canonical-recovery`
 
+Der eingefrorene aktuelle Releasevertrag steht in
+`docs/V1_FINAL_RELEASE_STATUS.md`. Diese Datei bleibt die ausfuehrlichere
+Readiness-Begruendung; historische Reports bleiben unveraendert.
+
 ## Aktueller Release-Stand
 
 Die spaeteren Development/Test- und physischen Founder-Nachweise schliessen die

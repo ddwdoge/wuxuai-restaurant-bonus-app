@@ -1,7 +1,7 @@
 # WUXUAI Bonus V1 - AI Implementation Guardrails
 
 Status: **ACTIVE / REQUIRED**  
-Stand: 2026-08-30  
+Stand: 2026-08-31
 Geltungsbereich: Implementierung, Review, Migration, Deployment und Release-Gates
 
 Dieses Dokument konsolidiert bestehende Projektregeln. Es fuehrt keine neue
@@ -11,6 +11,13 @@ wird als `CURRENT CODE/CONTRACT MISMATCH` und `NOT READY` gemeldet.
 
 ## 1. Source of Truth
 
+- Die verbindliche Reihenfolge lautet:
+  1. `AGENTS.md`
+  2. dieses Guardrail-Dokument
+  3. `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+  4. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege
+  5. `docs/V1_FINAL_RELEASE_STATUS.md`
+  6. historische Reports und Changelog
 - Der permanente Git-Stand ist die technische Arbeitsgrundlage. Historische
   Reports und Pruef-ZIPs sind Nachweise, aber keine aktive Spezifikation.
 - Fuer die laufende V1-Recovery ist `codex/v1-canonical-recovery` der
@@ -194,3 +201,18 @@ Worktree-Recovery und Git-/Cloudflare-Recovery-Reports vom 2026-08-28.
   separat kodifiziert und wird hier nicht erfunden. Jede Push-Aktion bleibt
   dennoch auf den ausdruecklich freigegebenen Branch/Commit beschraenkt.
 - Ungeklaerte Regeln bleiben ungeklaert und werden als `NOT READY` berichtet.
+
+## 12. Platform V4 und kuenftige Entwicklung
+
+- Der bewusst nach `main` integrierte V1-Stand ist die stabile Produktbasis.
+- Experimentelle V4-Arbeit erfolgt auf einem separaten Branch und nach dem
+  V1-Release auf einem getrennten Staging-Worker. Sie wird nicht direkt auf
+  `main` entwickelt oder ungeprueft in Production bereitgestellt.
+- Neue Module und spaetere bezahlte Add-ons erweitern den V1-Vertrag. Sie
+  duerfen bestehende V1-Flows nicht still ersetzen oder den Basistarif
+  unkenntlich machen.
+- `WUXUAI Bonus V1` bleibt als Basispaket mit seinem kanonischen Funktionsumfang
+  und Preisvertrag identifizierbar. Unfertige Pakete bleiben unsichtbar.
+- Stripe-Vorbereitung und spaetere Live-Aktivierung sind ein eigener,
+  Founder-freigegebener Gate. Dieser Dokumentations-Freeze aktiviert weder
+  Billing noch Stripe.

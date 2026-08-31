@@ -10,6 +10,28 @@ und physischen Founder-Gates verifizierten V1-Stand. Historische Reports
 behalten den Status zum Zeitpunkt ihrer Erstellung; dieser Vertrag bildet den
 spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
+## Owner, Onboarding und Legal Company Data - FINAL LOCK
+
+- Der Owner-Flow lautet Registrierung, E-Mail-Bestaetigung, Login, Onboarding,
+  Organization, Restaurant, Primary Branch, Owner-/Admin-Zuordnung, Legal
+  Operator, Unternehmensdaten und Legal Readiness.
+- Die rechtliche Struktur lautet `Legal Operator / Organization -> Restaurant
+  Brand -> Branch`. Rechtliche Betreiberdaten sind keine Branding-Eigenschaften
+  eines Restaurants oder Standorts.
+- `organizations` ist der kanonische Beziehungsknoten;
+  `organization_legal_profiles` speichert die strukturierte Betreiberidentitaet.
+- Rechtlicher Firmenname, Rechtsform, vertretungsberechtigte Person, FN und UID
+  werden auf Betreiber-Ebene gefuehrt. FN und UID bleiben in V1 optional.
+- Die Geschaeftsanschrift referenziert entweder die Restaurantadresse oder eine
+  getrennte rechtliche Anschrift. Der gespeicherte Modus bleibt in Onboarding
+  und Einstellungen derselbe kanonische Vertrag.
+- Dokumente und Legal Readiness verwenden die Betreiberidentitaet. Restaurant-
+  und Branch-Namen bleiben Marketing- beziehungsweise Standortidentitaeten.
+- Unternehmensdaten, Dokumentpruefung, Veroeffentlichung und Freigabe der
+  Kundenregistrierung bilden einen serverseitig autoritativen Readiness-Flow.
+  Unveroeffentlichte Pflichtdokumente koennen nicht gleichzeitig als erledigte
+  Veroeffentlichung dargestellt werden.
+
 ## Branding - IMPLEMENTED
 
 - Sichtbarer Produktname: **WUXUAI Bonus**.
@@ -152,6 +174,49 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   unveraendert; es wird keine Staff-Identitaet erzeugt oder imitiert.
 - Betreiberaktionen behalten `auth.uid()` als Akteur und werden im Audit als
   Admin-Aktion mit der konkreten Restaurantrolle gekennzeichnet.
+- Direkter Staff-Login mit E-Mail und gemeinsamem Auth-Passwort funktioniert
+  ohne QR. Der Staff-QR bleibt als sicherer Restaurant-Einstieg erhalten und
+  ersetzt weder Authentifizierung noch die serverseitige Staff-Zuordnung.
+- Owner steuern Staff-Zugaenge. Staff-Selbstregistrierung und willkuerliche
+  Restaurantuebernahme bleiben blockiert.
+
+## Aktiver Customer-Restaurantkontext - FINAL LOCK
+
+- Es gibt genau einen kanonischen aktiven Restaurantkontext je Customer-
+  Sitzung. Beitritt oder bewusster Restaurantwechsel aktualisiert diesen
+  Kontext servervalidiert.
+- Header, Punkte, Rewards, Offers, persoenliche Geschenke, Referral/2x und
+  Restaurantdetails lesen denselben aktiven Kontext. Kein Modul fuehrt einen
+  parallelen Restaurant-Switch oder einen eigenen Tenantzustand ein.
+- Ein Restaurantwechsel verschiebt keine Membership, Punkte, Geschenke,
+  Benefits oder Referral-Beziehung in einen anderen Tenant.
+
+## Punkte sammeln - FINAL LOCK
+
+- Buchungsbetrag: mindestens 1 EUR; Standardmaximum 300 EUR; Owner-
+  Konfiguration 1 bis 1.000 EUR.
+- Pro Customer, Restaurant und lokalem Kalendertag sind hoechstens zwei
+  erfolgreiche Punktebuchungen erlaubt. Fehlgeschlagene PIN-Eingaben und
+  abgebrochene Vorgaenge verbrauchen keinen erfolgreichen Tagesplatz.
+- Der persoenliche Customer-Punkte-QR ist einmalig und fuenf Minuten gueltig.
+  Fremdtenant, Ablauf, Widerruf und Replay werden serverseitig blockiert.
+- Die Tages-PIN ist serverkontrolliert. Nach fuenf falschen Versuchen ist der
+  Customer fuer dieses Restaurant bis zum naechsten lokalen Tag gesperrt.
+- Zusaetzlich gilt fuer den Actor maximal 30 Buchungsversuche in fuenf Minuten.
+- Punkteberechnung, Idempotenz, Rapid-Repeat-Schutz, Tenantpruefung und Audit
+  sind serverseitig autoritativ. Browserrollen duerfen das Punktejournal nicht
+  direkt per DML veraendern.
+
+## Welcome Gift - FINAL LOCK
+
+- Eine aktive Customer-Membership erhaelt ueber den kanonischen Assignment-
+  Flow hoechstens ein Welcome Gift aus dem aktiven Starter-Gift-Pool.
+- Wiederholte Registrierung, Hydration oder Anmeldung erzeugt kein Duplikat.
+- Zuweisung erzeugt keinen Besuch und keine Punkte. Eligibility und
+  Freischaltung folgen dem bestehenden serverseitigen Vertrag.
+- Die Einloesung verwendet dieselbe 15-Minuten-Live-Praesentation wie andere
+  persoenliche Geschenke. Serverpruefung, Einmalverwendung und Audit bleiben
+  autoritativ.
 
 ## Point Anomaly Monitoring - FINAL LOCK
 
@@ -183,7 +248,8 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   selbst teilt sofort genau ein Geschenk zu. Ab 15 Tagen besteht noch keine
   Berechtigung; ein bereits vergangener Geburtstag wird nicht nachgeholt.
 - Die Auswahl bleibt auf aktive Starter-Gifts mit
-  `birthday_pool_enabled = true` begrenzt. Restaurant-Zeitzone,
+  `birthday_pool_enabled = true` im berechtigten Restaurant-/Branch-Pool
+  begrenzt. Restaurant-Zeitzone,
   29.-Februar-Regel, Audit und bestehende Birthday-E-Mail-Queue bleiben
   erhalten.
 - Ein Unique Index, ein transaktionaler Advisory Lock und dieselbe
@@ -243,6 +309,15 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Das Onboarding erzeugt fuer neue Restaurants nur Gaeste- und Staff-QR-Assets.
   Der Gaeste-QR darf im Starter Kit mehrfach gestaltet, aber nicht als neuer
   Token oder neuer QR-Zweck erzeugt werden.
+- Das Starter Kit besteht aus drei kanonischen A6-Seiten mit 105 x 148 mm,
+  rein weissem Papiergrund, identischer Brand-Stage, unveraenderter QR-
+  Geometrie, Quiet Zone und Print-Safe-Area. Seite 3 bleibt ohne Text-/QR-
+  Kollision.
+- QR-Center-Vorschau und PDF verwenden dasselbe Seitenmodell und dieselbe
+  kanonische Skalierung. Die mobile Vorschau darf als Carousel responsiv
+  dargestellt werden, aber niemals PDF-Masse oder Druckgeometrie veraendern.
+- Mobile Preview, alle drei A6-Seiten und physischer iPhone-Gate sind durch den
+  Founder bestaetigt.
 - Historische Daten, Routen und Reportingbezeichnungen bleiben unveraendert.
 
 ## Customer Mobile - IMPLEMENTED
@@ -269,6 +344,35 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Kundenkarten, Angebotsdetail, Restaurantdetails und Owner-Vorschau zeigen
   denselben Rabatt, Streichpreis und aktuellen Preis. Ungueltige oder fehlende
   Vergleichspreise bleiben ohne Rabattdarstellung.
+- Der Rabatt wird ausschliesslich als
+  `round(((vorheriger_preis - aktueller_preis) / vorheriger_preis) * 100)`
+  berechnet. Beispiel: 14,52 EUR auf 5,00 EUR ergibt 66 Prozent. Es gibt weder
+  ein Prozent-Eingabefeld noch einen persistierten Prozentwert.
+
+## Auth Recovery und E-Mail - FINAL LOCK
+
+- Customer, Staff und Owner verwenden dieselbe Supabase-Auth-Identitaet und
+  damit dasselbe Passwort. Es gibt keine separaten Rollenpasswoerter.
+- Passwort-Reset, Callback und neues Passwort funktionieren rollenunabhaengig;
+  der anschliessende Portalzugriff bleibt serverseitig rollen- und
+  tenantgeprueft.
+- E-Mail-Bestaetigung und Resend sind mit Anti-Enumeration-Antwort, Cooldown und
+  klarer Recovery fuer abgelaufene oder bereits verwendete Links verifiziert.
+
+## Security und Legal Readiness - FINAL LOCK
+
+- RLS bleibt auf sensiblen Tabellen aktiv. Cross-Tenant-Lesen, -Schreiben und
+  Rolleneskalation sind blockiert.
+- Rollen stammen aus kanonischen serverseitigen Beziehungen, niemals aus
+  `user_metadata`, URL, E-Mail oder Frontendzustand.
+- Browsercode enthaelt keine Service Role. Tokens, PINs, Hashes und sensible
+  Kundendaten werden nicht in Git, Public Payloads oder Auditmetadaten
+  offengelegt.
+- `SECURITY DEFINER`-Funktionen verwenden festen `search_path`, minimale Grants
+  und explizite Actor-, Rollen- und Tenantpruefungen.
+- Customer-Registrierung bleibt bis zur gueltigen Veroeffentlichung der
+  Pflichtdokumente blockiert; Dokumenthistorie und Audit werden nicht
+  umgangen oder automatisch akzeptiert.
 
 ## Reporting - IMPLEMENTED
 
