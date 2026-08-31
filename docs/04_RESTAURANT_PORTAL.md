@@ -193,6 +193,12 @@ Wochentage und Uhrzeiten sowie den V1-Restaurantstandort enthalten. Der
 Arbeitsablauf umfasst Entwurf, geplante Veröffentlichung, Veröffentlichung,
 automatische öffentliche Ausblendung nach Ablauf und Deaktivierung.
 
+Wenn der vorherige Preis positiv und groesser als der aktuelle Preis ist,
+leitet WUXUAI den ganzzahligen Preisvorteil automatisch aus beiden vorhandenen
+Preisfeldern ab. Es gibt kein separates Prozentfeld und keinen gespeicherten
+Rabattwert. Die Owner-Vorschau zeigt dieselbe abgeleitete Darstellung wie die
+Kundenansicht.
+
 `Veröffentlicht` und `aktiv` bestimmen die Kundensichtbarkeit bis zum finalen
 Ablaufdatum. Startdatum, Wochentage und tägliche Uhrzeiten steuern ausschließlich
 die aktuelle Gültigkeit. Sie dürfen einen veröffentlichten Beitrag nicht aus dem

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  calculateOfferDiscountPercentage,
   getOfferValidityState,
   isPublicOfferVisible,
   maximumConcurrentOffers,
@@ -54,6 +55,21 @@ test("Preisvalidierung erlaubt keine negativen oder irreführenden Vergleichspre
   assert.equal(validateRestaurantOfferDraft(validDraft({ currentPrice: 0 })), "INVALID_CURRENT_PRICE");
   assert.equal(validateRestaurantOfferDraft(validDraft({ previousPrice: 10 })), "INVALID_PREVIOUS_PRICE");
   assert.equal(validateRestaurantOfferDraft(validDraft({ previousPrice: 15 })), null);
+});
+
+test("Rabattprozente werden einmalig aus aktuellem und vorherigem Preis abgeleitet", () => {
+  assert.equal(calculateOfferDiscountPercentage(5, 14.52), 66);
+  assert.equal(calculateOfferDiscountPercentage(8, 10), 20);
+  assert.equal(calculateOfferDiscountPercentage(99, 100), 1);
+  assert.equal(calculateOfferDiscountPercentage(0, 10), 100);
+});
+
+test("fehlende oder nicht günstigere Vergleichspreise erzeugen keinen Rabatt", () => {
+  assert.equal(calculateOfferDiscountPercentage(5, null), null);
+  assert.equal(calculateOfferDiscountPercentage(5, 5), null);
+  assert.equal(calculateOfferDiscountPercentage(6, 5), null);
+  assert.equal(calculateOfferDiscountPercentage(-1, 5), null);
+  assert.equal(calculateOfferDiscountPercentage(5, 0), null);
 });
 
 test("Veröffentlichung und Aktivierung steuern die Sichtbarkeit bis zum Ablauf", () => {
@@ -237,6 +253,23 @@ test("Customer-Angebote zeigen Gültigkeitsstatus und kompakten Zeitplan", async
   assert.match(card, /SmartMediaFrame/);
 });
 
+test("Customer und Owner verwenden dieselbe abgeleitete Rabattdarstellung", async () => {
+  const [card, ownerPage, service, finder] = await Promise.all([
+    readFile(customerOfferCardUrl, "utf8"),
+    readFile(ownerPageUrl, "utf8"),
+    readFile(serviceUrl, "utf8"),
+    readFile(finderUrl, "utf8"),
+  ]);
+  assert.match(service, /calculateOfferDiscountPercentage/);
+  assert.match(service, /discountLabel: discountPercentage == null \? null : `-\$\{discountPercentage\}%`/);
+  assert.match(card, /restaurantOfferPricePresentation\(offer\.current_price, offer\.previous_price\)/);
+  assert.match(card, /customer-offer-discount-badge/);
+  assert.match(card, /<del>\{price\.previousPrice\}<\/del>/);
+  assert.match(ownerPage, /<OfferPreviewPrice offer=\{previewOffer\}/);
+  assert.match(finder, /restaurantOfferPricePresentation\(currentOffer\.current_price, currentOffer\.previous_price\)/);
+  assert.doesNotMatch(ownerPage, /Rabatt(?:prozent| in Prozent)|discountPercentage.*input/);
+});
+
 test("Mobile Customer-Angebotskarten halten 16:9, Textgrenzen und volle CTA-Breite", async () => {
   const [css, mediaCss] = await Promise.all([
     readFile(customerOfferCssUrl, "utf8"),
@@ -247,6 +280,8 @@ test("Mobile Customer-Angebotskarten halten 16:9, Textgrenzen und volle CTA-Brei
   assert.match(mediaCss, /transform: scale\(var\(--smart-media-render-scale/);
   assert.match(css, /-webkit-line-clamp: 2/);
   assert.match(css, /customer-offer-card \.premium-button \{ min-height: 44px; width: 100%; \}/);
+  assert.match(css, /customer-offer-price \{[^}]*flex-wrap: wrap/);
+  assert.match(css, /customer-offer-discount-badge/);
   assert.match(css, /@media \(max-width: 560px\)/);
   assert.match(css, /grid-template-columns: minmax\(0, 1fr\)/);
   assert.doesNotMatch(css, /(?:^|[;{])\s*width:\s*[5-9]\d\dpx/m);

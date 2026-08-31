@@ -42,7 +42,7 @@ test("Offer-Inhalte bleiben vollstaendig, aber mobil kompakt", () => {
   assert.match(offerCard, /offer\.title/);
   assert.match(offerCard, /offer\.short_description/);
   assert.match(offerCard, /formatRestaurantOfferPeriod\(offer\)/);
-  assert.match(offerCard, /formatRestaurantOfferPrice\(offer\.current_price\)/);
+  assert.match(offerCard, /restaurantOfferPricePresentation\(offer\.current_price, offer\.previous_price\)/);
   assert.match(offerCard, /offer\.button_label/);
   assert.match(offerStyles, /customer-offer-card-body > p[^{]*\{[^}]*font-size: \.82rem[^}]*-webkit-line-clamp: 2/);
   assert.match(offerStyles, /customer-offer-card-validity-row/);

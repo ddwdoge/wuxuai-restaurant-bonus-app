@@ -3,9 +3,9 @@ import { CalendarDays, Image as ImageIcon } from "lucide-react";
 import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { mediaPresentationFromRecord } from "../../../shared/mediaPresentation";
 import {
-  formatRestaurantOfferPrice,
   formatRestaurantOfferPeriod,
   formatRestaurantOfferSchedule,
+  restaurantOfferPricePresentation,
   restaurantOfferValidityPresentation,
   restaurantOfferTypeLabels,
   type RestaurantOffer,
@@ -31,6 +31,7 @@ export function RestaurantOfferCard({
   showRestaurant?: boolean;
 }) {
   const validity = restaurantOfferValidityPresentation(offer);
+  const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
     <article className="customer-offer-card premium-compact-customer-card">
       <div className="customer-offer-card-media">
@@ -47,7 +48,7 @@ export function RestaurantOfferCard({
         </div>
         <div className="customer-offer-card-meta">
           <span><CalendarDays aria-hidden="true" size={16} />{formatRestaurantOfferPeriod(offer)}</span>
-          {offer.current_price != null ? <strong>{formatRestaurantOfferPrice(offer.current_price)}</strong> : null}
+          {price.currentPrice ? <div className="customer-offer-price">{price.discountLabel ? <strong className="customer-offer-discount-badge">{price.discountLabel}</strong> : null}{price.previousPrice ? <del>{price.previousPrice}</del> : null}<span className="customer-offer-current-price">{price.currentPrice}</span></div> : null}
         </div>
         <button className="premium-button premium-button-secondary" onClick={onOpen} type="button">{offer.button_label}</button>
       </div>
@@ -57,6 +58,7 @@ export function RestaurantOfferCard({
 
 export function RestaurantOfferDetail({ offer }: { offer: RestaurantOffer }) {
   const validity = restaurantOfferValidityPresentation(offer);
+  const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
     <article className="customer-offer-detail">
       <div className="customer-offer-detail-media"><OfferImage detail offer={offer} /></div>
@@ -68,8 +70,8 @@ export function RestaurantOfferDetail({ offer }: { offer: RestaurantOffer }) {
       <div className="customer-offer-detail-meta">
         <span><strong>Gültigkeit:</strong> {formatRestaurantOfferPeriod(offer)}</span>
         <span>{formatRestaurantOfferSchedule(offer)}</span>
-        {offer.current_price != null ? <strong>{formatRestaurantOfferPrice(offer.current_price)}</strong> : null}
       </div>
+      {price.currentPrice ? <div className="customer-offer-detail-price">{price.discountLabel ? <strong className="customer-offer-discount-badge">{price.discountLabel}</strong> : null}{price.previousPrice ? <del>{price.previousPrice}</del> : null}<strong className="customer-offer-current-price">{price.currentPrice}</strong></div> : null}
       <p className="customer-offer-responsibility">Angaben zu Preis, Verfügbarkeit und Inhalt stammen vom Restaurant.</p>
     </article>
   );

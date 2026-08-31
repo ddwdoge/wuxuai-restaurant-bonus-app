@@ -66,6 +66,16 @@ export function validateRestaurantOfferDraft(offer) {
   return null;
 }
 
+export function calculateOfferDiscountPercentage(currentPrice, previousPrice) {
+  if (currentPrice == null || previousPrice == null) return null;
+  const current = Number(currentPrice);
+  const previous = Number(previousPrice);
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || current < 0 || previous <= 0 || previous <= current) {
+    return null;
+  }
+  return Math.round(((previous - current) / previous) * 100);
+}
+
 export function maximumConcurrentOffers(offers) {
   const events = offers.flatMap((offer) => [
     { at: new Date(offer.valid_from).getTime(), delta: 1 },

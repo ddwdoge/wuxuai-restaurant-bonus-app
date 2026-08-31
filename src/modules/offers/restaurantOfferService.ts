@@ -1,5 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 import {
+  calculateOfferDiscountPercentage,
   getOfferValidityState,
   isPublicOfferVisible,
   type OfferValidityState,
@@ -295,4 +296,17 @@ export function restaurantOfferDisplayStatus(offer: RestaurantOffer, now = new D
 export function formatRestaurantOfferPrice(value: number | null | undefined) {
   if (value == null) return null;
   return new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(Number(value));
+}
+
+export function restaurantOfferPricePresentation(
+  currentPrice: number | null | undefined,
+  previousPrice: number | null | undefined,
+) {
+  const discountPercentage = calculateOfferDiscountPercentage(currentPrice, previousPrice);
+  return {
+    currentPrice: formatRestaurantOfferPrice(currentPrice),
+    previousPrice: discountPercentage == null ? null : formatRestaurantOfferPrice(previousPrice),
+    discountPercentage,
+    discountLabel: discountPercentage == null ? null : `-${discountPercentage}%`,
+  };
 }

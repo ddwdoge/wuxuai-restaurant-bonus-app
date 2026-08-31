@@ -244,4 +244,9 @@
 .partner-current-offer { background: #fff8e8; border-left: 3px solid #bd9136; display: grid; gap: 6px; padding: 12px; }
 .partner-current-offer > span { color: #8c681b; font-size: .74rem; font-weight: 800; text-transform: uppercase; }
 .partner-current-offer p, .partner-current-offer small { color: #655b4d; margin: 0; }
+.partner-current-offer-price { align-items: baseline; display: flex; flex-wrap: wrap; gap: 5px 7px; }
+.partner-current-offer-price b { background: #a5332a; border-radius: 4px; color: #fff; padding: 3px 6px; }
+.partner-current-offer-price del { color: #756c60; }
+.partner-current-offer-price strong { color: #211c16; }
+.partner-current-offer-price span { flex-basis: 100%; }
 .partner-current-offer .premium-button { margin-top: 4px; }

@@ -2187,6 +2187,22 @@ normale Punktebelohnungen.
 Diese Entscheidung ersetzt frühere pauschale Verbote dynamischer
 Promotionflächen ausschließlich für dieses eng begrenzte Informationsmodul.
 
+## CTO-Entscheidung 2026-08-31: Automatische Angebots-Rabattdarstellung
+
+🟢 **LOCKED / V1 PRESENTATION**
+
+- Restaurants erfassen weiterhin ausschliesslich aktuellen und optionalen
+  vorherigen Preis. Ein separates Prozentfeld ist nicht zulaessig.
+- Bei `vorheriger Preis > aktueller Preis >= 0` und positivem vorherigen Preis
+  wird der ganzzahlige Vorteil zentral als
+  `round(((vorher - aktuell) / vorher) * 100)` abgeleitet.
+- Kundenkarten, Angebotsdetail, Restaurantdetails und Owner-Vorschau verwenden
+  dieselbe Ableitung. Der Prozentwert wird nicht separat gespeichert.
+- Fehlende, gleiche oder niedrigere Vergleichspreise erzeugen weder Badge noch
+  Streichpreis.
+- Angebotsgueltigkeit, Zeitplan, Aktivierung, Punkte, Geschenke, Referral und
+  Einloesungen bleiben unveraendert.
+
 ## CTO-Entscheidung 2026-08-04: Zentraler Kundenbereich und Angebots-E-Mails
 
 🟢 **LOCKED / V1 / DRAFT_LEGAL_REVIEW_REQUIRED**

@@ -3,5 +3,6 @@ export function isPublicOfferVisible(offer: Record<string, unknown>, now?: Date)
 export type OfferValidityState = "CURRENT" | "LATER_TODAY" | "NOT_CURRENT" | "UPCOMING" | "EXPIRED";
 export function getOfferValidityState(offer: Record<string, unknown>, now?: Date): OfferValidityState;
 export function validateRestaurantOfferDraft(offer: Record<string, unknown>): string | null;
+export function calculateOfferDiscountPercentage(currentPrice: number | null | undefined, previousPrice: number | null | undefined): number | null;
 export function maximumConcurrentOffers(offers: Array<{ valid_from: string; valid_to: string }>): number;
 export function sortPublicOffers<T extends { offer_type: string; published_at?: string | null; valid_from: string }>(offers: T[]): T[];

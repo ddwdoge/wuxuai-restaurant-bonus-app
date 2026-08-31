@@ -236,6 +236,12 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Bevorstehende Beiträge bleiben mit `Gültig ab` sichtbar. Abgelaufene,
   deaktivierte, archivierte und fremde Beiträge bleiben verborgen.
 - Sichtbarkeit verändert keine Reward-, Punkte-, Claim- oder Einlöselogik.
+- Ein gueltiger vorheriger Preis ueber dem aktuellen Preis erzeugt eine rein
+  abgeleitete ganzzahlige Rabattdarstellung. Es gibt kein Prozent-Eingabefeld
+  und keine persistierte Prozentquelle.
+- Kundenkarten, Angebotsdetail, Restaurantdetails und Owner-Vorschau zeigen
+  denselben Rabatt, Streichpreis und aktuellen Preis. Ungueltige oder fehlende
+  Vergleichspreise bleiben ohne Rabattdarstellung.
 
 ## Reporting - IMPLEMENTED
 

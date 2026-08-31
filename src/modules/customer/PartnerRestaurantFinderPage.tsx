@@ -32,7 +32,7 @@ import {
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
 import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
-import { formatRestaurantOfferPrice, recordRestaurantOfferEvent } from "../offers/restaurantOfferService";
+import { recordRestaurantOfferEvent, restaurantOfferPricePresentation } from "../offers/restaurantOfferService";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
@@ -105,6 +105,10 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
   const isMember = membership?.registered === true;
   const customerToken = readStoredCustomerToken(location.slug);
   const portalUrl = `/customer/${encodeURIComponent(location.slug)}${customerToken ? `?token=${encodeURIComponent(customerToken)}` : ""}`;
+  const currentOffer = location.offers[0];
+  const currentOfferPrice = currentOffer
+    ? restaurantOfferPricePresentation(currentOffer.current_price, currentOffer.previous_price)
+    : null;
 
   return (
     <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
@@ -140,13 +144,13 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           {membership.available_rewards.slice(0, 3).map((reward) => <strong key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
-      {location.offers[0] ? (
+      {currentOffer ? (
         <div className="partner-current-offer">
-          <span>{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
-          <strong>{location.offers[0].title}</strong>
-          <p>{location.offers[0].short_description}</p>
-          <small>{location.offers[0].current_price != null ? `${formatRestaurantOfferPrice(location.offers[0].current_price)} · ` : ""}Gültig bis {new Date(location.offers[0].valid_to).toLocaleDateString("de-AT")}</small>
-          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
+          <span>{currentOffer.offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
+          <strong>{currentOffer.title}</strong>
+          <p>{currentOffer.short_description}</p>
+          <small className="partner-current-offer-price">{currentOfferPrice?.discountLabel ? <b>{currentOfferPrice.discountLabel}</b> : null}{currentOfferPrice?.previousPrice ? <del>{currentOfferPrice.previousPrice}</del> : null}{currentOfferPrice?.currentPrice ? <strong>{currentOfferPrice.currentPrice}</strong> : null}<span>Gültig bis {new Date(currentOffer.valid_to).toLocaleDateString("de-AT")}</span></small>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
         </div>
       ) : null}
       {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}

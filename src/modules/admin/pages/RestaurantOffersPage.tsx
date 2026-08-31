@@ -29,13 +29,13 @@ import {
   changeRestaurantOfferStatus,
   deleteRestaurantOfferDraft,
   duplicateRestaurantOffer,
-  formatRestaurantOfferPrice,
   formatRestaurantOfferSchedule,
   loadRestaurantOfferBranches,
   loadRestaurantOfferEmailSummary,
   loadRestaurantOffers,
   restaurantOfferCustomerVisibility,
   restaurantOfferDisplayStatus,
+  restaurantOfferPricePresentation,
   restaurantOfferValidityPresentation,
   restaurantOfferTypeLabels,
   restaurantOfferTypes,
@@ -139,6 +139,18 @@ function statusTone(status: string) {
   if (status === "Entwurf") return "draft";
   if (status === "Abgelaufen") return "expired";
   return "inactive";
+}
+
+function OfferPreviewPrice({ offer }: { offer: RestaurantOffer }) {
+  const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
+  if (!price.currentPrice) return null;
+  return (
+    <div className="restaurant-offer-preview-price">
+      {price.discountLabel ? <strong>{price.discountLabel}</strong> : null}
+      {price.previousPrice ? <del>{price.previousPrice}</del> : null}
+      <b>{price.currentPrice}</b>
+    </div>
+  );
 }
 
 export function RestaurantOffersPage() {
@@ -392,6 +404,7 @@ export function RestaurantOffersPage() {
             const displayStatus = restaurantOfferDisplayStatus(offer);
             const validity = restaurantOfferValidityPresentation(offer);
             const customerVisibility = restaurantOfferCustomerVisibility(offer);
+            const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
             return (
               <article className="restaurant-offer-card" key={offer.id}>
                 <div className="restaurant-offer-media">
@@ -408,7 +421,7 @@ export function RestaurantOffersPage() {
                     <div><dt>Zeitplan</dt><dd>{formatRestaurantOfferSchedule(offer)}</dd></div>
                     <div><dt>Zeitraum</dt><dd>{formatPeriod(offer)}</dd></div>
                     <div><dt>Standort</dt><dd>{offer.branch_name ?? activeRestaurant.name}</dd></div>
-                    {offer.current_price != null ? <div><dt>Preis</dt><dd>{formatRestaurantOfferPrice(offer.current_price)}</dd></div> : null}
+                    {price.currentPrice ? <div><dt>Preis</dt><dd>{price.discountLabel ? `${price.discountLabel} · ` : ""}{price.previousPrice ? `${price.previousPrice} → ` : ""}{price.currentPrice}</dd></div> : null}
                   </dl>
                   <div className="restaurant-offer-metrics"><span><Eye aria-hidden="true" size={16} />{offer.views ?? 0} Aufrufe</span><span><MousePointerClick aria-hidden="true" size={16} />{offer.clicks ?? 0} Klicks</span></div>
                   <div className="restaurant-offer-actions">
@@ -490,7 +503,7 @@ export function RestaurantOffersPage() {
       </AppDrawer>
 
       <AppDrawer description="So sehen Gäste den Beitrag." onClose={() => setPreviewOffer(null)} open={Boolean(previewOffer)} size="standard" title="Vorschau">
-        {previewOffer ? <article className="restaurant-offer-customer-preview">{previewOffer.image_url ? <SmartMediaFrame alt={`Bild zu ${previewOffer.title}`} imageUrl={previewOffer.image_url} presentation={rewardImageCropFromRecord(previewOffer)} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}<div><small>{restaurantOfferTypeLabels[previewOffer.offer_type]}</small><h2>{previewOffer.title}</h2><p>{previewOffer.short_description}</p>{previewOffer.current_price != null ? <strong>{formatRestaurantOfferPrice(previewOffer.current_price)}</strong> : null}<button className="button" type="button">{previewOffer.button_label}</button></div></article> : null}
+        {previewOffer ? <article className="restaurant-offer-customer-preview">{previewOffer.image_url ? <SmartMediaFrame alt={`Bild zu ${previewOffer.title}`} imageUrl={previewOffer.image_url} presentation={rewardImageCropFromRecord(previewOffer)} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}<div><small>{restaurantOfferTypeLabels[previewOffer.offer_type]}</small><h2>{previewOffer.title}</h2><p>{previewOffer.short_description}</p><OfferPreviewPrice offer={previewOffer} /><button className="button" type="button">{previewOffer.button_label}</button></div></article> : null}
       </AppDrawer>
     </div>
   );

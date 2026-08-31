@@ -851,6 +851,11 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   nur, wenn mindestens ein aktuell veröffentlichter Beitrag vorhanden ist.
 - Beiträge zeigen Angebotsart, Titel, Bild, Kurzbeschreibung, optionalen Preis,
   Gültigkeit und eine klar beschriftete Aktion.
+- Wenn ein gueltiger vorheriger Preis ueber dem aktuellen Preis liegt, zeigen
+  Kundenkarte, Angebotsdetail und Restaurantdetails denselben automatisch
+  gerundeten Prozentvorteil, den gestrichenen vorherigen Preis und den
+  hervorgehobenen aktuellen Preis. Fehlende oder nicht guenstigere
+  Vergleichspreise erzeugen keinen Rabatt-Hinweis.
 - Ein veröffentlichter und aktiver Beitrag bleibt bis zu seinem finalen
   Ablaufdatum sichtbar. Ein zukünftiges Startdatum, ein anderer Wochentag oder
   ein geschlossenes tägliches Zeitfenster ändern nur den sichtbaren

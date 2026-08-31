@@ -3514,3 +3514,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Birthday steht deterministisch vor Welcome; weitere Geschenktypen folgen
   stabil. Gift-Zuweisung, Einlösung, Punkte, Visits, Audit und E-Mail blieben
   unverändert.
+
+## 2026-08-31 - Angebotsrabatt automatisch aus Preisen dargestellt
+
+- Eine zentrale Präsentationsfunktion leitet den ganzzahligen Preisvorteil aus
+  vorhandenem aktuellem und vorherigem Preis ab; `14,52 EUR` auf `5,00 EUR`
+  ergibt sichtbar `-66%`.
+- Kundenkarte, Angebotsdetail, Restaurantdetails und Owner-Vorschau verwenden
+  denselben Rabattwert, Streichpreis und hervorgehobenen aktuellen Preis.
+- Fehlende, gleiche oder niedrigere Vergleichspreise erzeugen keine
+  Rabattdarstellung. Es wurde kein Prozentfeld und kein Datenbankwert ergänzt.
+- Angebotsgueltigkeit, Zeitplanung, Aktivierung, Punkte, Geschenke, Referral,
+  Einloesung, RLS und Datenbank blieben unveraendert.
