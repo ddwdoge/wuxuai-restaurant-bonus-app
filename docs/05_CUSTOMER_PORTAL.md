@@ -922,6 +922,10 @@ Geburtstagsauslosung als primären V1-Kundenflow:
 - Nach Ablauf erscheint das Geschenk nur noch als eingelöst in der Historie.
 - Geburtstagsgeschenke werden 14 Tage vor dem Geburtstag automatisch aus dem
   aktiven Geburtstagspool zugeteilt und nicht vom Kunden neu ausgelost.
+- Registriert oder aktiviert sich ein Kunde erst innerhalb der naechsten 14
+  lokalen Kalendertage einschliesslich Geburtstag, wird dieselbe kanonische
+  Zuteilung sofort nachgeholt. Ein Besuch, QR-Scan oder eine Punktebuchung ist
+  dafuer nicht erforderlich; die Jahres-Eindeutigkeit bleibt bestehen.
 - Der zentrale Kundenlogin verwendet Supabase Auth mit E-Mail, Passwort und
   E-Mail-Bestätigung. Ältere passwortlose Identitätsabschnitte sind historisch.
 

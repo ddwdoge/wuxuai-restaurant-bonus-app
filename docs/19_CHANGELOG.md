@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-31 - Geburtstagsgeschenk innerhalb von 14 Tagen nachholbar
+
+- Birthday Eligibility vom exakten Tag `Geburtstag - 14` auf das inklusive
+  lokale Fenster von heute bis heute plus 14 Kalendertage erweitert.
+- Taeglicher Cron und unmittelbare Account-Membership-Aktivierung verwenden
+  denselben internen Zuteilungshelper.
+- Eindeutigkeit auf genau ein Geschenk pro Customer, Restaurant und
+  Geburtstagsjahr verstaerkt; bestehende Pool-, Audit-, E-Mail-, Zeitzonen-
+  und 29.-Februar-Vertraege beibehalten.
+- Keine Besuchs-, Punkte-, Redemption-, Referral- oder Stripe-Logik geaendert.
+- Additive Migration:
+  `20260831001000_birthday_gift_14_day_catch_up.sql`.
+
 ## 2026-08-31 - Release-Evidenz Referral und Multi-Role reconciled
 
 - Spaetere Founder-/Live-Nachweise schliessen die historischen offenen Gates

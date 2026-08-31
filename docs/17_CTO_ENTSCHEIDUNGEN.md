@@ -3,6 +3,25 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-31 - Geburtstagsgeschenk mit 14-Tage-Nachholung
+
+- Ein aktiver Restaurantkunde ist einschliesslich heute bis 14 lokale
+  Kalendertage vor seinem Geburtstag fuer genau ein Geburtstagsgeschenk des
+  betreffenden Geburtstagsjahres berechtigt.
+- Eine spaete Registrierung innerhalb dieses Fensters verliert das Geschenk
+  nicht. Die kanonische Account-Membership-Aktivierung prueft die Berechtigung
+  sofort; der taegliche Serverjob verwendet dieselbe interne Zuteilung.
+- Ein bereits vergangener Geburtstag wird durch diese Nachholregel nicht
+  rueckwirkend berechtigt. Ab 15 Tagen vor dem Geburtstag wartet die
+  Zuteilung auf das normale Fenster.
+- Pool, Restaurant-Zeitzone, 29.-Februar-Verhalten, Audit,
+  Transaktions-E-Mail und die Einmaligkeit pro Customer, Restaurant und
+  Geburtstagsjahr bleiben kanonisch. Besuch und Punkte sind keine
+  Voraussetzung.
+- Diese Entscheidung erweitert die automatische Entscheidung vom 09.08.2026
+  vom exakten Tag `Geburtstag - 14` auf das inklusive Fenster
+  `heute ... heute + 14`.
+
 ## 2026-08-30 - Eine Auth-Identitaet mit additiven Portalrollen
 
 - Eine E-Mail-Adresse gehoert zu genau einer Supabase-Auth-Identitaet. Customer,

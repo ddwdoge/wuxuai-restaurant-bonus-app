@@ -164,6 +164,25 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   Kunden- oder Staff-Zugaenge und fuehrt weder automatische Rueckbuchung noch
   automatische Sperre aus.
 
+## Birthday Gift Catch-up - CODE INTEGRATED, STAGING PENDING
+
+- Das inklusive Eligibility-Fenster reicht vom lokalen Restauranttag bis zum
+  Geburtstag innerhalb der naechsten 14 lokalen Kalendertage.
+- Die kanonische Account-Membership-Aktivierung und der taegliche Birthday-Job
+  verwenden denselben internen, tenantgebundenen Assignment-Helper.
+- Eine Aktivierung 14, 10, 4 oder 1 Tag vor dem Geburtstag sowie am Geburtstag
+  selbst teilt sofort genau ein Geschenk zu. Ab 15 Tagen besteht noch keine
+  Berechtigung; ein bereits vergangener Geburtstag wird nicht nachgeholt.
+- Die Auswahl bleibt auf aktive Starter-Gifts mit
+  `birthday_pool_enabled = true` begrenzt. Restaurant-Zeitzone,
+  29.-Februar-Regel, Audit und bestehende Birthday-E-Mail-Queue bleiben
+  erhalten.
+- Ein Unique Index, ein transaktionaler Advisory Lock und dieselbe
+  serverseitige Existenzpruefung verhindern Duplikate pro Customer,
+  Restaurant und Geburtstagsjahr.
+- Migration: `20260831001000_birthday_gift_14_day_catch_up.sql`; noch nicht auf
+  Development/Test angewendet.
+
 ## QR Center und Starter Kit - IMPLEMENTED
 
 - Der Neue-Gaeste-QR `/customer/:slug` ist der einzige aktive oeffentliche

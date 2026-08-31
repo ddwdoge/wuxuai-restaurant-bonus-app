@@ -1215,3 +1215,19 @@ nur eine Zuteilung erlaubt. Das Geschenk ist vom Beginn des 14. Tages vor dem
 Geburtstag bis zum Beginn des 15. Tages danach gültig. Ein fehlender Pool
 erzeugt keine leere Zuteilung. Die Einlösung verwendet das einheitliche
 15-Minuten-Präsentationsfenster.
+
+## CTO-Ergänzung 2026-08-31: 14-Tage-Eligibility-Catch-up
+
+Der automatische Geburtstagspool verwendet nicht mehr nur den exakten
+Zuteilungstag. Ein aktiver Restaurantkunde ist ab 14 lokalen Kalendertagen vor
+dem Geburtstag bis einschliesslich des Geburtstags berechtigt. Bei einer
+Registrierung oder Membership-Aktivierung innerhalb dieses Fensters wird die
+kanonische Zuteilung sofort ausgefuehrt; der taegliche Job holt denselben Check
+idempotent nach. Ab 15 Tagen vor dem Geburtstag besteht noch keine
+Berechtigung, und ein bereits vergangener Geburtstag wird durch diese Regel
+nicht rueckwirkend zugeteilt.
+
+Pool, Restaurant-Zeitzone, 29.-Februar-Regel, Geltungsdauer, Audit und private
+Transaktions-E-Mail bleiben unveraendert. Die Datenbank erzwingt hoechstens
+eine Zuteilung pro Customer, Restaurant und Geburtstagsjahr. Weder Besuch noch
+Punktebuchung sind Voraussetzung.
