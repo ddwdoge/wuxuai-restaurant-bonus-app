@@ -159,7 +159,17 @@ export function RegisterPage() {
             </>
           )}
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
-          <PublicFormField autoComplete="tel" disabled={loading} id="phone" label="Telefon" onChange={(event) => setPhone(event.target.value)} optional type="tel" value={phone} />
+          <PublicFormField
+            autoComplete="tel"
+            disabled={loading}
+            hint="Empfohlen für zukünftige SMS-Benachrichtigungen."
+            id="phone"
+            label="Mobiltelefonnummer (empfohlen)"
+            onChange={(event) => setPhone(event.target.value)}
+            optional
+            type="tel"
+            value={phone}
+          />
 
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}

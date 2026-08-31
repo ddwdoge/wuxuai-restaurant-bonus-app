@@ -26,6 +26,13 @@ Flow 01 ist kein technisches Admin-Setup.
 
 Flow 01 ist ein geführter Installationsassistent.
 
+Im Schritt `Geöffnet` kann der Owner die vollständige Montagskonfiguration mit
+`Auf alle Tage übertragen` lokal auf Dienstag bis Sonntag kopieren. Dazu zählen
+offen/geschlossen, Hauptzeiten und vorhandene Pausen- beziehungsweise zweite
+Öffnungsblöcke. Abweichende Zielwerte werden erst nach einer verständlichen
+Überschreibbestätigung ersetzt. Jeder Tag bleibt danach einzeln bearbeitbar;
+erst `Weiter` übernimmt die kopierten Werte in den Onboarding-Entwurf.
+
 ------------------------------------------------------------------------
 
 ## 1. Ziel von Flow 01
@@ -352,19 +359,23 @@ Der Besitzer definiert die spätere Punkte-Einlösung, ohne Punkte zu berechnen.
 
 Restaurantbesitzer soll nicht mit Punktformeln arbeiten.
 
-Er beantwortet einfache Fragen:
+Er waehlt nur die gewuenschte V1-Rueckgabequote:
 
--   Wie hoch ist der durchschnittliche Rechnungsbetrag?
--   Nach wie vielen Besuchen soll die erste Einlösung ungefähr
-    erreichbar sein?
--   Welche Rückgabequote passt zum Restaurant?
--   Welche Einlöseart ist typisch?
+-   Sparsam: 3 %
+-   Normal: 5 %
+-   Grosszuegig: 8 %
+-   Premium: 10 %
 
-Die Software berechnet daraus:
+Die Software verwendet fuer die verstaendliche Vorschau feste V1-Richtwerte:
 
-- erwartete Konsumation bis zur Einlösung
-- empfohlenen Einlösewert
-- spätere interne Punkte-Einlösung
+- Referenzausgabe: 20 EUR pro Besuch
+- Referenzbesuche: 5
+- Referenzkonsumation: 100 EUR
+
+Diese Werte sind keine Kundenvoraussetzung. Ein Gast muss weder genau 20 EUR
+ausgeben noch genau fuenfmal kommen; es entsteht dadurch keine automatische
+Freischaltung nach fuenf Besuchen. Die tatsaechliche Punkte- und
+Einloesungslogik bleibt autoritativ serverseitig.
 
 ### Verboten
 
@@ -388,15 +399,15 @@ V1-Rückgabequoten:
 Berechnung:
 
 ```text
-Konsumation = Durchschnittsbon × Besuche
-Einlösewert = Konsumation × Rückgabequote
+Referenzkonsumation = 20 EUR × 5 Besuche
+Beispiel-Einlösewert = Referenzkonsumation × Rückgabequote
 ```
 
 Beispiel:
 
 ```text
-18 € × 5 Besuche = 90 €
-Normal: 5 % von 90 € = 4,50 €
+20 EUR × 5 Besuche = 100 EUR
+Normal: 5 % von 100 EUR = ca. 5 EUR
 ```
 
 ### Restaurant arbeitet mit Euro

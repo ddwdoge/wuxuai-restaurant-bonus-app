@@ -476,6 +476,19 @@ a {
 }
 
 .settings-location-description { min-height: 110px; padding-block: 12px; resize: vertical; }
+.country-select { min-width: 0; position: relative; width: 100%; z-index: 2; }
+.country-select.is-open { z-index: 12; }
+.country-select-control { min-width: 0; position: relative; }
+.country-select .country-select-input { min-height: 48px; padding-right: 42px; width: 100%; }
+.country-select-chevron { color: var(--muted); pointer-events: none; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); }
+.country-select-options { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 36px rgba(23, 32, 42, 0.14); display: grid; left: 0; max-height: min(320px, 46vh); min-width: 100%; overflow-x: hidden; overflow-y: auto; padding: 6px; position: absolute; right: 0; top: calc(100% + 6px); }
+.country-select-option { align-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--text); cursor: pointer; display: grid; font: inherit; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; min-height: 44px; padding: 10px 12px; text-align: left; width: 100%; }
+.country-select-option span { min-width: 0; overflow-wrap: anywhere; }
+.country-select-option:hover,
+.country-select-option.is-active { background: #fbf7ef; }
+.country-select-option[aria-selected="true"] { color: var(--tenant-primary, #0f766e); font-weight: 700; }
+.country-select-option:focus-visible { outline: 3px solid color-mix(in srgb, var(--gold) 38%, transparent); outline-offset: -2px; }
+.country-select-empty { color: var(--muted); margin: 0; padding: 12px; }
 .settings-cover-section {
   border-top: 1px solid var(--border);
   display: grid;
@@ -2424,6 +2437,56 @@ a {
 .schedule-grid {
   display: grid;
   gap: 10px;
+}
+
+.opening-hours-copy-action {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opening-hours-copy-button {
+  min-height: 44px;
+  width: fit-content;
+}
+
+.opening-hours-copy-confirmation {
+  background: #f7f9fb;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  max-width: 560px;
+  padding: 12px;
+  width: 100%;
+}
+
+.opening-hours-copy-confirmation p,
+.opening-hours-copy-feedback {
+  margin: 0;
+}
+
+.opening-hours-copy-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opening-hours-copy-confirmation-actions .button {
+  min-height: 44px;
+}
+
+.opening-hours-copy-feedback {
+  color: #16705c;
+  font-weight: 700;
+}
+
+@media (max-width: 430px) {
+  .opening-hours-copy-button,
+  .opening-hours-copy-confirmation-actions .button {
+    width: 100%;
+  }
 }
 
 .schedule-row {

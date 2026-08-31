@@ -1,6 +1,6 @@
 # WUXUAI Bonus V1 - Final Release Status
 
-Status: **V1 FINAL LOCK / PRE-MAIN GIT GATE**
+Status: **V1 CODE LOCK / OWNER-ONBOARDING DEVELOPMENT-TEST GATE OPEN**
 Stand: 2026-08-31
 Branch: `codex/v1-canonical-recovery`
 
@@ -10,7 +10,8 @@ damaligen Status und duerfen dieses Ergebnis nicht zuruecksetzen.
 
 ## Produkt- und Founder-Gates
 
-- Owner / Onboarding / Legal Company Data: PASS
+- Owner / Legal Company Data: PASS
+- Owner-Onboarding Bonus-Simplification: CODE LOCK; Development/Test offen
 - Customer: PASS
 - Staff: PASS
 - Multi-Role: FINAL LOCK
@@ -40,15 +41,15 @@ damaligen Status und duerfen dieses Ergebnis nicht zuruecksetzen.
 ## Offene Gates
 
 - Open P0: 0
-- Open P1: 0
-- Open Product Release Blockers: 0
+- Open P1: 1
+- Open Product Release Blockers: 1
 - Open Physical Founder Gates: 0
 
 ## Git- und Releasegrenze
 
-- V1 Final Lock: YES
-- Ready for Founder Main Merge: YES, sobald der finale Docs-Commit auf dem
-  Remote-Branch liegt und der identische Backup-Branch verifiziert ist.
+- V1 Final Lock: NO, bis das neue Owner-Onboarding auf Development/Test
+  verifiziert ist.
+- Ready for Founder Main Merge: NO
 - Main modified by this freeze: NO
 - Production deployed: NO
 - Production: LOCKED bis ausdrueckliche Founder-Freigabe

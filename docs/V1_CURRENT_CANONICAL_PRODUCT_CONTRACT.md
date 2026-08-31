@@ -1,6 +1,6 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-Status: **V1 FINAL LOCK / DEVELOPMENT-TEST VERIFIED**
+Status: **V1 CODE LOCK / OWNER-ONBOARDING DEVELOPMENT-TEST GATE OPEN**
 Stand: 2026-08-31
 Authoritative Branch: `codex/v1-canonical-recovery`
 Recovery Branch: `codex/v1-canonical-recovery`
@@ -31,6 +31,37 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   Kundenregistrierung bilden einen serverseitig autoritativen Readiness-Flow.
   Unveroeffentlichte Pflichtdokumente koennen nicht gleichzeitig als erledigte
   Veroeffentlichung dargestellt werden.
+- Der Bonus-Schritt zeigt nur die kanonischen Rueckgabequoten 3, 5, 8 und 10
+  Prozent. 20 EUR pro Besuch und fuenf Besuche ergeben ausschliesslich die
+  feste Vorschau von 100 EUR Referenzkonsumation und sind keine
+  Kundenvoraussetzung.
+- Die optionale Owner-Mobiltelefonnummer ist fuer zukuenftige
+  SMS-Benachrichtigungen vorbereitet. V1 aktiviert dadurch weder SMS noch eine
+  Marketingeinwilligung.
+
+## Owner Dashboard Smart Setup Assistant - CODE LOCK
+
+- Die bestehende schwarze Karte `Heute fuer dich` zeigt genau eine Empfehlung
+  aus dem zentralen Resolver `resolveOwnerDashboardRecommendation`.
+- Die feste Reihenfolge lautet: Publikation/Standort, Punkteeinloesung,
+  aktuelles Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang.
+- Publikation verwendet dieselbe Legal Readiness, den aktiven Restaurantstatus
+  sowie den aktiven, auffindbaren Standort mit vollstaendiger Adresse und
+  gueltigen Koordinaten. Angebot und Mitarbeiterzugang bleiben Empfehlungen
+  und sind keine Legal- oder Publikationsvoraussetzungen.
+- Jede CTA fuehrt direkt in den bestehenden verantwortlichen Bereich. Nach
+  vollstaendiger Einrichtung wechselt dieselbe Karte deterministisch in den
+  Betriebsmodus und empfiehlt ein neues Angebot.
+- V1 speichert keinen erfundenen QR-Download- oder Drucknachweis. Die
+  QR-Empfehlung kann nur die objektive technische QR-Bereitschaft auswerten;
+  die physische Platzierung bleibt ausserhalb des autoritativen App-Zustands.
+- Neue geeignete Welcome-/Starter-Gifts werden in den aktiven
+  Erstellungswegen mit `birthday_pool_enabled = true` angelegt. Der Owner kann
+  die Verwendung pro Geschenk mit `Fuer Geburtstagsgeschenke verwenden`
+  deaktivieren. Bereits gespeicherte Entscheidungen werden nicht
+  ueberschrieben; es gibt keine Bestandsmigration oder Massenaenderung.
+- Birthday Eligibility, 14-Tage-Catch-up, Einmaligkeit, Einloesung, Audit und
+  E-Mail bleiben unveraendert.
 
 ## Branding - IMPLEMENTED
 
@@ -154,6 +185,12 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 ## Geocoding - IMPLEMENTED
 
 - Owner geben Strasse, PLZ, Ort und Land an.
+- Die Standortseite zeigt eine durchsuchbare weltweite Laenderauswahl. Die
+  Namen werden fuer DE, EN, FR, IT und ES lokalisiert; gespeichert und an den
+  Geocoder uebergeben wird ausschliesslich der ISO-3166-1-Alpha-2-Code.
+- Bestehende Codes wie `AT` werden als lokalisierter Name dargestellt. Bei
+  fehlendem kanonischem Land gibt es keinen stillen Oesterreich-Default und
+  freie Texte koennen nicht gespeichert werden.
 - Geocodierung erfolgt nur nach ausdruecklicher Owner-Aktion serverseitig ueber
   den festgelegten Nominatim-Endpunkt.
 - Cache und anwendungsweites Rate Limit von mindestens 1,1 Sekunden bleiben

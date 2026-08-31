@@ -25,16 +25,24 @@ zugrunde liegenden Datenbankobjekte und Punkteverträge bleiben aus
 Kompatibilitätsgründen bestehen und dürfen durch diese UI-Regel nicht verändert
 oder gelöscht werden.
 
-## Dynamischer Dashboard-Schritt
+## Smart Setup Assistant im Dashboard
 
-Das Dashboard zeigt oberhalb der Kennzahlen maximal einen priorisierten
-`Nächster Schritt`-Hinweis. Echte Legal- oder Systemblocker haben Vorrang vor
-Einrichtungsaufgaben; danach folgen Punkte-Einlösung, Punktevergabe,
-Willkommensgeschenk und QR-Bereitschaft. Optionale Optimierungen dürfen
-benutzer- und restaurantbezogen geschlossen werden. Die einmalige
-Startklar-Meldung wird persistent als gesehen gespeichert. Wenn keine relevante
-Aufgabe vorhanden ist, wird kein Hinweiscontainer gerendert und die KPIs folgen
-direkt auf die Dashboard-Überschrift.
+Die bestehende schwarze Karte `Heute für dich` zeigt genau eine zentrale,
+tenantbezogene Empfehlung. Die Priorität lautet: Veröffentlichung und Standort,
+erste Punkteeinlösung, erstes aktuelles Angebot, Geburtstagspool, QR Center und
+Mitarbeiterzugang. Legal Readiness und öffentliche Auffindbarkeit bleiben die
+autoritativen Publikationsverträge; Angebot und Mitarbeiterzugang sind keine
+Publikationsvoraussetzungen.
+
+Nach Erledigung eines Schritts löst der zentrale Resolver automatisch die
+nächste offene Empfehlung auf. Sind alle Einrichtungsempfehlungen erfüllt,
+wechselt dieselbe Karte deterministisch in den Betriebsmodus. Das Dashboard
+zeigt keine parallele Setup-Checkliste und keinen zweiten `Nächster Schritt`-
+Container oberhalb der Kennzahlen.
+
+Der QR-Schritt verwendet nur objektiv vorhandene QR-Bereitschaft. Ein Download
+oder physischer Ausdruck wird nicht als abgeschlossen gespeichert oder
+behauptet, weil V1 dafür keinen autoritativen Nachweis besitzt.
 
 ## Punkte sammeln konfigurieren
 
@@ -271,15 +279,12 @@ Das Dashboard besitzt eine Karte:
 
 **Heute für dich**
 
-Diese Karte zeigt genau eine Empfehlung.
-
-V1: - Platzhalter oder einfache Empfehlung, zum Beispiel „Neue Punkteeinlösung
-erstellen".
-
-Später dynamisch: - Bonus Boost aktivieren - Freunde einladen - Neue
-Punkteeinlösung - Geburtstagsaktion - Saisonhinweis
-
-Regel: Immer nur eine Empfehlung. Keine Liste.
+Diese Karte zeigt genau eine zustandsabhängige Empfehlung und führt direkt in
+den bestehenden zuständigen Bereich. Veröffentlichung und Standort haben
+Vorrang, danach folgen Punkteeinlösung, Angebot, Geburtstagspool, QR Center und
+Mitarbeiterzugang. Nach vollständiger Einrichtung erscheint eine
+deterministische betriebliche Empfehlung. Keine Liste und keine doppelte
+Dashboard-Empfehlung.
 
 ------------------------------------------------------------------------
 
@@ -734,6 +739,10 @@ Endstatus: **LOCK**
 - Im normalen Owner-Flow werden Adresse, PLZ, Ort und Land gepflegt. Eine
   ausdrücklich gestartete serverseitige Nominatim-Suche ermittelt die
   Koordinaten; diese sind nur in den erweiterten Einstellungen sichtbar.
+- Das Land wird ueber eine durchsuchbare weltweite Laenderauswahl angezeigt.
+  Sichtbare Namen folgen nach Moeglichkeit der Restaurant-/UI-Sprache; der
+  kanonische Branch-Wert bleibt immer ISO 3166-1 Alpha-2. Fehlende Werte werden
+  nicht stillschweigend auf Oesterreich gesetzt.
 - Eine Adressänderung verwirft die bisherige Kartenposition, bis der Owner die
   neue Adresse erneut gesucht und geprüft hat.
 - Öffentliche Kurzbeschreibung und öffentliches Bild bleiben im bestehenden

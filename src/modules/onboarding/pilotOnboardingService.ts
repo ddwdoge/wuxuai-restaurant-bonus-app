@@ -206,7 +206,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
 
   const { data: existingRewards, error: existingRewardsError } = await supabase
     .from("rewards")
-    .select("id, starter_reward_key")
+    .select("id, starter_reward_key, birthday_pool_enabled")
     .eq("restaurant_id", restaurantId)
     .eq("is_starter_reward", true);
 
@@ -216,9 +216,15 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
   const rewards = [];
   for (const reward of starterRewardRows) {
     const existingReward = rewardsByKey.get(reward.starter_reward_key);
+    const rewardWithBirthdayDefault = {
+      ...reward,
+      birthday_pool_enabled: existingReward
+        ? Boolean(existingReward.birthday_pool_enabled)
+        : true,
+    };
     const rewardQuery = existingReward
-      ? supabase.from("rewards").update(reward).eq("id", existingReward.id)
-      : supabase.from("rewards").insert(reward);
+      ? supabase.from("rewards").update(rewardWithBirthdayDefault).eq("id", existingReward.id)
+      : supabase.from("rewards").insert(rewardWithBirthdayDefault);
     const { data: savedReward, error: rewardError } = await rewardQuery
       .select("id, restaurant_id, title, description, reward_type, required_points, required_stamps, active, expires_at, created_at")
       .single();

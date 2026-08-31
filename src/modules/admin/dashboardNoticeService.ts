@@ -1,4 +1,5 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { loadRestaurantOffers } from "../offers/restaurantOfferService";
 
 export type DashboardSetupStatus = {
   pointsRedemptionReady: boolean;
@@ -6,12 +7,15 @@ export type DashboardSetupStatus = {
   birthdayPoolReady: boolean;
   pointsFlowReady: boolean;
   referralEnabled: boolean;
+  offerReady: boolean;
+  publicationReady: boolean;
+  staffReady: boolean;
 };
 
 export async function loadDashboardSetupStatus(restaurantId: string): Promise<DashboardSetupStatus> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
 
-  const [rewardsResult, couponsResult, settingsResult] = await Promise.all([
+  const [rewardsResult, couponsResult, settingsResult, branchResult, staffResult, offers] = await Promise.all([
     supabase
       .from("rewards")
       .select("id, active, is_starter_reward, birthday_pool_enabled, required_points, required_stamps, expires_at")
@@ -25,11 +29,26 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       .select("active, points_collection_mode, points_collection_max_amount_cents, referral_boost_enabled")
       .eq("restaurant_id", restaurantId)
       .maybeSingle(),
+    supabase
+      .from("branches")
+      .select("status, address, postal_code, city, country, latitude, longitude, is_discoverable")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("staff_members")
+      .select("id", { count: "exact", head: true })
+      .eq("restaurant_id", restaurantId)
+      .eq("active", true),
+    loadRestaurantOffers(restaurantId),
   ]);
 
   if (rewardsResult.error) throw rewardsResult.error;
   if (couponsResult.error) throw couponsResult.error;
   if (settingsResult.error) throw settingsResult.error;
+  if (branchResult.error) throw branchResult.error;
+  if (staffResult.error) throw staffResult.error;
 
   const rewards = (rewardsResult.data ?? []) as Array<{
     active: boolean;
@@ -54,6 +73,26 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
   const validCollectionModes = new Set(["restaurant_controlled_only", "customer_initiated_only", "both"]);
   const now = Date.now();
   const isNotExpired = (expiresAt: string | null) => !expiresAt || new Date(expiresAt).getTime() > now;
+  const branch = branchResult.data as {
+    status: string;
+    address: string | null;
+    postal_code: string | null;
+    city: string | null;
+    country: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    is_discoverable: boolean;
+  } | null;
+  const addressComplete = Boolean(branch?.address?.trim()
+    && branch.postal_code?.trim()
+    && branch.city?.trim()
+    && branch.country?.trim());
+  const coordinatesPresent = branch?.latitude != null
+    && branch.longitude != null
+    && Number(branch.latitude) >= -90
+    && Number(branch.latitude) <= 90
+    && Number(branch.longitude) >= -180
+    && Number(branch.longitude) <= 180;
 
   return {
     pointsRedemptionReady: rewards.some((reward) => reward.active
@@ -76,6 +115,14 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       && Number(settings.points_collection_max_amount_cents) >= 100
       && Number(settings.points_collection_max_amount_cents) <= 100000),
     referralEnabled: Boolean(settings?.referral_boost_enabled),
+    offerReady: offers.some((offer) => offer.status === "PUBLISHED"
+      && offer.is_active
+      && new Date(offer.valid_to).getTime() >= now),
+    publicationReady: Boolean(branch?.status === "active"
+      && branch.is_discoverable
+      && addressComplete
+      && coordinatesPresent),
+    staffReady: Number(staffResult.count ?? 0) > 0,
   };
 }
 

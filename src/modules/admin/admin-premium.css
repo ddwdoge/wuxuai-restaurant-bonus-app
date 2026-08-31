@@ -520,6 +520,7 @@
   min-height: 0;
   padding: 15px;
   transition: background 160ms ease, border-color 160ms ease;
+  width: 100%;
 }
 
 .premium-owner-shell .dashboard-recommendation:hover {
@@ -537,6 +538,27 @@
   color: #c5c0b6;
   font-size: 13px;
   margin-top: 4px;
+}
+
+.premium-owner-shell .dashboard-recommendation-cta {
+  color: #f0cf8d;
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.premium-owner-shell button.dashboard-recommendation {
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+@media (max-width: 430px) {
+  .premium-owner-shell .dashboard-recommendation {
+    min-height: 48px;
+    padding: 14px;
+  }
 }
 
 .premium-owner-shell .dashboard-recommendation-icon {

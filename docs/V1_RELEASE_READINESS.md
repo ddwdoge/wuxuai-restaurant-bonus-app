@@ -14,7 +14,8 @@ Die spaeteren Development/Test- und physischen Founder-Nachweise schliessen die
 in historischen Reports noch als offen bezeichneten V1-Gates. Historische
 Reports werden nicht rueckwirkend umgeschrieben.
 
-- Owner, Onboarding und Legal Company Data: PASS
+- Owner und Legal Company Data: PASS
+- Owner-Onboarding Bonus-Simplification: CODE LOCK; Development/Test offen
 - Customer und Staff: PASS
 - Multi-Role mit einer Auth-Identitaet: FINAL LOCK
 - E-Mail-Bestaetigung, Resend und Password Recovery: PASS
@@ -41,10 +42,11 @@ Reports werden nicht rueckwirkend umgeschrieben.
 ## Release-Gates
 
 - Open P0: 0
-- Open P1: 0
-- Open Product Release Blockers: 0
+- Open P1: 1
+- Open Product Release Blockers: 1
 - Open Physical Founder Gates: 0
-- V1 Final Lock: YES
+- V1 Final Lock: NO, bis der neue Owner-Onboarding-Code auf Development/Test
+  verifiziert ist.
 
 Die Git-Integration nach `main` bleibt ein separates Pre-Main-Sicherheitsgate.
 `main` wird erst nach Branch-Reconciliation, sauberem Worktree, gruenen
@@ -59,7 +61,7 @@ Founder-Freigabe geaendert.
 
 ## Bewertung
 
-Produkt- und Flow-Gates: **V1 FINAL LOCK**
+Produkt- und Flow-Gates: **V1 CODE LOCK**
 
 Git-Releasefreigabe: erst nach Abschluss des aktuellen Pre-Main-
 Reconciliation-Gates.

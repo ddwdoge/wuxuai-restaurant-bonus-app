@@ -20,14 +20,18 @@ test("Willkommensgeschenke bleiben eine Mehrfachauswahl mit mindestens einem Ges
   assert.match(onboarding, /Jeder neue Gast erhaelt zufaellig eines davon|Jeder neue Gast erhält zufällig eines davon/);
 });
 
-test("Punkteeinloesung verwendet Bon, Besuche und die V1-Grosszuegigkeitsstufen", () => {
-  assert.match(onboarding, /averageBill:\s*number/);
-  assert.match(onboarding, /firstRewardVisits:\s*number/);
+test("Punkteeinloesung verwendet feste Referenzwerte und die V1-Grosszuegigkeitsstufen", () => {
+  assert.match(onboarding, /BONUS_REFERENCE_SPEND_EURO\s*=\s*20/);
+  assert.match(onboarding, /BONUS_REFERENCE_VISITS\s*=\s*5/);
+  assert.doesNotMatch(onboarding, /id="average-bill"/);
+  assert.doesNotMatch(onboarding, /id="first-reward-visits"/);
+  assert.doesNotMatch(onboarding, /id="first-reward-type"/);
   assert.match(onboarding, /Sparsam:\s*0\.03/);
   assert.match(onboarding, /Normal:\s*0\.05/);
   assert.match(onboarding, /Großzügig:\s*0\.08/);
   assert.match(onboarding, /Premium:\s*0\.1/);
-  assert.match(onboarding, /cleanAverageBill \* cleanVisits \* pointsPerEuro/);
+  assert.match(onboarding, /BONUS_REFERENCE_SPEND_EURO \* BONUS_REFERENCE_VISITS/);
+  assert.match(onboarding, /Das ist nur ein Rechenbeispiel/);
 });
 
 test("Restaurant-V1 bietet die gesperrten Gastro-Kategorien und eigene Geschenke", () => {

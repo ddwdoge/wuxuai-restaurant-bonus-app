@@ -138,7 +138,7 @@ function newGiftForm(): GiftForm {
     imageCrop: DEFAULT_REWARD_IMAGE_CROP,
     imageCropEditing: false,
     active: true,
-    birthdayPoolEnabled: false,
+    birthdayPoolEnabled: true,
   };
 }
 
@@ -483,7 +483,7 @@ export function WelcomeGiftsPage() {
                 ) : null}
               </div>
               <label className="premium-owner-toggle"><input checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
-              <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsüberraschungen verwenden</strong><small>Dieses Geschenk kann Kunden einmal jährlich rund um ihren Geburtstag automatisch zugeteilt werden.</small></span></label>
+              <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsgeschenke verwenden</strong><small>Dieses Geschenk kann Kunden einmal jährlich rund um ihren Geburtstag automatisch zugeteilt werden.</small></span></label>
             </section>
             {status && editing ? <p className="status-message" role="status">{status}</p> : null}
           </form>

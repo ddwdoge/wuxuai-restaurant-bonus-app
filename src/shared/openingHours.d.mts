@@ -17,6 +17,8 @@ export type LunchBreakSuggestion = {
   secondBlockStart: string;
 };
 export declare function normalizeOpeningDay(value: unknown, fallback: Pick<OpeningDay, "enabled" | "open" | "close">): OpeningDay;
+export declare function copyOpeningDayToDays<T extends string>(openingHours: Record<T, OpeningDay>, sourceKey: T, destinationKeys: readonly T[]): Record<T, OpeningDay>;
+export declare function openingDaysDiffer<T extends string>(openingHours: Record<T, OpeningDay>, sourceKey: T, destinationKeys: readonly T[]): boolean;
 export declare function suggestLunchBreak(openingStart: string, openingEnd: string, standardBreak?: { start: string; end: string } | null): LunchBreakSuggestion | null;
 export declare function validateOpeningDay(day: OpeningDay): string | null;
 export declare function todayOpeningHours(value: unknown, date?: Date): string | null;

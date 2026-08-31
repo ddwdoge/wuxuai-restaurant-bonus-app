@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AlertCircle, AlertTriangle, ArrowRight, CheckCircle2, CircleDot, Gift, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, CakeSlice, Gift, MapPinned, Newspaper, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
@@ -13,7 +13,7 @@ import {
   markDashboardNoticeSeen,
   type DashboardSetupStatus,
 } from "../dashboardNoticeService";
-import { resolveDashboardNextStep } from "../dashboardNextStep.mjs";
+import { resolveOwnerDashboardRecommendation } from "../ownerDashboardRecommendation.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { loadOwnerPointAnomalyWarnings, type OwnerPointAnomalyWarning } from "../pointAnomalyService";
 import { pointAnomalyNoticeKey } from "../pointAnomalyPolicy.mjs";
@@ -47,7 +47,7 @@ function formatAnomalyTimestamp(value: string) {
 
 export function AdminDashboard() {
   const { user } = useAuth();
-  const { activeRestaurant, branding } = useTenant();
+  const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
   const [boostKpis, setBoostKpis] = useState<BonusBoostKpis>(emptyBoostKpis);
   const [loading, setLoading] = useState(true);
@@ -57,11 +57,9 @@ export function AdminDashboard() {
   const [setupStatus, setSetupStatus] = useState<DashboardSetupStatus | null>(null);
   const [setupLoadFailed, setSetupLoadFailed] = useState(false);
   const [seenNoticeIds, setSeenNoticeIds] = useState<Set<string>>(new Set());
-  const [noticePersistenceAvailable, setNoticePersistenceAvailable] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(true);
   const [pointAnomalies, setPointAnomalies] = useState<OwnerPointAnomalyWarning[]>([]);
   const [selectedPointAnomaly, setSelectedPointAnomaly] = useState<OwnerPointAnomalyWarning | null>(null);
-  const markingNoticeIds = useRef(new Set<string>());
   const [reloadKey, setReloadKey] = useState(0);
 
   const reloadDashboard = useCallback(() => {
@@ -107,7 +105,6 @@ export function AdminDashboard() {
       setLegalSetup(null);
       setSetupStatus(null);
       setSeenNoticeIds(new Set());
-      setNoticePersistenceAvailable(false);
       setPointAnomalies([]);
       setSelectedPointAnomaly(null);
       setNextStepLoading(false);
@@ -119,11 +116,9 @@ export function AdminDashboard() {
     setSetupStatus(null);
     setSetupLoadFailed(false);
     setSeenNoticeIds(new Set());
-    setNoticePersistenceAvailable(false);
     setPointAnomalies([]);
     setSelectedPointAnomaly(null);
     setNextStepLoading(true);
-    markingNoticeIds.current.clear();
 
     Promise.allSettled([
       loadRestaurantLegalSetup(activeRestaurant.id),
@@ -138,7 +133,6 @@ export function AdminDashboard() {
       else setSetupLoadFailed(true);
       if (noticesResult.status === "fulfilled") {
         setSeenNoticeIds(noticesResult.value);
-        setNoticePersistenceAvailable(true);
       }
       if (anomalyResult.status === "fulfilled") setPointAnomalies(anomalyResult.value);
       else console.error("Hinweise zur Punktevergabe konnten nicht geladen werden.", anomalyResult.reason);
@@ -164,47 +158,36 @@ export function AdminDashboard() {
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
   const legalRegistration = legalSetup?.readiness.registration;
-  const nextStep = useMemo(() => nextStepLoading ? null : resolveDashboardNextStep({
+  const recommendation = useMemo(() => nextStepLoading ? null : resolveOwnerDashboardRecommendation({
     restaurantStatus: { active: activeRestaurant?.status === "active" },
     onboardingStatus: activeRestaurant?.onboarding_status,
     legalStatus: legalRegistration ?? null,
+    publicationStatus: { ready: setupStatus?.publicationReady ?? false },
     rewardStatus: {
       pointsRedemptionReady: setupStatus?.pointsRedemptionReady ?? false,
-      welcomeGiftReady: setupStatus?.welcomeGiftReady ?? false,
       birthdayPoolReady: setupStatus?.birthdayPoolReady ?? false,
     },
+    offerStatus: { ready: setupStatus?.offerReady ?? false },
     qrStatus: { ready: Boolean(activeRestaurant?.slug) },
-    pointsFlowStatus: { ready: setupStatus?.pointsFlowReady ?? false },
+    staffStatus: { ready: setupStatus?.staffReady ?? false },
     emailStatus: { confirmed: Boolean(user?.email_confirmed_at) },
-    profileStatus: { logoAvailable: Boolean(branding?.logo_url) },
-    referralStatus: { enabled: setupStatus?.referralEnabled ?? false },
-    seenNoticeIds,
-    persistenceAvailable: noticePersistenceAvailable,
     statusLoadFailed: legalLoadFailed || setupLoadFailed,
-  }), [activeRestaurant, branding?.logo_url, legalLoadFailed, legalRegistration, nextStepLoading, noticePersistenceAvailable, seenNoticeIds, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
-  const NextStepIcon = nextStep?.category === "success" ? CheckCircle2 : nextStep?.category === "critical" ? AlertCircle : nextStep?.category === "optimization" ? Sparkles : CircleDot;
+  }), [activeRestaurant, legalLoadFailed, legalRegistration, nextStepLoading, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
+  const RecommendationIcon = recommendation?.icon === "publication"
+    ? MapPinned
+    : recommendation?.icon === "reward"
+      ? Gift
+      : recommendation?.icon === "birthday"
+        ? CakeSlice
+        : recommendation?.icon === "qr"
+          ? QrCode
+          : recommendation?.icon === "staff"
+            ? Smartphone
+            : Newspaper;
   const pointAnomaly = useMemo(
     () => pointAnomalies.find((warning) => !seenNoticeIds.has(pointAnomalyNoticeKey(warning.id))) ?? null,
     [pointAnomalies, seenNoticeIds],
   );
-
-  useEffect(() => {
-    if (!activeRestaurant?.id || nextStep?.category !== "success" || markingNoticeIds.current.has(nextStep.id)) return;
-    markingNoticeIds.current.add(nextStep.id);
-    markDashboardNoticeSeen(activeRestaurant.id, nextStep.id).catch(() => {
-      markingNoticeIds.current.delete(nextStep.id);
-    });
-  }, [activeRestaurant?.id, nextStep]);
-
-  async function dismissNextStep() {
-    if (!activeRestaurant?.id || !nextStep?.dismissible) return;
-    try {
-      await markDashboardNoticeSeen(activeRestaurant.id, nextStep.id);
-      setSeenNoticeIds((current) => new Set([...current, nextStep.id]));
-    } catch {
-      // Der Hinweis bleibt sichtbar, wenn die persistente Speicherung fehlschlägt.
-    }
-  }
 
   function reviewPointAnomaly(warning: OwnerPointAnomalyWarning) {
     setSelectedPointAnomaly(warning);
@@ -224,22 +207,6 @@ export function AdminDashboard() {
           <p className="muted">Dein Bonusprogramm auf einen Blick.</p>
         </div>
       </header>
-
-      {nextStep ? (
-        <section className={`card dashboard-next-step ${nextStep.category}`} aria-labelledby="dashboard-next-step-title" aria-live={nextStep.category === "critical" ? "assertive" : "polite"}>
-          <span className="dashboard-next-step-icon"><NextStepIcon aria-hidden="true" size={21} /></span>
-          <div className="dashboard-next-step-copy">
-            <span className="premium-dashboard-kicker">{nextStep.category === "critical" ? "Wichtiger Hinweis" : nextStep.category === "success" ? "Startklar" : "Nächster Schritt"}</span>
-            <h2 id="dashboard-next-step-title">{nextStep.title}</h2>
-            <p>{nextStep.description}</p>
-          </div>
-          {nextStep.ctaLabel ? (
-            nextStep.ctaHref ? <Link className="button secondary" to={nextStep.ctaHref}>{nextStep.ctaLabel}<ArrowRight aria-hidden="true" size={17} /></Link>
-              : <button className="button secondary" onClick={reloadDashboard} type="button">{nextStep.ctaLabel}<RefreshCw aria-hidden="true" size={17} /></button>
-          ) : null}
-          {nextStep.dismissible ? <button aria-label="Hinweis schließen" className="dashboard-next-step-dismiss" onClick={dismissNextStep} title="Hinweis schließen" type="button"><X aria-hidden="true" size={18} /></button> : null}
-        </section>
-      ) : null}
 
       {pointAnomaly ? (
         <section className="card dashboard-point-anomaly" aria-labelledby="point-anomaly-title" role="status">
@@ -333,20 +300,33 @@ export function AdminDashboard() {
         </div>
       </section>
 
-      <section className="card dashboard-recommendation-card">
+      {recommendation ? <section className="card dashboard-recommendation-card" aria-labelledby="owner-recommendation-title" aria-live="polite">
         <div>
           <h2>Heute für dich</h2>
-          <p className="muted">Eine einfache Empfehlung für heute.</p>
+          <p className="muted">Der wichtigste nächste Schritt für dein Restaurant.</p>
         </div>
-        <Link className="dashboard-recommendation" to="/admin/rewards">
-          <span className="dashboard-recommendation-icon"><Sparkles size={22} /></span>
-          <span>
-            <strong>Neue Punkteeinlösung erstellen</strong>
-            <p className="muted">Lege ein Produkt fest, das Gäste mit Punkten einlösen können.</p>
-          </span>
-          <ArrowRight aria-hidden="true" size={20} />
-        </Link>
-      </section>
+        {recommendation.ctaHref ? (
+          <Link className="dashboard-recommendation" to={recommendation.ctaHref}>
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            <ArrowRight aria-hidden="true" size={20} />
+          </Link>
+        ) : (
+          <button className="dashboard-recommendation" onClick={reloadDashboard} type="button">
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            <RefreshCw aria-hidden="true" size={20} />
+          </button>
+        )}
+      </section> : null}
 
       <AppDrawer
         description="Dieser Hinweis dient ausschließlich der Prüfung und verändert weder Punkte noch Kontozugänge."

@@ -160,7 +160,7 @@ test("Kassenabgrenzung wird automatisch erzeugt und verweist auf Aktivitätsberi
 
 test("Dashboard priorisiert serverseitige Legal-Warnungen im nächsten Schritt", () => {
   assert.match(dashboard, /loadRestaurantLegalSetup/);
-  assert.match(dashboard, /resolveDashboardNextStep/);
+  assert.match(dashboard, /resolveOwnerDashboardRecommendation/);
   assert.match(dashboard, /legalStatus: legalRegistration \?\? null/);
   assert.doesNotMatch(dashboard, /dashboard-legal-status/);
 });

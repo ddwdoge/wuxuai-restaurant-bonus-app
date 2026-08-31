@@ -73,6 +73,26 @@ export function normalizeOpeningDay(value, fallback) {
   };
 }
 
+export function copyOpeningDayToDays(openingHours, sourceKey, destinationKeys) {
+  const sourceDay = openingHours[sourceKey];
+  return destinationKeys.reduce(
+    (nextOpeningHours, dayKey) => ({
+      ...nextOpeningHours,
+      [dayKey]: { ...sourceDay },
+    }),
+    { ...openingHours, [sourceKey]: { ...sourceDay } },
+  );
+}
+
+export function openingDaysDiffer(openingHours, sourceKey, destinationKeys) {
+  const sourceDay = openingHours[sourceKey];
+  return destinationKeys.some((dayKey) => {
+    const destinationDay = openingHours[dayKey];
+    return Object.keys(sourceDay).some((key) => sourceDay[key] !== destinationDay?.[key])
+      || Object.keys(destinationDay ?? {}).some((key) => destinationDay[key] !== sourceDay[key]);
+  });
+}
+
 export function validateOpeningDay(day) {
   if (!day.enabled) return null;
   if (!day.open || !day.close) return "Bitte fülle beide Pflichtzeiten aus.";

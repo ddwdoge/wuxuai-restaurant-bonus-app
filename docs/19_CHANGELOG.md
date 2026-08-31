@@ -1,6 +1,51 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-31 - Durchsuchbare Laenderauswahl fuer Restaurantstandort
+
+- Freies technisches Zwei-Zeichen-Feld im Owner-Standortformular durch eine
+  touch- und tastaturbedienbare Combobox mit weltweiter Laendersuche ersetzt.
+- Vollstaendige ISO-3166-1-Alpha-2-Codebasis zentral ergaenzt und Anzeigenamen
+  ueber `Intl.DisplayNames` fuer DE, EN, FR, IT und ES lokalisiert.
+- Bestehende Codes wie `AT` erscheinen als lokalisierter Laendername, waehrend
+  Persistenz und Geocoding weiterhin ausschliesslich den ISO-Code erhalten.
+- Stillen `AT`-Fallback bei fehlendem Standortland entfernt und Save sowie
+  Geocoding gegen beliebige Freitexte abgesichert.
+- Keine Migration und keine Aenderung an Publication, Legal, Discovery,
+  Kartenmarker, RLS oder Tenantlogik.
+
+## 2026-08-31 - Owner Dashboard Smart Setup Assistant
+
+- Die statische schwarze Karte `Heute fuer dich` auf genau eine zentrale,
+  zustandsabhaengige Setup- oder Betriebsempfehlung umgestellt und den
+  parallelen Dashboard-Hinweis entfernt.
+- Prioritaet auf Publikation/Standort, Punkteeinloesung, Angebot,
+  Geburtstagspool, QR Center und Mitarbeiterzugang festgelegt; direkte Links
+  fuehren in die bestehenden Owner-Bereiche.
+- Publikationszustand aus Legal Readiness, Restaurantstatus und aktivem,
+  auffindbarem Standort abgeleitet; Angebots- und Staff-Zustaende bleiben
+  tenantgebundene Empfehlungen.
+- Neue Welcome-/Starter-Gifts in den aktuellen Erstellungswegen standardmaessig
+  fuer den Birthday-Pool aktiviert. Bestehende Pool-Entscheidungen bleiben
+  erhalten und der Owner kann die Nutzung pro Geschenk deaktivieren.
+- Kein QR-Download-/Drucktracking erfunden; keine Migration und keine Aenderung
+  an Birthday Eligibility, Punkten, Legal, Referral, Multi-Role oder Stripe.
+
+## 2026-08-31 - Bonus-Setup im Owner-Onboarding vereinfacht
+
+- Editierbare Durchschnittsbon-, Besuchs- und wirkungslose Einloeseart-Felder
+  aus dem Owner-Onboarding entfernt.
+- Die bestehende Beispielrechnung auf feste V1-Richtwerte von 20 EUR mal fuenf
+  Besuche und damit 100 EUR Referenzkonsumation umgestellt.
+- Bestehende Rueckgabequoten von 3, 5, 8 und 10 Prozent sowie ihre kanonische
+  Persistenz unveraendert beibehalten; Richtwerte explizit als unverbindliches
+  Rechenbeispiel erklaert.
+- Das optionale Registrierungsfeld als `Mobiltelefonnummer (empfohlen)` mit
+  Zukunftshinweis gekennzeichnet; `type=tel`, internationale Eingabe und
+  fehlende SMS-Aktivierung bleiben unveraendert.
+- Keine Migration sowie keine Punkte-, Einloesungs-, Gift-, Referral-, Legal-,
+  Commercial- oder Tenant-Aenderung.
+
 ## 2026-08-31 - Geburtstagsgeschenk innerhalb von 14 Tagen nachholbar
 
 - Birthday Eligibility vom exakten Tag `Geburtstag - 14` auf das inklusive
@@ -813,6 +858,17 @@
   Überschreiben bestehender Werte.
 
 # WUXUAI Bonus V1 – Changelog
+
+## 2026-08-31 - Owner-Onboarding Öffnungszeiten kopieren
+
+- Die gemeinsame Öffnungszeiten-Eingabe in Onboarding und Einstellungen bietet
+  nun `Auf alle Tage übertragen` für die vollständige Montagskonfiguration.
+- Abweichende Zielzeiten werden nicht ohne Bestätigung überschrieben; einzelne
+  Tage bleiben nach dem Kopieren frei bearbeitbar.
+- Der Onboarding-Klick speichert nicht automatisch. Erst `Weiter` übernimmt
+  den lokalen Stand in den bestehenden Entwurfsvertrag.
+- Keine Migration und keine Änderung an Zeitzone, Validierung oder öffentlicher
+  Öffnungsstatuslogik.
 
 ## 2026-08-30 - Einheitlicher Login und Passwortwiederherstellung integriert
 

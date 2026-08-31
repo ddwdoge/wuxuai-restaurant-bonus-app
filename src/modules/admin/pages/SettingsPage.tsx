@@ -40,6 +40,8 @@ import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMa
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { OpeningHoursCopyAction } from "../../../shared/components/OpeningHoursCopyAction";
+import { CountrySelect } from "../../../shared/components/CountrySelect";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
@@ -65,6 +67,7 @@ import {
   ownerLocationAddressKey,
   type OwnerLocationCandidate,
 } from "../ownerLocationGeocodingService";
+import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -668,7 +671,7 @@ export function SettingsPage() {
             address: locationData.address ?? "",
             postalCode: locationData.postal_code ?? "",
             city: locationData.city ?? "",
-            country: locationData.country ?? "AT",
+            country: locationData.country ?? "",
             latitude: locationData.latitude === null ? "" : String(locationData.latitude),
             longitude: locationData.longitude === null ? "" : String(locationData.longitude),
             isDiscoverable: Boolean(locationData.is_discoverable),
@@ -832,11 +835,12 @@ export function SettingsPage() {
     const coordinatesValid = Boolean(partnerLocation.latitude.trim()) && Boolean(partnerLocation.longitude.trim())
       && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
       && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+    const countryValid = isIsoAlpha2CountryCode(partnerLocation.country);
     const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim()
-      && partnerLocation.city.trim() && partnerLocation.country.trim());
+      && partnerLocation.city.trim() && countryValid);
 
     if (!publicDetailsComplete) {
-      setErrorMessage("Bitte fülle alle Pflichtfelder des Standorts aus.");
+      setErrorMessage(countryValid ? "Bitte fülle alle Pflichtfelder des Standorts aus." : "Bitte wähle ein gültiges Land aus.");
       return;
     }
     if (!coordinatesValid || verifiedLocationKey !== ownerLocationAddressKey(partnerLocation)) {
@@ -859,7 +863,7 @@ export function SettingsPage() {
           address: partnerLocation.address.trim(),
           postal_code: partnerLocation.postalCode.trim(),
           city: partnerLocation.city.trim(),
-          country: partnerLocation.country.trim().toUpperCase() || "AT",
+          country: partnerLocation.country.trim().toUpperCase(),
           latitude,
           longitude,
           is_discoverable: partnerLocation.isDiscoverable,
@@ -907,9 +911,11 @@ export function SettingsPage() {
   async function findPartnerLocation() {
     if (!details?.id || !partnerLocation) return;
     const addressComplete = partnerLocation.address.trim() && partnerLocation.postalCode.trim()
-      && partnerLocation.city.trim() && partnerLocation.country.trim();
+      && partnerLocation.city.trim() && isIsoAlpha2CountryCode(partnerLocation.country);
     if (!addressComplete) {
-      setErrorMessage("Bitte fülle Adresse, Postleitzahl, Ort und Land aus.");
+      setErrorMessage(isIsoAlpha2CountryCode(partnerLocation.country)
+        ? "Bitte fülle Adresse, Postleitzahl, Ort und Land aus."
+        : "Bitte wähle ein gültiges Land aus.");
       return;
     }
 
@@ -1352,7 +1358,15 @@ export function SettingsPage() {
           <form className="form" onSubmit={saveOpeningHours}>
             <RequiredFieldsNote />
             <div className="settings-hours-grid">
-              {weekdays.map(({ key, label }) => (
+              <OpeningHoursEditor dayLabel="Montag" idPrefix="settings-mon" onChange={(patch) => updateOpeningDay("mon", patch)} value={openingHours.mon} />
+              <OpeningHoursCopyAction
+                destinationKeys={weekdays.slice(1).map(({ key }) => key)}
+                onChange={setOpeningHours}
+                openingHours={openingHours}
+                sourceKey="mon"
+                sourceLabel="Montag"
+              />
+              {weekdays.slice(1).map(({ key, label }) => (
                 <OpeningHoursEditor dayLabel={label} idPrefix={`settings-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={openingHours[key]} />
               ))}
             </div>
@@ -1406,7 +1420,7 @@ export function SettingsPage() {
                 <div className="field"><FormLabel htmlFor="location-address" required>Adresse</FormLabel><input aria-required="true" className="input" id="location-address" maxLength={180} onChange={(event) => updatePartnerAddress("address", event.target.value)} required value={partnerLocation.address} /></div>
                 <div className="field"><FormLabel htmlFor="location-postal-code" required>Postleitzahl</FormLabel><input aria-required="true" className="input" id="location-postal-code" inputMode="numeric" maxLength={24} onChange={(event) => updatePartnerAddress("postalCode", event.target.value)} required value={partnerLocation.postalCode} /></div>
                 <div className="field"><FormLabel htmlFor="location-city" required>Ort</FormLabel><input aria-required="true" className="input" id="location-city" maxLength={100} onChange={(event) => updatePartnerAddress("city", event.target.value)} required value={partnerLocation.city} /></div>
-                <div className="field"><FormLabel htmlFor="location-country" required>Land</FormLabel><input aria-required="true" className="input" id="location-country" maxLength={2} onChange={(event) => updatePartnerAddress("country", event.target.value)} required value={partnerLocation.country} /></div>
+                <div className="field"><FormLabel htmlFor="location-country" required>Land</FormLabel><CountrySelect id="location-country" locale={details.language ?? "de"} onChange={(countryCode) => updatePartnerAddress("country", countryCode)} required value={partnerLocation.country} /></div>
               </div>
               <div className="settings-location-geocoding">
                 <button className="button secondary settings-location-geocode-button" disabled={geocodingStatus === "searching"} onClick={findPartnerLocation} type="button">

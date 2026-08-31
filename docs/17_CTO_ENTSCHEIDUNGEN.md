@@ -3,6 +3,65 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-31 - Standortland als lokalisierte ISO-Auswahl
+
+- Das freie zweistellige Landfeld unter `Standort & Restaurantsuche` wird
+  durch eine durchsuchbare weltweite Laenderauswahl ersetzt.
+- Sichtbare Namen werden mit `Intl.DisplayNames` fuer DE, EN, FR, IT und ES
+  aus einer einzigen vollstaendigen ISO-3166-1-Alpha-2-Codebasis erzeugt.
+- `branches.country`, Save-Payload und Nominatim erhalten weiterhin nur den
+  ISO-Alpha-2-Code. Freie Texte werden nicht als Land akzeptiert.
+- Bestehende Codes bleiben unveraendert. Ein fehlendes Land wird nicht mehr
+  stillschweigend als `AT` interpretiert; der Owner muss es auswaehlen.
+- Datenbank, Geocoding, Kartenmarker, Discovery, Legal Readiness und Tenant-
+  Scope bleiben unveraendert.
+
+## 2026-08-31 - Heute fuer dich als zentraler Setup-Assistent
+
+- Die schwarze Owner-Dashboard-Karte `Heute fuer dich` zeigt immer genau eine
+  zustandsabhaengige Empfehlung. Ein paralleler `Naechster Schritt`-Container
+  oder eine permanente Setup-Checkliste wird nicht angezeigt.
+- Der zentrale Resolver priorisiert Publikation/Standort, Punkteeinloesung,
+  Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang. Legal Readiness
+  und öffentliche Auffindbarkeit bleiben autoritativ; Angebot und Staff sind
+  keine Publikations-Gates.
+- Nach vollstaendiger Einrichtung wechselt die Karte in einen
+  deterministischen Betriebsmodus. Alle Ziele sind bestehende Owner-Bereiche.
+- Neue Welcome-/Starter-Gifts werden in den aktuellen Erstellungswegen fuer den
+  Geburtstagspool vorausgewaehlt. Bestehende Owner-Entscheidungen werden nicht
+  massenhaft veraendert; die Nutzung bleibt pro Geschenk deaktivierbar.
+- V1 erfindet weder einen QR-Downloadstatus noch einen Nachweis des physischen
+  Ausdrucks. Datenbank, Birthday-Zuteilung, Punkte, Legal und Security bleiben
+  unveraendert.
+
+## 2026-08-31 - Öffnungszeiten auf alle Tage übertragen
+
+- Owner können die vollständige Montagskonfiguration im Onboarding und im
+  kanonischen Einstellungen-Editor auf Dienstag bis Sonntag übertragen.
+- Die Aktion kopiert offen/geschlossen, Hauptzeiten, Mittagspause und zweiten
+  Öffnungsblock. Zielwerte bleiben anschließend einzeln bearbeitbar.
+- Abweichende Zielwerte verlangen eine Überschreibbestätigung. Der
+  Onboarding-Klick bleibt lokaler Formularzustand und wird erst mit `Weiter`
+  in den Entwurf übernommen; Einstellungen speichern weiterhin nur über die
+  bestehende Speichern-Aktion.
+- Öffnungszeitenmodell, Restaurant-Zeitzone, Validierung und öffentliche
+  Offen-/Geschlossen-Berechnung bleiben unverändert.
+
+## 2026-08-31 - Owner-Onboarding verwendet feste Bonus-Richtwerte
+
+- Owner bearbeiten im V1-Onboarding weder Durchschnittsbon noch eine
+  erwartete Besuchszahl. Die wirkungslose Auswahl einer Einloeseart wird dort
+  ebenfalls nicht mehr gezeigt.
+- Die Vorschau verwendet ausschliesslich die Richtwerte 20 EUR pro Besuch und
+  fuenf Besuche, also 100 EUR Referenzkonsumation.
+- Owner waehlen weiterhin die bestehenden Rueckgabequoten 3, 5, 8 oder 10
+  Prozent. Nur diese Auswahl wird als `redemption_return_rate` gespeichert.
+- Richtwerte sind keine Kundenvoraussetzung und erzeugen weder Mindestumsatz,
+  Besuchslimit noch automatische Freischaltung.
+- Die optionale Telefonnummer der Owner-Registrierung wird als empfohlene
+  Mobiltelefonnummer fuer zukuenftige SMS-Benachrichtigungen bezeichnet. SMS,
+  Marketingeinwilligung und Providerintegration bleiben deaktiviert.
+
 ## 2026-08-31 - Alle aktiven Kundengeschenke auf Customer Home
 
 - Ein Kunde kann gleichzeitig mehrere gültige persönliche Geschenke besitzen.

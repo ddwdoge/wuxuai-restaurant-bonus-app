@@ -30,6 +30,7 @@ import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
 import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logoPresentation.mjs";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
 import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { OpeningHoursCopyAction } from "../../../shared/components/OpeningHoursCopyAction";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { onboardingCompletionErrorMessage, safeLegalRpcError } from "../../legal/legalPublicationDate.mjs";
 import {
@@ -46,9 +47,7 @@ type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
 
 type BonusCalculation = {
-  pointsPerEuro: number;
   amountPerPoint: number;
-  firstRewardPoints: number;
   rewardValueEuro: number;
   expectedConsumptionEuro: number;
   returnRate: number;
@@ -58,7 +57,6 @@ type BonusCalculation = {
     menu: number;
     family: number;
   };
-  recommendedRewardThresholds: number[];
 };
 
 type OnboardingOutletContext = {
@@ -113,9 +111,6 @@ type OnboardingForm = {
   specialDays: string;
   holidays: string;
   smartOpenEnabled: boolean;
-  averageBill: number;
-  firstRewardVisits: number;
-  firstRewardType: string;
   generosity: Generosity;
   starterRewards: StarterRewardDraft[];
   staffName: string;
@@ -172,10 +167,10 @@ const stepHelp = [
   },
   {
     sentences: [
-      "Gib deinen durchschnittlichen Bon und die gewünschte Zahl der Besuche an.",
-      "Wähle, welche Art von Punkteeinlösung zu deinem Restaurant passt.",
-      "Mit der Großzügigkeit legst du den ungefähren Gegenwert fest.",
-      "WUXUAI berechnet die Punkte und die wirtschaftliche Empfehlung automatisch.",
+      "Wähle eine der vier V1-Stufen für die Großzügigkeit deines Bonusprogramms.",
+      "WUXUAI zeigt den ungefähren Gegenwert anhand einer festen Referenzrechnung.",
+      "20 Euro und fünf Besuche sind nur Richtwerte und keine Voraussetzung für Gäste.",
+      "Die Punkte-Einlösung wird weiterhin automatisch berechnet.",
     ],
     note: "Dauer: ca. 1 Minute",
   },
@@ -253,6 +248,9 @@ const generosityHelpText: Record<Generosity, string> = {
   Großzügig: "Stärkerer Anreiz für Gäste.",
   Premium: "Sehr attraktiver Stammgäste-Anreiz.",
 };
+
+const BONUS_REFERENCE_SPEND_EURO = 20;
+const BONUS_REFERENCE_VISITS = 5;
 
 const starterRewardTemplates: StarterRewardTemplate[] = [
   {
@@ -347,9 +345,6 @@ function createDefaultForm(): OnboardingForm {
     specialDays: "",
     holidays: "",
     smartOpenEnabled: true,
-    averageBill: 18,
-    firstRewardVisits: 5,
-    firstRewardType: "Gratis Produkt",
     generosity: "Normal",
     starterRewards: [],
     staffName: "Team",
@@ -394,34 +389,24 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
   };
 }
 
-function calculateBonus(averageBill: number, firstRewardVisits: number, generosity: Generosity): BonusCalculation {
-  const cleanAverageBill = Math.max(1, averageBill || 1);
-  const cleanVisits = Math.max(1, firstRewardVisits || 1);
+function calculateBonus(generosity: Generosity): BonusCalculation {
   const returnRate = generosityReturnRates[generosity];
-  const expectedConsumptionEuro = Number((cleanAverageBill * cleanVisits).toFixed(2));
+  const expectedConsumptionEuro = BONUS_REFERENCE_SPEND_EURO * BONUS_REFERENCE_VISITS;
   const pointsPerEuro = 1;
   const amountPerPoint = Number((1 / pointsPerEuro).toFixed(4));
-  const firstRewardPoints = Math.max(10, Math.round(cleanAverageBill * cleanVisits * pointsPerEuro));
   const rewardValueEuro = Number((expectedConsumptionEuro * returnRate).toFixed(2));
 
   return {
-    pointsPerEuro,
     amountPerPoint,
-    firstRewardPoints,
     rewardValueEuro,
     expectedConsumptionEuro,
     returnRate,
     returnRatePercent: `${Math.round(returnRate * 100)} %`,
     amountTierPoints: {
-      visit: Math.round(cleanAverageBill * pointsPerEuro),
-      menu: Math.round(cleanAverageBill * 1.5 * pointsPerEuro),
-      family: Math.round(cleanAverageBill * 3 * pointsPerEuro),
+      visit: Math.round(BONUS_REFERENCE_SPEND_EURO * pointsPerEuro),
+      menu: Math.round(BONUS_REFERENCE_SPEND_EURO * 1.5 * pointsPerEuro),
+      family: Math.round(BONUS_REFERENCE_SPEND_EURO * 3 * pointsPerEuro),
     },
-    recommendedRewardThresholds: [
-      firstRewardPoints,
-      Math.round(firstRewardPoints * 1.8),
-      Math.round(firstRewardPoints * 3),
-    ],
   };
 }
 
@@ -1067,7 +1052,7 @@ function buildChecklist(form: OnboardingForm, step: number) {
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
     openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled)
       && weekdays.every(({ key }) => validateOpeningDay(form.openingHours[key]) === null),
-    bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
+    bonusProgramCompleted: Boolean(generosityReturnRates[form.generosity]),
     firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
     qrReady: true,
     guestTestReady: step >= 5,
@@ -1089,10 +1074,6 @@ function getStepBlocker(
     return invalidDay
       ? `${invalidDay.label}: ${validateOpeningDay(form.openingHours[invalidDay.key])}`
       : "Bitte wähle mindestens einen Öffnungstag.";
-  }
-
-  if (step === 3 && (!form.averageBill || !form.firstRewardVisits)) {
-    return "Bitte fülle die zwei Werte für dein Bonusprogramm aus.";
   }
 
   if (step === 4 && form.starterRewards.filter((reward) => reward.title.trim()).length === 0) {
@@ -1121,6 +1102,7 @@ export function RestaurantOnboarding() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
   const [form, setForm] = useState<OnboardingForm>(() => createDefaultForm());
+  const [pendingOpeningHours, setPendingOpeningHours] = useState<Record<Weekday, OpeningDay> | null>(null);
   const [draftLoading, setDraftLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
@@ -1129,10 +1111,7 @@ export function RestaurantOnboarding() {
   const [draggingLogo, setDraggingLogo] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
-  const bonus = useMemo(
-    () => calculateBonus(form.averageBill, form.firstRewardVisits, form.generosity),
-    [form.averageBill, form.firstRewardVisits, form.generosity],
-  );
+  const bonus = useMemo(() => calculateBonus(form.generosity), [form.generosity]);
 
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
@@ -1147,11 +1126,15 @@ export function RestaurantOnboarding() {
     && activeRestaurant.country?.trim(),
   );
 
-  const checklist = useMemo(() => buildChecklist(form, step), [form, step]);
+  const effectiveForm = useMemo(
+    () => pendingOpeningHours ? { ...form, openingHours: pendingOpeningHours } : form,
+    [form, pendingOpeningHours],
+  );
+  const checklist = useMemo(() => buildChecklist(effectiveForm, step), [effectiveForm, step]);
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
   const allReady = Object.values(checklist).every(Boolean);
-  const stepBlocker = getStepBlocker(step, form, checklist);
+  const stepBlocker = getStepBlocker(step, effectiveForm, checklist);
   const missingItems = missingChecklistItems(checklist);
   const selectedStarterRewardCount = form.starterRewards.length;
   const starterRewardCounterTone = selectedStarterRewardCount === 0
@@ -1193,6 +1176,7 @@ export function RestaurantOnboarding() {
         }
 
         const restoredForm = restoreForm(draft.draftData);
+        setPendingOpeningHours(null);
         setForm(restoredForm.legalAddressMatchesRestaurant && restaurantAddressComplete
           ? {
               ...restoredForm,
@@ -1239,7 +1223,7 @@ export function RestaurantOnboarding() {
   }, [activeRestaurant?.id]);
 
   useEffect(() => {
-    if (draftLoading || tenantLoading || !activeRestaurant?.id) {
+    if (draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
       return;
     }
 
@@ -1264,7 +1248,7 @@ export function RestaurantOnboarding() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [activeRestaurant?.id, checklist, draftLoading, form, step, tenantLoading]);
+  }, [activeRestaurant?.id, checklist, draftLoading, form, pendingOpeningHours, step, tenantLoading]);
 
   async function persistDraftSnapshot(nextStep: number, nextForm: OnboardingForm) {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1286,6 +1270,16 @@ export function RestaurantOnboarding() {
   }
 
   function updateOpeningDay(day: Weekday, nextDay: Partial<OpeningDay>) {
+    if (pendingOpeningHours) {
+      setPendingOpeningHours((current) => current ? ({
+        ...current,
+        [day]: {
+          ...current[day],
+          ...nextDay,
+        },
+      }) : current);
+      return;
+    }
     setForm((current) => ({
       ...current,
       openingHours: {
@@ -1465,6 +1459,7 @@ export function RestaurantOnboarding() {
     const nextStep = Math.max(0, step - 1);
     setStatus(null);
     if (await persistDraftSnapshot(nextStep, form)) {
+      if (step === 2) setPendingOpeningHours(null);
       setStep(nextStep);
     }
   }
@@ -1479,7 +1474,7 @@ export function RestaurantOnboarding() {
           })
         : step === 2
           ? (() => {
-              const invalidDay = weekdays.find(({ key }) => validateOpeningDay(form.openingHours[key]));
+              const invalidDay = weekdays.find(({ key }) => validateOpeningDay(effectiveForm.openingHours[key]));
               return invalidDay ? `onboarding-${invalidDay.key}-open` : null;
             })()
           : step === 3
@@ -1502,7 +1497,9 @@ export function RestaurantOnboarding() {
 
     const nextStep = Math.min(steps.length - 1, step + 1);
     setStatus(null);
-    if (await persistDraftSnapshot(nextStep, form)) {
+    if (await persistDraftSnapshot(nextStep, effectiveForm)) {
+      setForm(effectiveForm);
+      setPendingOpeningHours(null);
       setStep(nextStep);
     }
   }
@@ -1888,8 +1885,16 @@ export function RestaurantOnboarding() {
             <section className="wizard-screen">
               <RequiredFieldsNote />
               <div className="schedule-grid">
-                {weekdays.map(({ key, label }) => (
-                  <OpeningHoursEditor dayLabel={label} idPrefix={`onboarding-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={form.openingHours[key]} />
+                <OpeningHoursEditor dayLabel="Montag" idPrefix="onboarding-mon" onChange={(patch) => updateOpeningDay("mon", patch)} value={effectiveForm.openingHours.mon} />
+                <OpeningHoursCopyAction
+                  destinationKeys={weekdays.slice(1).map(({ key }) => key)}
+                  onChange={setPendingOpeningHours}
+                  openingHours={effectiveForm.openingHours}
+                  sourceKey="mon"
+                  sourceLabel="Montag"
+                />
+                {weekdays.slice(1).map(({ key, label }) => (
+                  <OpeningHoursEditor dayLabel={label} idPrefix={`onboarding-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={effectiveForm.openingHours[key]} />
                 ))}
               </div>
               <div className="grid two">
@@ -1927,54 +1932,7 @@ export function RestaurantOnboarding() {
 
           {step === 3 ? (
             <section className="wizard-screen">
-              <RequiredFieldsNote />
-              <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
-              <div className="grid two">
-                <div className="field">
-                  <FormLabel htmlFor="average-bill" required>Was gibt ein Gast durchschnittlich aus?</FormLabel>
-                  <input
-                    aria-required="true"
-                    className="input input-large"
-                    id="average-bill"
-                    min="1"
-                    required
-                    type="number"
-                    value={form.averageBill}
-                    onChange={(event) => setForm((current) => ({ ...current, averageBill: Number(event.target.value) || 1 }))}
-                  />
-                </div>
-                <div className="field">
-                  <FormLabel htmlFor="first-reward-visits" required>Nach wie vielen Besuchen soll die erste Freude kommen?</FormLabel>
-                  <input
-                    aria-required="true"
-                    className="input input-large"
-                    id="first-reward-visits"
-                    min="1"
-                    required
-                    type="number"
-                    value={form.firstRewardVisits}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, firstRewardVisits: Number(event.target.value) || 1 }))
-                    }
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <FormLabel htmlFor="first-reward-type" required>Was möchtest du gerne geben?</FormLabel>
-                <select
-                  aria-required="true"
-                  className="select input-large"
-                  id="first-reward-type"
-                  required
-                  value={form.firstRewardType}
-                  onChange={(event) => setForm((current) => ({ ...current, firstRewardType: event.target.value }))}
-                >
-                  <option>Gratis Produkt</option>
-                  <option>Rabatt</option>
-                  <option>Upgrade</option>
-                  <option>Überraschung</option>
-                </select>
-              </div>
+              <p className="muted">Wähle, wie großzügig dein Bonusprogramm sein soll. WUXUAI übernimmt die Referenzrechnung.</p>
               <div className="choice-grid">
                 {(["Sparsam", "Normal", "Großzügig", "Premium"] as Generosity[]).map((option) => (
                   <button
@@ -1990,18 +1948,18 @@ export function RestaurantOnboarding() {
                 ))}
               </div>
               <article className="calculation-card">
-                <strong>Unsere Empfehlung für dich</strong>
+                <strong>Beispiel mit unseren V1-Richtwerten</strong>
                 <p className="muted">
                   {form.generosity} gewählt: {bonus.returnRatePercent} Rückgabe.
                 </p>
                 <p className="muted">
-                  Erwartete Konsumation bis zur Einlösung: {formatEuro(form.averageBill)} × {form.firstRewardVisits} Besuche = {formatEuro(bonus.expectedConsumptionEuro)}
+                  {formatEuro(BONUS_REFERENCE_SPEND_EURO)} pro Besuch × {BONUS_REFERENCE_VISITS} Besuche = {formatEuro(bonus.expectedConsumptionEuro)} Referenzkonsumation.
                 </p>
                 <p className="muted">
-                  Empfohlener Einlösewert: {bonus.returnRatePercent} von {formatEuro(bonus.expectedConsumptionEuro)} = {formatEuro(bonus.rewardValueEuro, true)}
+                  {bonus.returnRatePercent} davon entsprechen ungefähr {formatEuro(bonus.rewardValueEuro, true)} Einlösewert.
                 </p>
                 <p className="muted">
-                  WUXUAI berechnet daraus später automatisch die passende Punkte-Einlösung.
+                  Das ist nur ein Rechenbeispiel. Gäste müssen weder genau {formatEuro(BONUS_REFERENCE_SPEND_EURO)} ausgeben noch genau {BONUS_REFERENCE_VISITS} Mal kommen.
                 </p>
               </article>
             </section>

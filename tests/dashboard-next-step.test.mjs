@@ -94,14 +94,14 @@ test("optionale Optimierung kann persistent geschlossen werden", () => {
   assert.equal(dismissed, null);
 });
 
-test("Dashboard rendert maximal einen kompakten Hauptschritt ohne Placeholder", () => {
-  const nextStepBlock = styles.match(/\.dashboard-next-step \{([^}]*)\}/)?.[1] ?? "";
-  assert.match(dashboard, /const nextStep = useMemo/);
-  assert.match(dashboard, /\{nextStep \? \(/);
+test("Dashboard rendert den zentralen Assistenten ausschließlich in Heute für dich", () => {
+  assert.match(dashboard, /resolveOwnerDashboardRecommendation/);
+  assert.match(dashboard, /const recommendation = useMemo/);
+  assert.match(dashboard, /dashboard-recommendation-card/);
+  assert.doesNotMatch(dashboard, /\{nextStep \? \(/);
   assert.doesNotMatch(dashboard, /dashboard-legal-status|Status wird geprüft/);
-  assert.match(nextStepBlock, /margin-bottom: 18px/);
-  assert.doesNotMatch(nextStepBlock, /min-height/);
-  assert.match(styles, /@media \(max-width: 699px\)[\s\S]*dashboard-next-step[\s\S]*grid-template-columns: auto minmax\(0,1fr\)/);
+  assert.match(styles, /dashboard-recommendation-card[\s\S]*background: #25231f/);
+  assert.match(styles, /@media \(max-width: 430px\)[\s\S]*dashboard-recommendation[\s\S]*min-height: 48px/);
 });
 
 test("Gesehen-Status ist pro Restaurant und Benutzer mit enger RLS gespeichert", () => {

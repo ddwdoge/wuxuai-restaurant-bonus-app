@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeOpeningDay, partnerOpeningStatus, suggestLunchBreak, todayOpeningHours, validateOpeningDay } from "../src/shared/openingHours.mjs";
+import {
+  copyOpeningDayToDays,
+  normalizeOpeningDay,
+  openingDaysDiffer,
+  partnerOpeningStatus,
+  suggestLunchBreak,
+  todayOpeningHours,
+  validateOpeningDay,
+} from "../src/shared/openingHours.mjs";
 
 const fallback = { enabled: false, open: "11:00", close: "22:00" };
 
@@ -94,6 +102,56 @@ test("gespeicherte manuelle Pausenwerte werden beim Reload unverändert normalis
 test("geschlossene Tage verlangen keine Zeiten", () => {
   const day = normalizeOpeningDay({ enabled: false, open: "", close: "", lunchBreakEnabled: true }, fallback);
   assert.equal(validateOpeningDay(day), null);
+});
+
+test("Montag wird mit der vollständigen Tageskonfiguration auf Dienstag bis Sonntag kopiert", () => {
+  const monday = normalizeOpeningDay({
+    enabled: true,
+    open: "11:00",
+    close: "14:00",
+    lunchBreakEnabled: true,
+    lunchBreakStart: "14:00",
+    lunchBreakEnd: "17:00",
+    secondOpen: "17:00",
+    secondClose: "22:00",
+  }, fallback);
+  const hours = Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((key) => [
+    key,
+    key === "mon" ? monday : normalizeOpeningDay(null, fallback),
+  ]));
+  const copied = copyOpeningDayToDays(hours, "mon", ["tue", "wed", "thu", "fri", "sat", "sun"]);
+
+  for (const day of ["tue", "wed", "thu", "fri", "sat", "sun"]) {
+    assert.deepEqual(copied[day], monday);
+    assert.notEqual(copied[day], copied.mon);
+  }
+});
+
+test("ein geschlossener Montag schließt beim Kopieren alle Tage", () => {
+  const closed = normalizeOpeningDay({ enabled: false, open: "", close: "" }, fallback);
+  const open = normalizeOpeningDay({ enabled: true, open: "11:00", close: "22:00" }, fallback);
+  const hours = { mon: closed, tue: open, wed: open, thu: open, fri: open, sat: open, sun: open };
+  const copied = copyOpeningDayToDays(hours, "mon", ["tue", "wed", "thu", "fri", "sat", "sun"]);
+
+  assert.equal(Object.values(copied).every((day) => day.enabled === false), true);
+});
+
+test("ein Tag bleibt nach dem Kopieren unabhängig bearbeitbar", () => {
+  const open = normalizeOpeningDay({ enabled: true, open: "11:00", close: "22:00" }, fallback);
+  const hours = { mon: open, tue: open, wed: open, thu: open, fri: open, sat: open, sun: open };
+  const copied = copyOpeningDayToDays(hours, "mon", ["tue", "wed", "thu", "fri", "sat", "sun"]);
+  const edited = { ...copied, sun: { ...copied.sun, enabled: false } };
+
+  assert.equal(edited.sun.enabled, false);
+  assert.equal(edited.sat.enabled, true);
+  assert.equal(edited.mon.enabled, true);
+});
+
+test("abweichende Zielzeiten werden für die Überschreibbestätigung erkannt", () => {
+  const monday = normalizeOpeningDay({ enabled: true, open: "11:00", close: "22:00" }, fallback);
+  const sunday = normalizeOpeningDay({ enabled: false, open: "12:00", close: "21:00" }, fallback);
+  assert.equal(openingDaysDiffer({ mon: monday, sun: sunday }, "mon", ["sun"]), true);
+  assert.equal(openingDaysDiffer({ mon: monday, sun: { ...monday } }, "mon", ["sun"]), false);
 });
 
 test("Kundenhinweis zeigt beide Öffnungsblöcke", () => {
