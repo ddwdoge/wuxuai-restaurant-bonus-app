@@ -1,68 +1,61 @@
-# WUXUAI Restaurant Bonus V1 Release Readiness
+# WUXUAI Bonus V1 Release Readiness
 
-Stand: 2026-08-11
+Stand: 2026-08-31
 
-## Technisch abgeschlossen
+Branch: `codex/v1-canonical-recovery`
 
-- Zentraler Kundenlogin, restaurantbezogene Mitgliedschaften und QR-Kontext
-- Serverzeitgebundene Präsentationsfenster für Punkte-, Willkommens- und
-  Geburtstagsgeschenke
-- Idempotente Geburtstagszuteilung 14 Tage vorher und einmaliger Reminder
-- Reaktivierbare Punkteschwellen-Benachrichtigung je Restaurant und Reward
-- Private Transaktionsmail-Outbox mit Lease, Retry, Fehlerstatus und
-  Service-Role-Grenze
-- Serveronly-Mail-Dispatcher für die drei bestehenden V1-Mailtypen
-- Staging-Migrationen bis `20260811001000` vollständig synchron
+## Aktueller Release-Stand
 
-## Qualität
+Die spaeteren Development/Test- und physischen Founder-Nachweise schliessen die
+in historischen Reports noch als offen bezeichneten V1-Gates. Historische
+Reports werden nicht rueckwirkend umgeschrieben.
 
-- Typecheck: erfolgreich
-- Lint: 0 Fehler, 8 bestehende Warnungen
-- Tests: 667/667 erfolgreich
-- Production-Build: erfolgreich
-- `git diff --check`: erfolgreich
-- 30 lokale Browserprüfungen auf 390/430/768/1024/1440 px: kein Overflow,
-  keine Console-Fehler; Callback-Touchfläche auf Premium-Buttongröße korrigiert
+- Owner, Onboarding und Legal Company Data: PASS
+- Customer und Staff: PASS
+- Multi-Role mit einer Auth-Identitaet: FINAL LOCK
+- E-Mail-Bestaetigung, Resend und Password Recovery: PASS
+- Referral inklusive nativer iPhone-Freigabe und Continuation: FINAL LOCK
+- Customer Discovery Direct Join: FINAL LOCK
+- Welcome Gift und Birthday Gift 14-Day Catch-up: FINAL LOCK
+- Customer Home Multi-Gift: FINAL LOCK
+- Punkte und Point Anomaly mit korrekter Actor-Attribution: FINAL LOCK
+- Rewards, Offers und automatische Rabattdarstellung: PASS
+- QR Center und A6 Starter Kit: FINAL LOCK
+- Commercial Contract: 3 Kalendermonate kostenlos, danach 59 EUR pro Monat
+  exkl. USt.: PASS
+- Guardrails und Tenant-/RLS-Vertraege: PASS
 
-## Manuelle Aktivierung erforderlich
+## Development/Test und Datenbank
 
-Der Dispatcher ist nicht deployt, weil in dieser Sitzung keine freigegebenen
-SMTP-, Scheduler-, Absender-, App-URL- oder Service-Role-Secrets verfügbar sind.
-Es wurden keine Zugangsdaten erfunden oder aus Auth SMTP exportiert.
+- Ziel: `bwhvfjuwixgwduoeqaya`
+- Migration History: lokal/remote bis `20260831001000` synchron
+- Pending Migrations: 0
+- Post-Dry-Run: PASS
+- DB-Linter Level Error: 0 Ergebnisse
+- Production-Migrationen: keine
 
-**MANUAL SECRET REQUIRED**
+## Release-Gates
 
-- `TRANSACTIONAL_MAIL_SCHEDULER_SECRET`
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`
-- `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`
-- `APP_BASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- Open P0: 0
+- Open P1: 0
+- Open Product Release Blockers: 0
+- Open Physical Founder Gates: 0
+- V1 Final Lock: YES
 
-Nach sicherer Secret-Hinterlegung muss die Edge Function
-`transactional-mail-dispatcher` auf Staging deployt, durch einen geschützten
-Scheduler aufgerufen und mit echten Geburtstag-/Schwellenmails geprüft werden.
+Die Git-Integration nach `main` bleibt ein separates Pre-Main-Sicherheitsgate.
+`main` wird erst nach Branch-Reconciliation, sauberem Worktree, gruenen
+Qualitaetspruefungen, identischem GitHub-Backup und ausdruecklicher
+Founder-Freigabe geaendert.
 
-## Offene Pilot-Gates
+## Commercial und Production
 
-- Echte Auth-Bestätigungsmail und Callback
-- Echte Geburtstag- und Punkteschwellenmail inklusive CTA
-- Vollständige Staging-E2E-Flows mit isolierten Testkonten
-- Physischer iPhone-Safari-Test
-- Installierte PWA inklusive Wiederaufnahme
-- Kellner-Lesbarkeit und Screenshot-Erkennbarkeit
-- Legacy-DB-Lint-Befunde separat triagieren; sie liegen außerhalb dieses
-  Dispatcher-Scopes und wurden nicht verändert
-
-## Stripe
-
-Stripe bleibt ausdrücklich **DEFERRED**. Kein Checkout, keine Webhooks, keine
-Keys und keine simulierte Subscription wurden ergänzt.
+- Stripe: DEFERRED
+- Production: LOCKED
+- Merge, Tag und Production-Deployment: NICHT AUSGEFUEHRT
 
 ## Bewertung
 
-- TECHNICALLY READY FOR MANUAL PILOT TEST: **NO**
-- PILOT READY: **NO**
+Produkt- und Flow-Gates: **V1 FINAL LOCK**
 
-Begründung: Code, Tests und Staging-Schema sind vorbereitet. Der reale
-Transaktionsmailtransport ist ohne manuell bereitgestellte Secrets und
-Staging-Deployment noch nicht aktiv; echte E2E- und Geräteprüfungen fehlen.
+Git-Releasefreigabe: erst nach Abschluss des aktuellen Pre-Main-
+Reconciliation-Gates.

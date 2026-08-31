@@ -1,14 +1,14 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-Status: **CODE INTEGRATED / AUTH MIGRATION STAGING APPLIED / LIVE GATES PENDING**
-Stand: 2026-08-30
-Authoritative Base: `919141181223aa414ef004a09aa3f02637f2b7fd`
+Status: **V1 FINAL LOCK / DEVELOPMENT-TEST VERIFIED**
+Stand: 2026-08-31
+Authoritative Branch: `codex/v1-canonical-recovery`
 Recovery Branch: `codex/v1-canonical-recovery`
 
-Dieses Dokument beschreibt den nach Source und Tests integrierten V1-Stand.
-`IMPLEMENTED` bedeutet Code und automatisierte Tests vorhanden.
-`STAGING PENDING` bedeutet, dass eine neue Migration oder ein echter externer
-Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
+Dieses Dokument beschreibt den nach Source, Tests, Development/Test-Live-Gates
+und physischen Founder-Gates verifizierten V1-Stand. Historische Reports
+behalten den Status zum Zeitpunkt ihrer Erstellung; dieser Vertrag bildet den
+spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
 ## Branding - IMPLEMENTED
 
@@ -38,7 +38,7 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   `register_referral_customer_legal`.
 - Aktive Client-Aufrufe der alten Registration-RPCs: null.
 
-## Multi-Role Account - CODE INTEGRATED, STAGING APPLIED, LIVE PENDING
+## Multi-Role Account - FINAL LOCK
 
 - Eine bestaetigte Supabase-Auth-Identitaet repraesentiert eine Person und kann
   unabhaengige Customer-, Owner-/Admin-, Staff- und Plattformbeziehungen tragen.
@@ -58,8 +58,11 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   `20260830002000_multi_role_account_foundation.sql` ist auf dem verknuepften
   Development/Test-Supabase-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Local/
   Remote Migration History sind synchron, der anschliessende Dry-Run ist leer
-  und der DB-Linter meldet 0 Fehler. Reale Mehrfachrollen-Sitzungen und
-  Cross-Tenant-Negativproben bleiben ein separates Live-Gate.
+  und der DB-Linter meldet 0 Fehler.
+- Staff plus Customer mit derselben Auth-Identitaet, derselben E-Mail und
+  demselben Passwort ist live verifiziert. Membership genau eins,
+  Staff-Rolle erhalten, kein zweiter Auth-User, Wiedereroeffnung ohne erneuten
+  Beitritt und Cross-Tenant-Blockierung sind verifiziert.
 
 ## Redemption - IMPLEMENTED
 
@@ -72,7 +75,7 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Server bleibt Autoritaet fuer Berechtigung, Ablauf, Einmalverwendung,
   Audit und Finalisierung.
 
-## Referral / Freundschaftsbonus - CODE INTEGRATED, STAGING VERIFIED
+## Referral / Freundschaftsbonus - FINAL LOCK
 
 - Multiplikator ist immer 2x und kann nicht gestapelt werden.
 - Default fuer neue Restaurants: 14 Tage.
@@ -122,6 +125,9 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
   werden. Wo sie fehlt, bleibt die Zwischenablage der primaere Fallback; QR und
   sekundaeres Linkoeffnen bleiben erhalten. Geteilt wird ausschliesslich die
   bestehende kanonische oeffentliche Referral-URL.
+- Native iPhone-Freigabe, Linkoeffnung, bestehendes Konto, Legal Consent,
+  Einladung, qualifizierender Besuch, 2x fuer beide Seiten und die automatische
+  Fortsetzung ohne zweiten Login sind physisch verifiziert.
 
 ## Geocoding - IMPLEMENTED
 
@@ -147,7 +153,7 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Betreiberaktionen behalten `auth.uid()` als Akteur und werden im Audit als
   Admin-Aktion mit der konkreten Restaurantrolle gekennzeichnet.
 
-## Point Anomaly Monitoring - CODE INTEGRATED
+## Point Anomaly Monitoring - FINAL LOCK
 
 - Das bestehende harte Limit von zwei erfolgreichen Punktebuchungen je Gast,
   Restaurant und lokalem Kalendertag bleibt unveraendert.
@@ -163,8 +169,11 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Der Hinweis ist rein informativ. Er veraendert keine Punkte, Einloesungen,
   Kunden- oder Staff-Zugaenge und fuehrt weder automatische Rueckbuchung noch
   automatische Sperre aus.
+- Der Development/Test-Live-Nachweis umfasst 100 EUR ohne Warnung, 240 EUR mit
+  Betreiberattribution `Restaurantinhaber` und 250 EUR mit Attribution
+  `Mitarbeiter`. Punkte und Staff-Zugang blieben erhalten.
 
-## Birthday Gift Catch-up - CODE INTEGRATED, STAGING PENDING
+## Birthday Gift Catch-up - FINAL LOCK
 
 - Das inklusive Eligibility-Fenster reicht vom lokalen Restauranttag bis zum
   Geburtstag innerhalb der naechsten 14 lokalen Kalendertage.
@@ -180,10 +189,14 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Ein Unique Index, ein transaktionaler Advisory Lock und dieselbe
   serverseitige Existenzpruefung verhindern Duplikate pro Customer,
   Restaurant und Geburtstagsjahr.
-- Migration: `20260831001000_birthday_gift_14_day_catch_up.sql`; noch nicht auf
-  Development/Test angewendet.
+- Migration `20260831001000_birthday_gift_14_day_catch_up.sql` ist auf
+  Development/Test angewendet. Migration History ist synchron, der Post-Dry-Run
+  leer und der DB-Linter meldet 0 Fehler.
+- Eligibility-Fenster, sofortige Membership-Pruefung, Jahres-Deduplizierung,
+  Restaurant-Lokalzeit, 29.-Februar-Regel, Audit und E-Mail-Queue sind live
+  verifiziert.
 
-## Customer Home Multi-Gift Carousel - CODE INTEGRATED, LIVE PENDING
+## Customer Home Multi-Gift Carousel - FINAL LOCK
 
 - Customer Home verwendet die bestehende kanonische Portal-Reward-Antwort und
   zeigt alle aktuell sichtbaren, nicht eingelösten und nicht abgelaufenen
@@ -196,8 +209,22 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Carousel-Navigation startet oder verbraucht keine Einlösung. Assignment,
   Birthday-Catch-up, 15-Minuten-Präsentation, Audit, E-Mail, Punkte und Visits
   bleiben unverändert.
-- Der reale Development/Test-Fall mit Welcome plus Birthday und der physische
-  iPhone-Swipe bleiben bis zum Deployment offen.
+- Der reale Development/Test-Fall mit gleichzeitigem Welcome- und
+  Birthday-Geschenk sowie der physische iPhone-Swipe sind Founder-verifiziert.
+
+## Customer Discovery Direct Join - FINAL LOCK
+
+- Nichtmitglieder sehen in den Restaurantdetails den primaeren Beitritts-CTA
+  und den sekundaeren Routen-CTA vollstaendig und touchgerecht.
+- Beitritt verlangt ausdruecklichen Legal Consent, ist servervalidiert und
+  idempotent und erzeugt genau eine tenantkorrekte Membership.
+- Das beigetretene Restaurant wird aktiver Customer-Kontext und erscheint ohne
+  manuellen Refresh auf der Startseite.
+- Der Beitritt erzeugt weder Besuch noch Punkte oder Referral und veraendert
+  Welcome-, Offer- und Reward-Eligibility nicht ausserhalb des bestehenden
+  Vertrags.
+- Der vollstaendige Flow und die CTA-Sichtbarkeit sind auf physischem iPhone
+  durch den Founder bestaetigt.
 
 ## QR Center und Starter Kit - IMPLEMENTED
 
@@ -252,17 +279,13 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 
 ## Staging und Production
 
-- Referral-Migration: `STAGING APPLIED`.
-- Local/Remote Migration History: einschließlich `20260824001000` und
-  `20260824002000` synchron.
-- Beide Referral-Migrationen wurden kontrolliert auf Staging angewendet.
-- Staging-DB-Linter nach Anwendung: 0 Fehler.
-- Referral Final Staging Gate: verifiziert.
-- Referral Welcome/Eligibility/Monatslimit: `STAGING VERIFIED`.
-- Der physische Referral-Pilot mit echter E-Mail-Bestaetigung und iPhone Safari
-  bleibt ein offenes manuelles Release-Gate.
-- Native Referral-Freigabe, automatische Callback-Fortsetzung und Multi-Role-
-  Aktivierung sind noch nicht deployed oder physisch/live verifiziert.
+- Local/Remote Migration History ist bis einschließlich `20260831001000`
+  synchron; der Post-Dry-Run meldet keine offenen Migrationen.
+- Development/Test-DB-Linter: 0 Fehler.
+- Referral, Multi-Role, Birthday Catch-up, Multi-Gift, Discovery Direct Join,
+  Point Anomaly, QR/Starter Kit und E-Mail-Bestaetigung/Resend sind durch
+  spaetere Live-/Founder-Evidenz geschlossen.
+- Offene verpflichtende V1-Produkt- oder physische Founder-Gates: 0.
 - Production: `DEFERRED / LOCKED`.
 - Stripe: `DEFERRED`.
 
