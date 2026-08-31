@@ -3,6 +3,20 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-31 - Alle aktiven Kundengeschenke auf Customer Home
+
+- Ein Kunde kann gleichzeitig mehrere gültige persönliche Geschenke besitzen.
+  Customer Home zeigt deshalb alle aktuell sichtbaren, nicht verbrauchten
+  Geschenkzuweisungen aus `customer_rewards` über die bestehende kanonische
+  Portal-Antwort.
+- Geburtstagsgeschenke stehen in V1 vor Willkommensgeschenken; weitere Typen
+  folgen deterministisch. Kein Geschenk wird durch eine Prioritätsauswahl
+  ausgeblendet.
+- Mehrere Geschenke verwenden den bestehenden horizontalen Premium-Carousel-
+  Vertrag. Navigation allein vergibt, startet oder verbraucht kein Geschenk.
+- Assignment, Birthday-Catch-up, Einlösung, Punkte, Visits, Audit und E-Mail
+  bleiben unverändert.
+
 ## 2026-08-31 - Geburtstagsgeschenk mit 14-Tage-Nachholung
 
 - Ein aktiver Restaurantkunde ist einschliesslich heute bis 14 lokale

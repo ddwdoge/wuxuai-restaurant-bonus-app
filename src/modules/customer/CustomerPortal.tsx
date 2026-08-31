@@ -89,6 +89,7 @@ import {
 import { createReferralCreationToken } from "./referralInviteFlow.mjs";
 import { referralSharePayload, supportsNativeReferralShare } from "./referralShare.mjs";
 import { formatReferralBoostExpiry, formatReferralBoostRemaining } from "./referralLifecycle.mjs";
+import { selectCustomerHomeGifts } from "./customerGiftPresentation.mjs";
 import {
   AppShell,
   BenefitTile,
@@ -603,8 +604,13 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const redemptionCatalog = rewards.filter((offer) => offer.source === "reward" && offer.active);
   const myRedemptions = redemptionCatalog.filter((offer) => offer.is_starter_reward || offer.status !== "locked");
   const filteredRedemptions = rewardFilter === "mine" ? myRedemptions : redemptionCatalog;
-  const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
-  const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
+  const activeGifts = useMemo(
+    () => selectCustomerHomeGifts(rewards),
+    [rewards],
+  );
+  const hasWelcomeGift = activeGifts.some((gift) => gift.gift_type !== "birthday");
+  const hasUnlockedWelcomeGift = activeGifts.some((gift) => gift.gift_type !== "birthday" && gift.status === "unlocked");
+  const hasBirthdayGift = activeGifts.some((gift) => gift.gift_type === "birthday");
   const nextPointRedemption = [...pointRedemptions].sort((left, right) => left.remaining_points - right.remaining_points)[0] ?? null;
   const nextRedemptionProgress = nextPointRedemption?.required_points
     ? clampPercent(((nextPointRedemption.required_points - nextPointRedemption.remaining_points) / nextPointRedemption.required_points) * 100)
@@ -1986,14 +1992,14 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <BenefitTile
                       icon={<Gift size={22} />}
                       label="Willkommensgeschenk"
-                      status={activeWelcomeGift
-                        ? activeWelcomeGift.status === "unlocked" ? "Einlösbar" : "Reserviert"
+                      status={hasWelcomeGift
+                        ? hasUnlockedWelcomeGift ? "Einlösbar" : "Reserviert"
                         : "Nicht vorhanden"}
                     />
                     <BenefitTile
                       icon={<CakeSlice size={22} />}
                       label="Geburtstagsgeschenk"
-                      status={activeBirthdayGift
+                      status={hasBirthdayGift
                         ? "Einlösbar"
                         : retention?.birthday.eligible ? "Überraschung wartet" : "Nicht vorhanden"}
                     />
@@ -2061,34 +2067,40 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   )}
                 </section>
 
-                {activeWelcomeGift || activeBirthdayGift ? (
+                {activeGifts.length ? (
                   <section className="premium-content-section premium-gift-preview">
-                    <SectionHeader subtitle="Dein persönlicher Vorteil für den nächsten Besuch." title="Dein Geschenk" />
-                    <div className="premium-reward-grid">
-                      {activeBirthdayGift ? (
-                        <RewardCard
-                          category="Geburtstagsgeschenk"
-                          imageUrl={activeBirthdayGift.image_url}
-                          imageCrop={rewardImageCropFromRecord(activeBirthdayGift)}
-                          meta="Für deinen Geburtstag"
-                          onOpen={() => openRewardRedemption(activeBirthdayGift)}
-                          state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode, activePointsPresentation)}
-                          status="Jetzt einlösbar"
-                          title={activeBirthdayGift.title}
-                        />
-                      ) : activeWelcomeGift ? (
-                        <RewardCard
-                          category="Willkommensgeschenk"
-                          imageUrl={activeWelcomeGift.image_url}
-                          imageCrop={rewardImageCropFromRecord(activeWelcomeGift)}
-                          meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
-                          onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
-                          state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode, activePointsPresentation)}
-                          status={activeWelcomeGift.status === "unlocked" ? "Jetzt einlösbar" : "Nach der ersten Punktebuchung verfügbar"}
-                          title={activeWelcomeGift.title}
-                        />
-                      ) : null}
-                    </div>
+                    <SectionHeader
+                      subtitle={activeGifts.length === 1
+                        ? "Dein persönlicher Vorteil für den nächsten Besuch."
+                        : `${activeGifts.length} persönliche Vorteile sind für dich bereit.`}
+                      title="Deine Geschenke"
+                    />
+                    <PremiumHorizontalCarousel
+                      label="Deine Geschenke"
+                      nextLabel="Nächstes Geschenk"
+                      previousLabel="Vorheriges Geschenk"
+                    >
+                      {activeGifts.map((gift) => {
+                        const state = rewardState(gift, nowMs, activeRedemptionCode, activePointsPresentation);
+                        const isBirthdayGift = gift.gift_type === "birthday";
+                        const isWelcomeGift = gift.gift_type === "welcome";
+                        return (
+                          <RewardCard
+                            category={isBirthdayGift ? "Geburtstagsgeschenk" : isWelcomeGift ? "Willkommensgeschenk" : gift.category ?? "Geschenk"}
+                            imageUrl={gift.image_url}
+                            imageCrop={rewardImageCropFromRecord(gift)}
+                            key={`${gift.source}-${gift.assignment_id ?? gift.id}`}
+                            meta={isBirthdayGift ? "Für deinen Geburtstag" : welcomeGiftDetail(gift) ?? "Für dich reserviert"}
+                            onOpen={isBirthdayGift || gift.status === "unlocked" ? () => openRewardRedemption(gift) : undefined}
+                            state={state}
+                            status={isWelcomeGift && gift.status !== "unlocked"
+                              ? "Nach der ersten Punktebuchung verfügbar"
+                              : rewardStatusText(gift, state)}
+                            title={gift.title}
+                          />
+                        );
+                      })}
+                    </PremiumHorizontalCarousel>
                   </section>
                 ) : null}
 

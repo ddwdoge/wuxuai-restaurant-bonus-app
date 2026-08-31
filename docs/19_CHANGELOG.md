@@ -3504,3 +3504,13 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Direct-Join-Logik blieben unveraendert.
 - Keine Migration, kein Deployment und keine Aenderung an Punkten, Gifts,
   Referral, Multi-Role, QR oder Starter Kit.
+## 2026-08-31 - Mehrere aktive Geschenke auf Customer Home
+
+- Customer Home reduziert persönliche Geschenke nicht mehr auf ein bevorzugtes
+  Geburtstags- oder Willkommensgeschenk, sondern zeigt alle aktuell sichtbaren
+  Geschenkzuweisungen.
+- Zwei oder mehr Geschenke verwenden den bestehenden horizontalen Premium-
+  Carousel mit Swipe, Scroll Snap, Pfeilen und Positionsanzeige.
+- Birthday steht deterministisch vor Welcome; weitere Geschenktypen folgen
+  stabil. Gift-Zuweisung, Einlösung, Punkte, Visits, Audit und E-Mail blieben
+  unverändert.

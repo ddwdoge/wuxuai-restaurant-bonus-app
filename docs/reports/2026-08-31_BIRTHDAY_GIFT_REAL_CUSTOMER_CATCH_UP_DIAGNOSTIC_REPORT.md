@@ -56,31 +56,87 @@ Dies ist kein Eligibility-, Pool-, Membership-, Tenant- oder Cron-Fehler. Es
 ist eine einmalige Deployment-/Backfill-Luecke zwischen dem letzten Cronlauf
 und der Migrationsanwendung.
 
+## Founder-freigegebener kanonischer Catch-up-Lauf
+
+Nach der Root-Cause-Feststellung wurde der kanonische Job ausschliesslich auf
+Development/Test ausgefuehrt. Es wurde kein direkter Insert verwendet.
+
+Erster Lauf:
+
+```sql
+select public.issue_birthday_gifts(now());
+```
+
+Globales Ergebnis des kanonischen Jobs:
+
+```text
+issued: 3
+skipped: 1
+mode: automatic_14_day_window
+```
+
+Der Job prueft vertragsgemaess alle aktuell berechtigten Development/Test-
+Kunden. Fuer den geprueften Zielkunden entstand genau eine Zuweisung fuer
+`birthday_year = 2026`.
+
+Zielkunden-Verifikation nach dem ersten Lauf:
+
+- Birthday Gifts 2026: **1**
+- Reward: `Eigene Ueberraschung`
+- Reward aktiv: **JA**
+- Birthday Pool aktiviert: **JA**
+- Starter-Gift-Pool: **JA**
+- Restaurant- und Branch-Zuordnung korrekt: **JA**
+- Assignment Source: `birthday_automatic_v1_catch_up`
+- Audit Events: **1 / PASS**
+- E-Mail-Queue-Eintraege: **1 / PASS**, Status `PENDING`
+- Punktebalance: `340`, unveraendert
+- Punktetransaktionen: `2`, unveraendert
+- Visits: `2`, unveraendert
+- letzter Visit: unveraendert
+- Stamp Balance: `0`, unveraendert
+
+Die Audit-Metadaten fuer Geburtstag und Geburtstagsjahr werden durch die
+bestehende Sicherheitsfunktion als `[ENTFERNT]` gespeichert. Der Audit-Vertrag
+ist trotzdem vollstaendig erfuellt: Event, Aktion, Status, Actor, Restaurant,
+Customer und Zielobjekt stimmen mit der Zuweisung ueberein.
+
+Idempotenzpruefung durch einen erneuten kanonischen Lauf:
+
+```text
+issued: 0
+skipped: 4
+mode: automatic_14_day_window
+```
+
+Danach blieben fuer den Zielkunden unveraendert:
+
+- Birthday Gifts 2026: **1**
+- Audit Events: **1**
+- E-Mail-Queue-Eintraege: **1**
+- Punktebalance und Punktetransaktionen: unveraendert
+- Visits und letzter Visit: unveraendert
+
 ## Datenmutation
 
 - manuelle `customer_rewards`-Zuweisung: **NEIN**
+- direkter Insert: **NEIN**
 - Aufruf von `assign_birthday_gift_if_eligible(...)`: **NEIN**
-- Aufruf von `issue_birthday_gifts(...)`: **NEIN**
+- kanonischer `issue_birthday_gifts(now())`-Lauf auf Development/Test: **JA**
+- kanonischer Idempotenzlauf auf Development/Test: **JA**
 - Update an Customer oder Membership: **NEIN**
+- Production-Mutation: **NEIN**
 - Datenbank-/Codeaenderung: **NEIN**
-
-## Sichere naechste Wege
-
-- Regulär warten: Der naechste aktive Cronlauf prueft den Kunden erneut im
-  weiterhin gueltigen Fenster.
-- Nach ausdruecklicher Founder-Freigabe: den kanonischen, idempotenten
-  `issue_birthday_gifts(now())`-Job einmal kontrolliert auf Development/Test
-  ausfuehren. Keine direkte Row-Zuweisung verwenden.
 
 ## Abschluss
 
 - Aufgabe: Realen Birthday-Catch-up-Datensatz pruefen und Ursache bestimmen
 - Build: Ja, unveraenderter aktueller Code-Stand bereits mit 2067 Modulen PASS
 - Migration: Keine neue; `20260831001000` auf Development/Test vorhanden
-- Flow-Test: Ja, ausschliesslich lesende Live-Datenbankdiagnose
-- RLS/Security: Ja, keine Grants oder Daten veraendert
+- Flow-Test: Ja, kanonischer Catch-up und Idempotenz live auf Development/Test
+- RLS/Security: Ja, keine Grants veraendert; kein direkter Insert
 - Alte Logik geprueft: Ja
 - Report: `docs/reports/2026-08-31_BIRTHDAY_GIFT_REAL_CUSTOMER_CATCH_UP_DIAGNOSTIC_REPORT.md`
 - Pruef-ZIP: `exports/2026-08-31_BIRTHDAY_GIFT_REAL_CUSTOMER_CATCH_UP_DIAGNOSTIC.zip`
-- Offene Risiken: bestehender Kunde wartet ohne kontrollierten Lauf bis zum naechsten Cron
-- Status: NOT READY fuer diesen realen Datensatz bis Zuweisung kanonisch erfolgt und nachgeprueft ist
+- Offene Risiken: keine fuer den geprueften realen Catch-up-Datensatz
+- Status: FINAL LOCK fuer den geprueften Birthday-Gift-14-Day-Catch-up

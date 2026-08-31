@@ -183,6 +183,22 @@ Flow noch nicht gegen Staging verifiziert wurde. `DEFERRED` ist nicht Teil V1.
 - Migration: `20260831001000_birthday_gift_14_day_catch_up.sql`; noch nicht auf
   Development/Test angewendet.
 
+## Customer Home Multi-Gift Carousel - CODE INTEGRATED, LIVE PENDING
+
+- Customer Home verwendet die bestehende kanonische Portal-Reward-Antwort und
+  zeigt alle aktuell sichtbaren, nicht eingelösten und nicht abgelaufenen
+  persönlichen Geschenkzuweisungen des aktiven Restaurants.
+- Geburtstagsgeschenke stehen deterministisch vor Willkommensgeschenken;
+  weitere Geschenktypen folgen nach Gültigkeit und stabiler Zuweisungs-ID.
+- Zwei oder mehr Geschenke verwenden den bestehenden horizontalen Premium-
+  Carousel mit nativem Swipe, Scroll Snap, Einzelschritt-Pfeilen und echter
+  Positionsanzeige. Eine einzelne Karte bleibt vollbreit.
+- Carousel-Navigation startet oder verbraucht keine Einlösung. Assignment,
+  Birthday-Catch-up, 15-Minuten-Präsentation, Audit, E-Mail, Punkte und Visits
+  bleiben unverändert.
+- Der reale Development/Test-Fall mit Welcome plus Birthday und der physische
+  iPhone-Swipe bleiben bis zum Deployment offen.
+
 ## QR Center und Starter Kit - IMPLEMENTED
 
 - Der Neue-Gaeste-QR `/customer/:slug` ist der einzige aktive oeffentliche

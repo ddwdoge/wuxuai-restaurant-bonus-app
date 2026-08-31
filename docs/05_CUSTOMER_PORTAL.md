@@ -48,6 +48,20 @@ einlösen. Ein abgelaufenes Fenster verbraucht keinen Benefit.
 - Offer-Karten behalten Titel, Kurzbeschreibung, Gültigkeit, Zeitplan, Zeitraum,
   Preis und Aktion, verdichten diese Angaben aber zu einem kompakten Rhythmus.
 
+## Mehrere aktive Geschenke auf der Startseite 2026-08-31
+
+- Die Customer-Startseite zeigt alle aktuell sichtbaren, nicht eingelösten und
+  nicht abgelaufenen persönlichen Geschenkzuweisungen aus derselben
+  kanonischen Reward-Antwort.
+- Geburtstagsgeschenke stehen deterministisch vor Willkommensgeschenken;
+  weitere Geschenktypen folgen stabil nach Gültigkeit und Zuweisungs-ID.
+- Ab zwei Geschenken verwendet die Startseite denselben nativen Swipe-,
+  Scroll-Snap-, Pfeil- und Positionsvertrag wie die bestehenden Reward-
+  Carousels. Eine einzelne Karte bleibt vollbreit ohne Carousel-Steuerung.
+- Swipe, Pfeile und Positionswechsel starten keine Einlösung. Jede Karte
+  behält ihren eigenen Status, ihr Bild und ihren bestehenden Detail- und
+  Einlöseweg.
+
 ## Persönlicher Punkte-QR
 
 Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.
