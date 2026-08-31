@@ -164,3 +164,44 @@ physischer iPhone-Test fehlen; deshalb kein FINAL LOCK.
 
 - Production: `LOCKED`
 - Stripe: `DEFERRED`
+
+## Nachtrag 2026-08-31: spaetere Live-/Founder-Evidenz
+
+Die oben dokumentierten `LIVE PENDING`-Angaben beschreiben den Stand vor dem
+spaeteren Development/Test-Deployment und sind fuer die Release-Bewertung
+ueberholt. Es wurden keine Businessflows fuer diesen Nachtrag wiederholt.
+
+### Referral
+
+Der Founder bestaetigte nach den relevanten Codeaenderungen physisch:
+
+- Native iPhone Share: PASS
+- geteilter Referral-Link geoeffnet: PASS
+- bestehendes Konto aktiviert: PASS
+- Teilnahmebedingungen, Datenschutz und Einladung angenommen: PASS
+- Customer Portal geoeffnet: PASS
+- qualifizierender Besuch/Punkteflow: PASS
+- 2x Referral-Bonus fuer beide Seiten: PASS
+- Referral Continuation nach Customer-Aktivierung: PASS
+- kein unnoetiger zweiter Login-Schritt: PASS
+
+Release-Gate Referral: `GESCHLOSSEN`. Fehlende Evidenz: `NONE`.
+
+### Multi-Role
+
+Spaetere Development/Test-Evidenz fuer Deployment
+`9cbb8de7-3a07-40f0-a30e-ba7650041513`, Commit
+`bb6ce42f8937bded4a28bad6545b84e8e71a6eba`:
+
+- Staff Login: PASS
+- kontofremder stale Customer Access entfernt: PASS
+- servervalidierter Customer Join: PASS
+- Membership genau 1 und tenant-korrekt: PASS
+- zweiter Auth-User: NO
+- Staff-Rolle erhalten: PASS
+- Cross-Tenant Staff-Zugriff: BLOCKED
+- Wiedereroeffnung ohne erneuten Beitritt: PASS
+- Staff- und Customer-Portal mit gleicher E-Mail und gleichem Passwort:
+  physisch PASS
+
+Release-Gate Multi-Role: `GESCHLOSSEN`. Fehlende Evidenz: `NONE`.

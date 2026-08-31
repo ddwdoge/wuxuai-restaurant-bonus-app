@@ -72,3 +72,17 @@ anderen Dateien kopiert oder protokolliert.
 
 CODE LOCK nach gruener technischer Verifikation; FINAL LOCK erst nach echtem
 Development/Test- und physischem iPhone-Flow.
+
+## Nachtrag 2026-08-31: Founder-Gate abgeschlossen
+
+Der spaeter ausgefuehrte physische iPhone-Flow wurde vom Founder nach dem
+Continuation-Fix als `PASS` bestaetigt. Die bestaetigte Referral-Strecke
+umfasste Linkoeffnung, Aktivierung des bestehenden Kontos, Legal Consent,
+Einladungsannahme, Customer Portal, qualifizierenden Besuch und den 2x-Bonus
+fuer beide Seiten. Der zuvor unnoetige zweite Login-Schritt trat nicht mehr
+auf.
+
+Der historische Status `CODE LOCK / physischer iPhone-Test offen` ist damit
+fuer die aktuelle Release-Bewertung ueberholt. Referral Continuation:
+`FINAL LOCK` auf Basis der spaeteren Founder-Evidenz. Keine erneute Ausfuehrung
+des Businessflows fuer diesen Nachtrag.

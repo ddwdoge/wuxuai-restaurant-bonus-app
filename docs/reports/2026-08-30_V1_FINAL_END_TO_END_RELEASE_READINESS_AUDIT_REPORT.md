@@ -9,6 +9,30 @@ Supabase Development/Test: `bwhvfjuwixgwduoeqaya`
 Production: `LOCKED`
 Stripe: `DEFERRED`
 
+## Nachtrag 2026-08-31: aktuelle Release-Evidenz
+
+Dieser Bericht ist ein historischer Snapshot von Commit `d64094c`. Seine
+damalige Ein-Blocker-Zaehlung ist nicht mehr der aktuelle Release-Stand:
+
+- QR-Center Mobile A6 Preview Seite 1/2/3 wurde spaeter vom Founder physisch
+  als PASS bestaetigt und ist geschlossen.
+- Referral wurde nach Native Share, Link, bestehendem Konto, Legal Consent,
+  Einladung, Customer Portal, qualifizierendem Besuch und 2x-Bonus fuer beide
+  Seiten sowie dem spaeteren Continuation-iPhone-PASS geschlossen.
+- Multi-Role wurde mit Deployment
+  `9cbb8de7-3a07-40f0-a30e-ba7650041513` / Commit
+  `bb6ce42f8937bded4a28bad6545b84e8e71a6eba` live geschlossen.
+- Point Anomaly bleibt offen, weil die reale Owner-Hochbetragsbuchung mit
+  sichtbarer Attribution `Restaurantinhaber` noch nicht bestaetigt ist. Die
+  Staff-Attribution wurde beim Founder-Test nicht eindeutig abgelesen.
+- Customer Discovery Direct Join ist auf Commit `bc3a090` lokal/remote
+  synchron, aber der korrigierte Stand und das physische iPhone-Gate sind noch
+  nicht als abgeschlossen dokumentiert.
+
+Aktuelle Zaehlung und Belege stehen in
+`docs/reports/2026-08-31_V1_RELEASE_EVIDENCE_RECONCILIATION_REPORT.md`.
+Production bleibt `LOCKED`, Stripe `DEFERRED`.
+
 ## Ergebnis
 
 Die geprueften V1-Laufzeitflows sind stabil. Owner-, Customer- und Staff-

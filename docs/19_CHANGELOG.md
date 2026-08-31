@@ -1,6 +1,21 @@
 
 # 19_CHANGELOG.md
 
+## 2026-08-31 - Release-Evidenz Referral und Multi-Role reconciled
+
+- Spaetere Founder-/Live-Nachweise schliessen die historischen offenen Gates
+  fuer Referral und Multi-Role; die Businessflows wurden nicht wiederholt.
+- Referral ist inklusive Native Share, bestehendem Konto, Legal Consent,
+  qualifizierendem Besuch, 2x-Bonus und Continuation ohne zweiten Login als
+  bestanden dokumentiert.
+- Multi-Role ist fuer Deployment
+  `9cbb8de7-3a07-40f0-a30e-ba7650041513` / Commit `bb6ce42` mit genau einer
+  Membership, gleicher Auth-Identitaet, erhaltener Staff-Rolle und
+  blockiertem Cross-Tenant-Zugriff als bestanden dokumentiert.
+- Die aktuelle Release-Zaehlung laesst Point-Anomaly-Attribution und das noch
+  nicht abgeschlossene Discovery-Direct-Join-Live-/iPhone-Gate offen.
+- Keine Anwendungscode-, Businesslogik-, Datenbank- oder Migrationsaenderung.
+
 ## 2026-08-31 - Direkter Customer-Beitritt aus Restaurant Discovery
 
 - Restaurantdetails unterscheiden jetzt zwischen bestehenden Mitgliedern mit
