@@ -53,7 +53,7 @@ nicht der aktive Vertrag.
 - keine Customer-UI-Aenderung
 - keine automatische Rueckbuchung oder Sperre
 - keine RLS-Abschwaechung und kein Browser-Grant fuer den internen Helper
-- kein Deployment, keine Production- oder Stripe-Aktion
+- kein Frontend-/Worker-Deployment, keine Production- oder Stripe-Aktion
 
 ## Sicherheit und Datenbank
 
@@ -76,15 +76,43 @@ nicht der aktive Vertrag.
 - Build: PASS, 2067 Module
 - `git diff --check`: PASS
 - Secret Scan im geaenderten Umfang: PASS
-- Migration: erstellt, nicht auf Development/Test angewendet
-- Migration History / DB-Linter nach Anwendung: noch offen
-- echter Development/Test-Flow: noch offen
+- Development/Test-Ziel: `bwhvfjuwixgwduoeqaya` (`wuxuai-bonus-staging`)
+- Preflight-History: nur `20260831001000` lokal offen
+- Preflight-Dry-Run: genau
+  `20260831001000_birthday_gift_14_day_catch_up.sql`, keine Seeds/Rollen
+- Migration: am 2026-08-31 erfolgreich auf Development/Test angewendet
+- Post-Migration-History: lokal/remote bis `20260831001000` synchron
+- Post-Dry-Run: PASS, Remote-Datenbank aktuell, keine offenen Migrationen
+- DB-Linter `--level error`: PASS, 0 Ergebnisse
+- Funktionsrechte live: `anon` und `authenticated` koennen weder den
+  internen Assignment-Helper noch den Birthday-Cron ausfuehren
+- Gesamttests nach Anwendung: `1178/1178 PASS`
+
+### Development/Test-Live-Gates
+
+Die Live-Pruefungen wurden im Supabase SQL Editor gegen das verknuepfte
+Development/Test-Projekt ausgefuehrt. Jede pruefende Anweisung endete nach
+allen Assertions absichtlich mit `P0001` und wurde dadurch vollstaendig
+zurueckgerollt.
+
+- Geburtstag +14/+10/+4/+1/heute: jeweils `assigned`
+- Geburtstag +15: `not_eligible`
+- zweiter Helper-Aufruf im selben Geburtstagsjahr: `already_assigned`
+- genau ein Gift pro Customer/Restaurant/Geburtstagsjahr: PASS
+- `issue_birthday_gifts(...)` Wiederholung: kein Duplikat, kanonischer
+  `automatic_14_day_window`-Modus
+- Restaurant-Lokalzeit bei abweichendem UTC-Kalendertag: PASS
+- Feb 29 im Nicht-Schaltjahr 2027: kanonisch `2027-02-28`
+- neuer Membership-Insert innerhalb des Vier-Tage-Fensters: sofort zugewiesen
+- bestehende Transactional-E-Mail-Queue: PASS
+- Punkte und Points-Transactions: unveraendert; kein Visit erforderlich
+- Rollback-Nachkontrolle: 0 Testkunden, 0 Test-E-Mails verblieben
 
 ## Ergebnis
 
-NORMAL 14-DAY ASSIGNMENT: CODE PASS
+NORMAL 14-DAY ASSIGNMENT: PASS
 
-LATE REGISTRATION CATCH-UP: CODE PASS
+LATE REGISTRATION CATCH-UP: PASS
 
 4 DAYS BEFORE: PASS
 
@@ -96,17 +124,17 @@ BIRTHDAY TODAY: PASS
 
 ONE GIFT PER YEAR: PASS
 
-IMMEDIATE MEMBERSHIP CHECK: CODE PASS
+IMMEDIATE MEMBERSHIP CHECK: PASS
 
-DAILY CRON: CODE PASS
+DAILY CRON: PASS
 
-EMAIL: CODE PASS
+EMAIL: PASS
 
-DB MIGRATION: `20260831001000_birthday_gift_14_day_catch_up.sql` / NOT APPLIED
+DB MIGRATION: `20260831001000_birthday_gift_14_day_catch_up.sql` / DEVELOPMENT/TEST APPLIED
 
 BUSINESS LOGIC CHANGE: BIRTHDAY ELIGIBILITY WINDOW ONLY
 
-BIRTHDAY GIFT 14-DAY CATCH-UP: `CODE LOCK / STAGING GATE OPEN`
+BIRTHDAY GIFT 14-DAY CATCH-UP: `FINAL LOCK`
 
 PRODUCTION: `LOCKED`
 
@@ -114,14 +142,12 @@ STRIPE: `DEFERRED`
 
 ## Risiken
 
-Vor Anwendung muss Development/Test auf bestehende doppelte Birthday-Gifts
-ueber verschiedene Branch-Werte geprueft werden, damit der staerkere Unique
-Index kontrolliert und ohne Datenbereinigung angewendet werden kann. Erst nach
-Migration History, DB-Linter und echten +14/+4/heute-/Deduplizierungsproben ist
-ein `FINAL LOCK` zulaessig.
+Keine offene Birthday-Catch-up-Releaseabweichung. Production bleibt bis zur
+ausdruecklichen Founder-Freigabe gesperrt. Discovery Direct Join ist ein
+separates Gate und wurde in dieser Aufgabe weder ausgefuehrt noch bewertet.
 
 ## Status
 
-`CODE LOCK`. Die Implementierung und automatisierte Regression sind gruen.
-Die additive Migration ist noch nicht auf Development/Test angewendet; deshalb
-kein `FINAL LOCK`.
+`FINAL LOCK` fuer Birthday Gift 14-Day Catch-up. Migration History, leerer
+Post-Dry-Run, DB-Linter, Rechte, automatisierte Regression und echte
+Development/Test-Datenbankpfade sind gruen. Production bleibt `LOCKED`.

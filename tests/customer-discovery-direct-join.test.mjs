@@ -75,8 +75,20 @@ test("Discovery-Beitritt erzeugt weder Punkte, Besuch noch Referral-Zuordnung", 
 });
 
 test("Join-Aktion bleibt mobil erreichbar und Erfolg ist barrierefrei sichtbar", () => {
+  const drawerTheme = finderCss.slice(
+    finderCss.indexOf(".app-drawer-panel:has(.partner-detail-drawer-content) {"),
+    finderCss.indexOf(".app-drawer-panel:has(.partner-detail-drawer-content) .app-drawer-body"),
+  );
+
+  assert.match(drawerTheme, /--premium-primary: var\(--premium-gold\)/);
+  assert.match(drawerTheme, /--premium-primary-dark: var\(--premium-gold-dark\)/);
+  assert.match(drawerTheme, /--premium-primary-light: var\(--premium-gold-soft\)/);
+  assert.match(drawerTheme, /--premium-primary-soft: var\(--premium-gold-soft\)/);
+  assert.match(finderCss, /partner-detail-actions[^}]*display: grid[^}]*gap: 9px/);
   assert.match(finderCss, /partner-detail-actions \.premium-button[^}]*min-height: 48px/);
   assert.match(finderCss, /padding-bottom: calc\(18px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(customerCss, /premium-button-primary[^}]*background: var\(--premium-primary\)[^}]*color: #ffffff/);
+  assert.match(customerCss, /premium-button-secondary[^}]*background: var\(--premium-surface\)[^}]*color: var\(--premium-text\)/);
   assert.match(customerCss, /customer-join-success/);
   assert.match(access, /entryMessage=\{joinSuccessMessage\}/);
 });

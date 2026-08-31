@@ -3492,3 +3492,15 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Warnung ist tenantgebunden und veraendert weder Punkte noch Zugaenge.
 - Keine Migration, keine automatische Rueckbuchung und keine automatische
   Sperre.
+
+## 2026-08-31 - Discovery-Join-CTA im mobilen Portal-Drawer sichtbar gemacht
+
+- Der per `document.body`-Portal gerenderte Restaurantdetails-Drawer definiert
+  nun denselben Primary-Farbvertrag wie die Customer-Premium-Shell.
+- Dadurch bleibt `Bonusprogramm beitreten` auf 320 bis 430 Pixel als goldener
+  Primary-CTA mit weisser Schrift sichtbar; `Route starten` bleibt die
+  sekundaere Aktion.
+- Drawer-Scroll, iPhone-Safe-Area, 48-Pixel-Touchflaechen und die bestehende
+  Direct-Join-Logik blieben unveraendert.
+- Keine Migration, kein Deployment und keine Aenderung an Punkten, Gifts,
+  Referral, Multi-Role, QR oder Starter Kit.
