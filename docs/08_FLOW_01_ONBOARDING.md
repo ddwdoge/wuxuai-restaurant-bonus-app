@@ -45,6 +45,17 @@ Das Ziel von Flow 01 lautet:
 Nach Flow 01 muss das Restaurant sofort bereit sein, echte Gäste zu
 registrieren und das Bonusprogramm im Betrieb zu testen.
 
+Die Owner-Registrierung folgt dem additiven Identitaetsvertrag. Eine bereits
+als Customer oder Staff verwendete E-Mail wird nach neutraler Aufforderung mit
+dem bestehenden Passwort authentifiziert und danach mit derselben
+`auth.users.id` fortgesetzt. Ein bestaetigtes Konto benoetigt keine erneute
+E-Mail-Bestaetigung. Bei einem noch unbestaetigten Konto bleiben die
+Restaurantdaten als passwortfreier Pending Intent erhalten, waehrend der
+bestehende Resend-/Callback-Weg abgeschlossen wird. Vorhandene Customer- und
+Staff-Rollen bleiben erhalten; die atomare Owner-Provisionierung erzeugt keine
+doppelte Identitaet und keinen zweiten Trial fuer ein bereits vorhandenes
+Owner-Restaurant.
+
 Flow 01 ist erfolgreich, wenn der Restaurantbesitzer denkt:
 
 > „Mein Bonusprogramm ist jetzt bereit."

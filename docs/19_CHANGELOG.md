@@ -3669,3 +3669,17 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Owner-Betreiberzugriff, geplante Angebote, Legal-/Publication-Readiness,
   Birthday-Pool und objektive QR-Bereitschaft behalten ihre kanonischen
   Vertraege. Keine Migration und keine neue Berechtigung.
+
+## 2026-09-01 - Bestehende Customer-E-Mail fuer Owner-Registrierung
+
+- Die Owner-Registrierung erkennt das von Supabase verschleierte Ergebnis
+  einer bereits vorhandenen E-Mail und fuehrt neutral zur Anmeldung mit dem
+  bestehenden Passwort, statt auf eine unnoetige zweite Bestaetigungsmail zu
+  warten.
+- Nach erfolgreicher Authentifizierung wird der passwortfreie Pending-Intent
+  mit derselben Auth-Identitaet fortgesetzt. Bestaetigte Konten benoetigen
+  keine neue E-Mail-Bestaetigung; unbestaetigte Konten verwenden weiterhin
+  Resend, Cooldown und den bestehenden Callback.
+- Customer- und Staff-Beziehungen bleiben erhalten. Owner-Provisionierung,
+  Tenantgrenzen, atomarer Trial, Commercial Contract und Datenbankvertrag
+  wurden nicht geaendert; keine Migration.

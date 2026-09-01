@@ -28,6 +28,14 @@ export function isOwnerEmailConfirmed(user) {
   return Boolean(user?.email_confirmed_at);
 }
 
+export function classifyOwnerSignUpResult(data) {
+  if (data?.session?.user?.email_confirmed_at) return "confirmed";
+  if (!data?.session && data?.user && Array.isArray(data.user.identities)) {
+    return data.user.identities.length > 0 ? "confirmation_required" : "existing_or_obfuscated";
+  }
+  return "failed";
+}
+
 export function validateOwnerPassword(password, confirmation) {
   if (typeof password !== "string" || password.length < 8) {
     return { valid: false, message: "Das Passwort muss mindestens 8 Zeichen lang sein." };

@@ -1,6 +1,12 @@
 import type { User } from "@supabase/supabase-js";
 import { liveDataUnavailableMessage, supabase, supabaseAuthStorageKey } from "../../shared/lib/supabase";
-import { buildOwnerAuthRedirect, isOwnerEmailConfirmed, OWNER_AUTH_PATHS, ownerAuthErrorMessage } from "./ownerAuthFlow.mjs";
+import {
+  buildOwnerAuthRedirect,
+  classifyOwnerSignUpResult,
+  isOwnerEmailConfirmed,
+  OWNER_AUTH_PATHS,
+  ownerAuthErrorMessage,
+} from "./ownerAuthFlow.mjs";
 import { clearSupabaseAuthStorage, createInvalidRefreshSessionHandler } from "./authSessionGuard.mjs";
 
 export type RegisterOwnerInput = {
@@ -13,6 +19,7 @@ export type RegisterOwnerInput = {
 
 export type RegisterOwnerResult = {
   requiresEmailConfirmation: boolean;
+  requiresAuthentication: boolean;
 };
 
 const pendingRegistrationKey = "wuxuai-pending-owner-registration";
@@ -217,12 +224,23 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
 
   storePendingRegistration(input);
 
+  const signUpResult = classifyOwnerSignUpResult(data);
+
+  if (signUpResult === "existing_or_obfuscated") {
+    return { requiresEmailConfirmation: false, requiresAuthentication: true };
+  }
+
   if (data.session) {
     await supabase.auth.signOut({ scope: "local" });
     throw new Error("Die sichere E-Mail-Bestätigung ist noch nicht verfügbar. Bitte versuche es später erneut.");
   }
 
-  return { requiresEmailConfirmation: true };
+  if (signUpResult !== "confirmation_required") {
+    clearPendingOwnerRegistration();
+    throw new Error("Die Registrierung konnte nicht abgeschlossen werden. Bitte versuche es erneut.");
+  }
+
+  return { requiresEmailConfirmation: true, requiresAuthentication: false };
 }
 
 export async function activateRestaurantOwnerForCurrentUser(input: Omit<RegisterOwnerInput, "email" | "password">) {

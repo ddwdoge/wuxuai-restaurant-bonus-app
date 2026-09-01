@@ -38,7 +38,7 @@ test("Existing authenticated users receive additive Customer and Owner activatio
   assert.match(customerPage, /portalAccessError[\s\S]*Es wurde nichts angelegt/);
   assert.match(ownerPage, /activateRestaurantOwnerForCurrentUser/);
   assert.match(ownerPage, /Restaurantbereich aktivieren/);
-  assert.match(ownerPage, /!activatingExistingAccount && !passwordValidation\.valid/);
+  assert.match(ownerPage, /!activatingExistingAccount && !existingIdentityFlow && !passwordValidation\.valid/);
   assert.match(ownerPage, /portalAccessError[\s\S]*Es wurde nichts angelegt/);
   assert.match(referral, /!portalAccess\.customer_access/);
 });

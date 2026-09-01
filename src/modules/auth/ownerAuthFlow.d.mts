@@ -18,6 +18,10 @@ export type OwnerAuthErrorCategory =
 
 export function buildOwnerAuthRedirect(origin: string, path: string): string;
 export function isOwnerEmailConfirmed(user: { email_confirmed_at?: string | null } | null | undefined): boolean;
+export function classifyOwnerSignUpResult(data: {
+  session?: { user?: { email_confirmed_at?: string | null } | null } | null;
+  user?: { identities?: unknown[] | null } | null;
+} | null | undefined): "confirmed" | "confirmation_required" | "existing_or_obfuscated" | "failed";
 export function validateOwnerPassword(password: string, confirmation?: string): PasswordValidation;
 export function classifyOwnerAuthError(error: unknown): OwnerAuthErrorCategory;
 export function ownerAuthErrorMessage(error: unknown, context?: "general" | "recovery"): string;

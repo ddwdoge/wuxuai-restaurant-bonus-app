@@ -117,6 +117,23 @@
 - Sichtbare V1-Texte bleiben gemaess dem aktiven Sprachvertrag Deutsch. Eine
   Erweiterung auf EN/FR/IT/ES ist damit nicht Bestandteil dieses V1-Changes.
 
+## 2026-09-01 - Bestehende Auth-Identitaet kann Owner-Bereich aktivieren
+
+- Eine bereits als Customer oder Staff verwendete E-Mail darf die
+  Restaurant-Owner-Registrierung mit derselben Supabase-Auth-Identitaet
+  fortsetzen. Es wird kein zweiter Auth-Benutzer erzeugt und keine vorhandene
+  Rolle entfernt.
+- Vor erfolgreicher Authentifizierung wird weder der Kontobestand noch eine
+  vorhandene Rolle offengelegt. Ein verschleiertes Supabase-Signup-Ergebnis
+  fuehrt neutral zur Anmeldung mit dem bestehenden Passwort.
+- Bestaetigte Konten benoetigen keine zweite E-Mail-Bestaetigung. Noch
+  unbestaetigte Konten behalten den passwortfreien Pending-Owner-Intent und
+  nutzen den bestehenden Resend-, Cooldown- und Callback-Vertrag.
+- Aktiver Staff darf ein eigenes erstes Owner-Restaurant anlegen. Die
+  kanonische Provisionierungs-RPC verwendet ausschliesslich `auth.uid()`, ist
+  atomar und verwendet bestehendes Owner-Restaurant, Membership und Trial
+  idempotent wieder. Komplexe Trial-Abuse-Erkennung bleibt fuer V1 deferred.
+
 ## 2026-08-29 - Kanonische optionale Betreiberdaten im Owner-Onboarding
 
 - Die bestehende `organizations`-Ebene ist der kanonische rechtliche

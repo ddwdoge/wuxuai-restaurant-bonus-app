@@ -2,7 +2,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { activateRestaurantOwnerForCurrentUser, registerRestaurantOwner } from "./registerOwnerService";
+import {
+  activateRestaurantOwnerForCurrentUser,
+  completePendingOwnerRegistration,
+  registerRestaurantOwner,
+} from "./registerOwnerService";
 import {
   PublicContentCard,
   PublicFormField,
@@ -16,7 +20,7 @@ import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
 export function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, user } = useAuth();
+  const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, signIn, user } = useAuth();
   const [ownerName, setOwnerName] = useState("");
   const initialEmail = typeof (location.state as { email?: unknown } | null)?.email === "string"
     ? (location.state as { email: string }).email
@@ -29,6 +33,7 @@ export function RegisterPage() {
   const [restaurantName, setRestaurantName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [existingIdentityFlow, setExistingIdentityFlow] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const passwordValidation = validateOwnerPassword(password);
@@ -46,11 +51,14 @@ export function RegisterPage() {
   const formValid = Boolean(
     ownerName.trim()
     && restaurantName.trim()
-    && (activatingExistingAccount || (
-      /^\S+@\S+\.\S+$/.test(email.trim())
-      && passwordValidation.valid
-      && passwordsMatch
-    ))
+    && (
+      activatingExistingAccount
+      || (existingIdentityFlow ? Boolean(password) : (
+        /^\S+@\S+\.\S+$/.test(email.trim())
+        && passwordValidation.valid
+        && passwordsMatch
+      ))
+    )
   );
 
   useEffect(() => {
@@ -70,19 +78,35 @@ export function RegisterPage() {
     setMessage(null);
 
     try {
-      if (!activatingExistingAccount && !passwordValidation.valid) {
+      if (!activatingExistingAccount && !existingIdentityFlow && !passwordValidation.valid) {
         setError(passwordValidation.message);
         return;
       }
-      if (!activatingExistingAccount && !confirmPassword) {
+      if (!activatingExistingAccount && !existingIdentityFlow && !confirmPassword) {
         return;
       }
-      if (!activatingExistingAccount && !passwordsMatch) {
+      if (!activatingExistingAccount && !existingIdentityFlow && !passwordsMatch) {
         return;
       }
       setLoading(true);
       if (activatingExistingAccount) {
         await activateRestaurantOwnerForCurrentUser({ ownerName, restaurantName, phone });
+        retryAuthorization();
+        window.location.assign("/admin/onboarding");
+        return;
+      }
+      if (existingIdentityFlow) {
+        try {
+          await signIn(email, password);
+        } catch (caught) {
+          if (caught instanceof Error && caught.name === "EmailConfirmationRequiredError") {
+            navigate("/auth/confirm-email", { state: { email } });
+            return;
+          }
+          throw caught;
+        }
+        const completed = await completePendingOwnerRegistration(email);
+        if (!completed) throw new Error("Die Restaurant-Registrierung konnte nicht fortgesetzt werden. Bitte beginne erneut.");
         retryAuthorization();
         window.location.assign("/admin/onboarding");
         return;
@@ -94,6 +118,16 @@ export function RegisterPage() {
         restaurantName,
         phone,
       });
+
+      if (result.requiresAuthentication) {
+        setExistingIdentityFlow(true);
+        setPassword("");
+        setConfirmPassword("");
+        setConfirmPasswordTouched(false);
+        setSubmitAttempted(false);
+        setMessage("Diese E-Mail kann bereits verwendet werden. Melde dich an, um fortzufahren.");
+        return;
+      }
 
       if (result.requiresEmailConfirmation) {
         navigate("/auth/confirm-email", { replace: true, state: { email } });
@@ -141,21 +175,23 @@ export function RegisterPage() {
             <PublicFormField disabled id="register-existing-email" label="Bestätigte E-Mail" type="email" value={user?.email ?? ""} />
           ) : (
             <>
-              <PublicFormField autoComplete="email" disabled={loading} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-              <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-              <PublicFormField
-                autoComplete="new-password"
-                disabled={loading}
-                error={confirmPasswordError}
-                id="register-password-confirmation"
-                label="Passwort bestätigen"
-                minLength={8}
-                onBlur={() => setConfirmPasswordTouched(true)}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                required
-                type="password"
-                value={confirmPassword}
-              />
+              <PublicFormField autoComplete="email" disabled={loading || existingIdentityFlow} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+              <PublicFormField autoComplete={existingIdentityFlow ? "current-password" : "new-password"} disabled={loading} hint={existingIdentityFlow ? undefined : "Mindestens 8 Zeichen, nicht leicht erratbar"} id="register-password" label={existingIdentityFlow ? "Bestehendes Passwort" : "Passwort"} minLength={existingIdentityFlow ? undefined : 8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              {!existingIdentityFlow ? (
+                <PublicFormField
+                  autoComplete="new-password"
+                  disabled={loading}
+                  error={confirmPasswordError}
+                  id="register-password-confirmation"
+                  label="Passwort bestätigen"
+                  minLength={8}
+                  onBlur={() => setConfirmPasswordTouched(true)}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                  type="password"
+                  value={confirmPassword}
+                />
+              ) : null}
             </>
           )}
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
@@ -175,11 +211,11 @@ export function RegisterPage() {
           {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
-            {activatingExistingAccount ? "Restaurantbereich aktivieren" : V1_COMMERCIAL_COPY.registrationCta}
+            {activatingExistingAccount || existingIdentityFlow ? "Restaurantbereich aktivieren" : V1_COMMERCIAL_COPY.registrationCta}
           </PublicPrimaryButton>
           <p className="public-premium-trust-note">{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
           <div className="public-premium-secondary-actions">
-            {activatingExistingAccount ? <span>Deine bestehende Anmeldung wird weiterverwendet.</span> : <><span>Bereits registriert?</span><Link className="public-premium-secondary-link" to="/login">Zum Login</Link></>}
+            {activatingExistingAccount || existingIdentityFlow ? <span>Deine bestehende Anmeldung wird weiterverwendet.</span> : <><span>Bereits registriert?</span><Link className="public-premium-secondary-link" to="/login">Zum Login</Link></>}
           </div>
         </form>
       </PublicContentCard>

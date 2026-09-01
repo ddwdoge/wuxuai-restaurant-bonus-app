@@ -149,6 +149,18 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Bestehende angemeldete Benutzer aktivieren einen weiteren Customer- oder
   Owner-Bereich ohne zweiten Auth-Benutzer, neues Passwort oder erneute
   E-Mail-Bestaetigung.
+- Beginnt eine noch nicht angemeldete Person die Owner-Registrierung mit einer
+  bereits vorhandenen E-Mail, bleibt die Antwort vor der Authentifizierung
+  rollen- und anti-enumerationsneutral. Die Person authentifiziert sich mit dem
+  bestehenden Passwort; danach wird der sichere Pending-Owner-Intent mit
+  derselben `auth.users.id` fortgesetzt. Ein bestaetigtes Konto braucht keine
+  zweite Bestaetigung. Ein noch unbestaetigtes Konto nutzt den bestehenden
+  Resend-/Cooldown-/Callback-Weg. Im Pending Intent wird kein Passwort
+  gespeichert.
+- Customer und Staff bleiben beim Hinzufuegen des Owner-Bereichs erhalten.
+  Aktiver Staff blockiert die Owner-Registrierung nicht. Die bestehende
+  Owner-Provisionierung bleibt authentifiziert, tenantgebunden, atomar und fuer
+  bereits vorhandenes Restaurant, Membership und Trial idempotent.
 - Staff-Einladungen duerfen bestehende Customer-, Plattform- oder
   fremdrestaurantbezogene Owner-Beziehungen nicht global blockieren. Eine
   Owner-/Admin-/Manager-Beziehung im selben Restaurant bleibt ein Konflikt;
