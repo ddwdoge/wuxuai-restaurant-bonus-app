@@ -62,6 +62,18 @@ einlösen. Ein abgelaufenes Fenster verbraucht keinen Benefit.
   behält ihren eigenen Status, ihr Bild und ihren bestehenden Detail- und
   Einlöseweg.
 
+## Kompakte Punkteinformation auf der Startseite 2026-09-01
+
+- Der rechtliche Punktehinweis bleibt vollständig zugänglich, belegt aber
+  keinen dauerhaften Block mehr zwischen Punktekarte und `Aktuelles & Angebote`.
+- Ein kompakter, mindestens 44 Pixel grosser Infobutton direkt neben
+  `Deine Punkte` öffnet den gemeinsamen barrierefreien Drawer mit dem
+  unveränderten Hinweis zu Geldwert, Auszahlung, Restaurantbindung und
+  Punktegültigkeit.
+- Punktestand, Bonus-Boost, Gültigkeit, Fortschritt und nächste Einlösung
+  bleiben unverändert. Der Umbau verändert keine Punkte-, Reward-, Offer-,
+  Gift-, Referral- oder Legal-Logik.
+
 ## Persönlicher Punkte-QR
 
 Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.

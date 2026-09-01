@@ -363,6 +363,11 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   Areas bleiben erhalten.
 - Filterchips bleiben horizontal erreichbar, Logos verwenden `object-fit:
   contain`.
+- Der Punktehinweis ist auf der Customer-Startseite ueber einen fokussierten
+  Infobutton in der Punktekarte und den gemeinsamen barrierefreien Drawer
+  erreichbar. Der fruehere dauerhaft sichtbare Hinweisblock zwischen
+  Punktekarte und Angeboten ist entfernt; sein rechtlicher Wortlaut und die
+  dynamische Gueltigkeitsinformation bleiben erhalten.
 - Der Map-Drawer wird ueber ein Body-Portal gerendert; Leaflet bleibt darunter
   und erhaelt bei offenem Drawer keine Pointer-Events.
 

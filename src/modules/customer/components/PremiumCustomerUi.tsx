@@ -167,16 +167,24 @@ type PointsCardProps = {
   boostLabel?: string | null;
   label: string;
   note: string;
+  onInfo?: () => void;
   progress?: number;
   progressLabel?: string;
   value: string;
 };
 
-export function PointsCard({ boostDetail, boostLabel, label, note, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
+export function PointsCard({ boostDetail, boostLabel, label, note, onInfo, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
   return (
     <PremiumCard className="premium-points-card" variant="highlight">
       <div className="premium-points-heading">
-        <span>{label}</span>
+        <span className="premium-points-title">
+          <span>{label}</span>
+          {onInfo ? (
+            <button aria-label="Informationen zu Punkten" className="premium-points-info" onClick={onInfo} type="button">
+              <Info aria-hidden="true" size={21} />
+            </button>
+          ) : null}
+        </span>
         {boostLabel ? <StatusBadge tone="warning">{boostLabel}</StatusBadge> : null}
       </div>
       <strong className="premium-points-value">{value}</strong>

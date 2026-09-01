@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Punkteinformation auf Customer Home verdichtet
+
+- Den dauerhaft sichtbaren rechtlichen Punktehinweis zwischen Punktekarte und
+  `Aktuelles & Angebote` aus dem normalen Startseitenfluss entfernt.
+- Direkt neben `Deine Punkte` einen barrierefreien Infobutton mit
+  44-Pixel-Touchflaeche ergänzt, der denselben vollständigen Wortlaut im
+  bestehenden `AppDrawer` öffnet.
+- Punktekarte, Balance, Bonus-Boost, Gültigkeit, Fortschritt, Offers, Rewards,
+  Gifts, Referral und Legal Center blieben unverändert.
+- Keine Migration und keine Punkte- oder Businesslogikänderung.
+
 ## 2026-08-31 - Durchsuchbare Laenderauswahl fuer Restaurantstandort
 
 - Freies technisches Zwei-Zeichen-Feld im Owner-Standortformular durch eine

@@ -290,6 +290,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [referralLink, setReferralLink] = useState<string | null>(null);
   const [referralInviteStatus, setReferralInviteStatus] = useState<CustomerReferralInviteStatus | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [pointsInfoOpen, setPointsInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
   const [identitySummary, setIdentitySummary] = useState<CustomerIdentitySummary | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
@@ -1930,10 +1931,10 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     : settings.loyalty_mode === "stamp_based"
                       ? "Diese Stempel zeigen deinen Fortschritt."
                       : "Diese Punkte kannst du für Punkteeinlösungen verwenden."}
+                  onInfo={() => setPointsInfoOpen(true)}
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
                 />
-                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
                 {!activeBoost && referralLifecycleState !== "none" ? (
                   <PremiumCard className="premium-boost-card" variant="information">
                     <div className="premium-icon-heading">
@@ -2335,6 +2336,16 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             ) : null}
 
             <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
+
+            <AppDrawer
+              footer={<PrimaryButton onClick={() => setPointsInfoOpen(false)}>Schließen</PrimaryButton>}
+              onClose={() => setPointsInfoOpen(false)}
+              open={pointsInfoOpen}
+              size="compact"
+              title="Informationen zu deinen Punkten"
+            >
+              <p className="premium-points-info-copy">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+            </AppDrawer>
 
             <AppDrawer
               description="Information des Restaurants"
