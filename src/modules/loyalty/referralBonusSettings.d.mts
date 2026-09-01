@@ -1,0 +1,11 @@
+export const referralBonusMultiplier: 2;
+export const referralBonusDefaultDurationDays: 14;
+export const referralBonusDurationPresets: readonly number[];
+export const referralBonusMinDurationDays: 1;
+export const referralBonusMaxDurationDays: 365;
+export function isValidReferralBonusDuration(durationDays: number): boolean;
+export function isReferralBonusDurationPreset(durationDays: number): boolean;
+export function normalizeReferralBonusDuration(durationDays: number | null | undefined): number;
+export function invitedReferralDurationDays(configuredDurationDays: number): number;
+export function formatReferralDuration(durationDays: number): string;
+export function formatInvitedReferralDuration(configuredDurationDays: number): string;

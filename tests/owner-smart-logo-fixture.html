@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Logo Darstellung</title>
+  <link rel="stylesheet" href="../src/shared/components/restaurant-logo-stage.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #f6f1e8; color: #17202a; font-family: Arial, sans-serif; margin: 0; padding: 24px; }
+    main { margin: 0 auto; max-width: 1100px; }
+    h1 { font-size: 24px; margin: 0 0 18px; }
+    .matrix { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    article { background: #fff; border: 1px solid #e5ddd0; border-radius: 8px; min-width: 0; padding: 14px; }
+    article > span { display: block; font-size: 13px; margin-bottom: 10px; }
+    .restaurant-logo-stage { aspect-ratio: 16 / 9; height: auto; width: 100%; }
+    @media (max-width: 430px) { body { padding: 16px; } .matrix { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Logo-Darstellung</h1>
+  <section class="matrix">
+    <article><span>Quadratisch</span><span class="restaurant-logo-stage aspect-square"><img alt="Quadratisches Logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800'%3E%3Crect width='800' height='800' rx='130' fill='%230a315c'/%3E%3Ctext x='400' y='470' text-anchor='middle' font-size='250' fill='%23d3a536'%3EWX%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Breit</span><span class="restaurant-logo-stage aspect-wide"><img alt="Breites Logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='650'%3E%3Crect width='1600' height='650' rx='90' fill='%230a315c'/%3E%3Ctext x='800' y='390' text-anchor='middle' font-size='190' fill='%23d3a536'%3EWUXUAI BONUS%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Sehr breit</span><span class="restaurant-logo-stage aspect-wide"><img alt="Sehr breites Logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2600' height='420'%3E%3Ctext x='1300' y='300' text-anchor='middle' font-size='280' fill='%230a315c'%3EWUXUAI BONUS%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Hochformat</span><span class="restaurant-logo-stage aspect-tall"><img alt="Hohes Logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='1100'%3E%3Crect width='520' height='1100' rx='120' fill='%239a6b1f'/%3E%3Ctext x='260' y='620' text-anchor='middle' font-size='190' fill='white'%3EWX%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Transparent</span><span class="restaurant-logo-stage aspect-wide"><img alt="Transparentes Logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1500' height='600'%3E%3Ccircle cx='250' cy='300' r='210' fill='%23d3a536'/%3E%3Ctext x='850' y='365' text-anchor='middle' font-size='210' fill='%230a315c'%3EBONUS%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Fester Hintergrund</span><span class="restaurant-logo-stage aspect-wide"><img alt="Logo mit Hintergrund" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1500' height='600'%3E%3Crect width='1500' height='600' fill='%23ffffff'/%3E%3Crect x='20' y='20' width='1460' height='560' fill='none' stroke='%230a315c' stroke-width='20'/%3E%3Ctext x='750' y='370' text-anchor='middle' font-size='210' fill='%230a315c'%3ERESTAURANT%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Innenabstand</span><span class="restaurant-logo-stage aspect-square"><img alt="Logo mit Innenabstand" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Ccircle cx='500' cy='500' r='170' fill='%230a315c'/%3E%3Ctext x='500' y='560' text-anchor='middle' font-size='150' fill='%23d3a536'%3EWX%3C/text%3E%3C/svg%3E" /></span></article>
+    <article><span>Fehlerhafter Pfad</span><span class="restaurant-logo-stage is-fallback"><span class="restaurant-logo-fallback" role="img" aria-label="Restaurant Logo"><span aria-hidden="true">R</span></span></span></article>
+  </section>
+</main>
+</body>
+</html>

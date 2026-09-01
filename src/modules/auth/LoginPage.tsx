@@ -10,10 +10,14 @@ import {
   PublicPageShell,
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
+import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { Link } from "react-router-dom";
+import { WrongPortalNotice } from "./WrongPortalNotice";
+import { PortalLoginNavigation } from "./PortalLoginNavigation";
+import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { loading: authLoading, portalAccess, signIn, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -39,10 +43,18 @@ export function LoginPage() {
       }
       navigate("/admin");
     } catch (caught) {
+      if (caught instanceof Error && caught.name === "EmailConfirmationRequiredError") {
+        navigate("/auth/confirm-email", { state: { email } });
+        return;
+      }
       setError(caught instanceof Error ? caught.message : "Login fehlgeschlagen.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!authLoading && user && !portalAccess.owner_access) {
+    return <WrongPortalNotice portal="owner" />;
   }
 
   return (
@@ -53,6 +65,7 @@ export function LoginPage() {
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
+          <RequiredFieldsNote />
           {logoutMessage ? <p className="public-premium-alert public-premium-alert-success" role="status">{logoutMessage}</p> : null}
           {liveDataMissing ? <p className="public-premium-alert public-premium-alert-error" role="alert">{liveDataUnavailableMessage}</p> : null}
           <PublicFormField
@@ -86,10 +99,12 @@ export function LoginPage() {
             Anmelden
           </PublicPrimaryButton>
           <div className="public-premium-secondary-actions">
+            <Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath("owner")}>Passwort vergessen?</Link>
             <Link className="public-premium-secondary-link" to="/">Zurück zur Startseite</Link>
             <Link className="public-premium-secondary-link" to="/register">Noch nicht registriert?</Link>
           </div>
         </form>
+        <PortalLoginNavigation currentPortal="owner" />
       </PublicContentCard>
     </PublicPageShell>
   );

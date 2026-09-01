@@ -1,9 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import { Activity, ArrowRight, Gift, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, CakeSlice, Gift, MapPinned, Newspaper, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { loadRestaurantLegalSetup, type RestaurantLegalSetup } from "../../legal/legalService";
+import { useAuth } from "../../auth/AuthProvider";
+import {
+  loadDashboardSetupStatus,
+  loadSeenDashboardNotices,
+  markDashboardNoticeSeen,
+  type DashboardSetupStatus,
+} from "../dashboardNoticeService";
+import { resolveOwnerDashboardRecommendation } from "../ownerDashboardRecommendation.mjs";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
+import { loadOwnerPointAnomalyWarnings, type OwnerPointAnomalyWarning } from "../pointAnomalyService";
+import { pointAnomalyNoticeKey } from "../pointAnomalyPolicy.mjs";
+import { isAuthoritativePublicationReady, isQrSetupReady } from "../ownerDashboardSetupStatus.mjs";
+import {
+  ownerSmartSetupLaunchState,
+  readOwnerSmartSetupSuccessState,
+} from "../ownerSmartSetupContinuation.mjs";
 
 const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
@@ -17,13 +35,49 @@ const emptyKpis: RewardKpis = {
 };
 const emptyBoostKpis: BonusBoostKpis = { guestsCurrentlyBoosted: 0, guestsReturnedBecauseOfBoost: 0, successfulReferrals: 0, newCustomersFromReferrals: 0, boostExtraPoints: 0 };
 
+function formatAnomalyAmount(cents: number) {
+  return new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+function formatAnomalyTimestamp(value: string) {
+  return new Intl.DateTimeFormat("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(value));
+}
+
 export function AdminDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
   const [boostKpis, setBoostKpis] = useState<BonusBoostKpis>(emptyBoostKpis);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [legalSetup, setLegalSetup] = useState<RestaurantLegalSetup | null>(null);
+  const [legalLoadFailed, setLegalLoadFailed] = useState(false);
+  const [setupStatus, setSetupStatus] = useState<DashboardSetupStatus | null>(null);
+  const [setupLoadFailed, setSetupLoadFailed] = useState(false);
+  const [seenNoticeIds, setSeenNoticeIds] = useState<Set<string>>(new Set());
+  const [nextStepLoading, setNextStepLoading] = useState(true);
+  const [pointAnomalies, setPointAnomalies] = useState<OwnerPointAnomalyWarning[]>([]);
+  const [selectedPointAnomaly, setSelectedPointAnomaly] = useState<OwnerPointAnomalyWarning | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [smartSetupSuccess, setSmartSetupSuccess] = useState(
+    () => readOwnerSmartSetupSuccessState(location.state)?.message ?? null,
+  );
+
+  useEffect(() => {
+    const success = readOwnerSmartSetupSuccessState(location.state);
+    if (!success) return;
+    setSmartSetupSuccess(success.message);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const reloadDashboard = useCallback(() => {
     setReloadKey((current) => current + 1);
@@ -63,7 +117,48 @@ export function AdminDashboard() {
     };
   }, [activeRestaurant?.id, reloadKey]);
 
-  const staffPath = activeRestaurant ? `/staff/${activeRestaurant.slug}` : "/admin";
+  useEffect(() => {
+    if (!activeRestaurant?.id) {
+      setLegalSetup(null);
+      setSetupStatus(null);
+      setSeenNoticeIds(new Set());
+      setPointAnomalies([]);
+      setSelectedPointAnomaly(null);
+      setNextStepLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLegalSetup(null);
+    setLegalLoadFailed(false);
+    setSetupStatus(null);
+    setSetupLoadFailed(false);
+    setSeenNoticeIds(new Set());
+    setPointAnomalies([]);
+    setSelectedPointAnomaly(null);
+    setNextStepLoading(true);
+
+    Promise.allSettled([
+      loadRestaurantLegalSetup(activeRestaurant.id),
+      loadDashboardSetupStatus(activeRestaurant.id, activeRestaurant.slug),
+      loadSeenDashboardNotices(activeRestaurant.id),
+      loadOwnerPointAnomalyWarnings(activeRestaurant.id, activeRestaurant.name),
+    ]).then(([legalResult, setupResult, noticesResult, anomalyResult]) => {
+      if (cancelled) return;
+      if (legalResult.status === "fulfilled") setLegalSetup(legalResult.value);
+      else setLegalLoadFailed(true);
+      if (setupResult.status === "fulfilled") setSetupStatus(setupResult.value);
+      else setSetupLoadFailed(true);
+      if (noticesResult.status === "fulfilled") {
+        setSeenNoticeIds(noticesResult.value);
+      }
+      if (anomalyResult.status === "fulfilled") setPointAnomalies(anomalyResult.value);
+      else console.error("Hinweise zur Punktevergabe konnten nicht geladen werden.", anomalyResult.reason);
+      setNextStepLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [activeRestaurant?.id, activeRestaurant?.name, activeRestaurant?.slug, reloadKey]);
+
+  const staffPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const dashboardKpis = [
     { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers) },
     { icon: UserPlus, label: "Neue Kunden heute", value: String(rewardKpis.newMembersToday) },
@@ -79,6 +174,53 @@ export function AdminDashboard() {
     { label: "Mitarbeiter", to: staffPath, icon: Smartphone },
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
+  const legalRegistration = legalSetup?.readiness.registration;
+  const pointAnomaly = useMemo(
+    () => pointAnomalies.find((warning) => !seenNoticeIds.has(pointAnomalyNoticeKey(warning.id))) ?? null,
+    [pointAnomalies, seenNoticeIds],
+  );
+  const recommendation = useMemo(() => nextStepLoading ? null : resolveOwnerDashboardRecommendation({
+    restaurantStatus: { active: activeRestaurant?.status === "active" },
+    onboardingStatus: activeRestaurant?.onboarding_status,
+    legalStatus: legalRegistration ?? null,
+    publicationStatus: { ready: isAuthoritativePublicationReady({
+      restaurantActive: activeRestaurant?.status === "active",
+      registrationAllowed: legalRegistration?.registration_allowed === true,
+      publicDiscoveryReady: setupStatus?.publicationReady === true,
+    }) },
+    rewardStatus: {
+      pointsRedemptionReady: setupStatus?.pointsRedemptionReady ?? false,
+      birthdayPoolReady: setupStatus?.birthdayPoolReady ?? false,
+    },
+    offerStatus: { ready: setupStatus?.offerReady ?? false },
+    qrStatus: { ready: isQrSetupReady(activeRestaurant) },
+    staffStatus: { ready: setupStatus?.staffReady ?? false },
+    emailStatus: { confirmed: Boolean(user?.email_confirmed_at) },
+    actionStatus: { pointAnomalyOpen: Boolean(pointAnomaly) },
+    statusLoadFailed: legalLoadFailed || setupLoadFailed,
+  }), [activeRestaurant, legalLoadFailed, legalRegistration, nextStepLoading, pointAnomaly, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
+  const RecommendationIcon = recommendation?.icon === "publication"
+    ? MapPinned
+    : recommendation?.icon === "reward"
+      ? Gift
+      : recommendation?.icon === "birthday"
+        ? CakeSlice
+        : recommendation?.icon === "qr"
+          ? QrCode
+          : recommendation?.icon === "staff"
+            ? Smartphone
+            : recommendation?.icon === "warning"
+              ? AlertTriangle
+              : Newspaper;
+
+  function reviewPointAnomaly(warning: OwnerPointAnomalyWarning) {
+    setSelectedPointAnomaly(warning);
+    if (!activeRestaurant?.id) return;
+    const noticeKey = pointAnomalyNoticeKey(warning.id);
+    markDashboardNoticeSeen(activeRestaurant.id, noticeKey)
+      .then(() => setSeenNoticeIds((current) => new Set([...current, noticeKey])))
+      .catch(() => undefined);
+  }
 
   return (
     <div className="premium-dashboard">
@@ -89,6 +231,40 @@ export function AdminDashboard() {
           <p className="muted">Dein Bonusprogramm auf einen Blick.</p>
         </div>
       </header>
+
+      {smartSetupSuccess ? <p className="status-message" role="status">{smartSetupSuccess}</p> : null}
+
+      {recommendation ? <section className={`card dashboard-recommendation-card ${recommendation.category}`} aria-labelledby="owner-recommendation-title" aria-live="polite">
+        <div>
+          <h2>Heute für dich</h2>
+          <p className="muted">Der wichtigste nächste Schritt für dein Restaurant.</p>
+        </div>
+        {recommendation.ctaHref ? (
+          <Link className="dashboard-recommendation" state={ownerSmartSetupLaunchState(recommendation.id)} to={recommendation.ctaHref}>
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            <ArrowRight aria-hidden="true" size={20} />
+          </Link>
+        ) : (
+          <button
+            className="dashboard-recommendation"
+            onClick={() => recommendation.id === "action_point_anomaly" && pointAnomaly ? reviewPointAnomaly(pointAnomaly) : reloadDashboard()}
+            type="button"
+          >
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            {recommendation.id === "action_point_anomaly" ? <ArrowRight aria-hidden="true" size={20} /> : <RefreshCw aria-hidden="true" size={20} />}
+          </button>
+        )}
+      </section> : null}
 
       {loading ? (
         <section className="dashboard-kpi-grid" aria-label="Dashboard wird geladen" aria-busy="true">
@@ -168,20 +344,26 @@ export function AdminDashboard() {
         </div>
       </section>
 
-      <section className="card dashboard-recommendation-card">
-        <div>
-          <h2>Heute für dich</h2>
-          <p className="muted">Eine einfache Empfehlung für heute.</p>
-        </div>
-        <Link className="dashboard-recommendation" to="/admin/rewards">
-          <span className="dashboard-recommendation-icon"><Sparkles size={22} /></span>
-          <span>
-            <strong>Neue Punkteeinlösung erstellen</strong>
-            <p className="muted">Lege ein Produkt fest, das Gäste mit Punkten einlösen können.</p>
-          </span>
-          <ArrowRight aria-hidden="true" size={20} />
-        </Link>
-      </section>
+      <AppDrawer
+        description="Dieser Hinweis dient ausschließlich der Prüfung und verändert weder Punkte noch Kontozugänge."
+        footer={<button className="button" onClick={() => setSelectedPointAnomaly(null)} type="button">Schließen</button>}
+        onClose={() => setSelectedPointAnomaly(null)}
+        open={Boolean(selectedPointAnomaly)}
+        size="compact"
+        title="Ungewöhnlich hoher Buchungsbetrag"
+      >
+        {selectedPointAnomaly ? (
+          <dl className="point-anomaly-detail">
+            <div><dt>Zeitpunkt</dt><dd>{formatAnomalyTimestamp(selectedPointAnomaly.createdAt)}</dd></div>
+            <div><dt>Betrag</dt><dd>{formatAnomalyAmount(selectedPointAnomaly.amountCents)}</dd></div>
+            <div><dt>Gutgeschriebene Punkte</dt><dd>{selectedPointAnomaly.points.toLocaleString("de-AT")}</dd></div>
+            <div><dt>Gast</dt><dd>{selectedPointAnomaly.customerName}</dd></div>
+            <div><dt>Ausgeführt von</dt><dd>{selectedPointAnomaly.actorLabel}</dd></div>
+            <div><dt>Restaurant</dt><dd>{selectedPointAnomaly.restaurantName}</dd></div>
+            <div><dt>Buchungsreferenz</dt><dd>{selectedPointAnomaly.transactionReference}</dd></div>
+          </dl>
+        ) : null}
+      </AppDrawer>
     </div>
   );
 }

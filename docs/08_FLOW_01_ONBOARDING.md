@@ -4,6 +4,15 @@
 
 Status: **LOCK**
 
+## Current QR Starter Kit Lock 2026-08-24
+
+Das Starter Kit neuer Restaurants enthält den Neue-Gäste-QR in zwei
+Druckvarianten und den Mitarbeiter-QR für den internen Bereich. Beide
+Gästevarianten verwenden dieselbe `/customer/:slug`-URL. Das Onboarding erzeugt
+keinen separaten Kassa-QR und keinen Kassa-Aufsteller. Bestehende
+kundeninitiierte Sammelwege bleiben ausserhalb des Onboardings über
+`/w/:slug` kompatibel.
+
 Dieses Dokument beschreibt den vollständigen Flow 01 des WUXUAI Bonus
 Systems.
 
@@ -17,6 +26,13 @@ Flow 01 ist kein technisches Admin-Setup.
 
 Flow 01 ist ein geführter Installationsassistent.
 
+Im Schritt `Geöffnet` kann der Owner die vollständige Montagskonfiguration mit
+`Auf alle Tage übertragen` lokal auf Dienstag bis Sonntag kopieren. Dazu zählen
+offen/geschlossen, Hauptzeiten und vorhandene Pausen- beziehungsweise zweite
+Öffnungsblöcke. Abweichende Zielwerte werden erst nach einer verständlichen
+Überschreibbestätigung ersetzt. Jeder Tag bleibt danach einzeln bearbeitbar;
+erst `Weiter` übernimmt die kopierten Werte in den Onboarding-Entwurf.
+
 ------------------------------------------------------------------------
 
 ## 1. Ziel von Flow 01
@@ -28,6 +44,24 @@ Das Ziel von Flow 01 lautet:
 
 Nach Flow 01 muss das Restaurant sofort bereit sein, echte Gäste zu
 registrieren und das Bonusprogramm im Betrieb zu testen.
+
+Die Owner-Registrierung folgt dem additiven Identitaetsvertrag. Eine bereits
+als Customer oder Staff verwendete E-Mail wird nach neutraler Aufforderung mit
+dem bestehenden Passwort authentifiziert und danach mit derselben
+`auth.users.id` fortgesetzt. Ein bestaetigtes Konto benoetigt keine erneute
+E-Mail-Bestaetigung. Bei einem noch unbestaetigten Konto bleiben die
+Restaurantdaten als passwortfreier Pending Intent erhalten, waehrend der
+bestehende Resend-/Callback-Weg abgeschlossen wird. Vorhandene Customer- und
+Staff-Rollen bleiben erhalten; die atomare Owner-Provisionierung erzeugt keine
+doppelte Identitaet und keinen zweiten Trial fuer ein bereits vorhandenes
+Owner-Restaurant.
+
+Nach der neutralen Erkennung einer bereits verwendbaren E-Mail bleibt die
+Person im Restaurant-Registrierungsformular. Ein hellgruener Hinweis und ein
+visuell hervorgehobenes, automatisch fokussiertes Feld `Bestehendes Passwort`
+fuehren durch die Authentifizierung; eine zusaetzliche Loginseite oder ein
+zweiter Aktivierungsweg wird nicht eingefuehrt. Falsche Zugangsdaten werden
+direkt am bestehenden Passwortfeld verstaendlich angezeigt.
 
 Flow 01 ist erfolgreich, wenn der Restaurantbesitzer denkt:
 
@@ -45,7 +79,7 @@ Flow 01 dient direkt dem Cashflow-Ziel der Plattform.
 
 Ein Restaurant soll die Software schnell testen können.\
 Je schneller ein Restaurant starten kann, desto höher ist die
-Wahrscheinlichkeit, dass es die 30 Tage Testphase aktiv nutzt und später
+Wahrscheinlichkeit, dass es die drei Kalendermonate Testphase aktiv nutzt und später
 bezahlt.
 
 Deshalb gilt:
@@ -158,7 +192,64 @@ Der Besitzer gibt die wichtigsten Basisdaten seines Betriebs an.
 
 ### Inhalt
 
-Erlaubt: - Restaurantname - Betriebsart - Sprache
+Erlaubt:
+
+- Restaurantname
+- Betriebsart
+- Sprache
+- kompakter Unterbereich „Rechtliche Angaben“
+- Unternehmensname
+- Rechtsform
+- Straße und Hausnummer
+- Postleitzahl
+- Ort
+- Land
+- Kontakt-E-Mail
+
+Die rechtlichen Stammdaten dienen ausschließlich der automatischen Erzeugung
+des restaurantbezogenen Legal-Pakets. Der Owner schreibt im Onboarding keine
+juristischen Freitexte.
+
+Optional:
+
+- Telefonnummer
+- Firmenbuchnummer und Firmenbuchgericht
+- UID-Nummer
+- vertretungsberechtigte Person / Geschäftsführung
+- Kammerzugehörigkeit
+- Aufsichtsbehörde
+- Barrierefreiheitskontakt
+- abweichender Beschwerdekontakt
+
+Ist kein Beschwerdekontakt angegeben, wird die Kontakt-E-Mail verwendet.
+
+Die rechtliche Betreiberidentität liegt auf der bestehenden
+`organization`-Ebene. Restaurantname und Branding bleiben davon getrennt;
+der V1-Standort bleibt über Restaurant und primäre Branch-Beziehung
+zugeordnet. Damit gilt strukturell:
+
+```text
+Legal Operator / Organization
+-> Restaurant / Marke
+-> Branch / Standort
+```
+
+Die Geschäftsanschrift kann ausdrücklich auf die vorhandene
+Restaurantadresse verweisen. Ist die Option nicht gewählt, wird eine separate
+rechtliche Anschrift gespeichert. Eine fehlende oder unvollständige
+Restaurantadresse darf nicht stillschweigend als Geschäftsanschrift verwendet
+werden.
+
+Firmenbuchnummer und UID sind in V1 optionale strukturierte Betreiberangaben.
+Ihr Fehlen blockiert weder den Onboarding-Schritt noch die Kundenregistrierung.
+Der rechtliche Unternehmensname, die Rechtsform, die Geschäftsanschrift und die
+Kontakt-E-Mail bleiben Bestandteil des bestehenden Legal-Veröffentlichungsvertrags.
+Österreichische FN- und UID-Werte werden zurückhaltend normalisiert; Angaben
+anderer Länder behalten ihre generische Form. Dieselben Daten werden nach dem
+Onboarding unter `Einstellungen -> Unternehmensdaten & Rechtliches` bearbeitet.
+Es gibt keine parallele Betreiberquelle in Restaurantprofil, Branding oder
+Abrechnung. Stripe bleibt außerhalb des Flows; die strukturierten Daten sind
+lediglich für eine spätere Billing-Anbindung wiederverwendbar.
 
 V1 Sprache: - Deutsch
 
@@ -170,9 +261,28 @@ lokale Betriebe
 ### Nicht fragen
 
 Nicht fragen: - technischer Slug - Datenbank-ID - Organisation-ID -
-Filial-ID - detaillierte Steuerdaten - Rechnungsdaten
+Filial-ID - Rechnungsdaten - juristische Freitexte
 
 Diese Dinge werden später oder automatisch behandelt.
+
+### Automatisches Legal-Paket
+
+Nach dem erfolgreichen Abschluss erzeugt das System aus zentral versionierten
+Mastervorlagen automatisch:
+
+- Impressum
+- Teilnahmebedingungen
+- Datenschutzerklärung
+- Bonusregeln
+- Kassenabgrenzung
+
+Das Paket wird als prüfbarer Entwurf vorbereitet. Vor der Veröffentlichung
+sieht der Owner Vorschau, Änderungen, Versionsnummer, Gültigkeitsdatum und die
+Auswirkungen auf neue sowie bestehende Gäste. Erst die ausdrückliche
+Bestätigung veröffentlicht die Version. Im Pilotmodus dürfen dafür als
+„rechtliche Prüfung empfohlen“ gekennzeichnete Mastervorlagen verwendet
+werden. Im Productionmodus dürfen ausschließlich zentral freigegebene
+Mastervorlagen veröffentlicht werden.
 
 ------------------------------------------------------------------------
 
@@ -231,6 +341,19 @@ Beispiel: - geöffnet bis 22:00 - geschlossen, öffnet morgen um 10:00
 ### Inhalt
 
 Erlaubt: - Wochentage - Öffnungszeiten - Pausen optional - Sondertage
+
+V1 unterstützt pro geöffnetem Wochentag einen durchgehenden Öffnungsblock oder
+optional eine Mittagspause mit genau zwei Öffnungsblöcken. Die beiden Blöcke
+dürfen sich nicht überschneiden; die Pause liegt vollständig zwischen ihnen.
+Bestehende Restaurants ohne Pause verwenden weiterhin unverändert `open` und
+`close`.
+
+Beim erstmaligen Hinzufügen einer Mittagspause schlägt das System aus der
+eingetragenen Tagesöffnung automatisch passende Zeiten vor. Tage unter acht
+Stunden erhalten keinen automatischen Vorschlag. Vor und nach der Pause bleiben
+mindestens 90 Minuten Öffnungszeit. Der Owner kann die vorgeschlagenen Werte
+anschließend anpassen; bestehende gespeicherte Pausen werden niemals automatisch
+neu berechnet oder überschrieben.
 später
 
 ### Nicht bauen in V1
@@ -254,19 +377,23 @@ Der Besitzer definiert die spätere Punkte-Einlösung, ohne Punkte zu berechnen.
 
 Restaurantbesitzer soll nicht mit Punktformeln arbeiten.
 
-Er beantwortet einfache Fragen:
+Er waehlt nur die gewuenschte V1-Rueckgabequote:
 
--   Wie hoch ist der durchschnittliche Rechnungsbetrag?
--   Nach wie vielen Besuchen soll die erste Einlösung ungefähr
-    erreichbar sein?
--   Welche Rückgabequote passt zum Restaurant?
--   Welche Einlöseart ist typisch?
+-   Sparsam: 3 %
+-   Normal: 5 %
+-   Grosszuegig: 8 %
+-   Premium: 10 %
 
-Die Software berechnet daraus:
+Die Software verwendet fuer die verstaendliche Vorschau feste V1-Richtwerte:
 
-- erwartete Konsumation bis zur Einlösung
-- empfohlenen Einlösewert
-- spätere interne Punkte-Einlösung
+- Referenzausgabe: 20 EUR pro Besuch
+- Referenzbesuche: 5
+- Referenzkonsumation: 100 EUR
+
+Diese Werte sind keine Kundenvoraussetzung. Ein Gast muss weder genau 20 EUR
+ausgeben noch genau fuenfmal kommen; es entsteht dadurch keine automatische
+Freischaltung nach fuenf Besuchen. Die tatsaechliche Punkte- und
+Einloesungslogik bleibt autoritativ serverseitig.
 
 ### Verboten
 
@@ -290,15 +417,15 @@ V1-Rückgabequoten:
 Berechnung:
 
 ```text
-Konsumation = Durchschnittsbon × Besuche
-Einlösewert = Konsumation × Rückgabequote
+Referenzkonsumation = 20 EUR × 5 Besuche
+Beispiel-Einlösewert = Referenzkonsumation × Rückgabequote
 ```
 
 Beispiel:
 
 ```text
-18 € × 5 Besuche = 90 €
-Normal: 5 % von 90 € = 4,50 €
+20 EUR × 5 Besuche = 100 EUR
+Normal: 5 % von 100 EUR = ca. 5 EUR
 ```
 
 ### Restaurant arbeitet mit Euro
@@ -467,11 +594,12 @@ Er lädt das Starter Kit herunter.
 
 Das PDF enthält:
 
--   Infoseite für Restaurantbesitzer
--   Restaurant QR
--   Mein Bonus QR
--   Kassen-Aufsteller
--   Eingangs-Aufsteller
+-   Neue-Gäste-QR für Eingang oder Aufsteller
+-   derselbe Neue-Gäste-QR als alternatives Tisch-/Flyerformat
+-   Mitarbeiter-QR für den internen Bereich
+
+Die drei Druckseiten bilden eine einheitliche A6-Familie. Operative
+Platzierungshinweise stehen nicht in oder direkt unter dem QR-Rahmen.
 
 ### PDF Regeln
 
@@ -489,20 +617,22 @@ contain-scaling - Querformat, Hochformat, Quadrat funktionieren
 
 QR: - schwarz - groß - zentriert - gleiche Größe - gut scanbar
 
-### KPI-Infobox
+### Referral-Infobox
 
 🟢 **FIX**
 
-In der freien Fläche darf eine KPI-Box für Bonus Boost erscheinen.
+Auf der ersten Gaesteseite darf ein kompakter Hinweis fuer den
+Freundschaftsbonus erscheinen.
 
-Titel: **💡 Freunde einladen**
+Titel: **Freunde einladen lohnt sich**
 
-Karten: - 🔥 Du 2× Punkte - 👥 Freund 2× Punkte - 📅 +30 Tage Bonus
-Boost
+Text: **Nach deinem ersten Besuch kannst du Freunde einladen und 2× Bonus
+erhalten.**
 
-Keine Fließtexte.
+Keine feste Tageszahl im Druck. Die restaurantbezogene Laufzeit wird in der
+Anwendung dynamisch angezeigt.
 
-Ziel: Gast versteht Bonus Boost in 1 Sekunde.
+Ziel: Gast versteht den Vorteil ohne kleinteilige Erklaerkarten.
 
 ### Nach Onboarding
 
@@ -585,18 +715,18 @@ oder zu `/admin` leiten - kein Reset - keine Duplikat-Restaurants
 
 ------------------------------------------------------------------------
 
-## 16. So funktioniert's
+## 16. Hilfe zu diesem Schritt
 
 ### Grundregel
 
 🟢 **FIX**
 
-„So funktioniert's" ist kein permanenter Seitenbereich.
+„Hilfe zu diesem Schritt" ist kein permanenter Seitenbereich.
 
 Es erscheint: - beim ersten Besuch automatisch einmal - danach nur über
 Icon
 
-Icon: **ⓘ So funktioniert's**
+Icon: **ⓘ Hilfe**
 
 ### Verhalten
 
@@ -606,10 +736,16 @@ Icon: **ⓘ So funktioniert's**
 
 ### Text
 
-Text muss dynamisch sein: - aktueller Restaurantname - aktuelle
-Einstellungen - aktuelle Bonuslogik - aktuelle Willkommens-Belohnungen
+Jeder der sieben Schritte besitzt einen eigenen kurzen Hilfetext. Die Hilfe:
 
-Keine harten Standardtexte mit falschen Werten.
+- bezieht sich ausschließlich auf den aktuell geöffneten Schritt,
+- besteht aus vier bis sechs kurzen Sätzen,
+- nimmt keine Informationen späterer Schritte vorweg,
+- kann eine kurze Zeitangabe oder einen Änderungshinweis enthalten.
+
+Beim Wechsel des Schritts zeigt ein erneut geöffneter Drawer sofort die
+passende Hilfe. Allgemeine Zusammenfassungen des gesamten Bonusprogramms sind
+im Onboarding-Hilfedialog nicht erlaubt.
 
 ------------------------------------------------------------------------
 
@@ -750,6 +886,41 @@ Wenn Codex an Flow 01 arbeitet:
 8.  Mobile First prüfen.
 9.  Build ausführen.
 10. Wenn eine Regel unklar ist: NOT READY melden.
+
+------------------------------------------------------------------------
+
+## 25. Kontextbezogene Hilfe und automatische Geschenkverteilung
+
+Jeder der sieben Schritte besitzt eine eigene Hilfe. Sie erklaert verbindlich:
+
+1.  was der Owner in diesem Schritt einrichtet,
+2.  warum dies wichtig ist,
+3.  worauf der Owner konkret achten soll.
+
+Die Hilfe bleibt kurz, praktisch und als kompakter Drawer hinter dem
+vorhandenen Hilfe-Button erreichbar. Sie veraendert weder Schrittfolge noch
+Formular-, Speicher- oder Abschlusslogik.
+
+Restaurants waehlen bei Willkommensgeschenken ausschliesslich Geschenkarten
+und spaeter deren konkrete Bezeichnung, Beschreibung, Gueltigkeit,
+Einloesebedingungen und Verfuegbarkeit. Die Owner-Hilfe bleibt bewusst
+algorithmusneutral: Sie zeigt weder Prozentsaetze noch Gleichverteilungs- oder
+Gewichtungsbehauptungen, erwartete Zuteilungen oder daraus abgeleitete Kosten.
+Restaurants erhalten keine Eingabe fuer Quote, Gewicht oder Systemverteilung.
+
+Die verfuegbaren Willkommensgeschenke werden automatisch durch WUXUAI
+zugeteilt. Das Restaurant legt fest, welche Geschenke verfuegbar sind; die
+Verteilung uebernimmt das System automatisch. Aenderungen an der Auswahl gelten
+nur fuer zukuenftige Zuteilungen. Bereits zugeteilte Geschenke bleiben
+unveraendert.
+
+Die rechtliche Veroeffentlichung bleibt ein ausdruecklicher Owner-Schritt.
+Bestehende Dokumente werden weder automatisch akzeptiert noch automatisch neu
+veroeffentlicht.
+
+Die urspruengliche wertorientierte Kategoriengewichtung, ihre gewichtete
+Zufallsauswahl und Normalisierung sind `FINAL LOCK`. Interne Gewichte und
+Wahrscheinlichkeiten bleiben aus der Owner-Hilfe ausgeschlossen.
 
 ------------------------------------------------------------------------
 

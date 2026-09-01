@@ -3,7 +3,7 @@ import { supabase } from "../../../shared/lib/supabase";
 export const OWNER_REWARD_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const OWNER_REWARD_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
-export type OwnerRewardImageFolder = "rewards" | "starter-rewards";
+export type OwnerRewardImageFolder = "rewards" | "starter-rewards" | "offers";
 
 export function validateOwnerRewardImage(file: Pick<File, "size" | "type">): string | null {
   if (!OWNER_REWARD_IMAGE_TYPES.includes(file.type as (typeof OWNER_REWARD_IMAGE_TYPES)[number])) {

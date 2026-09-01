@@ -31,16 +31,18 @@ test("Kundennavigation hat exakt vier verständliche deutsche Hauptpunkte", () =
 
 test("Punkte sammeln und Einlösung behalten vorhandene Service-Aufrufe", () => {
   assert.match(portal, /collectBonusPoints\(\{/);
-  assert.match(portal, /startCustomerRedemption\(\{/);
+  assert.match(portal, /startCustomerGiftPresentation\(\{/);
+  assert.match(portal, /startCustomerPointsPresentation\(\{/);
   assert.match(portal, /type="password"/);
   assert.match(portal, /\[0, 1, 2, 3\]\.map/);
   assert.match(portal, /maxLength=\{1\}/);
   assert.match(portal, /Vierstellige Tages-PIN/);
 });
 
-test("Info und Einlösung verwenden den gemeinsamen barrierefreien Drawer", () => {
+test("Info und Einlösung verwenden den gemeinsamen barrierefreien Drawer, Referral bleibt eine fokussierte Landingpage", () => {
   assert.match(portal, /<AppDrawer/);
-  assert.match(referral, /<AppDrawer/);
+  assert.match(referral, /referral-invite-card/);
+  assert.match(referral, /Kundenkonto erstellen/);
   assert.match(portal, /redemptionDrawerOpen/);
 });
 
@@ -51,14 +53,15 @@ test("Kundenoberflächen verwenden keine Emoji-Icons", () => {
 
 test("Mobile Navigation berücksichtigt Safe Areas und Inhalte", () => {
   assert.match(styles, /env\(safe-area-inset-bottom\)/);
-  assert.match(styles, /padding: 14px 16px calc\(110px/);
-  assert.match(styles, /height: calc\(100dvh - 112px/);
-  assert.match(styles, /overflow-y: auto/);
+  assert.match(styles, /padding: max\(12px, env\(safe-area-inset-top\)\) 16px calc\(112px/);
+  assert.match(styles, /min-height: 100dvh/);
+  assert.doesNotMatch(styles, /\.customer-page-container[\s\S]{0,260}height: calc\(100dvh/);
+  assert.doesNotMatch(styles, /\.customer-premium-shell[\s\S]{0,900}overflow: hidden/);
   assert.match(styles, /min-width: 0/);
 });
 
-test("Staff-Portal übernimmt konkrete Supabase-Fehlermeldungen", () => {
-  assert.match(staff, /classifyStaffRedemptionError\(error, phase\)/);
+test("Legacy-Codefehler bleiben sicher klassifiziert, aber aus der primären Staff-UX entfernt", () => {
+  assert.doesNotMatch(staff, /classifyStaffRedemptionError\(error, phase\)/);
   assert.match(staffErrors, /typeof errorLike\?\.message === "string"/);
   assert.match(staffErrors, /Diese Belohnung wurde bereits eingelöst/);
 });

@@ -97,7 +97,8 @@ Verboten:
 - eigene Punkteformeln erfinden,
 - eigene Preislogik erfinden,
 - eigene Referral-Regeln erfinden,
-- Aktionen wieder einführen,
+- generische Aktionen oder Kampagnen wieder einführen; ausgenommen ist nur das
+  LOCKED Informationsmodul `Aktuelles & Angebote`,
 - englische UI-Texte erzeugen.
 
 Wenn Codex glaubt, dass eine neue Idee sinnvoll ist, darf Codex sie nur als Hinweis im Bericht nennen.
@@ -149,7 +150,7 @@ V1 enthält:
 - Willkommensgeschenke
 - Bonus Boost
 - QR / Starter Kit
-- 30 Tage Trial
+- 3 Kalendermonate kostenlos
 - Deutsch
 - Mobile First
 
@@ -161,10 +162,10 @@ V2 enthält später:
 - Wochenplan
 - POS-QR mit signierter Rechnung
 - Stripe-Automation
-- WUXUAI Admin Portal
+- vollstaendiges WUXUAI Admin Backoffice ausserhalb der freigegebenen sicheren V1-Basis
 - Mehrsprachigkeit
 - Smart Recommendation Engine
-- dynamische Promotionflächen
+- automatisierte oder personalisierte Promotionflächen
 - Branchen-Erweiterung
 - Enterprise-Funktionen
 
@@ -615,7 +616,8 @@ Bei UI-Änderungen muss Codex prüfen:
 - keine starren Logo-Boxen,
 - nur notwendige Buttons,
 - Design System einhalten,
-- keine Aktionen in V1 zurückbringen.
+- keine generischen Aktionen oder Kampagnen in V1 zurückbringen; das freigegebene
+  Informationsmodul `Aktuelles & Angebote` bleibt strikt ohne Reward-/Punktelogik.
 
 ---
 
@@ -642,7 +644,7 @@ Codex darf nicht:
 - Produktpreis ignorieren,
 - Wirtschaftlichkeitsstatus entfernen,
 - Willkommensgeschenke mit Punkte-Belohnungen vermischen,
-- Aktionen wieder einführen.
+- Angebote mit Rewards, Punkten, Geschenken oder Einlösungen verbinden.
 
 ---
 
@@ -752,9 +754,11 @@ Im QR Center später:
 - PNG
 - SVG
 - PDF
-- Sticker
-- Aufsteller
-- Tischkarten
+- Druckvarianten für Eingang, Tisch, Kassa, Rechnung oder Werbung verwenden
+  denselben Neue-Gäste-QR
+- Mitarbeiter-QR bleibt ein eigener, geschützter Einstieg
+- kein eigener technischer QR-Typ nur wegen Sticker, Aufsteller oder Tischkarte
+- Kassa-QR nur als Kompatibilitätsweg bei aktivem kundeninitiiertem Sammelmodus
 
 PDF Regeln:
 
@@ -835,8 +839,9 @@ Nicht einfach losbauen.
 
 Vor und nach der Änderung prüfen:
 
-- keine Aktionen
-- keine Kampagnen
+- keine generischen Aktionen, Coupons oder Reward-Kampagnen
+- keine Marketingautomation, Zielgruppen oder personalisierte Kampagnen
+- `Aktuelles & Angebote` höchstens als LOCKED, PII-freies Informationsmodul
 - keine KI
 - kein POS
 - kein SMS/WhatsApp

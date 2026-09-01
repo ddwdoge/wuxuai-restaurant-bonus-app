@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Point Anomaly Monitoring Visual Fixture</title>
+    <link rel="stylesheet" href="../src/styles.css" />
+    <link rel="stylesheet" href="../src/modules/admin/admin-premium.css" />
+    <style>[hidden] { display: none !important; }</style>
+  </head>
+  <body>
+    <main class="premium-owner-shell">
+      <div class="premium-owner-content">
+        <div class="premium-dashboard">
+          <header class="page-header dashboard-page-header">
+            <div><span class="premium-dashboard-kicker">Dashboard</span><h1>Heute im Restaurant</h1><p class="muted">Dein Bonusprogramm auf einen Blick.</p></div>
+          </header>
+          <section class="card dashboard-recommendation-card action" aria-labelledby="owner-recommendation-title" aria-live="polite">
+            <div><h2>Heute für dich</h2><p class="muted">Der wichtigste nächste Schritt für dein Restaurant.</p></div>
+            <button class="dashboard-recommendation" id="review" type="button">
+              <span class="dashboard-recommendation-icon" aria-hidden="true">!</span>
+              <span><strong id="owner-recommendation-title">Ungewöhnlich hohen Buchungsbetrag prüfen</strong><p class="muted">Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag. Bitte prüfe die Buchung.</p><small class="dashboard-recommendation-cta">Prüfen</small></span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </section>
+          <section class="dashboard-kpi-grid" aria-label="Heute im Bonusprogramm">
+            <article class="card dashboard-kpi-card"><span class="dashboard-kpi-icon">★</span><strong>240</strong><p>Vergebene Bonuspunkte heute</p></article>
+            <article class="card dashboard-kpi-card"><span class="dashboard-kpi-icon">◎</span><strong>8</strong><p>Heute aktiv</p></article>
+          </section>
+        </div>
+      </div>
+    </main>
+    <div class="app-drawer-overlay app-drawer-overlay-compact" id="drawer" role="presentation" hidden>
+      <aside aria-labelledby="drawer-title" aria-modal="true" class="app-drawer-panel app-drawer-compact" role="dialog">
+        <header class="app-drawer-header"><div><h2 id="drawer-title">Ungewöhnlich hoher Buchungsbetrag</h2><p>Dieser Hinweis dient ausschließlich der Prüfung und verändert weder Punkte noch Kontozugänge.</p></div><button aria-label="Ansicht schließen" class="app-drawer-close" id="close" type="button">×</button></header>
+        <div class="app-drawer-body"><dl class="point-anomaly-detail"><div><dt>Zeitpunkt</dt><dd>30.08.2026, 23:45:30</dd></div><div><dt>Betrag</dt><dd>240,00 €</dd></div><div><dt>Gutgeschriebene Punkte</dt><dd>240</dd></div><div><dt>Gast</dt><dd>Testgast</dd></div><div><dt>Ausgeführt von</dt><dd>Restaurantinhaber</dd></div><div><dt>Restaurant</dt><dd>Kaffee Konditorei Bäckerei</dd></div><div><dt>Buchungsreferenz</dt><dd>EF987654</dd></div></dl></div>
+        <footer class="app-drawer-footer"><button class="button" id="footer-close" type="button">Schließen</button></footer>
+      </aside>
+    </div>
+    <script>
+      const drawer = document.querySelector("#drawer");
+      document.querySelector("#review").addEventListener("click", () => { drawer.hidden = false; });
+      for (const id of ["#close", "#footer-close"]) document.querySelector(id).addEventListener("click", () => { drawer.hidden = true; });
+    </script>
+  </body>
+</html>

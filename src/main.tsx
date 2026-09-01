@@ -4,7 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App";
 import { AuthProvider } from "./modules/auth/AuthProvider";
 import { TenantProvider } from "./modules/tenant/TenantProvider";
+import { installDeploymentRecovery } from "./app/deploymentRecovery.mjs";
 import "./styles.css";
+
+installDeploymentRecovery();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

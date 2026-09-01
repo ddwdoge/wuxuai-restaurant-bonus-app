@@ -3,6 +3,42 @@
 
 # WUXUAI Bonus V1 – Flow 04: Punkte sammeln
 
+## QR-Vertrag vom 24.08.2026
+
+Der Standard neuer Restaurants ist restaurantgesteuert: Der Gast zeigt seinen
+persönlichen, kurzlebigen QR im Kundenportal und das Team scannt ihn im
+geschützten Mitarbeiterbereich. Dafür wird kein Kassa-QR ausgegeben.
+
+Der historische `/w/:slug`-Kassa-QR bleibt ausschliesslich für Restaurants mit
+`customer_initiated_only` oder `both` als Kompatibilitätsweg aktiv. Er wird
+nicht als Aufsteller-Duplikat ausgegeben. Ältere Abschnitte dieses Dokuments,
+die den Kassa-QR als einzigen allgemeinen V1-Standard beschreiben, sind damit
+teilweise superseded.
+
+## Verbindliche V1-Entscheidung vom 03.08.2026: keine Bonnummer
+
+V1 verarbeitet im Punkteflow keine Bonnummer und keine Belegreferenz. Das gilt
+fuer den restaurantgesteuerten und den kundeninitiierten Sammelweg. Der Gast
+uebermittelt keinen Betrag im restaurantgesteuerten Ablauf; das Team erfasst nur
+den tatsaechlich bezahlten bonusberechtigten Betrag und bestaetigt mit der
+Tages-PIN. Idempotenz, QR-Single-Use, Betragsschutz und Audit funktionieren ohne
+Bonnummer. Eine spaetere POS-Integration gehoert nicht zu V1.
+
+## Gemeinsame Punkteberechnung seit 2026-08-01
+
+Kundeninitiierte und restaurantgesteuerte Buchungen verwenden ausschließlich
+`calculate_points_award_v1` und `award_points_v1`. Bei identischem Restaurant,
+Gast, Betrag und Buchungszeitpunkt sind Basispunkte, aktiver Boost,
+Rundungsregel und Endpunkte identisch. Preview ist unverbindlich und verändert
+weder Referral-Status noch Willkommensgeschenke. Die Confirmation berechnet
+unter Sperre erneut und speichert den vollständigen Regelsnapshot.
+
+## Verbindliche Modusentscheidung (31.07.2026)
+
+Frühere Festlegungen auf ausschließlich kundeninitiierte Bonstufen sind **partially superseded**. Restaurants wählen serverseitig zwischen `restaurant_controlled_only`, `customer_initiated_only` und `both`. Bestandsrestaurants bleiben zunächst kundeninitiiert; neue Restaurants starten restaurantgesteuert.
+
+Im restaurantgesteuerten Ablauf zeigt der Gast einen fünf Minuten gültigen, einmalig verwendbaren persönlichen QR. Das Team scannt ihn, erfasst den direkt im Restaurant bezahlten bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Eine Bonnummer wird nicht erfasst. Betrag, Rate und Punkte werden serverseitig geprüft und atomar gebucht. Trinkgeld, Gutscheinkäufe und externe Lieferplattformen sind ausgeschlossen.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt den vollständigen Flow 04 des WUXUAI Bonus Systems.
@@ -726,9 +762,11 @@ Keine technischen RPC-Fehler anzeigen.
 
 ---
 
-## 19. QR im Starter Kit
+## 19. QR im Starter Kit (historisch, superseded)
 
-Der Bonus QR ist Teil des Restaurant Starter Kits.
+Der Bonus QR war Teil des Restaurant Starter Kits. Seit dem QR-Vertrag vom
+24.08.2026 enthält das Onboarding-Starter-Kit stattdessen den Neue-Gäste-QR und
+den Mitarbeiter-QR. `/w/:slug` bleibt nur als Kompatibilitätsroute bestehen.
 
 Die PDF soll klar zeigen:
 

@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Coffee,
@@ -12,9 +12,7 @@ import {
   Utensils,
   UtensilsCrossed,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   completePilotOnboarding,
   loadOnboardingDraft,
@@ -22,22 +20,35 @@ import {
 } from "../../onboarding/pilotOnboardingService";
 import { useTenant } from "../../tenant/TenantProvider";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
+import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.mjs";
+import { getStarterKitPageDefinitions, STARTER_KIT_FOOTER, STARTER_KIT_REFERRAL, type StarterKitPageDefinition } from "../../../shared/lib/starterKitPages.mjs";
 import { supabase } from "../../../shared/lib/supabase";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { OperationalQrCode } from "../../../shared/components/OperationalQrCode";
+import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
+import { OPERATIONAL_QR_EXPORT } from "../../../shared/lib/operationalQr.mjs";
+import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logoPresentation.mjs";
+import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
+import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { OpeningHoursCopyAction } from "../../../shared/components/OpeningHoursCopyAction";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { onboardingCompletionErrorMessage, safeLegalRpcError } from "../../legal/legalPublicationDate.mjs";
+import {
+  companyRegistrationLabel,
+  legalFormSuggestions,
+  normalizeCompanyRegistrationNumber,
+  normalizeVatId,
+  optionalCompanyIdentifierHint,
+  vatIdLabel,
+} from "../../legal/legalCompanyData.mjs";
+import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
 
-type OpeningDay = {
-  enabled: boolean;
-  open: string;
-  close: string;
-};
-
 type BonusCalculation = {
-  pointsPerEuro: number;
   amountPerPoint: number;
-  firstRewardPoints: number;
   rewardValueEuro: number;
   expectedConsumptionEuro: number;
   returnRate: number;
@@ -47,7 +58,11 @@ type BonusCalculation = {
     menu: number;
     family: number;
   };
-  recommendedRewardThresholds: number[];
+};
+
+type OnboardingOutletContext = {
+  onboardingAccountAction: ReactNode;
+  onboardingRestaurantAction: ReactNode;
 };
 
 type LogoColors = {
@@ -76,17 +91,27 @@ type OnboardingForm = {
   restaurantName: string;
   restaurantType: string;
   language: string;
+  legalCompanyName: string;
+  legalForm: string;
+  legalAddressMatchesRestaurant: boolean;
+  legalStreet: string;
+  legalPostalCode: string;
+  legalCity: string;
+  legalCountry: string;
+  legalEmail: string;
+  legalCompanyRegistrationNumber: string;
+  legalVatId: string;
+  legalAuthorizedRepresentative: string;
+  legalComplaintContact: string;
   logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
   starterRewardConfirmed: boolean;
+  legalPublicationConfirmed: boolean;
   openingHours: Record<Weekday, OpeningDay>;
   specialDays: string;
   holidays: string;
   smartOpenEnabled: boolean;
-  averageBill: number;
-  firstRewardVisits: number;
-  firstRewardType: string;
   generosity: Generosity;
   starterRewards: StarterRewardDraft[];
   staffName: string;
@@ -113,6 +138,51 @@ const stepTitles = [
   "Herzlichen Glückwunsch! Dein Restaurant ist startklar.",
 ];
 
+const stepHelp = [
+  {
+    configure: "Restaurantname, Betriebsart sowie korrekte Unternehmens-, Kontakt- und Adressdaten.",
+    importance: "Diese Angaben identifizieren deinen Betrieb in WUXUAI, in der Restaurantsuche und in den rechtlichen Dokumenten.",
+    attention: "Prüfe Firmenname und vollständige Adresse sorgfältig. Eine Mobiltelefonnummer wird bereits bei der Restaurantregistrierung für zukünftige SMS-Funktionen empfohlen; SMS ist derzeit nicht aktiv.",
+    note: "Dauer: ca. 2 Minuten",
+  },
+  {
+    configure: "Logo und Markenfarben für den Auftritt deines Restaurants.",
+    importance: "Deine Kunden sehen dieses Erscheinungsbild im Bonusprogramm und auf dem Druckmaterial.",
+    attention: "Verwende ein scharfes Logo und gut lesbare Farben. Du kannst das Aussehen später jederzeit bearbeiten.",
+    note: "Tipp: Du kannst das Aussehen später jederzeit ändern.",
+  },
+  {
+    configure: "Reguläre Öffnungszeiten, geschlossene Tage und besondere Hinweise.",
+    importance: "Kunden können dadurch erkennen, wann dein Lokal geöffnet ist.",
+    attention: "Richte zuerst Montag ein und nutze bei gleichen Zeiten „Auf alle Tage übertragen“. Abweichende Tage kannst du danach einzeln anpassen.",
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    configure: "Den gewünschten Bonus-Prozentsatz von 3, 5, 8 oder 10 Prozent.",
+    importance: "Damit legst du fest, wie attraktiv dein Bonusprogramm für Stammkunden ist.",
+    attention: "Du wählst nur den Prozentsatz. Die interne Referenzrechnung mit 20 EUR und fünf Besuchen übernimmt WUXUAI automatisch.",
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    configure: "Welche Willkommensgeschenke für neue Kunden verfügbar sind.",
+    importance: "Ein berechtigter neuer Kunde erhält nach der bestehenden Systemlogik ein Willkommensgeschenk.",
+    attention: "Aktiviere nur Geschenke, die dein Restaurant zuverlässig anbieten kann. WUXUAI verteilt sie automatisch; du musst keine Verteilung einstellen.",
+    note: "Tipp: Produkte und Bilder kannst du später bearbeiten.",
+  },
+  {
+    configure: "Das fertige Starter Kit mit Gäste- und Mitarbeiter-QR.",
+    importance: "Die QR-Codes führen Gäste und Mitarbeiter in den jeweils richtigen Bereich.",
+    attention: "Prüfe die Druckseiten und bewahre den Mitarbeiter-QR nur im geschützten Arbeitsbereich auf.",
+    note: "Dauer: ca. 1 Minute",
+  },
+  {
+    configure: "Die abschließende Prüfung deiner Grundeinrichtung und der vorbereiteten Dokumente.",
+    importance: "So startet dein Restaurant mit vollständigen Basisdaten und einem verständlichen Bonusprogramm.",
+    attention: "Nach dem Start zeigt „Heute für dich“ den nächsten wichtigen Schritt. Unter „Einstellungen → Setup & Einrichtung“ kannst du alle Bereiche später erneut prüfen und bearbeiten.",
+    note: "Dauer: weniger als 1 Minute",
+  },
+] as const;
+
 const checklistLabels = {
   restaurantDataCompleted: "Restaurantdaten fertig",
   brandingCompleted: "Aussehen fertig",
@@ -121,6 +191,7 @@ const checklistLabels = {
   firstRewardCreated: "Willkommensgeschenke fertig",
   guestTestReady: "Restaurant Starter Kit bereit",
   qrReady: "QR-Codes bereit",
+  legalPublicationConfirmed: "Veröffentlichung bestätigt",
 };
 
 const weekdays: { key: Weekday; label: string }[] = [
@@ -134,13 +205,13 @@ const weekdays: { key: Weekday; label: string }[] = [
 ];
 
 const defaultOpeningHours: Record<Weekday, OpeningDay> = {
-  mon: { enabled: true, open: "11:00", close: "22:00" },
-  tue: { enabled: true, open: "11:00", close: "22:00" },
-  wed: { enabled: true, open: "11:00", close: "22:00" },
-  thu: { enabled: true, open: "11:00", close: "22:00" },
-  fri: { enabled: true, open: "11:00", close: "23:00" },
-  sat: { enabled: true, open: "12:00", close: "23:00" },
-  sun: { enabled: false, open: "12:00", close: "21:00" },
+  mon: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  tue: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  wed: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  thu: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "22:00" }),
+  fri: normalizeOpeningDay(null, { enabled: true, open: "11:00", close: "23:00" }),
+  sat: normalizeOpeningDay(null, { enabled: true, open: "12:00", close: "23:00" }),
+  sun: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "21:00" }),
 };
 
 const generosityReturnRates: Record<Generosity, number> = {
@@ -156,6 +227,9 @@ const generosityHelpText: Record<Generosity, string> = {
   Großzügig: "Stärkerer Anreiz für Gäste.",
   Premium: "Sehr attraktiver Stammgäste-Anreiz.",
 };
+
+const BONUS_REFERENCE_SPEND_EURO = 20;
+const BONUS_REFERENCE_VISITS = 5;
 
 const starterRewardTemplates: StarterRewardTemplate[] = [
   {
@@ -221,10 +295,23 @@ function createDefaultForm(): OnboardingForm {
     restaurantName: "",
     restaurantType: "Restaurant",
     language: "Deutsch",
+    legalCompanyName: "",
+    legalForm: "",
+    legalAddressMatchesRestaurant: false,
+    legalStreet: "",
+    legalPostalCode: "",
+    legalCity: "",
+    legalCountry: "Österreich",
+    legalEmail: "",
+    legalCompanyRegistrationNumber: "",
+    legalVatId: "",
+    legalAuthorizedRepresentative: "",
+    legalComplaintContact: "",
     logoUrl: "",
     primaryColor: "#0f766e",
     secondaryColor: "#f4a261",
     starterRewardConfirmed: false,
+    legalPublicationConfirmed: false,
     openingHours: {
       mon: { ...defaultOpeningHours.mon },
       tue: { ...defaultOpeningHours.tue },
@@ -237,9 +324,6 @@ function createDefaultForm(): OnboardingForm {
     specialDays: "",
     holidays: "",
     smartOpenEnabled: true,
-    averageBill: 18,
-    firstRewardVisits: 5,
-    firstRewardType: "Gratis Produkt",
     generosity: "Normal",
     starterRewards: [],
     staffName: "Team",
@@ -249,7 +333,7 @@ function createDefaultForm(): OnboardingForm {
 
 function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm {
   const defaults = createDefaultForm();
-  const draftOpeningHours = (draftData?.openingHours ?? {}) as Partial<Record<Weekday, Partial<OpeningDay>>>;
+  const draftOpeningHours = (draftData?.openingHours ?? {}) as Partial<Record<Weekday, unknown>>;
   const legacyDraft = (draftData ?? {}) as Partial<OnboardingForm> & {
     rewardImageUrl?: string;
     rewardTitle?: string;
@@ -280,46 +364,28 @@ function restoreForm(draftData: Partial<OnboardingForm> | null): OnboardingForm 
       availableProducts: reward.availableProducts || "",
       active: true,
     })),
-    openingHours: {
-      mon: { ...defaults.openingHours.mon, ...draftOpeningHours.mon },
-      tue: { ...defaults.openingHours.tue, ...draftOpeningHours.tue },
-      wed: { ...defaults.openingHours.wed, ...draftOpeningHours.wed },
-      thu: { ...defaults.openingHours.thu, ...draftOpeningHours.thu },
-      fri: { ...defaults.openingHours.fri, ...draftOpeningHours.fri },
-      sat: { ...defaults.openingHours.sat, ...draftOpeningHours.sat },
-      sun: { ...defaults.openingHours.sun, ...draftOpeningHours.sun },
-    },
+    openingHours: Object.fromEntries(weekdays.map(({ key }) => [key, normalizeOpeningDay(draftOpeningHours[key], defaults.openingHours[key])])) as Record<Weekday, OpeningDay>,
   };
 }
 
-function calculateBonus(averageBill: number, firstRewardVisits: number, generosity: Generosity): BonusCalculation {
-  const cleanAverageBill = Math.max(1, averageBill || 1);
-  const cleanVisits = Math.max(1, firstRewardVisits || 1);
+function calculateBonus(generosity: Generosity): BonusCalculation {
   const returnRate = generosityReturnRates[generosity];
-  const expectedConsumptionEuro = Number((cleanAverageBill * cleanVisits).toFixed(2));
+  const expectedConsumptionEuro = BONUS_REFERENCE_SPEND_EURO * BONUS_REFERENCE_VISITS;
   const pointsPerEuro = 1;
   const amountPerPoint = Number((1 / pointsPerEuro).toFixed(4));
-  const firstRewardPoints = Math.max(10, Math.round(cleanAverageBill * cleanVisits * pointsPerEuro));
   const rewardValueEuro = Number((expectedConsumptionEuro * returnRate).toFixed(2));
 
   return {
-    pointsPerEuro,
     amountPerPoint,
-    firstRewardPoints,
     rewardValueEuro,
     expectedConsumptionEuro,
     returnRate,
     returnRatePercent: `${Math.round(returnRate * 100)} %`,
     amountTierPoints: {
-      visit: Math.round(cleanAverageBill * pointsPerEuro),
-      menu: Math.round(cleanAverageBill * 1.5 * pointsPerEuro),
-      family: Math.round(cleanAverageBill * 3 * pointsPerEuro),
+      visit: Math.round(BONUS_REFERENCE_SPEND_EURO * pointsPerEuro),
+      menu: Math.round(BONUS_REFERENCE_SPEND_EURO * 1.5 * pointsPerEuro),
+      family: Math.round(BONUS_REFERENCE_SPEND_EURO * 3 * pointsPerEuro),
     },
-    recommendedRewardThresholds: [
-      firstRewardPoints,
-      Math.round(firstRewardPoints * 1.8),
-      Math.round(firstRewardPoints * 3),
-    ],
   };
 }
 
@@ -333,16 +399,6 @@ function formatEuro(value: number, fixedCents = false) {
   }).format(value);
 }
 
-function slugifyRestaurant(value: string) {
-  const slug = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-  return slug || "restaurant";
-}
-
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -352,7 +408,7 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-async function qrSvgToCanvas(svgId: string, size = 960) {
+async function qrSvgToCanvas(svgId: string, size = OPERATIONAL_QR_EXPORT.qrSize) {
   const svg = document.getElementById(svgId);
   if (!svg) {
     throw new Error("QR-Code konnte nicht gefunden werden.");
@@ -381,6 +437,7 @@ async function qrSvgToCanvas(svgId: string, size = 960) {
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, size, size);
+  context.imageSmoothingEnabled = false;
   context.drawImage(image, 0, 0, size, size);
   URL.revokeObjectURL(url);
   return canvas;
@@ -414,13 +471,12 @@ type StarterKitPdfPage = {
   pageWidth: number;
 };
 
-type StarterKitPageSpec = {
-  headline: string;
+type StarterKitPageSpec = StarterKitPageDefinition & {
   qrCanvas: HTMLCanvasElement;
-  shortNote: string;
 };
 
-const starterKitFooterText = "Powered by WUXUAI Bonus • www.wuxuaisbi.com";
+const starterKitA6PageWidthPt = 297.64;
+const starterKitA6PageHeightPt = 419.53;
 
 function buildStarterKitPdf(pages: StarterKitPdfPage[]) {
   const encoder = new TextEncoder();
@@ -522,29 +578,26 @@ function drawRestaurantBrand(
     height: number;
     logoImage: HTMLImageElement | null;
     name: string;
+    presentation?: Partial<LogoPresentation> | null;
     primaryColor: string;
     width: number;
     x: number;
     y: number;
   },
 ) {
-  const { accentColor, height, logoImage, name, primaryColor, width, x, y } = options;
+  const { height, logoImage, presentation, primaryColor, width, x, y } = options;
   context.save();
-  roundedRect(context, x, y, width, height, Math.min(width, height) * 0.14);
-  context.fillStyle = "#ffffff";
-  context.fill();
-  context.strokeStyle = accentColor;
-  context.lineWidth = Math.max(3, Math.min(width, height) * 0.035);
-  context.stroke();
-
   if (logoImage) {
-    const padding = Math.min(width, height) * 0.12;
-    const availableWidth = width - padding * 2;
-    const availableHeight = height - padding * 2;
-    const ratio = Math.min(availableWidth / logoImage.width, availableHeight / logoImage.height);
-    const imageWidth = logoImage.width * ratio;
-    const imageHeight = logoImage.height * ratio;
-    context.drawImage(logoImage, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2, imageWidth, imageHeight);
+    const placement = logoCanvasPlacement(
+      logoImage.naturalWidth || logoImage.width,
+      logoImage.naturalHeight || logoImage.height,
+      { height, width, x: 0, y: 0 },
+      presentation ?? {},
+    );
+    context.beginPath();
+    context.rect(x, y, width, height);
+    context.clip();
+    context.drawImage(logoImage, x + placement.x, y + placement.y, placement.width, placement.height);
   } else {
     context.fillStyle = primaryColor;
     roundedRect(context, x + width * 0.08, y + height * 0.16, width * 0.84, height * 0.68, Math.min(width, height) * 0.11);
@@ -608,51 +661,63 @@ function drawBonusBoostKpiBox(
   },
 ) {
   const { accentColor, primaryColor, width, x, y } = options;
-  const gap = 34;
-  const cardWidth = (width - gap * 2) / 3;
-  const cardHeight = 300;
-  const titleY = y;
-  const cardsY = y + 110;
-  const cards = [
-    { icon: "🔥", label: "Du", value: "2× Punkte" },
-    { icon: "👥", label: "Freund", value: "2× Punkte" },
-    { icon: "📅", label: "+30 Tage", value: "Bonus Boost" },
-  ];
 
   context.save();
+  const cellGap = 72;
+  const cellInset = 64;
+  const cellWidth = (width - cellInset * 2 - cellGap) / 2;
+  const cellY = y + 146;
+
+  roundedRect(context, x, y, width, 560, 48);
+  context.fillStyle = colorWithAlpha(accentColor, 0.12);
+  context.fill();
+  context.strokeStyle = colorWithAlpha(accentColor, 0.42);
+  context.lineWidth = 5;
+  context.stroke();
+
   context.textAlign = "center";
   context.textBaseline = "top";
   context.fillStyle = primaryColor;
-  context.font = "900 64px Inter, Arial, sans-serif";
-  context.fillText("💡 Freunde einladen", x + width / 2, titleY);
+  context.font = "700 70px Inter, Arial, sans-serif";
+  context.fillText(STARTER_KIT_REFERRAL.title, x + width / 2, y + 44);
 
-  cards.forEach((card, index) => {
-    const cardX = x + index * (cardWidth + gap);
-    roundedRect(context, cardX, cardsY, cardWidth, cardHeight, 42);
-    context.fillStyle = colorWithAlpha(index === 2 ? accentColor : primaryColor, 0.08);
+  STARTER_KIT_REFERRAL.benefits.forEach((benefit, index) => {
+    const cellX = x + cellInset + index * (cellWidth + cellGap);
+    roundedRect(context, cellX, cellY, cellWidth, 258, 36);
+    context.fillStyle = "rgba(255, 255, 255, 0.78)";
     context.fill();
-    context.strokeStyle = index === 2 ? accentColor : primaryColor;
-    context.lineWidth = 5;
+    context.strokeStyle = colorWithAlpha(accentColor, 0.32);
+    context.lineWidth = 4;
     context.stroke();
-
     context.fillStyle = "#17202a";
-    context.font = "900 70px Inter, Arial, sans-serif";
-    context.fillText(card.icon, cardX + cardWidth / 2, cardsY + 34);
-
-    context.fillStyle = "#344251";
-    context.font = "900 46px Inter, Arial, sans-serif";
-    context.fillText(card.label, cardX + cardWidth / 2, cardsY + 140);
-
+    context.font = "400 68px Apple Color Emoji, Segoe UI Emoji, sans-serif";
+    context.fillText(benefit.icon, cellX + cellWidth / 2, cellY + 16);
+    context.font = "600 50px Inter, Arial, sans-serif";
+    context.fillText(benefit.label, cellX + cellWidth / 2, cellY + 106);
     context.fillStyle = primaryColor;
-    context.font = "900 48px Inter, Arial, sans-serif";
-    context.fillText(card.value, cardX + cardWidth / 2, cardsY + 208);
+    context.font = "800 66px Inter, Arial, sans-serif";
+    context.fillText(benefit.value, cellX + cellWidth / 2, cellY + 170);
   });
+
+  context.fillStyle = "#465463";
+  context.font = "400 46px Inter, Arial, sans-serif";
+  context.fillText(
+    STARTER_KIT_REFERRAL.note,
+    x + width / 2,
+    y + 472,
+  );
   context.restore();
 }
 
 function drawStarterKitPage(
   spec: StarterKitPageSpec,
-  branding: { logoImage: HTMLImageElement | null; name: string; primaryColor: string; secondaryColor: string },
+  branding: {
+    logoImage: HTMLImageElement | null;
+    name: string;
+    presentation?: Partial<LogoPresentation> | null;
+    primaryColor: string;
+    secondaryColor: string;
+  },
 ): StarterKitPdfPage {
   const canvas = document.createElement("canvas");
   canvas.width = 2480;
@@ -663,27 +728,27 @@ function drawStarterKitPage(
     throw new Error("Starter Kit konnte nicht gezeichnet werden.");
   }
 
-  const margin = 188;
-  const logoWidth = 984;
-  const logoHeight = 276;
-  const qrSize = 820;
+  const margin = 200;
+  const logoWidth = 1279;
+  const logoHeight = 359;
+  const qrSize = 1120;
   const qrX = (canvas.width - qrSize) / 2;
-  const qrY = 1010;
+  const qrY = 1080;
   const cardPadding = 104;
-  const cardTop = 130;
-  const cardBottom = 185;
+  const cardTop = 190;
+  const cardBottom = 190;
   const cardHeight = canvas.height - cardTop - cardBottom;
-  const logoY = cardTop + 120;
-  const nameY = logoY + logoHeight + 40;
-  const headlineY = nameY + 108;
-  const noteY = qrY + qrSize + 98;
+  const logoY = 236;
+  const nameY = 620;
+  const audienceY = 716;
+  const headlineY = 790;
+  const descriptionY = 926;
+  const noteY = qrY + qrSize + 104;
   const kpiBoxWidth = 1760;
-  const kpiBoxY = noteY + 260;
+  const kpiBoxY = noteY + 40;
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = branding.secondaryColor;
-  context.fillRect(0, 0, canvas.width, 46);
 
   roundedRect(context, margin, cardTop, canvas.width - margin * 2, cardHeight, 66);
   context.fillStyle = "#ffffff";
@@ -701,6 +766,7 @@ function drawStarterKitPage(
     height: logoHeight,
     logoImage: branding.logoImage,
     name: branding.name,
+    presentation: branding.presentation,
     primaryColor: branding.primaryColor,
     width: logoWidth,
     x: (canvas.width - logoWidth) / 2,
@@ -708,7 +774,7 @@ function drawStarterKitPage(
   });
 
   context.fillStyle = "#17202a";
-  context.font = "800 66px Inter, Arial, sans-serif";
+  context.font = "600 78px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
   drawWrappedText(
@@ -717,201 +783,96 @@ function drawStarterKitPage(
     canvas.width / 2,
     nameY,
     canvas.width - margin * 2 - cardPadding,
-    76,
+    88,
   );
 
-  context.fillStyle = branding.primaryColor;
-  context.font = "900 116px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "top";
-  drawWrappedText(context, spec.headline, canvas.width / 2, headlineY, canvas.width - margin * 2 - cardPadding, 132);
-
-  roundedRect(context, qrX - 36, qrY - 36, qrSize + 72, qrSize + 72, 42);
-  context.fillStyle = "#ffffff";
-  context.fill();
-  context.strokeStyle = branding.secondaryColor;
-  context.lineWidth = 8;
-  context.stroke();
-  context.drawImage(spec.qrCanvas, qrX, qrY, qrSize, qrSize);
-
-  context.fillStyle = "#344251";
-  context.font = "800 54px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "top";
-  drawWrappedText(context, spec.shortNote, canvas.width / 2, noteY, canvas.width - margin * 2 - cardPadding, 68);
-
-  drawBonusBoostKpiBox(context, {
-    accentColor: branding.secondaryColor,
-    primaryColor: branding.primaryColor,
-    width: kpiBoxWidth,
-    x: (canvas.width - kpiBoxWidth) / 2,
-    y: kpiBoxY,
-  });
-
-  context.fillStyle = "#8a96a3";
-  context.font = "600 30px Inter, Arial, sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "alphabetic";
-  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 54);
-
-  return {
-    imageBytes: canvasToJpegBytes(canvas),
-    imageHeight: canvas.height,
-    imageWidth: canvas.width,
-    pageHeight: 842,
-    pageWidth: 595,
-  };
-}
-
-function drawStarterKitInfoPage(
-  branding: { logoImage: HTMLImageElement | null; name: string; primaryColor: string; secondaryColor: string },
-): StarterKitPdfPage {
-  const canvas = document.createElement("canvas");
-  canvas.width = 2480;
-  canvas.height = 3508;
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("Starter Kit konnte nicht gezeichnet werden.");
+  if (spec.audienceLabel) {
+    context.fillStyle = branding.primaryColor;
+    context.font = "600 52px Inter, Arial, sans-serif";
+    drawWrappedText(context, spec.audienceLabel, canvas.width / 2, audienceY, canvas.width - margin * 2 - cardPadding, 62);
   }
 
-  const margin = 188;
-  const cardTop = 130;
-  const cardBottom = 185;
-  const cardHeight = canvas.height - cardTop - cardBottom;
-  const logoWidth = 984;
-  const logoHeight = 276;
-  const logoY = cardTop + 150;
-  const nameY = logoY + logoHeight + 40;
-  const titleY = nameY + 150;
-  const subtitleY = titleY + 150;
-  const listX = margin + 360;
-  const listY = subtitleY + 260;
-
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = branding.secondaryColor;
-  context.fillRect(0, 0, canvas.width, 46);
-
-  roundedRect(context, margin, cardTop, canvas.width - margin * 2, cardHeight, 66);
-  context.fillStyle = "#ffffff";
-  context.fill();
-  context.shadowColor = "rgba(23, 32, 42, 0.14)";
-  context.shadowBlur = 42;
-  context.shadowOffsetY = 18;
-  context.strokeStyle = "#dde3ea";
-  context.lineWidth = 6;
-  context.stroke();
-  context.shadowColor = "transparent";
-
-  drawRestaurantBrand(context, {
-    accentColor: branding.secondaryColor,
-    height: logoHeight,
-    logoImage: branding.logoImage,
-    name: branding.name,
-    primaryColor: branding.primaryColor,
-    width: logoWidth,
-    x: (canvas.width - logoWidth) / 2,
-    y: logoY,
-  });
-
-  context.fillStyle = "#17202a";
-  context.font = "800 66px Inter, Arial, sans-serif";
+  context.fillStyle = branding.primaryColor;
+  context.font = "800 112px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "top";
-  drawWrappedText(context, branding.name || "Dein Restaurant", canvas.width / 2, nameY, canvas.width - margin * 2 - 104, 76);
+  drawWrappedText(context, spec.headline, canvas.width / 2, headlineY, canvas.width - margin * 2 - cardPadding, 140);
 
-  context.fillStyle = branding.primaryColor;
-  context.font = "900 122px Inter, Arial, sans-serif";
-  drawWrappedText(context, "Restaurant Starter Kit", canvas.width / 2, titleY, canvas.width - margin * 2 - 104, 140);
+  context.fillStyle = "#465463";
+  context.font = "400 56px Inter, Arial, sans-serif";
+  drawWrappedText(context, spec.subheadline, canvas.width / 2, descriptionY, canvas.width - margin * 2 - cardPadding - 100, 68);
 
-  context.fillStyle = "#344251";
-  context.font = "800 58px Inter, Arial, sans-serif";
-  drawWrappedText(context, "So startest du dein Bonusprogramm.", canvas.width / 2, subtitleY, canvas.width - margin * 2 - 180, 72);
+  roundedRect(context, qrX - 64, qrY - 64, qrSize + 128, qrSize + 128, 48);
+  context.fillStyle = "#ffffff";
+  context.fill();
+  context.strokeStyle = colorWithAlpha(branding.secondaryColor, 0.46);
+  context.lineWidth = 5;
+  context.stroke();
+  context.imageSmoothingEnabled = false;
+  context.drawImage(spec.qrCanvas, qrX, qrY, qrSize, qrSize);
 
-  const items = [
-    "Drucke alle Seiten aus.",
-    "Für längere Haltbarkeit empfehlen wir Laminieren.",
-    'Seite "Mitglied werden" am Eingang aufstellen.',
-    'Seite "Bonuspunkte sammeln" an der Kassa aufstellen.',
-    "Teste beide QR Codes einmal.",
-    "Danach ist dein Bonusprogramm einsatzbereit.",
-  ];
+  if (spec.secondaryNote) {
+    context.fillStyle = "#344251";
+    context.font = "400 46px Inter, Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    drawWrappedText(context, spec.secondaryNote, canvas.width / 2, noteY, canvas.width - margin * 2 - cardPadding, 58);
+  }
 
-  context.textAlign = "left";
-  context.textBaseline = "top";
-  items.forEach((item, index) => {
-    const y = listY + index * 170;
-    context.fillStyle = branding.primaryColor;
-    context.font = "900 58px Inter, Arial, sans-serif";
-    context.fillText("✓", listX, y);
-    context.fillStyle = "#17202a";
-    context.font = "800 52px Inter, Arial, sans-serif";
-    drawWrappedText(context, item, listX + 90, y + 4, canvas.width - listX - margin - 180, 66);
-  });
+  if (spec.referralHint) {
+    drawBonusBoostKpiBox(context, {
+      accentColor: branding.secondaryColor,
+      primaryColor: branding.primaryColor,
+      width: kpiBoxWidth,
+      x: (canvas.width - kpiBoxWidth) / 2,
+      y: kpiBoxY,
+    });
+  }
 
   context.fillStyle = "#8a96a3";
   context.font = "600 30px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "alphabetic";
-  context.fillText(starterKitFooterText, canvas.width / 2, canvas.height - 54);
+  context.fillText(STARTER_KIT_FOOTER, canvas.width / 2, canvas.height - 220);
 
   return {
     imageBytes: canvasToJpegBytes(canvas),
     imageHeight: canvas.height,
     imageWidth: canvas.width,
-    pageHeight: 842,
-    pageWidth: 595,
+    pageHeight: starterKitA6PageHeightPt,
+    pageWidth: starterKitA6PageWidthPt,
   };
 }
 
 async function downloadRestaurantStarterKit(input: {
-  bonusQrId: string;
   logoUrl: string;
+  logoPresentation?: Partial<LogoPresentation> | null;
   primaryColor: string;
   restaurantName: string;
   restaurantQrId: string;
   secondaryColor: string;
+  staffQrId: string;
 }) {
-  const [restaurantQr, bonusQr, logoImage] = await Promise.all([
+  const [restaurantQr, staffQr, logoImage] = await Promise.all([
     qrSvgToCanvas(input.restaurantQrId),
-    qrSvgToCanvas(input.bonusQrId),
+    qrSvgToCanvas(input.staffQrId),
     loadCanvasImage(input.logoUrl).catch(() => null),
   ]);
   const branding = {
     logoImage,
     name: input.restaurantName || "Dein Restaurant",
+    presentation: input.logoPresentation,
     primaryColor: input.primaryColor,
     secondaryColor: input.secondaryColor,
   };
-  const pageSpecs: StarterKitPageSpec[] = [
-    {
-      headline: "Mitglied werden",
-      shortNote: "Mitglied werden\nBonuspunkte sammeln\nPunkteeinlösung nutzen",
-      qrCanvas: restaurantQr,
-    },
-    {
-      headline: "Bonuspunkte sammeln",
-      shortNote: "Nach dem Bezahlen\nQR scannen\nBonuspunkte sammeln.",
-      qrCanvas: bonusQr,
-    },
-    {
-      headline: "Bonuspunkte sammeln",
-      shortNote: "Für die Kassa",
-      qrCanvas: bonusQr,
-    },
-    {
-      headline: "Mitglied werden",
-      shortNote: "Neue Gäste\nstarten hier ihr Bonusprogramm.",
-      qrCanvas: restaurantQr,
-    },
-  ];
+  const pageSpecs: StarterKitPageSpec[] = getStarterKitPageDefinitions().map((page) => ({
+    ...page,
+    qrCanvas: page.qrKind === "staff" ? staffQr : restaurantQr,
+  }));
 
-  const pdf = buildStarterKitPdf([
-    drawStarterKitInfoPage(branding),
-    ...pageSpecs.map((page) => drawStarterKitPage(page, branding)),
-  ]);
-  triggerDownload(pdf, "restaurant-starter-kit.pdf");
+  const pdf = buildStarterKitPdf(pageSpecs.map((page) => drawStarterKitPage(page, branding)));
+  const filename = buildStarterKitFilename(input.restaurantName);
+  triggerDownload(new File([pdf], filename, { type: "application/pdf" }), filename);
 }
 
 function linesToList(value: string) {
@@ -1055,13 +1016,26 @@ function missingChecklistItems(checklist: Record<keyof typeof checklistLabels, b
 
 function buildChecklist(form: OnboardingForm, step: number) {
   return {
-    restaurantDataCompleted: Boolean(form.restaurantName.trim() && form.restaurantType && form.language),
+    restaurantDataCompleted: Boolean(
+      form.restaurantName.trim()
+      && form.restaurantType
+      && form.language
+      && form.legalCompanyName.trim()
+      && form.legalForm.trim()
+      && form.legalStreet.trim()
+      && form.legalPostalCode.trim()
+      && form.legalCity.trim()
+      && form.legalCountry.trim()
+      && form.legalEmail.trim(),
+    ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
-    openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled),
-    bonusProgramCompleted: form.averageBill > 0 && form.firstRewardVisits > 0,
+    openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled)
+      && weekdays.every(({ key }) => validateOpeningDay(form.openingHours[key]) === null),
+    bonusProgramCompleted: Boolean(generosityReturnRates[form.generosity]),
     firstRewardCreated: form.starterRewards.filter((reward) => reward.title.trim()).length > 0,
     qrReady: true,
     guestTestReady: step >= 5,
+    legalPublicationConfirmed: form.legalPublicationConfirmed,
   };
 }
 
@@ -1070,16 +1044,15 @@ function getStepBlocker(
   form: OnboardingForm,
   checklist: Record<keyof typeof checklistLabels, boolean>,
 ) {
-  if (step === 0 && !form.restaurantName.trim()) {
-    return "Bitte gib den Namen deines Restaurants ein.";
+  if (step === 0 && !checklist.restaurantDataCompleted) {
+    return "Bitte fülle die Pflichtfelder zu deinem Restaurant und Unternehmen aus.";
   }
 
   if (step === 2 && !checklist.openingHoursCompleted) {
-    return "Bitte wähle mindestens einen Öffnungstag.";
-  }
-
-  if (step === 3 && (!form.averageBill || !form.firstRewardVisits)) {
-    return "Bitte fülle die zwei Werte für dein Bonusprogramm aus.";
+    const invalidDay = weekdays.find(({ key }) => validateOpeningDay(form.openingHours[key]));
+    return invalidDay
+      ? `${invalidDay.label}: ${validateOpeningDay(form.openingHours[invalidDay.key])}`
+      : "Bitte wähle mindestens einen Öffnungstag.";
   }
 
   if (step === 4 && form.starterRewards.filter((reward) => reward.title.trim()).length === 0) {
@@ -1087,6 +1060,9 @@ function getStepBlocker(
   }
 
   if (step === 6) {
+    if (!form.legalPublicationConfirmed) {
+      return "Bitte bestätige die Veröffentlichung der vorbereiteten Dokumente.";
+    }
     const missingItems = missingChecklistItems(checklist);
     if (missingItems.length) {
       return `Noch offen: ${missingItems.join(", ")}`;
@@ -1097,13 +1073,16 @@ function getStepBlocker(
 }
 
 export function RestaurantOnboarding() {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const { activeRestaurant, loading: tenantLoading, refreshTenants } = useTenant();
+  const smartSetup = useOwnerSmartSetupContinuation();
+  const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
+  const { activeRestaurant, branding: tenantBranding, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
   const [form, setForm] = useState<OnboardingForm>(() => createDefaultForm());
+  const [pendingOpeningHours, setPendingOpeningHours] = useState<Record<Weekday, OpeningDay> | null>(null);
   const [draftLoading, setDraftLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
@@ -1112,22 +1091,30 @@ export function RestaurantOnboarding() {
   const [draggingLogo, setDraggingLogo] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
-  const bonus = useMemo(
-    () => calculateBonus(form.averageBill, form.firstRewardVisits, form.generosity),
-    [form.averageBill, form.firstRewardVisits, form.generosity],
-  );
+  const bonus = useMemo(() => calculateBonus(form.generosity), [form.generosity]);
 
-  const restaurantSlug = slugifyRestaurant(form.restaurantName || "restaurant");
+  const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
   const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
-  const bonusQrUrl = `${publicBaseUrl}/w/${restaurantSlug}`;
+  const staffTabletUrl = `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
+  const restaurantAddressComplete = Boolean(
+    activeRestaurant?.address?.trim()
+    && activeRestaurant.postal_code?.trim()
+    && activeRestaurant.city?.trim()
+    && activeRestaurant.country?.trim(),
+  );
 
-  const checklist = useMemo(() => buildChecklist(form, step), [form, step]);
+  const effectiveForm = useMemo(
+    () => pendingOpeningHours ? { ...form, openingHours: pendingOpeningHours } : form,
+    [form, pendingOpeningHours],
+  );
+  const checklist = useMemo(() => buildChecklist(effectiveForm, step), [effectiveForm, step]);
+  const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
   const allReady = Object.values(checklist).every(Boolean);
-  const stepBlocker = getStepBlocker(step, form, checklist);
+  const stepBlocker = getStepBlocker(step, effectiveForm, checklist);
   const missingItems = missingChecklistItems(checklist);
   const selectedStarterRewardCount = form.starterRewards.length;
   const starterRewardCounterTone = selectedStarterRewardCount === 0
@@ -1140,13 +1127,7 @@ export function RestaurantOnboarding() {
     ? `wuxuai:onboarding-how-it-works-dismissed:${activeRestaurant.id}`
     : null;
 
-  const explanation = [
-    `${form.restaurantName || "Dein Restaurant"} bekommt ein eigenes digitales Bonusprogramm.`,
-    `Gäste sehen deine Öffnungszeiten: ${openDaysSummary(form.openingHours)}.`,
-    `Du planst ${bonus.returnRatePercent} Rückgabe nach ca. ${form.firstRewardVisits} Besuchen.`,
-    `${form.starterRewards.length || 1} Willkommensgeschenk wartet später zufällig auf neue Gäste.`,
-    "Willkommensgeschenke sind ein fester Teil deines Bonusprogramms.",
-  ];
+  const currentStepHelp = stepHelp[step] ?? stepHelp[0];
 
   useEffect(() => {
     let cancelled = false;
@@ -1174,7 +1155,17 @@ export function RestaurantOnboarding() {
           return;
         }
 
-        setForm(restoreForm(draft.draftData));
+        const restoredForm = restoreForm(draft.draftData);
+        setPendingOpeningHours(null);
+        setForm(restoredForm.legalAddressMatchesRestaurant && restaurantAddressComplete
+          ? {
+              ...restoredForm,
+              legalStreet: activeRestaurant.address ?? "",
+              legalPostalCode: activeRestaurant.postal_code ?? "",
+              legalCity: activeRestaurant.city ?? "",
+              legalCountry: activeRestaurant.country ?? "AT",
+            }
+          : restoredForm);
         setStep(draft.currentStep);
       } catch (error) {
         if (!cancelled) {
@@ -1192,7 +1183,7 @@ export function RestaurantOnboarding() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant?.id, navigate, tenantLoading]);
+  }, [activeRestaurant, navigate, restaurantAddressComplete, tenantLoading]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1212,7 +1203,7 @@ export function RestaurantOnboarding() {
   }, [activeRestaurant?.id]);
 
   useEffect(() => {
-    if (draftLoading || tenantLoading || !activeRestaurant?.id) {
+    if (draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
       return;
     }
 
@@ -1237,7 +1228,7 @@ export function RestaurantOnboarding() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [activeRestaurant?.id, checklist, draftLoading, form, step, tenantLoading]);
+  }, [activeRestaurant?.id, checklist, draftLoading, form, pendingOpeningHours, step, tenantLoading]);
 
   async function persistDraftSnapshot(nextStep: number, nextForm: OnboardingForm) {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1259,6 +1250,16 @@ export function RestaurantOnboarding() {
   }
 
   function updateOpeningDay(day: Weekday, nextDay: Partial<OpeningDay>) {
+    if (pendingOpeningHours) {
+      setPendingOpeningHours((current) => current ? ({
+        ...current,
+        [day]: {
+          ...current[day],
+          ...nextDay,
+        },
+      }) : current);
+      return;
+    }
     setForm((current) => ({
       ...current,
       openingHours: {
@@ -1406,8 +1407,17 @@ export function RestaurantOnboarding() {
     });
   }
 
-  function openGuestPreview() {
-    window.open(`/customer/${restaurantSlug}`, "_blank", "noopener,noreferrer");
+  function setLegalAddressMatchesRestaurant(checked: boolean) {
+    setForm((current) => ({
+      ...current,
+      legalAddressMatchesRestaurant: checked,
+      ...(checked && restaurantAddressComplete ? {
+        legalStreet: activeRestaurant?.address ?? "",
+        legalPostalCode: activeRestaurant?.postal_code ?? "",
+        legalCity: activeRestaurant?.city ?? "",
+        legalCountry: activeRestaurant?.country ?? "AT",
+      } : {}),
+    }));
   }
 
   function closeHowItWorks() {
@@ -1429,12 +1439,31 @@ export function RestaurantOnboarding() {
     const nextStep = Math.max(0, step - 1);
     setStatus(null);
     if (await persistDraftSnapshot(nextStep, form)) {
+      if (step === 2) setPendingOpeningHours(null);
       setStep(nextStep);
     }
   }
 
   async function goToNextStep() {
     if (stepBlocker) {
+      setStatus(stepBlocker);
+      const firstInvalidId = step === 0
+        ? ["restaurant-name", "restaurant-type", "language", "legal-company-name", "legal-form", "legal-email", "legal-street", "legal-postal-code", "legal-city", "legal-country"].find((id) => {
+            const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+            return field && !field.checkValidity();
+          })
+        : step === 2
+          ? (() => {
+              const invalidDay = weekdays.find(({ key }) => validateOpeningDay(effectiveForm.openingHours[key]));
+              return invalidDay ? `onboarding-${invalidDay.key}-open` : null;
+            })()
+          : step === 3
+            ? ["average-bill", "first-reward-visits", "first-reward-type"].find((id) => {
+                const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+                return field && !field.checkValidity();
+              })
+            : null;
+      if (firstInvalidId) document.getElementById(firstInvalidId)?.focus();
       return;
     }
 
@@ -1448,28 +1477,39 @@ export function RestaurantOnboarding() {
 
     const nextStep = Math.min(steps.length - 1, step + 1);
     setStatus(null);
-    if (await persistDraftSnapshot(nextStep, form)) {
+    if (await persistDraftSnapshot(nextStep, effectiveForm)) {
+      setForm(effectiveForm);
+      setPendingOpeningHours(null);
       setStep(nextStep);
     }
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (submissionInFlightRef.current) {
+      return;
+    }
+
     if (!allReady) {
       setStatus("Bitte die offenen Punkte in der Checkliste abschließen.");
       return;
     }
 
+    if (!activeRestaurant?.id) {
+      setStatus("Das bestehende Restaurant konnte nicht aktiviert werden.");
+      return;
+    }
+
+    submissionInFlightRef.current = true;
+    setSaving(true);
     setStatus(null);
 
     try {
       const result = await completePilotOnboarding({
-        restaurantId: activeRestaurant?.id ?? null,
-        ownerId: user?.id ?? null,
+        restaurantId: activeRestaurant.id,
         restaurantName: form.restaurantName.trim(),
         restaurantType: form.restaurantType,
         language: form.language,
-        slug: restaurantSlug,
         logoUrl: form.logoUrl || null,
         primaryColor: form.primaryColor,
         secondaryColor: form.secondaryColor,
@@ -1478,7 +1518,6 @@ export function RestaurantOnboarding() {
         specialDays: linesToList(form.specialDays),
         holidays: linesToList(form.holidays),
         smartOpenEnabled: form.smartOpenEnabled,
-        onboardingStatus: "ready",
         onboardingChecklist: checklist,
         loyaltyMode: "amount_based",
         amountPerPoint: bonus.amountPerPoint,
@@ -1494,16 +1533,33 @@ export function RestaurantOnboarding() {
         })),
         staffName: form.staffName,
         staffPin: form.staffPin,
+          legalProfile: {
+            company_name: form.legalCompanyName.trim(),
+            legal_form: form.legalForm.trim(),
+            registered_address_matches_restaurant: form.legalAddressMatchesRestaurant,
+            street: form.legalStreet.trim(),
+          postal_code: form.legalPostalCode.trim(),
+          city: form.legalCity.trim(),
+          country: form.legalCountry.trim(),
+          email: form.legalEmail.trim(),
+          commercial_register_number: normalizeCompanyRegistrationNumber(form.legalCompanyRegistrationNumber, form.legalCountry),
+          vat_id: normalizeVatId(form.legalVatId, form.legalCountry),
+          responsible_person: form.legalAuthorizedRepresentative.trim(),
+          complaint_contact: form.legalComplaintContact.trim() || form.legalEmail.trim(),
+        },
+        legalPublicationConfirmed: form.legalPublicationConfirmed,
       });
-      if (activeRestaurant?.id) {
-        await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
-      }
+      await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
       await refreshTenants();
       setStatus(`${result.restaurant.name} ist startklar.`);
       setStep(steps.length - 1);
-      navigate("/admin", { replace: true });
+      if (!smartSetup.complete("onboarding_completed")) navigate("/admin", { replace: true });
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Restaurant konnte nicht eröffnet werden.");
+      console.error("Onboarding-Abschluss fehlgeschlagen.", safeLegalRpcError(error));
+      setStatus(onboardingCompletionErrorMessage(error));
+    } finally {
+      submissionInFlightRef.current = false;
+      setSaving(false);
     }
   }
 
@@ -1517,57 +1573,73 @@ export function RestaurantOnboarding() {
 
   return (
     <>
-      <header className="page-header installation-header">
-        <div>
-          <span className="pill">Restaurant einrichten</span>
+      <header className="installation-header">
+        <div className="installation-header-copy">
+          <span className="installation-eyebrow">Restaurant einrichten</span>
           <h1>Willkommen! In wenigen Minuten startet dein digitales Bonusprogramm.</h1>
-          <p className="muted">Gleich bereit für Gäste.</p>
+          <p>Gleich bereit für deine Gäste.</p>
         </div>
-        <div className="row-actions">
-          {saving ? <span className="pill">Speichert...</span> : null}
-          <span className="pill">Schritt {step + 1} von {steps.length}</span>
-          <button className="button secondary compact-button" onClick={() => setHowItWorksOpen(true)} type="button">
+        <div className="installation-header-actions">
+          {onboardingRestaurantAction}
+          <button
+            aria-label={`Hilfe zu Schritt ${step + 1}: ${steps[step]}`}
+            className="button secondary installation-help-action"
+            onClick={() => setHowItWorksOpen(true)}
+            type="button"
+          >
             <Info size={17} />
-            So funktioniert's
+            <span className="installation-help-label">Hilfe</span>
           </button>
+          {onboardingAccountAction}
         </div>
       </header>
 
+      <section className="onboarding-progress" aria-labelledby="onboarding-progress-title">
+        <div className="onboarding-progress-copy">
+          <div>
+            <span>Schritt {step + 1} von {steps.length}</span>
+            <h2 id="onboarding-progress-title">{stepTitles[step]}</h2>
+          </div>
+          <span>{progressPercent} % abgeschlossen</span>
+        </div>
+        <div
+          aria-label={`${progressPercent} Prozent abgeschlossen`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={progressPercent}
+          className="onboarding-progress-track"
+          role="progressbar"
+        >
+          <span style={{ width: `${progressPercent}%` }} />
+        </div>
+        {saving ? <span className="onboarding-saving-status" role="status">Änderungen werden gespeichert...</span> : null}
+      </section>
+
       <section className="onboarding-layout">
         <form className="card onboarding-card installation-card form" onSubmit={handleSubmit}>
-          <div className="setup-steps" aria-label="Einrichtungsschritte">
-            {steps.map((label, index) => (
-              <button
-                className={`setup-step${index === step ? " active" : ""}${index < step ? " done" : ""}`}
-                aria-current={index === step ? "step" : undefined}
-                disabled
-                key={label}
-                type="button"
-              >
-                {index + 1}. {label}
-              </button>
-            ))}
-          </div>
-
           {step === 0 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[0]}</h2>
+              <RequiredFieldsNote />
               <div className="field">
-                <label htmlFor="restaurant-name">Wie heißt dein Restaurant?</label>
+                <FormLabel htmlFor="restaurant-name" required>Wie heißt dein Restaurant?</FormLabel>
                 <input
+                  aria-required="true"
                   className="input input-large"
                   id="restaurant-name"
                   placeholder="z. B. Café am Markt"
+                  required
                   value={form.restaurantName}
                   onChange={(event) => setForm((current) => ({ ...current, restaurantName: event.target.value }))}
                 />
               </div>
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="restaurant-type">Was passt am besten zu dir?</label>
+                  <FormLabel htmlFor="restaurant-type" required>Was passt am besten zu dir?</FormLabel>
                   <select
+                    aria-required="true"
                     className="select input-large"
                     id="restaurant-type"
+                    required
                     value={form.restaurantType}
                     onChange={(event) => setForm((current) => ({ ...current, restaurantType: event.target.value }))}
                   >
@@ -1579,10 +1651,12 @@ export function RestaurantOnboarding() {
                   </select>
                 </div>
                 <div className="field">
-                  <label htmlFor="language">Welche Sprache sollen deine Gäste sehen?</label>
+                  <FormLabel htmlFor="language" required>Welche Sprache sollen deine Gäste sehen?</FormLabel>
                   <select
+                    aria-required="true"
                     className="select input-large"
                     id="language"
+                    required
                     value={form.language}
                     onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}
                   >
@@ -1591,12 +1665,85 @@ export function RestaurantOnboarding() {
                   </select>
                 </div>
               </div>
+              <div className="onboarding-legal-fields">
+                <div>
+                  <span className="premium-dashboard-kicker">Unternehmensdaten</span>
+                  <h3>Rechtliche Angaben zu deinem Betrieb</h3>
+                  <p className="muted">Diese Angaben werden später für rechtliche Dokumente, Impressum und Abrechnungsdaten verwendet. FN und UID kannst du auch später ergänzen.</p>
+                </div>
+                <div className="grid two">
+                  <div className="field">
+                    <FormLabel htmlFor="legal-company-name" required>Rechtlicher Unternehmensname</FormLabel>
+                    <input aria-required="true" className="input" id="legal-company-name" onChange={(event) => setForm((current) => ({ ...current, legalCompanyName: event.target.value }))} placeholder="z. B. Muster Gastro GmbH" required value={form.legalCompanyName} />
+                  </div>
+                  <div className="field">
+                    <FormLabel htmlFor="legal-form" required>Rechtsform</FormLabel>
+                    <input aria-required="true" className="input" id="legal-form" list="legal-form-options" onChange={(event) => setForm((current) => ({ ...current, legalForm: event.target.value }))} placeholder="z. B. Einzelunternehmen" required value={form.legalForm} />
+                    <datalist id="legal-form-options">{legalFormSuggestions.map((legalForm) => <option key={legalForm} value={legalForm} />)}</datalist>
+                  </div>
+                  <div className="field">
+                    <FormLabel htmlFor="legal-email" required>Kontakt-E-Mail</FormLabel>
+                    <input aria-required="true" className="input" id="legal-email" onChange={(event) => setForm((current) => ({ ...current, legalEmail: event.target.value }))} required type="email" value={form.legalEmail} />
+                  </div>
+                  <label className="legal-address-source-toggle" htmlFor="legal-address-matches-restaurant">
+                    <input
+                      checked={form.legalAddressMatchesRestaurant}
+                      id="legal-address-matches-restaurant"
+                      onChange={(event) => setLegalAddressMatchesRestaurant(event.target.checked)}
+                      type="checkbox"
+                    />
+                    <span>Geschäftsanschrift entspricht Restaurantadresse</span>
+                  </label>
+                  {form.legalAddressMatchesRestaurant && !restaurantAddressComplete ? <p className="field-hint">Die eingegebene Adresse wird zugleich als Restaurant- und Geschäftsanschrift gespeichert.</p> : null}
+                  {!form.legalAddressMatchesRestaurant ? <p className="field-hint">Diese Geschäftsanschrift bleibt von späteren Änderungen der Restaurantadresse getrennt.</p> : null}
+                  <div className="field">
+                    <FormLabel htmlFor="legal-street" required>Straße und Hausnummer</FormLabel>
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-street" onChange={(event) => setForm((current) => ({ ...current, legalStreet: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalStreet} />
+                  </div>
+                  <div className="field">
+                    <FormLabel htmlFor="legal-postal-code" required>Postleitzahl</FormLabel>
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-postal-code" inputMode="numeric" onChange={(event) => setForm((current) => ({ ...current, legalPostalCode: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalPostalCode} />
+                  </div>
+                  <div className="field">
+                    <FormLabel htmlFor="legal-city" required>Ort</FormLabel>
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-city" onChange={(event) => setForm((current) => ({ ...current, legalCity: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalCity} />
+                  </div>
+                  <div className="field">
+                    <FormLabel htmlFor="legal-country" required>Land</FormLabel>
+                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalCountry} />
+                  </div>
+                </div>
+                <details className="advanced-panel">
+                  <summary>Weitere Unternehmensangaben (optional)</summary>
+                  <div className="grid two">
+                    <div className="field">
+                      <FormLabel htmlFor="legal-company-registration" optional>{companyRegistrationLabel(form.legalCountry)}</FormLabel>
+                      <input className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} value={form.legalCompanyRegistrationNumber} />
+                      {optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry)}</p> : null}
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-vat-id" optional>{vatIdLabel(form.legalCountry)}</FormLabel>
+                      <input autoCapitalize="characters" className="input" id="legal-vat-id" onBlur={(event) => setForm((current) => ({ ...current, legalVatId: normalizeVatId(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalVatId: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. ATU12345678" : undefined} value={form.legalVatId} />
+                      {optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry)}</p> : null}
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-authorized-representative" optional>Vertretungsberechtigte Person / Geschäftsführung</FormLabel>
+                      <input className="input" id="legal-authorized-representative" onChange={(event) => setForm((current) => ({ ...current, legalAuthorizedRepresentative: event.target.value }))} value={form.legalAuthorizedRepresentative} />
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-complaint-contact" optional>Beschwerdekontakt</FormLabel>
+                      <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />
+                      <p className="muted">Wenn du nichts einträgst, verwenden wir deine Kontakt-E-Mail.</p>
+                    </div>
+                  </div>
+                </details>
+              </div>
             </section>
           ) : null}
 
           {step === 1 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[1]}</h2>
+              <RequiredFieldsNote />
               <div
                 className={`logo-dropzone${draggingLogo ? " active" : ""}`}
                 onDragEnter={(event) => {
@@ -1617,7 +1764,13 @@ export function RestaurantOnboarding() {
                 />
                 <div className="logo-preview-box">
                   {visibleLogoUrl ? (
-                    <img alt={`${form.restaurantName || "Restaurant"} Logo`} src={visibleLogoUrl} />
+                    <RestaurantLogoStage
+                      alt={`${form.restaurantName || "Restaurant"} Logo`}
+                      logoUrl={visibleLogoUrl}
+                      name={form.restaurantName || "Restaurant"}
+                      primaryColor={form.primaryColor}
+                      size="header"
+                    />
                   ) : (
                     <ImagePlus size={36} />
                   )}
@@ -1640,37 +1793,27 @@ export function RestaurantOnboarding() {
                 </div>
               ) : null}
 
-              <details className="advanced-panel">
-                <summary>Erweitert</summary>
-                <div className="field">
-                  <label htmlFor="logo-url">Logo-Link manuell einfügen</label>
-                  <input
-                    className="input"
-                    id="logo-url"
-                    placeholder="https://..."
-                    value={form.logoUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))}
-                  />
-                </div>
-              </details>
-
               <div className="grid two">
                 <div className="field">
-                  <label htmlFor="primary-color">Deine Markenfarbe</label>
+                  <FormLabel htmlFor="primary-color" required>Deine Markenfarbe</FormLabel>
                   <p className="muted">Diese Farbe wird für Buttons, Bonuskarten und Highlights verwendet.</p>
                   <input
+                    aria-required="true"
                     className="input color-input"
                     id="primary-color"
+                    required
                     type="color"
                     value={form.primaryColor}
                     onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="secondary-color">Deine Akzentfarbe</label>
+                  <FormLabel htmlFor="secondary-color" required>Deine Akzentfarbe</FormLabel>
                   <input
+                    aria-required="true"
                     className="input color-input"
                     id="secondary-color"
+                    required
                     type="color"
                     value={form.secondaryColor}
                     onChange={(event) => setForm((current) => ({ ...current, secondaryColor: event.target.value }))}
@@ -1696,22 +1839,10 @@ export function RestaurantOnboarding() {
               <section className="brand-live-preview">
                 <article className="customer-app-preview" style={{ borderColor: form.primaryColor }}>
                   <div className="customer-brand-header restaurant-brand-header">
-                    <span className="restaurant-logo-frame">
-                      {visibleLogoUrl ? (
-                        <img
-                          className="customer-logo restaurant-logo-image"
-                          alt={`${form.restaurantName || "Restaurant"} Logo`}
-                          src={visibleLogoUrl}
-                        />
-                      ) : (
-                        <span className="restaurant-logo-placeholder" style={{ background: bonusCardColor }}>
-                          {(form.restaurantName.trim().charAt(0) || "R").toUpperCase()}
-                        </span>
-                      )}
-                    </span>
+                    <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={visibleLogoUrl} name={form.restaurantName || "Restaurant"} primaryColor={form.primaryColor} size="header" />
                     <div className="restaurant-brand-copy">
                       <h3 className="restaurant-brand-title">{form.restaurantName || "Dein Restaurant"}</h3>
-                      <p className="restaurant-brand-subtitle">Mein Bonus</p>
+                      <p className="restaurant-brand-subtitle">Meine Vorteile</p>
                     </div>
                   </div>
                   <div className="bonus-preview-card" style={{ background: bonusCardColor, borderColor: form.secondaryColor }}>
@@ -1719,26 +1850,12 @@ export function RestaurantOnboarding() {
                     <strong style={{ color: form.primaryColor }}>0 Punkte</strong>
                     <p>Punkteeinlösungen sammeln und beim nächsten Besuch einlösen.</p>
                   </div>
-                  <button className="button customer-primary-button" style={{ background: form.primaryColor }} type="button">
+                  <span
+                    className="button customer-primary-button onboarding-preview-button"
+                    style={{ background: form.primaryColor }}
+                  >
                     Bonus öffnen
-                  </button>
-                </article>
-
-                <article className="qr-preview-panel">
-                  <h3>So testest du es als Gast</h3>
-                  <div className="mini-qr-grid">
-                    <div>
-                      <QRCodeSVG value={restaurantQrUrl} size={96} level="M" />
-                      <span>Restaurant</span>
-                    </div>
-                    <div>
-                      <QRCodeSVG value={bonusQrUrl} size={96} level="M" />
-                      <span>Mein Bonus</span>
-                    </div>
-                  </div>
-                  <button className="button secondary" onClick={openGuestPreview} type="button">
-                    Als Gast ansehen
-                  </button>
+                  </span>
                 </article>
               </section>
             </section>
@@ -1746,33 +1863,18 @@ export function RestaurantOnboarding() {
 
           {step === 2 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[2]}</h2>
+              <RequiredFieldsNote />
               <div className="schedule-grid">
-                {weekdays.map(({ key, label }) => (
-                  <article className="schedule-row" key={key}>
-                    <label className="inline-check">
-                      <input
-                        checked={form.openingHours[key].enabled}
-                        onChange={(event) => updateOpeningDay(key, { enabled: event.target.checked })}
-                        type="checkbox"
-                      />
-                      {label}
-                    </label>
-                    <input
-                      className="input"
-                      disabled={!form.openingHours[key].enabled}
-                      type="time"
-                      value={form.openingHours[key].open}
-                      onChange={(event) => updateOpeningDay(key, { open: event.target.value })}
-                    />
-                    <input
-                      className="input"
-                      disabled={!form.openingHours[key].enabled}
-                      type="time"
-                      value={form.openingHours[key].close}
-                      onChange={(event) => updateOpeningDay(key, { close: event.target.value })}
-                    />
-                  </article>
+                <OpeningHoursEditor dayLabel="Montag" idPrefix="onboarding-mon" onChange={(patch) => updateOpeningDay("mon", patch)} value={effectiveForm.openingHours.mon} />
+                <OpeningHoursCopyAction
+                  destinationKeys={weekdays.slice(1).map(({ key }) => key)}
+                  onChange={setPendingOpeningHours}
+                  openingHours={effectiveForm.openingHours}
+                  sourceKey="mon"
+                  sourceLabel="Montag"
+                />
+                {weekdays.slice(1).map(({ key, label }) => (
+                  <OpeningHoursEditor dayLabel={label} idPrefix={`onboarding-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={effectiveForm.openingHours[key]} />
                 ))}
               </div>
               <div className="grid two">
@@ -1810,48 +1912,7 @@ export function RestaurantOnboarding() {
 
           {step === 3 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[3]}</h2>
-              <p className="muted">Lege fest, wie viel Gegenwert Gäste nach mehreren Besuchen einlösen können.</p>
-              <div className="grid two">
-                <div className="field">
-                  <label htmlFor="average-bill">Was gibt ein Gast durchschnittlich aus?</label>
-                  <input
-                    className="input input-large"
-                    id="average-bill"
-                    min="1"
-                    type="number"
-                    value={form.averageBill}
-                    onChange={(event) => setForm((current) => ({ ...current, averageBill: Number(event.target.value) || 1 }))}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="first-reward-visits">Nach wie vielen Besuchen soll die erste Freude kommen?</label>
-                  <input
-                    className="input input-large"
-                    id="first-reward-visits"
-                    min="1"
-                    type="number"
-                    value={form.firstRewardVisits}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, firstRewardVisits: Number(event.target.value) || 1 }))
-                    }
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label htmlFor="first-reward-type">Was möchtest du gerne geben?</label>
-                <select
-                  className="select input-large"
-                  id="first-reward-type"
-                  value={form.firstRewardType}
-                  onChange={(event) => setForm((current) => ({ ...current, firstRewardType: event.target.value }))}
-                >
-                  <option>Gratis Produkt</option>
-                  <option>Rabatt</option>
-                  <option>Upgrade</option>
-                  <option>Überraschung</option>
-                </select>
-              </div>
+              <p className="muted">Wähle, wie großzügig dein Bonusprogramm sein soll. WUXUAI übernimmt die Referenzrechnung.</p>
               <div className="choice-grid">
                 {(["Sparsam", "Normal", "Großzügig", "Premium"] as Generosity[]).map((option) => (
                   <button
@@ -1867,18 +1928,18 @@ export function RestaurantOnboarding() {
                 ))}
               </div>
               <article className="calculation-card">
-                <strong>Unsere Empfehlung für dich</strong>
+                <strong>Beispiel mit unseren V1-Richtwerten</strong>
                 <p className="muted">
                   {form.generosity} gewählt: {bonus.returnRatePercent} Rückgabe.
                 </p>
                 <p className="muted">
-                  Erwartete Konsumation bis zur Einlösung: {formatEuro(form.averageBill)} × {form.firstRewardVisits} Besuche = {formatEuro(bonus.expectedConsumptionEuro)}
+                  {formatEuro(BONUS_REFERENCE_SPEND_EURO)} pro Besuch × {BONUS_REFERENCE_VISITS} Besuche = {formatEuro(bonus.expectedConsumptionEuro)} Referenzkonsumation.
                 </p>
                 <p className="muted">
-                  Empfohlener Einlösewert: {bonus.returnRatePercent} von {formatEuro(bonus.expectedConsumptionEuro)} = {formatEuro(bonus.rewardValueEuro, true)}
+                  {bonus.returnRatePercent} davon entsprechen ungefähr {formatEuro(bonus.rewardValueEuro, true)} Einlösewert.
                 </p>
                 <p className="muted">
-                  WUXUAI berechnet daraus später automatisch die passende Punkte-Einlösung.
+                  Das ist nur ein Rechenbeispiel. Gäste müssen weder genau {formatEuro(BONUS_REFERENCE_SPEND_EURO)} ausgeben noch genau {BONUS_REFERENCE_VISITS} Mal kommen.
                 </p>
               </article>
             </section>
@@ -1886,10 +1947,16 @@ export function RestaurantOnboarding() {
 
           {step === 4 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[4]}</h2>
               <article className="calculation-card">
                 <strong>Welche Willkommensgeschenke möchtest du anbieten?</strong>
-                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Jeder neue Gast erhält zufällig eines davon.</p>
+                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Das System teilt jedem neuen Mitglied automatisch eines davon zu.</p>
+              </article>
+
+              <article className="welcome-distribution-notice">
+                <strong>Automatische Geschenkverteilung</strong>
+                <p>
+                  Die verfügbaren Willkommensgeschenke werden automatisch durch WUXUAI zugeteilt. Du legst fest, welche Geschenke verfügbar sind – die Verteilung übernimmt das System automatisch.
+                </p>
               </article>
 
               {!starterRewardConfirmationOpen ? (
@@ -1935,7 +2002,7 @@ export function RestaurantOnboarding() {
                     ))}
                   </div>
                   <p className="muted">
-                    Jeder neue Gast erhält zufällig eines dieser Willkommensgeschenke.
+                    Jeder neue Gast erhält automatisch eines dieser Willkommensgeschenke.
                   </p>
                   <p className="muted">
                     Welches konkrete Produkt du verschenkst, entscheidest du später im Bereich Willkommensgeschenke.
@@ -1957,11 +2024,10 @@ export function RestaurantOnboarding() {
 
           {step === 5 ? (
             <section className="wizard-screen">
-              <h2>{stepTitles[5]}</h2>
               <article className="calculation-card">
                 <strong>Restaurant Starter Kit</strong>
                 <p className="muted">
-                  Lade dein druckfertiges Paket herunter. Es enthält alles für Eingang und Kassa.
+                  Lade dein druckfertiges Paket für neue Gäste und dein Team herunter.
                 </p>
               </article>
               <div className="qr-launch-grid">
@@ -1976,14 +2042,14 @@ export function RestaurantOnboarding() {
                   url={restaurantQrUrl}
                 />
                 <QrLaunchCard
-                  description="Bestandsgäste scannen diesen QR-Code nach dem Bezahlen und sammeln Bonuspunkte."
-                  icon="🎁"
-                  id="bonus-qr"
+                  description="Dein Team öffnet damit den geschützten Mitarbeiterbereich. Eine Anmeldung bleibt erforderlich."
+                  icon="👥"
+                  id="staff-qr"
                   logoUrl={visibleLogoUrl}
                   restaurantName={form.restaurantName}
-                  subtitle="Mein Bonus"
-                  title="Bonuspunkte sammeln"
-                  url={bonusQrUrl}
+                  subtitle="Nur für dein Team"
+                  title="Mitarbeiterbereich"
+                  url={staffTabletUrl}
                 />
               </div>
               <div className="starter-kit-action">
@@ -1991,12 +2057,18 @@ export function RestaurantOnboarding() {
                   className="button starter-kit-button"
                   onClick={() => {
                     downloadRestaurantStarterKit({
-                      bonusQrId: "bonus-qr",
                       logoUrl: visibleLogoUrl,
+                      logoPresentation: tenantBranding ? {
+                        fitMode: tenantBranding.logo_fit_mode,
+                        positionX: tenantBranding.logo_position_x,
+                        positionY: tenantBranding.logo_position_y,
+                        scale: tenantBranding.logo_scale,
+                      } : null,
                       primaryColor: form.primaryColor,
                       restaurantName: form.restaurantName,
                       restaurantQrId: "restaurant-qr",
                       secondaryColor: form.secondaryColor,
+                      staffQrId: "staff-qr",
                     }).catch((error) => {
                       window.alert(error instanceof Error ? error.message : "Restaurant Starter Kit konnte nicht gespeichert werden.");
                     });
@@ -2011,8 +2083,7 @@ export function RestaurantOnboarding() {
           ) : null}
 
           {step === 6 ? (
-            <section className="wizard-screen">
-              <h2>{stepTitles[6]}</h2>
+            <section className="wizard-screen onboarding-completion-screen">
               <div className="rule-list">
                 <ChecklistRow done={checklist.restaurantDataCompleted} label={checklistLabels.restaurantDataCompleted} />
                 <ChecklistRow done={checklist.brandingCompleted} label={checklistLabels.brandingCompleted} />
@@ -2021,7 +2092,23 @@ export function RestaurantOnboarding() {
                 <ChecklistRow done={checklist.firstRewardCreated} label={checklistLabels.firstRewardCreated} />
                 <ChecklistRow done={checklist.guestTestReady} label={checklistLabels.guestTestReady} />
                 <ChecklistRow done={checklist.qrReady} label={checklistLabels.qrReady} />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Rechtliche Stammdaten gespeichert" />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Teilnahmebedingungen vorbereitet" />
+                <ChecklistRow done={checklist.restaurantDataCompleted} label="Datenschutzerklärung vorbereitet" />
+                <ChecklistRow done={checklist.legalPublicationConfirmed} label={checklistLabels.legalPublicationConfirmed} />
               </div>
+              <label className="inline-check large-check onboarding-legal-confirmation">
+                <input
+                  checked={form.legalPublicationConfirmed}
+                  onChange={(event) => setForm((current) => ({ ...current, legalPublicationConfirmed: event.target.checked }))}
+                  required
+                  type="checkbox"
+                />
+                <span>
+                  <strong>Ich habe meine Unternehmens- und Bonusprogrammdaten geprüft und möchte die automatisch vorbereiteten Dokumente veröffentlichen.</strong>
+                  <small>Die Vorlagen wurden automatisch erstellt und ersetzen keine individuelle Rechtsberatung.</small>
+                </span>
+              </label>
               {!allReady ? (
                 <div className="status-message">
                   <strong>Fast geschafft.</strong>
@@ -2042,8 +2129,9 @@ export function RestaurantOnboarding() {
             </button>
             {step < steps.length - 1 ? (
               <button
+                aria-disabled={saving || Boolean(stepBlocker)}
                 className="button"
-                disabled={saving || Boolean(stepBlocker)}
+                disabled={saving}
                 onClick={goToNextStep}
                 type="button"
               >
@@ -2062,34 +2150,31 @@ export function RestaurantOnboarding() {
       </section>
 
       <AppDrawer
-        description="Die wichtigsten Schritte deines Bonusprogramms."
+        description={`Schritt ${step + 1}: ${steps[step]}`}
         footer={<button className="button" onClick={closeHowItWorks} type="button">Verstanden</button>}
         onClose={closeHowItWorks}
         open={howItWorksOpen}
         size="compact"
-        title="So funktioniert's"
+        title="Hilfe zu diesem Schritt"
       >
-        <div className="rule-list">
-          {explanation.map((line) => (
-            <p className="muted" key={line}>{line}</p>
+        <div className="onboarding-help-sections">
+          {[
+            ["Was richtest du ein?", currentStepHelp.configure],
+            ["Warum ist das wichtig?", currentStepHelp.importance],
+            ["Worauf solltest du achten?", currentStepHelp.attention],
+          ].map(([title, content]) => (
+            <section className="onboarding-help-section" key={title}>
+              <strong>{title}</strong>
+              <p className="muted">{content}</p>
+            </section>
           ))}
         </div>
         <article className="calculation-card">
-          <strong>Deine Gäste sollen schnell verstehen, warum sie wiederkommen.</strong>
-          <p className="muted">
-            Wir übersetzen deine Antworten in ein einfaches Bonusprogramm, das im Restaurant sofort erklärbar ist.
-          </p>
+          <strong>{currentStepHelp.note}</strong>
         </article>
       </AppDrawer>
     </>
   );
-}
-
-function openDaysSummary(openingHours: Record<Weekday, OpeningDay>) {
-  const activeDays = weekdays.filter(({ key }) => openingHours[key].enabled);
-  if (activeDays.length === 0) return "Keine Öffnungszeiten";
-  if (activeDays.length === 7) return "Alle Wochentage";
-  return activeDays.map((day) => day.label).join(", ");
 }
 
 function StandardRewardIcon({ asset, size }: { asset: StarterRewardTemplate["asset"]; size: number }) {
@@ -2133,14 +2218,7 @@ function QrLaunchCard({
   return (
     <article className="card qr-box-large starter-qr-card">
       <div className="starter-qr-logo">
-        {logoUrl ? (
-          <img alt={`${restaurantName || "Restaurant"} Logo`} src={logoUrl} />
-        ) : (
-          <span>
-            WUXUAI
-            <small>Bonus</small>
-          </span>
-        )}
+        <RestaurantLogoStage logoUrl={logoUrl} name={restaurantName || "Restaurant"} size="print" />
       </div>
       <span className="starter-qr-icon" aria-hidden="true">{icon}</span>
       <div className="starter-qr-heading">
@@ -2148,7 +2226,7 @@ function QrLaunchCard({
         <p>{subtitle}</p>
       </div>
       <div className="starter-qr-code">
-        <QRCodeSVG id={id} value={url} size={178} level="M" />
+        <OperationalQrCode id={id} title={`${title} QR-Code`} value={url} />
       </div>
       <p className="starter-qr-description">{description}</p>
     </article>

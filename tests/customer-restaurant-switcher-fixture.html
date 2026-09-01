@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Restaurant Switcher Fixture</title>
+  <link rel="stylesheet" href="../src/styles.css" />
+  <link rel="stylesheet" href="../src/modules/customer/customer-premium.css" />
+  <link rel="stylesheet" href="../src/modules/customer/components/customer-restaurant-switcher.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    .fixture-icon { align-items: center; display: inline-flex; justify-content: center; }
+    .fixture-info { font-size: 22px; }
+    .fixture-chevron { color: #956820; }
+  </style>
+</head>
+<body class="customer-premium-shell">
+  <main class="customer-page-container">
+    <header class="premium-customer-header compact">
+      <button aria-label="Aktuelles Restaurant wechseln" class="premium-customer-restaurant-selector" type="button">
+        <span class="premium-restaurant-logo"><span aria-hidden="true" style="background:#956820">K</span></span>
+        <span class="premium-customer-header-copy"><strong>Kaffee Konditorei Bäckerei Familienbetrieb Innenstadt</strong></span>
+        <span class="fixture-chevron">⌄</span>
+      </button>
+      <button aria-label="So funktioniert's öffnen" class="premium-icon-button fixture-info" type="button">ⓘ</button>
+    </header>
+  </main>
+  <div class="app-drawer-overlay">
+    <aside class="app-drawer-panel app-drawer-standard" role="dialog">
+      <span class="app-drawer-handle"></span>
+      <header class="app-drawer-header"><div><h2>Restaurant wechseln</h2><p>Wähle eines deiner Restaurants.</p></div><button aria-label="Ansicht schließen" class="app-drawer-close" type="button">×</button></header>
+      <div class="app-drawer-body">
+        <div class="customer-restaurant-switcher">
+          <section><h3>Aktuell</h3><button class="customer-restaurant-switcher-row current" type="button"><span class="premium-restaurant-logo"><span style="background:#956820">K</span></span><span class="customer-restaurant-switcher-copy"><strong>Kaffee Konditorei Bäckerei Familienbetrieb Innenstadt</strong><small>Wien</small></span><span class="customer-restaurant-switcher-points">93 Punkte</span><span class="customer-restaurant-switcher-current">✓ Aktuell</span></button></section>
+          <section><h3>Deine Restaurants</h3><label class="customer-restaurant-switcher-search"><span>⌕</span><input placeholder="Restaurant filtern" type="search" /></label><div class="customer-restaurant-switcher-list" id="fixture-list"></div></section>
+          <a class="customer-restaurant-switcher-discover" href="#">＋ Neues Restaurant entdecken</a>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <script>
+    const list = document.querySelector("#fixture-list");
+    for (let index = 1; index <= 19; index += 1) {
+      const row = document.createElement("button");
+      row.className = "customer-restaurant-switcher-row";
+      row.type = "button";
+      row.innerHTML = `<span class="premium-restaurant-logo"><span style="background:#956820">R</span></span><span class="customer-restaurant-switcher-copy"><strong>Restaurant mit langem Namen ${index}</strong><small>${index % 2 ? "Wien" : "Traiskirchen"}</small></span><span class="customer-restaurant-switcher-points">${index === 2 ? 0 : index * 10} Punkte</span>`;
+      list.append(row);
+    }
+  </script>
+</body>
+</html>

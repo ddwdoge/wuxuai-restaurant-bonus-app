@@ -19,11 +19,19 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import {
   RewardImageFrame,
 } from "../../../shared/components/RewardImageFrame";
 import { DEFAULT_REWARD_IMAGE_CROP, rewardImageCropFromRecord, type RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { loadLoyaltySettings } from "../../loyalty/loyaltyService";
+import {
+  DEFAULT_REDEMPTION_RATE_PERCENT,
+  calculateRewardEconomics,
+  isAllowedRedemptionRatePercent,
+  parseRewardRedemptionRate,
+  redemptionRateToPercent,
+} from "../../loyalty/redemptionRate.mjs";
 import {
   isRewardImageCropMigrationRequiredError,
   loadRewardOffers,
@@ -36,7 +44,9 @@ import { useTenant } from "../../tenant/TenantProvider";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
+import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type RewardCalculationSettings = {
@@ -76,7 +86,7 @@ const rewardTemplates: RewardTemplate[] = [
 const fallbackSettings: RewardCalculationSettings = {
   loyalty_mode: "amount_based",
   amount_per_point: 1,
-  redemption_return_rate: 0.05,
+  redemption_return_rate: 0.03,
   stamps_required: 10,
   active: true,
 };
@@ -106,18 +116,14 @@ function extractProductPrice(description: string) {
   return match ? parseEuro(match[1]) : null;
 }
 
-function calculateReward(price: number, settings: RewardCalculationSettings) {
+function calculateReward(price: number, settings: RewardCalculationSettings, redemptionRatePercent: number | null) {
   const amountPerPoint = Math.max(0.01, Number(settings.amount_per_point) || 1);
-  const redemptionReturnRate = Math.max(0.01, Number(settings.redemption_return_rate) || 0.05);
-  const targetRevenue = price > 0 ? price / redemptionReturnRate : 0;
-  const requiredPoints = Math.max(1, Math.ceil(targetRevenue / amountPerPoint));
-  const estimatedRevenue = requiredPoints * amountPerPoint;
-  const ratio = price > 0 ? estimatedRevenue / price : 0;
-  const quotePercent = Math.round(redemptionReturnRate * 100);
-
-  if (ratio >= 10) return { requiredPoints, estimatedRevenue, quotePercent, status: "Wirtschaftlich", statusClass: "good" };
-  if (ratio >= 7) return { requiredPoints, estimatedRevenue, quotePercent, status: "Bitte prüfen", statusClass: "check" };
-  return { requiredPoints, estimatedRevenue, quotePercent, status: "Sehr großzügig", statusClass: "risk" };
+  const economics = calculateRewardEconomics({
+    productPrice: price,
+    redemptionRatePercent,
+    pointsPerEuro: 1 / amountPerPoint,
+  });
+  return { ...economics, quotePercent: redemptionRatePercent };
 }
 
 function iconForCategory(category: string | null | undefined) {
@@ -138,6 +144,7 @@ function formatValidity(expiresAt: string | null) {
 }
 
 export function RewardsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [offers, setOffers] = useState<RewardOffer[]>([]);
@@ -147,6 +154,8 @@ export function RewardsPage() {
   const [rewardName, setRewardName] = useState("");
   const [rewardCategory, setRewardCategory] = useState("");
   const [priceInput, setPriceInput] = useState("");
+  const [redemptionRatePercent, setRedemptionRatePercent] = useState<number | null>(DEFAULT_REDEMPTION_RATE_PERCENT);
+  const [legacyRedemptionRatePercent, setLegacyRedemptionRatePercent] = useState<number | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoCrop, setPhotoCrop] = useState<RewardImageCrop>(DEFAULT_REWARD_IMAGE_CROP);
@@ -182,7 +191,7 @@ export function RewardsPage() {
         setSettings({
           loyalty_mode: nextSettings.loyalty_mode,
           amount_per_point: nextSettings.amount_per_point,
-          redemption_return_rate: nextSettings.redemption_return_rate ?? 0.05,
+          redemption_return_rate: nextSettings.redemption_return_rate ?? 0.03,
           stamps_required: nextSettings.stamps_required,
           active: nextSettings.active,
         });
@@ -210,7 +219,10 @@ export function RewardsPage() {
 
   const reloadRewards = useCallback(() => setReloadKey((current) => current + 1), []);
   const productPrice = parseEuro(priceInput);
-  const calculation = useMemo(() => calculateReward(productPrice, settings), [productPrice, settings]);
+  const calculation = useMemo(
+    () => calculateReward(productPrice, settings, redemptionRatePercent),
+    [productPrice, redemptionRatePercent, settings],
+  );
   const rewardTitle = rewardName.trim() || selectedTemplate?.defaultTitle || "Neue Punkteeinlösung";
   const currentCategory = rewardCategory.trim() || selectedTemplate?.category || "Eigenes Produkt";
 
@@ -221,6 +233,11 @@ export function RewardsPage() {
     setRewardName("");
     setRewardCategory("");
     setPriceInput("");
+    const settingsPercent = redemptionRateToPercent(settings.redemption_return_rate);
+    setRedemptionRatePercent(settingsPercent !== null && isAllowedRedemptionRatePercent(settingsPercent)
+      ? settingsPercent
+      : null);
+    setLegacyRedemptionRatePercent(settingsPercent);
     setPhotoPreview(null);
     setPhotoFile(null);
     setPhotoCrop(DEFAULT_REWARD_IMAGE_CROP);
@@ -242,6 +259,13 @@ export function RewardsPage() {
     setRewardName(offer.title);
     setRewardCategory(offer.category ?? template.category);
     setPriceInput(formatPriceInput(offer.product_price ?? extractProductPrice(offer.description)));
+    const savedPercent = parseRewardRedemptionRate(offer.description);
+    const settingsPercent = redemptionRateToPercent(settings.redemption_return_rate);
+    const effectivePercent = savedPercent ?? settingsPercent;
+    setRedemptionRatePercent(effectivePercent !== null && isAllowedRedemptionRatePercent(effectivePercent)
+      ? effectivePercent
+      : null);
+    setLegacyRedemptionRatePercent(effectivePercent);
     setPhotoPreview(offer.image_url);
     setPhotoFile(null);
     setPhotoCrop(rewardImageCropFromRecord(offer));
@@ -268,7 +292,7 @@ export function RewardsPage() {
   }
 
   async function saveReward() {
-    if (saving || !restaurantId || !selectedTemplate || productPrice <= 0) return;
+    if (saving || !restaurantId || !selectedTemplate || productPrice <= 0 || redemptionRatePercent === null) return;
     const wasEditing = Boolean(editingOffer);
     setSaving(true);
     setStatus(null);
@@ -291,7 +315,7 @@ export function RewardsPage() {
         source: "reward",
         restaurant_id: restaurantId,
         title: rewardTitle,
-        description: `Produktwert: ${formatEuro(productPrice)}. Einlösequote: ${calculation.quotePercent} %. Geschätzte Konsumation: ${formatEuro(calculation.estimatedRevenue)}.`,
+        description: `Produktwert: ${formatEuro(productPrice)}. Einlösequote: ${calculation.quotePercent} %. Geschätzte Konsumation: ${formatEuro(calculation.estimatedConsumption)}.`,
         reward_type: "reward",
         required_points: calculation.requiredPoints,
         required_stamps: 0,
@@ -316,6 +340,7 @@ export function RewardsPage() {
       setEditorOpen(false);
       resetWizard();
       setStatus(wasEditing ? "Punkteeinlösung aktualisiert." : "Punkteeinlösung erstellt.");
+      smartSetup.complete("reward_saved");
     } catch (error) {
       if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Punkteeinlösung konnte nicht gespeichert werden.", error);
@@ -400,6 +425,7 @@ export function RewardsPage() {
   const SelectedIcon = selectedTemplate?.Icon ?? Gift;
   const wizardContent = (
     <div className="premium-owner-editor">
+      <RequiredFieldsNote />
       <div className="premium-owner-editor-progress">
         <span>Schritt {step} von 5</span>
         <div><span style={{ width: `${step * 20}%` }} /></div>
@@ -428,16 +454,25 @@ export function RewardsPage() {
       {step === 2 ? (
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Produktwert</p><h3>Wie viel kostet das Produkt normalerweise?</h3><p>Die benötigten Punkte werden automatisch berechnet.</p></div>
-          <label className="field" htmlFor="reward-price"><span>Preis in €</span><input className="input reward-price-input" data-drawer-autofocus="true" id="reward-price" inputMode="decimal" onChange={(event) => setPriceInput(event.target.value)} placeholder="Beispiel: 5,50 €" value={priceInput} /></label>
+          <div className="field"><FormLabel htmlFor="reward-price" required>Preis in €</FormLabel><input aria-required="true" className="input reward-price-input" data-drawer-autofocus="true" id="reward-price" inputMode="decimal" onChange={(event) => setPriceInput(event.target.value)} placeholder="Beispiel: 5,50 €" required value={priceInput} /></div>
         </section>
       ) : null}
       {step === 3 ? (
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Empfehlung</p><h3>Automatisch berechnete Einlösung</h3></div>
+          <RedemptionRateSelect
+            id="reward-redemption-rate"
+            legacyValue={legacyRedemptionRatePercent}
+            onChange={(percent) => {
+              setRedemptionRatePercent(percent);
+              setLegacyRedemptionRatePercent(null);
+            }}
+            value={redemptionRatePercent}
+          />
           <div className="reward-engine-summary">
             <article><span>Benötigte Punkte</span><strong>{calculation.requiredPoints}</strong></article>
-            <article><span>Einlösequote</span><strong>{calculation.quotePercent} %</strong></article>
-            <article><span>Konsumation bis Einlösung</span><strong>{formatEuro(calculation.estimatedRevenue)}</strong></article>
+            <article><span>Einlösequote</span><strong>{calculation.quotePercent === null ? "Auswählen" : `${calculation.quotePercent} %`}</strong></article>
+            <article><span>Konsumation bis Einlösung</span><strong>{formatEuro(calculation.estimatedConsumption)}</strong></article>
             <article className={`reward-profit-status ${calculation.statusClass}`}><span>Einordnung</span><strong>{calculation.status}</strong></article>
           </div>
         </section>
@@ -475,8 +510,8 @@ export function RewardsPage() {
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Vorschau</p><h3>Letzte Angaben prüfen</h3></div>
           <div className="grid two">
-            <label className="field" htmlFor="reward-name"><span>Name</span><input className="input" id="reward-name" onChange={(event) => setRewardName(event.target.value)} value={rewardName} /></label>
-            <label className="field" htmlFor="reward-category"><span>Kategorie</span><input className="input" id="reward-category" onChange={(event) => setRewardCategory(event.target.value)} value={rewardCategory} /></label>
+            <div className="field"><FormLabel htmlFor="reward-name" required>Name</FormLabel><input aria-required="true" className="input" id="reward-name" onChange={(event) => setRewardName(event.target.value)} required value={rewardName} /></div>
+            <div className="field"><FormLabel htmlFor="reward-category" required>Kategorie</FormLabel><input aria-required="true" className="input" id="reward-category" onChange={(event) => setRewardCategory(event.target.value)} required value={rewardCategory} /></div>
           </div>
           <article className="premium-customer-reward-preview large">
             <div>{photoPreview ? <RewardImageFrame alt={rewardTitle} crop={photoCrop} imageUrl={photoPreview} /> : <SelectedIcon aria-hidden="true" size={48} />}</div>
@@ -494,7 +529,7 @@ export function RewardsPage() {
       {step < 5 ? (
         <button className="button" disabled={(step === 1 && !selectedTemplate) || (step === 2 && productPrice <= 0)} onClick={() => setStep((current) => Math.min(5, current + 1) as WizardStep)} type="button">Weiter</button>
       ) : (
-        <button className="button" disabled={saving || !rewardName.trim()} onClick={saveReward} type="button"><Sparkles size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}</button>
+        <button className="button" disabled={saving || !rewardName.trim() || redemptionRatePercent === null} onClick={saveReward} type="button"><Sparkles size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editingOffer ? "Änderungen speichern" : "Punkteeinlösung erstellen"}</button>
       )}
     </>
   );

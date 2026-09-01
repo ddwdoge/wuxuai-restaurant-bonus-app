@@ -1,6 +1,84 @@
 # 05_CUSTOMER_PORTAL.md
 
-# WUXUAI Bonus V1 – Customer Portal / „Mein Bonus“
+## Current Lock 2026-08-24
+
+- Der Kundenbereich heißt **Meine Vorteile**.
+- Kunden verwenden Supabase Auth mit E-Mail, Passwortbestätigung und
+  E-Mail-Bestätigung; aktive Registrierung verwendet nur die Legal-RPCs.
+- Einlösungen laufen primär über die serverzeitgebundene
+  15-Minuten-Präsentation, nicht über einen sechsstelligen Primärcode.
+- Beim Freundschaftsbonus erhält der Referrer die volle und der eingeladene
+  Freund exakt die halbe konfigurierte Dauer; der Multiplikator bleibt 2x.
+- Widersprechende ältere Abschnitte sind historisch und im
+  `docs/LEGACY_DOCUMENT_INDEX.md` erfasst.
+
+### Einlösebestätigung 2026-08-29
+
+Die 15-Minuten-Präsentation ist ab jetzt ein Vorbereitungsfenster. Das bloße
+Öffnen zieht keine Punkte ab und verbraucht kein Geschenk. Der Kunde wischt
+direkt vor dem Mitarbeiter bewusst von links nach rechts; erst danach bestätigt
+der Server die konkrete Präsentation atomar. Der Erfolg zeigt Restaurant,
+Benefit und den autoritativen Serverzeitpunkt. Ein zweites Gerät, ein alter
+Screenshot oder ein paralleler Request kann dieselbe Präsentation nicht erneut
+einlösen. Ein abgelaufenes Fenster verbraucht keinen Benefit.
+
+## Horizontaler Discovery-Standard 2026-08-27
+
+- `Aktuelles & Angebote` auf der Customer-Startseite und die Belohnungskarten
+  in `Alle Belohnungen` sowie `Meine Belohnungen` verwenden denselben
+  horizontalen Carousel-Baustein.
+- Die Tabs bleiben die einzige Umschaltung zwischen allen und persönlichen
+  Belohnungen; Swipe navigiert ausschließlich innerhalb des aktiven Tabs.
+- Mehrere Karten unterstützen nativen Swipe, Scroll Snap, Einzelschritt-Pfeile
+  und eine kompakte Positionsanzeige ohne automatische Rotation.
+- Eine einzelne Karte bleibt vollbreit ohne künstliche Bedienelemente. Ein
+  leerer persönlicher Bereich zeigt weiterhin den synchronisierten Empty State.
+- Swipe öffnet oder verwendet keine Belohnung. Detailansicht, Eligibility und
+  serverzeitgebundene 15-Minuten-Präsentation bleiben unverändert.
+- Angebote, Punkteeinlösungen, Willkommensgeschenke und Geburtstagsgeschenke
+  gehören mobil zu derselben kompakten Kartenfamilie. Gemeinsame Tokens steuern
+  83 Prozent Kartenbreite, 13 Pixel Abstand, Radius, Innenabstand und 16:9-Medien.
+- Die Customer-Startseite zeigt mehrere Punkteeinlösungen ebenfalls horizontal;
+  zwei kleine vollständige Reward-Karten nebeneinander sind mobil nicht erlaubt.
+- `Mit Punkten einlösbar` zeigt auf der Customer-Startseite den vollständigen
+  aktuell sichtbaren Punkte-Rewards-Katalog des aktiven Restaurants. Es gibt
+  keine Vorschaugrenze von zwei Karten; alle Einträge bleiben in derselben
+  horizontalen Carousel-Höhe per Swipe, Pfeilen und echter Positionsanzeige
+  erreichbar.
+- Offer-Karten behalten Titel, Kurzbeschreibung, Gültigkeit, Zeitplan, Zeitraum,
+  Preis und Aktion, verdichten diese Angaben aber zu einem kompakten Rhythmus.
+
+## Mehrere aktive Geschenke auf der Startseite 2026-08-31
+
+- Die Customer-Startseite zeigt alle aktuell sichtbaren, nicht eingelösten und
+  nicht abgelaufenen persönlichen Geschenkzuweisungen aus derselben
+  kanonischen Reward-Antwort.
+- Geburtstagsgeschenke stehen deterministisch vor Willkommensgeschenken;
+  weitere Geschenktypen folgen stabil nach Gültigkeit und Zuweisungs-ID.
+- Ab zwei Geschenken verwendet die Startseite denselben nativen Swipe-,
+  Scroll-Snap-, Pfeil- und Positionsvertrag wie die bestehenden Reward-
+  Carousels. Eine einzelne Karte bleibt vollbreit ohne Carousel-Steuerung.
+- Swipe, Pfeile und Positionswechsel starten keine Einlösung. Jede Karte
+  behält ihren eigenen Status, ihr Bild und ihren bestehenden Detail- und
+  Einlöseweg.
+
+## Kompakte Punkteinformation auf der Startseite 2026-09-01
+
+- Der rechtliche Punktehinweis bleibt vollständig zugänglich, belegt aber
+  keinen dauerhaften Block mehr zwischen Punktekarte und `Aktuelles & Angebote`.
+- Ein kompakter, mindestens 44 Pixel grosser Infobutton direkt neben
+  `Deine Punkte` öffnet den gemeinsamen barrierefreien Drawer mit dem
+  unveränderten Hinweis zu Geldwert, Auszahlung, Restaurantbindung und
+  Punktegültigkeit.
+- Punktestand, Bonus-Boost, Gültigkeit, Fortschritt und nächste Einlösung
+  bleiben unverändert. Der Umbau verändert keine Punkte-, Reward-, Offer-,
+  Gift-, Referral- oder Legal-Logik.
+
+## Persönlicher Punkte-QR
+
+Wenn der restaurantgesteuerte Modus aktiv ist, zeigt das Kundenportal einen fünf Minuten gültigen Single-Use-QR und einen achtstelligen Ersatzcode. Beide enthalten weder personenbezogene Daten noch den dauerhaften Kundenzugang. Der Gast kann keinen Betrag und keine Punktezahl übermitteln.
+
+# WUXUAI Bonus V1 – Customer Portal / „Meine Vorteile“
 
 Status: **LOCK**
 
@@ -49,7 +127,7 @@ Er soll nur sehen:
 
 Das Kundenportal heißt sichtbar:
 
-**Mein Bonus**
+**Meine Vorteile**
 
 Nicht:
 - Customer Portal
@@ -89,6 +167,11 @@ Erlaubt:
 - „Meine Restaurants“ später als Wallet/Profilbereich
 - automatischer Wechsel über QR
 
+Die optionale Seite `Lokale entdecken` ist kein aktiver Restaurantkontext und
+keine manuelle Restaurantauswahl. Sie zeigt ausschließlich freigegebene Partner
+und persönliche, serverseitig tokengeprüfte Bonusstände. Erst ein gültiger
+Restaurant-QR setzt den aktiven Sammelkontext.
+
 ### 3.3 Slogan
 
 > Ein Scan. Sofort im richtigen Restaurant.
@@ -113,14 +196,12 @@ Ein neuer Gast soll in unter 30 Sekunden Mitglied werden.
 8. Konto sofort aktiv
 9. Persönlicher QR erscheint
 
-### 4.3 Keine Hürden
+### 4.3 Zentraler Zugang
 
-In V1 gibt es:
-- kein Passwort
-- keine SMS
-- kein WhatsApp
-- keine E-Mail-Pflicht
-- keine App-Installation
+Seit der CTO-Entscheidung vom 04.08.2026 verwendet V1 ein zentrales
+Supabase-Auth-Kundenkonto mit E-Mail, Passwort und E-Mail-Bestätigung. Diese
+Regel ersetzt die frühere passwortlose restaurantbezogene Gastanmeldung.
+SMS, WhatsApp und App-Installation bleiben weiterhin ausgeschlossen.
 
 ### 4.4 Warum keine SMS
 
@@ -337,7 +418,9 @@ Sondern:
 ### 8.2 Standard V1
 
 - 2× Punkte
-- 30 Tage
+- Default 14 Tage; Restaurantwahl 7, 14, 28 oder eigener Wert
+- Referrer erhält 100 Prozent, eingeladener Freund exakt 50 Prozent der bei
+  Qualifikation gespeicherten Dauer
 - Aktivierung erst nach echter Konsumation des eingeladenen Freundes
 
 ### 8.3 Anzeige im Kundenportal
@@ -360,17 +443,16 @@ Wenn Bonus Boost aktiv ist, muss der Effekt zusätzlich sichtbar sein:
 Wenn Bonus Boost nicht aktiv ist:
 
 > 🔥 Lade einen Freund ein  
-> Ihr sammelt beide 30 Tage lang 2× Punkte, sobald dein Freund erstmals Punkte sammelt.
+> Nach dem ersten gültigen Besuch sammelt ihr 2× Punkte: du für die volle und
+> dein Freund für die halbe Restaurantdauer.
 
 ### 8.4 Verlängerung
 
 Jeder erfolgreiche Freund verlängert den Boost.
 
-Beispiel:
-
-- 1 Freund = +30 Tage
-- 2 Freunde = +60 Tage
-- 3 Freunde = +90 Tage
+Jede weitere erfolgreiche Empfehlung verlängert den Referrer um die beim
+Qualifikationszeitpunkt gespeicherte volle Restaurantdauer. Der Multiplikator
+bleibt maximal 2×.
 
 ### 8.5 Emotion
 
@@ -389,6 +471,12 @@ Bonus Boost startet erst, wenn der eingeladene Freund:
 ---
 
 ## 9. Punkte sammeln
+
+V1 fragt den Gast in keinem Sammelmodus nach einer Bonnummer. Im
+restaurantgesteuerten Modus zeigt der Gast nur seinen kurzlebigen persoenlichen
+QR; Betrag, Tages-PIN und Bestaetigung liegen beim Restaurant. Im
+kundeninitiierten Bestandsflow bleibt die bestehende Bonstufen-Auswahl erhalten,
+ebenfalls ohne Belegreferenz.
 
 ### 9.1 Smart Bonus QR
 
@@ -438,7 +526,7 @@ Der Gast darf niemals Punkte eintippen.
 
 ## 10. Punkteeinlösungen im Kundenportal
 
-### 10.0 Reihenfolge in „Mein Bonus“
+### 10.0 Reihenfolge in „Meine Vorteile“
 
 Die Kundenansicht ist nach Wichtigkeit sortiert:
 
@@ -547,7 +635,7 @@ Erlaubt:
 - technische Funktionsnamen im Code
 
 Sichtbare Begriffe:
-- Mein Bonus
+- Meine Vorteile
 - Punkte
 - Punkteeinlösung
 - Willkommensgeschenk
@@ -653,7 +741,7 @@ Nicht als harte Sperre.
 
 ## 18. Was ausdrücklich verboten ist
 
-- Passwortpflicht in V1
+- eigene Passwortspeicherung außerhalb von Supabase Auth
 - SMS/WhatsApp in V1
 - Kunde kann Punkte selbst eingeben
 - Kunde kann Punkteeinlösung ohne gültigen Serverstatus verwenden
@@ -673,7 +761,7 @@ V2 vorbereitet:
 - Meine Restaurants Wallet
 - Wochenübersicht für Punkteeinlösungen
 - Push/Email/SMS optional
-- dynamische Nachrichten
+- automatische oder personalisierte Nachrichten
 - Multibranch Punkte
 - weitere Branchen
 - Premium-Login
@@ -687,10 +775,12 @@ Customer Portal ist LOCK, wenn:
 
 - QR-Kontext automatisch Restaurant setzt
 - Registrierung unter 30 Sekunden möglich ist
-- keine SMS/WhatsApp/Passwort nötig sind
+- keine SMS/WhatsApp nötig sind und das zentrale Konto ausschließlich Supabase
+  Auth für E-Mail, Passwort und E-Mail-Bestätigung verwendet
 - Willkommensgeschenk gesperrt und später freigeschaltet wird
 - Freunde-Einladung kein Willkommensgeschenk gibt
 - Bonus Boost sichtbar und emotional ist
+- `Aktuelles & Angebote` rein informativ und vom Bonuskonto getrennt bleibt
 - Punkte sammeln über Bonus QR funktioniert
 - Punkteeinlösungen fehlende Punkte und Euro anzeigen
 - QR immer schnell erreichbar ist
@@ -722,7 +812,8 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Web Push ist freiwillig und ergänzt den Drawer. Ohne Zustimmung oder Browserunterstützung bleibt der Drawer vollständig nutzbar.
 - Ein Push-Link öffnet ausschließlich die zugehörige Punkteeinlösung; er löst nichts automatisch ein.
 - Geburtstagstag und -monat können freiwillig im Konto gespeichert werden. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag kann der Gast genau einmal pro Kalenderjahr eine serverseitig ausgeloste Überraschung abholen.
-- Der Freunde-Bonus ist fest auf 2× Punkte für beide Beteiligten während 30 Tagen gesetzt.
+- Der Freundschaftsbonus ist fest 2×. Der Referrer erhält die volle, der
+  eingeladene Freund exakt die halbe gespeicherte Restaurantdauer.
 
 ## CTO-Ergänzung 2026-07-23: QR-Restaurantkontext
 
@@ -759,6 +850,45 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
   stammen ausschließlich aus der WUXUAI Datenbank.
 - Externe Navigation darf über einen Google-Maps-Weblink ohne API-Key geöffnet
   werden; es wird keine Google Maps Platform API verwendet.
+- Der V1-Payload wird in einer begrenzten, aggregierten Abfrage geladen. Lokale
+  Kundenzugänge werden restaurantbezogen validiert; ohne gültigen Zugang werden
+  nur öffentliche Standortdaten ausgegeben.
+- Die zentrale Schwelle für `Belohnung bald erreichbar` beträgt mindestens
+  70 Prozent des erforderlichen Punktestands.
+- Öffnungsstatus und Mittagspause werden nach `Europe/Vienna` berechnet.
+
+## CTO-Ergänzung 2026-08-04: Aktuelles & Angebote
+
+- Ein restaurantbezogenes Kundenportal zeigt den Bereich `Aktuelles & Angebote`
+  nur, wenn mindestens ein aktuell veröffentlichter Beitrag vorhanden ist.
+- Beiträge zeigen Angebotsart, Titel, Bild, Kurzbeschreibung, optionalen Preis,
+  Gültigkeit und eine klar beschriftete Aktion.
+- Wenn ein gueltiger vorheriger Preis ueber dem aktuellen Preis liegt, zeigen
+  Kundenkarte, Angebotsdetail und Restaurantdetails denselben automatisch
+  gerundeten Prozentvorteil, den gestrichenen vorherigen Preis und den
+  hervorgehobenen aktuellen Preis. Fehlende oder nicht guenstigere
+  Vergleichspreise erzeugen keinen Rabatt-Hinweis.
+- Ein veröffentlichter und aktiver Beitrag bleibt bis zu seinem finalen
+  Ablaufdatum sichtbar. Ein zukünftiges Startdatum, ein anderer Wochentag oder
+  ein geschlossenes tägliches Zeitfenster ändern nur den sichtbaren
+  Gültigkeitsstatus, nicht die Sichtbarkeit im Marketingfeed.
+- Der Gültigkeitsstatus wird nach `Europe/Vienna` als beispielsweise `Jetzt
+  gültig`, `Heute nicht gültig`, `Heute 11:00–15:00 Uhr` oder `Gültig ab
+  TT.MM.JJJJ` dargestellt. Abgelaufene Beiträge werden im normalen Feed nicht
+  mehr angezeigt.
+- Eine globale Ansicht `Aktuelles` ist durch die spätere zentrale
+  Kundenkonto-Entscheidung ersetzt. Vollständige Beiträge werden nur im
+  bewusst ausgewählten Restaurantkontext angezeigt; `Meine Lokale` darf
+  ausschließlich restaurantbezogene Angebotsbadges zeigen.
+- Der Partnerlokal-Finder darf am Lokal ein neutrales Badge und den wichtigsten
+  aktuell gültigen Beitrag anzeigen.
+- Das Öffnen eines Beitrags setzt keinen Restaurant-QR-Kontext, registriert
+  keinen Kunden, verändert keine Punkte und startet keine Einlösung.
+- In V1 gibt es keine automatische Benachrichtigung, Personalisierung,
+  Segmentierung oder Marketingnachricht. Kunden sehen Beiträge nur beim Öffnen
+  der App beziehungsweise des Kundenportals.
+- Es werden höchstens aggregierte Aufrufe und Klickarten erfasst; keine
+  personenbezogene Betrachterliste und kein Kundenprofil.
 
 ## Legal Center V1
 
@@ -766,3 +896,119 @@ Diese Ergänzung ersetzt für den Einlösezeitpunkt ältere Beschreibungen einer
 - Persönliche Einwilligungen, restaurantbezogener Datenexport und Datenschutzanfragen verlangen einen gültigen Kundenzugang für genau dieses Restaurant.
 - Teilnahme- und Datenschutzhinweis sind Pflicht; Marketing-Push, SMS, E-Mail und Geburtstagsverarbeitung bleiben getrennt, freiwillig und standardmäßig aus.
 - Punkte werden als nicht auszahlbar, nicht übertragbar und restaurantbezogen erklärt. Die aktuelle Gültigkeitsregel wird angezeigt; ein konkretes historisches Ablaufdatum nur, wenn es verlässlich berechenbar ist.
+
+## CTO-Ergänzung 2026-07-27: Kundenidentität ohne SMS-OTP
+
+- Die V1-Kundenidentität ist `restaurant_id + normalisierte Telefonnummer`.
+- Registrierung und bekannter Kundenzugang bleiben passwortlos und verwenden kein SMS-OTP.
+- Ein vorhandenes Konto wird auf einem unbekannten Gerät nicht über die bekannte Telefonnummer geöffnet und erhält dabei keinen neuen Token. Der Gast wird neutral an sein bekanntes Gerät oder das Restaurant verwiesen.
+- Telefonnummer und freiwillig erfasster Geburtstag sind nach der ersten Speicherung im Kundenportal nur maskiert lesbar.
+- Korrekturen erfolgen ausschließlich über einen kontrollierten Owner/Admin-Supportpfad mit Identitätsprüfung, Prüfart, Grund und Audit.
+- Eine Telefonnummernkorrektur widerruft alte Tokens und bekannte Geräte. Es findet keine automatische Kontozusammenführung statt.
+- SMS-Verifizierung ist nur als standardmäßig deaktivierte spätere Konfiguration vorbereitet und hat keine V1-Runtime oder UI.
+
+## CTO-Ergänzung 2026-08-03: Punkte-Präsentationsfenster
+
+Diese LOCK-Entscheidung ersetzt den sechsstelligen Code ausschließlich für
+normale Punktebelohnungen. Nach ausdrücklicher Bestätigung werden die Punkte
+serverseitig sofort endgültig abgezogen. Der Kunde sieht 15 Minuten lang einen
+serverzeitgebundenen Live-Bildschirm mit Countdown, Serverzeit, wechselndem
+Sicherheitselement und Einlösungsnummer. Reload, mehrere Tabs und Browserwechsel
+starten kein neues Fenster.
+
+Willkommens- und Geburtstagsgeschenke behalten ihren bestehenden
+sechsstelligen Einlösecode. Der Kunde kann eine Punktebelohnung nicht selbst
+stornieren.
+
+## CTO-Ergänzung 2026-08-04: Zentraler Kundenbereich
+
+- `/customer` öffnet `Meine Vorteile` ohne Restaurant-Slug.
+- Die Navigation lautet `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
+- Memberships werden nur nach einem gültigen restaurantbezogenen Kundenzugang
+  serverseitig mit dem zentralen Konto verknüpft.
+- `Meine Lokale` zeigt Punkte, Besuche, Rewards, Geschenke und Angebote für
+  jedes Restaurant getrennt. Es gibt keine Gesamtpunktesumme.
+- `Bonus öffnen` stellt serverseitig einen neuen restaurantgebundenen Zugang
+  aus und erzeugt keine Registrierung oder Membership.
+- Telefonnummer und Geburtstag bleiben maskiert und nur über den Support
+  änderbar.
+- Angebots-E-Mails bleiben optional, pro Lokal getrennt und standardmäßig aus.
+  Ohne bestätigtes Double-Opt-in findet kein Versand statt.
+- Der vorhandene QR-, Punkte-, Redemption- und Restaurantwechsel-Flow bleibt
+  unverändert maßgeblich für Vor-Ort-Aktionen.
+- Vollständige Angebote werden ausschließlich im bewusst geöffneten
+  Restaurantkontext gezeigt. Einen global gemischten Angebotsfeed gibt es nicht.
+
+## CTO-Ergänzung 2026-08-09: Einheitliche Geschenk-Präsentation
+
+Diese Entscheidung ersetzt den sechsstelligen Geschenk-Code und die manuelle
+Geburtstagsauslosung als primären V1-Kundenflow:
+
+- Verfügbare Willkommens- und Geburtstagsgeschenke zeigen „Jetzt einlösen“.
+- Nach ausdrücklicher Bestätigung startet der Server genau ein 15-minütiges
+  Präsentationsfenster mit Countdown, Serverzeit und wechselndem visuellen
+  Sicherheitsmerkmal.
+- Reload und erneutes Öffnen laden ausschließlich den servervalidierten
+  Vorgang und verlängern ihn nicht.
+- Nach Ablauf erscheint das Geschenk nur noch als eingelöst in der Historie.
+- Geburtstagsgeschenke werden 14 Tage vor dem Geburtstag automatisch aus dem
+  aktiven Geburtstagspool zugeteilt und nicht vom Kunden neu ausgelost.
+- Registriert oder aktiviert sich ein Kunde erst innerhalb der naechsten 14
+  lokalen Kalendertage einschliesslich Geburtstag, wird dieselbe kanonische
+  Zuteilung sofort nachgeholt. Ein Besuch, QR-Scan oder eine Punktebuchung ist
+  dafuer nicht erforderlich; die Jahres-Eindeutigkeit bleibt bestehen.
+- Der zentrale Kundenlogin verwendet Supabase Auth mit E-Mail, Passwort und
+  E-Mail-Bestätigung. Ältere passwortlose Identitätsabschnitte sind historisch.
+
+## Referral-Lebenszyklus V1
+
+- Die Startseite zeigt serverseitig aufgeloeste Referral-Zustaende fuer
+  wartende Registrierung, ausstehende Qualifikation, aktiven und abgelaufenen
+  Bonus.
+- Pending-Zustaende bleiben nach Reload, Login, Callback und Geraetewechsel
+  erhalten, sobald der serverseitige Kundenzugang wiederhergestellt ist.
+- Aktive Booster zeigen Rolle, verbleibende Dauer und den exakten
+  Ablaufzeitpunkt in Europe/Vienna. Der Friend-Hinweis verwendet exakt die
+  halbe, der Referrer die volle aktuelle Owner-Dauer.
+- Nach Ablauf gibt es kein aktives Badge. Einladungs-CTA und restaurantbezogene
+  Punktetrennung bleiben bestehen.
+
+## Globaler Restaurant-Schnellwechsel
+
+- Im authentifizierten Restaurantkontext öffnet Logo, Restaurantname und
+  Chevron im gemeinsamen Customer-Header den Dialog `Restaurant wechseln`.
+  Die separate Informationstaste behält ihre bisherige Funktion.
+- Die Liste stammt ausschließlich aus `get_customer_account()` und enthält nur
+  aktive Memberships des angemeldeten zentralen Kundenkontos. Null Punkte
+  bleiben sichtbar; Suche filtert nur diese bereits verbundenen Restaurants.
+- Ein manueller Wechsel verwendet `open_customer_account_membership(...)`.
+  Dadurch werden Membership und Restaurant serverseitig validiert, bevor der
+  kanonische Pfad `/customer/:slug` geladen wird.
+- QR und manueller Wechsel enden im selben `CustomerRestaurantAccess`. Es gibt
+  keinen zweiten clientseitigen Restaurantzustand und keinen Browser-Reload.
+- Beim Pfadwechsel wird der bisherige Portalinhalt sofort entfernt. Der neue
+  `CustomerPortal` erscheint erst nach dem validierten Öffnen des neuen
+  Restaurantkontexts, damit Header, Punkte, Rewards, Geschenke, Angebote,
+  Referral und 2×-Status nicht restaurantübergreifend gemischt werden.
+- Schlägt das Öffnen fehl, bleibt der bisherige Restaurantkontext bestehen und
+  der Dialog bietet `Erneut versuchen` an.
+- `Konto → Restaurants` und `Restaurants entdecken` bleiben als sekundäre
+  Verwaltung beziehungsweise Discovery erhalten.
+
+## CTO-Ergänzung 2026-08-31: Direkter Beitritt aus Restaurant Discovery
+
+- Ein angemeldeter Kunde kann in `Entdecken → Restaurantdetails` einem noch
+  nicht verbundenen Bonusprogramm direkt beitreten.
+- Nichtmitglieder sehen `Bonusprogramm beitreten`; bestehende Mitglieder sehen
+  `Restaurant öffnen`. `Route starten` bleibt die sekundäre Aktion.
+- Vor dem Beitritt müssen die aktiven Teilnahmebedingungen ausdrücklich
+  akzeptiert und die Datenschutzerklärung zur Kenntnis genommen werden.
+- Der Beitritt verwendet ausschließlich den bestehenden authentifizierten,
+  tenantgebundenen und idempotenten Server-RPC. Danach öffnet derselbe
+  servervalidierte Membership-Opener wie beim Restaurant-Schnellwechsel den
+  neuen aktiven Restaurantkontext.
+- Der Beitritt erzeugt genau eine Membership, aber keinen Besuch, keine Punkte
+  und keine Referral-Zuordnung. Ein Besuch entsteht weiterhin erst nach einer
+  erfolgreichen Punktebuchung.
+- Bestehende Willkommensgeschenk-Regeln bleiben maßgeblich; Reload oder ein
+  wiederholter Beitritt dürfen keine zweite Zuteilung erzeugen.

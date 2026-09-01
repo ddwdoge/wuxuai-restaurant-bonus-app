@@ -1,0 +1,97 @@
+.restaurant-logo-stage {
+  align-items: center;
+  background: color-mix(in srgb, var(--restaurant-logo-fallback, #9a6b1f) 6%, #f8f5ef);
+  border: 1px solid color-mix(in srgb, var(--restaurant-logo-fallback, #9a6b1f) 14%, #e9e2d8);
+  border-radius: 12px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.restaurant-logo-stage.restaurant-logo-frame,
+.restaurant-logo-stage.premium-restaurant-logo,
+.restaurant-logo-stage.premium-member-card-logo,
+.restaurant-logo-stage.premium-account-sheet-logo,
+.restaurant-logo-stage.central-location-logo {
+  background: color-mix(in srgb, var(--restaurant-logo-fallback, #9a6b1f) 6%, #f8f5ef);
+  border: 1px solid color-mix(in srgb, var(--restaurant-logo-fallback, #9a6b1f) 14%, #e9e2d8);
+  box-shadow: none;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.restaurant-logo-stage.has-image {
+  background: transparent;
+  border-color: transparent;
+}
+
+.restaurant-logo-stage.size-compact { height: 42px; width: 48px; }
+.restaurant-logo-stage.size-header { height: 48px; width: clamp(52px, 10vw, 86px); }
+.restaurant-logo-stage.size-detail { aspect-ratio: 16 / 9; max-width: 280px; width: 100%; }
+.restaurant-logo-stage.size-preview { aspect-ratio: 16 / 9; width: 100%; }
+.restaurant-logo-stage.size-print { height: 82px; width: 184px; }
+
+.restaurant-logo-stage.has-image.size-compact.aspect-square { width: 42px; }
+.restaurant-logo-stage.has-image.size-compact.aspect-tall { width: 34px; }
+.restaurant-logo-stage.has-image.size-header.aspect-square { width: 48px; }
+.restaurant-logo-stage.has-image.size-header.aspect-tall { width: 40px; }
+.restaurant-logo-stage.has-image.size-detail.aspect-square { aspect-ratio: 1; max-width: 180px; }
+.restaurant-logo-stage.has-image.size-detail.aspect-tall { aspect-ratio: 3 / 4; max-width: 160px; }
+.restaurant-logo-stage.has-image.size-preview.aspect-square { aspect-ratio: 1; }
+.restaurant-logo-stage.has-image.size-preview.aspect-tall { aspect-ratio: 3 / 4; }
+.restaurant-logo-stage.has-image.size-print.aspect-square { width: 82px; }
+.restaurant-logo-stage.has-image.size-print.aspect-tall { width: 66px; }
+
+.restaurant-logo-stage img {
+  box-sizing: border-box;
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 160ms ease;
+  width: 100%;
+}
+
+.restaurant-logo-stage.placement-canonical img {
+  transition: none;
+}
+
+.restaurant-logo-stage.placement-canonical.is-fallback {
+  background: transparent;
+  border-color: transparent;
+}
+
+.restaurant-logo-stage .canonical-logo-fallback {
+  background: var(--restaurant-logo-fallback, #9a6b1f);
+  border-radius: 12px;
+  color: #ffffff;
+  height: 100%;
+  width: 64%;
+}
+
+.restaurant-logo-stage .canonical-logo-fallback > span {
+  font-size: 18px;
+}
+
+.restaurant-logo-stage.aspect-square img { padding: 9%; }
+.restaurant-logo-stage.aspect-wide img { padding: 13% 5%; }
+.restaurant-logo-stage.aspect-tall img { padding: 5% 16%; }
+.restaurant-logo-stage.aspect-unknown img { padding: 9%; }
+
+.restaurant-logo-fallback {
+  align-items: center;
+  color: var(--restaurant-logo-fallback, #9a6b1f);
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.restaurant-logo-fallback > span { font-size: 0.9rem; font-weight: 800; }
+
+@media (max-width: 430px) {
+  .restaurant-logo-stage.size-header { height: 44px; width: 54px; }
+  .restaurant-logo-stage.has-image.size-header.aspect-square { width: 44px; }
+  .restaurant-logo-stage.has-image.size-header.aspect-tall { width: 36px; }
+}

@@ -1,5 +1,106 @@
 # 04_RESTAURANT_PORTAL.md
 
+## Current Lock 2026-08-24
+
+Das Owner-Portal verwendet den sichtbaren Produktnamen **WUXUAI Bonus**. Der
+Freundschaftsbonus bietet 7, 14, 28 oder einen eigenen Wert von 1 bis 365 Tagen;
+2x ist fest. Der Referrer erhält die volle, der Freund exakt die halbe Dauer.
+Ältere widersprechende Referral- oder Branding-Angaben sind superseded.
+
+Das QR Center priorisiert genau zwei Zwecke: Neue Gäste und Mitarbeiter. Der
+Neue-Gäste-QR darf für Eingang, Tisch, Kassa, Rechnung oder Werbung in mehreren
+Druckformaten verwendet werden. Ein separater Kassa-Aufsteller existiert nicht
+mehr. Der historische Kassa-QR wird nur für Restaurants mit aktivem
+kundeninitiiertem Sammelmodus als Kompatibilitätsweg angezeigt.
+
+## Owner-Bonusprogramm V1
+
+Die Owner-Seite `Bonusprogramm` zeigt ausschließlich die freigegebene
+Konfiguration `Freunde einladen & 2× Bonus`: Aktivierung, den festen
+Multiplikator 2x, 7/14/28/eigene Dauer und das monatliche Einladungslimit.
+
+Historische Modus-, Einlösequoten-, Stempel-, Bonstufen- und Regel-Editoren
+sind keine Owner-Funktionen in V1 und werden dort nicht angezeigt. Die
+zugrunde liegenden Datenbankobjekte und Punkteverträge bleiben aus
+Kompatibilitätsgründen bestehen und dürfen durch diese UI-Regel nicht verändert
+oder gelöscht werden.
+
+## Smart Setup Assistant im Dashboard
+
+Die Karte `Heute für dich` steht direkt unter dem Dashboard-Kopf, solange eine
+Einrichtung oder objektiv erkennbare Owner-Aktion offen ist. Sie zeigt genau
+eine zentrale, tenantbezogene Empfehlung. Die Priorität lautet:
+Veröffentlichung und Standort, erste Punkteeinlösung, erstes veröffentlichtes
+und noch nutzbares Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang.
+Legal Readiness und öffentliche Auffindbarkeit bleiben die autoritativen
+Publikationsverträge; Angebot und Mitarbeiterzugang sind keine
+Publikationsvoraussetzungen.
+
+Ein veröffentlichtes, aktives und noch nicht abgelaufenes Angebot erfüllt den
+Setup-Schritt auch dann, wenn sein Start in der Zukunft liegt oder seine
+Sichtbarkeit auf Wochentage beziehungsweise Uhrzeiten begrenzt ist. Entwürfe,
+deaktivierte und abgelaufene Angebote erfüllen ihn nicht.
+
+Nach Erledigung eines Schritts löst der zentrale Resolver automatisch die
+nächste offene Empfehlung auf. Sind alle Einrichtungsempfehlungen erfüllt,
+wird die Karte verborgen. Sie erscheint danach nur für einen objektiv
+feststellbaren Handlungsbedarf, derzeit insbesondere eine ungesehene Warnung
+zu einem ungewöhnlich hohen Buchungsbetrag. Kritische Publikations- und
+Legal-Zustände haben weiterhin Vorrang. Das Dashboard zeigt keine parallele
+Setup-Checkliste, keine separate Warnkarte und keinen zweiten `Nächster
+Schritt`-Container.
+
+Wurde ein verantwortlicher Editor über `Heute für dich` geöffnet, übergibt die
+Navigation einen kurzlebigen, validierten Smart-Setup-Kontext. Erst ein
+serverseitig bestätigter erfolgreicher Abschluss führt mit einer festen
+Erfolgsmeldung zum Dashboard zurück. Dort werden Legal-, Restaurant- und
+Setup-Zustand neu geladen und derselbe zentrale Resolver erneut ausgeführt.
+Direkt oder über Einstellungen geöffnete Editoren bleiben nach dem Speichern
+an Ort und Stelle; Fehler und Abbruch lösen keine Rücknavigation aus. Dieser
+Kontext ist reine Router-UI und verleiht keine Berechtigung.
+
+Der QR-Schritt verwendet nur objektiv vorhandene QR-Bereitschaft. Ein Download
+oder physischer Ausdruck wird nicht als abgeschlossen gespeichert oder
+behauptet, weil V1 dafür keinen autoritativen Nachweis besitzt.
+
+Der Mitarbeiter-Schritt ist abgeschlossen, wenn der aktuelle Owner seinen
+bereits autorisierten Betreiberzugriff auf den Mitarbeiterbereich besitzt oder
+die Teamverwaltung mindestens einen kanonisch aktiven Staff-Zugang liefert.
+Eine separate Staff-Einladung ist fuer Owner-geführte Kleinbetriebe optional.
+Der Owner bleibt Owner; es wird keine Staff-Zeile oder zweite Membership
+erzeugt. Ohne Betreiberzugriff erfuellen rohe Legacy-Zeilen, Einladungen sowie
+gesperrte, archivierte oder nicht aktivierte Staff-Zugaenge den Schritt nicht.
+
+## Persistente Setup-Uebersicht in Einstellungen
+
+`Einstellungen -> Setup & Einrichtung` ist die jederzeit erreichbare manuelle
+Gesamtansicht. Sie bleibt von `Heute fuer dich` getrennt: Der Dashboard-
+Assistent zeigt automatisch nur die hoechste offene Aktion, waehrend die
+Settings-Uebersicht alle sechs Bereiche und den kompakten Fortschritt zeigt.
+
+Die Bereiche Restaurant/Standort, Punkteeinloesungen, Aktuelles/Angebote,
+Geburtstagsgeschenke, QR Center und Mitarbeiterzugang verwenden dieselben
+kanonischen Zustandsresolver wie der Dashboard-Assistent. Der Owner bestaetigt
+nichts manuell; der Status folgt ausschliesslich echtem Restaurant-, Legal-,
+Reward-, Offer-, QR- und Zugriffsstatus.
+
+Jede Zeile oeffnet den bestehenden Editor. Ein erfolgreicher Save kehrt nur
+dann zur Setup-Uebersicht zurueck, wenn der Editor von dort gestartet wurde.
+Ein Start ueber `Heute fuer dich` kehrt weiterhin zum Dashboard zurueck;
+normale Settings-Saves bleiben an ihrem bisherigen Ziel. Der Router-Kontext
+speichert keine Businessdaten und verleiht keine Berechtigung.
+
+## Punkte sammeln konfigurieren
+
+Der erlaubte Sammelweg und der Maximalbetrag bleiben tenantgebundene,
+auditpflichtige Systemwerte. Sie sind nicht Bestandteil der reduzierten
+Owner-Seite `Bonusprogramm`. Der Standard für neue Restaurants ist
+„Restaurant scannt Kunden-QR“ mit 300 EUR Limit.
+
+V1 besitzt keine Owner-Einstellung fuer Bonnummern oder Kassenbelege. Historische
+Belegfelder sind nicht Teil der aktiven Konfiguration und duerfen nicht als
+Sicherheits- oder Idempotenzmerkmal verwendet werden.
+
 # WUXUAI Bonus V1 -- Restaurant Portal
 
 Status: **LOCK**
@@ -70,7 +171,7 @@ Session - schnelle Aktionen ohne Admin-Komplexität
 
 Für Gäste.
 
-Beispiele: - Mein Bonus - Punkte - Punkteeinlösungen - Bonus Boost - QR zeigen
+Beispiele: - Meine Vorteile - Punkte - Punkteeinlösungen - Bonus Boost - QR zeigen
 
 ------------------------------------------------------------------------
 
@@ -94,9 +195,10 @@ V1 Navigation:
 2.  Gäste
 3.  Punkteeinlösung
 4.  Willkommensgeschenke
-5.  QR Center
-6.  Mitarbeiter
-7.  Einstellungen
+5.  Aktuelles & Angebote
+6.  QR Center
+7.  Mitarbeiter
+8.  Einstellungen
 
 ### 4.1 Sitzung beenden
 
@@ -109,7 +211,8 @@ beenden.
 - Geschützte Restaurant-Routen führen danach zum Restaurant-Login.
 - Eine bereits abgelaufene Sitzung verhindert die lokale Abmeldung nicht.
 
-Das Modul **Aktionen** existiert in V1 nicht.
+Das generische Modul **Aktionen** existiert in V1 nicht. Das davon fachlich
+getrennte Informationsmodul **Aktuelles & Angebote** ist Bestandteil von V1.
 
 ### 4.2 Warum Aktionen entfernt wurden
 
@@ -123,7 +226,48 @@ Diese Unklarheit widerspricht der WUXUAI-Philosophie.
 
 Alle relevanten Mechanismen gehören in eindeutige Bereiche: -
 Punkteprodukte → Punkteeinlösung - Anmeldungsgeschenke →
-Willkommensgeschenke - Empfehlungen → Bonus Boost - Druck/QR → QR Center
+Willkommensgeschenke - Restaurantinformationen → Aktuelles & Angebote -
+Empfehlungen → Bonus Boost - Druck/QR → QR Center
+
+### 4.3 Aktuelles & Angebote
+
+Owner und berechtigte Restaurant-Administratoren dürfen höchstens fünf Beiträge
+gleichzeitig veröffentlichen. Zulässig sind Wochenangebot, Monatsangebot,
+Mittagsmenü, neues Gericht, Saisonangebot, Veranstaltung und allgemeine
+Neuigkeit.
+
+Das Modul ist eine reine Informationsfläche. Es hat keine Pflichtbeziehung zu
+Rewards, Coupons oder historischen Campaign-Tabellen und darf keine Punkte,
+Geschenke, Codes, Einlösungen oder Marketingnachrichten erzeugen. Mitarbeiter
+dürfen Beiträge weder erstellen noch veröffentlichen oder löschen.
+
+Ein Beitrag darf Titel, Bild, Kurz- und Langbeschreibung, Angebotsart,
+optionalen aktuellen und vorherigen Preis, Gültigkeitszeitraum, optionale
+Wochentage und Uhrzeiten sowie den V1-Restaurantstandort enthalten. Der
+Arbeitsablauf umfasst Entwurf, geplante Veröffentlichung, Veröffentlichung,
+automatische öffentliche Ausblendung nach Ablauf und Deaktivierung.
+
+Wenn der vorherige Preis positiv und groesser als der aktuelle Preis ist,
+leitet WUXUAI den ganzzahligen Preisvorteil automatisch aus beiden vorhandenen
+Preisfeldern ab. Es gibt kein separates Prozentfeld und keinen gespeicherten
+Rabattwert. Die Owner-Vorschau zeigt dieselbe abgeleitete Darstellung wie die
+Kundenansicht.
+
+`Veröffentlicht` und `aktiv` bestimmen die Kundensichtbarkeit bis zum finalen
+Ablaufdatum. Startdatum, Wochentage und tägliche Uhrzeiten steuern ausschließlich
+die aktuelle Gültigkeit. Sie dürfen einen veröffentlichten Beitrag nicht aus dem
+Marketingfeed entfernen. Die Owner-Ansicht weist deshalb Veröffentlichung,
+Kundensichtbarkeit und aktuelle Gültigkeit getrennt aus.
+
+Das Modul schafft einen direkten Restaurantnutzen: Bestehende Bonusgäste können
+beim Öffnen des Kundenportals auf aktuelle Informationen aufmerksam werden.
+Eine konkrete Umsatzsteigerung oder Rückkehrquote wird nicht versprochen.
+
+Im Owner-Bereich muss folgender Hinweis sichtbar sein:
+
+> Das Restaurant ist für die Richtigkeit, Aktualität, Verfügbarkeit und
+> rechtliche Zulässigkeit seiner Angebots-, Preis-, Produkt- und Bildangaben
+> verantwortlich.
 
 ------------------------------------------------------------------------
 
@@ -155,9 +299,11 @@ Diagramme - leere Teamkarten - Debug-Daten - Entwicklerbegriffe
 
 ### 5.4 Hauptaktion
 
-Der Button **„Neue Aktion starten"** wird entfernt.
+Der Button **„Neue Aktion starten"** bleibt entfernt.
 
-Grund: Aktionen existieren nicht in V1.
+Grund: Generische Aktionen und Kampagnen existieren nicht in V1. Der klar
+benannte Arbeitsbereich `Aktuelles & Angebote` besitzt ausschließlich auf seiner
+eigenen Seite die Hauptaktion `Neues Angebot erstellen`.
 
 Das Dashboard besitzt keinen künstlichen Hauptbutton, wenn dieser nicht
 klar zum aktuellen Produktziel gehört.
@@ -179,15 +325,13 @@ Das Dashboard besitzt eine Karte:
 
 **Heute für dich**
 
-Diese Karte zeigt genau eine Empfehlung.
-
-V1: - Platzhalter oder einfache Empfehlung, zum Beispiel „Neue Punkteeinlösung
-erstellen".
-
-Später dynamisch: - Bonus Boost aktivieren - Freunde einladen - Neue
-Punkteeinlösung - Geburtstagsaktion - Saisonhinweis
-
-Regel: Immer nur eine Empfehlung. Keine Liste.
+Diese Karte steht bei offenem Setup oder objektivem Handlungsbedarf direkt
+unter dem Dashboard-Kopf. Sie zeigt genau eine zustandsabhängige Empfehlung
+und führt direkt in den bestehenden zuständigen Bereich. Veröffentlichung und
+Standort haben Vorrang, danach folgen Punkteeinlösung, Angebot,
+Geburtstagspool, QR Center und Mitarbeiterzugang. Nach vollständiger
+Einrichtung und ohne offene Aktion wird sie verborgen. Keine erfundene
+Wachstumsempfehlung, keine Liste und keine doppelte Dashboard-Empfehlung.
 
 ------------------------------------------------------------------------
 
@@ -206,18 +350,25 @@ WUXUAI berechnet: - Einlösequote - geschätzte Konsumation bis zur
 Einlösung - benötigte Punkte - Wirtschaftlichkeit - fehlende Punkte -
 geschätzten fehlenden Umsatz
 
-Die Einlösequote kommt aus dem Onboarding-Schritt **Punkteeinlösung**:
+Die Einlösequote startet im Onboarding-Schritt **Punkteeinlösung** mit einer
+der vier Empfehlungen:
 
 - Sparsam: 3 %
 - Normal: 5 %
 - Großzügig: 8 %
 - Premium: 10 %
 
+In den Restaurant-Einstellungen und beim Erstellen oder Bearbeiten einer
+Punkteeinlösung wird sie als feste Auswahl von **1 % bis 10 %** angeboten.
+Der Standardwert für neue Einstellungen ist **3 %**. Freie Eingaben und
+Dezimalwerte sind nicht zulässig. Historische Altwerte außerhalb dieses
+Bereichs bleiben sichtbar und werden erst nach einer bewussten Auswahl ersetzt.
+
 Formel:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
 Beispiel:
@@ -358,7 +509,7 @@ Keine Einzel-Downloads. Keine SVG. Keine erweiterten Optionen.
 ### 8.2 Nach Onboarding
 
 Im QR Center dürfen später Einzeldateien angeboten werden: - Restaurant
-QR PNG - Mein Bonus QR PNG - PDF - Sticker - Aufsteller - Tischkarte -
+QR PNG - Meine-Vorteile-QR PNG - PDF - Sticker - Aufsteller - Tischkarte -
 Fensteraufkleber
 
 ### 8.3 Zweck
@@ -398,8 +549,8 @@ Lieblingsbelohnungen - Wochenplanung
 
 Einstellungen sind ein Menü, kein langes Formular.
 
-Unterseiten: - Restaurantdaten - Aussehen - Öffnungszeiten -
-Bonusprogramm - Konto & Testphase
+Unterseiten: - Setup & Einrichtung - Restaurantdaten - Aussehen -
+Öffnungszeiten - Bonusprogramm - Konto & Testphase
 
 Regel: Jede Karte ist klickbar. Jede Unterseite hat ein klares Ziel.
 
@@ -519,7 +670,7 @@ Regel:
 - Punkteeinlösung, Willkommensgeschenke, Mitarbeiter/Tages-PIN und QR Center sind echte Links.
 - Abo & Testphase zeigt echte Subscription-Daten oder einen klaren Nicht-verfügbar-Zustand.
 - Abo & Testphase darf keine kaputten DB-Spalten abfragen. Wenn Stripe-/Payment-Felder noch fehlen, zeigt die Seite einen ruhigen V1-Status.
-- V1 Testphase: 30 Tage kostenlos, keine Kreditkarte, danach Monatsabo.
+- V1 Testphase: 3 Kalendermonate kostenlos, kein Zahlungsmittel erforderlich, danach 59 EUR pro Monat exkl. USt.; automatische Abrechnung bleibt bis zur Stripe-Freigabe deaktiviert.
 - Solange Stripe Checkout/Webhooks nicht echt aktiv sind, gibt es keine Fake-Zahlung und keinen Fake-Erfolg.
 - Keine klickbare Karte darf ins Leere führen.
 - Keine Karte darf wie eine Funktion wirken, wenn dahinter keine echte Funktion steht.
@@ -585,7 +736,10 @@ an einer anderen Position derselben Seite erscheinen.
 
 ## 14. Was ausdrücklich verboten ist
 
--   Aktionen in V1 wieder einführen
+-   generische Aktionen, Coupons oder Kampagnen in V1 wieder einführen
+-   `Aktuelles & Angebote` mit Rewards, Punkten, Geschenken oder Einlösungen verbinden
+-   mehr als fünf Beiträge je Restaurant gleichzeitig veröffentlichen
+-   Push, Segmentierung, Marketingautomation oder Umsatzattribution ergänzen
 -   Dashboard mit technischen Warnungen überladen
 -   Restaurantbesitzer Punkte berechnen lassen
 -   Willkommensgeschenke mit Punkteeinlösungen vermischen
@@ -611,7 +765,8 @@ Tarife - weitere Branchen neben Restaurants/Cafés
 Restaurant Portal gilt als LOCK, wenn:
 
 -   Dashboard in 5 Sekunden verständlich ist
--   Aktionen vollständig aus UI entfernt sind
+-   generische Aktionen vollständig aus der UI entfernt sind
+-   `Aktuelles & Angebote` strikt informativ und von Rewards getrennt bleibt
 -   Punkteeinlösungen ohne manuelle Punkte funktionieren
 -   Willkommensgeschenke eigenständig sind
 -   QR Center klar vom Onboarding getrennt ist
@@ -628,16 +783,99 @@ Endstatus: **LOCK**
 
 - Owner verwalten in V1 ausschließlich den bestehenden primären Standort ihres
   Restaurants. Dies ist keine allgemeine Filialverwaltung.
-- Adresse, PLZ, Ort, Land, Koordinaten, öffentliche Kurzbeschreibung und
-  öffentliches Bild können gepflegt werden.
+- Im normalen Owner-Flow werden Adresse, PLZ, Ort und Land gepflegt. Eine
+  ausdrücklich gestartete serverseitige Nominatim-Suche ermittelt die
+  Koordinaten; diese sind nur in den erweiterten Einstellungen sichtbar.
+- Das Land wird ueber eine durchsuchbare weltweite Laenderauswahl angezeigt.
+  Sichtbare Namen folgen nach Moeglichkeit der Restaurant-/UI-Sprache; der
+  kanonische Branch-Wert bleibt immer ISO 3166-1 Alpha-2. Fehlende Werte werden
+  nicht stillschweigend auf Oesterreich gesetzt.
+- Eine Adressänderung verwirft die bisherige Kartenposition, bis der Owner die
+  neue Adresse erneut gesucht und geprüft hat.
+- Öffentliche Kurzbeschreibung und öffentliches Bild bleiben im bestehenden
+  Standortformular pflegbar.
 - `In Restaurantsuche sichtbar` ist eine ausdrückliche Freigabe und setzt ein
   aktives Restaurant, vollständige Adressdaten und valide Koordinaten voraus.
 - Bestehende Restaurants bleiben standardmäßig unsichtbar.
 - Owner können durch bestehende RLS nur den Standort ihres Restaurants ändern.
+- Nominatim erhält ausschließlich die normalisierte geschäftliche Adresse.
+  Auth-, Owner-, Kunden-, Zahlungs- und interne Tenantdaten werden nicht an den
+  Provider übertragen. Aufrufe sind gecacht, global begrenzt und nur für
+  berechtigte Owner/Restaurantadmins möglich.
 
 ## Rechtliche Bereitschaft V1
 
 - Unter Einstellungen verwaltet der Owner Impressumsangaben, versionierte Teilnahmebedingungen, Datenschutztext, Beschwerdekontakt und Programmende für das eigene Restaurant.
 - Öffentliche Sichtbarkeit neuer Standorte setzt Betriebs-, Rechts- und Sicherheitsbereitschaft voraus. Bestehende Teststandorte werden nicht ungeprüft deaktiviert.
 - Offene Datenschutzanfragen werden pseudonymisiert angezeigt. Eine Anfrage führt nicht automatisch zu ungeprüfter Löschung.
-- Der Einlösungs-CSV ist eine technische Aufzeichnung und keine Steuerberatung.
+- Der interne Bonus-Aktivitätsexport ist eine technische Aufzeichnung des Bonusprogramms und kein Kassen- oder Steuerbericht.
+
+## V1 Bonus-Aktivitätsberichte
+
+Der Owner-Bereich `Berichte` enthält:
+
+- Monatsübersicht
+- Jahresübersicht
+- chronologisches Einlösungsprotokoll
+- CSV-Detailprotokoll
+- druckbare Zusammenfassung
+
+Die Berichte dokumentieren ausschließlich Aktivitäten des Bonusprogramms. Sie
+sind keine Kassen-, RKSV-, Steuer- oder Buchhaltungsberichte. Testkunden sind
+standardmäßig ausgeschlossen; alle Zeiträume werden serverseitig nach
+`Europe/Vienna` gebildet. Zugriff erhalten nur Owner und Restaurantadmins.
+
+Historische Einlösungsdaten werden niemals aus später geänderten Rewardwerten
+rekonstruiert. Fehlende Altdaten müssen sichtbar gekennzeichnet bleiben.
+
+## Punkte-Präsentationsfenster
+
+Normale Punktebelohnungen werden vom Kunden selbst verbindlich aktiviert. Das
+Restaurantpersonal kontrolliert den 15 Minuten aktiven Bildschirm nur visuell.
+Owner können eine fehlerhafte Aktivierung im Bonus-Aktivitätsbericht mit einer
+Begründung stornieren; Punkte, Journalstatus und Audit werden dabei atomar
+korrigiert. Restaurantadmins und Mitarbeiter besitzen dieses Stornorecht nicht.
+
+## Owner-Teamverwaltung V1
+
+- Unter `Mitarbeiter` verwalten Owner und berechtigte Restaurantadmins
+  individuelle Teamzugänge des eigenen Restaurants.
+- Eine Einladung benötigt Name und E-Mail-Adresse. Es wird kein gemeinsames
+  Restaurant- oder Mitarbeiterpasswort erzeugt.
+- Der Zugang wird erst nach persönlicher Annahme des Auth-Links und eigener
+  Passwortsetzung aktiv.
+- Owner können offene Einladungen erneut senden sowie aktive Zugänge sperren,
+  reaktivieren oder auditierbar entfernen. Auditdaten werden nicht gelöscht.
+- Manager, Staff, Customer und Anon dürfen Teamzugänge nicht verwalten.
+- Der Mitarbeiter-QR öffnet ausschließlich den Login-Einstieg und verleiht
+  weder Rolle noch Restaurantzugriff.
+
+## Smart Logo Darstellung V1
+
+- Der Owner lädt unter `Einstellungen → Aussehen` PNG, JPG, WebP oder SVG bis
+  maximal 5 MB hoch. Empfohlen sind mindestens 1024 Pixel; sehr breite Logos
+  werden nicht allein wegen einer geringen Höhe abgelehnt.
+- Logos werden proportional, formatabhängig und mit sicherer Ruhezone
+  eingepasst. Das Originalbild wird nicht zugeschnitten oder verändert.
+- Bei Bedarf passt der Owner Größe sowie horizontale und vertikale Position an
+  und kann jederzeit zu `Automatisch einpassen` zurückkehren.
+- Der Editor öffnet als kompakter, zentrierter Arbeitsbereich. Live-Vorschau,
+  Sicherheitsrahmen, die drei Anpassungen, vier reale Verwendungsvorschauen
+  und die fest erreichbare Speicheraktion bleiben auf üblichen Desktop- und
+  Tabletgrößen gemeinsam sichtbar. Auf Mobile scrollt nur der Editorinhalt.
+- `Zurücksetzen` stellt den beim Öffnen gespeicherten Stand wieder her;
+  `Automatisch einpassen` setzt dagegen die empfohlene Standarddarstellung.
+- Transparente Innenabstände dürfen als nicht-destruktiver Vorschlag korrigiert
+  werden. Ein vorhandener Bildhintergrund wird niemals automatisch entfernt.
+- Customer-, Staff- und QR-Starter-Kit-Flächen nutzen dieselbe LogoStage und
+  denselben stabilen Fehlerfallback.
+- Eine geladene LogoStage zeigt keinen kuenstlichen grauen oder weissen
+  Seitenbereich. Header- und Printflaechen passen ihre Breite an quadratische,
+  breite und hohe Logos an; feste Bildhintergruende in der Originaldatei
+  bleiben unveraendert.
+- Das A6-Starter-Kit verwendet dieselben Fit-, Skalierungs- und X-/Y-Werte. Die
+  groessere Markenpraesenz darf QR-Groesse und QR-Ruhezone nicht verkleinern.
+- Beide Exportwege erzeugen echte A6-Seiten (`105 x 148 mm`) mit mindestens
+  8 mm Druck-Sicherheitsabstand. Logo und Restaurantidentitaet beginnen auf
+  allen Seiten einheitlich bei etwa 9 bis 10 mm; kein Element setzt
+  randlosen Druck voraus.

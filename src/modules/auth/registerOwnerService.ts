@@ -1,4 +1,13 @@
-import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import type { User } from "@supabase/supabase-js";
+import { liveDataUnavailableMessage, supabase, supabaseAuthStorageKey } from "../../shared/lib/supabase";
+import {
+  buildOwnerAuthRedirect,
+  classifyOwnerSignUpResult,
+  isOwnerEmailConfirmed,
+  OWNER_AUTH_PATHS,
+  ownerAuthErrorMessage,
+} from "./ownerAuthFlow.mjs";
+import { clearSupabaseAuthStorage, createInvalidRefreshSessionHandler } from "./authSessionGuard.mjs";
 
 export type RegisterOwnerInput = {
   ownerName: string;
@@ -10,10 +19,42 @@ export type RegisterOwnerInput = {
 
 export type RegisterOwnerResult = {
   requiresEmailConfirmation: boolean;
+  requiresAuthentication: boolean;
 };
 
 const pendingRegistrationKey = "wuxuai-pending-owner-registration";
 const pendingRegistrationRetryMessage = "Deine Registrierung wird noch vorbereitet. Bitte versuche es in wenigen Sekunden erneut.";
+let invalidOwnerSessionHandler: ReturnType<typeof createInvalidRefreshSessionHandler> | null = null;
+
+function getInvalidOwnerSessionHandler() {
+  if (!invalidOwnerSessionHandler) {
+    invalidOwnerSessionHandler = createInvalidRefreshSessionHandler({
+      clearStorage: () => clearSupabaseAuthStorage(window.localStorage, supabaseAuthStorageKey),
+      localSignOut: async () => {
+        if (!supabase) return;
+        const { error } = await supabase.auth.signOut({ scope: "local" });
+        if (error && error.name !== "AuthSessionMissingError") throw error;
+      },
+      onInvalidSession: () => window.location.replace("/restaurant/login"),
+    });
+  }
+  return invalidOwnerSessionHandler;
+}
+
+async function throwOwnerSessionError(error: unknown): Promise<never> {
+  const invalid = await getInvalidOwnerSessionHandler().handle(error);
+  if (invalid) {
+    throw new Error("Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.");
+  }
+  throw new Error(registrationErrorMessage(error));
+}
+
+async function refreshOwnerSession() {
+  if (!supabase) return null;
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error) await throwOwnerSessionError(error);
+  return data.session;
+}
 
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -46,6 +87,23 @@ function readPendingRegistration(email: string): RegisterOwnerInput | null {
   }
 }
 
+export function readPendingOwnerEmail(): string {
+  const raw = localStorage.getItem(pendingRegistrationKey);
+  if (!raw) return "";
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<RegisterOwnerInput>;
+    return typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : "";
+  } catch {
+    localStorage.removeItem(pendingRegistrationKey);
+    return "";
+  }
+}
+
+export function clearPendingOwnerRegistration() {
+  localStorage.removeItem(pendingRegistrationKey);
+}
+
 async function waitForReadySession(retries = 1) {
   if (!supabase) {
     return null;
@@ -54,7 +112,7 @@ async function waitForReadySession(retries = 1) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) {
-      throw new Error(registrationErrorMessage(sessionError));
+      await throwOwnerSessionError(sessionError);
     }
 
     if (sessionData.session?.user) {
@@ -63,14 +121,13 @@ async function waitForReadySession(retries = 1) {
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError && attempt === retries - 1) {
-      throw new Error(registrationErrorMessage(userError));
+      await throwOwnerSessionError(userError);
     }
 
     if (userData.user) {
-      await supabase.auth.refreshSession();
-      const { data: refreshedSession } = await supabase.auth.getSession();
-      if (refreshedSession.session?.user) {
-        return refreshedSession.session;
+      const refreshedSession = await refreshOwnerSession();
+      if (refreshedSession?.user) {
+        return refreshedSession;
       }
     }
 
@@ -103,7 +160,7 @@ async function startOwnerTrial(input: RegisterOwnerInput, sessionRetries = 1) {
     throw new Error(registrationErrorMessage(trialError));
   }
 
-  await supabase.auth.refreshSession();
+  await refreshOwnerSession();
 }
 
 function registrationErrorMessage(error: unknown): string {
@@ -121,7 +178,7 @@ function registrationErrorMessage(error: unknown): string {
     message.includes("email_exists") ||
     message.includes("user already")
   ) {
-    return "Diese E-Mail ist bereits registriert. Bitte melde dich an.";
+    return "Die Registrierung konnte nicht abgeschlossen werden. Bitte prüfe deine Angaben oder melde dich an.";
   }
 
   if (message.includes("weak password") || message.includes("password should") || message.includes("password")) {
@@ -140,7 +197,7 @@ function registrationErrorMessage(error: unknown): string {
     return pendingRegistrationRetryMessage;
   }
 
-  return rawMessage;
+  return ownerAuthErrorMessage(error);
 }
 
 export async function registerRestaurantOwner(input: RegisterOwnerInput): Promise<RegisterOwnerResult> {
@@ -154,8 +211,10 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
     options: {
       data: {
         full_name: input.ownerName.trim(),
+        restaurant_name: input.restaurantName.trim(),
+        phone: input.phone.trim() || null,
       },
-      emailRedirectTo: `${window.location.origin}/admin/onboarding`,
+      emailRedirectTo: buildOwnerAuthRedirect(window.location.origin, OWNER_AUTH_PATHS.callback),
     },
   });
 
@@ -163,20 +222,44 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
     throw new Error(registrationErrorMessage(error));
   }
 
-  if (!data.session) {
-    storePendingRegistration(input);
-    return { requiresEmailConfirmation: true };
+  storePendingRegistration(input);
+
+  const signUpResult = classifyOwnerSignUpResult(data);
+
+  if (signUpResult === "existing_or_obfuscated") {
+    return { requiresEmailConfirmation: false, requiresAuthentication: true };
   }
 
-  await startOwnerTrial(input);
-  localStorage.removeItem(pendingRegistrationKey);
+  if (data.session) {
+    await supabase.auth.signOut({ scope: "local" });
+    throw new Error("Die sichere E-Mail-Bestätigung ist noch nicht verfügbar. Bitte versuche es später erneut.");
+  }
 
-  return { requiresEmailConfirmation: false };
+  if (signUpResult !== "confirmation_required") {
+    clearPendingOwnerRegistration();
+    throw new Error("Die Registrierung konnte nicht abgeschlossen werden. Bitte versuche es erneut.");
+  }
+
+  return { requiresEmailConfirmation: true, requiresAuthentication: false };
+}
+
+export async function activateRestaurantOwnerForCurrentUser(input: Omit<RegisterOwnerInput, "email" | "password">) {
+  if (!supabase) throw new Error(liveDataUnavailableMessage);
+  const session = await waitForReadySession(2);
+  if (!session?.user || !isOwnerEmailConfirmed(session.user)) {
+    throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+  }
+  await startOwnerTrial({ ...input, email: session.user.email ?? "", password: "" }, 2);
 }
 
 export async function completePendingOwnerRegistration(email: string): Promise<boolean> {
   if (!supabase) {
     throw new Error(liveDataUnavailableMessage);
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user || !isOwnerEmailConfirmed(userData.user)) {
+    throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
   }
 
   const pendingRegistration = readPendingRegistration(email);
@@ -186,5 +269,34 @@ export async function completePendingOwnerRegistration(email: string): Promise<b
 
   await startOwnerTrial(pendingRegistration, 3);
   localStorage.removeItem(pendingRegistrationKey);
+  return true;
+}
+
+export async function completeConfirmedOwnerRegistration(user: User): Promise<boolean> {
+  if (!isOwnerEmailConfirmed(user) || !user.email) {
+    throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+  }
+
+  const pendingRegistration = readPendingRegistration(user.email);
+  const metadata = user.user_metadata ?? {};
+  const metadataRegistration: RegisterOwnerInput | null =
+    typeof metadata.full_name === "string"
+    && typeof metadata.restaurant_name === "string"
+    && metadata.full_name.trim()
+    && metadata.restaurant_name.trim()
+      ? {
+          ownerName: metadata.full_name,
+          email: user.email,
+          password: "",
+          restaurantName: metadata.restaurant_name,
+          phone: typeof metadata.phone === "string" ? metadata.phone : "",
+        }
+      : null;
+  const registration = pendingRegistration ?? metadataRegistration;
+
+  if (!registration) return false;
+
+  await startOwnerTrial(registration, 3);
+  if (pendingRegistration) localStorage.removeItem(pendingRegistrationKey);
   return true;
 }

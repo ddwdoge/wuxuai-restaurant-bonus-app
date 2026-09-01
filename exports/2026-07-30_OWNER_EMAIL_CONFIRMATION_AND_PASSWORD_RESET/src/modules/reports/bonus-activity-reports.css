@@ -1,0 +1,290 @@
+.bonus-reports-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 1440px;
+  margin: 0 auto;
+  color: #201d18;
+}
+
+.bonus-reports-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.bonus-reports-header h1 {
+  margin: 5px 0 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.bonus-reports-header p,
+.bonus-report-journal > header p {
+  margin: 0;
+  color: #716a60;
+}
+
+.bonus-report-actions {
+  display: flex;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.bonus-legal-boundary {
+  display: flex;
+  gap: 14px;
+  padding: 17px 18px;
+  border: 1px solid #e5d7bd;
+  border-radius: 14px;
+  background: #fffaf0;
+  color: #57482d;
+}
+
+.bonus-legal-boundary svg { flex: 0 0 auto; margin-top: 2px; color: #956820; }
+.bonus-legal-boundary p { margin: 4px 0 7px; max-width: 1050px; line-height: 1.55; }
+.bonus-legal-boundary span { font-size: .72rem; font-weight: 700; color: #8c6c31; }
+
+.bonus-report-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 680px;
+  margin: 20px 0 14px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eee8de;
+}
+
+.bonus-report-tabs button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #655f56;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bonus-report-tabs button.active {
+  background: #fff;
+  color: #956820;
+  box-shadow: 0 2px 8px rgb(74 55 25 / 8%);
+}
+
+.bonus-report-tabs button:focus-visible,
+.bonus-report-filters select:focus-visible,
+.bonus-test-filter:focus-within {
+  outline: 3px solid rgb(191 143 54 / 28%);
+  outline-offset: 2px;
+}
+
+.bonus-report-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.bonus-report-filters label:not(.bonus-test-filter) {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #635c52;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.bonus-report-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #dfd7cb;
+  border-radius: 9px;
+  background: #fff;
+  color: #28241e;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.bonus-test-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 1 / -1;
+  min-height: 44px;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.bonus-test-filter input { width: 20px; height: 20px; accent-color: #bf8f36; }
+.bonus-test-filter span { display: grid; gap: 2px; }
+.bonus-test-filter small { color: #80786d; }
+
+.bonus-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.bonus-report-metrics article {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  padding: 17px;
+}
+
+.bonus-report-metrics svg { grid-row: 1 / span 2; color: #bf8f36; }
+.bonus-report-metrics span { color: #746d63; font-size: .8rem; }
+.bonus-report-metrics strong { font-size: 1.45rem; font-weight: 600; }
+
+.bonus-report-quality {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bonus-report-quality p {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+  padding: 15px;
+  border-right: 1px solid #ece5da;
+}
+
+.bonus-report-quality p:last-child { border-right: 0; }
+.bonus-report-quality span { color: #766f65; font-size: .75rem; }
+.bonus-report-quality strong { font-size: .95rem; font-weight: 600; overflow-wrap: anywhere; }
+
+.bonus-report-journal > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.bonus-report-journal h2 { margin: 0 0 4px; font-size: 1.3rem; }
+.bonus-report-journal > header > span { color: #956820; font-size: .82rem; font-weight: 700; }
+.bonus-activity-list { display: grid; gap: 10px; }
+
+.bonus-activity-card {
+  padding: 17px;
+  border: 1px solid #ebe4da;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 7px 22px rgb(54 43 25 / 5%);
+}
+
+.bonus-activity-card > header,
+.bonus-activity-card > footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.bonus-activity-number { display: block; color: #956820; font-size: .72rem; font-weight: 700; }
+.bonus-activity-card h3 { margin: 4px 0 0; font-size: 1rem; font-weight: 600; }
+.bonus-activity-status { padding: 5px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.bonus-activity-status.active { background: #e8f5eb; color: #286039; }
+.bonus-activity-status.cancelled { background: #f5e8e5; color: #8b4037; }
+
+.bonus-activity-card dl {
+  display: grid;
+  grid-template-columns: 1.35fr 1.2fr repeat(4, minmax(90px, 1fr));
+  gap: 14px;
+  margin: 15px 0;
+  padding: 13px 0;
+  border-block: 1px solid #eee8df;
+}
+
+.bonus-activity-card dl div { min-width: 0; }
+.bonus-activity-card dt { margin-bottom: 3px; color: #827a70; font-size: .7rem; }
+.bonus-activity-card dd { margin: 0; font-size: .86rem; font-weight: 600; overflow-wrap: anywhere; }
+.snapshot-pill { align-self: center; padding: 5px 8px; border-radius: 999px; background: #edf4ed; color: #31603b; font-size: .71rem; font-weight: 700; }
+.snapshot-pill.partial_legacy { background: #f6eedf; color: #795b23; }
+.snapshot-pill.missing_source_data { background: #f3e8e5; color: #864a40; }
+.bonus-cancel-button { min-height: 44px; }
+.bonus-cancellation-copy { margin: 0; color: #7c5149; font-size: .82rem; text-align: right; }
+
+.bonus-report-loading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+.bonus-report-loading span { height: 104px; border-radius: 12px; background: linear-gradient(90deg, #eee8df, #faf7f1, #eee8df); background-size: 220% 100%; animation: bonus-report-shimmer 1.4s infinite; }
+@keyframes bonus-report-shimmer { to { background-position: -220% 0; } }
+
+.bonus-report-state,
+.bonus-report-empty,
+.bonus-report-access-denied {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 24px;
+}
+
+.bonus-report-state h2,
+.bonus-report-state p,
+.bonus-report-empty h3,
+.bonus-report-empty p,
+.bonus-report-access-denied h1,
+.bonus-report-access-denied p { margin: 0; }
+
+.bonus-cash-responsibility { margin-top: 24px; padding: 20px; }
+.bonus-cash-responsibility h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.bonus-cash-responsibility p { max-width: 960px; line-height: 1.55; }
+.bonus-drawer-reference { padding: 13px; border-radius: 10px; background: #f7f2e8; color: #6e5b38; }
+
+@media (max-width: 1000px) {
+  .bonus-report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bonus-report-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bonus-report-quality { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bonus-report-quality p { border-bottom: 1px solid #ece5da; }
+  .bonus-activity-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .bonus-reports-page { max-width: 100%; }
+  .bonus-reports-header { align-items: stretch; flex-direction: column; gap: 14px; }
+  .bonus-reports-header h1 { font-size: 2.35rem; }
+  .bonus-report-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .bonus-report-actions .button { width: 100%; min-width: 0; }
+  .bonus-legal-boundary { padding: 14px; }
+  .bonus-report-tabs { max-width: none; overflow-x: auto; }
+  .bonus-report-tabs button { padding-inline: 8px; font-size: .78rem; }
+  .bonus-report-filters { grid-template-columns: 1fr; }
+  .bonus-report-metrics { gap: 10px; }
+  .bonus-report-metrics article { padding: 14px 12px; }
+  .bonus-report-metrics strong { font-size: 1.2rem; }
+  .bonus-report-quality { grid-template-columns: 1fr; }
+  .bonus-report-quality p { border-right: 0; }
+  .bonus-activity-card > header,
+  .bonus-activity-card > footer { align-items: stretch; flex-direction: column; }
+  .bonus-activity-card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .bonus-cancel-button { width: 100%; }
+  .bonus-cancellation-copy { text-align: left; }
+  .bonus-report-loading { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .premium-owner-sidebar,
+  .premium-owner-topbar,
+  .bonus-report-actions,
+  .bonus-report-tabs,
+  .bonus-report-filters,
+  .bonus-cancel-button,
+  .bonus-cash-responsibility { display: none !important; }
+  .premium-owner-main { padding: 0 !important; }
+  .bonus-reports-page { max-width: none; }
+  .bonus-activity-card { break-inside: avoid; box-shadow: none; }
+}

@@ -1,13 +1,18 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import type { LoyaltyMode, RewardType } from "../../shared/types/domain";
+import {
+  buildRestaurantActivationPayload,
+  indexRowsByKey,
+  requireExistingRestaurantId,
+  shouldSkipCompletedOnboarding,
+} from "./restaurantOnboardingActivation.mjs";
+import { syncRestaurantAddressFromLegalProfile } from "../legal/legalAddressSourceService";
 
 export type PilotOnboardingInput = {
-  restaurantId?: string | null;
-  ownerId: string | null;
+  restaurantId: string;
   restaurantName: string;
   restaurantType: string;
   language: string;
-  slug: string;
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
@@ -16,7 +21,6 @@ export type PilotOnboardingInput = {
   specialDays: string[];
   holidays: string[];
   smartOpenEnabled: boolean;
-  onboardingStatus: "draft" | "ready";
   onboardingChecklist: Record<string, boolean>;
   loyaltyMode: LoyaltyMode;
   amountPerPoint: number;
@@ -29,6 +33,8 @@ export type PilotOnboardingInput = {
   starterRewards: StarterRewardInput[];
   staffName: string;
   staffPin: string;
+  legalProfile: Record<string, string | boolean | null>;
+  legalPublicationConfirmed: boolean;
 };
 
 export type StarterRewardInput = {
@@ -64,38 +70,29 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const restaurantPayload = {
-      owner_id: input.ownerId,
-      name: input.restaurantName,
-      slug: input.slug,
-      status: "active",
-      restaurant_type: input.restaurantType,
-      language: input.language,
-      opening_hours: input.openingHours,
-      special_days: input.specialDays,
-      holidays: input.holidays,
-      smart_open_enabled: input.smartOpenEnabled,
-      onboarding_status: input.onboardingStatus,
-      onboarding_checklist: input.onboardingChecklist,
-      owner_phone: null,
-  };
-
-  const restaurantQuery = input.restaurantId
-    ? supabase
-        .from("restaurants")
-        .update(restaurantPayload)
-        .eq("id", input.restaurantId)
-    : supabase
-        .from("restaurants")
-        .insert(restaurantPayload);
-
-  const { data: restaurant, error: restaurantError } = await restaurantQuery
-    .select("id, owner_id, name, slug, status, created_at")
+  const restaurantId = requireExistingRestaurantId(input.restaurantId);
+  const { data: existingRestaurant, error: restaurantError } = await supabase
+    .from("restaurants")
+    .select("id, owner_id, name, slug, status, onboarding_status, created_at")
+    .eq("id", restaurantId)
     .single();
 
   if (restaurantError) throw restaurantError;
 
-  const restaurantId = restaurant.id as string;
+  if (shouldSkipCompletedOnboarding(existingRestaurant.onboarding_status)) {
+    const { data: existingOffer, error: existingOfferError } = await supabase
+      .from("rewards")
+      .select("id, restaurant_id, title, description, reward_type, required_points, required_stamps, active, expires_at, created_at")
+      .eq("restaurant_id", restaurantId)
+      .eq("is_starter_reward", true)
+      .order("starter_reward_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingOfferError) throw existingOfferError;
+    const completedResult = { restaurant: existingRestaurant, offer: existingOffer ?? null, campaign: null };
+    return completedResult;
+  }
 
   const { error: brandingError } = await supabase.from("restaurant_branding").upsert(
     {
@@ -140,7 +137,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     throw loyaltyError;
   }
 
-  const { error: rulesError } = await supabase.from("loyalty_rules").insert([
+  const desiredRules = [
     {
       restaurant_id: restaurantId,
       title: "Besuch",
@@ -165,9 +162,25 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
       min_amount: 0,
       active: true,
     },
-  ]);
+  ];
 
-  if (rulesError) throw rulesError;
+  const { data: existingRules, error: existingRulesError } = await supabase
+    .from("loyalty_rules")
+    .select("id, title")
+    .eq("restaurant_id", restaurantId)
+    .in("title", desiredRules.map((rule) => rule.title));
+
+  if (existingRulesError) throw existingRulesError;
+
+  const rulesByTitle = indexRowsByKey(existingRules ?? [], "title");
+  for (const rule of desiredRules) {
+    const existingRule = rulesByTitle.get(rule.title);
+    const { error: ruleError } = existingRule
+      ? await supabase.from("loyalty_rules").update(rule).eq("id", existingRule.id)
+      : await supabase.from("loyalty_rules").insert(rule);
+
+    if (ruleError) throw ruleError;
+  }
 
   const starterRewardRows = input.starterRewards
     .filter((reward) => reward.title.trim())
@@ -191,20 +204,72 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     throw new Error("Bitte mindestens ein Willkommensgeschenk anlegen.");
   }
 
-  const { data: rewards, error: rewardError } = await supabase
+  const { data: existingRewards, error: existingRewardsError } = await supabase
     .from("rewards")
-    .insert(starterRewardRows)
-    .select("id, restaurant_id, title, description, reward_type, required_points, required_stamps, active, expires_at, created_at");
+    .select("id, starter_reward_key, birthday_pool_enabled")
+    .eq("restaurant_id", restaurantId)
+    .eq("is_starter_reward", true);
 
-  if (rewardError) throw rewardError;
+  if (existingRewardsError) throw existingRewardsError;
 
-  const { error: staffError } = await supabase.rpc("create_staff_member_with_pin", {
+  const rewardsByKey = indexRowsByKey(existingRewards ?? [], "starter_reward_key");
+  const rewards = [];
+  for (const reward of starterRewardRows) {
+    const existingReward = rewardsByKey.get(reward.starter_reward_key);
+    const rewardWithBirthdayDefault = {
+      ...reward,
+      birthday_pool_enabled: existingReward
+        ? Boolean(existingReward.birthday_pool_enabled)
+        : true,
+    };
+    const rewardQuery = existingReward
+      ? supabase.from("rewards").update(rewardWithBirthdayDefault).eq("id", existingReward.id)
+      : supabase.from("rewards").insert(rewardWithBirthdayDefault);
+    const { data: savedReward, error: rewardError } = await rewardQuery
+      .select("id, restaurant_id, title, description, reward_type, required_points, required_stamps, active, expires_at, created_at")
+      .single();
+
+    if (rewardError) throw rewardError;
+    rewards.push(savedReward);
+  }
+
+  const { data: existingStaff, error: existingStaffError } = await supabase
+    .from("staff_members")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("name", input.staffName.trim())
+    .eq("role", "staff")
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingStaffError) throw existingStaffError;
+
+  if (!existingStaff) {
+    const { error: staffError } = await supabase.rpc("create_staff_member_with_pin", {
+      input_restaurant_id: restaurantId,
+      input_name: input.staffName,
+      input_pin: input.staffPin,
+    });
+
+    if (staffError) throw staffError;
+  }
+
+  await syncRestaurantAddressFromLegalProfile(restaurantId, input.legalProfile);
+
+  const { data: completion, error: completionError } = await supabase.rpc("complete_restaurant_onboarding", {
     input_restaurant_id: restaurantId,
-    input_name: input.staffName,
-    input_pin: input.staffPin,
+    input_profile: input.legalProfile,
+    input_activation: buildRestaurantActivationPayload(input),
+    input_publication_confirmed: input.legalPublicationConfirmed,
+    input_request_id: crypto.randomUUID(),
   });
 
-  if (staffError) throw staffError;
+  if (completionError) throw completionError;
+  const restaurant = completion?.restaurant;
+  if (!restaurant?.id || restaurant.id !== restaurantId) {
+    throw new Error("Der Onboarding-Abschluss konnte nicht bestätigt werden.");
+  }
 
   return { restaurant, offer: rewards?.[0] ?? null, campaign: null };
 }

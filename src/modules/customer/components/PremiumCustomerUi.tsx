@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CheckCircle2, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
@@ -9,14 +10,15 @@ export type CustomerView = "home" | "redemptions" | "collect" | "account";
 
 type CustomerAppShellProps = {
   children: ReactNode;
+  className?: string;
   fontFamily?: string | null;
   primaryColor?: string | null;
 };
 
-export function AppShell({ children, fontFamily, primaryColor }: CustomerAppShellProps) {
+export function AppShell({ children, className = "", fontFamily, primaryColor }: CustomerAppShellProps) {
   return (
     <main
-      className="customer-premium-shell"
+      className={`customer-premium-shell ${className}`.trim()}
       style={{
         "--customer-brand": primaryColor ?? "#b88a3b",
         fontFamily: fontFamily
@@ -36,38 +38,43 @@ export function PageContainer({ children, className = "" }: { children: ReactNod
 type RestaurantLogoProps = {
   logoUrl?: string | null;
   name: string;
+  presentation?: RestaurantLogoPresentation | null;
   primaryColor?: string | null;
 };
 
-export function RestaurantLogo({ logoUrl, name, primaryColor }: RestaurantLogoProps) {
-  return (
-    <span className="premium-restaurant-logo">
-      {logoUrl ? (
-        <img alt={`${name} Logo`} src={logoUrl} />
-      ) : (
-        <span aria-hidden="true" style={{ background: primaryColor ?? "#b88a3b" }}>
-          {(name.trim().charAt(0) || "W").toUpperCase()}
-        </span>
-      )}
-    </span>
-  );
+export function RestaurantLogo({ logoUrl, name, presentation, primaryColor }: RestaurantLogoProps) {
+  return <RestaurantLogoStage className="premium-restaurant-logo" logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} size="compact" />;
 }
 
 type CustomerHeaderProps = RestaurantLogoProps & {
   compact?: boolean;
   customerName?: string | null;
   onInfo: () => void;
+  onSwitchRestaurant?: () => void;
   subtitle?: string;
 };
 
-export function CustomerHeader({ compact = false, logoUrl, name, onInfo, primaryColor, subtitle = "Mein Bonus" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, presentation, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
-      <RestaurantLogo logoUrl={logoUrl} name={name} primaryColor={primaryColor} />
-      <div>
-        {!compact ? <span>{subtitle}</span> : null}
-        <strong>{name}</strong>
-      </div>
+      {onSwitchRestaurant ? (
+        <button aria-label="Aktuelles Restaurant wechseln" className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
+          <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
+          <span className="premium-customer-header-copy">
+            {!compact ? <span>{subtitle}</span> : null}
+            <strong>{name}</strong>
+          </span>
+          <ChevronDown aria-hidden="true" size={18} />
+        </button>
+      ) : (
+        <>
+          <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
+          <span className="premium-customer-header-copy">
+            {!compact ? <span>{subtitle}</span> : null}
+            <strong>{name}</strong>
+          </span>
+        </>
+      )}
       <button aria-label="So funktioniert's öffnen" className="premium-icon-button" onClick={onInfo} type="button">
         <Info aria-hidden="true" size={21} />
       </button>
@@ -89,7 +96,7 @@ const navigationItems = [
 
 export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
   return (
-    <nav aria-label="Mein Bonus Navigation" className="premium-bottom-navigation">
+    <nav aria-label="Meine Vorteile Navigation" className="premium-bottom-navigation">
       {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}
@@ -156,22 +163,32 @@ export function ProgressBar({ label, value }: { label: string; value: number }) 
 }
 
 type PointsCardProps = {
+  boostDetail?: string | null;
   boostLabel?: string | null;
   label: string;
   note: string;
+  onInfo?: () => void;
   progress?: number;
   progressLabel?: string;
   value: string;
 };
 
-export function PointsCard({ boostLabel, label, note, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
+export function PointsCard({ boostDetail, boostLabel, label, note, onInfo, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
   return (
     <PremiumCard className="premium-points-card" variant="highlight">
       <div className="premium-points-heading">
-        <span>{label}</span>
+        <span className="premium-points-title">
+          <span>{label}</span>
+          {onInfo ? (
+            <button aria-label="Informationen zu Punkten" className="premium-points-info" onClick={onInfo} type="button">
+              <Info aria-hidden="true" size={21} />
+            </button>
+          ) : null}
+        </span>
         {boostLabel ? <StatusBadge tone="warning">{boostLabel}</StatusBadge> : null}
       </div>
       <strong className="premium-points-value">{value}</strong>
+      {boostDetail ? <small className="premium-points-boost-detail">{boostDetail}</small> : null}
       {typeof progress === "number" ? <ProgressBar label={progressLabel} value={progress} /> : null}
       <p>{note}</p>
     </PremiumCard>
@@ -237,7 +254,7 @@ export function RewardCard({ actionLabel = "Details ansehen", category, imageCro
   const StateIcon = stateMeta.icon;
 
   return (
-    <PremiumCard className={`premium-reward-card state-${state}`}>
+    <PremiumCard className={`premium-compact-customer-card premium-reward-card state-${state}`}>
       <div className="premium-reward-media">
         <RewardImage crop={imageCrop} imageUrl={imageUrl} title={title} />
         {state !== "available" ? (

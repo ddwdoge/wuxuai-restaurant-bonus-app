@@ -16,6 +16,7 @@ import {
   Wine,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import {
   RewardImageFrame,
 } from "../../../shared/components/RewardImageFrame";
@@ -33,6 +34,7 @@ import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type WelcomeGiftMode = "value_limit" | "fixed_product";
 
@@ -137,7 +139,7 @@ function newGiftForm(): GiftForm {
     imageCrop: DEFAULT_REWARD_IMAGE_CROP,
     imageCropEditing: false,
     active: true,
-    birthdayPoolEnabled: false,
+    birthdayPoolEnabled: true,
   };
 }
 
@@ -148,6 +150,7 @@ function giftStatus(gift: RewardOffer) {
 }
 
 export function WelcomeGiftsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [gifts, setGifts] = useState<RewardOffer[]>([]);
@@ -294,6 +297,7 @@ export function WelcomeGiftsPage() {
       setEditing(null);
       setPhotoFile(null);
       setStatus(original ? "Willkommensgeschenk aktualisiert." : "Willkommensgeschenk erstellt.");
+      if (saved.active && saved.birthday_pool_enabled) smartSetup.complete("birthday_pool_saved");
     } catch (error) {
       if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Willkommensgeschenk konnte nicht gespeichert werden.", error);
@@ -311,6 +315,7 @@ export function WelcomeGiftsPage() {
       setGifts((current) => current.map((item) => item.id === updated.id ? updated : item));
       setStatus(updated.active ? "Willkommensgeschenk aktiviert." : "Willkommensgeschenk deaktiviert.");
       setPendingStatusGift(null);
+      if (updated.active && updated.birthday_pool_enabled) smartSetup.complete("birthday_pool_saved");
     } catch (error) {
       console.error("Willkommensgeschenk-Status konnte nicht geändert werden.", error);
       setStatus("Status konnte gerade nicht geändert werden.");
@@ -435,9 +440,10 @@ export function WelcomeGiftsPage() {
       <AppDrawer description="Name, Wert, Foto und Status des Geschenks." dismissOnOverlay={false} footer={editing ? <><button className="button secondary" disabled={saving} onClick={closeEditor} type="button">Abbrechen</button><button className="button" disabled={saving || !editing.title.trim()} form="welcome-gift-editor-form" type="submit"><Save size={18} />{saving && photoFile ? "Foto wird hochgeladen …" : editing.id ? "Änderungen speichern" : "Willkommensgeschenk erstellen"}</button></> : null} onClose={closeEditor} open={Boolean(editing)} size="large" title={editing?.id ? "Willkommensgeschenk bearbeiten" : "Willkommensgeschenk erstellen"}>
         {editing ? (
           <form className="form premium-owner-editor welcome-gift-drawer-form" id="welcome-gift-editor-form" onSubmit={saveGift}>
+            <RequiredFieldsNote />
             <section className="premium-owner-editor-section">
               <div><p className="premium-owner-kicker">Grundlagen</p><h3>Geschenk beschreiben</h3><p>Diese Angaben sehen Gäste im Kundenportal.</p></div>
-              <label className="field" htmlFor="gift-title"><span>Name</span><input className="input" data-drawer-autofocus="true" id="gift-title" required value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></label>
+              <div className="field"><FormLabel htmlFor="gift-title" required>Name</FormLabel><input aria-required="true" className="input" data-drawer-autofocus="true" id="gift-title" required value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></div>
               <div className="grid two">
                 <label className="field" htmlFor="gift-category"><span>Kategorie</span><select className="input" id="gift-category" value={editing.category} onChange={(event) => { const category = event.target.value; setEditing({ ...editing, category, productPrice: editing.productPrice || priceInput(defaultGiftValue(category)) }); }}>{giftCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                 <label className="field" htmlFor="gift-value"><span>Preisgrenze / Wert bis €</span><input className="input" id="gift-value" inputMode="decimal" value={editing.productPrice} onChange={(event) => setEditing({ ...editing, productPrice: event.target.value })} /></label>
@@ -481,7 +487,7 @@ export function WelcomeGiftsPage() {
                 ) : null}
               </div>
               <label className="premium-owner-toggle"><input checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
-              <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsüberraschungen verwenden</strong><small>Nur aktive Geschenke in diesem Pool können zufällig ausgelost werden.</small></span></label>
+              <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsgeschenke verwenden</strong><small>Dieses Geschenk kann Kunden einmal jährlich rund um ihren Geburtstag automatisch zugeteilt werden.</small></span></label>
             </section>
             {status && editing ? <p className="status-message" role="status">{status}</p> : null}
           </form>

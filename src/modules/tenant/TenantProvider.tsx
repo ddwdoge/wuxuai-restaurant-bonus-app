@@ -8,6 +8,7 @@ type TenantContextValue = {
   activeRestaurant: Restaurant | null;
   branding: RestaurantBranding | null;
   loading: boolean;
+  loadError: boolean;
   clearTenantState: () => void;
   refreshTenants: () => Promise<void>;
   setActiveRestaurantId: (restaurantId: string) => void;
@@ -22,6 +23,15 @@ type RestaurantMembership = {
 const restaurantSelect =
   "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
 
+type RestaurantBranchAddress = {
+  id: string;
+  restaurant_id: string;
+  address: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+};
+
 async function loadBrandingForRestaurant(restaurantId: string) {
   if (!supabase) {
     return null;
@@ -29,7 +39,7 @@ async function loadBrandingForRestaurant(restaurantId: string) {
 
   const { data, error } = await supabase
     .from("restaurant_branding")
-    .select("id, restaurant_id, logo_url, primary_color, secondary_color, button_color, font_family, created_at")
+    .select("id, restaurant_id, logo_url, logo_fit_mode, logo_scale, logo_position_x, logo_position_y, primary_color, secondary_color, button_color, font_family, created_at")
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
@@ -41,11 +51,12 @@ async function loadBrandingForRestaurant(restaurantId: string) {
 }
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { contextRevision, user } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [activeRestaurantId, setActiveRestaurantId] = useState("");
   const [branding, setBranding] = useState<RestaurantBranding | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const [loadError, setLoadError] = useState(false);
   const tenantLoadRequestId = useRef(0);
 
   const clearTenantState = useCallback(() => {
@@ -53,6 +64,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setRestaurants([]);
     setActiveRestaurantId("");
     setBranding(null);
+    setLoadError(false);
     setLoading(false);
   }, []);
 
@@ -70,6 +82,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   async function loadTenantsForUser(userId: string, requestId = tenantLoadRequestId.current) {
     setLoading(true);
+    setLoadError(false);
     const { data: memberships, error: membershipError } = await supabase!
       .from("restaurant_members")
       .select("restaurant_id")
@@ -84,6 +97,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setRestaurants([]);
       setActiveRestaurantId("");
       setBranding(null);
+      setLoadError(true);
       setLoading(false);
       return;
     }
@@ -114,6 +128,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setRestaurants([]);
       setActiveRestaurantId("");
       setBranding(null);
+      setLoadError(true);
       setLoading(false);
       return;
     }
@@ -129,10 +144,40 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const nextRestaurants = [...uniqueRestaurants.values()].sort((left, right) =>
+    const branchAddresses = new Map<string, RestaurantBranchAddress>();
+    if (uniqueRestaurants.size > 0) {
+      const { data: branches, error: branchError } = await supabase!
+        .from("branches")
+        .select("id, restaurant_id, address, postal_code, city, country")
+        .in("restaurant_id", [...uniqueRestaurants.keys()]);
+
+      if (branchError) {
+        console.error("Restaurant-Standorte konnten nicht geladen werden.", branchError);
+      } else {
+        ((branches ?? []) as RestaurantBranchAddress[]).forEach((branch) => {
+          const restaurant = uniqueRestaurants.get(branch.restaurant_id);
+          const currentBranch = branchAddresses.get(branch.restaurant_id);
+          if (!currentBranch || branch.id === restaurant?.primary_branch_id) {
+            branchAddresses.set(branch.restaurant_id, branch);
+          }
+        });
+      }
+    }
+
+    const nextRestaurants = [...uniqueRestaurants.values()].map((restaurant) => {
+      const branch = branchAddresses.get(restaurant.id);
+      return {
+        ...restaurant,
+        address: branch?.address ?? null,
+        postal_code: branch?.postal_code ?? null,
+        city: branch?.city ?? null,
+        country: branch?.country ?? null,
+      };
+    }).sort((left, right) =>
       new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
     );
     replaceTenantState(nextRestaurants);
+    setLoadError(false);
     setLoading(false);
   }
 
@@ -148,6 +193,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setRestaurants([]);
     setActiveRestaurantId("");
     setBranding(null);
+    setLoadError(false);
     setLoading(true);
 
     async function loadTenants() {
@@ -155,7 +201,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadTenants();
-  }, [clearTenantState, user]);
+  }, [clearTenantState, contextRevision, user]);
 
   useEffect(() => {
     if (!supabase) {
@@ -195,6 +241,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       activeRestaurant,
       branding,
       clearTenantState,
+      loadError,
       loading,
       refreshTenants: async () => {
         if (supabase && user) {
@@ -218,7 +265,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         );
       },
     }),
-    [activeRestaurant, branding, clearTenantState, loading, restaurants, user],
+    [activeRestaurant, branding, clearTenantState, loadError, loading, restaurants, user],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;

@@ -1,4 +1,5 @@
-import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import type { IScannerControls } from "@zxing/browser";
 import {
   BadgeCheck,
   CalendarDays,
@@ -6,80 +7,149 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
-  Gift,
   HandCoins,
   HelpCircle,
   Home,
   KeyRound,
-  LockKeyhole,
   LogOut,
   Menu,
   MoreHorizontal,
   QrCode,
   Search,
-  SearchX,
   ShieldCheck,
   Stamp,
   UserSearch,
-  WifiOff,
-  X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
 import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useAuth } from "../auth/AuthProvider";
+import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
   applyStaffLoyaltyAction,
+  confirmRestaurantControlledPoints,
   defaultSettingsForMode,
   loadTodayRestaurantPin,
   loadCustomers,
   loadLoyaltyRules,
   loadLoyaltySettings,
   resolveCustomerQrToken,
+  previewRestaurantControlledPoints,
   rulesForMode,
   type TodayRestaurantPin,
+  type RestaurantControlledPointsPreview,
 } from "../loyalty/loyaltyService";
-import {
-  consumeRedemptionCode,
-  inspectRedemptionCode,
-  loadStaffCustomerRewards,
-  type ConsumeRedemptionCodeResult,
-  type RedemptionCodePreview,
-  type StaffCustomerRewardView,
-} from "../rewards/rewardService";
 import { useTenant } from "../tenant/TenantProvider";
+import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
-import {
-  classifyStaffRedemptionError,
-  staffRedemptionErrorContent,
-  type StaffRedemptionErrorKind,
-} from "./staffRedemptionError";
 import "./staff-premium.css";
 
-type StaffView = "home" | "search" | "earn" | "redeem";
+type StaffView = "home" | "search" | "earn";
 
 type PendingPinAction = {
   title: string;
   detail: string;
   pinLabel: string;
   pinHelp: string;
-  run: (dailyPin: string) => Promise<void>;
+  customerName: string;
+  currentPoints: number | null;
+  intendedPoints: number | null;
+  boostMultiplier: number;
+  boostExpiresAt?: string | null;
+  run: (dailyPin: string) => Promise<PinActionSuccess>;
 };
 
-type BarcodeDetectorResult = {
-  rawValue?: string;
+type PinActionSuccess = {
+  title: string;
+  message: string;
+  basePoints?: number | null;
+  boostMultiplier?: number | null;
+  awardedPoints?: number | null;
 };
 
-type BarcodeDetectorInstance = {
-  detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]>;
+type PinActionFeedback = {
+  kind: "error" | "blocked" | "success";
+  title: string;
+  message: string;
+  pinError?: boolean;
+  basePoints?: number | null;
+  boostMultiplier?: number | null;
+  awardedPoints?: number | null;
 };
 
-type BarcodeDetectorConstructor = new (options?: { formats?: string[] }) => BarcodeDetectorInstance;
+function pointsActionErrorText(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "";
+}
 
-type WindowWithBarcodeDetector = Window &
-  typeof globalThis & {
-    BarcodeDetector?: BarcodeDetectorConstructor;
+function classifyPointsActionError(error: unknown, customerName: string): PinActionFeedback {
+  const errorText = pointsActionErrorText(error);
+  const normalized = errorText.toLowerCase();
+
+  if (normalized.includes("buchungslimit") || normalized.includes("points_daily_limit")) {
+    return {
+      kind: "blocked",
+      title: "Keine weitere Punktebuchung möglich",
+      message: `Für ${customerName} wurde das heutige Buchungslimit bereits erreicht.`,
+    };
+  }
+  if (normalized.includes("tages-pin") && normalized.includes("nicht korrekt")) {
+    return {
+      kind: "error",
+      pinError: true,
+      title: "Tages-PIN prüfen",
+      message: "Der Tages-PIN ist nicht korrekt.",
+    };
+  }
+  if (normalized.includes("tages-pin") && normalized.includes("nicht mehr gültig")) {
+    return {
+      kind: "error",
+      pinError: true,
+      title: "Tages-PIN nicht mehr gültig",
+      message: "Bitte gib die heutige Tages-PIN ein.",
+    };
+  }
+  if (normalized.includes("zu viele falsche versuche")) {
+    return {
+      kind: "blocked",
+      title: "Punktebuchung vorübergehend gesperrt",
+      message: "Zu viele falsche PIN-Versuche. Bitte wende dich an die Restaurantleitung.",
+    };
+  }
+  if (normalized.includes("qr-code") && /(ungültig|abgelaufen|verwendet|nicht gefunden)/i.test(errorText)) {
+    return {
+      kind: "blocked",
+      title: "Kunden-QR nicht mehr gültig",
+      message: "Bitte öffne den aktuellen Kunden-QR erneut und scanne ihn noch einmal.",
+    };
+  }
+  if (normalized.includes("gast") && normalized.includes("nicht gefunden")) {
+    return {
+      kind: "blocked",
+      title: "Gast nicht verfügbar",
+      message: "Die Kundendaten konnten nicht geladen werden. Bitte wähle den Gast erneut aus.",
+    };
+  }
+  if (normalized.includes("überschreitet") && normalized.includes("limit")) {
+    return {
+      kind: "blocked",
+      title: "Betrag nicht zulässig",
+      message: "Der Betrag überschreitet das für dieses Restaurant festgelegte Limit.",
+    };
+  }
+
+  return {
+    kind: "error",
+    title: "Punkte konnten nicht gutgeschrieben werden",
+    message: "Bitte prüfe die Verbindung und versuche es erneut.",
   };
+}
 
 function extractCustomerToken(value: string) {
   const trimmed = value.trim();
@@ -104,6 +174,7 @@ export function StaffTablet() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { signOut, user } = useAuth();
+  const staffPortalAccess = useStaffPortalAccess();
   const { activeRestaurant, branding, loading: tenantLoading, restaurants } = useTenant();
   const staffRestaurant = useMemo(() => {
     if (slug) {
@@ -118,13 +189,16 @@ export function StaffTablet() {
     defaultSettingsForMode(restaurantId, "menu_points"),
   );
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
-  const [staffRewards, setStaffRewards] = useState<StaffCustomerRewardView[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [billAmount, setBillAmount] = useState(0);
+  const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
+  const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
+  const [customerPreviewError, setCustomerPreviewError] = useState<string | null>(null);
   const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
+  const [pinActionFeedback, setPinActionFeedback] = useState<PinActionFeedback | null>(null);
   const [pinDraft, setPinDraft] = useState("");
   const [todayPin, setTodayPin] = useState<TodayRestaurantPin | null>(null);
   const [todayPinLoading, setTodayPinLoading] = useState(false);
@@ -134,29 +208,26 @@ export function StaffTablet() {
   const [scannerStatus, setScannerStatus] = useState<string | null>(null);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [scannerManualValue, setScannerManualValue] = useState("");
+  const [scannerManualSearchOpen, setScannerManualSearchOpen] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [redemptionDigits, setRedemptionDigits] = useState<string[]>(() => Array(6).fill(""));
-  const [redemptionStep, setRedemptionStep] = useState<"entry" | "preview" | "result" | "error">("entry");
-  const [redemptionPreview, setRedemptionPreview] = useState<RedemptionCodePreview | null>(null);
-  const [redemptionResult, setRedemptionResult] = useState<ConsumeRedemptionCodeResult | null>(null);
-  const [redemptionErrorKind, setRedemptionErrorKind] = useState<StaffRedemptionErrorKind | null>(null);
-  const [checkingRedemptionCode, setCheckingRedemptionCode] = useState(false);
   const [todayActivity, setTodayActivity] = useState<StaffDailyActivity[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [activityRefreshToken, setActivityRefreshToken] = useState(0);
   const [pinDetailOpen, setPinDetailOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerStreamRef = useRef<MediaStream | null>(null);
-  const scannerAnimationRef = useRef<number | null>(null);
-  const scannerActiveRef = useRef(false);
-  const redemptionInputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const redemptionErrorHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const scannerControlsRef = useRef<IScannerControls | null>(null);
+  const scannerHandlingResultRef = useRef(false);
+  const scannerLaunchPendingRef = useRef(false);
+  const scannerReturnViewRef = useRef<StaffView>("home");
+  const scannerHistoryEntryRef = useRef(false);
+  const pinActionFeedbackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (tenantLoading || restaurantId || !slug) return;
@@ -233,7 +304,7 @@ export function StaffTablet() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId]);
+  }, [activityRefreshToken, restaurantId]);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -272,34 +343,36 @@ export function StaffTablet() {
   }, [restaurantId]);
 
   useEffect(() => {
-    if (!restaurantId || !selectedCustomerId) {
-      setStaffRewards([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    loadStaffCustomerRewards(restaurantId, selectedCustomerId)
-      .then((nextRewards) => {
-        if (!cancelled) setStaffRewards(nextRewards);
-      })
-      .catch((error) => {
-        console.error("Punkteeinlösungen konnten nicht geladen werden.", error);
-        if (!cancelled) {
-          setStaffRewards([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId, selectedCustomerId]);
-
-  useEffect(() => {
     return () => {
       stopScanner();
     };
   }, []);
+
+  useEffect(() => {
+    if (!scannerOpen || scannerHistoryEntryRef.current) return;
+
+    window.history.pushState({ ...window.history.state, wuxuaiStaffScanner: true }, "");
+    scannerHistoryEntryRef.current = true;
+
+    function handleScannerBack() {
+      if (!scannerHistoryEntryRef.current) return;
+      scannerHistoryEntryRef.current = false;
+      closeScanner(true);
+      resetSelectedCustomerState();
+      openStaffView(scannerReturnViewRef.current);
+    }
+
+    window.addEventListener("popstate", handleScannerBack);
+    return () => window.removeEventListener("popstate", handleScannerBack);
+    // closeScanner is intentionally captured for the lifetime of this drawer history entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scannerOpen]);
+
+  useEffect(() => {
+    if (pinActionFeedback?.kind === "error" || pinActionFeedback?.kind === "blocked") {
+      pinActionFeedbackRef.current?.focus();
+    }
+  }, [pinActionFeedback]);
 
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const activeRules = useMemo(
@@ -315,12 +388,37 @@ export function StaffTablet() {
       ),
     [customers, query],
   );
+  const scannerFilteredCustomers = useMemo(() => {
+    const nextQuery = scannerManualValue.trim().toLowerCase();
+    return customers
+      .filter((customer) =>
+        !nextQuery
+        || `${customer.name} ${customer.phone ?? ""} ${customer.email ?? ""} ${customer.customer_code}`
+          .toLowerCase()
+          .includes(nextQuery),
+      )
+      .slice(0, 8);
+  }, [customers, scannerManualValue]);
   const calculatedPoints = Math.max(0, Math.floor(billAmount / settings.amount_per_point));
+  const restaurantControlledEnabled = settings.points_collection_mode === "restaurant_controlled_only"
+    || settings.points_collection_mode === "both";
+  const customerInitiatedStaffToolsEnabled = settings.points_collection_mode !== "restaurant_controlled_only";
   const stampRules = activeRules.filter((rule) => rule.stamps > 0);
-  const unlockedRewards = staffRewards.filter((offer) => offer.status === "unlocked");
-  const redemptionCode = redemptionDigits.join("");
   const todayPointsIssued = todayActivity.reduce((total, activity) => total + activity.points_issued, 0);
   const todayRewardsRedeemed = todayActivity.reduce((total, activity) => total + activity.rewards_redeemed, 0);
+  const recognizedCustomerName = pointsPreview?.customer_label ?? selectedCustomer?.name ?? null;
+  const recognizedPointsBalance = pointsPreview?.points_balance ?? selectedCustomer?.points_balance ?? null;
+  const hasCustomerContext = Boolean(selectedCustomer || pointsQrReference);
+  const customerStatusMessage = message
+    ?? (pointsPreview
+      ? "Kunde erfolgreich geladen."
+      : pointsQrReference
+        ? "Kunden-QR erkannt."
+        : selectedCustomer
+          ? "Gast ausgewählt."
+          : "Bitte QR scannen oder Gast suchen.");
+  const customerStatusIsError = Boolean(customerPreviewError)
+    || Boolean(message && /(nicht|konnte|ungültig|abgelaufen|fehler|überschreitet|zu viele)/i.test(message));
   const currentDateLabel = useMemo(
     () => new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
     [],
@@ -332,7 +430,7 @@ export function StaffTablet() {
 
     try {
       await signOut();
-      navigate("/restaurant/login", { replace: true });
+      navigate(buildStaffLoginPath(slug), { replace: true });
     } catch {
       setLogoutError("Abmelden ist gerade nicht möglich. Bitte versuche es erneut.");
     } finally {
@@ -341,16 +439,40 @@ export function StaffTablet() {
   }
 
   function openStaffView(nextView: StaffView) {
-    if (nextView !== "redeem") {
-      setRedemptionDigits(Array(6).fill(""));
-      setRedemptionStep("entry");
-      setRedemptionPreview(null);
-      setRedemptionResult(null);
-      setRedemptionErrorKind(null);
-      setMessage(null);
-    }
+    setMessage(null);
     setView(nextView);
     setMoreOpen(false);
+  }
+
+  function resetSelectedCustomerState() {
+    setPendingPinAction(null);
+    setPinActionFeedback(null);
+    setPinDraft("");
+    setSelectedCustomerId("");
+    setPointsQrReference(null);
+    setPointsPreview(null);
+    setCustomerPreviewError(null);
+    setBillAmount(0);
+    setQuery("");
+    setMessage(null);
+  }
+
+  function clearSelectedCustomer() {
+    resetSelectedCustomerState();
+    setView("search");
+  }
+
+  function formatBoostExpiry(expiresAt: string) {
+    return new Intl.DateTimeFormat("de-AT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Europe/Vienna",
+    }).format(new Date(expiresAt));
+  }
+
+  function boostRemainingDays(expiresAt: string) {
+    return Math.max(1, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
   }
 
   function replaceCustomerBalance(customerId: string, pointsBalance: number, stampBalance: number) {
@@ -364,19 +486,12 @@ export function StaffTablet() {
   }
 
   function stopScanner() {
-    scannerActiveRef.current = false;
-
-    if (scannerAnimationRef.current !== null) {
-      cancelAnimationFrame(scannerAnimationRef.current);
-      scannerAnimationRef.current = null;
-    }
-
-    if (scannerStreamRef.current) {
-      scannerStreamRef.current.getTracks().forEach((track) => track.stop());
-      scannerStreamRef.current = null;
-    }
+    scannerControlsRef.current?.stop();
+    scannerControlsRef.current = null;
 
     if (scannerVideoRef.current) {
+      const stream = scannerVideoRef.current.srcObject;
+      if (stream instanceof MediaStream) stream.getTracks().forEach((track) => track.stop());
       scannerVideoRef.current.srcObject = null;
     }
   }
@@ -401,6 +516,18 @@ export function StaffTablet() {
 
   async function findCustomerFromSearch(searchValue: string) {
     const nextQuery = searchValue.trim();
+    const pointsReference = extractCustomerPointsQrReference(nextQuery);
+    if (pointsReference && restaurantId && restaurantControlledEnabled) {
+      setPointsQrReference(pointsReference);
+      setPointsPreview(null);
+      setCustomerPreviewError(null);
+      setBillAmount(0);
+      setSelectedCustomerId("");
+      setQuery("");
+      setView("earn");
+      setMessage(null);
+      return;
+    }
     const token = extractCustomerToken(nextQuery);
 
     if (token && restaurantId) {
@@ -413,7 +540,8 @@ export function StaffTablet() {
             : [customerFromQr, ...currentCustomers];
         });
         setSelectedCustomerId(customerFromQr.id);
-        setView("redeem");
+        setCustomerPreviewError(null);
+        setView("search");
         setMessage("Gast per QR gefunden.");
         return;
       } catch (error) {
@@ -431,22 +559,20 @@ export function StaffTablet() {
 
   async function handleScannerValue(value: string) {
     stopScanner();
-    setScannerOpen(false);
+    setScannerStarting(false);
+    setScannerStatus("Kunden-QR erkannt.");
+    setScannerManualSearchOpen(false);
     setScannerManualValue("");
     setQuery(value);
     await findCustomerFromSearch(value);
   }
 
-  async function startQrScanner() {
-    setView("search");
-    setScannerOpen(true);
-    setScannerStarting(true);
-    setScannerError(null);
-    setScannerStatus("Kamera wird geöffnet...");
-    setMessage(null);
+  async function activateQrScannerCamera() {
     stopScanner();
+    scannerHandlingResultRef.current = false;
 
     if (!navigator.mediaDevices?.getUserMedia) {
+      scannerLaunchPendingRef.current = false;
       setScannerStarting(false);
       setScannerStatus(null);
       setScannerError("Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte suche den Gast manuell.");
@@ -454,88 +580,121 @@ export function StaffTablet() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: { ideal: "environment" } },
-      });
-      scannerStreamRef.current = stream;
-      scannerActiveRef.current = true;
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      if (!scannerVideoRef.current) throw new Error("Scanner video is unavailable.");
+      const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 180 });
+      const controls = await reader.decodeFromConstraints(
+        { audio: false, video: { facingMode: { ideal: "environment" } } },
+        scannerVideoRef.current,
+        (result, _decodeError, scannerControls) => {
+          if (!result || scannerHandlingResultRef.current) return;
+          const rawValue = result.getText();
+          const recognized = extractCustomerPointsQrReference(rawValue) || extractCustomerToken(rawValue);
+          if (!recognized) {
+            setScannerError("Dieser QR-Code ist kein gültiger Kunden-QR. Bitte versuche es erneut.");
+            setScannerStatus("Kunden-QR ruhig und vollständig in den Rahmen halten.");
+            return;
+          }
 
-      if (scannerVideoRef.current) {
-        scannerVideoRef.current.srcObject = stream;
-        await scannerVideoRef.current.play();
-      }
-
-      const BarcodeDetector = (window as WindowWithBarcodeDetector).BarcodeDetector;
-      if (!BarcodeDetector) {
-        setScannerStarting(false);
-        setScannerStatus("Kamera geöffnet. Automatisches QR-Lesen wird von diesem Browser nicht unterstützt.");
+          scannerHandlingResultRef.current = true;
+          scannerControls.stop();
+          scannerControlsRef.current = null;
+          setScannerStatus("Kunden-QR erkannt.");
+          void handleScannerValue(rawValue);
+        },
+      );
+      if (scannerHandlingResultRef.current) {
+        controls.stop();
         return;
       }
-
-      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      scannerControlsRef.current = controls;
       setScannerStarting(false);
-      setScannerStatus("QR-Code vor die Kamera halten.");
-
-      const scanFrame = async () => {
-        if (!scannerActiveRef.current || !scannerVideoRef.current) return;
-
-        try {
-          if (scannerVideoRef.current.readyState >= 2) {
-            const codes = await detector.detect(scannerVideoRef.current);
-            const rawValue = codes.find((code) => code.rawValue)?.rawValue;
-            if (rawValue) {
-              await handleScannerValue(rawValue);
-              return;
-            }
-          }
-        } catch (error) {
-          console.error("QR konnte nicht automatisch gelesen werden.", error);
-          setScannerStatus("Kamera geöffnet. Bitte QR-Code ruhig vor die Kamera halten.");
-        }
-
-        scannerAnimationRef.current = requestAnimationFrame(scanFrame);
-      };
-
-      scannerAnimationRef.current = requestAnimationFrame(scanFrame);
+      setScannerStatus("QR-Code erfassen");
+      scannerLaunchPendingRef.current = false;
     } catch (error) {
-      console.error("QR-Scanner konnte nicht geöffnet werden.", error);
       stopScanner();
       setScannerStarting(false);
       setScannerStatus(null);
       setScannerError(scannerErrorMessage(error));
+      scannerLaunchPendingRef.current = false;
     }
   }
 
-  function closeScanner() {
+  async function startQrScanner() {
+    if (scannerLaunchPendingRef.current || scannerOpen) return;
+    if (!restaurantControlledEnabled) {
+      setMessage("Der Kunden-QR-Scanner ist für dieses Restaurant nicht aktiviert.");
+      return;
+    }
+    scannerReturnViewRef.current = view;
+    scannerLaunchPendingRef.current = true;
+    resetSelectedCustomerState();
+    setView("search");
+    setScannerOpen(true);
+    setScannerManualSearchOpen(false);
+    setScannerStarting(true);
+    setScannerError(null);
+    setScannerStatus("QR-Code erfassen");
+    setMessage(null);
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    await activateQrScannerCamera();
+  }
+
+  async function restartQrScanner() {
+    scannerLaunchPendingRef.current = true;
+    resetSelectedCustomerState();
+    setView("search");
+    setScannerManualSearchOpen(false);
+    setScannerStarting(true);
+    setScannerError(null);
+    setScannerStatus("QR-Code erfassen");
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    await activateQrScannerCamera();
+  }
+
+  function closeScanner(fromHistory = false) {
+    scannerLaunchPendingRef.current = false;
     stopScanner();
+    scannerHandlingResultRef.current = false;
     setScannerOpen(false);
     setScannerStarting(false);
     setScannerStatus(null);
     setScannerError(null);
     setScannerManualValue("");
+    setScannerManualSearchOpen(false);
+    if (!fromHistory && scannerHistoryEntryRef.current) {
+      scannerHistoryEntryRef.current = false;
+      window.history.back();
+    }
+  }
+
+  function dismissScanner() {
+    closeScanner();
+    resetSelectedCustomerState();
+    openStaffView(scannerReturnViewRef.current);
   }
 
   async function executePinAction(action: PendingPinAction, pin: string) {
     if (!restaurantId) return;
     if (!pin.trim()) {
-      setMessage("Bitte gib die Tages-PIN ein.");
+      setPinActionFeedback({
+        kind: "error",
+        pinError: true,
+        title: "Tages-PIN fehlt",
+        message: "Bitte gib die Tages-PIN ein.",
+      });
       return;
     }
 
     setSaving(true);
-    setMessage(null);
+    setPinActionFeedback(null);
 
     try {
-      await action.run(pin.trim());
-      setPendingPinAction(null);
+      const success = await action.run(pin.trim());
+      setPinActionFeedback({ kind: "success", ...success });
       setPinDraft("");
     } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Punkte konnten gerade nicht gebucht werden. Bitte versuche es erneut.",
-      );
+      setPinActionFeedback(classifyPointsActionError(error, action.customerName));
     } finally {
       setSaving(false);
     }
@@ -543,7 +702,19 @@ export function StaffTablet() {
 
   function requestPin(action: PendingPinAction) {
     setPendingPinAction(action);
+    setPinActionFeedback(null);
     setPinDraft("");
+  }
+
+  function closePinAction() {
+    setPendingPinAction(null);
+    setPinActionFeedback(null);
+    setPinDraft("");
+  }
+
+  function finishPinAction() {
+    closePinAction();
+    setView("home");
   }
 
   function queueLoyaltyAction(payload: {
@@ -561,6 +732,10 @@ export function StaffTablet() {
       detail: selectedCustomer.name,
       pinLabel: "Tages-PIN",
       pinHelp: "Bitte prüfe die heutige Tages-PIN in der Mitarbeiteransicht.",
+      customerName: selectedCustomer.name,
+      currentPoints: selectedCustomer.points_balance,
+      intendedPoints: payload.points || null,
+      boostMultiplier: 1,
       run: async (dailyPin) => {
         const result = await applyStaffLoyaltyAction({
           restaurantId,
@@ -577,7 +752,58 @@ export function StaffTablet() {
 
         replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
         setBillAmount(0);
-        setMessage("Vorgang gespeichert und protokolliert.");
+        setActivityRefreshToken((current) => current + 1);
+        return {
+          title: "Vorgang erfolgreich gespeichert",
+          message: result.points_added > 0
+            ? `${result.points_added} Punkte wurden ${selectedCustomer.name} gutgeschrieben.`
+            : `${result.stamps_added} Stempel wurden ${selectedCustomer.name} gutgeschrieben.`,
+          awardedPoints: result.points_added || null,
+          boostMultiplier: 1,
+        };
+      },
+    });
+  }
+
+  async function handleRestaurantControlledPreview() {
+    if (!restaurantId || !pointsQrReference) return;
+    const amountCents = Math.round(billAmount * 100);
+    setSaving(true); setMessage(null); setCustomerPreviewError(null);
+    try {
+      setPointsPreview(await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents));
+    } catch (error) {
+      setPointsPreview(null);
+      const nextError = error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.";
+      setCustomerPreviewError(nextError);
+      if (!scannerOpen) setMessage(nextError);
+    } finally { setSaving(false); }
+  }
+
+  function confirmRestaurantControlledPreview() {
+    if (!restaurantId || !pointsQrReference || !pointsPreview) return;
+    const idempotencyKey = crypto.randomUUID();
+    requestPin({
+      title: "Punkte gutschreiben",
+      detail: `${pointsPreview.customer_label} · ${pointsPreview.expected_points} Punkte`,
+      pinLabel: "Tages-PIN",
+      pinHelp: "Bestätige den tatsächlich direkt im Restaurant bezahlten Betrag.",
+      customerName: pointsPreview.customer_label,
+      currentPoints: pointsPreview.points_balance,
+      intendedPoints: pointsPreview.expected_points,
+      boostMultiplier: pointsPreview.boost_multiplier,
+      boostExpiresAt: pointsPreview.boost_expires_at,
+      run: async (dailyPin) => {
+        const result = await confirmRestaurantControlledPoints({ restaurantId, qrReference: pointsQrReference,
+          amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey });
+        setPointsQrReference(null); setPointsPreview(null); setBillAmount(0);
+        setActivityRefreshToken((current) => current + 1);
+        return {
+          title: "Punkte erfolgreich gutgeschrieben",
+          message: `${result.points_added} Punkte wurden ${pointsPreview.customer_label} gutgeschrieben.`,
+          basePoints: result.base_points,
+          boostMultiplier: result.boost_multiplier,
+          awardedPoints: result.points_added,
+        };
       },
     });
   }
@@ -587,169 +813,141 @@ export function StaffTablet() {
     await findCustomerFromSearch(query);
   }
 
-  function resetRedemptionFlow() {
-    setRedemptionDigits(Array(6).fill(""));
-    setRedemptionStep("entry");
-    setRedemptionPreview(null);
-    setRedemptionResult(null);
-    setRedemptionErrorKind(null);
-    setMessage(null);
-    window.setTimeout(() => redemptionInputRefs.current[0]?.focus(), 0);
-  }
-
-  function updateRedemptionDigits(startIndex: number, value: string) {
-    setMessage(null);
-    const incomingDigits = value.replace(/\D/g, "").slice(0, 6 - startIndex).split("");
-    if (incomingDigits.length === 0) {
-      setRedemptionDigits((current) => current.map((digit, index) => (index === startIndex ? "" : digit)));
-      return;
-    }
-
-    setRedemptionDigits((current) => {
-      const next = [...current];
-      incomingDigits.forEach((digit, offset) => {
-        next[startIndex + offset] = digit;
-      });
-      return next;
-    });
-
-    const nextIndex = Math.min(startIndex + incomingDigits.length, 5);
-    redemptionInputRefs.current[nextIndex]?.focus();
-  }
-
-  function handleRedemptionKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !redemptionDigits[index] && index > 0) {
-      event.preventDefault();
-      setRedemptionDigits((current) => current.map((digit, digitIndex) => (digitIndex === index - 1 ? "" : digit)));
-      redemptionInputRefs.current[index - 1]?.focus();
-    }
-  }
-
-  function handleRedemptionPaste(event: ClipboardEvent<HTMLInputElement>) {
-    const pastedDigits = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pastedDigits) return;
-    event.preventDefault();
-    setMessage(null);
-    setRedemptionDigits(Array.from({ length: 6 }, (_, index) => pastedDigits[index] ?? ""));
-    redemptionInputRefs.current[Math.min(pastedDigits.length, 6) - 1]?.focus();
-  }
-
-  function showRedemptionError(error: unknown, phase: "preview" | "consume") {
-    setRedemptionPreview(null);
-    setRedemptionResult(null);
-    setRedemptionErrorKind(classifyStaffRedemptionError(error, phase));
-    setRedemptionStep("error");
-    setMessage(null);
-  }
-
-  async function runRedemptionPreview() {
-    if (!restaurantId || checkingRedemptionCode) return;
-    if (!/^\d{6}$/.test(redemptionCode)) {
-      setMessage("Bitte gib den sechsstelligen Einlösecode ein.");
-      const firstEmptyIndex = Math.max(0, redemptionDigits.findIndex((digit) => !digit));
-      window.setTimeout(() => redemptionInputRefs.current[firstEmptyIndex]?.focus(), 0);
-      return;
-    }
-
-    setCheckingRedemptionCode(true);
-    setMessage(null);
-    setRedemptionErrorKind(null);
-    try {
-      const preview = await inspectRedemptionCode(restaurantId, redemptionCode);
-      setRedemptionPreview(preview);
-      setRedemptionStep("preview");
-    } catch (error) {
-      showRedemptionError(error, "preview");
-    } finally {
-      setCheckingRedemptionCode(false);
-    }
-  }
-
-  async function handleRedemptionCode(event: FormEvent) {
-    event.preventDefault();
-    await runRedemptionPreview();
-  }
-
-  async function confirmRedemptionCode() {
-    if (!restaurantId || checkingRedemptionCode || !/^\d{6}$/.test(redemptionCode)) return;
-    setCheckingRedemptionCode(true);
-    setMessage(null);
-    setRedemptionErrorKind(null);
-    try {
-      const result = await consumeRedemptionCode(restaurantId, redemptionCode);
-      setRedemptionResult(result);
-      setRedemptionStep("result");
-      if (selectedCustomerId) {
-        const nextRewards = await loadStaffCustomerRewards(restaurantId, selectedCustomerId);
-        setStaffRewards(nextRewards);
-      }
-    } catch (error) {
-      showRedemptionError(error, "consume");
-    } finally {
-      setCheckingRedemptionCode(false);
-    }
-  }
-
-  function handleRedemptionErrorPrimaryAction() {
-    if (redemptionErrorKind === "unauthorized") {
-      openStaffView("home");
-      return;
-    }
-
-    if (redemptionErrorKind === "preview_network_error" || redemptionErrorKind === "consume_unknown") {
-      void runRedemptionPreview();
-      return;
-    }
-
-    resetRedemptionFlow();
-  }
-
-  useEffect(() => {
-    if (view !== "redeem" || redemptionStep !== "error") return;
-    window.setTimeout(() => redemptionErrorHeadingRef.current?.focus(), 0);
-  }, [redemptionErrorKind, redemptionStep, view]);
-
-  useEffect(() => {
-    if (view !== "redeem" || redemptionStep === "entry" || checkingRedemptionCode) return;
-
-    function handleEscape(event: globalThis.KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setRedemptionDigits(Array(6).fill(""));
-      setRedemptionStep("entry");
-      setRedemptionPreview(null);
-      setRedemptionResult(null);
-      setRedemptionErrorKind(null);
-      setMessage(null);
-      window.setTimeout(() => redemptionInputRefs.current[0]?.focus(), 0);
-    }
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [checkingRedemptionCode, redemptionStep, view]);
-
-  function selectCustomer(customerId: string, nextView: StaffView = "search") {
+  function selectCustomer(customerId: string, nextView: StaffView = "earn") {
     setSelectedCustomerId(customerId);
+    setCustomerPreviewError(null);
+    setMessage(null);
     setView(nextView);
+  }
+
+  function finishOperationalScanner() {
+    closePinAction();
+    closeScanner();
+    resetSelectedCustomerState();
+    setView("home");
+  }
+
+  function continueManualCustomerOnPage() {
+    closeScanner();
+    setView("earn");
+  }
+
+  function renderPinActionFooter(inScannerDrawer = false) {
+    if (!pendingPinAction) return null;
+    if (pinActionFeedback?.kind === "blocked") {
+      return (
+        <>
+          <button className="button secondary" disabled={saving} onClick={() => inScannerDrawer ? void restartQrScanner() : clearSelectedCustomer()} type="button">Anderen Gast wählen</button>
+          <button className="button" disabled={saving} onClick={inScannerDrawer ? finishOperationalScanner : closePinAction} type="button">Schließen</button>
+        </>
+      );
+    }
+    if (pinActionFeedback?.kind === "success") {
+      return inScannerDrawer ? (
+        <>
+          <button className="button secondary" onClick={finishOperationalScanner} type="button">Fertig</button>
+          <button className="button" onClick={() => void restartQrScanner()} type="button">Nächsten Gast scannen</button>
+        </>
+      ) : <button className="button" onClick={finishPinAction} type="button">Fertig</button>;
+    }
+    return (
+      <>
+        <button className="button secondary" disabled={saving} onClick={inScannerDrawer ? dismissScanner : closePinAction} type="button">Abbrechen</button>
+        <button className="button" disabled={!pinDraft || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? "Wird geprüft …" : "Bestätigen"}</button>
+      </>
+    );
+  }
+
+  function renderPinActionContent(inScannerDrawer = false) {
+    if (!pendingPinAction) return null;
+    const formId = inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation";
+    const inputId = inScannerDrawer ? "staff-scanner-pin" : "staff-pin-modal";
+    const errorId = inScannerDrawer ? "staff-scanner-pin-error" : "staff-pin-error";
+    const helpId = inScannerDrawer ? "staff-scanner-pin-help" : "staff-pin-help";
+
+    return (
+      <div className="staff-points-drawer">
+        <section className="staff-points-drawer-customer" aria-label="Ausgewählter Gast">
+          <span><BadgeCheck aria-hidden="true" size={17} />Gast erkannt</span>
+          <h3>{pendingPinAction.customerName}</h3>
+          {pendingPinAction.currentPoints !== null ? <p>Aktuell <strong>{pendingPinAction.currentPoints} Punkte</strong></p> : null}
+          {pendingPinAction.boostMultiplier > 1 ? (
+            <p className="staff-points-drawer-boost">
+              <strong>{pendingPinAction.boostMultiplier}× Bonus aktiv</strong>
+              {pendingPinAction.boostExpiresAt ? <span>bis {formatBoostExpiry(pendingPinAction.boostExpiresAt)}</span> : null}
+            </p>
+          ) : null}
+          {pendingPinAction.intendedPoints !== null ? <p className="staff-points-drawer-intent">Geplant: <strong>{pendingPinAction.intendedPoints} Punkte</strong></p> : null}
+        </section>
+
+        {pinActionFeedback && !pinActionFeedback.pinError ? (
+          <div
+            className={`staff-points-drawer-feedback is-${pinActionFeedback.kind}`}
+            ref={pinActionFeedbackRef}
+            role={pinActionFeedback.kind === "success" ? "status" : "alert"}
+            tabIndex={-1}
+          >
+            {pinActionFeedback.kind === "success" ? <BadgeCheck aria-hidden="true" size={22} /> : <CircleAlert aria-hidden="true" size={22} />}
+            <div>
+              <h3>{pinActionFeedback.title}</h3>
+              <p>{pinActionFeedback.message}</p>
+              {pinActionFeedback.kind === "success" && pinActionFeedback.awardedPoints !== null && pinActionFeedback.awardedPoints !== undefined ? (
+                <dl>
+                  {pinActionFeedback.basePoints !== null && pinActionFeedback.basePoints !== undefined ? <div><dt>Basis</dt><dd>{pinActionFeedback.basePoints} Punkte</dd></div> : null}
+                  {pinActionFeedback.boostMultiplier && pinActionFeedback.boostMultiplier > 1 ? <div><dt>{pinActionFeedback.boostMultiplier}× Bonus</dt><dd>aktiv</dd></div> : null}
+                  <div><dt>Gutgeschrieben</dt><dd>{pinActionFeedback.awardedPoints} Punkte</dd></div>
+                </dl>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {!pinActionFeedback || pinActionFeedback.kind === "error" ? (
+          <form
+            className="form staff-points-drawer-form"
+            id={formId}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void executePinAction(pendingPinAction, pinDraft);
+            }}
+          >
+            <RequiredFieldsNote />
+            <div className="field">
+              <FormLabel htmlFor={inputId} required>{pendingPinAction.pinLabel}</FormLabel>
+              <input
+                aria-describedby={pinActionFeedback?.pinError ? errorId : helpId}
+                aria-invalid={pinActionFeedback?.pinError || undefined}
+                aria-required="true"
+                autoFocus
+                className="input"
+                data-drawer-autofocus="true"
+                id={inputId}
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="Tages-PIN eingeben"
+                required
+                type="password"
+                value={pinDraft}
+                onChange={(event) => {
+                  setPinDraft(event.target.value.replace(/\D/g, "").slice(0, 4));
+                  if (pinActionFeedback?.pinError) setPinActionFeedback(null);
+                }}
+              />
+              {pinActionFeedback?.pinError ? (
+                <p className="staff-points-drawer-pin-error" id={errorId} ref={pinActionFeedbackRef} role="alert" tabIndex={-1}>{pinActionFeedback.message}</p>
+              ) : <p className="muted" id={helpId}>{pendingPinAction.pinHelp}</p>}
+            </div>
+          </form>
+        ) : null}
+      </div>
+    );
   }
 
   return (
     <main className="tablet-shell staff-premium-shell">
       <header className="staff-premium-header">
         <div className="restaurant-brand-header staff-premium-brand">
-          <span className="restaurant-logo-frame">
-            {staffBranding?.logo_url ? (
-              <img
-                alt={`${staffRestaurant?.name ?? "Restaurant"} Logo`}
-                className="restaurant-logo-image"
-                src={staffBranding.logo_url}
-              />
-            ) : (
-              <span className="restaurant-logo-placeholder">
-                {(staffRestaurant?.name.trim().charAt(0) || "R").toUpperCase()}
-              </span>
-            )}
-          </span>
+          <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={staffBranding?.logo_url} name={staffRestaurant?.name ?? "Restaurant"} presentation={staffBranding} primaryColor={staffBranding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="staff-premium-kicker">WUXUAI Bonus</span>
             <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"}</h1>
@@ -766,7 +964,7 @@ export function StaffTablet() {
           <span>Menü</span>
         </button>
         <div className="staff-premium-header-meta">
-          <span><ShieldCheck aria-hidden="true" size={16} />Mitarbeiterbereich</span>
+          <span><ShieldCheck aria-hidden="true" size={16} />{staffPortalAccess?.access_mode === "operator" ? "Mitarbeiterbereich – Betreiberzugriff" : "Mitarbeiterbereich"}</span>
           <time dateTime={new Date().toISOString().slice(0, 10)}><CalendarDays aria-hidden="true" size={16} />{currentDateLabel}</time>
         </div>
       </header>
@@ -777,37 +975,54 @@ export function StaffTablet() {
             <section className="staff-premium-intro">
               <span className="staff-premium-kicker">Heute im Service</span>
               <h2>Bereit für den nächsten Gast.</h2>
-              <p>Tages-PIN zeigen, Einlösecode prüfen oder einen Gast schnell finden.</p>
+              <p>Kunden-QR scannen, Punkte sicher gutschreiben oder einen Gast schnell finden.</p>
             </section>
 
-            <button
-              aria-label="Details zur heutigen Tages-PIN öffnen"
-              className="staff-premium-pin-card"
-              onClick={() => setPinDetailOpen(true)}
-              type="button"
-            >
-              <span className="staff-premium-pin-head"><KeyRound aria-hidden="true" size={19} />Heutige Tages-PIN</span>
-              {todayPinLoading ? (
-                <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
+            <div className="staff-premium-priority-grid">
+              {restaurantControlledEnabled ? (
+                <section className="staff-premium-scan-hero" aria-labelledby="staff-scan-title">
+                  <span className="staff-premium-scan-icon"><QrCode aria-hidden="true" size={27} /></span>
+                  <div className="staff-premium-scan-copy">
+                    <span className="staff-premium-kicker">Wichtigste Aktion</span>
+                    <h2 id="staff-scan-title">Kunden-QR scannen</h2>
+                    <p>QR-Code des Gastes scannen und Punkte sicher gutschreiben.</p>
+                  </div>
+                  <button
+                    aria-label="Kunden-QR-Code scannen und Punkte gutschreiben"
+                    className="staff-premium-scan-button"
+                    disabled={scannerStarting || scannerOpen}
+                    onClick={() => void startQrScanner()}
+                    type="button"
+                  >
+                    <QrCode aria-hidden="true" size={21} />
+                    <span>{scannerStarting ? "Scanner wird geöffnet …" : "QR-Code scannen"}</span>
+                    <ChevronRight aria-hidden="true" size={19} />
+                  </button>
+                </section>
               ) : null}
-              {!todayPinLoading && todayPinError ? (
-                <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
-              ) : null}
-              {!todayPinLoading && !todayPinError && todayPin ? (
-                <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
-                  {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
-                </strong>
-              ) : null}
-              <span className="staff-premium-pin-copy">Nur für heutige Punktebuchungen.</span>
-              <span className="staff-premium-pin-valid"><Clock3 aria-hidden="true" size={16} />Gültig bis heute 23:59<ChevronRight aria-hidden="true" size={18} /></span>
-            </button>
 
-            <button className="staff-premium-primary-action" onClick={() => openStaffView("redeem")} type="button">
-              <span><Gift aria-hidden="true" size={24} /></span>
-              <strong>Einlösecode prüfen</strong>
-              <small>Sechsstelligen Kundencode sicher prüfen</small>
-              <ChevronRight aria-hidden="true" size={22} />
-            </button>
+              <button
+                aria-label="Details zur heutigen Tages-PIN öffnen"
+                className="staff-premium-pin-card"
+                onClick={() => setPinDetailOpen(true)}
+                type="button"
+              >
+                <span className="staff-premium-pin-head"><KeyRound aria-hidden="true" size={19} />Heutige Tages-PIN</span>
+                {todayPinLoading ? (
+                  <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
+                ) : null}
+                {!todayPinLoading && todayPinError ? (
+                  <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
+                ) : null}
+                {!todayPinLoading && !todayPinError && todayPin ? (
+                  <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
+                    {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-${index}`}>{digit}</span>)}
+                  </strong>
+                ) : null}
+                <span className="staff-premium-pin-copy">Nur für heutige Punktebuchungen</span>
+                <span className="staff-premium-pin-valid"><Clock3 aria-hidden="true" size={16} />Gültig bis 23:59<ChevronRight aria-hidden="true" size={18} /></span>
+              </button>
+            </div>
 
             <section className="staff-premium-activity" aria-labelledby="staff-activity-title">
               <div className="staff-premium-section-heading">
@@ -840,9 +1055,8 @@ export function StaffTablet() {
             <section className="staff-premium-quick-section" aria-labelledby="staff-quick-title">
               <div className="staff-premium-section-heading"><div><span className="staff-premium-kicker">Weitere Aufgaben</span><h2 id="staff-quick-title">Schnell starten</h2></div></div>
               <div className="staff-premium-quick-grid">
-                <button onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={22} /><span><strong>QR scannen</strong><small>Kamera öffnen</small></span><ChevronRight aria-hidden="true" size={18} /></button>
                 <button onClick={() => openStaffView("search")} type="button"><UserSearch aria-hidden="true" size={22} /><span><strong>Gast suchen</strong><small>Name oder Code</small></span><ChevronRight aria-hidden="true" size={18} /></button>
-                <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button>
+                {customerInitiatedStaffToolsEnabled ? <button onClick={() => openStaffView("earn")} type="button"><HandCoins aria-hidden="true" size={22} /><span><strong>Punkte geben</strong><small>Tages-PIN nötig</small></span><ChevronRight aria-hidden="true" size={18} /></button> : null}
               </div>
             </section>
           </>
@@ -850,122 +1064,74 @@ export function StaffTablet() {
           <button className="staff-premium-back" onClick={() => openStaffView("home")} type="button"><Home aria-hidden="true" size={18} />Zur Startseite</button>
         )}
 
-      {view !== "home" && view !== "redeem" ? <section className="grid two staff-premium-existing-grid">
-        <article className="card">
-          <form className="form" onSubmit={handleSearch}>
-            <div className="field">
-              <label htmlFor="customer-search">Schnellsuche</label>
-              <input
-                className="input"
-                id="customer-search"
-                placeholder="QR, Telefon, Name oder Gästecode"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </div>
-            <button className="button" type="submit">
-              <Search size={18} />
-              Gast suchen
-            </button>
-          </form>
+      {view !== "home" ? <section className="staff-customer-flow">
+        <div className="staff-customer-flow-status" aria-live={customerStatusIsError ? "assertive" : "polite"} role={customerStatusIsError ? "alert" : "status"}>
+          {customerStatusIsError ? <CircleAlert aria-hidden="true" size={20} /> : <BadgeCheck aria-hidden="true" size={20} />}
+          <strong>{customerStatusMessage}</strong>
+        </div>
 
-          {view === "search" ? (
-            <div className="rule-list compact-list">
-              {scannerOpen ? (
-                <section className="scanner-panel" aria-live="polite">
-                  <div className="scanner-head">
-                    <strong>QR scannen</strong>
-                    <button className="icon-button" onClick={closeScanner} type="button" aria-label="Scanner schließen">
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div className="scanner-video-frame">
-                    <video
-                      ref={scannerVideoRef}
-                      className="scanner-video"
-                      muted
-                      playsInline
-                      aria-label="Kamera-Vorschau für QR-Scan"
-                    />
-                    {scannerStarting ? <span className="scanner-overlay">Kamera wird geöffnet...</span> : null}
-                  </div>
-                  {scannerStatus ? <p className="muted">{scannerStatus}</p> : null}
-                  {scannerError ? <p className="status-message error">{scannerError}</p> : null}
-                  <form
-                    className="scanner-manual-form"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      if (!scannerManualValue.trim()) {
-                        setScannerError("Bitte QR-Code, Telefon, Name oder Gästecode eingeben.");
-                        return;
-                      }
-                      void handleScannerValue(scannerManualValue);
-                    }}
-                  >
-                    <label htmlFor="scanner-manual-input">QR-Code manuell eingeben</label>
-                    <div className="row-actions">
-                      <input
-                        className="input"
-                        id="scanner-manual-input"
-                        placeholder="QR-Code, Telefon, Name oder Gästecode"
-                        value={scannerManualValue}
-                        onChange={(event) => setScannerManualValue(event.target.value)}
-                      />
-                      <button className="button secondary" type="submit">
-                        <Search size={16} />
-                        Suchen
-                      </button>
-                    </div>
-                  </form>
-                </section>
-              ) : null}
-              {staffLoading ? <p className="muted">Mitarbeiterdaten werden geladen...</p> : null}
-              {!staffLoading && staffError ? <p className="status-message">{staffError}</p> : null}
-              {filteredCustomers.map((customer) => (
-                <button
-                  className={`customer-row${customer.id === selectedCustomerId ? " active" : ""}`}
-                  key={customer.id}
-                  onClick={() => selectCustomer(customer.id)}
-                  type="button"
-                >
-                  <strong>{customer.name}</strong>
-                  <span>{customer.phone ?? customer.customer_code}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </article>
-
-        <article className="card">
-          <h2>{selectedCustomer?.name ?? "Kein Gast gewählt"}</h2>
-          {selectedCustomer ? (
+        <article className={`card staff-customer-context-card${hasCustomerContext ? " is-selected" : " is-empty"}`} aria-live="polite">
+          {recognizedCustomerName && recognizedPointsBalance !== null ? (
             <>
-              <p className="muted">
-                <QrCode size={16} /> {selectedCustomer.customer_code}
-              </p>
-              <p>
-                <span className="pill">{selectedCustomer.points_balance} Punkte</span>{" "}
-                <span className="pill">{selectedCustomer.stamp_balance} Stempel</span>{" "}
-                <span className="pill">{unlockedRewards.length} Punkteeinlösungen</span>
-              </p>
+              <span className="staff-customer-context-status"><BadgeCheck aria-hidden="true" size={18} />Gast erkannt</span>
+              <h2>{recognizedCustomerName}</h2>
+              <p className="staff-customer-context-points">Aktuell <strong>{recognizedPointsBalance} Punkte</strong></p>
+              {pointsPreview?.boost_multiplier && pointsPreview.boost_multiplier > 1 ? (
+                <div className="staff-customer-boost">
+                  <strong>{pointsPreview.boost_multiplier}× Bonus aktiv</strong>
+                  {pointsPreview.boost_expires_at ? (
+                    <span>Noch {boostRemainingDays(pointsPreview.boost_expires_at)} Tage · bis {formatBoostExpiry(pointsPreview.boost_expires_at)}</span>
+                  ) : null}
+                </div>
+              ) : null}
+              <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
+            </>
+          ) : pointsQrReference ? (
+            <>
+              <span className="staff-customer-context-status">
+                {customerPreviewError ? <CircleAlert aria-hidden="true" size={18} /> : <BadgeCheck aria-hidden="true" size={18} />}
+                {customerPreviewError ? "Kundendaten nicht verfügbar" : "Kunden-QR erkannt"}
+              </span>
+              <h2>{customerPreviewError ? "Gast konnte nicht sicher geladen werden" : saving ? "Kundendaten werden geladen …" : "Gast wird sicher geprüft"}</h2>
+              <p className="muted">{customerPreviewError ?? "Name und Punktestand erscheinen mit der sicheren serverseitigen Punkte-Vorschau."}</p>
+              {customerPreviewError ? <button className="button" onClick={() => { setCustomerPreviewError(null); setMessage(null); }} type="button">Erneut versuchen</button> : null}
+              <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
             </>
           ) : (
-            <p className="muted">Bitte QR scannen oder Gast suchen.</p>
+            <>
+              <span className="staff-customer-context-status"><UserSearch aria-hidden="true" size={18} />Kein Gast gewählt</span>
+              <h2>Kein Gast gewählt</h2>
+              <p className="muted">Bitte QR scannen oder Gast suchen.</p>
+            </>
           )}
         </article>
-      </section> : null}
 
-      {view === "earn" ? (
-        <section className="card" style={{ marginTop: 16 }}>
-          <h2>Punkte/Stempel geben</h2>
-          {settings.loyalty_mode === "amount_based" ? (
+        {view === "earn" && !customerPreviewError ? (
+        <section aria-disabled={!hasCustomerContext} className={`card staff-points-credit-card${hasCustomerContext ? "" : " is-disabled"}`}>
+          <h2>{recognizedCustomerName ? `Punkte für ${recognizedCustomerName} vergeben` : pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
+          {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
+          {pointsQrReference ? <div className="restaurant-controlled-credit">
+            <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
+            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
+            {!pointsPreview ? <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
+              <span>{pointsPreview.customer_label} · aktuell {pointsPreview.points_balance} Punkte</span>
+              <strong>+{pointsPreview.expected_points} Punkte</strong>
+              {pointsPreview.boost_multiplier > 1 ? <p className="muted">{pointsPreview.base_points} Basispunkte · {pointsPreview.boost_multiplier}× Freundschaftsbonus</p> : null}
+              {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte den bezahlten Betrag sorgfältig prüfen.</p> : null}
+              <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
+            </div>}
+          </div> : null}
+          {!pointsQrReference && settings.loyalty_mode === "amount_based" ? (
             <div className="grid two">
               <div className="field">
-                <label htmlFor="bill-amount">Rechnungsbetrag</label>
+                <FormLabel htmlFor="bill-amount" required>Rechnungsbetrag</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="bill-amount"
                   min="0"
+                  disabled={!selectedCustomer}
+                  required
                   step="0.01"
                   type="number"
                   value={billAmount}
@@ -996,13 +1162,16 @@ export function StaffTablet() {
             </div>
           ) : null}
 
-          {settings.loyalty_mode === "stamp_based" ? (
+          {!pointsQrReference && settings.loyalty_mode === "stamp_based" ? (
             <div className="grid two">
               <div className="field">
-                <label htmlFor="stamp-rule">Stempel-Regel</label>
+                <FormLabel htmlFor="stamp-rule" required>Stempel-Regel</FormLabel>
                 <select
+                  aria-required="true"
                   className="select"
                   id="stamp-rule"
+                  disabled={!selectedCustomer}
+                  required
                   value={selectedStampRuleId}
                   onChange={(event) => setSelectedStampRuleId(event.target.value)}
                 >
@@ -1036,7 +1205,7 @@ export function StaffTablet() {
             </div>
           ) : null}
 
-          {settings.loyalty_mode === "menu_points" ? (
+          {!pointsQrReference && settings.loyalty_mode === "menu_points" ? (
             <div className="tablet-actions" style={{ marginTop: 16 }}>
               {activeRules.map((rule) => (
                 <button
@@ -1064,183 +1233,259 @@ export function StaffTablet() {
         </section>
       ) : null}
 
-      {view === "redeem" ? (
-        <section className="staff-redemption-workflow" aria-labelledby="staff-redemption-title">
-          {redemptionStep === "entry" ? (
-            <form className="staff-redemption-step" onSubmit={handleRedemptionCode}>
-              <div className="staff-redemption-heading">
-                <span className="staff-redemption-icon"><Gift aria-hidden="true" size={24} /></span>
-                <span className="staff-premium-kicker">Punkteeinlösung</span>
-                <h2 id="staff-redemption-title">Einlösecode prüfen</h2>
-                <p>Bitte gib den sechsstelligen Code ein, den der Gast auf seinem Smartphone zeigt.</p>
-              </div>
+        <article className={`card staff-customer-search-card${hasCustomerContext ? " is-secondary" : ""}`}>
+          <form className="form" onSubmit={handleSearch}>
+            <RequiredFieldsNote />
+            <div className="field">
+              <FormLabel htmlFor="customer-search" required>Schnellsuche</FormLabel>
+              <input
+                aria-required="true"
+                className="input"
+                id="customer-search"
+                placeholder="QR, Telefon, Name oder Gästecode"
+                required
+                autoFocus={view === "search" && !scannerOpen}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            <div className="row-actions staff-customer-search-actions">
+              <button className="button" type="submit"><Search size={18} />Gast suchen</button>
+              <button className="button secondary" disabled={scannerStarting || scannerOpen} onClick={() => void startQrScanner()} type="button"><QrCode size={18} />QR scannen</button>
+            </div>
+          </form>
 
-              <fieldset className="staff-code-fieldset">
-                <legend>Sechsstelliger Einlösecode</legend>
-                <div className="staff-code-inputs" onPaste={handleRedemptionPaste}>
-                  {redemptionDigits.map((digit, index) => (
-                    <input
-                      aria-label={`Ziffer ${index + 1} des Einlösecodes`}
-                      autoComplete="one-time-code"
-                      autoFocus={index === 0}
-                      inputMode="numeric"
-                      key={index}
-                      maxLength={1}
-                      onChange={(event) => updateRedemptionDigits(index, event.target.value)}
-                      onKeyDown={(event) => handleRedemptionKeyDown(index, event)}
-                      ref={(element) => { redemptionInputRefs.current[index] = element; }}
-                      type="text"
-                      value={digit}
-                    />
-                  ))}
-                </div>
-                <p><ShieldCheck aria-hidden="true" size={17} />Für die Einlösung ist keine Tages-PIN erforderlich. Die Prüfung verbraucht den Code noch nicht.</p>
-              </fieldset>
-
-              {message ? <p className="staff-redemption-inline-error" role="alert">{message}</p> : null}
-
-              <div className="staff-redemption-actions">
-                <button className="staff-redemption-primary" disabled={checkingRedemptionCode || redemptionCode.length !== 6} type="submit">
-                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Code wird geprüft …</> : <>Code sicher prüfen
-                  <ChevronRight aria-hidden="true" size={20} />
-                  </>}
+          {view === "search" ? (
+            <div className="rule-list compact-list">
+              {staffLoading ? <p className="muted">Mitarbeiterdaten werden geladen...</p> : null}
+              {!staffLoading && staffError ? <p className="status-message">{staffError}</p> : null}
+              {filteredCustomers.map((customer) => (
+                <button
+                  className={`customer-row${customer.id === selectedCustomerId ? " active" : ""}`}
+                  key={customer.id}
+                  onClick={() => selectCustomer(customer.id)}
+                  type="button"
+                >
+                  <strong>{customer.name}</strong>
+                  <span>{customer.phone ?? customer.customer_code}</span>
                 </button>
-                <button className="staff-redemption-secondary" onClick={() => openStaffView("home")} type="button">Abbrechen</button>
-              </div>
-            </form>
-          ) : null}
-
-          {redemptionStep === "preview" && redemptionPreview ? (
-            <div className="staff-redemption-step staff-redemption-confirmation">
-              <div className="staff-redemption-heading">
-                <span className="staff-redemption-icon"><ShieldCheck aria-hidden="true" size={24} /></span>
-                <span className="staff-premium-kicker">Code gültig</span>
-                <h2 id="staff-redemption-title">{redemptionPreview.title}</h2>
-                <p>Prüfe die Punkteeinlösung gemeinsam mit dem Gast. Erst die folgende Bestätigung verbraucht den Code.</p>
-              </div>
-
-              <div className="staff-redemption-review-card">
-                <div><span>Kategorie</span><strong>{redemptionPreview.category ?? (redemptionPreview.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk")}</strong></div>
-                {redemptionPreview.product_price !== null ? <div><span>Produktwert</span><strong>Wert bis {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(redemptionPreview.product_price)}</strong></div> : null}
-                {redemptionPreview.description ? <div><span>Bedingung</span><strong>{redemptionPreview.description}</strong></div> : null}
-                <div><span>Restaurant</span><strong>{redemptionPreview.restaurant_name}</strong></div>
-                <div><span>Status</span><strong className="staff-redemption-valid-status">Code gültig</strong></div>
-                <div><span>Gültig bis</span><strong>{new Intl.DateTimeFormat("de-AT", { dateStyle: "short", timeStyle: "short" }).format(new Date(redemptionPreview.expires_at))} Uhr</strong></div>
-              </div>
-
-              <aside className="staff-redemption-notice">
-                <Clock3 aria-hidden="true" size={20} />
-                <p>Der Server prüft Status, Ablauf und Restaurant bei der finalen Bestätigung erneut.</p>
-              </aside>
-
-              {message ? <p className="staff-redemption-inline-error" role="alert">{message}</p> : null}
-
-              <div className="staff-redemption-actions">
-                <button className="staff-redemption-primary" disabled={checkingRedemptionCode} onClick={() => void confirmRedemptionCode()} type="button">
-                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Einlösung wird bestätigt …</> : <>Einlösung bestätigen<BadgeCheck aria-hidden="true" size={20} /></>}
-                </button>
-                <button className="staff-redemption-secondary" disabled={checkingRedemptionCode} onClick={() => { setRedemptionPreview(null); setRedemptionStep("entry"); }} type="button">Zurück</button>
-              </div>
+              ))}
             </div>
           ) : null}
-
-          {redemptionStep === "result" && redemptionResult ? (
-            <div className="staff-redemption-step staff-redemption-result">
-              <div className="staff-redemption-heading">
-                <span className="staff-redemption-icon staff-redemption-icon-success"><BadgeCheck aria-hidden="true" size={25} /></span>
-                <span className="staff-premium-kicker">Serverseitig bestätigt</span>
-                <h2 id="staff-redemption-title">Gültige Punkteeinlösung</h2>
-                <p>Der Code wurde geprüft und verbindlich als verwendet markiert.</p>
-              </div>
-
-              <article className="staff-redemption-reward-card">
-                <span className="staff-redemption-reward-visual"><Gift aria-hidden="true" size={30} /></span>
-                <div><span>{redemptionResult.redemption_type === "points_redemption" ? "Punkteeinlösung" : "Geschenk"}</span><h3>{redemptionResult.title}</h3></div>
-                <dl>
-                  <div><dt>Restaurant</dt><dd>{staffRestaurant?.name ?? "Restaurant"}</dd></div>
-                  <div><dt>Status</dt><dd>Bestätigt</dd></div>
-                  <div><dt>Zeitpunkt</dt><dd>{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(new Date(redemptionResult.redeemed_at))} Uhr</dd></div>
-                </dl>
-              </article>
-
-              <div className="staff-redemption-actions">
-                <button className="staff-redemption-primary" onClick={resetRedemptionFlow} type="button">Nächsten Code prüfen<ChevronRight aria-hidden="true" size={20} /></button>
-                <button className="staff-redemption-secondary" onClick={() => openStaffView("home")} type="button">Zur Startseite</button>
-              </div>
-            </div>
-          ) : null}
-
-          {redemptionStep === "error" && redemptionErrorKind ? (
-            <div
-              aria-live="assertive"
-              className={"staff-redemption-step staff-redemption-error staff-redemption-error-" + staffRedemptionErrorContent[redemptionErrorKind].tone}
-              role="alert"
-            >
-              <div className="staff-redemption-heading">
-                <span className="staff-redemption-icon staff-redemption-error-icon">
-                  {redemptionErrorKind === "preview_network_error" || redemptionErrorKind === "consume_unknown" ? <WifiOff aria-hidden="true" size={24} /> : null}
-                  {redemptionErrorKind === "unauthorized" ? <LockKeyhole aria-hidden="true" size={24} /> : null}
-                  {redemptionErrorKind === "not_found" ? <SearchX aria-hidden="true" size={24} /> : null}
-                  {redemptionErrorKind === "expired" ? <Clock3 aria-hidden="true" size={24} /> : null}
-                  {!["preview_network_error", "consume_unknown", "unauthorized", "not_found", "expired"].includes(redemptionErrorKind) ? <CircleAlert aria-hidden="true" size={24} /> : null}
-                </span>
-                <span className="staff-premium-kicker">{staffRedemptionErrorContent[redemptionErrorKind].eyebrow}</span>
-                <h2 id="staff-redemption-title" ref={redemptionErrorHeadingRef} tabIndex={-1}>{staffRedemptionErrorContent[redemptionErrorKind].title}</h2>
-                <p>{staffRedemptionErrorContent[redemptionErrorKind].text}</p>
-              </div>
-
-              {redemptionErrorKind === "consume_unknown" ? (
-                <aside className="staff-redemption-notice">
-                  <ShieldCheck aria-hidden="true" size={20} />
-                  <p>Die erneute Prüfung fragt nur den aktuellen Serverstatus ab. Sie bestätigt die Einlösung nicht automatisch erneut.</p>
-                </aside>
-              ) : null}
-
-              <div className="staff-redemption-actions">
-                <button className="staff-redemption-primary" disabled={checkingRedemptionCode} onClick={handleRedemptionErrorPrimaryAction} type="button">
-                  {checkingRedemptionCode ? <><span className="staff-redemption-spinner" aria-hidden="true" />Status wird geprüft …</> : <>{staffRedemptionErrorContent[redemptionErrorKind].primaryAction}<ChevronRight aria-hidden="true" size={20} /></>}
-                </button>
-                {staffRedemptionErrorContent[redemptionErrorKind].secondaryAction ? (
-                  <button className="staff-redemption-secondary" disabled={checkingRedemptionCode} onClick={() => openStaffView("home")} type="button">
-                    {staffRedemptionErrorContent[redemptionErrorKind].secondaryAction}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+        </article>
+      </section> : null}
 
       </div>
 
       <nav aria-label="Mitarbeiter-Navigation" className="staff-premium-bottom-nav">
         <button
-          aria-current={view === "home" ? "page" : undefined}
-          className={view === "home" ? "active" : ""}
-          onClick={() => openStaffView("home")}
+          aria-current={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
+          className={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); openStaffView("home"); }}
           type="button"
         >
           <Home aria-hidden="true" size={21} />
           <span>Start</span>
         </button>
         <button
-          aria-current={view === "redeem" ? "page" : undefined}
-          className={view === "redeem" ? "active" : ""}
-          onClick={() => openStaffView("redeem")}
+          aria-current={scannerOpen ? "page" : undefined}
+          aria-label="Kunden-QR scannen"
+          className={scannerOpen ? "active staff-premium-nav-scan" : "staff-premium-nav-scan"}
+          disabled={scannerStarting || scannerOpen}
+          onClick={() => void startQrScanner()}
           type="button"
         >
-          <Gift aria-hidden="true" size={21} />
-          <span>Code prüfen</span>
+          <QrCode aria-hidden="true" size={22} />
+          <span><span className="staff-premium-nav-label-wide">QR scannen</span><span className="staff-premium-nav-label-short">QR</span></span>
         </button>
-        <button onClick={() => setPinDetailOpen(true)} type="button">
+        <button
+          aria-current={pinDetailOpen ? "page" : undefined}
+          className={pinDetailOpen ? "active" : ""}
+          onClick={() => { closeScanner(); setPinDetailOpen(true); }}
+          type="button"
+        >
           <KeyRound aria-hidden="true" size={21} />
           <span>Tages-PIN</span>
         </button>
-        <button aria-expanded={moreOpen} onClick={() => setMoreOpen(true)} type="button">
+        <button
+          aria-current={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
+          className={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); openStaffView("search"); }}
+          type="button"
+        >
+          <UserSearch aria-hidden="true" size={21} />
+          <span><span className="staff-premium-nav-label-wide">Gast suchen</span><span className="staff-premium-nav-label-short">Suchen</span></span>
+        </button>
+        <button
+          aria-current={moreOpen ? "page" : undefined}
+          aria-expanded={moreOpen}
+          className={moreOpen ? "active" : ""}
+          onClick={() => { closeScanner(); setMoreOpen(true); }}
+          type="button"
+        >
           <MoreHorizontal aria-hidden="true" size={21} />
           <span>Mehr</span>
         </button>
       </nav>
+
+      <AppDrawer
+        description={pendingPinAction
+          ? pendingPinAction.detail
+          : "Scanne den persönlichen Bonus-QR des Gastes und bestätige die Punkte sicher im selben Ablauf."}
+        dismissOnOverlay={false}
+        footer={pendingPinAction ? renderPinActionFooter(true) : undefined}
+        onClose={dismissScanner}
+        open={scannerOpen}
+        size="large"
+        title={pendingPinAction?.title
+          ?? (pointsQrReference ? "Punkte gutschreiben" : scannerManualSearchOpen ? "Gast suchen" : "Kunden-QR scannen")}
+      >
+        <div className="staff-operational-scanner">
+          {pendingPinAction ? renderPinActionContent(true) : null}
+
+          {!pendingPinAction && !pointsQrReference && !selectedCustomer && !scannerManualSearchOpen ? (
+            <>
+              <div className="staff-operational-camera">
+                <div className="scanner-video-frame">
+                  <video aria-label="Kamera für Kunden-QR" autoPlay className="scanner-video" muted playsInline ref={scannerVideoRef} />
+                  {scannerStarting ? <span className="scanner-overlay">Kamera wird gestartet …</span> : null}
+                </div>
+                <div className="staff-operational-scanner-status" aria-live="polite" role="status">
+                  <QrCode aria-hidden="true" size={20} />
+                  <div><strong>{scannerStatus ?? "QR-Code erfassen"}</strong><span>Kunden-QR vollständig in den Rahmen halten.</span></div>
+                </div>
+                {scannerError ? <div className="staff-operational-scanner-error" role="alert"><CircleAlert aria-hidden="true" size={20} /><span>{scannerError}</span></div> : null}
+              </div>
+              <button
+                className="staff-operational-manual-link"
+                onClick={() => {
+                  stopScanner();
+                  setScannerStarting(false);
+                  setScannerStatus(null);
+                  setScannerError(null);
+                  setScannerManualSearchOpen(true);
+                }}
+                type="button"
+              >
+                <UserSearch aria-hidden="true" size={18} />QR nicht verfügbar? Gast suchen
+              </button>
+            </>
+          ) : null}
+
+          {!pendingPinAction && scannerManualSearchOpen ? (
+            <div className="staff-operational-manual-search">
+              <button className="staff-operational-back" onClick={() => void restartQrScanner()} type="button"><QrCode aria-hidden="true" size={18} />Zurück zum Scanner</button>
+              <div className="field">
+                <FormLabel htmlFor="scanner-customer-search" required>Schnellsuche</FormLabel>
+                <input
+                  aria-required="true"
+                  autoFocus
+                  className="input"
+                  data-drawer-autofocus="true"
+                  id="scanner-customer-search"
+                  onChange={(event) => setScannerManualValue(event.target.value)}
+                  placeholder="Name, Telefon oder Gästecode"
+                  required
+                  type="search"
+                  value={scannerManualValue}
+                />
+              </div>
+              <div className="staff-operational-customer-list" aria-label="Gefundene Gäste">
+                {scannerFilteredCustomers.map((customer) => (
+                  <button
+                    key={customer.id}
+                    onClick={() => {
+                      selectCustomer(customer.id, "earn");
+                      setScannerManualSearchOpen(false);
+                    }}
+                    type="button"
+                  >
+                    <span><strong>{customer.name}</strong><small>{customer.phone ?? customer.customer_code}</small></span>
+                    <ChevronRight aria-hidden="true" size={18} />
+                  </button>
+                ))}
+                {scannerManualValue.trim() && scannerFilteredCustomers.length === 0 ? <p className="muted">Kein Gast gefunden.</p> : null}
+              </div>
+            </div>
+          ) : null}
+
+          {!pendingPinAction && selectedCustomer ? (
+            <div className="staff-operational-selected-customer">
+              <section className="staff-points-drawer-customer" aria-label="Ausgewählter Gast">
+                <span><BadgeCheck aria-hidden="true" size={17} />Gast erkannt</span>
+                <h3>{selectedCustomer.name}</h3>
+                <p>Aktuell <strong>{selectedCustomer.points_balance} Punkte</strong></p>
+              </section>
+              <button className="button" onClick={continueManualCustomerOnPage} type="button">Mit diesem Gast fortfahren</button>
+              <button className="button secondary" onClick={() => void restartQrScanner()} type="button">Anderen Gast wählen</button>
+            </div>
+          ) : null}
+
+          {!pendingPinAction && pointsQrReference ? (
+            <div className="staff-operational-points-flow">
+              <div className="staff-operational-detected" aria-live="polite" role="status"><BadgeCheck aria-hidden="true" size={19} /><strong>Kunden-QR erkannt</strong></div>
+              <section className={`staff-points-drawer-customer${customerPreviewError ? " is-error" : ""}`} aria-label="Erkannter Gast">
+                {pointsPreview ? (
+                  <>
+                    <span><BadgeCheck aria-hidden="true" size={17} />Gast sicher geprüft</span>
+                    <h3>{pointsPreview.customer_label}</h3>
+                    <p>Aktuell <strong>{pointsPreview.points_balance} Punkte</strong></p>
+                    {pointsPreview.boost_multiplier > 1 ? (
+                      <p className="staff-points-drawer-boost"><strong>{pointsPreview.boost_multiplier}× Bonus aktiv</strong>{pointsPreview.boost_expires_at ? <span>bis {formatBoostExpiry(pointsPreview.boost_expires_at)}</span> : null}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <span>{customerPreviewError ? <CircleAlert aria-hidden="true" size={17} /> : <ShieldCheck aria-hidden="true" size={17} />}{customerPreviewError ? "Prüfung fehlgeschlagen" : "Sichere Prüfung ausstehend"}</span>
+                    <h3>{customerPreviewError ? "Gast nicht verfügbar" : "Gast wird mit der Vorschau geprüft"}</h3>
+                    <p>{customerPreviewError ?? "Name, Punktestand und Bonusstatus werden serverseitig geladen."}</p>
+                  </>
+                )}
+              </section>
+
+              <section className="staff-operational-points-form" aria-labelledby="staff-scanner-points-title">
+                <div><span className="staff-premium-kicker">Punkte gutschreiben</span><h3 id="staff-scanner-points-title">Bezahlten Betrag erfassen</h3></div>
+                <p className="muted">Nur der direkt im Restaurant bezahlte Betrag nach Rabatten zählt.</p>
+                <div className="field">
+                  <FormLabel htmlFor="scanner-controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel>
+                  <input
+                    aria-required="true"
+                    className="input"
+                    id="scanner-controlled-bill-amount"
+                    inputMode="decimal"
+                    max={(settings.points_collection_max_amount_cents ?? 30000) / 100}
+                    min="0.01"
+                    onChange={(event) => {
+                      setBillAmount(Number(event.target.value) || 0);
+                      setPointsPreview(null);
+                      setCustomerPreviewError(null);
+                    }}
+                    required
+                    step="0.01"
+                    type="number"
+                    value={billAmount || ""}
+                  />
+                </div>
+                {!pointsPreview ? (
+                  <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">{saving ? "Vorschau wird geladen …" : customerPreviewError ? "Erneut versuchen" : "Punkte serverseitig berechnen"}</button>
+                ) : (
+                  <div className="staff-operational-points-preview">
+                    <dl>
+                      <div><dt>Gast</dt><dd>{pointsPreview.customer_label}</dd></div>
+                      <div><dt>Basispunkte</dt><dd>{pointsPreview.base_points}</dd></div>
+                      <div><dt>Multiplikator</dt><dd>{pointsPreview.boost_multiplier}×</dd></div>
+                      <div><dt>Gutschrift</dt><dd>{pointsPreview.expected_points} Punkte</dd></div>
+                    </dl>
+                    {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte den bezahlten Betrag sorgfältig prüfen.</p> : null}
+                    <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
+                  </div>
+                )}
+              </section>
+              <button className="button secondary" disabled={saving} onClick={() => void restartQrScanner()} type="button">Anderen Gast wählen</button>
+            </div>
+          ) : null}
+        </div>
+      </AppDrawer>
 
       <AppDrawer
         description="Diese PIN wird für heutige Punktebuchungen benötigt."
@@ -1313,49 +1558,18 @@ export function StaffTablet() {
         </div>
       </AppDrawer>
 
-      {message && view !== "redeem" ? <p className="status-message">{message}</p> : null}
+      {view === "home" && message ? <p className="status-message">{message}</p> : null}
 
       <AppDrawer
         description={pendingPinAction?.detail}
         dismissOnOverlay={false}
-        footer={pendingPinAction ? (
-          <>
-            <button className="button secondary" disabled={saving} onClick={() => setPendingPinAction(null)} type="button">Abbrechen</button>
-            <button className="button" disabled={!pinDraft || saving} form="staff-pin-confirmation" type="submit">Bestätigen</button>
-          </>
-        ) : null}
-        onClose={() => setPendingPinAction(null)}
-        open={Boolean(pendingPinAction)}
+        footer={renderPinActionFooter()}
+        onClose={closePinAction}
+        open={Boolean(pendingPinAction) && !scannerOpen}
         size="compact"
         title={pendingPinAction?.title ?? "Punkte bestätigen"}
       >
-        {pendingPinAction ? (
-          <form
-            className="form"
-            id="staff-pin-confirmation"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void executePinAction(pendingPinAction, pinDraft);
-            }}
-          >
-            <div className="field">
-              <label htmlFor="staff-pin-modal">{pendingPinAction.pinLabel}</label>
-              <input
-                autoFocus
-                className="input"
-                data-drawer-autofocus="true"
-                id="staff-pin-modal"
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="Tages-PIN eingeben"
-                type="password"
-                value={pinDraft}
-                onChange={(event) => setPinDraft(event.target.value.replace(/\D/g, "").slice(0, 4))}
-              />
-              <p className="muted">{pendingPinAction.pinHelp}</p>
-            </div>
-          </form>
-        ) : null}
+        {renderPinActionContent()}
       </AppDrawer>
     </main>
   );

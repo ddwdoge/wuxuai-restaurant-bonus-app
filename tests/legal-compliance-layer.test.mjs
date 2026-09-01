@@ -59,7 +59,7 @@ test("notwendige und Programmnachrichten sind nicht als Marketing gekoppelt", ()
 });
 
 test("Legal Readiness verlangt Impressum, Bedingungen und Datenschutztext", () => {
-  const profile = { company_name: "Test", street: "Straße 1", postal_code: "1010", city: "Wien", email: "legal@example.invalid", complaint_contact: "Kontakt" };
+  const profile = { company_name: "Test", legal_form: "Einzelunternehmen", street: "Straße 1", postal_code: "1010", city: "Wien", country: "Österreich", email: "legal@example.invalid", complaint_contact: "Kontakt" };
   assert.deepEqual(legalReadiness(profile, completeTerms, "x".repeat(120)), { imprintComplete: true, termsComplete: true, privacyComplete: true });
   assert.equal(legalReadiness({ ...profile, email: "" }, completeTerms, "x".repeat(120)).imprintComplete, false);
 });
@@ -80,7 +80,9 @@ test("Registrierung nutzt ausschließlich Legal-Wrapper und getrennte Opt-ins", 
   assert.match(customerPortal, /termsAccepted: form\.termsAccepted/);
   assert.match(customerPortal, /marketingPush: form\.marketingPush/);
   assert.match(customerPortal, /Freiwillige Einwilligungen/);
-  assert.match(referralLanding, /termsAccepted: form\.termsAccepted/);
+  assert.match(referralLanding, /joinCustomerReferral\(\{/);
+  assert.match(referralLanding, /termsAccepted,/);
+  assert.match(referralLanding, /privacyAcknowledged,/);
 });
 
 test("Migration blockiert Registrierung ohne Pflichtannahme serverseitig", () => {
@@ -208,9 +210,11 @@ test("Registrierungs-Wrapper blockieren fehlende Pflichtdokumente ohne Public-Ba
 test("Legal-Fehler bleibt vom Bonusportal getrennt und blockiert nur Registrierung", () => {
   assert.match(customerPortal, /setLegalCenterState\(\{ status: "error"/);
   assert.match(customerPortal, /Dein Bonuskonto bleibt nutzbar/);
-  assert.match(customerPortal, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(customerPortal, /customerRegistrationCanSubmit\(form, legalCenterState\.status === "ready"\)/);
+  assert.match(customerPortal, /disabled=\{submitting \|\| !registrationCanSubmit\}/);
   assert.match(customerPortal, /reloadLegalCenter/);
-  assert.match(referralLanding, /disabled=\{submitting \|\| legalCenterState\.status !== "ready"\}/);
+  assert.match(referralLanding, /const legalReady = legalCenterState\.status === "ready"/);
+  assert.match(referralLanding, /disabled=\{!legalReady \|\| !termsAccepted \|\| !privacyAcknowledged \|\| submitting\}/);
   assert.match(legalCenter, /data\.missing_configuration/);
 });
 

@@ -8,25 +8,44 @@ import {
   LocateFixed,
   Map as MapIcon,
   MapPin,
+  Newspaper,
   Search,
   Store,
   Trophy,
+  UserPlus,
   X,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { AppDrawer } from "../../shared/components/AppDrawer";
 import { AppShell, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
+import { CentralCustomerNavigation } from "./components/CentralCustomerNavigation";
+import { RestaurantHeroImage, RestaurantLogoImage } from "./components/RestaurantHeroImage";
 import { readStoredCustomerToken } from "./customerTokenStorage";
 import {
   distanceInKilometers,
   filterPartnerRestaurants,
+  filterPartnerRestaurantsByCategory,
   googleMapsUrl,
+  isRewardNear,
   sortPartnerRestaurants,
 } from "./partnerRestaurantFinder.mjs";
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
 import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
+import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
+import { recordRestaurantOfferEvent, restaurantOfferPricePresentation } from "../offers/restaurantOfferService";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
+type PartnerFilter = "all" | "nearby" | "visited" | "points" | "near_reward" | "open";
+
+const partnerFilters: Array<{ key: PartnerFilter; label: string }> = [
+  { key: "all", label: "Alle Partner" },
+  { key: "nearby", label: "In meiner Nähe" },
+  { key: "visited", label: "Bereits besucht" },
+  { key: "points", label: "Meine Punkte" },
+  { key: "near_reward", label: "Belohnung bald erreichbar" },
+  { key: "open", label: "Jetzt geöffnet" },
+];
 
 function formatDistance(value: number | null) {
   if (value === null) return null;
@@ -38,17 +57,6 @@ function formatVisit(value: string | null | undefined) {
   return `Zuletzt am ${new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value))}`;
 }
 
-const openingDayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
-function todayOpeningHours(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const hours = value as Record<string, { enabled?: boolean; open?: string; close?: string }>;
-  const day = hours[openingDayKeys[new Date().getDay()]];
-  if (!day?.enabled) return "Heute geschlossen";
-  if (!day.open || !day.close) return null;
-  return `Heute ${day.open}–${day.close} Uhr`;
-}
-
 function locationAddress(location: PartnerRestaurant) {
   return [location.address, `${location.postal_code} ${location.city}`.trim()].filter(Boolean).join(", ");
 }
@@ -56,9 +64,15 @@ function locationAddress(location: PartnerRestaurant) {
 function recommendation(location: PartnerRestaurant) {
   const membership = location.membership;
   if (membership?.available_rewards.length) return "Jetzt einlösbar";
-  if (membership?.next_reward) return `Nur noch ${membership.next_reward.missing_points} Punkte bis ${membership.next_reward.title}`;
+  if (membership?.next_reward && isRewardNear(location)) return `Bald erreichbar: noch ${membership.next_reward.missing_points} Punkte bis ${membership.next_reward.title}`;
+  if (membership?.next_reward) return `Noch ${membership.next_reward.missing_points} Punkte bis ${membership.next_reward.title}`;
   if (membership?.registered) return "Du bist hier Bonus-Mitglied";
   return location.welcome_reward_available ? "Willkommensgeschenk verfügbar" : `${location.active_reward_count} Punkteeinlösungen`;
+}
+
+function visitLabel(location: PartnerRestaurant) {
+  if ((location.membership?.visits_count ?? 0) > 0) return "Bereits besucht";
+  return "Noch nicht besucht";
 }
 
 function PartnerResultCard({ location, onSelect, selected }: { location: PartnerRestaurant; onSelect: () => void; selected: boolean }) {
@@ -69,13 +83,17 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
       onClick={onSelect}
       type="button"
     >
-      <span className="partner-result-logo">
-        {location.logo_url ? <img alt="" src={location.logo_url} /> : <Store aria-hidden="true" size={24} />}
-      </span>
+      <RestaurantLogoImage alt="" className="partner-result-logo" logoUrl={location.logo_url} name={location.name} />
       <span className="partner-result-copy">
         <strong>{location.name}</strong>
         <small>{locationAddress(location)}</small>
-        <span>{formatDistance(location.distance_km) ?? recommendation(location)}</span>
+        {formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}
+        <span className="partner-result-statuses">
+          <em>{visitLabel(location)}</em>
+          <em className={location.opening_status?.isOpen ? "open" : "closed"}>{location.opening_status?.message}</em>
+        </span>
+        {location.offers[0] ? <span className="partner-offer-badge"><Newspaper aria-hidden="true" size={14} />{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : location.offers[0].offer_type === "WEEKLY_OFFER" ? "Wochenangebot" : "Neues Angebot"}</span> : null}
+        <span>{location.membership ? `${location.membership.points_balance} Punkte · ${recommendation(location)}` : recommendation(location)}</span>
       </span>
       <ChevronRight aria-hidden="true" size={19} />
     </button>
@@ -84,21 +102,33 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
 
 function PartnerDetail({ current, location, onClose }: { current: boolean; location: PartnerRestaurant; onClose: () => void }) {
   const membership = location.membership;
+  const isMember = membership?.registered === true;
   const customerToken = readStoredCustomerToken(location.slug);
   const portalUrl = `/customer/${encodeURIComponent(location.slug)}${customerToken ? `?token=${encodeURIComponent(customerToken)}` : ""}`;
+  const currentOffer = location.offers[0];
+  const currentOfferPrice = currentOffer
+    ? restaurantOfferPricePresentation(currentOffer.current_price, currentOffer.previous_price)
+    : null;
 
   return (
     <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
       <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
-      {location.cover_image_url ? <img alt={`${location.name} Titelbild`} className="partner-detail-cover" src={location.cover_image_url} /> : null}
+      <RestaurantHeroImage
+        coverImageUrl={location.cover_image_url}
+        logoUrl={location.logo_url}
+        name={location.name}
+        presentation={{
+          zoom: location.cover_image_zoom ?? 1,
+          positionX: location.cover_image_position_x ?? 0.5,
+          positionY: location.cover_image_position_y ?? 0.5,
+        }}
+      />
       <div className="partner-detail-heading">
-        <span className="partner-detail-logo">
-          {location.logo_url ? <img alt={`${location.name} Logo`} src={location.logo_url} /> : <Store aria-hidden="true" size={25} />}
-        </span>
-        <div><StatusBadge tone={current || membership?.registered ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : membership?.registered ? "Dein Restaurant" : "WUXUAI Partner"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p></div>
+        <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
+        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : isMember ? "Dein Bonus" : "Noch kein Bonus-Mitglied"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description">{location.short_description}</p> : null}
-      {todayOpeningHours(location.opening_hours) ? <p className="partner-detail-hours">{todayOpeningHours(location.opening_hours)}</p> : null}
+      {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{location.opening_status.message}{location.opening_status.todayHours && location.opening_status.message !== location.opening_status.todayHours ? ` · ${location.opening_status.todayHours}` : ""}</p> : null}
       <div className="partner-detail-stats">
         <div><span>Punkte</span><strong>{membership ? membership.points_balance : "–"}</strong></div>
         <div><span>Besuche</span><strong>{membership ? membership.visits_count : "–"}</strong></div>
@@ -114,11 +144,22 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           {membership.available_rewards.slice(0, 3).map((reward) => <strong key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
-      {!membership ? <p className="partner-detail-note">Besuche das Restaurant und scanne dort den Bonus-QR, um Punkte zu sammeln.</p> : null}
+      {currentOffer ? (
+        <div className="partner-current-offer">
+          <span>{currentOffer.offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
+          <strong>{currentOffer.title}</strong>
+          <p>{currentOffer.short_description}</p>
+          <small className="partner-current-offer-price">{currentOfferPrice?.discountLabel ? <b>{currentOfferPrice.discountLabel}</b> : null}{currentOfferPrice?.previousPrice ? <del>{currentOfferPrice.previousPrice}</del> : null}{currentOfferPrice?.currentPrice ? <strong>{currentOfferPrice.currentPrice}</strong> : null}<span>Gültig bis {new Date(currentOffer.valid_to).toLocaleDateString("de-AT")}</span></small>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
+        </div>
+      ) : null}
+      {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}
       <div className="partner-detail-actions">
-        <Link className="premium-button premium-button-primary" to={portalUrl}>Restaurant ansehen</Link>
-        <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} rel="noreferrer" target="_blank">
-          <ExternalLink aria-hidden="true" size={18} /> In Google Maps öffnen
+        <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>
+          {isMember ? <><Store aria-hidden="true" size={18} /> Restaurant öffnen</> : <><UserPlus aria-hidden="true" size={18} /> Bonusprogramm beitreten</>}
+        </Link>
+        <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_ROUTE_CLICKED"); }} rel="noreferrer" target="_blank">
+          <ExternalLink aria-hidden="true" size={18} /> Route starten
         </a>
       </div>
     </article>
@@ -130,28 +171,38 @@ export function PartnerRestaurantFinderPage() {
   const currentSlug = searchParams.get("current");
   const [locations, setLocations] = useState<PartnerRestaurant[]>([]);
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<PartnerFilter>("all");
   const [view, setView] = useState<FinderView>("map");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasCustomerAccess, setHasCustomerAccess] = useState(false);
+  const [total, setTotal] = useState(0);
 
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const nextLocations = await loadPartnerRestaurants();
-      setLocations(nextLocations);
-      setSelectedId((current) => current && nextLocations.some((item) => item.branch_id === current) ? current : nextLocations[0]?.branch_id ?? null);
+      const result = await loadPartnerRestaurants();
+      setLocations(result.locations);
+      setHasCustomerAccess(result.hasCustomerAccess);
+      setTotal(result.total);
+      setSelectedId((current) => {
+        if (current && result.locations.some((item) => item.branch_id === current)) return current;
+        return result.locations.find((item) => item.slug === currentSlug)?.branch_id ?? null;
+      });
     } catch {
       setLocations([]);
       setSelectedId(null);
+      setHasCustomerAccess(false);
+      setTotal(0);
       setError("Partnerrestaurants konnten gerade nicht geladen werden.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentSlug]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -159,11 +210,13 @@ export function PartnerRestaurantFinderPage() {
     const matches = filterPartnerRestaurants(locations, query).map((location) => ({
       ...location,
       distance_km: userLocation ? distanceInKilometers(userLocation, location) : null,
+      opening_status: partnerOpeningStatus(location.opening_hours, new Date(), location.special_days, location.holidays),
     }));
-    return sortPartnerRestaurants(matches);
-  }, [locations, query, userLocation]);
+    return sortPartnerRestaurants(filterPartnerRestaurantsByCategory(matches, filter));
+  }, [filter, locations, query, userLocation]);
 
   const selected = selectedId ? filteredLocations.find((location) => location.branch_id === selectedId) ?? null : null;
+  const detailOpenInDrawer = Boolean(selected);
 
   function requestLocation() {
     setLocationMessage("Dein Standort wird nur für diese Suche verwendet.");
@@ -174,6 +227,7 @@ export function PartnerRestaurantFinderPage() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setFilter("nearby");
         setLocationMessage("Restaurants werden nach deiner Nähe sortiert.");
       },
       () => setLocationMessage("Standort nicht freigegeben. Die Ortssuche bleibt verfügbar."),
@@ -189,11 +243,14 @@ export function PartnerRestaurantFinderPage() {
     <AppShell>
       <main className="partner-finder-shell">
         <header className="partner-finder-header">
-          <Link aria-label="Zurück" className="partner-finder-back" to="/"><ArrowLeft aria-hidden="true" size={21} /></Link>
-          <div><span>WUXUAI Bonus</span><h1>Restaurants entdecken</h1></div>
+          <Link aria-label="Zurück" className="partner-finder-back" to="/customer"><ArrowLeft aria-hidden="true" size={21} /></Link>
+          <div><span>WUXUAI Bonus</span><h1>Lokale entdecken</h1></div>
           <MapPin aria-hidden="true" size={24} />
         </header>
-        <p className="partner-finder-legal-note">Punkte und Punkteeinlösungen werden für jedes Restaurant getrennt geführt.</p>
+        <div className="partner-finder-intro">
+          <p>Finde teilnehmende Lokale in deiner Nähe und sieh, wo du bereits Punkte gesammelt hast.</p>
+          <small>Punkte und Punkteeinlösungen werden für jedes Lokal getrennt geführt.</small>
+        </div>
 
         <section className="partner-finder-controls" aria-label="Restaurantsuche">
           <label className="partner-search-field">
@@ -206,13 +263,25 @@ export function PartnerRestaurantFinderPage() {
             <button aria-pressed={view === "map"} onClick={() => setView("map")} type="button"><MapIcon aria-hidden="true" size={18} /> Karte</button>
             <button aria-pressed={view === "list"} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={18} /> Liste</button>
           </div>
-          <p aria-live="polite">{locationMessage ?? `${filteredLocations.length} Partnerrestaurant${filteredLocations.length === 1 ? "" : "s"} gefunden`}</p>
+          <p aria-live="polite">{locationMessage ?? `${filteredLocations.length} von ${total} teilnehmenden Lokalen angezeigt`}</p>
         </section>
+
+        <div aria-label="Lokale filtern" className="partner-filter-scroll" role="group">
+          {partnerFilters.map((option) => (
+            <button aria-pressed={filter === option.key} key={option.key} onClick={() => setFilter(option.key)} type="button">
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {!loading && !hasCustomerAccess ? (
+          <p className="partner-customer-access-note">Wähle ein Lokal und tritt dem Bonusprogramm direkt bei.</p>
+        ) : null}
 
         {loading ? <LoadingState description="Partnerrestaurants werden geladen …" /> : null}
         {!loading && error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Restaurantsuche nicht verfügbar" /> : null}
         {!loading && !error && filteredLocations.length === 0 ? (
-          <EmptyState description="In diesem Gebiet gibt es derzeit noch keine teilnehmenden Restaurants." title="Keine Partnerrestaurants gefunden" />
+          <EmptyState description="In diesem Gebiet gibt es derzeit noch keine teilnehmenden Restaurants." title="Keine teilnehmenden Lokale gefunden" />
         ) : null}
 
         {!loading && !error && filteredLocations.length ? (
@@ -238,11 +307,25 @@ export function PartnerRestaurantFinderPage() {
                   <PartnerResultCard key={location.branch_id} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
                 ))}
               </div>
-              {selected ? <PartnerDetail current={selected.slug === currentSlug} location={selected} onClose={() => setSelectedId(null)} /> : null}
             </section>
           </div>
         ) : null}
       </main>
+      <CentralCustomerNavigation />
+      <AppDrawer
+        description="Punkte, Punkteeinlösungen und Informationen dieses Lokals."
+        className="partner-detail-responsive-drawer"
+        onClose={() => setSelectedId(null)}
+        open={detailOpenInDrawer}
+        size="large"
+        title="Restaurantdetails"
+      >
+        {selected ? (
+          <div className="partner-detail-drawer-content">
+            <PartnerDetail current={selected.slug === currentSlug} location={selected} onClose={() => setSelectedId(null)} />
+          </div>
+        ) : null}
+      </AppDrawer>
     </AppShell>
   );
 }

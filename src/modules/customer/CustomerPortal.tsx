@@ -14,10 +14,12 @@ import {
   LockKeyhole,
   LogOut,
   MapPinned,
+  Newspaper,
   QrCode,
   ReceiptText,
   ScanLine,
   ShieldCheck,
+  Share2,
   Sparkles,
   Store,
   UserRound,
@@ -25,11 +27,22 @@ import {
   WalletCards,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { OperationalQrCode } from "../../shared/components/OperationalQrCode";
+import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
+import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import type { Restaurant, RestaurantBranding } from "../../shared/types/domain";
-import { loadCustomerRedemptionStatus, startCustomerRedemption } from "../rewards/rewardService";
+import {
+  loadCustomerPointsPresentation,
+  loadCustomerGiftPresentation,
+  loadCustomerRedemptionStatus,
+  confirmCustomerRedemptionSwipe,
+  startCustomerPointsPresentation,
+  startCustomerGiftPresentation,
+  type CustomerPointsPresentation,
+} from "../rewards/rewardService";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -38,18 +51,30 @@ import {
 import {
   collectBonusPoints,
   calculateBonusTierPoints,
+  createCustomerPointsQr,
   createReferralLink,
   defaultBonusAmountTiers,
   loadCustomerPortalData,
+  loadCustomerReferralInviteStatus,
+  loadPublicPointsCollectionMode,
   registerRestaurantGuest,
   type BonusPointCollectionResult,
   type GuestRegistrationResult,
   type PublicCustomerOfferView,
   type PublicLoyaltySettings,
   type PublicPortalCustomer,
+  type CustomerPointsQr,
+  type CustomerReferralInviteStatus,
 } from "../loyalty/loyaltyService";
+import { buildCustomerPointsQrPayload } from "../loyalty/customerPointsQr.mjs";
 import {
-  isInvalidCustomerTokenError,
+  formatInvitedReferralDuration,
+  normalizeReferralBonusDuration,
+  referralBonusMultiplier as finalReferralBonusMultiplier,
+} from "../loyalty/referralBonusSettings.mjs";
+import {
+  emitCustomerAccessDiagnostic,
+  isPermanentCustomerAccessError,
   readStoredCustomerToken,
   removeStoredCustomerToken,
   saveStoredCustomerToken,
@@ -57,11 +82,14 @@ import {
 import {
   isUsableRestaurantSlug,
   loadPortalForRestaurant,
-  persistScopedActiveRedemption,
   removeScopedActiveRedemption,
   restoreScopedActiveRedemption,
   type ScopedActiveRedemption,
 } from "./customerRedemptionSession.mjs";
+import { createReferralCreationToken } from "./referralInviteFlow.mjs";
+import { referralSharePayload, supportsNativeReferralShare } from "./referralShare.mjs";
+import { formatReferralBoostExpiry, formatReferralBoostRemaining } from "./referralLifecycle.mjs";
+import { selectCustomerHomeGifts } from "./customerGiftPresentation.mjs";
 import {
   AppShell,
   BenefitTile,
@@ -84,19 +112,37 @@ import {
 } from "./components/PremiumCustomerUi";
 import { RewardImageFrame } from "../../shared/components/RewardImageFrame";
 import { rewardImageCropFromRecord } from "../../shared/rewardImageCrop";
+import { CustomerRestaurantScanner } from "./components/CustomerRestaurantScanner";
+import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
+import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
+import { CustomerRestaurantSwitcher } from "./components/CustomerRestaurantSwitcher";
+import { SwipeToRedeem } from "./components/SwipeToRedeem";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
+import { useAuth } from "../auth/AuthProvider";
+import {
+  loadPublicRestaurantOffers,
+  recordRestaurantOfferEvent,
+  type RestaurantOffer,
+} from "../offers/restaurantOfferService";
 import {
   customerPushAvailable,
   disableCustomerPush,
-  drawCustomerBirthdayGift,
   enableCustomerPush,
+  loadCustomerIdentitySummary,
   loadCustomerRetentionStatus,
   markExpiryReminder,
-  updateCustomerBirthday,
+  type CustomerIdentitySummary,
   type CustomerRetentionStatus,
   type ExpiryReminder,
 } from "./retentionService";
+import {
+  customerRegistrationCanSubmit,
+  emptyCustomerRegistrationForm,
+  isValidCustomerFirstName,
+} from "./customerRegistration.mjs";
+import { customerPhoneValidation } from "./customerIdentity.mjs";
 
-type GuestStep = "welcome" | "register" | "success";
+type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
 type RewardFilter = "all" | "mine";
 type RedemptionSheetStep = "detail" | "confirm";
@@ -105,34 +151,51 @@ type RedemptionOutcome = {
   kind: "redeemed" | "expired" | "error";
   pointsSpent: number;
   title: string;
+  presentation?: boolean;
+  redeemedAt?: string | null;
+  redemptionNumber?: string | null;
 };
 
 type ActiveRedemptionCode = ScopedActiveRedemption;
-
-function formatBoostRemaining(activeUntil: string, remainingDays: number | undefined, nowMs: number) {
-  const remainingMs = new Date(activeUntil).getTime() - nowMs;
-  if (remainingMs <= 0) return "Boost abgelaufen";
-  if (remainingMs < 86_400_000) return "Nur noch heute aktiv";
-  const days = Math.max(1, remainingDays ?? Math.ceil(remainingMs / 86_400_000));
-  return days === 1 ? "Noch 1 Tag gültig" : `Noch ${days} Tage gültig`;
-}
 
 function clampPercent(value: number) {
   return Math.min(100, Math.max(0, value));
 }
 
-function rewardState(reward: PublicCustomerOfferView, nowMs: number, activeCode: ActiveRedemptionCode | null): RewardCardState {
+function customerRedemptionErrorMessage(error: unknown) {
+  const raw = error instanceof Error ? error.message : "";
+  if (/BALANCE_INSUFFICIENT|noch nicht genug Punkte/i.test(raw)) return "Du hast noch nicht genug Punkte.";
+  if (/ALREADY_REDEEMED/i.test(raw)) return "Bereits eingelöst";
+  if (/WINDOW_EXPIRED/i.test(raw)) return "Einlösezeit abgelaufen";
+  if (/RATE|too many|zu viele/i.test(raw)) return "Zu viele Versuche. Bitte warte kurz und versuche es erneut.";
+  if (/TOKEN|MEMBERSHIP|ACCESS/i.test(raw)) return "Dein Kundenzugang ist nicht mehr gültig. Bitte öffne dein Bonuskonto erneut.";
+  return "Diese Einlösung ist derzeit nicht verfügbar.";
+}
+
+function rewardState(
+  reward: PublicCustomerOfferView,
+  nowMs: number,
+  activeCode: ActiveRedemptionCode | null,
+  activePresentation: CustomerPointsPresentation | null,
+): RewardCardState {
   const expiresAt = reward.valid_until ?? reward.expires_at;
   if (expiresAt && new Date(expiresAt).getTime() <= nowMs) return "expired";
   if (reward.status === "redeemed") return "redeemed";
-  if (reward.status === "redemption_started" || activeCode?.rewardId === reward.id) return "redeeming";
+  if (reward.status === "redemption_started" || activeCode?.rewardId === reward.id
+    || (activePresentation?.active && activePresentation.reward_id === reward.id)) return "redeeming";
   return reward.status === "unlocked" ? "available" : "locked";
 }
 
 function rewardStatusText(reward: PublicCustomerOfferView, state: RewardCardState) {
   if (state === "available") return reward.is_starter_reward ? "Geschenk einlösbar" : "Jetzt einlösbar";
-  if (state === "redeeming") return "Einlösecode ist aktiv";
-  if (state === "redeemed") return "Bereits eingelöst";
+  if (state === "redeeming") return "Einlösung ist aktiv";
+  if (state === "redeemed") return reward.redeemed_at
+    ? `Eingelöst am ${new Intl.DateTimeFormat("de-AT", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Europe/Vienna",
+    }).format(new Date(reward.redeemed_at))}`
+    : "Bereits eingelöst";
   if (state === "expired") return "Nicht mehr verfügbar";
   if (reward.is_starter_reward) return "Noch nicht freigeschaltet";
   if (reward.remaining_stamps > 0) return `Noch ${reward.remaining_stamps} Stempel`;
@@ -188,15 +251,20 @@ function standardRewardAsset(category: string | null | undefined, title: string)
   );
 }
 
-export function CustomerPortal() {
-  const { slug } = useParams();
-  const location = useLocation();
+type CustomerPortalProps = {
+  entryMessage?: string | null;
+  isBonusCollection: boolean;
+  restaurantSlug: string;
+};
+
+export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug }: CustomerPortalProps) {
+  const { portalAccess, signOut } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
   const [activeView, setActiveView] = useState<CustomerView>("home");
   const [restaurant, setRestaurant] = useState<Pick<Restaurant, "name" | "slug" | "status"> | null>(null);
-  const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
+  const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "logo_fit_mode" | "logo_scale" | "logo_position_x" | "logo_position_y" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
   const [settings, setSettings] = useState<PublicLoyaltySettings | null>(null);
   const [customer, setCustomer] = useState<PublicPortalCustomer | null>(null);
   const [rewards, setRewards] = useState<PublicCustomerOfferView[]>([]);
@@ -207,40 +275,53 @@ export function CustomerPortal() {
   const [redemptionOutcome, setRedemptionOutcome] = useState<RedemptionOutcome | null>(null);
   const [redemptionStatus, setRedemptionStatus] = useState<string | null>(null);
   const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
+  const [activePointsPresentation, setActivePointsPresentation] = useState<CustomerPointsPresentation | null>(null);
+  const [presentationClockOffsetMs, setPresentationClockOffsetMs] = useState(0);
   const [redeemingReward, setRedeemingReward] = useState(false);
+  const [confirmingSwipe, setConfirmingSwipe] = useState(false);
   const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
-  const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(null);
+  const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(() => (
+    isUsableRestaurantSlug(restaurantSlug) ? readStoredCustomerToken(restaurantSlug) : null
+  ));
   const [collectStep, setCollectStep] = useState<CollectStep>("entry");
   const [selectedTierKey, setSelectedTierKey] = useState("");
   const [dailyPin, setDailyPin] = useState("");
   const [collectionResult, setCollectionResult] = useState<BonusPointCollectionResult | null>(null);
   const [referralLink, setReferralLink] = useState<string | null>(null);
+  const [referralInviteStatus, setReferralInviteStatus] = useState<CustomerReferralInviteStatus | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [pointsInfoOpen, setPointsInfoOpen] = useState(false);
   const [retention, setRetention] = useState<CustomerRetentionStatus | null>(null);
+  const [identitySummary, setIdentitySummary] = useState<CustomerIdentitySummary | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [retentionMessage, setRetentionMessage] = useState<string | null>(null);
-  const [birthdayForm, setBirthdayForm] = useState({ day: "", month: "" });
-  const [drawingBirthdayGift, setDrawingBirthdayGift] = useState(false);
   const [enablingPush, setEnablingPush] = useState(false);
   const [accountSheet, setAccountSheet] = useState<AccountSheet>(null);
-  const [form, setForm] = useState({
-    firstName: "", phone: "", birthday: "", termsAccepted: false,
-    privacyAcknowledged: false, marketingPush: false, marketingSms: false,
-    marketingEmail: false, birthdayProcessing: false,
-  });
+  const [form, setForm] = useState(() => ({ ...emptyCustomerRegistrationForm }));
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [creatingReferral, setCreatingReferral] = useState(false);
+  const [restaurantScannerOpen, setRestaurantScannerOpen] = useState(false);
+  const [restaurantSwitcherOpen, setRestaurantSwitcherOpen] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [refreshToken, setRefreshToken] = useState(0);
+  const [pointsQr, setPointsQr] = useState<CustomerPointsQr | null>(null);
+  const [pointsQrLoading, setPointsQrLoading] = useState(false);
+  const [restaurantOffers, setRestaurantOffers] = useState<RestaurantOffer[]>([]);
+  const [selectedRestaurantOffer, setSelectedRestaurantOffer] = useState<RestaurantOffer | null>(null);
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
+  const swipeConfirmationKeysRef = useRef(new Map<string, string>());
   const processedReminderDeepLinkRef = useRef<string | null>(null);
-  const restaurantSlug = slug?.trim() ?? "";
-  const activeToken = customerToken ?? registration?.customer.customer_qr_token ?? storedCustomerToken;
-  const isBonusCollection = location.pathname.startsWith("/w/");
+  const referralCreationTokenRef = useRef<string | null>(null);
+  const activeToken = customerToken ?? storedCustomerToken;
+  const activeTokenSource = customerToken
+    ? "url"
+    : storedCustomerToken
+      ? "stored"
+      : "none";
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
 
@@ -254,22 +335,26 @@ export function CustomerPortal() {
       const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
       setLegalCenterState(legalCenterStateFromResponse(legalData));
     } catch {
-      setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
+      setLegalCenterState({ status: "error", message: "Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut." });
     }
   }, [activeToken, restaurantSlug]);
   useEffect(() => {
-    if (!isUsableRestaurantSlug(restaurantSlug)) return;
-    setStoredCustomerToken(readStoredCustomerToken(restaurantSlug));
-  }, [restaurantSlug]);
-
-  useEffect(() => {
     if (!restaurantSlug || !activeToken || !customer) return;
-    saveStoredCustomerToken(restaurantSlug, {
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
       customer_token: activeToken,
       restaurant_id: null,
-      customer_name: customer.name,
+      device_id: getWebDeviceId(),
     });
-  }, [activeToken, customer, restaurantSlug]);
+    if (!persisted) return;
+    setStoredCustomerToken(activeToken);
+
+    if (customerToken === activeToken) {
+      const nextSearchParams = new URLSearchParams(searchParams);
+      nextSearchParams.delete("token");
+      setSearchParams(nextSearchParams, { replace: true });
+    }
+  }, [activeToken, customer, customerToken, restaurantSlug, searchParams, setSearchParams]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -280,7 +365,9 @@ export function CustomerPortal() {
       setSettings(null);
       setCustomer(null);
       setRewards([]);
+      setRestaurantOffers([]);
       setRetention(null);
+      setReferralInviteStatus(null);
       setLegalCenterState({ status: "error", message: "Rechtliche Informationen sind für diesen Restaurant-Link nicht verfügbar." });
       setActiveRedemptionCode(null);
       setRedeemOffer(null);
@@ -295,11 +382,22 @@ export function CustomerPortal() {
         restaurantSlug,
         customerToken: activeToken,
         loadPortal: loadCustomerPortalData,
+        maxAttempts: 2,
+        retryDelayMs: 450,
+        isCancelled: () => cancelled,
+        shouldRetry: (error: unknown) => {
+          const message = error instanceof Error ? error.message.toLowerCase() : "";
+          return !message.includes("restaurant wurde nicht gefunden")
+            && !isPermanentCustomerAccessError(error);
+        },
       });
+      if (portalResult.status === "cancelled") return;
       if (portalResult.status !== "loaded") {
         throw portalResult.error ?? new Error("Restaurant wurde nicht gefunden.");
       }
       const data = portalResult.data;
+      const pointsCollectionMode = await loadPublicPointsCollectionMode(restaurantSlug).catch(() => "customer_initiated_only" as const);
+      data.settings.points_collection_mode = pointsCollectionMode;
       if (!cancelled) {
         setRestaurant(data.restaurant);
         setBranding(data.branding);
@@ -309,27 +407,36 @@ export function CustomerPortal() {
         setMessage(null);
         if (data.customer) {
           setGuestStep("welcome");
+          if (activeTokenSource === "stored") {
+            emitCustomerAccessDiagnostic("CUSTOMER_EXISTING_MEMBERSHIP_RESTORED", restaurantSlug);
+          }
         }
       }
       if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
         try {
-          const retentionData = await loadCustomerRetentionStatus(restaurantSlug, activeToken);
+          const [retentionData, identityData, inviteStatus] = await Promise.all([
+            loadCustomerRetentionStatus(restaurantSlug, activeToken),
+            loadCustomerIdentitySummary(restaurantSlug, activeToken),
+            loadCustomerReferralInviteStatus(restaurantSlug, activeToken).catch(() => null),
+          ]);
           if (!cancelled) {
             setRetention(retentionData);
-            setBirthdayForm({
-              day: retentionData.birthday.day ? String(retentionData.birthday.day) : "",
-              month: retentionData.birthday.month ? String(retentionData.birthday.month) : "",
-            });
+            setIdentitySummary(identityData);
+            setReferralInviteStatus(inviteStatus);
           }
         } catch (retentionError) {
           if (!cancelled) {
             console.warn("Zusätzliche Kundenhinweise konnten nicht geladen werden.", retentionError);
             setRetention(null);
+            setIdentitySummary(null);
+            setReferralInviteStatus(null);
           }
         }
       } else if (!cancelled) {
         setRetention(null);
+        setIdentitySummary(null);
+        setReferralInviteStatus(null);
       }
     }
 
@@ -341,22 +448,30 @@ export function CustomerPortal() {
         setSettings(null);
         setCustomer(null);
         setRewards([]);
+        setRestaurantOffers([]);
         setRetention(null);
+        setIdentitySummary(null);
+        setReferralInviteStatus(null);
         setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
         setRedemptionOutcome(null);
         setRedemptionDrawerOpen(false);
-        if (activeToken && isInvalidCustomerTokenError(error)) {
-          removeStoredCustomerToken(restaurantSlug);
-          setStoredCustomerToken(null);
+        if (activeToken && isPermanentCustomerAccessError(error)) {
+          emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_INVALID", restaurantSlug);
+          if (activeTokenSource !== "url" || storedCustomerToken === activeToken) {
+            removeStoredCustomerToken(restaurantSlug);
+            setStoredCustomerToken(null);
+          }
           setRegistration(null);
           setGuestStep("welcome");
           void removeScopedActiveRedemption(window.sessionStorage, {
             restaurantSlug,
             customerToken: activeToken,
           });
-          setMessage("Du bist auf diesem Gerät noch nicht angemeldet.");
+          setMessage(error instanceof Error
+            ? error.message
+            : "Dein gespeicherter Zugang ist nicht mehr gültig. Bitte wende dich an das Restaurant.");
           return;
         }
         setMessage(error instanceof Error ? error.message : "Live-Daten konnten nicht geladen werden. Bitte prüfe die Supabase-Verbindung.");
@@ -366,7 +481,51 @@ export function CustomerPortal() {
     return () => {
       cancelled = true;
     };
-  }, [activeToken, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, slug]);
+  }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken]);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug)) {
+      setRestaurantOffers([]);
+      return;
+    }
+    setRestaurantOffers([]);
+    setSelectedRestaurantOffer(null);
+    let cancelled = false;
+    loadPublicRestaurantOffers(restaurantSlug, 100)
+      .then((nextOffers) => {
+        if (cancelled) return;
+        setRestaurantOffers(nextOffers);
+        const firstOffer = nextOffers[0];
+        if (firstOffer) void recordRestaurantOfferEvent(firstOffer.id, "OFFER_VIEWED");
+      })
+      .catch(() => { if (!cancelled) setRestaurantOffers([]); });
+    return () => { cancelled = true; };
+  }, [restaurantSlug, refreshToken]);
+
+  function openRestaurantOffer(offer: RestaurantOffer) {
+    setSelectedRestaurantOffer(offer);
+    void recordRestaurantOfferEvent(offer.id, "OFFER_CTA_CLICKED");
+  }
+
+  const restaurantControlledEnabled = settings?.points_collection_mode === "restaurant_controlled_only"
+    || settings?.points_collection_mode === "both";
+  const refreshPersonalPointsQr = useCallback(async () => {
+    if (!activeToken || !restaurantSlug || !restaurantControlledEnabled) return;
+    setPointsQrLoading(true); setMessage(null);
+    try { setPointsQr(await createCustomerPointsQr(restaurantSlug, activeToken)); }
+    catch { setMessage("Dein Punkte-QR konnte gerade nicht erstellt werden."); }
+    finally { setPointsQrLoading(false); }
+  }, [activeToken, restaurantControlledEnabled, restaurantSlug]);
+
+  useEffect(() => {
+    if (accountSheet !== "qr" || !restaurantControlledEnabled || pointsQr || pointsQrLoading) return;
+    void refreshPersonalPointsQr();
+  }, [accountSheet, pointsQr, pointsQrLoading, refreshPersonalPointsQr, restaurantControlledEnabled]);
+
+  useEffect(() => {
+    if (!pointsQr || new Date(pointsQr.expires_at).getTime() > nowMs) return;
+    setPointsQr(null);
+  }, [nowMs, pointsQr]);
 
   useEffect(() => {
     if (!activeToken || !customer || !retention?.reminders.length || infoOpen || redemptionDrawerOpen || accountSheet) return;
@@ -405,20 +564,27 @@ export function CustomerPortal() {
   }, [activeToken, customer, retention, rewards, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!customerToken) return;
+    if (!activeToken) return;
 
     function refreshOnFocus() {
+      if (document.visibilityState === "hidden") return;
       setRefreshToken((current) => current + 1);
     }
 
+    function refreshFromPageCache(event: PageTransitionEvent) {
+      if (event.persisted) setRefreshToken((current) => current + 1);
+    }
+
     window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener("pageshow", refreshFromPageCache);
     document.addEventListener("visibilitychange", refreshOnFocus);
 
     return () => {
       window.removeEventListener("focus", refreshOnFocus);
+      window.removeEventListener("pageshow", refreshFromPageCache);
       document.removeEventListener("visibilitychange", refreshOnFocus);
     };
-  }, [customerToken]);
+  }, [activeToken]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 1_000);
@@ -439,9 +605,13 @@ export function CustomerPortal() {
   const redemptionCatalog = rewards.filter((offer) => offer.source === "reward" && offer.active);
   const myRedemptions = redemptionCatalog.filter((offer) => offer.is_starter_reward || offer.status !== "locked");
   const filteredRedemptions = rewardFilter === "mine" ? myRedemptions : redemptionCatalog;
-  const activeWelcomeGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type !== "birthday") ?? null;
-  const activeBirthdayGift = visibleRewards.find((offer) => offer.is_starter_reward && offer.gift_type === "birthday") ?? null;
-  const previewRedemptions = pointRedemptions.slice(0, 2);
+  const activeGifts = useMemo(
+    () => selectCustomerHomeGifts(rewards),
+    [rewards],
+  );
+  const hasWelcomeGift = activeGifts.some((gift) => gift.gift_type !== "birthday");
+  const hasUnlockedWelcomeGift = activeGifts.some((gift) => gift.gift_type !== "birthday" && gift.status === "unlocked");
+  const hasBirthdayGift = activeGifts.some((gift) => gift.gift_type === "birthday");
   const nextPointRedemption = [...pointRedemptions].sort((left, right) => left.remaining_points - right.remaining_points)[0] ?? null;
   const nextRedemptionProgress = nextPointRedemption?.required_points
     ? clampPercent(((nextPointRedemption.required_points - nextPointRedemption.remaining_points) / nextPointRedemption.required_points) * 100)
@@ -451,7 +621,7 @@ export function CustomerPortal() {
     ? `${customer?.stamp_balance ?? 0}/${settings.stamps_required}`
     : String(customer?.points_balance ?? 0);
   const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
-  const pointsValidityMonths = Number(legalTerms?.content.points_validity_months);
+  const pointsValidityMonths = Number(legalTerms?.content?.points_validity_months);
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
     ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
     : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
@@ -460,12 +630,24 @@ export function CustomerPortal() {
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
   const rawActiveBoost = customer?.bonus_boost ?? null;
   const referralBoostEnabled = settings?.referral_boost_enabled ?? true;
-  const referralBoostMultiplier = 2;
-  const referralBoostDurationDays = 30;
+  const referralBoostMultiplier = finalReferralBonusMultiplier;
+  const referralBoostDurationDays = normalizeReferralBonusDuration(settings?.referral_boost_duration_days);
+  const referralInviteEligible = referralInviteStatus?.eligible === true;
+  const referralInviteLimitReached = referralInviteStatus ? referralInviteStatus.remaining <= 0 : false;
+  const referralInviteEnabled = referralBoostEnabled && referralInviteEligible && !referralInviteLimitReached;
+  const referralLifecycleState = referralInviteStatus?.lifecycle_state ?? "none";
+  const referralLifecycleRole = referralInviteStatus?.beneficiary_role ?? null;
+  const referralResetLabel = referralInviteStatus?.next_reset_at
+    ? new Intl.DateTimeFormat("de-AT", { day: "numeric", month: "long" }).format(new Date(referralInviteStatus.next_reset_at))
+    : null;
+  const invitedReferralDurationLabel = formatInvitedReferralDuration(referralBoostDurationDays);
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
+  const effectiveReferralRole = activeBoost?.beneficiary_role ?? referralLifecycleRole;
+  const activeBoostIsInvitedFriend = effectiveReferralRole === "invited_friend";
   const activePointMultiplier = activeBoost?.multiplier ?? 1;
-  const boostRemainingLabel = activeBoost ? formatBoostRemaining(activeBoost.active_until, activeBoost.remaining_days, nowMs) : null;
+  const boostRemainingLabel = activeBoost ? formatReferralBoostRemaining(activeBoost.active_until, nowMs) : null;
+  const boostExpiryLabel = activeBoost ? formatReferralBoostExpiry(activeBoost.active_until) : null;
   const boostEndsAtMs = activeBoost ? new Date(activeBoost.active_until).getTime() : 0;
   const boostStartedAtMs = activeBoost?.active_from
     ? new Date(activeBoost.active_from).getTime()
@@ -473,6 +655,30 @@ export function CustomerPortal() {
   const boostTotalMs = Math.max(1, boostEndsAtMs - boostStartedAtMs);
   const boostRemainingMs = Math.max(0, boostEndsAtMs - nowMs);
   const boostProgress = activeBoost ? clampPercent((boostRemainingMs / boostTotalMs) * 100) : 0;
+  const referralLifecycleTitle = activeBoost
+    ? activeBoostIsInvitedFriend ? "Dein Einladungsbonus" : "Dein Bonus"
+    : referralLifecycleState === "waiting_registration"
+      ? "Einladung gesendet"
+      : referralLifecycleState === "pending_qualification"
+        ? referralLifecycleRole === "invited_friend"
+          ? "Einladung erfolgreich angenommen"
+          : "Freund erfolgreich eingeladen"
+        : referralLifecycleState === "expired"
+          ? "Dein letzter 2× Bonus ist abgelaufen"
+          : "Lade einen Freund ein";
+  const referralLifecycleDescription = activeBoost
+    ? activeBoostIsInvitedFriend
+      ? `Du sammelst doppelte Punkte und erhältst 50 % der eingestellten Bonusdauer. Aktiv bis ${boostExpiryLabel}.`
+      : `Du sammelst doppelte Punkte und erhältst die volle Bonusdauer. Aktiv bis ${boostExpiryLabel}.`
+    : referralLifecycleState === "waiting_registration"
+      ? "Warte darauf, dass dein Freund die Einladung annimmt. Der Bonus startet erst nach dem ersten qualifizierten Besuch deines Freundes."
+      : referralLifecycleState === "pending_qualification"
+        ? referralLifecycleRole === "invited_friend"
+          ? "Dein 2× Bonus ist vorbereitet. Sammle bei deinem ersten qualifizierten Besuch Punkte. Danach wird dein Einladungsbonus aktiviert."
+          : "Einladung angenommen. Sobald dein Freund erstmals qualifiziert Punkte sammelt, wird dein 2× Bonus aktiviert."
+        : referralLifecycleState === "expired"
+          ? "Du kannst jederzeit wieder einen Freund einladen und neue Bonuszeit sammeln."
+          : `Du erhältst ${referralBoostDurationDays} Tage, dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte.`;
   const previewPoints = selectedTier && settings
     ? calculateBonusTierPoints(selectedTier, settings.amount_per_point, activePointMultiplier)
     : 0;
@@ -490,7 +696,7 @@ export function CustomerPortal() {
     "Bonus Boost",
     activeBoost
       ? `Wenn dein Bonus Boost aktiv ist, sammelst du für begrenzte Zeit doppelte Punkte.`
-      : `Lade einen Freund ein. Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`,
+      : `Lade einen Freund ein. Du erhältst ${referralBoostDurationDays} Tage und dein Freund ${invitedReferralDurationLabel} lang ${referralBoostMultiplier}× Punkte, sobald dein Freund erstmals Punkte sammelt.`,
     activeBoost
       ? `Normal: 50 Punkte. Mit Bonus Boost: ${Math.round(50 * activeBoost.multiplier)} Punkte.`
       : `Normal: 50 Punkte. Mit Bonus Boost: ${Math.round(50 * referralBoostMultiplier)} Punkte.`,
@@ -500,7 +706,9 @@ export function CustomerPortal() {
     isBonusCollection
       ? `Bitte Mitarbeiter um die Tages-PIN. Pro Rechnung ist eine Punktebuchung möglich.`
       : activeBoost
-        ? `Bonus Boost ist aktiv: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Lade Freunde ein und verlängere um ${referralBoostDurationDays} Tage.`
+        ? activeBoostIsInvitedFriend
+          ? `Willkommen: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Wenn du später selbst einen Freund einlädst, erhältst du den vollen Bonuszeitraum.`
+          : `Bonus Boost ist aktiv: Du sammelst ${activeBoost.multiplier}× Punkte bis ${new Date(activeBoost.active_until).toLocaleDateString("de-AT")}. Jede weitere erfolgreiche Einladung verlängert um ${referralBoostDurationDays} Tage.`
       : referralBoostEnabled
         ? `Bonus Boost startet erst, wenn dein eingeladener Freund erstmals Punkte sammelt: ${referralBoostMultiplier}× Punkte für ${referralBoostDurationDays} Tage.`
       : pointRedemptions.some((offer) => offer.status === "unlocked")
@@ -517,9 +725,16 @@ export function CustomerPortal() {
   const redemptionSecondsRemaining = activeRedemptionCode
     ? Math.min(15 * 60, Math.max(0, Math.ceil((new Date(activeRedemptionCode.expiresAt).getTime() - nowMs) / 1_000)))
     : 0;
+  const presentationNowMs = nowMs + presentationClockOffsetMs;
+  const presentationSecondsRemaining = activePointsPresentation?.active
+    ? Math.min(15 * 60, Math.max(0, Math.ceil(
+      (new Date(activePointsPresentation.expires_at).getTime() - presentationNowMs) / 1_000,
+    )))
+    : 0;
 
   useEffect(() => {
     setActiveRedemptionCode(null);
+    setActivePointsPresentation(null);
     setRedeemOffer(null);
     setRedemptionOutcome(null);
     setRedemptionDrawerOpen(false);
@@ -542,7 +757,6 @@ export function CustomerPortal() {
         if (restored.state === "active") {
           setActiveRedemptionCode(restored.redemption);
           setRedemptionOutcome(null);
-          setRedemptionDrawerOpen(true);
           return;
         }
 
@@ -553,7 +767,6 @@ export function CustomerPortal() {
             pointsSpent: restored.redemption.pointsSpent,
             title: restored.redemption.title,
           });
-          setRedemptionDrawerOpen(true);
         }
       } catch (error) {
         console.error("Einlösecode konnte nicht serverseitig geprüft werden.", error);
@@ -594,7 +807,6 @@ export function CustomerPortal() {
             title: activeRedemptionCode.title,
           });
           setActiveRedemptionCode(null);
-          setRedemptionDrawerOpen(true);
           setMessage(serverStatus.status === "redeemed"
             ? "Einlösung erfolgreich bestätigt."
             : "Der Einlösecode ist nicht mehr verfügbar.");
@@ -627,14 +839,127 @@ export function CustomerPortal() {
       title: activeRedemptionCode.title,
     });
     setActiveRedemptionCode(null);
-    setRedemptionDrawerOpen(true);
     setMessage("Der Einlösecode ist abgelaufen.");
   }, [activeRedemptionCode, activeToken, redemptionSecondsRemaining, restaurantSlug]);
 
+  const applyPointsPresentation = useCallback((
+    presentation: CustomerPointsPresentation,
+    options: { openDrawer?: boolean } = {},
+  ) => {
+    setPresentationClockOffsetMs(new Date(presentation.server_now).getTime() - Date.now());
+    if (presentation.active && presentation.status === "REDEMPTION_STARTED") {
+      setActivePointsPresentation(presentation);
+      setRedemptionOutcome(null);
+      if (options.openDrawer) setRedemptionDrawerOpen(true);
+      return;
+    }
+    setActivePointsPresentation(null);
+    if (presentation.status === "REDEEMED") {
+      setRedemptionOutcome({
+        kind: "redeemed",
+        pointsSpent: presentation.points_spent,
+        title: presentation.reward_title,
+        presentation: true,
+        redeemedAt: presentation.redeemed_at,
+        redemptionNumber: presentation.redemption_number,
+      });
+      if (options.openDrawer) setRedemptionDrawerOpen(true);
+      return;
+    }
+    if (presentation.status === "EXPIRED") {
+      setRedemptionOutcome({
+        kind: "expired",
+        pointsSpent: presentation.points_spent,
+        title: presentation.reward_title,
+        presentation: true,
+      });
+      if (options.openDrawer) setRedemptionDrawerOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isUsableRestaurantSlug(restaurantSlug) || !activeToken || !customer) return;
+    let cancelled = false;
+    Promise.all([
+      loadCustomerGiftPresentation({ restaurantSlug, customerToken: activeToken }),
+      loadCustomerPointsPresentation({ restaurantSlug, customerToken: activeToken }),
+    ])
+      .then(([giftPresentation, pointsPresentation]) => {
+        const presentation = giftPresentation?.active ? giftPresentation : pointsPresentation;
+        if (!cancelled && presentation) applyPointsPresentation(presentation);
+      })
+      .catch((error) => {
+        console.error("Aktive Punkteeinlösung konnte nicht geprüft werden.", error);
+      });
+    return () => { cancelled = true; };
+  }, [activeToken, applyPointsPresentation, customer, restaurantSlug]);
+
+  useEffect(() => {
+    const presentationId = activePointsPresentation?.presentation_id;
+    if (!presentationId || !activeToken || !restaurantSlug) return;
+    let cancelled = false;
+    let requestRunning = false;
+    const refreshPresentation = () => {
+      if (requestRunning) return;
+      requestRunning = true;
+      const loadPresentation = activePointsPresentation?.customer_reward_id
+        ? loadCustomerGiftPresentation
+        : loadCustomerPointsPresentation;
+      loadPresentation({
+        restaurantSlug,
+        customerToken: activeToken,
+        presentationId,
+      })
+        .then((presentation) => {
+          if (cancelled || !presentation) return;
+          applyPointsPresentation(presentation);
+          if (!presentation.active) setRefreshToken((current) => current + 1);
+        })
+        .catch((error) => {
+          console.error("Punkteeinlösungsstatus konnte nicht aktualisiert werden.", error);
+        })
+        .finally(() => { requestRunning = false; });
+    };
+    refreshPresentation();
+    const intervalId = window.setInterval(refreshPresentation, 4_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [
+    activePointsPresentation?.customer_reward_id,
+    activePointsPresentation?.presentation_id,
+    activeToken,
+    applyPointsPresentation,
+    restaurantSlug,
+  ]);
+
+  useEffect(() => {
+    if (!activePointsPresentation?.active || !redemptionDrawerOpen || !("wakeLock" in navigator)) return;
+    let released = false;
+    let lock: { release: () => Promise<void> } | null = null;
+    (navigator as Navigator & { wakeLock: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> } })
+      .wakeLock.request("screen")
+      .then((nextLock) => {
+        if (released) void nextLock.release();
+        else lock = nextLock;
+      })
+      .catch(() => undefined);
+    return () => {
+      released = true;
+      if (lock) void lock.release();
+    };
+  }, [activePointsPresentation, redemptionDrawerOpen]);
+
   async function handleRegister(event: FormEvent) {
     event.preventDefault();
-    if (!restaurantSlug || !form.firstName.trim() || !form.phone.trim()) {
-      setMessage("Vorname und Telefonnummer sind erforderlich.");
+    if (!restaurantSlug || !isValidCustomerFirstName(form.firstName)) {
+      setMessage("Bitte gib einen gültigen Vornamen ein.");
+      return;
+    }
+    const phoneValidation = customerPhoneValidation(form.phoneCountryCode, form.phone);
+    if (!phoneValidation.e164) {
+      setMessage(phoneValidation.error ?? "Bitte gib eine gültige Telefonnummer ein.");
       return;
     }
     if (legalCenterState.status !== "ready") {
@@ -645,11 +970,6 @@ export function CustomerPortal() {
       setMessage("Bitte akzeptiere die Teilnahmebedingungen und bestätige die Datenschutzerklärung.");
       return;
     }
-    if (form.birthday && !form.birthdayProcessing) {
-      setMessage("Bitte bestätige die freiwillige Geburtstagsverarbeitung oder entferne das Geburtsdatum.");
-      return;
-    }
-
     setSubmitting(true);
     setMessage(null);
 
@@ -657,7 +977,7 @@ export function CustomerPortal() {
       const result = await registerRestaurantGuest({
         restaurantSlug,
         firstName: form.firstName.trim(),
-        phone: form.phone.trim(),
+        phone: phoneValidation.e164,
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
         legal: {
@@ -669,13 +989,18 @@ export function CustomerPortal() {
           birthdayProcessing: form.birthdayProcessing,
         },
       });
-      saveStoredCustomerToken(restaurantSlug, {
+      setRegistration(result);
+      const persisted = saveStoredCustomerToken(restaurantSlug, {
         customer_token: result.customer.customer_qr_token,
         restaurant_id: null,
-        customer_name: result.customer.name,
+        device_id: getWebDeviceId(),
       });
+      if (!persisted) {
+        setGuestStep("persist");
+        setMessage("Dein Bonuskonto wurde erstellt, konnte auf diesem Gerät aber nicht gespeichert werden. Bitte versuche das Speichern erneut.");
+        return;
+      }
       setStoredCustomerToken(result.customer.customer_qr_token);
-      setRegistration(result);
       setGuestStep("success");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Registrierung fehlgeschlagen.");
@@ -684,15 +1009,39 @@ export function CustomerPortal() {
     }
   }
 
+  function retryPersistRegisteredAccess() {
+    const token = registration?.customer.customer_qr_token;
+    if (!token) return;
+    setMessage(null);
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
+      customer_token: token,
+      restaurant_id: null,
+      device_id: getWebDeviceId(),
+    });
+    if (!persisted) {
+      setMessage("Der Zugang konnte noch nicht gespeichert werden. Prüfe bitte die Browser-Einstellungen und versuche es erneut.");
+      return;
+    }
+    setStoredCustomerToken(token);
+    setGuestStep("success");
+  }
+
   function openMemberHome() {
     if (!registration?.customer.customer_qr_token) return;
-    saveStoredCustomerToken(restaurantSlug, {
+    const persisted = saveStoredCustomerToken(restaurantSlug, {
       customer_token: registration.customer.customer_qr_token,
       restaurant_id: null,
-      customer_name: registration.customer.name,
+      device_id: getWebDeviceId(),
     });
+    if (!persisted) {
+      setGuestStep("persist");
+      setMessage("Dein Zugang konnte nicht sicher gespeichert werden. Bitte versuche es erneut.");
+      return;
+    }
     setStoredCustomerToken(registration.customer.customer_qr_token);
-    setSearchParams({ token: registration.customer.customer_qr_token });
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("token");
+    setSearchParams(nextSearchParams, { replace: true });
     setRegistration(null);
   }
 
@@ -779,46 +1128,39 @@ export function CustomerPortal() {
     setMessage(null);
 
     try {
-      const result = await createReferralLink(restaurantSlug, activeToken, getWebDeviceId());
+      const creationToken = referralCreationTokenRef.current ?? createReferralCreationToken();
+      referralCreationTokenRef.current = creationToken;
+      const result = await createReferralLink(restaurantSlug, activeToken, getWebDeviceId(), creationToken);
       setReferralLink(`${window.location.origin}/r/${restaurantSlug}/${encodeURIComponent(result.referral_token)}`);
+      setReferralInviteStatus(result.quota);
+      referralCreationTokenRef.current = null;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Einladung konnte nicht erstellt werden.");
+      void loadCustomerReferralInviteStatus(restaurantSlug, activeToken)
+        .then(setReferralInviteStatus)
+        .catch(() => undefined);
     } finally {
       setCreatingReferral(false);
     }
   }
 
-  async function handleBirthdaySave() {
-    if (!activeToken || !restaurantSlug) return;
-    const day = Number(birthdayForm.day);
-    const month = Number(birthdayForm.month);
-    if (!Number.isInteger(day) || !Number.isInteger(month)) {
-      setRetentionMessage("Bitte gib Tag und Monat vollständig ein.");
-      return;
-    }
+  async function shareReferralLink() {
+    if (!referralLink || !restaurant || !supportsNativeReferralShare(navigator)) return;
     try {
-      await updateCustomerBirthday(restaurantSlug, activeToken, day, month);
-      setRetentionMessage("Geburtstag gespeichert.");
-      setRefreshToken((current) => current + 1);
+      await navigator.share(referralSharePayload(restaurant.name, referralLink));
     } catch (error) {
-      setRetentionMessage(error instanceof Error ? error.message : "Geburtstag konnte nicht gespeichert werden.");
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setMessage("Die Einladung konnte gerade nicht geteilt werden. Du kannst den Link stattdessen kopieren.");
     }
   }
 
-  async function handleBirthdayGiftDraw() {
-    if (!activeToken || !restaurantSlug || drawingBirthdayGift) return;
-    setDrawingBirthdayGift(true);
-    setRetentionMessage(null);
+  async function copyReferralLink() {
+    if (!referralLink) return;
     try {
-      const gift = await drawCustomerBirthdayGift(restaurantSlug, activeToken, crypto.randomUUID());
-      setRetentionMessage(gift.already_drawn
-        ? "Deine Geburtstagsüberraschung ist bereits für dich reserviert."
-        : `${gift.title} wurde für dich ausgelost.`);
-      setRefreshToken((current) => current + 1);
-    } catch (error) {
-      setRetentionMessage(error instanceof Error ? error.message : "Geburtstagsüberraschung konnte nicht ausgelost werden.");
-    } finally {
-      setDrawingBirthdayGift(false);
+      await navigator.clipboard.writeText(referralLink);
+      setMessage("Einladungslink kopiert");
+    } catch {
+      setMessage("Der Einladungslink konnte nicht kopiert werden. Bitte öffne ihn und kopiere die Browseradresse.");
     }
   }
 
@@ -876,6 +1218,10 @@ export function CustomerPortal() {
 
   function handleCustomerViewChange(view: CustomerView) {
     if (view === "collect") {
+      if (settings?.points_collection_mode === "restaurant_controlled_only") {
+        setAccountSheet("qr");
+        return;
+      }
       const tokenQuery = activeToken ? `?token=${encodeURIComponent(activeToken)}` : "";
       window.location.assign(`/w/${restaurantSlug}${tokenQuery}`);
       return;
@@ -883,6 +1229,25 @@ export function CustomerPortal() {
 
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openRestaurantScanner() {
+    setSelectedTierKey("");
+    setDailyPin("");
+    setCollectionResult(null);
+    setMessage(null);
+    setCollectStep("entry");
+    setRestaurantScannerOpen(true);
+  }
+
+  function cancelRestaurantScanner() {
+    setRestaurantScannerOpen(false);
+    window.location.assign("/customer");
+  }
+
+  function handleRestaurantDetected(_nextRestaurantSlug: string, targetPath: string) {
+    setRestaurantScannerOpen(false);
+    window.location.assign(targetPath);
   }
 
   function openMyRedemptions() {
@@ -899,7 +1264,11 @@ export function CustomerPortal() {
         customerToken: activeToken,
       });
     }
-    window.location.assign(`/customer/${restaurantSlug}`);
+    try {
+      await signOut();
+    } finally {
+      window.location.assign("/customer/login");
+    }
   }
 
   function openRewardRedemption(reward: PublicCustomerOfferView) {
@@ -924,7 +1293,7 @@ export function CustomerPortal() {
     setRedemptionDrawerOpen(false);
     setRedemptionStatus(null);
     setRedemptionSheetStep("detail");
-    if (!activeRedemptionCode) {
+    if (!activeRedemptionCode && !activePointsPresentation) {
       setRedeemOffer(null);
       setRedemptionOutcome(null);
     }
@@ -937,86 +1306,133 @@ export function CustomerPortal() {
     setRedemptionStatus(null);
 
     try {
-      const result = await startCustomerRedemption({
-        customerToken: activeToken,
-        rewardId: redeemOffer.id,
-        customerRewardId: redeemOffer.assignment_id ?? null,
-        idempotencyKey: crypto.randomUUID(),
-      });
-      if (!result.redemption_code) {
-        setRedemptionStatus("Für diese Einlösung ist bereits ein Code aktiv. Bitte zeige den bereits geöffneten Code.");
-        return;
-      }
-      const nextActiveCode: ActiveRedemptionCode = {
-        code: result.redemption_code,
-        expiresAt: result.expires_at,
-        redemptionId: result.redemption_id,
-        rewardId: redeemOffer.id,
-        assignmentId: redeemOffer.assignment_id ?? null,
-        title: redeemOffer.title,
-        redemptionType: result.redemption_type,
-        pointsSpent: result.points_spent ?? redeemOffer.required_points,
-      };
-      setActiveRedemptionCode(nextActiveCode);
-      setRedemptionOutcome(null);
-      await persistScopedActiveRedemption(window.sessionStorage, {
-        restaurantSlug,
-        customerToken: activeToken,
-        redemption: nextActiveCode,
-      });
-      setCustomer((current) => current
-        ? { ...current, points_balance: result.points_balance, stamp_balance: result.stamp_balance }
-        : current);
-      setRewards((current) => {
-        if (redeemOffer.is_starter_reward) {
-          return current.filter((reward) =>
-            (reward.assignment_id ?? reward.id) !== (redeemOffer.assignment_id ?? redeemOffer.id));
-        }
-
-        return current.map((reward) => {
+      if (!redeemOffer.is_starter_reward) {
+        const presentation = await startCustomerPointsPresentation({
+          customerToken: activeToken,
+          rewardId: redeemOffer.id,
+          idempotencyKey: crypto.randomUUID(),
+        });
+        applyPointsPresentation(presentation, { openDrawer: true });
+        setActiveRedemptionCode(null);
+        setRewards((current) => current.map((reward) => {
           if (reward.id !== redeemOffer.id || reward.is_starter_reward) return reward;
-          const remainingPoints = Math.max(0, reward.required_points - result.points_balance);
-          const remainingStamps = Math.max(0, reward.required_stamps - result.stamp_balance);
           return {
             ...reward,
-            status: remainingPoints === 0 && remainingStamps === 0 ? "unlocked" : "locked",
-            remaining_points: remainingPoints,
-            remaining_stamps: remainingStamps,
+            status: "redemption_started",
           };
-        });
+        }));
+        setRedemptionStatus("Bitte erst vor dem Mitarbeiter bestätigen.");
+        return;
+      }
+
+      if (!redeemOffer.assignment_id) {
+        throw new Error("Dieses Geschenk ist nicht mehr verfügbar.");
+      }
+      const presentation = await startCustomerGiftPresentation({
+        customerToken: activeToken,
+        customerRewardId: redeemOffer.assignment_id,
+        idempotencyKey: crypto.randomUUID(),
       });
-      setRedemptionStatus("Einlösung verbindlich bestätigt. Zeige den Code jetzt dem Mitarbeiter.");
-      setRefreshToken((current) => current + 1);
+      applyPointsPresentation(presentation, { openDrawer: true });
+      setActiveRedemptionCode(null);
+      setRewards((current) => current.map((reward) =>
+        reward.assignment_id === redeemOffer.assignment_id
+          ? { ...reward, status: "redemption_started" }
+          : reward));
+      setRedemptionStatus("Bitte erst vor dem Mitarbeiter bestätigen.");
     } catch (error) {
       console.error("Punkteeinlösung konnte nicht verwendet werden.", error);
-      setRedemptionStatus(error instanceof Error ? error.message : "Diese Punkteeinlösung ist nicht mehr verfügbar.");
+      setRedemptionStatus(customerRedemptionErrorMessage(error));
     } finally {
       redemptionInFlightRef.current = false;
       setRedeemingReward(false);
     }
   }
 
-  const selectedRewardState = redeemOffer ? rewardState(redeemOffer, nowMs, activeRedemptionCode) : null;
-  const redemptionDrawerFooter = activeRedemptionCode || redemptionOutcome ? (
+  async function handleConfirmRedemptionSwipe() {
+    const presentation = activePointsPresentation;
+    if (!activeToken || !presentation || confirmingSwipe) return false;
+    const confirmationKey = swipeConfirmationKeysRef.current.get(presentation.presentation_id)
+      ?? crypto.randomUUID();
+    swipeConfirmationKeysRef.current.set(presentation.presentation_id, confirmationKey);
+    setConfirmingSwipe(true);
+    setRedemptionStatus("Verbindung wird geprüft…");
+
+    try {
+      const result = await confirmCustomerRedemptionSwipe({
+        customerToken: activeToken,
+        presentationType: presentation.presentation_type,
+        presentationId: presentation.presentation_id,
+        idempotencyKey: confirmationKey,
+      });
+      applyPointsPresentation(result, { openDrawer: true });
+      if (result.status === "REDEEMED") {
+        setCustomer((current) => current && result.points_balance != null
+          ? {
+            ...current,
+            points_balance: result.points_balance,
+            stamp_balance: result.stamp_balance ?? current.stamp_balance,
+          }
+          : current);
+        setRedemptionStatus(result.success === false ? "Bereits eingelöst" : "Erfolgreich eingelöst");
+        setRefreshToken((current) => current + 1);
+        return true;
+      }
+      setRedemptionStatus(result.error_message ?? (result.status === "EXPIRED"
+        ? "Einlösezeit abgelaufen"
+        : "Diese Einlösung ist nicht mehr verfügbar."));
+      return false;
+    } catch (error) {
+      console.error("Einlösestatus wird nach Verbindungsfehler geprüft.", error);
+      try {
+        const loadPresentation = presentation.presentation_type === "gift"
+          ? loadCustomerGiftPresentation
+          : loadCustomerPointsPresentation;
+        const serverState = await loadPresentation({
+          restaurantSlug,
+          customerToken: activeToken,
+          presentationId: presentation.presentation_id,
+        });
+        if (serverState) {
+          applyPointsPresentation(serverState, { openDrawer: true });
+          if (serverState.status === "REDEEMED") {
+            setRedemptionStatus("Erfolgreich eingelöst");
+            setRefreshToken((current) => current + 1);
+            return true;
+          }
+          if (serverState.status === "EXPIRED") {
+            setRedemptionStatus("Einlösezeit abgelaufen");
+            return false;
+          }
+        }
+        setRedemptionStatus("Verbindung unterbrochen. Die Einlösung wurde nicht bestätigt. Bitte erneut wischen.");
+        return false;
+      } catch (statusError) {
+        console.error("Autoritativer Einlösestatus konnte nicht geladen werden.", statusError);
+        setRedemptionStatus("Status noch unklar. Bitte erneut wischen; der Server verhindert eine doppelte Einlösung.");
+        return false;
+      }
+    } finally {
+      setConfirmingSwipe(false);
+    }
+  }
+
+  const selectedRewardState = redeemOffer
+    ? rewardState(redeemOffer, nowMs, activeRedemptionCode, activePointsPresentation)
+    : null;
+  const redemptionDrawerFooter = activeRedemptionCode || activePointsPresentation || redemptionOutcome ? (
     <PrimaryButton onClick={closeRedemptionDrawer}>Schließen</PrimaryButton>
-  ) : redeemOffer && redemptionSheetStep === "confirm" ? (
-    <>
-      <SecondaryButton disabled={redeemingReward} onClick={() => {
-        setRedemptionSheetStep("detail");
-        setRedemptionStatus(null);
-      }}>Zurück</SecondaryButton>
-      <PrimaryButton disabled={redeemingReward} onClick={handleRedeemCustomerReward}>
-        {redeemingReward ? "Einlösung wird vorbereitet …" : "Jetzt verbindlich einlösen"}
-      </PrimaryButton>
-    </>
   ) : redeemOffer ? (
     <>
       <SecondaryButton onClick={closeRedemptionDrawer}>Schließen</SecondaryButton>
       {selectedRewardState === "available" ? (
-        <PrimaryButton onClick={() => setRedemptionSheetStep("confirm")}>Jetzt einlösen</PrimaryButton>
+        <PrimaryButton disabled={redeemingReward} onClick={handleRedeemCustomerReward}>
+          {redeemingReward ? "Einlösung wird vorbereitet …" : "Jetzt einlösen"}
+        </PrimaryButton>
       ) : null}
     </>
   ) : null;
+  const registrationCanSubmit = customerRegistrationCanSubmit(form, legalCenterState.status === "ready");
 
   if (!settings || !restaurant || !branding) {
     return (
@@ -1036,7 +1452,7 @@ export function CustomerPortal() {
               title="Dein Bonus konnte nicht geöffnet werden"
             />
           ) : (
-            <LoadingState description="Dein Bonus wird geladen." />
+            <LoadingState description="Dein Bonuskonto wird erkannt …" />
           )}
         </PageContainer>
       </AppShell>
@@ -1045,14 +1461,24 @@ export function CustomerPortal() {
 
   return (
     <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
-      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}`}>
+      <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}${customer && !isBonusCollection && activeView === "redemptions" ? " premium-redemption-page" : ""}`}>
         <CustomerHeader
           compact
           logoUrl={branding.logo_url}
           name={restaurant.name}
           onInfo={() => setInfoOpen(true)}
+          onSwitchRestaurant={customer ? () => setRestaurantSwitcherOpen(true) : undefined}
+          presentation={branding}
           primaryColor={branding.primary_color}
           subtitle="Bonus für Gäste"
+        />
+
+        {entryMessage ? <p aria-live="polite" className="customer-join-success" role="status">{entryMessage}</p> : null}
+
+        <CustomerRestaurantSwitcher
+          currentSlug={restaurant.slug}
+          onClose={() => setRestaurantSwitcherOpen(false)}
+          open={restaurantSwitcherOpen}
         />
 
         <AppDrawer
@@ -1101,7 +1527,7 @@ export function CustomerPortal() {
 
         {!customer && guestStep === "welcome" && !activeToken && !isBonusCollection ? (
           <article className="customer-hero-card">
-            <span className="pill">Mein Bonus</span>
+            <span className="pill">Meine Vorteile</span>
             <h2>Du bist auf diesem Gerät noch nicht angemeldet.</h2>
             <p className="muted">
               Wenn du bereits Mitglied bist, öffne deinen persönlichen Bonus-Link. Du kannst sonst neu beitreten.
@@ -1115,7 +1541,7 @@ export function CustomerPortal() {
 
         {!customer && guestStep === "welcome" && (activeToken || isBonusCollection) ? (
           <article className="customer-hero-card">
-            <span className="pill">Mein Bonus</span>
+            <span className="pill">Meine Vorteile</span>
             <h2>{isBonusCollection ? `Willkommen bei ${restaurant.name}` : "Willkommen"}</h2>
             <p className="muted">{reasonToJoin}</p>
             <button className="button customer-primary-button" onClick={() => setGuestStep("register")} type="button">
@@ -1126,31 +1552,33 @@ export function CustomerPortal() {
         ) : null}
 
         {!customer && guestStep === "register" ? (
-          <article className="customer-hero-card">
+          <article className="customer-hero-card customer-registration-card">
             <h2>Mitglied werden</h2>
             <form className="form compact-customer-form" onSubmit={handleRegister}>
+              <RequiredFieldsNote />
               <div className="field">
-                <label htmlFor="guest-first-name">Vorname</label>
+                <FormLabel htmlFor="guest-first-name" required>Vorname</FormLabel>
                 <input
+                  aria-required="true"
                   autoFocus
                   className="input input-large"
                   id="guest-first-name"
+                  required
                   value={form.firstName}
                   onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                 />
               </div>
+              <CustomerPhoneField
+                countryCode={form.phoneCountryCode}
+                idPrefix="guest-phone"
+                localNumber={form.phone}
+                onCountryCodeChange={(phoneCountryCode) => setForm((current) => ({ ...current, phoneCountryCode }))}
+                onLocalNumberChange={(phone) => setForm((current) => ({ ...current, phone }))}
+                showError={Boolean(form.phone)}
+                required
+              />
               <div className="field">
-                <label htmlFor="guest-phone">Telefonnummer</label>
-                <input
-                  className="input input-large"
-                  id="guest-phone"
-                  inputMode="tel"
-                  value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="guest-birthday">Geburtstag optional</label>
+                <FormLabel htmlFor="guest-birthday" optional>Geburtstag</FormLabel>
                 <input
                   className="input input-large"
                   id="guest-birthday"
@@ -1176,27 +1604,40 @@ export function CustomerPortal() {
                     <button className="button secondary" onClick={() => void reloadLegalCenter()} type="button">Erneut versuchen</button>
                   </div>
                 ) : null}
-                <label><input checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.</span></label>
-                <label><input checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.</span></label>
+                <label><input aria-required="true" checked={form.termsAccepted} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, termsAccepted: event.target.checked }))} required type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
+                <label><input aria-required="true" checked={form.privacyAcknowledged} disabled={legalCenterState.status !== "ready"} onChange={(event) => setForm((current) => ({ ...current, privacyAcknowledged: event.target.checked }))} required type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen.<span aria-hidden="true" className="required-field-marker"> *</span><span className="sr-only"> Pflichtfeld</span></span></label>
               </section>
-              <section className="customer-registration-consents" aria-labelledby="registration-consents-title">
-                <h3 id="registration-consents-title">Freiwillige Einwilligungen</h3>
+              <details className="customer-registration-consents">
+                <summary id="registration-consents-title">Freiwillige Einwilligungen <span>Optional</span></summary>
                 <p>Diese Auswahl ist freiwillig und für dein Bonuskonto nicht erforderlich.</p>
                 <label><input checked={form.birthdayProcessing} onChange={(event) => setForm((current) => ({ ...current, birthdayProcessing: event.target.checked }))} type="checkbox" /><span>Geburtstag für ein mögliches Geburtstagsgeschenk verwenden.</span></label>
                 <label><input checked={form.marketingPush} onChange={(event) => setForm((current) => ({ ...current, marketingPush: event.target.checked }))} type="checkbox" /><span>Marketing per Push erhalten.</span></label>
                 <label><input checked={form.marketingSms} onChange={(event) => setForm((current) => ({ ...current, marketingSms: event.target.checked }))} type="checkbox" /><span>Marketing per SMS erhalten.</span></label>
                 <label><input checked={form.marketingEmail} onChange={(event) => setForm((current) => ({ ...current, marketingEmail: event.target.checked }))} type="checkbox" /><span>Marketing per E-Mail erhalten.</span></label>
-              </section>
-              <div className="grid two">
+              </details>
+              {message ? <p className="status-message error" role="alert">{message}</p> : null}
+              <div className="grid two customer-registration-actions">
                 <button className="button secondary" onClick={() => setGuestStep("welcome")} type="button">
                   Zurück
                 </button>
-                <button className="button" disabled={submitting || legalCenterState.status !== "ready"} type="submit">
+                <button className="button" disabled={submitting || !registrationCanSubmit} type="submit">
                   <CheckCircle2 size={20} />
                   Fertig
                 </button>
               </div>
             </form>
+          </article>
+        ) : null}
+
+        {!customer && guestStep === "persist" && registration ? (
+          <article className="customer-hero-card" role="alert">
+            <span className="pill">Speichern erforderlich</span>
+            <h2>Dein Bonuskonto ist bereits erstellt</h2>
+            <p className="muted">Damit du beim nächsten QR-Scan automatisch erkannt wirst, muss der Zugang noch auf diesem Gerät gespeichert werden.</p>
+            {message ? <p className="status-message error">{message}</p> : null}
+            <button className="button customer-primary-button" onClick={retryPersistRegisteredAccess} type="button">
+              Erneut speichern
+            </button>
           </article>
         ) : null}
 
@@ -1241,7 +1682,7 @@ export function CustomerPortal() {
             </div>
             <div className="grid two">
               <button className="button customer-primary-button" onClick={openMemberHome} type="button">
-                Mein Bonus öffnen
+                Meine Vorteile öffnen
               </button>
               <button className="button secondary" onClick={copyPortalLink} type="button">
                 Link kopieren
@@ -1349,6 +1790,15 @@ export function CustomerPortal() {
                       setCollectStep("tier");
                       setMessage(null);
                     }}>Bon-Stufe auswählen</PrimaryButton>
+                    <button
+                      aria-label="Anderes Restaurant scannen"
+                      className="premium-collect-text-button premium-restaurant-rescan-button"
+                      onClick={openRestaurantScanner}
+                      type="button"
+                    >
+                      <QrCode aria-hidden="true" size={18} />
+                      Anderes Restaurant scannen
+                    </button>
                     <p className="premium-collect-security"><ShieldCheck aria-hidden="true" size={16} /> Sicher mit deinem Bonuskonto verbunden</p>
                   </article>
                 ) : null}
@@ -1446,16 +1896,33 @@ export function CustomerPortal() {
 
         {customer && !isBonusCollection ? (
           <>
+            {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
+              <button
+                aria-label={`${activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? "Live-Einlösung"} anzeigen`}
+                className="premium-active-code"
+                onClick={() => setRedemptionDrawerOpen(true)}
+                type="button"
+              >
+                <span className="premium-active-code-icon"><Sparkles aria-hidden="true" size={18} /></span>
+                <span className="premium-active-code-copy">
+                  <strong>{activePointsPresentation?.reward_title ?? activeRedemptionCode?.title}</strong>
+                  <small>{activePointsPresentation ? "Bestätigung ausstehend" : "Live-Einlösung aktiv"} · {Math.floor((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) / 60)}:{String((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) % 60).padStart(2, "0")}</small>
+                </span>
+                <span className="premium-active-code-action">Anzeigen</span>
+              </button>
+            ) : null}
+
             {activeView === "home" ? (
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
-                  <span>Mein Bonus bei {restaurant.name}</span>
+                  <span>Meine Vorteile bei {restaurant.name}</span>
                   <h1 id="customer-home-title">Hallo {customer.name.split(" ")[0]},</h1>
                   <p>schön, dass du wieder da bist. Hier siehst du deine Punkte und Vorteile.</p>
                 </div>
 
                 <PointsCard
-                  boostLabel={activeBoost ? `${activeBoost.multiplier}× Bonus Boost aktiv` : null}
+                  boostDetail={activeBoost ? `Aktiv bis ${boostExpiryLabel}` : null}
+                  boostLabel={activeBoost ? `${activeBoost.multiplier}× aktiv · ${boostRemainingLabel}` : null}
                   label={pointsTitle}
                   note={nextPointRedemption
                     ? nextPointRedemption.remaining_points > 0
@@ -1464,10 +1931,28 @@ export function CustomerPortal() {
                     : settings.loyalty_mode === "stamp_based"
                       ? "Diese Stempel zeigen deinen Fortschritt."
                       : "Diese Punkte kannst du für Punkteeinlösungen verwenden."}
+                  onInfo={() => setPointsInfoOpen(true)}
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
                 />
-                <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+                {!activeBoost && referralLifecycleState !== "none" ? (
+                  <PremiumCard className="premium-boost-card" variant="information">
+                    <div className="premium-icon-heading">
+                      <span><Flame aria-hidden="true" size={22} /></span>
+                      <div>
+                        <StatusBadge tone={referralLifecycleState === "expired" ? "neutral" : "warning"}>
+                          {referralLifecycleState === "waiting_registration"
+                            ? "Einladung versendet"
+                            : referralLifecycleState === "pending_qualification"
+                              ? "Qualifizierter Besuch ausständig"
+                              : "Abgelaufen"}
+                        </StatusBadge>
+                        <h2>{referralLifecycleTitle}</h2>
+                      </div>
+                    </div>
+                    <p>{referralLifecycleDescription}</p>
+                  </PremiumCard>
+                ) : null}
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="premium-legal-load-warning" role="status">
                     <span>Rechtliche Informationen sind vorübergehend nicht verfügbar. Dein Bonuskonto bleibt nutzbar.</span>
@@ -1483,20 +1968,39 @@ export function CustomerPortal() {
                   </button>
                 ) : null}
 
+                {restaurantOffers.length ? (
+                  <section className="premium-content-section" aria-label="Aktuelles und Angebote">
+                    <SectionHeader
+                      action={restaurantOffers.length > 3 ? <Link className="premium-text-button" to={`/customer/${encodeURIComponent(restaurant.slug)}/offers`}>Alle ansehen</Link> : null}
+                      subtitle="Neuigkeiten direkt von deinem Restaurant."
+                      title="Aktuelles & Angebote"
+                    />
+                    <PremiumHorizontalCarousel
+                      label="Aktuelles und Angebote"
+                      nextLabel="Nächstes Angebot"
+                      previousLabel="Vorheriges Angebot"
+                    >
+                      {restaurantOffers.map((offer) => (
+                        <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />
+                      ))}
+                    </PremiumHorizontalCarousel>
+                  </section>
+                ) : null}
+
                 <section className="premium-content-section" aria-label="Deine Vorteile">
                   <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
                   <div className="premium-benefit-grid">
                     <BenefitTile
                       icon={<Gift size={22} />}
                       label="Willkommensgeschenk"
-                      status={activeWelcomeGift
-                        ? activeWelcomeGift.status === "unlocked" ? "Einlösbar" : "Reserviert"
+                      status={hasWelcomeGift
+                        ? hasUnlockedWelcomeGift ? "Einlösbar" : "Reserviert"
                         : "Nicht vorhanden"}
                     />
                     <BenefitTile
                       icon={<CakeSlice size={22} />}
                       label="Geburtstagsgeschenk"
-                      status={activeBirthdayGift
+                      status={hasBirthdayGift
                         ? "Einlösbar"
                         : retention?.birthday.eligible ? "Überraschung wartet" : "Nicht vorhanden"}
                     />
@@ -1506,11 +2010,15 @@ export function CustomerPortal() {
                       status={activeBoost ? `${activeBoost.multiplier}× aktiv` : "Nicht aktiv"}
                     />
                     <BenefitTile
-                      disabled={creatingReferral}
+                      disabled={creatingReferral || !referralInviteEnabled}
                       icon={<UserPlus size={22} />}
                       label="Freund einladen"
-                      onClick={referralBoostEnabled ? handleCreateReferralLink : undefined}
-                      status={referralBoostEnabled ? `${referralBoostMultiplier}× für euch` : "Nicht verfügbar"}
+                      onClick={referralInviteEnabled ? handleCreateReferralLink : undefined}
+                      status={!referralInviteEligible
+                        ? "Nach erstem Besuch"
+                        : referralInviteLimitReached
+                          ? "Monatslimit erreicht"
+                          : `${referralBoostMultiplier}× für euch`}
                     />
                   </div>
                 </section>
@@ -1521,18 +2029,17 @@ export function CustomerPortal() {
                   <ChevronRight aria-hidden="true" size={19} />
                 </Link>
 
-                {retention?.birthday.eligible && !activeBirthdayGift && !retention.birthday.gift ? (
-                  <PremiumCard className="premium-birthday-draw-card" variant="highlight">
-                    <span className="premium-birthday-icon"><CakeSlice aria-hidden="true" size={25} /></span>
-                    <div><StatusBadge tone="warning">Für dich</StatusBadge><h2>Alles Gute zum Geburtstag!</h2><p>Deine Geburtstagsüberraschung wartet auf dich.</p></div>
-                    <PrimaryButton disabled={drawingBirthdayGift} onClick={handleBirthdayGiftDraw}>
-                      <Gift aria-hidden="true" size={19} />
-                      {drawingBirthdayGift ? "Geschenk wird ausgewählt …" : "Geschenk abholen"}
-                    </PrimaryButton>
-                    <p className="premium-legal-note-small">Die Geburtstagsangabe ist freiwillig. Pro Restaurant und Jahr ist höchstens ein Geburtstagsgeschenk vorgesehen.</p>
-                    {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
-                  </PremiumCard>
-                ) : null}
+                <Link className="premium-restaurant-finder-link" to={`/customer/${encodeURIComponent(restaurant.slug)}/offers`}>
+                  <span><Newspaper aria-hidden="true" size={22} /></span>
+                  <div><strong>Aktuelles entdecken</strong><small>Neuigkeiten der WUXUAI Partner ansehen</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
+
+                <Link className="premium-restaurant-finder-link" to="/customer">
+                  <span><UserRound aria-hidden="true" size={22} /></span>
+                  <div><strong>Meine Vorteile</strong><small>Alle deine Lokale und Punkte getrennt im Überblick</small></div>
+                  <ChevronRight aria-hidden="true" size={19} />
+                </Link>
 
                 <section className="premium-content-section">
                   <SectionHeader
@@ -1540,9 +2047,9 @@ export function CustomerPortal() {
                     subtitle="Deine nächsten Möglichkeiten auf einen Blick."
                     title="Mit Punkten einlösbar"
                   />
-                  {previewRedemptions.length ? (
-                    <div className="premium-reward-grid premium-home-reward-grid">
-                      {previewRedemptions.map((reward) => (
+                  {pointRedemptions.length ? (
+                    <PremiumHorizontalCarousel label="Mit Punkten einlösbar">
+                      {pointRedemptions.map((reward) => (
                         <RewardCard
                           category={reward.category ?? reward.product_group}
                           imageUrl={reward.image_url}
@@ -1550,45 +2057,51 @@ export function CustomerPortal() {
                           key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                           meta={`${reward.required_points} Punkte`}
                           onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
-                          state={rewardState(reward, nowMs, activeRedemptionCode)}
+                          state={rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation)}
                           status={reward.status === "unlocked" ? "Jetzt einlösbar" : `Noch ${reward.remaining_points} Punkte`}
                           title={reward.title}
                         />
                       ))}
-                    </div>
+                    </PremiumHorizontalCarousel>
                   ) : (
                     <EmptyState description="Sobald das Restaurant eine Punkteeinlösung aktiviert, erscheint sie hier." title="Noch keine Punkteeinlösungen" />
                   )}
                 </section>
 
-                {activeWelcomeGift || activeBirthdayGift ? (
+                {activeGifts.length ? (
                   <section className="premium-content-section premium-gift-preview">
-                    <SectionHeader subtitle="Dein persönlicher Vorteil für den nächsten Besuch." title="Dein Geschenk" />
-                    <div className="premium-reward-grid">
-                      {activeBirthdayGift ? (
-                        <RewardCard
-                          category="Geburtstagsgeschenk"
-                          imageUrl={activeBirthdayGift.image_url}
-                          imageCrop={rewardImageCropFromRecord(activeBirthdayGift)}
-                          meta="Für deinen Geburtstag"
-                          onOpen={() => openRewardRedemption(activeBirthdayGift)}
-                          state={rewardState(activeBirthdayGift, nowMs, activeRedemptionCode)}
-                          status="Jetzt einlösbar"
-                          title={activeBirthdayGift.title}
-                        />
-                      ) : activeWelcomeGift ? (
-                        <RewardCard
-                          category="Willkommensgeschenk"
-                          imageUrl={activeWelcomeGift.image_url}
-                          imageCrop={rewardImageCropFromRecord(activeWelcomeGift)}
-                          meta={welcomeGiftDetail(activeWelcomeGift) ?? "Für dich reserviert"}
-                          onOpen={activeWelcomeGift.status === "unlocked" ? () => openRewardRedemption(activeWelcomeGift) : undefined}
-                          state={rewardState(activeWelcomeGift, nowMs, activeRedemptionCode)}
-                          status={activeWelcomeGift.status === "unlocked" ? "Jetzt einlösbar" : "Nach der ersten Punktebuchung verfügbar"}
-                          title={activeWelcomeGift.title}
-                        />
-                      ) : null}
-                    </div>
+                    <SectionHeader
+                      subtitle={activeGifts.length === 1
+                        ? "Dein persönlicher Vorteil für den nächsten Besuch."
+                        : `${activeGifts.length} persönliche Vorteile sind für dich bereit.`}
+                      title="Deine Geschenke"
+                    />
+                    <PremiumHorizontalCarousel
+                      label="Deine Geschenke"
+                      nextLabel="Nächstes Geschenk"
+                      previousLabel="Vorheriges Geschenk"
+                    >
+                      {activeGifts.map((gift) => {
+                        const state = rewardState(gift, nowMs, activeRedemptionCode, activePointsPresentation);
+                        const isBirthdayGift = gift.gift_type === "birthday";
+                        const isWelcomeGift = gift.gift_type === "welcome";
+                        return (
+                          <RewardCard
+                            category={isBirthdayGift ? "Geburtstagsgeschenk" : isWelcomeGift ? "Willkommensgeschenk" : gift.category ?? "Geschenk"}
+                            imageUrl={gift.image_url}
+                            imageCrop={rewardImageCropFromRecord(gift)}
+                            key={`${gift.source}-${gift.assignment_id ?? gift.id}`}
+                            meta={isBirthdayGift ? "Für deinen Geburtstag" : welcomeGiftDetail(gift) ?? "Für dich reserviert"}
+                            onOpen={isBirthdayGift || gift.status === "unlocked" ? () => openRewardRedemption(gift) : undefined}
+                            state={state}
+                            status={isWelcomeGift && gift.status !== "unlocked"
+                              ? "Nach der ersten Punktebuchung verfügbar"
+                              : rewardStatusText(gift, state)}
+                            title={gift.title}
+                          />
+                        );
+                      })}
+                    </PremiumHorizontalCarousel>
                   </section>
                 ) : null}
 
@@ -1596,32 +2109,51 @@ export function CustomerPortal() {
                   <div className="premium-icon-heading">
                     <span><Flame aria-hidden="true" size={22} /></span>
                     <div>
-                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>Bonus Boost</StatusBadge>
-                      <h2>{activeBoost ? `${activeBoost.multiplier}× Punkte aktiv` : "Lade einen Freund ein"}</h2>
+                      <StatusBadge tone={activeBoost ? "warning" : "neutral"}>
+                        {activeBoost ? "2× Bonus Boost aktiv" : referralLifecycleState === "expired" ? "Abgelaufen" : "Bonus Boost"}
+                      </StatusBadge>
+                      <h2>{referralLifecycleTitle}</h2>
                     </div>
                   </div>
                   <p>
                     {activeBoost
-                      ? activeBoost.multiplier === 2
-                        ? "Du sammelst aktuell doppelte Punkte."
-                        : `Du sammelst aktuell ${activeBoost.multiplier}× Punkte.`
-                      : `Ihr sammelt beide ${referralBoostDurationDays} Tage lang ${referralBoostMultiplier}× Punkte.`}
+                      ? referralLifecycleDescription
+                      : !referralInviteEligible
+                        ? "Nach deinem ersten qualifizierten Besuch kannst du Freunde einladen und 2× Bonuszeit sammeln."
+                        : referralLifecycleDescription}
                   </p>
                   <div className="premium-boost-meta">
                     <strong>{activeBoost?.multiplier ?? referralBoostMultiplier}×</strong>
-                    <span>{boostRemainingLabel ?? `+${referralBoostDurationDays} Tage`}</span>
+                    <span>{boostRemainingLabel
+                      ?? (referralLifecycleState === "expired" && referralInviteStatus?.active_until
+                        ? `Abgelaufen am ${formatReferralBoostExpiry(referralInviteStatus.active_until)}`
+                        : `+${referralBoostDurationDays} Tage`)}</span>
                   </div>
                   {activeBoost ? (
                     <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
                   ) : null}
                   {referralBoostEnabled ? (
-                    <PrimaryButton disabled={creatingReferral} onClick={handleCreateReferralLink}>
+                    <PrimaryButton disabled={creatingReferral || !referralInviteEnabled} onClick={handleCreateReferralLink}>
                       Freund einladen
                     </PrimaryButton>
+                  ) : null}
+                  {referralInviteStatus ? (
+                    <div className="premium-legal-note-small" aria-live="polite">
+                      <p>Einladungen diesen Monat: {referralInviteStatus.used} von {referralInviteStatus.limit}</p>
+                      <p>{referralInviteLimitReached
+                        ? `Monatslimit erreicht.${referralResetLabel ? ` Ab ${referralResetLabel} kannst du wieder Freunde einladen.` : ""}`
+                        : `Du kannst noch ${referralInviteStatus.remaining} ${referralInviteStatus.remaining === 1 ? "Freund" : "Freunde"} einladen.`}</p>
+                    </div>
                   ) : null}
                   <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
+                      <div className="referral-share-actions">
+                        {supportsNativeReferralShare(navigator) ? (
+                          <PrimaryButton onClick={() => void shareReferralLink()}><Share2 aria-hidden="true" size={18} /> Einladung teilen</PrimaryButton>
+                        ) : null}
+                        <SecondaryButton onClick={() => void copyReferralLink()}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                      </div>
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
                       <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
@@ -1633,7 +2165,7 @@ export function CustomerPortal() {
             ) : null}
 
             {activeView === "redemptions" ? (
-              <section className="premium-view-stack" aria-labelledby="redemptions-title">
+              <section className="premium-view-stack premium-redemption-content" aria-labelledby="redemptions-title">
                 <div className="premium-page-heading">
                   <span><Gift aria-hidden="true" size={20} /></span>
                   <div><h1 id="redemptions-title">Einlösen</h1><p>Wähle deinen nächsten Vorteil.</p></div>
@@ -1665,40 +2197,42 @@ export function CustomerPortal() {
                     : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
                 </div>
                 <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
-                {filteredRedemptions.length ? (
-                  <div
-                    aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
-                    className="premium-reward-grid premium-redemption-grid"
-                    id="reward-overview"
-                    role="tabpanel"
-                  >
-                    {filteredRedemptions.map((reward) => {
-                      const state = rewardState(reward, nowMs, activeRedemptionCode);
-                      return (
-                      <RewardCard
-                        category={reward.category ?? reward.product_group}
-                        imageUrl={reward.image_url}
-                        imageCrop={rewardImageCropFromRecord(reward)}
-                        key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
-                        meta={reward.is_starter_reward
-                          ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
-                          : `${reward.required_points} Punkte`}
-                        onOpen={() => openRewardRedemption(reward)}
-                        state={state}
-                        status={rewardStatusText(reward, state)}
-                        title={reward.title}
-                      />
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <EmptyState
-                    description={rewardFilter === "all"
-                      ? "Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet."
-                      : "Sobald etwas für dich bereitsteht, erscheint es hier."}
-                    title={rewardFilter === "all" ? "Noch nichts zum Einlösen" : "Noch keine persönlichen Belohnungen"}
-                  />
-                )}
+                <div
+                  aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
+                  className="premium-redemption-rewards"
+                  id="reward-overview"
+                  role="tabpanel"
+                >
+                  {filteredRedemptions.length ? (
+                    <PremiumHorizontalCarousel key={rewardFilter} label="Belohnungen">
+                      {filteredRedemptions.map((reward) => {
+                        const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
+                        return (
+                          <RewardCard
+                            category={reward.category ?? reward.product_group}
+                            imageUrl={reward.image_url}
+                            imageCrop={rewardImageCropFromRecord(reward)}
+                            key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
+                            meta={reward.is_starter_reward
+                              ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
+                              : `${reward.required_points} Punkte`}
+                            onOpen={() => openRewardRedemption(reward)}
+                            state={state}
+                            status={rewardStatusText(reward, state)}
+                            title={reward.title}
+                          />
+                        );
+                      })}
+                    </PremiumHorizontalCarousel>
+                  ) : (
+                    <EmptyState
+                      description={rewardFilter === "all"
+                        ? "Aktuell hat das Restaurant keine Punkteeinlösung freigeschaltet."
+                        : "Sobald etwas für dich bereitsteht, erscheint es hier."}
+                      title={rewardFilter === "all" ? "Noch nichts zum Einlösen" : "Noch keine persönlichen Belohnungen"}
+                    />
+                  )}
+                </div>
               </section>
             ) : null}
 
@@ -1708,14 +2242,20 @@ export function CustomerPortal() {
                   <span aria-hidden="true" className="premium-customer-avatar">{customer.name.trim().charAt(0).toUpperCase()}</span>
                   <div><span>Dein Konto</span><h1 id="account-title">{customer.name}</h1><p>Bonus-Mitglied bei {restaurant.name}</p></div>
                 </div>
+                {portalAccess.owner_access || portalAccess.staff_access || portalAccess.platform_access ? (
+                  <PremiumCard className="premium-role-switch" variant="information">
+                    <h2>Bereich wechseln</h2>
+                    <div className="referral-share-actions">
+                      {portalAccess.owner_access ? <a className="premium-button premium-button-secondary" href="/admin">Restaurant-Portal</a> : null}
+                      {portalAccess.staff_access ? <a className="premium-button premium-button-secondary" href={portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff"}>Mitarbeiterbereich</a> : null}
+                      {portalAccess.platform_access ? <a className="premium-button premium-button-secondary" href="/platform-admin">WUXUAI Admin</a> : null}
+                    </div>
+                  </PremiumCard>
+                ) : null}
 
                 <article className="premium-member-card" aria-label="Digitale Kundenkarte">
                   <div className="premium-member-card-top">
-                    <span className="premium-member-card-logo">
-                      {branding.logo_url
-                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
-                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
-                    </span>
+                    <RestaurantLogoStage className="premium-member-card-logo" logoUrl={branding.logo_url} name={restaurant.name} presentation={branding} primaryColor={branding.primary_color} size="header" />
                     <div><span>Bonus-Mitglied</span><strong>{restaurant.name}</strong></div>
                     <IdCard aria-hidden="true" size={24} />
                   </div>
@@ -1749,12 +2289,18 @@ export function CustomerPortal() {
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
                     <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
-                    <button disabled={creatingReferral || !referralBoostEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralBoostMultiplier}× Punkte</span></button>
+                    <button disabled={creatingReferral || !referralInviteEnabled} onClick={handleCreateReferralLink} type="button"><UserPlus aria-hidden="true" size={22} /><strong>Freund einladen</strong><span>{referralInviteEligible ? `${referralBoostMultiplier}× Punkte` : "Nach erstem Besuch"}</span></button>
                     <button onClick={() => setAccountSheet("qr")} type="button"><QrCode aria-hidden="true" size={22} /><strong>Bonus-QR</strong><span>Persönlich</span></button>
                     <button onClick={() => setAccountSheet("restaurant")} type="button"><Store aria-hidden="true" size={22} /><strong>Restaurant</strong><span>{restaurant.name}</span></button>
                   </div>
                   {referralLink ? (
                     <div className="referral-share-box premium-referral-share compact">
+                      <div className="referral-share-actions">
+                        {supportsNativeReferralShare(navigator) ? (
+                          <PrimaryButton onClick={() => void shareReferralLink()}><Share2 aria-hidden="true" size={18} /> Einladung teilen</PrimaryButton>
+                        ) : null}
+                        <SecondaryButton onClick={() => void copyReferralLink()}><Copy aria-hidden="true" size={18} /> Link kopieren</SecondaryButton>
+                      </div>
                       <div className="premium-referral-qr"><QRCodeSVG level="M" size={112} value={referralLink} /></div>
                       <p>Dein Einladungslink und QR-Code sind bereit.</p>
                       <a href={referralLink}>Einladungslink öffnen</a>
@@ -1791,20 +2337,36 @@ export function CustomerPortal() {
 
             <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
 
-            {activeRedemptionCode && !redemptionDrawerOpen ? (
-              <button className="premium-active-code" onClick={() => setRedemptionDrawerOpen(true)} type="button">
-                <Sparkles aria-hidden="true" size={18} /> Aktiven Einlösecode anzeigen
-              </button>
-            ) : null}
+            <AppDrawer
+              footer={<PrimaryButton onClick={() => setPointsInfoOpen(false)}>Schließen</PrimaryButton>}
+              onClose={() => setPointsInfoOpen(false)}
+              open={pointsInfoOpen}
+              size="compact"
+              title="Informationen zu deinen Punkten"
+            >
+              <p className="premium-points-info-copy">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
+            </AppDrawer>
 
             <AppDrawer
-              description={activeRedemptionCode
-                ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
+              description="Information des Restaurants"
+              onClose={() => setSelectedRestaurantOffer(null)}
+              open={Boolean(selectedRestaurantOffer)}
+              size="standard"
+              title="Aktuelles & Angebote"
+            >
+              {selectedRestaurantOffer ? <RestaurantOfferDetail offer={selectedRestaurantOffer} /> : null}
+            </AppDrawer>
+
+            <AppDrawer
+              description={activePointsPresentation
+                ? "Bitte jetzt vor dem Mitarbeiter bestätigen."
+                : activeRedemptionCode
+                  ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
                 : "Alle Details zu deiner Auswahl."}
               footer={redemptionDrawerFooter}
               onClose={closeRedemptionDrawer}
-              open={redemptionDrawerOpen && Boolean(activeRedemptionCode || redeemOffer || redemptionOutcome)}
-              title={redemptionOutcome?.title ?? activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
+              open={redemptionDrawerOpen && Boolean(activePointsPresentation || activeRedemptionCode || redeemOffer || redemptionOutcome)}
+              title={redemptionOutcome?.title ?? activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
             >
               <div className="premium-redemption-sheet-content">
                 {redemptionOutcome ? (
@@ -1821,15 +2383,83 @@ export function CustomerPortal() {
                     </StatusBadge>
                     <h2>{redemptionOutcome.kind === "redeemed" ? "Erfolgreich eingelöst" : "Einlösung beendet"}</h2>
                     <p>{redemptionOutcome.kind === "redeemed"
-                      ? redemptionOutcome.pointsSpent > 0
+                      ? redemptionOutcome.presentation
+                        ? `${redemptionOutcome.title} wurde serverseitig bestätigt.`
+                        : redemptionOutcome.pointsSpent > 0
                         ? `${redemptionOutcome.pointsSpent} Punkte wurden eingelöst.`
                         : "Dein Geschenk wurde erfolgreich eingelöst."
                       : redemptionOutcome.kind === "expired"
-                        ? "Der Einlösecode ist abgelaufen und kann nicht mehr verwendet werden."
+                        ? "Einlösezeit abgelaufen. Es wurde nichts eingelöst."
                         : "Diese Einlösung ist nicht mehr verfügbar."}</p>
-                    {redemptionOutcome.kind === "redeemed" ? (
+                    {redemptionOutcome.kind === "redeemed" && redemptionOutcome.redeemedAt ? (
+                      <dl className="premium-redemption-server-proof">
+                        <div><dt>Restaurant</dt><dd>{restaurant?.name}</dd></div>
+                        <div><dt>Eingelöst</dt><dd>{new Intl.DateTimeFormat("de-AT", {
+                          dateStyle: "medium",
+                          timeStyle: "medium",
+                          timeZone: "Europe/Vienna",
+                        }).format(new Date(redemptionOutcome.redeemedAt))}</dd></div>
+                        {redemptionOutcome.redemptionNumber ? (
+                          <div><dt>Referenz</dt><dd>{redemptionOutcome.redemptionNumber.slice(-6)}</dd></div>
+                        ) : null}
+                      </dl>
+                    ) : null}
+                    {redemptionOutcome.kind === "redeemed" && !redemptionOutcome.presentation ? (
                       <p className="premium-redemption-outcome-note">Die Belohnung wurde erfolgreich als verwendet markiert.</p>
                     ) : null}
+                  </article>
+                ) : null}
+
+                {activePointsPresentation ? (
+                  <article className="premium-presentation-window" aria-live="polite">
+                    <div className="premium-presentation-shine" aria-hidden="true" />
+                    <header>
+                      <span className="premium-presentation-security-mark" aria-hidden="true"><ShieldCheck size={28} /></span>
+                      <StatusBadge tone="warning">Bestätigung ausstehend</StatusBadge>
+                    </header>
+                    <div className="premium-presentation-image">
+                      <RewardImageFrame
+                        alt={activePointsPresentation.reward_title}
+                        crop={rewardImageCropFromRecord({
+                          image_zoom: activePointsPresentation.image_zoom,
+                          image_position_x: activePointsPresentation.image_position_x,
+                          image_position_y: activePointsPresentation.image_position_y,
+                        })}
+                        imageUrl={activePointsPresentation.reward_image_url}
+                      />
+                    </div>
+                    <div className="premium-presentation-heading">
+                      <span>{activePointsPresentation.restaurant_name}</span>
+                      <h2>{activePointsPresentation.reward_title}</h2>
+                      <p>{activePointsPresentation.gift_type
+                        ? activePointsPresentation.gift_type === "birthday" ? "Deine Geburtstagsüberraschung" : "Dein Willkommensgeschenk"
+                        : `${activePointsPresentation.points_spent.toLocaleString("de-AT")} Punkte werden erst nach dem Wischen abgezogen.`}</p>
+                    </div>
+                    <div className="premium-presentation-countdown">
+                      <span>Verbleibende Zeit</span>
+                      <strong>{Math.floor(presentationSecondsRemaining / 60)}:{String(presentationSecondsRemaining % 60).padStart(2, "0")}</strong>
+                    </div>
+                    <div className="premium-presentation-live-grid">
+                      <div><span>Serverzeit</span><strong>{new Intl.DateTimeFormat("de-AT", {
+                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        timeZone: "Europe/Vienna",
+                      }).format(new Date(presentationNowMs))}</strong></div>
+                      <div><span>Gültig bis</span><strong>{new Intl.DateTimeFormat("de-AT", {
+                        hour: "2-digit", minute: "2-digit",
+                        timeZone: "Europe/Vienna",
+                      }).format(new Date(activePointsPresentation.expires_at))}</strong></div>
+                    </div>
+                    <div className="premium-redemption-before-swipe">
+                      <LockKeyhole aria-hidden="true" size={20} />
+                      <p><strong>Bitte erst vor dem Mitarbeiter bestätigen.</strong> Das Öffnen dieses Fensters löst noch nichts ein.</p>
+                    </div>
+                    <SwipeToRedeem
+                      disabled={!activePointsPresentation.active || presentationSecondsRemaining <= 0}
+                      onConfirm={handleConfirmRedemptionSwipe}
+                      pending={confirmingSwipe}
+                    />
+                    {redemptionStatus ? <p className="status-message" role="status">{redemptionStatus}</p> : null}
+                    <p className="premium-presentation-number">Vorbereitung {activePointsPresentation.redemption_number}</p>
                   </article>
                 ) : null}
 
@@ -1879,7 +2509,7 @@ export function CustomerPortal() {
                       <div className="premium-reward-notice"><LockKeyhole aria-hidden="true" size={20} /><p>{rewardStatusText(redeemOffer, "locked")}</p></div>
                     ) : null}
                     {selectedRewardState === "redeeming" ? (
-                      <div className="premium-reward-notice"><Clock3 aria-hidden="true" size={20} /><p>Für diese Einlösung ist bereits ein Code aktiv.</p></div>
+                      <div className="premium-reward-notice"><Clock3 aria-hidden="true" size={20} /><p>Für diese Einlösung ist bereits ein 15-Minuten-Fenster aktiv.</p></div>
                     ) : null}
                     {selectedRewardState === "expired" ? (
                       <div className="premium-reward-notice error"><Clock3 aria-hidden="true" size={20} /><p>Diese Belohnung ist abgelaufen.</p></div>
@@ -1890,24 +2520,6 @@ export function CustomerPortal() {
                   </article>
                 ) : null}
 
-                {redeemOffer && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "confirm" ? (
-                  <article className="premium-redemption-confirmation">
-                    <span className="premium-confirm-icon"><LockKeyhole aria-hidden="true" size={26} /></span>
-                    <StatusBadge tone="warning">Verbindliche Bestätigung</StatusBadge>
-                    <h2>{redeemOffer.is_starter_reward ? "Geschenk wirklich einlösen?" : "Punkte wirklich einlösen?"}</h2>
-                    <p><strong>Bitte erst direkt vor dem Mitarbeiter bestätigen.</strong></p>
-                    <p>
-                      {redeemOffer.is_starter_reward
-                        ? "Nach deiner Bestätigung wird ein einmaliger Einlösecode erzeugt."
-                        : `Nach deiner Bestätigung werden ${redeemOffer.required_points} Punkte reserviert und ein einmaliger Einlösecode erzeugt.`}
-                    </p>
-                    <div className="premium-confirm-summary">
-                      <span>{redeemOffer.title}</span>
-                      <strong>{redeemOffer.is_starter_reward ? "Geschenk" : `${redeemOffer.required_points} Punkte`}</strong>
-                    </div>
-                    {redemptionStatus ? <p className="status-message" role="alert">{redemptionStatus}</p> : null}
-                  </article>
-                ) : null}
               </div>
             </AppDrawer>
 
@@ -1918,11 +2530,6 @@ export function CustomerPortal() {
                 <>
                   <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
                   <PrimaryButton onClick={handleCustomerLogout}>Abmelden</PrimaryButton>
-                </>
-              ) : accountSheet === "profile" ? (
-                <>
-                  <SecondaryButton onClick={() => setAccountSheet(null)}>Abbrechen</SecondaryButton>
-                  <PrimaryButton disabled={!retention?.birthday.can_update} onClick={handleBirthdaySave}>Geburtstag speichern</PrimaryButton>
                 </>
               ) : <PrimaryButton onClick={() => setAccountSheet(null)}>Schließen</PrimaryButton>}
               onClose={() => setAccountSheet(null)}
@@ -1947,16 +2554,15 @@ export function CustomerPortal() {
                   <div className="premium-account-profile-form">
                     <div className="premium-account-detail-list">
                       <div><span>Name</span><strong>{customer.name}</strong></div>
+                      <div><span>Telefon</span><strong>{identitySummary?.phone_masked ?? "Nicht verfügbar"}</strong></div>
+                      <div><span>Geburtstag</span><strong>{identitySummary?.birthday_masked ?? "Nicht hinterlegt"}</strong></div>
                       <div><span>Mitglieds-ID</span><strong>{customer.customer_code}</strong></div>
                     </div>
                     <section>
-                      <div><h3>Geburtstag</h3><p>Freiwillig. Für deine Geburtstagsüberraschung benötigen wir nur Tag und Monat.</p></div>
-                      <div className="premium-birthday-fields">
-                        <label><span>Tag</span><input inputMode="numeric" max="31" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, day: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="TT" value={birthdayForm.day} /></label>
-                        <label><span>Monat</span><input inputMode="numeric" max="12" min="1" onChange={(event) => setBirthdayForm((current) => ({ ...current, month: event.target.value.replace(/\D/g, "").slice(0, 2) }))} placeholder="MM" value={birthdayForm.month} /></label>
+                      <div>
+                        <h3>Identitätsdaten geschützt</h3>
+                        <p>Telefonnummer oder Geburtsdatum ändern? Bitte wende dich direkt an das Restaurant.</p>
                       </div>
-                      {!retention?.birthday.can_update ? <p className="muted">Dein Geburtstag kann erst später wieder geändert werden.</p> : null}
-                      {retentionMessage ? <p className="status-message" role="status">{retentionMessage}</p> : null}
                     </section>
                   </div>
                 ) : null}
@@ -1973,9 +2579,21 @@ export function CustomerPortal() {
                 ) : null}
                 {accountSheet === "qr" ? (
                   <div className="premium-account-qr">
-                    <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
-                    <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
-                    <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                    {restaurantControlledEnabled ? <>
+                      <p>Zeige diesen QR dem Team. Er gilt fünf Minuten und kann nur einmal für eine Punktebuchung verwendet werden.</p>
+                      {pointsQrLoading ? <LoadingState description="Punkte-QR wird erstellt." /> : null}
+                      {pointsQr ? <>
+                        <div className="premium-qr-frame"><OperationalQrCode id="customer-points-credit-qr" title="Persönlicher Punkte-QR" value={buildCustomerPointsQrPayload(pointsQr.qr_token)} /></div>
+                        <StatusBadge><Clock3 aria-hidden="true" size={15} /> 5 Minuten gültig</StatusBadge>
+                        <p className="premium-manual-code">Ersatzcode: <strong>{pointsQr.manual_code.replace(/(\d{4})(\d{4})/, "$1 $2")}</strong></p>
+                        <SecondaryButton disabled={pointsQrLoading} onClick={() => void refreshPersonalPointsQr()}><QrCode aria-hidden="true" size={18} /> Neuen QR erstellen</SecondaryButton>
+                      </> : null}
+                    </> : <>
+                      <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
+                      <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
+                      <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
+                    </>}
+                    {settings?.points_collection_mode === "both" ? <a className="premium-button premium-button-secondary" href={`/w/${restaurantSlug}?token=${encodeURIComponent(activeToken ?? "")}`}>Stattdessen Restaurant-QR scannen</a> : null}
                   </div>
                 ) : null}
                 {accountSheet === "save" ? (
@@ -1988,11 +2606,7 @@ export function CustomerPortal() {
                 ) : null}
                 {accountSheet === "restaurant" ? (
                   <div className="premium-restaurant-detail">
-                    <span className="premium-account-sheet-logo">
-                      {branding.logo_url
-                        ? <img alt={`${restaurant.name} Logo`} src={branding.logo_url} />
-                        : <span aria-hidden="true">{restaurant.name.trim().charAt(0).toUpperCase()}</span>}
-                    </span>
+                    <RestaurantLogoStage className="premium-account-sheet-logo" logoUrl={branding.logo_url} name={restaurant.name} presentation={branding} primaryColor={branding.primary_color} size="detail" />
                     <h3>{restaurant.name}</h3>
                     <StatusBadge tone="success">Bonusprogramm aktiv</StatusBadge>
                     <p>Du bist in diesem Restaurant als Bonus-Mitglied gespeichert.</p>
@@ -2019,6 +2633,11 @@ export function CustomerPortal() {
         ) : null}
 
         {message && !(customer && isBonusCollection) ? <p className="status-message" role="alert">{message}</p> : null}
+        <CustomerRestaurantScanner
+          onCancel={cancelRestaurantScanner}
+          onRestaurantDetected={handleRestaurantDetected}
+          open={restaurantScannerOpen}
+        />
       </PageContainer>
     </AppShell>
   );

@@ -22,7 +22,7 @@ test("öffentliche Startseite behält drei echte Hauptwege auf Route /", () => {
   assert.match(publicHome, /title="Restaurant Login" to="\/login"/);
   assert.match(publicHome, /title="Restaurant registrieren" to="\/register"/);
   assert.match(publicHome, /title="Gast-Bonus öffnen" to="\/customer"/);
-  assert.match(publicHome, /title="Restaurant Bonus einfach starten\."/);
+  assert.match(publicHome, /title="Bonusprogramm einfach starten\."/);
 });
 
 test("Startseite verwendet zentrale Premium-Tokens und kompakte Mobile-Karten", () => {
@@ -85,11 +85,12 @@ test("kritische Formulare schließen nicht über einen versehentlichen Overlay-K
 });
 
 test("mobiles Finder-Detail nutzt Premium-Sheet-Tokens und einen echten Schließen-Button", () => {
+  assert.match(finder, /<AppDrawer[\s\S]*open=\{detailOpenInDrawer\}/);
   assert.match(finder, /aria-label="Restaurantdetails schließen"/);
   assert.match(finder, /onClose=\{\(\) => setSelectedId\(null\)\}/);
   assert.match(finderStyles, /partner-detail-close[\s\S]*height: 44px[\s\S]*width: 44px/);
-  assert.match(finderStyles, /--wux-radius-sheet/);
-  assert.match(finderStyles, /--wux-shadow-overlay/);
+  assert.match(finderStyles, /partner-detail-drawer-content/);
+  assert.match(finderStyles, /partner-map-panel[^}]*isolation: isolate[^}]*z-index: 0/);
 });
 
 test("unreferenzierte zweite globale Stylesammlung ist entfernt", () => {

@@ -5,18 +5,19 @@ import {
   PublicPageShell,
   PublicPrimaryLink,
 } from "./PublicPageComponents";
+import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
 
 export function PublicHome() {
   return (
     <PublicPageShell
       description="Ein Login für Restaurants. Ein QR für Gäste."
       eyebrow="WUXUAI Bonus"
-      title="Restaurant Bonus einfach starten."
+      title="Bonusprogramm einfach starten."
       width="entry"
     >
       <div className="public-premium-entry-grid">
         <PublicEntryCard action="Öffnen" description="Für Restaurantbesitzer und Manager." icon={Store} title="Restaurant Login" to="/login" />
-        <PublicEntryCard action="Kostenlos starten" description="Bonusprogramm in wenigen Minuten einrichten und 30 Tage kostenlos testen." icon={Sparkles} title="Restaurant registrieren" to="/register" />
+        <PublicEntryCard action="Kostenlos starten" description={`Bonusprogramm in wenigen Minuten einrichten. ${V1_COMMERCIAL_COPY.trial}. ${V1_COMMERCIAL_COPY.price}`} icon={Sparkles} title="Restaurant registrieren" to="/register" />
         <PublicEntryCard action="Öffnen" description="Bonuskonto öffnen oder den QR-Code im Restaurant scannen." icon={QrCode} title="Gast-Bonus öffnen" to="/customer" />
       </div>
     </PublicPageShell>
@@ -26,7 +27,7 @@ export function PublicHome() {
 export function GuestBonusInfoPage() {
   return (
     <PublicPageShell
-      description="Scanne den QR-Code im Restaurant oder öffne deinen persönlichen Bonus-Link."
+      description="Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen."
       eyebrow="WUXUAI Bonus"
       title="Bonus für Gäste"
     >

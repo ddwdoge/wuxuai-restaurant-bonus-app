@@ -1,7 +1,53 @@
 
 # 23_API_RPC_REGELN.md
 
+## Platform Admin Foundation
+
+Plattformrollen werden ausschliesslich serverseitig ueber
+`get_current_platform_role` aus aktiven `platform_admins`-Eintraegen aufgeloest.
+Der Browser darf die Rollentabelle nicht direkt lesen oder veraendern. Globale
+Restaurantdaten laufen ueber `get_platform_restaurants`,
+`get_platform_restaurant_detail` und eng begrenzte Schreib-RPCs. Jede RPC prueft
+die Plattformrolle erneut; eine Client-Route allein ist nie Autoritaet.
+
+`get_platform_restaurant_control_center(input_restaurant_id)` ist ein
+read-only Aggregationsvertrag. Jeder Messwert trägt einen Verfügbarkeitszustand,
+sodass `0`, `unavailable` und ein fehlgeschlagener RPC nicht vermischt werden.
+Der RPC liefert keine Kundenlisten, PINs, Token, SMTP-Inhalte oder rohe
+Audit-Metadaten.
+
+## Current Lock 2026-08-24
+
+- Aktive Customer-Registrierung ruft nur
+  `register_restaurant_customer_legal` beziehungsweise
+  `register_referral_customer_legal` auf.
+- Neue Einlösungen verwenden die serverzeitgebundene 15-Minuten-Präsentation;
+  Legacy-Code-RPCs sind kein aktiver Primärvertrag.
+- Referral-Grants sind serverseitig pro Referral, Kunde und Rolle idempotent;
+  die halbe Freundesdauer wird zeitgenau gespeichert.
+
+## RPC-Gruppe Aktuelles & Angebote
+
+Owner-RPCs pruefen `auth.uid()`, Adminrolle, `restaurant_id` und gegebenenfalls
+die Branch-Zuordnung. Public-RPCs liefern nur aktive, veroeffentlichte und
+zeitlich gueltige Beitraege. Analytics darf ausschliesslich aggregierte
+Ereigniszaehler ohne Kundenbezug erhoehen. Alle Funktionen verwenden einen
+festen `search_path`; direkte Schreibrechte auf Angebotstabellen bleiben
+entzogen.
+
+
 # WUXUAI Bonus V1 – API- und RPC-Regeln
+
+## Restaurantgesteuerte Punkte-RPCs
+
+Erzeugung, Vorschau und Bestätigung sind getrennte RPCs. Alle `SECURITY DEFINER`-Funktionen besitzen einen festen `search_path`, prüfen Tenant und Rolle serverseitig und geben weder PIN noch Kundenzugang zurück. Die Bestätigung sperrt die QR-Zeile mit `FOR UPDATE`; ein restaurantgebundener Idempotency-Key verhindert Doppelbuchungen.
+
+Die öffentlichen Einstiegspunkte dürfen keine eigene Formel enthalten. Preview,
+Customer-Confirmation und Staff-Confirmation verwenden die interne Funktion
+`calculate_points_award_v1`; erfolgreiche Buchungen laufen über
+`award_points_v1`. Vor der finalen Berechnung wird derselbe kundenbezogene
+Advisory Lock verwendet wie bei Referral-Boost-Änderungen. Legacy-Signaturen
+von `collect_bonus_points` sind für Browserrollen entzogen.
 
 Status: **LOCK**
 
@@ -242,7 +288,7 @@ Pflichten:
 - branch_subscriptions per Insert/Upsert sicherstellen
 - subscription_record darf nicht NULL sein
 - keine doppelten Restaurants durch normalen Flow
-- 30 Tage Trial setzen
+- Trial-Ende auf exakt drei Kalendermonate nach Trial-Start setzen
 - keine Kreditkarte verlangen
 - Audit schreiben
 
@@ -258,13 +304,14 @@ Zweck:
 
 Pflichten:
 
-- keine Passwortlogik
+- keine eigene Passwortlogik im Restaurant-RPC; Authentifizierung und
+  Passwortverwaltung liegen ausschließlich bei Supabase Auth
 - keine SMS/WhatsApp
 - phone pro Restaurant prüfen
 - keine vollständigen Kundendaten bei bestehender Telefonnummer an anon zurückgeben
 - Token sicher erzeugen
-- Willkommensgeschenk nur bei normaler Registrierung
-- Referral Vorrang beachten, falls Route/Service gemeinsam genutzt wird
+- Willkommensgeschenk bei direkter und Referral-Erstregistrierung ueber denselben
+  kanonischen Assignment-Flow zuteilen
 - Audit schreiben
 
 ### 7.3 register_referral_customer / referral registration
@@ -273,7 +320,8 @@ Zweck:
 
 - eingeladenen Freund registrieren
 - Referral-Beziehung speichern
-- kein Willkommensgeschenk zuteilen
+- hoechstens ein normales, zunaechst gesperrtes Willkommensgeschenk ueber
+  `assign_welcome_starter_reward` zuteilen
 - Bonus Boost noch nicht aktivieren
 
 Pflichten:
@@ -283,8 +331,19 @@ Pflichten:
 - A↔B Zirkel blockieren
 - gleiche Telefonnummer-Regel prüfen
 - Referral Status pending setzen
-- kein Welcome Gift
+- keine parallele Welcome-Gift-Insertlogik; bestehende Unique-Regel nutzen
 - Audit schreiben
+
+### 7.3a create_referral_link / get_customer_referral_invite_status
+
+- Restaurant und geheimen Customer-Token serverseitig pruefen.
+- Mindestens eine positive Punktebuchung desselben Kunden im selben Restaurant
+  verlangen.
+- Monatliches Limit serverseitig unter Lock pruefen und atomar verbrauchen.
+- Restaurant-Zeitzone fuer Monatsgrenzen verwenden.
+- Retry desselben Erstellungswerts gibt denselben Link zurueck und zaehlt nicht
+  doppelt.
+- Rohwerte von Referral- und Erstellungs-Token weder speichern noch auditieren.
 
 ### 7.4 get_public_customer_portal
 
@@ -496,13 +555,24 @@ RPCs müssen idempotent oder eindeutig geschützt sein.
 
 ### 10.1 Punkte sammeln
 
-V1 nutzt Wiederholungssperre.
+V1 nutzt einen serverseitig erzwungenen Idempotenzschluessel. Der aktive
+restaurantgesteuerte Vertrag lautet:
 
-Später:
+```text
+confirm_restaurant_controlled_points(
+  restaurant_id,
+  qr_reference,
+  amount_cents,
+  daily_pin,
+  idempotency_key
+)
+```
 
-- idempotency_key
-- bill_id
-- signed receipt
+Es gibt in V1 keine Bonnummer, keine `bill_id` und keinen signierten Beleg. Der
+historische sechsparametrige Vertrag ist fuer Browserrollen gesperrt. Earn-Retry
+bindet den Schluessel an den kanonischen fachlichen Payload; Reverse-Retry bindet
+Restaurant, Aktion, Originaltransaktion, serverseitig autorisierte Rolle und
+normalisierte Begruendung.
 
 ### 10.2 Belohnung einlösen
 
@@ -697,9 +767,14 @@ Operativer Zugriff über staff_members und staff_sessions.
 
 ### 17.3 Customer
 
-Kein Supabase Auth in V1.
+Kunden verwenden seit 04.08.2026 ein bestätigtes Supabase-Auth-Konto als
+zentrale Identität. Restaurantbezogene Tokens bleiben nach serverseitiger
+Membership-Prüfung ausschließlich Zugangsmittel für den lokalen Bonusbereich.
+Telefonnummer, Geburtstag und Gerätekennung sind keine Authentifizierung.
 
-Kunden nutzen tokenisiertes Kundenportal.
+`join_customer_account_restaurant` prüft Auth-User, aktives Restaurant, Legal
+Readiness und ausdrückliche Zustimmung. Ein bestehender Restaurantkunde darf
+nur über einen gültigen geheimen Restauranttoken verknüpft werden.
 
 ### 17.4 WUXUAI Admin
 
@@ -935,6 +1010,52 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   nur `anon` und `authenticated`.
 - Es werden keine Owner-, Mitarbeiter-, Kundenkontakt- oder Umsatzdaten
   veröffentlicht.
+- `get_partner_local_finder(input_customer_tokens, input_limit, input_offset)`
+  ist der aktive gebündelte V1-Lesevertrag. Er ersetzt im Finder die N+1-Folge
+  aus öffentlicher Standortabfrage und einzelnen Mitgliedschaftsabfragen.
+- Der RPC begrenzt die Ergebnismenge auf 100, prüft jeden lokalen Kundenzugang
+  gegen Restaurant, aktive Mitgliedschaft, Hash und Ablauf und gibt weder
+  Klartexttoken noch personenbezogene Kontaktdaten zurück.
+- Die bisherigen beiden RPCs bleiben als Kompatibilitätsverträge bestehen.
+
+## Ergänzung 2026-08-04: Zentraler Kundenaccount und E-Mail-Digests
+
+- `bootstrap_customer_account` verknüpft nur einen gültigen aktiven
+  restaurantbezogenen Kundenzugang.
+- `get_customer_account` liefert ausschließlich Memberships des gehasht
+  validierten zentralen Accounts.
+- `open_customer_account_membership` prüft Account, Restaurant und aktive
+  Membership und gibt einen neuen restaurantbezogenen Token nur einmal zurück.
+- DOI-Anforderung und Digest-Jobverträge sind `service_role`-only; Bestätigung
+  und restaurantbezogene Abmeldung verwenden zweckgebundene Token-Hashes.
+- `list_due_customer_offer_email_consents`,
+  `reserve_customer_offer_email_delivery` und
+  `complete_customer_offer_email_delivery` bilden den begrenzten serverseitigen
+  Versandvertrag. Browserrollen erhalten kein EXECUTE.
+- Der Owner-RPC liefert nur restaurantbezogene Aggregate, keine E-Mail-Liste.
+
+## Ergänzung 2026-08-09: Geschenk-Präsentation und Transaktions-E-Mail-Queue
+
+- `start_customer_gift_presentation` validiert Kundentoken, Restaurant,
+  Zuteilung, Gift-Typ, Status und Reward-Aktivität und startet idempotent ein
+  einziges 15-Minuten-Fenster.
+- `get_customer_gift_presentation` gibt einen Vorgang nur an denselben
+  servervalidierten Restaurantkunden zurück.
+- Präsentationstabellen besitzen RLS und keine direkten Browserrechte.
+- `issue_birthday_gifts`, Reminder-Queue und Abschlussjob sind nicht für
+  Browserrollen ausführbar.
+- `reserve_customer_transactional_emails` und
+  `complete_customer_transactional_email` sind ausschließlich für
+  `service_role` freigegeben. Klartexttokens, Passwörter und interne IDs werden
+  nicht Teil sichtbarer E-Mail-Inhalte.
+- Die Reservierung verwendet `FOR UPDATE SKIP LOCKED` und ein zehnminütiges
+  Verarbeitungs-Lease. Ein abgebrochener Worker kann einen Job danach erneut
+  reservieren; nach fünf Versuchen endet er dauerhaft als `SKIPPED`.
+- Der Abschluss speichert Versand- oder Fehlerzeit, einen gekürzten sicheren
+  Fehlercode und eine begrenzte exponentielle Retry-Zeit.
+- `transactional-mail-dispatcher` ist der einzige Anwendungstransport hinter
+  dieser Queue. Die Edge Function benötigt Scheduler-, SMTP- und
+  Absender-Secrets und ist kein Browser-Endpunkt.
 
 ## Ergänzung 2026-07-24: Public Legal Center und Datenexport
 
@@ -946,3 +1067,29 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
 - `get_customer_data_export(slug, token)` gibt bei Dokumentannahmen nur
   Nachweismetadaten wie Titel, Version, Hash, Gültigkeitsdatum, Annahmezeit und
   Quelle aus. Dokumentvolltexte sind nicht Teil des personenbezogenen Exports.
+
+## Ergänzung 2026-08-25: Platform Admin Referral-Limit
+
+- `get_platform_restaurant_control_center(uuid)` liefert im vorhandenen
+  Referral-Teilvertrag zusätzlich `monthly_invite_limit`.
+- Quelle ist ausschließlich
+  `loyalty_settings.referral_monthly_invite_limit`; der RPC erfindet bei
+  fehlenden Daten oder Abfragefehlern keinen Wert 5.
+- Fehlt die gesamte Restaurantkonfiguration, bleibt der Referral-Teilvertrag
+  ausdrücklich `unavailable`. SQL-Fehler werden als RPC-Fehler weitergegeben.
+- `SECURITY DEFINER`, fester `search_path`, Platform-Admin-Prüfung und der nur
+  für `authenticated` gewährte `EXECUTE`-Vertrag bleiben unverändert.
+
+## Ergänzung 2026-08-25: Staff-Account-RPCs
+
+- Owner-Teamaktionen verwenden kleine `SECURITY DEFINER`-RPCs mit festem
+  `search_path`, serverseitiger Owner/Admin-Prüfung und Restaurantbindung.
+- `create_restaurant_staff_invitation` erzeugt nur eine inaktive Einladung.
+- `bind_restaurant_staff_auth_identity` akzeptiert ausschließlich die exakte,
+  normalisierte Auth-E-Mail und aktiviert den Zugang nicht.
+- `accept_my_restaurant_staff_invitation` wird in der authentifizierten
+  Einladungs-Sitzung durch genau die gebundene Identität ausgeführt.
+- Statuswechsel und erneuter Versand sind rate-limitiert, tenantgebunden und
+  auditierbar. `anon` besitzt kein Execute-Recht.
+- Die Edge Function `owner-staff-invite` ist der einzige Auth-Admin-Transport;
+  die Service Role bleibt serverseitig.

@@ -1,7 +1,85 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## V1 Final Security Contract 2026-08-31
+
+- Eine E-Mail entspricht genau einer Supabase-Auth-Identitaet. Customer-,
+  Staff-, Owner- und Platform-Beziehungen sind additive, serververifizierte
+  Rollen; `user_metadata`, URL und Frontendzustand sind keine Autoritaet.
+- RLS bleibt auf sensiblen Tabellen aktiv. Alle schreibenden Business-RPCs
+  pruefen Actor, Organization, Restaurant, Branch und Membership explizit.
+- `SECURITY DEFINER` verwendet einen festen `search_path`, minimale
+  `EXECUTE`-Grants und gibt keine Token-, PIN- oder Secret-Hashes zurueck.
+- Browserrollen besitzen keine direkte DML-Autoritaet ueber Punktejournal,
+  Reward-/Gift-Zuweisung, Redemption, Legal-Veroeffentlichung oder Rollen.
+- Customer-Punkte-QRs sind einmalig und fuenf Minuten gueltig. Die Tages-PIN
+  bleibt serverkontrolliert; fuenf falsche Versuche sperren den Customer bis
+  zum naechsten lokalen Tag. Actor-Rate-Limit: 30 Versuche in fuenf Minuten.
+- Erfolgreiche Punktebuchungen sind auf zwei je Customer, Restaurant und
+  lokalem Tag begrenzt. Fehlgeschlagene PIN- und abgebrochene Vorgaenge zaehlen
+  nicht als Erfolg. Idempotenz und Rapid-Repeat-Schutz bleiben serverseitig.
+- Gift- und Reward-Einloesungen verwenden die 15-Minuten-Live-Praesentation
+  mit serverseitiger Eligibility, Einmalverwendung, Zeit und Audit. Aeltere
+  sechsstellige Codes sind nur historische Kompatibilitaet, kein V1-
+  Primaerflow.
+- Legal Operator, Dokumente und Registrierungsfreigabe sind
+  organizationgebunden. Unveroeffentlichte Pflichtdokumente blockieren neue
+  Customer-Registrierung; kein Client darf diesen Gate umgehen.
+- Cross-Tenant-Zugriff, willkuerliche Owner-Eskalation, Staff-
+  Selbstregistrierung und Platform-Zugriff aus Restaurantrollen bleiben
+  blockiert.
+
+Bei Widerspruch zu spaeteren historischen Ergaenzungen in dieser Datei gilt
+dieser Abschnitt zusammen mit dem Canonical Product Contract.
+
+## Platform Admin Isolation
+
+- Plattformzugriff folgt nicht aus Restaurant-Ownership oder Membership.
+- Nur aktive interne Eintraege in `platform_admins` sind autoritativ.
+- Anon, Customer, Staff und Owner erhalten keine Plattformrolle.
+- Direkte Tabellenrechte auf die interne Rollentabelle sind fuer Browserrollen
+  entzogen; RLS bleibt zusaetzlich aktiv.
+- Plattform-RPCs verwenden feste `search_path`-Werte und pruefen die Rolle
+  serverseitig.
+- Die Browseranwendung enthaelt keine Service-Role-Zugangsdaten.
+- Der Restaurant-Control-Center-RPC prüft dieselbe serverseitige Rollenquelle,
+  besitzt einen festen `search_path` und gibt standardmäßig nur Aggregate sowie
+  begrenzte, bereinigte Auditfelder zurück.
+
+## Current Lock 2026-08-24
+
+Customer Auth, Restaurantmitgliedschaft und aktive Legal-RPCs bleiben die
+Identitäts- und Tenant-Autorität. Neue Einlösungen nutzen die 15-Minuten-
+Präsentation. Referral-Grants sind tenantgebunden, atomar und idempotent; weder
+Referral-Token noch Auth-, PIN- oder Customer-Token werden geloggt. Ältere
+widersprechende Code- und token-only-Regeln sind superseded.
+
+## Aktuelles & Angebote
+
+Angebote sind oeffentliche Restaurantinformationen, keine Bonus- oder
+Kundenobjekte. Der Public-Payload enthaelt keine Kundendaten oder Tokens.
+Aufrufe und Klicks werden nur als PII-freie Tagesaggregate gespeichert.
+Angebotsinteraktionen duerfen weder QR-Kontext noch Kundenzugang, Punkte,
+Rewards, Geschenke oder Einloesungen veraendern.
+
+
 # WUXUAI Bonus V1 – Sicherheit & Datenschutz
+
+## Punkte-QR
+
+Der persönliche Punkte-QR ist kein Kundenzugang. Er enthält ausschließlich einen kryptografisch zufälligen, kurzlebigen Wert; gespeichert wird nur dessen Hash. Fremdrestaurant, Ablauf, Widerruf, Wiederverwendung und inaktive Mitgliedschaft werden serverseitig abgelehnt. Token, Tages-PIN und Auth-Daten dürfen nicht in Audit, Analytics oder Logs erscheinen.
+
+Punkteberechnung und Boost-Auswahl werden unter einem restaurant- und
+kundenbezogenen Transaktions-Lock ausgeführt. Ein paralleler Confirm prüft nach
+dem QR-Row-Lock den Idempotenzschlüssel erneut. Dadurch wird derselbe Request als
+derselbe Erfolg beantwortet und nicht als zweite Buchung oder Replay behandelt.
+Öffentliche Antworten enthalten keine Referral-Beziehung oder Referral-Tokens.
+
+Bonnummern sind kein V1-Sicherheitsmerkmal und werden weder abgefragt noch in
+aktive Idempotenz-Fingerprints, Audit-Metadaten oder Browser-RPCs aufgenommen.
+Die nullable historische Datenbankspalte bleibt ungenutzt. Reverse-Idempotenz
+bindet stattdessen Tenant, Aktion, Originalbuchung, serverseitig aufgeloeste
+Owner-/Manager-Rolle und normalisierte Begruendung.
 
 Status: **LOCK**
 
@@ -267,13 +345,13 @@ Sie arbeiten über:
 
 ### 8.3 Gäste
 
-Gäste nutzen in V1 kein Supabase Auth Konto.
+Gäste nutzen ein bestätigtes Supabase-Auth-Konto. Die Auth-User-ID bindet genau
+eine zentrale `customer_accounts`-Identität. Darunter bleiben mehrere
+Memberships, Punkte und Rewards strikt restaurantbezogen.
 
-Sie nutzen:
-
-- Customer Token
-- QR-Link
-- restaurantspezifisches Kundenportal
+Restauranttokens werden erst nach Auth- und Membership-Prüfung ausgegeben und
+gelten nur für das konkrete Restaurant. E-Mail, Telefonnummer, Geburtstag und
+Gerätekennung dürfen niemals allein eine Membership verknüpfen.
 
 ### 8.4 WUXUAI Admin
 
@@ -566,9 +644,12 @@ Erst nach erster bezahlter Konsumation / Punktebuchung.
 
 Erst beim nächsten Besuch.
 
-### 18.4 Referral Vorrang
+### 18.4 Referral-Gast
 
-Referral-Gast bekommt kein Willkommensgeschenk.
+Referral-Gaeste erhalten dasselbe normale, zunaechst gesperrte
+Willkommensgeschenk wie direkt registrierte Gaeste. Die bestehende
+restaurantbezogene Einmaligkeitsregel verhindert doppelte Zuteilungen bei Retry,
+Callback oder parallelen Requests.
 
 ### 18.5 Wirtschaftlichkeit
 
@@ -603,6 +684,14 @@ Sie erhöhen nicht den Multiplikator.
 ### 19.5 Audit
 
 Jede Aktivierung wird protokolliert.
+
+### 19.6 Einladungsvoraussetzung und Monatslimit
+
+Einladungserstellung setzt eine positive Punktebuchung des Referrers im selben
+Restaurant voraus. Das restaurantbezogene Monatslimit wird in lokaler
+Restaurantzeit atomar geprueft. Ein Wiederholungsversuch mit demselben sicheren
+Erstellungswert gibt dieselbe Einladung zurueck; Token werden nur gehasht
+gespeichert und niemals auditiert.
 
 ---
 
@@ -734,6 +823,19 @@ Nicht anzeigen:
 - Admininformationen,
 - Auditdaten,
 - technische Tokenhashes.
+
+### 23.1 Partnerlokal-Finder
+
+- Öffentliche Kartenmarker enthalten nur freigegebene Standort- und
+  Angebotsdaten aus der eigenen Datenbank.
+- Eigene Punkte, Besuche und Belohnungen erscheinen nur nach serverseitiger
+  Prüfung eines restaurantbezogen gespeicherten Kundenzugangs.
+- Der Aggregat-RPC liefert keine Namen, Telefonnummern, Geburtstage, Geräte-IDs,
+  Klartexttoken oder Tokenhashes aus.
+- Standortfreigabe bleibt optional und wird nur im Browser für Sortierung und
+  Kartenzentrum verwendet; Kundenkoordinaten werden nicht gespeichert.
+- Karten- und Listenauswahl verändern keinen QR-, Token- oder Sammelkontext und
+  lösen keine Registrierung, Punktebuchung oder Einlösung aus.
 
 ---
 
@@ -1111,5 +1213,84 @@ Endstatus: **LOCK**
 - Optionale technische Kennungen müssen pseudonymisiert und Browserangaben auf
   eine nicht eindeutig identifizierende Klasse minimiert bleiben.
 - Browser-Push-Permission und Marketingeinwilligung sind getrennte Nachweise.
+
+## Ergänzung 2026-08-04: Zentraler Zugang und Angebots-E-Mail-Datenschutz
+
+- Ein zentraler Zugang wird nur aus einem gültigen geheimen Restauranttoken
+  aufgebaut; Telefonnummer, Geburtstag und `device_id` reichen niemals aus.
+- Klartexttokens erscheinen weder in Tabellen, Audit, Analytics noch Reports.
+- Restaurant A erhält keine Membership-, Punkte- oder E-Mail-Daten von B.
+- E-Mail-Einwilligungen sind restaurantbezogen, freiwillig, versioniert,
+  widerrufbar und standardmäßig nicht erteilt.
+- DOI- und Abmeldetokens sind gehasht, zweckgebunden, ablaufend, einmalig und
+  rate-limitiert.
+- V1 verwendet keine individuellen Öffnungsprofile oder Trackingpixel.
+- Auth-SMTP wird nicht automatisch für Marketing verwendet; Delivery bleibt
+  ohne freigegebenen Provider deaktiviert.
 - Der öffentliche Legal-Endpunkt besitzt keine Tabellen-Schreiboperation und
   keine direkte Public-Select-Policy auf Legal- oder Kundentabellen.
+
+## Ergänzung 2026-08-09: Aktuelles Kundenkonto und Geschenk-Präsentation
+
+- Die zentrale Kundenidentität ist die bestätigte Supabase-Auth-Session mit
+  E-Mail und Passwort. Ältere Aussagen, E-Mail und Passwort seien in V1 nicht
+  erforderlich, sind für den aktuellen zentralen Kundenbereich überholt.
+- Restaurantbezogene Kundentokens bleiben zusätzliche, geheime
+  Membership-Zugänge; Telefonnummer, Geburtstag und Gerätekennung reichen nie.
+- Geschenk-Präsentationen sind an Restaurant, Kunde und konkrete Zuteilung
+  gebunden. Browserzustand und Clientzeit sind keine Autorität.
+- Die private E-Mail-Queue ist per RLS und entzogenem DML geschützt. Nur ein
+  serverseitiger Dispatcher darf Empfänger reservieren und Ergebnisse melden.
+- Versandfehler werden ohne sensible Providerdetails gespeichert und dürfen
+  Punkte- oder Geschenktransaktionen niemals zurückrollen.
+- SMTP-, Scheduler- und Service-Role-Secrets des Transaktionsmail-Dispatchers
+  bleiben ausschließlich in Edge-Function-Secrets und erscheinen weder im
+  Browserbundle noch in Logs.
+- Sichtbare Transaktionsmails enthalten keine Kundentokens, internen IDs,
+  Telefonnummern oder Geburtstage. Der HTTPS-Link bewahrt nur den öffentlichen
+  Restaurant-Slug als Rückkehrpfad nach der Kundenanmeldung.
+- Strukturierte Dispatcherlogs enthalten höchstens eine gekürzte
+  Delivery-Referenz, Template-Key, Versuchszahl und sicheren Fehlercode, aber
+  weder Empfängeradresse noch Queue-Payload.
+
+## Ergänzung 2026-08-23: Serverseitige Standort-Geocodierung
+
+- Eine Geocodierung erfolgt nur nach ausdrücklicher Owner-Aktion und nie als
+  Autocomplete oder Hintergrundprozess.
+- Ausschließlich die normalisierte geschäftliche Adresse wird serverseitig an
+  den fest konfigurierten Nominatim-Endpunkt übertragen.
+- Restaurant-ID, Owner-, Kunden-, Login-, Zahlungs- und Legal-Daten verlassen
+  WUXUAI bei diesem Aufruf nicht.
+- Authentifizierung, Restaurantrolle und Mandantenzuordnung werden vor dem
+  externen Aufruf serverseitig geprüft.
+- Provider-Cache und globale Aufrufbegrenzung sind für Browserrollen gesperrt;
+  Nominatim wird anwendungsweit höchstens einmal je 1,1 Sekunden aufgerufen.
+- Gespeicherte Koordinaten verhindern unnötige Wiederholungsabfragen. Eine
+  Adressänderung verwirft die alte Kartenposition, bis sie erneut geprüft wurde.
+
+## Ergänzung 2026-08-25: Control-Center-Vertragsgrenze
+
+- Das monatliche Referral-Limit wird nur innerhalb des geschützten Platform
+  Admin Control Centers gelesen.
+- Restaurant-Owner, Staff, Customer und Anon erhalten dadurch keine neue
+  Ausführungs- oder Tabellenberechtigung.
+- Ein fehlender oder fehlerhafter Settings-Lesezugriff wird nicht als gesunder
+  Defaultwert maskiert.
+
+## Ergänzung 2026-08-25: Staff-Identität und Einladungen
+
+- Name oder E-Mail-Adresse allein erteilen keinen Zugriff. Erst ein gültiger
+  Auth-Link, persönliche Passwortsetzung und der gebundene Annahme-RPC
+  aktivieren die restaurantbezogene Staff-Mitgliedschaft.
+- Owner können keine Plattformrolle und keine fremde Restaurantrolle über die
+  Teamverwaltung vergeben. Staff, Customer und Anon können sich nicht selbst
+  hinzufügen oder reaktivieren.
+- Eine Auth-Identität mit aktiver Owner-, Platform-Admin- oder Customer-
+  Zuordnung wird nicht als Staff-Zugang gebunden. Eine bestehende reine
+  Staff-Identität darf nur über eine weitere ausdrückliche Restaurantbindung
+  einem zusätzlichen Standort zugeordnet werden; globale Freigabe entsteht nie.
+- Service-Role- und Auth-Link-Geheimnisse werden weder an den Browser
+  ausgeliefert noch protokolliert. Der Staff-QR enthält keine Rolle und kein
+  Authentifizierungsgeheimnis.
+- Sperren und Archivieren wirken fail-closed auf die zentrale
+  `is_restaurant_member`-Prüfung. Normale Tenant-RLS bleibt aktiv.

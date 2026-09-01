@@ -3,6 +3,243 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## 2026-08-31 - Standortland als lokalisierte ISO-Auswahl
+
+- Das freie zweistellige Landfeld unter `Standort & Restaurantsuche` wird
+  durch eine durchsuchbare weltweite Laenderauswahl ersetzt.
+- Sichtbare Namen werden mit `Intl.DisplayNames` fuer DE, EN, FR, IT und ES
+  aus einer einzigen vollstaendigen ISO-3166-1-Alpha-2-Codebasis erzeugt.
+- `branches.country`, Save-Payload und Nominatim erhalten weiterhin nur den
+  ISO-Alpha-2-Code. Freie Texte werden nicht als Land akzeptiert.
+- Bestehende Codes bleiben unveraendert. Ein fehlendes Land wird nicht mehr
+  stillschweigend als `AT` interpretiert; der Owner muss es auswaehlen.
+- Datenbank, Geocoding, Kartenmarker, Discovery, Legal Readiness und Tenant-
+  Scope bleiben unveraendert.
+
+## 2026-08-31 - Heute fuer dich als zentraler Setup-Assistent
+
+- Die schwarze Owner-Dashboard-Karte `Heute fuer dich` zeigt immer genau eine
+  zustandsabhaengige Empfehlung. Ein paralleler `Naechster Schritt`-Container
+  oder eine permanente Setup-Checkliste wird nicht angezeigt.
+- Der zentrale Resolver priorisiert Publikation/Standort, Punkteeinloesung,
+  Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang. Legal Readiness
+  und öffentliche Auffindbarkeit bleiben autoritativ; Angebot und Staff sind
+  keine Publikations-Gates.
+- Nach vollstaendiger Einrichtung wechselt die Karte in einen
+  deterministischen Betriebsmodus. Alle Ziele sind bestehende Owner-Bereiche.
+- Neue Welcome-/Starter-Gifts werden in den aktuellen Erstellungswegen fuer den
+  Geburtstagspool vorausgewaehlt. Bestehende Owner-Entscheidungen werden nicht
+  massenhaft veraendert; die Nutzung bleibt pro Geschenk deaktivierbar.
+- V1 erfindet weder einen QR-Downloadstatus noch einen Nachweis des physischen
+  Ausdrucks. Datenbank, Birthday-Zuteilung, Punkte, Legal und Security bleiben
+  unveraendert.
+
+## 2026-08-31 - Öffnungszeiten auf alle Tage übertragen
+
+- Owner können die vollständige Montagskonfiguration im Onboarding und im
+  kanonischen Einstellungen-Editor auf Dienstag bis Sonntag übertragen.
+- Die Aktion kopiert offen/geschlossen, Hauptzeiten, Mittagspause und zweiten
+  Öffnungsblock. Zielwerte bleiben anschließend einzeln bearbeitbar.
+- Abweichende Zielwerte verlangen eine Überschreibbestätigung. Der
+  Onboarding-Klick bleibt lokaler Formularzustand und wird erst mit `Weiter`
+  in den Entwurf übernommen; Einstellungen speichern weiterhin nur über die
+  bestehende Speichern-Aktion.
+- Öffnungszeitenmodell, Restaurant-Zeitzone, Validierung und öffentliche
+  Offen-/Geschlossen-Berechnung bleiben unverändert.
+
+## 2026-08-31 - Owner-Onboarding verwendet feste Bonus-Richtwerte
+
+- Owner bearbeiten im V1-Onboarding weder Durchschnittsbon noch eine
+  erwartete Besuchszahl. Die wirkungslose Auswahl einer Einloeseart wird dort
+  ebenfalls nicht mehr gezeigt.
+- Die Vorschau verwendet ausschliesslich die Richtwerte 20 EUR pro Besuch und
+  fuenf Besuche, also 100 EUR Referenzkonsumation.
+- Owner waehlen weiterhin die bestehenden Rueckgabequoten 3, 5, 8 oder 10
+  Prozent. Nur diese Auswahl wird als `redemption_return_rate` gespeichert.
+- Richtwerte sind keine Kundenvoraussetzung und erzeugen weder Mindestumsatz,
+  Besuchslimit noch automatische Freischaltung.
+- Die optionale Telefonnummer der Owner-Registrierung wird als empfohlene
+  Mobiltelefonnummer fuer zukuenftige SMS-Benachrichtigungen bezeichnet. SMS,
+  Marketingeinwilligung und Providerintegration bleiben deaktiviert.
+
+## 2026-08-31 - Alle aktiven Kundengeschenke auf Customer Home
+
+- Ein Kunde kann gleichzeitig mehrere gültige persönliche Geschenke besitzen.
+  Customer Home zeigt deshalb alle aktuell sichtbaren, nicht verbrauchten
+  Geschenkzuweisungen aus `customer_rewards` über die bestehende kanonische
+  Portal-Antwort.
+- Geburtstagsgeschenke stehen in V1 vor Willkommensgeschenken; weitere Typen
+  folgen deterministisch. Kein Geschenk wird durch eine Prioritätsauswahl
+  ausgeblendet.
+- Mehrere Geschenke verwenden den bestehenden horizontalen Premium-Carousel-
+  Vertrag. Navigation allein vergibt, startet oder verbraucht kein Geschenk.
+- Assignment, Birthday-Catch-up, Einlösung, Punkte, Visits, Audit und E-Mail
+  bleiben unverändert.
+
+## 2026-08-31 - Geburtstagsgeschenk mit 14-Tage-Nachholung
+
+- Ein aktiver Restaurantkunde ist einschliesslich heute bis 14 lokale
+  Kalendertage vor seinem Geburtstag fuer genau ein Geburtstagsgeschenk des
+  betreffenden Geburtstagsjahres berechtigt.
+- Eine spaete Registrierung innerhalb dieses Fensters verliert das Geschenk
+  nicht. Die kanonische Account-Membership-Aktivierung prueft die Berechtigung
+  sofort; der taegliche Serverjob verwendet dieselbe interne Zuteilung.
+- Ein bereits vergangener Geburtstag wird durch diese Nachholregel nicht
+  rueckwirkend berechtigt. Ab 15 Tagen vor dem Geburtstag wartet die
+  Zuteilung auf das normale Fenster.
+- Pool, Restaurant-Zeitzone, 29.-Februar-Verhalten, Audit,
+  Transaktions-E-Mail und die Einmaligkeit pro Customer, Restaurant und
+  Geburtstagsjahr bleiben kanonisch. Besuch und Punkte sind keine
+  Voraussetzung.
+- Diese Entscheidung erweitert die automatische Entscheidung vom 09.08.2026
+  vom exakten Tag `Geburtstag - 14` auf das inklusive Fenster
+  `heute ... heute + 14`.
+
+## 2026-08-30 - Eine Auth-Identitaet mit additiven Portalrollen
+
+- Eine E-Mail-Adresse gehoert zu genau einer Supabase-Auth-Identitaet. Customer,
+  Owner/Admin, Staff und Platform Admin sind additive Profile beziehungsweise
+  Tenantbeziehungen und keine exklusiven Auth-Benutzertypen.
+- Bereits bestaetigte und angemeldete Benutzer aktivieren weitere Bereiche mit
+  derselben Session und demselben Passwort. Anonyme Antworten bleiben
+  anti-enumerationssicher.
+- Staff-Einladungen koennen eine bestehende Customer-, Plattform- oder
+  fremdrestaurantbezogene Owner-Rolle wiederverwenden. Im selben Restaurant
+  bleibt Owner/Admin/Manager vom persoenlichen Staff-Modell getrennt und nutzt
+  den bestehenden autoritativen Betreiberzugriff ohne Impersonation.
+- Portalwechsel zeigt nur serververifizierte Bereiche; alle Tenant-, RLS- und
+  Auditgrenzen bleiben bestehen.
+- E-Mail-Bestaetigungslinks zeigen nach dem Oeffnen einen automatischen,
+  eindeutigen Erfolgs- oder Recovery-Zustand. Resend bleibt bei 60 Sekunden
+  Frontend-Cooldown und den unveraenderten Supabase-/Providerlimits.
+- Referral verwendet die native Web-Share-Schnittstelle mit Clipboard-Fallback
+  und teilt ausschliesslich die bestehende kanonische Referral-URL.
+- Sichtbare V1-Texte bleiben gemaess dem aktiven Sprachvertrag Deutsch. Eine
+  Erweiterung auf EN/FR/IT/ES ist damit nicht Bestandteil dieses V1-Changes.
+
+## 2026-09-01 - Bestehende Auth-Identitaet kann Owner-Bereich aktivieren
+
+- Eine bereits als Customer oder Staff verwendete E-Mail darf die
+  Restaurant-Owner-Registrierung mit derselben Supabase-Auth-Identitaet
+  fortsetzen. Es wird kein zweiter Auth-Benutzer erzeugt und keine vorhandene
+  Rolle entfernt.
+- Vor erfolgreicher Authentifizierung wird weder der Kontobestand noch eine
+  vorhandene Rolle offengelegt. Ein verschleiertes Supabase-Signup-Ergebnis
+  fuehrt neutral zur Anmeldung mit dem bestehenden Passwort.
+- Bestaetigte Konten benoetigen keine zweite E-Mail-Bestaetigung. Noch
+  unbestaetigte Konten behalten den passwortfreien Pending-Owner-Intent und
+  nutzen den bestehenden Resend-, Cooldown- und Callback-Vertrag.
+- Aktiver Staff darf ein eigenes erstes Owner-Restaurant anlegen. Die
+  kanonische Provisionierungs-RPC verwendet ausschliesslich `auth.uid()`, ist
+  atomar und verwendet bestehendes Owner-Restaurant, Membership und Trial
+  idempotent wieder. Komplexe Trial-Abuse-Erkennung bleibt fuer V1 deferred.
+
+## 2026-08-29 - Kanonische optionale Betreiberdaten im Owner-Onboarding
+
+- Die bestehende `organizations`-Ebene ist der kanonische rechtliche
+  Betreiber. Strukturierte Angaben liegen in `organization_legal_profiles`;
+  Restaurant und Branch bleiben Marke beziehungsweise Standort.
+- `restaurant_legal_profiles` ist nur eine explizit über
+  `operator_profile_id` verknüpfte Kompatibilitätsprojektion für bestehende
+  restaurantbezogene Legal-Dokumente und Readiness-Verträge.
+- Die Geschäftsanschrift referenziert entweder ausdrücklich die vorhandene
+  Restaurantadresse oder wird als separate Operator-Anschrift gespeichert.
+- Rechtlicher Unternehmensname, Rechtsform, Geschäftsanschrift und
+  Kontakt-E-Mail bleiben wegen des bestehenden Legal-Pakets Pflichtangaben.
+- Firmenbuchnummer, UID und vertretungsberechtigte Person sind optional; ihr
+  Fehlen blockiert Onboarding, Legal Readiness und Kundenregistrierung nicht.
+- Österreichische FN/UID werden nur bei eindeutig erkennbarem Format
+  normalisiert. Unklare optionale Werte werden verständlich markiert, aber
+  nicht als Pflichtfehler behandelt; andere Länder verwenden generische
+  Bezeichnungen.
+- Neue Dokumententwürfe übernehmen vorhandene optionale Betreiberangaben.
+  Bestehende veröffentlichte Versionen bleiben unveränderlich und werden nie
+  automatisch neu veröffentlicht.
+- Audit-Ereignisse nennen nur geänderte Feldnamen, nicht die betreffenden
+  Unternehmenswerte.
+- Die Struktur ist für spätere Billing-Nutzung wiederverwendbar, erzeugt aber
+  weder Stripe-Customer noch Subscription- oder externe Billing-Daten.
+
+
+## 2026-08-24 - QR Center: zwei aktive Zwecke, ein Kompatibilitaetsweg
+
+- Aktive V1-QR-Zwecke sind der oeffentliche Neue-Gaeste-QR und der geschuetzte
+  Mitarbeiter-QR.
+- Eingang, Tischaufsteller, Kassa, Rechnung, Flyer und Plakat sind nur
+  Druckvarianten desselben Neue-Gaeste-QR; sie erzeugen keinen eigenen QR-Typ.
+- Der bisherige Kassa-Aufsteller war technisch nur eine zweite Darstellung der
+  identischen `/w/:slug`-URL und ist aus QR Center und Starter Kit entfernt.
+- Der Kassa-QR bleibt ausschliesslich als sichtbarer Kompatibilitaetsweg fuer
+  Restaurants mit `customer_initiated_only` oder `both` erhalten. Die Route
+  `/w/:slug` bleibt fuer bestehendes Druckmaterial funktionsfaehig.
+- Neue Restaurants starten weiterhin `restaurant_controlled_only`; ihr Starter
+  Kit enthaelt zwei Gaeste-Druckformate mit identischer URL und einen Staff-QR.
+- Es werden keine historischen Daten geloescht und keine QR-Geheimnisse in
+  Drucklinks aufgenommen.
+
+## 2026-08-24 - Canonical Recovery Lock
+
+- Sichtbarer Name ist **WUXUAI Bonus**; der Kundenbereich heißt **Meine
+  Vorteile**.
+- Customer Auth verwendet E-Mail, Passwortbestätigung, E-Mail-Bestätigung und
+  ausschließlich die aktiven Legal-RPCs.
+- Einlösungen verwenden primär die serverzeitgebundene 15-Minuten-Präsentation;
+  die sechsstellige Codeprüfung ist kein normaler Staff-Flow.
+- Freundschaftsbonus: fest 2x; Default 14 Tage; Owner 7/14/28/Custom; Referrer
+  100 Prozent, Freund exakt 50 Prozent derselben gespeicherten Dauer.
+- Manuelle Koordinaten sind keine Pflicht; Owner-Geocodierung erfolgt
+  serverseitig nach ausdrücklicher Aktion.
+- Diese Entscheidung ersetzt jede ältere widersprechende Aussage. Details:
+  `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` und
+  `docs/LEGACY_DOCUMENT_INDEX.md`.
+
+## 2026-08-24 - Referral Welcome Gift, Eligibility und Monatslimit
+
+- Ein Referral-Gast erhaelt ueber denselben bestehenden Assignment-Flow wie
+  ein direkt registrierter Gast genau ein zunaechst gesperrtes
+  Willkommensgeschenk pro Restaurant.
+- Der einladende Gast darf erst nach seiner eigenen ersten positiven
+  Punktebuchung im selben Restaurant Einladungen erzeugen.
+- Default sind 5 neue Einladungen pro Gast, Restaurant und lokalem
+  Kalendermonat; Owner duerfen 1 bis 100 konfigurieren.
+- Erneutes Teilen desselben Links verbraucht keinen weiteren Monatsplatz.
+- Die Einladung bleibt bis zur ersten qualifizierten Punktebuchung des
+  eingeladenen Freundes pending. Referrer-Punkte qualifizieren sie niemals.
+- Diese Entscheidung ersetzt insbesondere die alten Regeln in Abschnitt 28
+  und spaetere historische Aussagen, wonach Referral-Gaeste kein
+  Willkommensgeschenk erhalten.
+
+## 2026-08-03 – V1-Punkteflow ohne Bonnummer
+
+- V1 besitzt keine POS-/Kassenintegration und keine Bonnummer im Punkteflow.
+- Diese Entscheidung ersetzt die aktive Nutzung der am 03.08.2026 vorbereiteten
+  Receipt-Haertung; historische Migrationen und nullable Spalten bleiben aus
+  Nachvollziehbarkeits- und Kompatibilitaetsgruenden erhalten.
+- Der oeffentliche restaurantgesteuerte Confirm-RPC hat genau fuenf Parameter:
+  Restaurant, QR-Referenz, Centbetrag, Tages-PIN und Idempotenzschluessel.
+- Der historische sechsparametrige Vertrag ist fuer Browserrollen gesperrt und
+  erhaelt intern ausschliesslich `NULL` als Belegwert.
+- Earn-Idempotenz bindet Tenant, Gast, Quelle, Betrag, QR, Aktion und Kontext.
+  Reverse bindet Tenant, Aktion, Originaltransaktion, serverseitig autorisierte
+  Rolle und normalisierte Begruendung. Bonnummern gehoeren zu keinem aktiven
+  V1-Fingerprint.
+
+## 2026-08-01 – Eine Punkte-Engine für beide Sammelmodi
+
+- `customer_initiated` und `restaurant_controlled` dürfen nur unterschiedliche
+  Quellen, nicht unterschiedliche Punkteergebnisse erzeugen.
+- Der höchste aktuell aktive restaurantgebundene Boost wird genau einmal auf
+  gerundete Basispunkte angewendet.
+- Referral-Erstqualifizierung folgt erst nach einer erfolgreichen positiven
+  Buchung und wird durch Preview, Fehler, Retry oder Storno nicht erneut ausgelöst.
+- Interne Engine-RPCs bleiben für `public`, `anon` und `authenticated` gesperrt.
+
+## 31.07.2026 – Zwei Punkte-Sammel-Modi
+
+Die bisherige FIX-Entscheidung für einen ausschließlich kundeninitiierten Restaurant-QR ist **partially superseded**. Owner wählen restaurantgesteuert, kundeninitiiert oder beide. Neue Restaurants starten restaurantgesteuert, Bestandsrestaurants bleiben zunächst kundeninitiiert. Die Tages-PIN bleibt unverändert; es wird keine persönliche Mitarbeiter-PIN eingeführt.
+
+Restaurantgesteuerte QR-Referenzen sind opaque, fünf Minuten gültig, serverseitig nur gehasht gespeichert und nach erfolgreicher Gutschrift atomar verbraucht. Standardlimit sind 300 EUR, technisch und konfigurierbar maximal 1.000 EUR.
+
 Status: **LOCK**
 
 Dieses Dokument sammelt die wichtigsten CTO-Entscheidungen des WUXUAI Bonus Projekts.
@@ -214,7 +451,7 @@ V1 dient dazu, erste zahlende Restaurants zu gewinnen.
 - keine unnötigen Features
 - schnelle Einrichtung
 - ein Paket
-- 30 Tage kostenlos
+- 3 Kalendermonate kostenlos
 - einfache Bedienung
 - klare Restaurant-Sprache
 - keine komplexe Abrechnung vor Pilot
@@ -260,23 +497,30 @@ V2 erweitert über Business-Type-Templates.
 
 ---
 
-## 6. Produktname langfristig: WUXUAI Bonus
+## 6. Produktname V1: WUXUAI Bonus
 
-🟢 **FIX / Strategie**
+🟢 **LOCK / ERSETZT LANGFRISTIGE DACHMARKENREGEL AM 30.07.2026**
 
-Das Produkt soll nicht dauerhaft nur „Restaurant Bonus“ heißen.
-
-Langfristige Marke:
+V1 wird unter folgender Produktpositionierung fertiggestellt:
 
 ```text
 WUXUAI Bonus
 ```
 
-V1 kann in Kommunikation Restaurants/Cafés fokussieren.
+Die branchenneutrale Marke bleibt fuer V2 archiviert:
+
+```text
+WUXUAI Bonus
+```
+
+V2 wird erst nach ersten zahlenden V1-Restaurants, echtem Marktfeedback und
+ausdruecklicher Product-Owner-Freigabe fortgesetzt.
 
 ### Warum?
 
-Das gleiche Bonusmodell funktioniert auch für andere lokale Betriebe.
+Restaurantfokus reduziert Onboarding-Komplexitaet und beschleunigt den
+V1-Verkauf. Die technische Erweiterbarkeit bleibt erhalten, aktiviert aber
+keine Branchenprofile in V1.
 
 ### Domain
 
@@ -309,8 +553,8 @@ V1 startet mit einem einfachen Paket.
 Empfehlung:
 
 ```text
-30 Tage kostenlos
-danach ca. 59–69 € / Monat
+3 Kalendermonate kostenlos
+danach 59 € / Monat exkl. USt.
 ```
 
 Keine komplizierten Tarife in V1.
@@ -337,7 +581,7 @@ Restaurants zahlen nicht rückwirkend für kostenlose Testzeit.
 V1-Regel:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte
 Keine Nachzahlung
 Danach normales Monatsabo
@@ -349,7 +593,7 @@ Rückwirkende Zahlung erzeugt psychologischen Widerstand.
 
 Besser:
 
-- 30 Tage Wert beweisen
+- drei Kalendermonate Wert beweisen
 - Erfolgsbericht zeigen
 - Restaurant entscheidet freiwillig
 
@@ -388,6 +632,15 @@ One Persona – One Interface.
 - Restaurantfunktionen im Kundenportal
 - Adminfunktionen im Staff Portal
 - Staff-Prozesse im Kundenportal
+
+### Betreiberzugriff auf operative Staff-Prozesse
+
+Owner, Admins und Manager dürfen den Mitarbeiterbereich ihres eigenen
+Restaurants mit ihrer normalen Betreiberidentität verwenden. Das ist kein
+Rollenwechsel: Es wird keine Staff-Zuordnung erzeugt und keine
+Mitarbeiteridentität imitiert. Die Berechtigung wird für den konkreten Tenant
+serverseitig aus `restaurant_members` ermittelt; eine reine Plattformrolle
+begründet keinen Zugriff.
 
 ---
 
@@ -693,11 +946,13 @@ Einzeldateien kommen später ins QR Center.
 
 ---
 
-## 22. Aktionen-Modul aus V1 entfernt
+## 22. Generisches Aktionen-Modul aus V1 entfernt
 
 🟢 **FIX**
 
-Das Modul „Aktionen“ wird aus V1 entfernt.
+Das unklare generische Modul „Aktionen“ bleibt aus V1 entfernt. Seit der
+LOCKED-Entscheidung vom 04.08.2026 ist ausschließlich das klar begrenzte,
+rein informative Modul `Aktuelles & Angebote` zulässig.
 
 ### Warum?
 
@@ -716,9 +971,16 @@ Nicht „Aktionen“.
 
 ### Verboten
 
-- Aktionen in Sidebar
+- generischer Menüpunkt „Aktionen“ in der Sidebar
 - Neue Aktion starten Button
 - Aktionen als Pflichtbereich
+- Reward-, Coupon-, Punkte- oder Zielgruppenkampagnen
+
+### Eng begrenzte V1-Ausnahme
+
+`Aktuelles & Angebote` darf höchstens fünf gleichzeitig veröffentlichte
+Restaurantbeiträge zeigen. Das Modul erzeugt keine Rewards, Punkte, Geschenke,
+Codes, Einlösungen, Push-Nachrichten oder Kundensegmente.
 
 ---
 
@@ -904,8 +1166,8 @@ Standard:
 
 ```text
 2× Punkte
-30 Tage
-+30 Tage pro erfolgreichem Freund
+Default 14 Tage
+Referrer volle Dauer, Freund exakt halbe Dauer
 ```
 
 Aktivierung erst nach erster Punktebuchung des eingeladenen Freundes.
@@ -1035,9 +1297,9 @@ Nur noch 2,20 € bis zur nächsten Stufe.
 
 ---
 
-## 39. Kunden registrieren ohne Passwort
+## 39. Historische Regel: Kunden registrieren ohne Passwort
 
-🟢 **FIX**
+Status: **ERSETZT AM 2026-08-04**
 
 V1 Kundenregistrierung:
 
@@ -1055,6 +1317,9 @@ Keine:
 ### Warum?
 
 Schneller Einstieg, keine Kosten.
+
+Diese Regel wurde durch die spätere CTO-Entscheidung zum zentralen
+Supabase-Auth-Kundenkonto ersetzt.
 
 ---
 
@@ -1390,6 +1655,13 @@ Nicht V1.
   Multi-Filialverwaltung bleibt V2.
 - Auswahl auf Karte oder Liste verändert keinen aktiven Kundentoken und startet
   weder Registrierung, Punktebuchung noch Einlösung.
+- Der Finder trägt sichtbar den Titel `Lokale entdecken` und bietet Karte und
+  barrierefreie Liste mit Besuchen, restaurantbezogenen Punkten und der
+  nächsten Einlösemöglichkeit.
+- Die Daten werden über genau einen begrenzten Aggregat-RPC geladen. Kundenzugänge
+  bleiben restaurantbezogen, werden nur gehasht geprüft und nie zurückgegeben.
+- `Belohnung bald erreichbar` gilt zentral ab 70 Prozent. Öffnungsstatus,
+  Mittagspause und Tagesgrenzen verwenden `Europe/Vienna`.
 
 ---
 
@@ -1426,7 +1698,7 @@ Logikregeln:
 - Multi-Branch-Fan-out in der Restaurantliste ist verboten.
 - Restaurant Settings zeigen Abo/Testphase mit echten `branch_subscriptions`-Daten.
 - Die Restaurant-Settings-Seite muss auch mit der einfachen V1-Basistabelle funktionieren und darf nicht an fehlenden Stripe-/Payment-Spalten scheitern.
-- V1 Trial: 30 Tage kostenlos, keine Kreditkarte, danach Monatsabo.
+- V1 Trial: 3 Kalendermonate kostenlos, kein Zahlungsmittel erforderlich, danach 59 EUR pro Monat exkl. USt.
 - Keine Fake-Zahlung, kein Dummy-Checkout und kein Fake-Abo-Erfolg vor echter Stripe-Anbindung.
 
 ---
@@ -1626,7 +1898,8 @@ npm run build
 Codex darf nicht:
 
 - V2 in V1 bauen
-- Aktionen wieder einführen
+- generische Aktionen oder Kampagnen wieder einführen; die einzige V1-Ausnahme
+  ist das LOCKED Informationsmodul `Aktuelles & Angebote`
 - Punkte manuell machen
 - Willkommensgeschenke sofort freischalten
 - Referral und Welcome Gift kombinieren
@@ -1777,13 +2050,15 @@ Tages-PIN-Logik, keine neue Reward-Einlösung und keine neue Bonus-Boost-Logik
 wird daraus abgeleitet.
 
 Die gewählte Quote wird pro Restaurant gespeichert und ist die zentrale
-Berechnungsgrundlage für normale Punkteeinlösungen.
+Berechnungsgrundlage für normale Punkteeinlösungen. Nach dem Onboarding kann
+der Owner ausschließlich ganze Werte von 1 % bis 10 % wählen. Der Standard ist
+3 %. Historische Altwerte werden nicht stillschweigend überschrieben.
 
 Formel:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
 Beispiel Normal:
@@ -1896,8 +2171,10 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Ablauf-Erinnerungen: serverseitige Stufen 7/3/1/0 Tage, Darstellung im Startseiten-Drawer und freiwilliger Web Push. Drawer ist der vollständige Fallback.
 - Geburtstagsgeschenk: freiwilliger Tag/Monat, Abholung 3 Tage vor bis 7 Tage nach dem Geburtstag, serverseitige Zufallsauswahl aus dem freigegebenen aktiven Willkommensgeschenk-Pool, höchstens einmal pro Jahr.
 - Diese Geburtstagsregel ersetzt die automatische Auswahl 14 Tage vor dem Geburtstag.
-- Bonus Boost: beide Beteiligten erhalten nach der ersten gültigen Punktebuchung des geworbenen Neukunden 30 Tage lang exakt 2× Punkte.
-- Weitere erfolgreiche Empfehlungen verlängern den aktiven Boost des Empfehlenden jeweils um 30 Tage.
+- Bonus Boost: Nach der ersten gültigen Punktebuchung erhält der Referrer für
+  die volle, der Freund für exakt die halbe gespeicherte Restaurantdauer 2×.
+- Weitere erfolgreiche Empfehlungen verlängern den Referrer um die jeweils bei
+  Qualifikation gespeicherte volle Dauer; 2× bleibt die Obergrenze.
 - Keine Push-Nachricht, Auslosung oder Empfehlung darf die bestehende serverseitige Punkte- oder Einlösesicherheit umgehen.
 
 ## CTO-Entscheidung 2026-07-24: Legal-Compliance-Layer
@@ -1911,3 +2188,270 @@ Diese Entscheidung hat Vorrang vor älteren Aussagen, nach denen eine Einlösung
 - Öffentliche rechtliche Inhalte laufen über begrenzte RPCs. Legal-, Consent- und Kundentabellen erhalten keine öffentliche Lesepolicy.
 - Datenschutzlöschung und Programmende sind geprüfte Abläufe, keine sofortigen Lösch- oder Abschaltaktionen.
 - Die technische Grundlage benötigt vor Production externe österreichische Rechts- und Steuerprüfung.
+
+## CTO-Entscheidung 2026-07-28: V1 Bonus-Aktivitätsprotokoll
+
+🟢 **FIX / V1 / EXTERNE RECHTSPRÜFUNG ERFORDERLICH**
+
+- WUXUAI dokumentiert Punktebewegungen und Einlösungsaktivitäten innerhalb des Bonusprogramms.
+- WUXUAI ist keine Registrierkasse, kein RKSV-System, kein Kassenbelegsystem, kein Buchhaltungssystem und keine Steuerberatung.
+- Steuerlich, kassentechnisch oder buchhalterisch relevante Vorgänge erfasst das Restaurant eigenverantwortlich in seinem Kassensystem.
+- Erfolgreiche Einlösungen erhalten genau einen unveränderbaren Snapshot im Bonus-Aktivitätsprotokoll.
+- Korrekturen erfolgen als auditiertes Protokollstorno; der Ursprungsdatensatz bleibt erhalten.
+- Monats- und Jahresübersichten verwenden serverseitige Kalendergrenzen in `Europe/Vienna` und schließen Testkunden standardmäßig aus.
+- Historische Lücken werden gekennzeichnet und niemals mit heutigen Stammdaten als historische Wahrheit aufgefüllt.
+- Der bestehende RPC `get_reward_accounting_export` bleibt als technischer Kompatibilitätsvertrag erhalten, wird aber nicht als Steuer- oder Kassenexport bezeichnet.
+- Referral-, Werbe- und Kompensationsarten werden im Journal klassifizierbar, ohne dadurch neue V1-Ausgabe- oder Einlöseflows einzuführen.
+- Alle rechtlichen Hinweise tragen bis zur externen Prüfung den Status `LEGAL_REVIEW_REQUIRED` beziehungsweise `DRAFT_LEGAL_REVIEW_REQUIRED`.
+
+## CTO-Entscheidung 2026-07-28: Restaurantbezogene Dauer des Freundschaftsbonus
+
+🟢 **FIX / V1**
+
+- Der Freundschaftsbonus bleibt exakt 2×; Standarddauer ist 14 Tage.
+- Owner-Auswahl: 7, 14, 28 oder ein eigener Wert von 1 bis 365 Tagen.
+- Der Referrer erhält 100 Prozent, der eingeladene Freund exakt 50 Prozent der
+  bei Qualifikation gespeicherten Dauer.
+- Owner/Admin dürfen pro Restaurant 1 bis 365 ganze Tage konfigurieren.
+- Manager, Mitarbeiter und Kunden dürfen diese Einstellung nicht ändern.
+- Die gespeicherte Dauer wird erst bei einer neuen erfolgreichen Empfehlungsqualifizierung verwendet.
+- Laufende Bonuszeiträume bleiben bei Einstellungsänderungen unverändert.
+- Weitere erfolgreiche Empfehlungen verlängern einen aktiven Zeitraum um die zum Qualifizierungszeitpunkt gespeicherte Dauer.
+- Diese Entscheidung ersetzt für die Dauer die feste 30-Tage-Regel aus der Retention-Entscheidung vom 22.07.2026; der 2×-Multiplikator bleibt unverändert.
+
+## CTO-Entscheidung 2026-08-03: Punkte-Präsentationsfenster
+
+🟢 **LOCKED / V1**
+
+- Normale Punktebelohnungen benötigen keinen sechsstelligen Staff-Code mehr.
+- Die ausdrückliche Kundenbestätigung belastet die Punkte serverseitig sofort
+  und endgültig.
+- Danach gilt ein serverzeitgebundenes Präsentationsfenster von 15 Minuten.
+- Das Team kontrolliert nur den aktiven Bildschirm; keine elektronische
+  Mitarbeiterbestätigung, PIN oder QR-Prüfung.
+- Status: `REDEEMED_ACTIVE` zu `REDEEMED_COMPLETED`.
+- Reload, Browserwechsel und parallele Tabs verlängern das Fenster nicht.
+- Nur Owner oder Support dürfen mit Begründung, Audit, Journal und atomarer
+  Rückbuchung stornieren.
+- Willkommens- und Geburtstagsgeschenke behalten den sechsstelligen Code.
+
+Diese Entscheidung ersetzt die Code-Regel vom 14.07.2026 ausschließlich für
+normale Punktebelohnungen.
+
+## CTO-Entscheidung 2026-08-04: Aktuelles & Angebote
+
+🟢 **LOCKED / V1**
+
+- `Aktuelles & Angebote` ist ein kleines Informations- und Werbemodul für
+  Wochenangebote, Monatsangebote, Mittagsmenüs, neue Gerichte, Saisonangebote,
+  Veranstaltungen und allgemeine Neuigkeiten.
+- Pro Restaurant dürfen maximal fünf Beiträge gleichzeitig veröffentlicht sein.
+- Angebote und Rewards sind getrennte fachliche Objekte; es gibt keine
+  Pflichtbeziehung zu Reward-, Coupon- oder Campaign-Tabellen.
+- Beiträge dürfen keine Punktebewegung, Freischaltung, Geschenkvergabe,
+  Einlösung, Codes oder Einlösungsjournale erzeugen.
+- Kunden sehen Beiträge nur beim Öffnen der App, des Kundenportals oder des
+  Partnerlokal-Finders. V1 versendet keine automatische Benachrichtigung.
+- Analytics bleibt aggregiert und PII-frei: Aufrufe, CTA-, Route- und
+  Bonus-öffnen-Klicks. Keine Betrachterlisten, Profile oder Segmente.
+- Push, E-Mail, SMS, Zielgruppen, Personalisierung, Coupons, Rabattcodes,
+  Punkte-Multiplikator-Kampagnen, Marketingautomation, A/B-Tests und
+  Umsatzattribution bleiben V2.
+- Preiswerbung, Streichpreise, Verfügbarkeit, Bildrechte, Produktinformationen,
+  Allergene und Veranstaltungsangaben bleiben `LEGAL_REVIEW_REQUIRED`.
+
+Diese Entscheidung ersetzt frühere pauschale Verbote dynamischer
+Promotionflächen ausschließlich für dieses eng begrenzte Informationsmodul.
+
+## CTO-Entscheidung 2026-08-31: Automatische Angebots-Rabattdarstellung
+
+🟢 **LOCKED / V1 PRESENTATION**
+
+- Restaurants erfassen weiterhin ausschliesslich aktuellen und optionalen
+  vorherigen Preis. Ein separates Prozentfeld ist nicht zulaessig.
+- Bei `vorheriger Preis > aktueller Preis >= 0` und positivem vorherigen Preis
+  wird der ganzzahlige Vorteil zentral als
+  `round(((vorher - aktuell) / vorher) * 100)` abgeleitet.
+- Kundenkarten, Angebotsdetail, Restaurantdetails und Owner-Vorschau verwenden
+  dieselbe Ableitung. Der Prozentwert wird nicht separat gespeichert.
+- Fehlende, gleiche oder niedrigere Vergleichspreise erzeugen weder Badge noch
+  Streichpreis.
+- Angebotsgueltigkeit, Zeitplan, Aktivierung, Punkte, Geschenke, Referral und
+  Einloesungen bleiben unveraendert.
+
+## CTO-Entscheidung 2026-08-04: Zentraler Kundenbereich und Angebots-E-Mails
+
+🟢 **LOCKED / V1 / DRAFT_LEGAL_REVIEW_REQUIRED**
+
+- `Meine Vorteile` verbindet serverseitig validierte restaurantbezogene
+  Memberships, ohne Punkte restaurantübergreifend zu summieren.
+- Der QR bleibt für Beitritt und Vor-Ort-Kontext; bestehende Memberships dürfen
+  ohne erneuten Scan geöffnet werden.
+- Telefonnummer, Geburtstag und Gerätekennung sind keine Zugangsnachweise.
+- Pro Restaurant sind freiwillig `Nie`, `Wöchentlich` und `Monatlich` erlaubt;
+  Standard ist `Nie`, Aktivierung erst nach Double-Opt-in.
+- Digest-Versand ist serverseitig und periodisch idempotent. Owner sehen nur
+  Aggregate.
+- Diese Entscheidung ersetzt die E-Mail-Sperre der unmittelbar vorherigen
+  `Aktuelles & Angebote`-Entscheidung nur für bestätigte Digests.
+- Ohne geeigneten Marketingprovider bleibt Versand technisch deaktiviert.
+
+Diese Entscheidung wird hinsichtlich Auth-Modell, Navigation und globaler
+Angebotsansicht durch die nachfolgende Entscheidung `Zentraler Kundenlogin und
+Restaurantkontext` präzisiert beziehungsweise ersetzt.
+
+## CTO-Entscheidung 2026-08-04: Zentraler Kundenlogin und Restaurantkontext
+
+🟢 **LOCKED / V1**
+
+- Eine bestätigte Supabase-Auth-Session ist die zentrale Kundenidentität.
+- Kunden registrieren sich mit E-Mail, Passwort, Vorname, Telefonnummer und
+  optionalem Geburtstag. Passwörter werden ausschließlich von Supabase Auth
+  verarbeitet.
+- Ein Restaurant-QR setzt nur den Restaurantkontext und enthält keine
+  Kundendaten oder globalen Kundentokens.
+- Memberships entstehen ausschließlich nach bewusster Zustimmung und bleiben
+  zusammen mit Punkten, Rewards, Geschenken und Angeboten restaurantbezogen.
+- Bestehende Restaurantkunden werden nur mit gültigem geheimem Restauranttoken
+  verknüpft; Telefonnummer, Geburtstag oder Gerätekennung reichen nicht.
+- Die zentrale Navigation lautet `Start`, `Meine Lokale`, `Entdecken`, `Konto`.
+- Es gibt keinen global gemischten Angebotsfeed. Vollständige Angebote werden
+  nur im bewusst geöffneten Restaurantkontext gezeigt.
+- Angebots-E-Mails bleiben deaktiviert, bis die gesonderte Infrastruktur
+  freigegeben ist.
+
+## CTO-Entscheidung 2026-08-09: Einheitliches Präsentationsfenster und automatische Geburtstagszuteilung
+
+🟢 **LOCKED / V1 / VORRANG VOR DEN EINLÖSEENTSCHEIDUNGEN VOM 14.07., 22.07. UND 03.08.**
+
+- Punktebelohnungen, Willkommensgeschenke und Geburtstagsgeschenke verwenden
+  nach ausdrücklicher Kundenbestätigung dasselbe serverzeitgebundene
+  15-Minuten-Präsentationsfenster.
+- Ein neuer sechsstelliger Mitarbeitercode ist kein primärer V1-Geschenkflow.
+  Historische aktive Codes bleiben nur aus Kompatibilitätsgründen lesbar.
+- Geschenkzuteilung, Kunde, Restaurant, Status und Gültigkeit werden beim Start
+  serverseitig geprüft. Doppelklick, parallele Tabs und weitere Geräte erzeugen
+  kein zweites Fenster.
+- Nach Ablauf wird die Zuteilung unveränderbar als eingelöst markiert und im
+  Journal sowie Audit protokolliert; sie wird nicht gelöscht.
+- Ein täglicher Serverjob weist 14 Tage vor dem Geburtstag genau ein aktives,
+  für Geburtstage freigegebenes Willkommensgeschenk zu. Die Gültigkeit reicht
+  bis zum Beginn des 15. Tages nach dem Geburtstag.
+- Pro Kunde, Restaurant und Geburtstagsjahr existiert höchstens eine
+  Zuteilung. Der 29. Februar wird in Nicht-Schaltjahren am 28. Februar behandelt.
+- Geburtstags- und Punkte-Schwellen-E-Mails werden nur als private,
+  idempotente Transaktionsqueue erzeugt. Versandfehler rollen weder Punkte noch
+  Geschenke zurück. Ein freigegebener serverseitiger Versandprovider bleibt
+  Voraussetzung für tatsächliche Zustellung.
+- Stripe bleibt ausdrücklich außerhalb dieses Sprints.
+
+## CTO-Entscheidung 2026-08-26: Sichtbarkeit und Gültigkeit von Angeboten
+
+🟢 **LOCKED / V1**
+
+- `PUBLISHED` und `is_active = true` machen einen restaurantbezogenen Beitrag
+  bis zu seinem finalen Ablaufdatum im Customer-Marketingfeed sichtbar.
+- `valid_from`, Wochentage und tägliche Zeitfenster bestimmen die aktuelle
+  Gültigkeit nach `Europe/Vienna`, dürfen den Beitrag aber nicht aus dem Feed
+  entfernen. Das gilt insbesondere für Mittagsmenüs außerhalb der Mittagszeit.
+- Beiträge vor `valid_from` werden als bevorstehend angezeigt; Beiträge nach
+  `valid_to` werden aus dem normalen Feed ausgeblendet.
+- Entwürfe, deaktivierte, archivierte und fremde Restaurantbeiträge bleiben
+  verborgen. Tenant-Grenzen und öffentliche Feldbegrenzung bleiben unverändert.
+- Diese Entscheidung betrifft Marketingdarstellung und keine Reward-, Claim-
+  oder Einlöseberechtigung.
+
+## CTO-Entscheidung 2026-08-27: Globaler Restaurant-Schnellwechsel im Kundenportal
+
+🟢 **LOCKED / V1**
+
+- Der aktuelle Restaurantname im authentifizierten Customer-Header ist der
+  primäre manuelle Restaurantwechsel. `Konto → Restaurants` bleibt sekundär.
+- Angezeigt werden ausschließlich aktive, serverseitig autorisierte
+  Memberships des zentralen Kundenkontos. Browserhistorie, Local Storage,
+  E-Mail und Auth-Metadaten sind keine Quelle für diese Auswahl.
+- QR- und manueller Wechsel enden im selben kanonischen
+  `CustomerRestaurantAccess` und im URL-Pfad `/customer/:slug`.
+- Ein anderer Restaurantkontext wird erst sichtbar, nachdem die Membership
+  serverseitig validiert und der restaurantbezogene Zugang geöffnet wurde.
+  Alte und neue Restaurantdaten dürfen nie gemeinsam gerendert werden.
+- Punkte, Rewards, Geschenke, Angebote, Referral, 2×-Status, Einlösungen und
+  Restaurantinformation bleiben strikt restaurantbezogen. RLS und bestehende
+  Geschäftslogik werden nicht verändert.
+
+## CTO-Entscheidung 2026-08-27: Restaurantlogos adaptiv und nicht-destruktiv darstellen
+
+🟢 **LOCKED / V1**
+
+- Restaurantlogos behalten ihr originales Seitenverhältnis. Auto-Fit erkennt
+  quadratische, breite und hohe Dateien und verwendet eine passende Ruhezone.
+- Owner ändern ausschließlich Darstellungsmetadaten für Größe und Position.
+  Die Originaldatei wird weder beschnitten noch überschrieben.
+- Transparente Innenabstände können nach ausdrücklicher Auswahl korrigiert
+  werden; Hintergrundentfernung und KI-Bildbearbeitung sind nicht Teil von V1.
+- Customer-, Owner-, Staff- und QR-Starter-Kit-Oberflächen verwenden dieselbe
+  Darstellungslogik und denselben sicheren Fehlerfallback.
+- Auth-, Punkte-, Reward-, Referral- und sonstige Geschäftslogik bleiben
+  unverändert.
+
+## CTO-Entscheidung 2026-08-29: Finale Kundenbestätigung per Live-Swipe
+
+🟢 **APPROVED / V1 / VORRANG VOR AUTOMATISCHER PRÄSENTATIONS-EINLÖSUNG**
+
+- Punktebelohnungen, Willkommensgeschenke und Geburtstagsgeschenke verwenden
+  denselben finalen Swipe-Vertrag.
+- Das 15-Minuten-Fenster ist `REDEMPTION_STARTED` und verbraucht noch keinen
+  Wert. Erst die atomare Server-RPC setzt `REDEEMED`, zieht Punkte ab oder
+  verbraucht die einmalige Geschenkzuteilung und schreibt Audit sowie Journal.
+- Präsentationszeile und Kundenzustand werden in derselben Transaktion gesperrt.
+  Eine bedingte Zustandsänderung und die bestehende Eindeutigkeit erlauben bei
+  parallelen Geräten exakt einen Erfolg.
+- Derselbe Bestätigungs-Retry ist idempotent. Ein anderes Gerät erhält nach dem
+  ersten Erfolg `ALREADY_REDEEMED` mit dem gespeicherten Serverzeitpunkt.
+- Ablauf vor dem Swipe bedeutet `EXPIRED` ohne Punkteabzug und ohne
+  Geschenkverbrauch. Netzwerkunsicherheit wird durch anschließende
+  Serverstatusprüfung aufgelöst; der Client zeigt keinen optimistischen Erfolg.
+- Customer Undo bleibt verboten. Ein operatives Storno bleibt ein gesonderter,
+  autorisierter und auditierter Owner-/Supportprozess.
+- RLS, Restaurant-/Filialbindung, Reward-Eligibility und Punkteberechnung
+  werden nicht gelockert oder clientseitig entschieden.
+
+## CTO-Entscheidung 2026-08-30: V1 Commercial Contract
+
+🟢 **APPROVED / V1 / ERSETZT FRÜHERE TRIAL- UND PREISANGABEN**
+
+- Die V1-Testphase beträgt drei Kalendermonate. Neue Vertragszeiträume werden
+  kalenderbasiert und nicht als feste Tagesanzahl berechnet.
+- Danach kostet das Basispaket `WUXUAI Bonus V1` verbindlich 59 EUR pro Monat
+  exkl. USt. Das Abrechnungsintervall ist monatlich.
+- Aktuell wird kein Zahlungsmittel erhoben. Stripe und automatische Abrechnung
+  bleiben `DEFERRED`; die Anwendung darf keinen automatischen Zahlungserfolg
+  vortäuschen.
+- Bestehende Trial-Enddaten werden nicht rückwirkend verändert.
+- Zukünftige Zusatzpakete dürfen den V1-Basispreis nicht automatisch erhöhen.
+  Die Konfiguration darf einen leeren Erweiterungspunkt besitzen, aber keine
+  unfertigen Pakete im Owner-Portal anzeigen oder aktivieren.
+- Diese Entscheidung ersetzt frühere aktive Aussagen zu `30 Tage kostenlos`
+  und zur Preisrange `59–69 EUR` im V1-Vertrag.
+
+## CTO-Entscheidung 2026-09-01: Originale Verteilungslogik FINAL LOCK, Hilfe neutral
+
+🟢 **FOUNDER FINAL LOCK / HELP-ONLY**
+
+- Die historisch belegte wertorientierte Kategoriengewichtung, gewichtete
+  Zufallsauswahl und Normalisierung sind der originale Founder-Vertrag und
+  `FINAL LOCK`.
+- Restaurants koennen Geschenkarten und konkrete Geschenkbedingungen waehlen,
+  aber keine Quote, Gewichtung oder Systemverteilung bearbeiten.
+- Die Owner-Hilfe erklaert nur die automatische Zuteilung. Sie zeigt keine
+  individuellen Prozentsaetze, keine Gleich- oder Gewichtungsbehauptung, keine
+  erwarteten Zuteilungen und keine daraus abgeleiteten Kosten.
+- Die unangewendete Migration
+  `20260901001000_welcome_gift_system_rule_snapshot.sql` wurde aus dem V1-
+  Arbeitsstand entfernt und ist `DEFERRED`.
+- Welcome Assignment, Birthday Assignment, Duplicate Protection, Eligibility,
+  RLS, Tenant Isolation, Redemption, Audit und Customer Rewards bleiben
+  unveraendert.
+- Alle sieben bestehenden Onboarding-Schritte verwenden eine kompakte Hilfe
+  mit exakt drei praktischen Fragen. Schrittfolge, Formulare und Businesslogik
+  werden dafuer nicht umgebaut.

@@ -12,7 +12,8 @@ const migration = await readFile(new URL("../supabase/migrations/20260720003000_
 test("cached redemption is restored only after a positive server status", () => {
   assert.match(portal, /restoreScopedActiveRedemption\(window\.sessionStorage/);
   assert.match(redemptionSession, /serverStatus\?\.active && serverStatus\.status === "active"/);
-  assert.match(portal, /redemptionId: result\.redemption_id/);
+  assert.match(portal, /loadCustomerGiftPresentation\(/);
+  assert.match(portal, /loadCustomerPointsPresentation\(/);
   assert.match(redemptionSession, /removeScopedActiveRedemption\(storage/);
   assert.doesNotMatch(portal, /status === "redemption_started"\).*alreadyRedeemed/s);
 });

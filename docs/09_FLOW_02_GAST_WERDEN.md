@@ -1,6 +1,14 @@
 
 # 09_FLOW_02_GAST_WERDEN.md
 
+## Current Lock 2026-08-24
+
+Der aktive Flow verwendet Supabase Auth mit E-Mail, Passwortbestätigung,
+E-Mail-Bestätigung und den restaurantgebundenen Legal-RPCs. Der sichtbare
+Kundenbereich heißt **Meine Vorteile**. Referral registriert allein noch nicht;
+erst die erste gültige Punktebuchung qualifiziert. Ältere token-only- oder
+Legacy-RPC-Angaben sind superseded.
+
 # WUXUAI Bonus V1 – Flow 02: Gast werden
 
 Status: **LOCK**
@@ -21,7 +29,6 @@ Das Ziel von Flow 02 lautet:
 
 Der Gast soll nicht suchen.  
 Der Gast soll nicht ein Restaurant auswählen.  
-Der Gast soll kein Passwort erstellen.  
 Der Gast soll keine App installieren.  
 Der Gast soll keine SMS abwarten.  
 Der Gast soll keine lange Erklärung lesen.
@@ -32,10 +39,12 @@ Der Gast soll:
 QR scannen
 → Restaurant erkannt
 → Vorteil sehen
-→ Vorname + Telefonnummer eingeben
+→ zentrales Kundenkonto anmelden oder erstellen
+→ E-Mail bestätigen
+→ Beitritt ausdrücklich bestätigen
 → Mitglied werden
 → persönlichen QR sehen
-→ Mein Bonus öffnen
+→ Meine Vorteile öffnen
 ```
 
 ---
@@ -125,14 +134,18 @@ Zweck:
 - kein Willkommensgeschenk
 - Bonus Boost wird nach erster Konsumation aktiviert
 
-### 4.3 Kampagnen- oder Angebotsrouten
+### 4.3 Historische Kampagnenrouten und aktuelle Informationsbeiträge
 
 Historisch existierende Kampagnenrouten dürfen nicht die V1-Produktlogik dominieren.
 
 V1-Entscheidung:
 
-- Aktionen/Kampagnen sind aus V1-UI entfernt
+- historische reward- oder coupongebundene Kampagnen bleiben aus der V1-UI entfernt
+- `Aktuelles & Angebote` ist eine rein lesende Informationsfläche und kein
+  Registrierungs-, Reward- oder Punkteflow
 - Kunden-Einstieg erfolgt primär über Restaurant QR, Bonus QR oder Referral QR
+- das Öffnen eines Informationsbeitrags registriert keinen Gast und setzt keinen
+  aktiven Restaurantkontext
 
 ---
 
@@ -190,6 +203,8 @@ V1 Pflichtfelder:
 
 - Vorname
 - Telefonnummer
+- E-Mail-Adresse
+- Passwort über Supabase Auth
 
 ### 6.2 Optionale Felder
 
@@ -201,8 +216,6 @@ Optional:
 
 Nicht abfragen:
 
-- Passwort
-- E-Mail als Pflicht
 - Adresse
 - Nachname als Pflicht
 - Loginname
@@ -226,8 +239,8 @@ Verboten in V1:
 
 - SMS OTP
 - WhatsApp OTP
-- E-Mail-Bestätigung für Gäste
-- Passwortzwang
+- eigene Passwortspeicherung außerhalb von Supabase Auth
+- Anmeldung nur mit Telefonnummer, Geburtstag oder Gerätekennung
 
 ### 6.5 Telefonnummer als Identifikation
 
@@ -255,7 +268,7 @@ Der Gast sieht:
 Du bist jetzt Mitglied.
 
 [Mein QR anzeigen]
-[Mein Bonus öffnen]
+[Meine Vorteile öffnen]
 ```
 
 Der persönliche QR ist sofort verfügbar.
@@ -405,6 +418,21 @@ Ein Gast darf niemals gleichzeitig erhalten:
 - Bonus Boost als eingeladener Freund
 
 Freunde-Einladung hat immer Vorrang.
+
+### 9.4 Kanonischer Einladungs- und Registrierungsweg
+
+Die Referral-Landingpage besitzt kein eigenes Identitaetsformular. Sie zeigt
+zuerst Einlader, Restaurant und den zeitlich korrekten Vorteil und fuehrt dann
+in den zentralen Customer-Auth-Flow mit E-Mail, Passwort und
+Passwortbestaetigung. Der streng validierte Referral-Rueckweg wird in den
+Supabase-Auth-Metadaten erhalten und nach der E-Mail-Bestaetigung erneut
+serverseitig gegen Restaurant und Token geprueft.
+
+Erst die restaurantbezogene Pflichtannahme verknuepft Customer-Row,
+Referral `pending_registered` und zentrale Membership in einer Transaktion.
+Weder Linkaufruf noch Kontoerstellung, E-Mail-Bestaetigung oder Beitritt
+aktivieren den Boost. Die Aktivierung bleibt ausschliesslich Aufgabe der ersten
+gueltigen serverseitigen Punktebuchung.
 
 ---
 
@@ -628,7 +656,7 @@ Der Gast sieht:
 
 ```text
 Lade einen Freund ein
-+30 Tage Bonus Boost
+2× Bonus für die gespeicherte Restaurantdauer
 ```
 
 ### 16.3 Kein versteckter Bonus
@@ -755,10 +783,8 @@ Beispiele:
 
 Verboten:
 
-- Passwortpflicht für Gäste
 - SMS OTP in V1
 - WhatsApp OTP in V1
-- E-Mail-Pflicht
 - lange Registrierung
 - Restaurantauswahl durch Gast
 - öffentliche Kundentabellen lesen
@@ -769,6 +795,11 @@ Verboten:
 - englische UI-Texte
 - technische Begriffe im Kundenportal
 - Admin-Funktionen im Kundenportal
+
+Die früheren Verbote von Kundenpasswort und E-Mail-Pflicht sind durch die
+LOCKED CTO-Entscheidung `V1 zentraler Kundenlogin und Restaurantkontext` vom
+04.08.2026 ersetzt. Passwort und E-Mail werden ausschließlich über Supabase
+Auth verarbeitet; WUXUAI speichert kein eigenes Passwort.
 
 ---
 
@@ -782,7 +813,7 @@ V2 kann enthalten:
 - Lieblingsbelohnungen
 - Wallet mit mehreren Restaurants
 - Multi-Branch Bonuskonten
-- dynamische Promotion-Flächen
+- personalisierte oder automatisierte Promotion-Flächen
 - Geburtstagsbonus
 - bessere Wiederherstellung bei Gerätewechsel
 
@@ -811,7 +842,8 @@ Flow 02 ist LOCK, wenn:
 
 - Smart Context funktioniert
 - `/customer/:slug` öffnet richtige Restaurantansicht
-- Registrierung ohne Passwort/SMS/WhatsApp funktioniert
+- zentrale Registrierung mit Supabase Auth, E-Mail-Bestätigung und Passwort
+  funktioniert ohne SMS/WhatsApp
 - sichere Kundentokens erstellt werden
 - keine Demo-Daten in Produktion erscheinen
 - Willkommensgeschenk korrekt gesperrt ist
@@ -841,6 +873,25 @@ Wenn Codex an Flow 02 arbeitet:
 ---
 
 Endstatus: **LOCK**
+
+## CTO-Ergänzung 2026-08-31: Discovery als zusätzlicher Beitrittseinstieg
+
+Diese spätere V1-Entscheidung ersetzt das frühere Verbot der Restaurantsuche
+nur für bereits angemeldete zentrale Kunden:
+
+- `Entdecken → Restaurantdetails → Bonusprogramm beitreten` ist ein erlaubter
+  zusätzlicher Einstieg neben dem Restaurant-QR.
+- Der bestehende Legal-Consent- und Server-Join-Vertrag wird wiederverwendet;
+  es gibt keinen zweiten Join- oder Kundenidentitäts-Flow.
+- Ein direkter Beitritt erzeugt weder Besuch noch Punkte, Referral oder
+  `Bereits besucht`. Die erste erfolgreiche Punktebuchung bleibt dafür
+  maßgeblich.
+- Nach erfolgreichem Beitritt wird der Restaurantkontext über
+  `open_customer_account_membership(...)` aktiviert. Header, Punkte,
+  Belohnungen, Angebote, Geschenke und Referral bleiben dadurch strikt an die
+  neue Membership gebunden.
+- Wiederholung ist idempotent und darf weder eine zweite Membership noch ein
+  zweites Willkommensgeschenk erzeugen.
 ## CTO-Ergänzung 2026-07-14: Eindeutige Geschenkzuteilung
 
 🟢 **FIX / V1**
@@ -856,4 +907,5 @@ Endstatus: **LOCK**
 - Die bisherige automatische Zuteilung 14 Tage vor dem Geburtstag ist ersetzt: Der Gast löst im gültigen Zeitraum selbst einmalig die serverseitige Auslosung aus.
 - Die gespeicherte Auswahl bleibt bei Reload und erneutem Drücken identisch.
 - Eine Empfehlung gilt erst nach der ersten gültigen Punktebuchung des neuen Restaurantkunden als qualifiziert.
-- Erst dann erhalten der empfehlende und der geworbene Gast jeweils 30 Tage lang 2× Punkte.
+- Erst dann erhält der empfehlende Gast für die volle und der geworbene Gast
+  für exakt die halbe gespeicherte Restaurantdauer 2× Punkte.

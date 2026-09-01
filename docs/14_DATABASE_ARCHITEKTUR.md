@@ -1,7 +1,86 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-08-29 - Rechtlicher Betreiber auf Organization-Ebene
+
+Die bestehende `organizations`-Entität ist der kanonische Beziehungsknoten für
+den rechtlichen Betreiber. Strukturierte rechtliche Angaben liegen in
+`organization_legal_profiles` und sind nicht Teil von Restaurant-Branding oder
+Branch-Marketingdaten.
+
+```text
+organizations
+  -> organization_legal_profiles
+  -> restaurants
+       -> branches
+```
+
+`restaurant_legal_profiles` bleibt vorübergehend als explizit über
+`operator_profile_id` verknüpfte Kompatibilitätsprojektion für bestehende
+restaurantbezogene Dokument- und Readiness-Verträge. Owner-Schreibvorgänge
+gehen ausschließlich über den organisationsgebundenen Legal-Generator.
+
+Die Geschäftsanschrift besitzt eine explizite Quelle:
+
+- `restaurant`: Referenz auf die vorhandene Restaurantadresse
+- `separate`: eigene rechtliche Anschrift im Operator-Profil
+
+Stripe-, Subscription- oder externe Billing-Datensätze werden dadurch nicht
+erzeugt.
+
+## Platform Admin Foundation
+
+`platform_admins` ist die einzige Laufzeitautoritaet fuer interne
+Plattformrollen. Die Tabelle ist an `auth.users` gebunden, verlangt einen aktiven
+Eintrag, besitzt RLS und hat keine direkten Browserrechte. Restaurantrollen und
+Restaurant-Ownership werden bei der Plattformautorisierung nicht ausgewertet.
+Der Client erhaelt nur die eigene verifizierte Rolle ueber
+`get_current_platform_role`; globale Plattformdaten bleiben hinter dedizierten
+serverseitig autorisierten RPCs.
+
+Der additive Control-Center-Vertrag `05000` verwendet die bestehenden
+autoritativen Tabellen und erzeugt keine parallele Analytics-Datenhaltung.
+Tageswerte folgen der Restaurant-Zeitzone, 30-Tage-Werte sind rollierend und
+Testkunden beziehungsweise Testevents werden ausgeschlossen. Nicht
+restaurantbezogene Cron- und Geocoding-Telemetrie wird als `unavailable`
+ausgegeben.
+
+## Current Lock 2026-08-24 - Freundschaftsbonus
+
+Neue Restaurants verwenden 14 Tage. Qualifizierte Referrer erhalten die volle,
+eingeladene Freunde exakt die halbe gespeicherte Dauer; 2x ist die Obergrenze.
+Grants sind pro Referral, Kunde und Rolle idempotent. Historische Booster werden
+nicht umgeschrieben. Die Forward-Migration ist
+`20260824001000_v1_referral_owner_duration_split.sql`.
+
+## V1 Aktuelles & Angebote
+
+`restaurant_offers` ist ein eigenstaendiges restaurantbezogenes
+Informationsobjekt. Es besitzt keine Foreign Keys zu Rewards, Punkten, Coupons,
+Campaigns oder Einloesungen. `restaurant_offer_metrics` speichert nur
+PII-freie Tagesaggregate. Direkte Browser-Schreibrechte sind entzogen;
+Veroeffentlichung und Fuenfergrenze werden serverseitig erzwungen.
+
+
 # WUXUAI Bonus V1 – Datenbank-Architektur
+
+## Owner-Dashboard-Hinweise
+
+`owner_dashboard_notice_views` speichert ausschließlich benutzer- und
+restaurantbezogene Gesehen-Schlüssel für optionale oder einmalige
+Dashboard-Hinweise. Die Tabelle besitzt RLS; authentifizierte Owner, Admins und
+Manager dürfen nur eigene Gesehen-Einträge im eigenen Restaurant lesen und
+anlegen. Kritische Zustände werden nicht über diese Tabelle unterdrückt.
+
+## Restaurantgesteuerte Punktevergabe
+
+`loyalty_settings.points_collection_mode` trennt die drei erlaubten Modi. Kurzlebige Referenzen liegen mit Token- und Ersatzcode-Hash in `customer_points_qr_references`; direkte Tabellenrechte sind entzogen und RLS bleibt aktiv. `points_transactions` speichert Centbetrag, Regelversion, angewendete Rate, Quelle und Staff-Kontext. Die nullable Spalte `receipt_number` ist nur ein historischer Platzhalter fuer eine moegliche V3/V4-POS-Integration und wird von keinem aktiven V1-RPC gelesen oder geschrieben.
+
+Seit 2026-08-01 speichert jede neue Punktebuchung zusätzlich `base_points`,
+`boost_multiplier`, `boost_source`, `boost_expires_at` und
+`bonus_rule_version`. `calculate_points_award_v1` ist die gemeinsame lesende
+Engine, `award_points_v1` die gemeinsame atomare Schreibfunktion. Beide sind
+interne `SECURITY DEFINER`-Funktionen ohne Ausführungsrecht für Browserrollen.
 
 Status: **LOCK**
 
@@ -423,7 +502,7 @@ V1 Status:
 
 Regeln:
 
-- Registrierung startet 30 Tage Testphase.
+- Registrierung startet eine Testphase von 3 Kalendermonaten.
 - Keine Kreditkarte erforderlich.
 - Keine rückwirkende Zahlung.
 - RPC `start_restaurant_owner_trial` muss Branch Subscription sicher per `INSERT ... ON CONFLICT` erzeugen.
@@ -798,7 +877,8 @@ Regeln:
 - normale Registrierung → Geschenk zuteilen locked
 - erste Punktebuchung → unlock
 - Einlösung erst nächster Besuch
-- Referral Registrierung → kein Geschenk
+- Referral-Registrierung → derselbe Assignment-Flow wie normale Registrierung,
+  hoechstens ein gesperrtes Geschenk pro Kunde und Restaurant
 - Geschenk einmalig pro Kunde/Restaurant
 
 ---
@@ -822,6 +902,8 @@ Wichtige Felder:
 - registered_at
 - activated_at
 - metadata
+- quota_counted
+- quota_month
 
 Status:
 
@@ -837,6 +919,10 @@ Regeln:
 - Aktivierung erst bei erster Punktebuchung
 - keine doppelte Aktivierung
 - Audit schreiben
+- Erstellung erst nach positiver Punktebuchung des Referrers im selben Tenant
+- neue Einladungen gegen `referral_monthly_invite_limit` im lokalen
+  Restaurantmonat zaehlen
+- historische Datensaetze mit `quota_counted = false` nicht rueckwirkend zaehlen
 
 ---
 
@@ -862,7 +948,8 @@ Regeln:
 
 - Multiplikator stapelt nicht.
 - Weitere erfolgreiche Freunde verlängern Dauer.
-- Standard: 2×, 30 Tage, +30 Tage pro Freund.
+- Standard: 2× und 14 Tage. Referrer erhalten die volle, Freunde exakt die
+  halbe gespeicherte Dauer; weitere Referrals verlängern nur die Laufzeit.
 - Punkteberechnung nutzt aktiven Boost.
 
 ---
@@ -1289,3 +1376,52 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
 - Fehlende Pflichtdokumente werden als kontrollierter Status ausgegeben und
   blockieren ausschließlich neue Registrierungen.
 - Bestehende veröffentlichte Versionen werden beim Backfill nicht ersetzt.
+
+## Ergänzung 2026-07-27: Kundenidentität V1
+
+- `customers.normalized_phone` ist die kanonische restaurantbezogene Identität.
+- Ein partieller Unique-Index verhindert mehrere Konten für `(restaurant_id, normalized_phone)`.
+- Die Migration stoppt bei ungültigen Bestandsnummern oder normalisierten Dubletten und löscht beziehungsweise verbindet keine Konten automatisch.
+- Direkte Browserrechte auf `customers` sind entzogen. Owner und Staff lesen ausschließlich eine minimierte Security-Definer-RPC.
+- Identitätsfelder werden durch einen Trigger gesperrt. Nur der kontrollierte Owner/Admin-Support-RPC darf sie ändern.
+- Telefonnummernänderungen widerrufen alle aktiven Kundentokens und bekannten Geräte und erzeugen genau einen neuen, nur einmal zurückgegebenen Zugang.
+- `restaurant_security_settings.sms_verification_enabled` ist standardmäßig `false`; es existiert keine SMS-Runtime-Abhängigkeit.
+
+## Ergänzung 2026-08-04: Zentraler Kundenaccount und Angebots-E-Mail-Consent
+
+- `customer_accounts` ist eine technische zentrale Zugangsidentität und ersetzt
+  nicht die restaurantbezogenen `customers`-Zeilen.
+- `customer_account_memberships` verknüpft ausschließlich bereits validierte
+  Memberships; ein Customer kann nur einem zentralen Account zugeordnet sein.
+- `customer_account_tokens` speichert ausschließlich Hashes.
+- E-Mail-Adresse, Consent, DOI-/Abmeldetokens und Delivery-Log liegen in
+  getrennten Tabellen mit aktivem RLS und ohne direkte Browserrechte.
+- Die eindeutige Delivery-Kombination `(consent_id, frequency, period_key)`
+  verhindert doppelte Wochen- und Monatszusammenfassungen.
+- Delivery ist standardmäßig deaktiviert und benötigt eine gesonderte
+  Providerfreigabe.
+
+### Supabase-Auth-Bindung
+
+- `customer_accounts.auth_user_id` bindet genau einen bestätigten Supabase
+  Auth User an die zentrale Identität.
+- `customer_account_memberships` bleibt die einzige Verbindung zu den
+  restaurantbezogenen `customers`-Zeilen.
+- Restauranttokens werden nicht als globales Login verwendet. Sie dürfen nur
+  eine bestehende Legacy-Membership nach positiver Serverprüfung verknüpfen.
+- Es findet keine automatische Zusammenführung über Telefonnummer, Geburtstag
+  oder Gerätekennung statt.
+
+## Ergänzung 2026-08-25: Owner-Teamverwaltung
+
+- `staff_members.auth_user_id` bindet einen Teamdatensatz an genau eine
+  Supabase-Auth-Identität im jeweiligen Restaurant.
+- `account_status` unterscheidet `legacy`, `invited`, `active`, `suspended`
+  und `archived`. Nur `active` zusammen mit einer passenden
+  `restaurant_members`-Zeile erteilt Staff-Zugriff.
+- Partielle Unique-Indizes verhindern doppelte E-Mail- und Auth-Bindungen pro
+  Restaurant. Bestehende Legacy-PIN-Datensätze bleiben erhalten.
+- Direkte Browser-Schreibrechte auf `staff_members` und direkte Zuweisungen
+  von `staff`/`supervisor` in `restaurant_members` sind nicht erlaubt.
+- Entfernen ist eine auditierte Archivierung; historische Aktionen und
+  Auditdaten bleiben erhalten.

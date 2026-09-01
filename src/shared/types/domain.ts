@@ -12,6 +12,7 @@ export type RestaurantUserRole = "owner" | "admin" | "manager" | "staff" | "supe
 export type UserRole = RestaurantUserRole | PlatformRole;
 
 export type LoyaltyMode = "amount_based" | "stamp_based" | "menu_points";
+export type PointsCollectionMode = "restaurant_controlled_only" | "customer_initiated_only" | "both";
 export type RewardType = "reward" | "coupon";
 
 export type Restaurant = {
@@ -25,6 +26,10 @@ export type Restaurant = {
   owner_phone?: string | null;
   restaurant_type?: string | null;
   language?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
   opening_hours?: unknown;
   smart_open_enabled?: boolean;
   onboarding_status?: "draft" | "ready" | "completed";
@@ -76,6 +81,10 @@ export type RestaurantBranding = {
   organization_id?: string;
   branch_id?: string;
   logo_url: string | null;
+  logo_fit_mode: "auto" | "manual";
+  logo_scale: number;
+  logo_position_x: number;
+  logo_position_y: number;
   primary_color: string;
   secondary_color: string;
   button_color: string;
@@ -117,6 +126,9 @@ export type LoyaltySettings = {
   referral_boost_enabled?: boolean;
   referral_boost_multiplier?: number;
   referral_boost_duration_days?: number;
+  referral_monthly_invite_limit?: number;
+  points_collection_mode?: PointsCollectionMode;
+  points_collection_max_amount_cents?: number;
   active: boolean;
   created_at: string;
 };

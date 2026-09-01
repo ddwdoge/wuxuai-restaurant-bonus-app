@@ -30,6 +30,29 @@ export function distanceInKilometers(origin, destination) {
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+export const partnerFilterKeys = ["all", "nearby", "visited", "points", "near_reward", "open"];
+
+export function rewardProgressPercent(location) {
+  const membership = location.membership;
+  const requiredPoints = Number(membership?.next_reward?.required_points) || 0;
+  if (!membership?.registered || requiredPoints <= 0) return 0;
+  return Math.max(0, Math.min(100, ((Number(membership.points_balance) || 0) / requiredPoints) * 100));
+}
+
+export function isRewardNear(location) {
+  return (location.membership?.available_rewards?.length ?? 0) === 0
+    && rewardProgressPercent(location) >= 70;
+}
+
+export function filterPartnerRestaurantsByCategory(locations, filter) {
+  if (filter === "nearby") return locations.filter((location) => Number.isFinite(location.distance_km));
+  if (filter === "visited") return locations.filter((location) => (location.membership?.visits_count ?? 0) > 0);
+  if (filter === "points") return locations.filter((location) => (location.membership?.points_balance ?? 0) > 0);
+  if (filter === "near_reward") return locations.filter(isRewardNear);
+  if (filter === "open") return locations.filter((location) => location.opening_status?.isOpen === true);
+  return [...locations];
+}
+
 export function sortPartnerRestaurants(locations) {
   return [...locations].sort((left, right) => {
     const leftMembership = left.membership;
@@ -74,9 +97,9 @@ export function googleMapsUrl(location, mode = "search") {
 
 export function markerStatus(location) {
   const membership = location.membership;
-  if (!membership?.registered) return "partner";
+  if (!membership?.registered) return location.opening_status?.isOpen === false ? "closed" : "partner";
   if ((membership.available_rewards?.length ?? 0) > 0) return "reward";
-  if ((membership.next_reward?.missing_points ?? Number.POSITIVE_INFINITY) <= 20) return "near";
+  if (isRewardNear(location)) return "near";
   if ((membership.points_balance ?? 0) > 0) return "member";
   return "registered";
 }

@@ -6,6 +6,16 @@ Zweck: Produktvision, Grundphilosophie, strategische Richtung und Entscheidungsr
 Sprache: Deutsch für V1.  
 Geltung: Diese Datei gilt für Produkt, UX, Codex, Architektur, Business und spätere Weiterentwicklung.
 
+## Current Lock 2026-08-24
+
+- Sichtbarer Produktname: **WUXUAI Bonus**.
+- Der Kundenbereich heißt **Meine Vorteile**.
+- Freundschaftsbonus: 2x, Default 14 Tage, Owner-Auswahl 7/14/28/Custom;
+  einladender Gast erhält 100 Prozent, eingeladener Freund exakt 50 Prozent der
+  bei Qualifikation gespeicherten Dauer.
+- Widersprechende ältere Aussagen in diesem Dokument sind historisch und durch
+  `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` ersetzt.
+
 ---
 
 ## 1. Warum WUXUAI Bonus existiert
@@ -270,9 +280,10 @@ Deshalb muss die Architektur langfristig geschäftsneutral bleiben, auch wenn V1
 
 ---
 
-## 9. Warum „Bonusprogramm“ statt „Restaurant Bonus“
+## 9. Produktname in V1 und V2
 
-Der Begriff „Restaurant Bonus“ ist für V1 verständlich, aber langfristig zu eng.
+V1 wird bewusst als **WUXUAI Bonus** verkauft und fuer Restaurants
+und Cafes fertiggestellt.
 
 Der Produktkern ist nicht Restaurant.
 
@@ -280,13 +291,14 @@ Der Produktkern ist:
 
 > **Bonusprogramm für lokale Unternehmen.**
 
-Deshalb wird als Produktidentität verwendet:
+Die spaetere branchenneutrale Produktidentitaet bleibt als V2 archiviert:
 
 > **WUXUAI Bonus**
 
-V1 darf im Marketing Restaurants und Cafés ansprechen.
+V1 spricht in Produkt, Marketing und Onboarding Restaurants und Cafes an.
 
-Die Plattform selbst soll aber nicht dauerhaft auf Restaurants beschränkt sein.
+Eine spaetere Oeffnung fuer andere lokale Unternehmen benoetigt eine neue
+ausdrueckliche Product-Owner-Freigabe.
 
 ---
 
@@ -663,7 +675,7 @@ Es enthält:
 
 - Anleitung für Restaurantbesitzer
 - Restaurant QR
-- Mein Bonus QR
+- Meine-Vorteile-QR
 - Kassen-Aufsteller
 - Eingangs-Aufsteller
 
@@ -761,7 +773,7 @@ Für Gäste.
 Aufgaben:
 
 - Mitglied werden
-- Mein Bonus sehen
+- Meine Vorteile sehen
 - QR anzeigen
 - Punkte sehen
 - Belohnungen sehen
@@ -958,4 +970,3 @@ Diese Vision ist LOCK, wenn:
 Status dieser Datei:
 
 > 🟢 LOCK
-

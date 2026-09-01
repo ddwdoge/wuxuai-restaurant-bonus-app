@@ -1,4 +1,14 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,28 +17,61 @@ import {
   CreditCard,
   Gift,
   ImageUp,
+  Info,
   KeyRound,
+  ListChecks,
+  LoaderCircle,
   MapPinned,
+  Minus,
   Scale,
   Palette,
+  Plus,
   QrCode,
+  ScanLine,
   Save,
   ShoppingBag,
+  RotateCcw,
+  Users,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
-import type { BranchSubscription, Restaurant } from "../../../shared/types/domain";
+import type { BranchSubscription, PointsCollectionMode, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
 import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
+import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
+import { OpeningHoursEditor } from "../../../shared/components/OpeningHoursEditor";
+import { OpeningHoursCopyAction } from "../../../shared/components/OpeningHoursCopyAction";
+import { CountrySelect } from "../../../shared/components/CountrySelect";
+import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
+import { SmartMediaEditor } from "../../../shared/components/SmartMediaEditor";
+import { DEFAULT_MEDIA_PRESENTATION, type MediaPresentation } from "../../../shared/mediaPresentation";
+import {
+  addV1TrialMonthsIso,
+  V1_COMMERCIAL_CONTRACT,
+  V1_COMMERCIAL_COPY,
+} from "../../../shared/commercialContract.mjs";
+import {
+  defaultLogoPresentation,
+  logoPresentationAfterEditorDrag,
+  logoPresentationAtRelativeScale,
+  relativeLogoScale,
+  transparentContentAdjustment,
+  type LogoPresentation,
+} from "../../../shared/logoPresentation.mjs";
+import { loadLoyaltySettings, updatePointsCollectionSettings } from "../../loyalty/loyaltyService";
+import {
+  geocodeOwnerLocation,
+  OwnerLocationGeocodingError,
+  ownerLocationAddressKey,
+  type OwnerLocationCandidate,
+} from "../ownerLocationGeocodingService";
+import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
-
-type OpeningDay = {
-  enabled: boolean;
-  open: string;
-  close: string;
-};
 
 type RestaurantDetails = Pick<
   Restaurant,
@@ -56,7 +99,21 @@ type PartnerLocationForm = {
   isDiscoverable: boolean;
   shortDescription: string;
   coverImageUrl: string;
+  coverImagePresentation: MediaPresentation;
 };
+
+function coverImagePersistenceFields(location: PartnerLocationForm) {
+  return {
+    public_cover_image_url: location.coverImageUrl.trim() || null,
+    public_cover_image_zoom: location.coverImagePresentation.zoom,
+    public_cover_image_position_x: location.coverImagePresentation.positionX,
+    public_cover_image_position_y: location.coverImagePresentation.positionY,
+    public_cover_image_aspect_ratio: "16:9",
+    public_cover_image_crop_version: 1,
+  };
+}
+
+type GeocodingStatus = "idle" | "searching" | "found" | "ambiguous" | "not_found" | "stale" | "error" | "rate_limited";
 
 const weekdays: { key: Weekday; label: string }[] = [
   { key: "mon", label: "Montag" },
@@ -69,13 +126,13 @@ const weekdays: { key: Weekday; label: string }[] = [
 ];
 
 const defaultOpeningHours: Record<Weekday, OpeningDay> = {
-  mon: { enabled: false, open: "11:00", close: "22:00" },
-  tue: { enabled: false, open: "11:00", close: "22:00" },
-  wed: { enabled: false, open: "11:00", close: "22:00" },
-  thu: { enabled: false, open: "11:00", close: "22:00" },
-  fri: { enabled: false, open: "11:00", close: "22:00" },
-  sat: { enabled: false, open: "12:00", close: "22:00" },
-  sun: { enabled: false, open: "12:00", close: "21:00" },
+  mon: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  tue: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  wed: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  thu: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  fri: normalizeOpeningDay(null, { enabled: false, open: "11:00", close: "22:00" }),
+  sat: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "22:00" }),
+  sun: normalizeOpeningDay(null, { enabled: false, open: "12:00", close: "21:00" }),
 };
 
 const subscriptionLabels: Record<string, string> = {
@@ -96,13 +153,9 @@ const paymentLabels: Record<string, string> = {
 };
 
 function normalizeOpeningHours(value: unknown): Record<Weekday, OpeningDay> {
-  const input = (value && typeof value === "object" ? value : {}) as Partial<Record<Weekday, Partial<OpeningDay>>>;
+  const input = (value && typeof value === "object" ? value : {}) as Partial<Record<Weekday, unknown>>;
   return weekdays.reduce((result, { key }) => {
-    result[key] = {
-      ...defaultOpeningHours[key],
-      ...input[key],
-      enabled: Boolean(input[key]?.enabled),
-    };
+    result[key] = normalizeOpeningDay(input[key], defaultOpeningHours[key]);
     return result;
   }, {} as Record<Weekday, OpeningDay>);
 }
@@ -122,19 +175,12 @@ function isDatePast(value?: string | null) {
   return new Date(value).getTime() < Date.now();
 }
 
-function addDaysIso(value: string | null | undefined, days: number) {
-  const base = value ? new Date(value) : new Date();
-  if (Number.isNaN(base.getTime())) return null;
-  base.setDate(base.getDate() + days);
-  return base.toISOString();
-}
-
 function normalizeSubscription(record: Partial<BranchSubscription> | null): BranchSubscription | null {
   if (!record?.id || !record.branch_id || !record.organization_id) return null;
   const status = record.subscription_status ?? record.status ?? "trialing";
   const createdAt = record.created_at ?? new Date().toISOString();
   const trialStartedAt = record.trial_started_at ?? createdAt;
-  const trialEndsAt = record.trial_ends_at ?? record.current_period_ends_at ?? addDaysIso(trialStartedAt, 30);
+  const trialEndsAt = record.trial_ends_at ?? record.current_period_ends_at ?? addV1TrialMonthsIso(trialStartedAt);
 
   return {
     id: record.id,
@@ -161,6 +207,319 @@ function fileExtension(file: File) {
   if (file.type === "image/svg+xml") return "svg";
   if (file.type === "image/png") return "png";
   return "jpg";
+}
+
+async function inspectLogoBlob(blob: Blob, enforceMinimumSize: boolean) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () => reject(new Error("Das Logo konnte nicht gelesen werden."));
+      nextImage.src = url;
+    });
+    if (enforceMinimumSize && image.naturalWidth < 512 && image.naturalHeight < 512) {
+      throw new Error("Bitte verwende ein Logo mit mindestens 512 Pixeln Breite oder Höhe.");
+    }
+
+    const maxDimension = 420;
+    const ratio = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return { adjustment: null, height: image.naturalHeight, width: image.naturalWidth };
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let left = canvas.width;
+    let right = -1;
+    let top = canvas.height;
+    let bottom = -1;
+    let transparentPixelFound = false;
+    const cornerIndexes = [0, canvas.width - 1, (canvas.height - 1) * canvas.width, canvas.width * canvas.height - 1];
+    const cornerColors = cornerIndexes.map((index) => {
+      const offset = index * 4;
+      return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
+    });
+    const background = cornerColors[0];
+    const lightNeutralBackground = background.every((channel) => channel >= 235)
+      && Math.max(...background) - Math.min(...background) <= 14
+      && cornerColors.every((color) => color.every((channel, index) => Math.abs(channel - background[index]) <= 18));
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const offset = (y * canvas.width + x) * 4;
+        const alpha = pixels[offset + 3];
+        if (alpha <= 10) {
+          transparentPixelFound = true;
+          continue;
+        }
+        if (lightNeutralBackground) {
+          const distance = Math.max(
+            Math.abs(pixels[offset] - background[0]),
+            Math.abs(pixels[offset + 1] - background[1]),
+            Math.abs(pixels[offset + 2] - background[2]),
+          );
+          if (distance <= 24) continue;
+        }
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+    const adjustment = (transparentPixelFound || lightNeutralBackground) && right >= left && bottom >= top
+      ? transparentContentAdjustment({ bottom, left, right, top }, canvas.width, canvas.height)
+      : null;
+    return { adjustment, height: image.naturalHeight, width: image.naturalWidth };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function inspectLogoFile(file: File) {
+  return inspectLogoBlob(file, true);
+}
+
+async function inspectLogoUrl(url: string) {
+  const response = await fetch(url, { cache: "force-cache" });
+  if (!response.ok) throw new Error("Das gespeicherte Logo konnte nicht geprüft werden.");
+  return inspectLogoBlob(await response.blob(), false);
+}
+
+type BrandingLogoEditorProps = {
+  adjustment: LogoPresentation | null;
+  logoUrl: string;
+  name: string;
+  onChange: (presentation: LogoPresentation) => void;
+  onClose: () => void;
+  onSave: () => void;
+  open: boolean;
+  presentation: LogoPresentation;
+  primaryColor: string;
+  saving: boolean;
+};
+
+function BrandingLogoEditor({ adjustment, logoUrl, name, onChange, onClose, onSave, open, presentation, primaryColor, saving }: BrandingLogoEditorProps) {
+  const openingPresentationRef = useRef(presentation);
+  const wasOpenRef = useRef(false);
+  const presentationRef = useRef(presentation);
+  const autoFitBaselineRef = useRef(adjustment ?? { ...defaultLogoPresentation });
+  const activePointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const gestureRef = useRef<
+    | { mode: "drag"; pointerId: number; startX: number; startY: number; presentation: LogoPresentation }
+    | { mode: "pinch"; startDistance: number; startRelativeScale: number }
+    | null
+  >(null);
+  const [autoFitBaseline, setAutoFitBaseline] = useState<LogoPresentation>(adjustment ?? { ...defaultLogoPresentation });
+  const [imageMetrics, setImageMetrics] = useState({ aspect: "wide" as "wide" | "tall" | "square", ratio: 2 });
+  const [interacting, setInteracting] = useState(false);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) openingPresentationRef.current = presentation;
+    wasOpenRef.current = open;
+  }, [open, presentation]);
+
+  useEffect(() => {
+    presentationRef.current = presentation;
+  }, [presentation]);
+
+  useEffect(() => {
+    autoFitBaselineRef.current = autoFitBaseline;
+  }, [autoFitBaseline]);
+
+  useEffect(() => {
+    if (open) return;
+    activePointersRef.current.clear();
+    gestureRef.current = null;
+    setInteracting(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (adjustment) {
+      setAutoFitBaseline(adjustment);
+      return;
+    }
+    setAutoFitBaseline({ ...defaultLogoPresentation });
+    if (!logoUrl || logoUrl.startsWith("blob:")) return;
+    let cancelled = false;
+    void inspectLogoUrl(logoUrl)
+      .then((inspection) => {
+        if (!cancelled) setAutoFitBaseline(inspection.adjustment ?? { ...defaultLogoPresentation });
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [adjustment, logoUrl, open]);
+
+  const setManual = (patch: Partial<LogoPresentation>) => onChange({ ...presentation, ...patch, fitMode: "manual" });
+  const relativeScale = relativeLogoScale(presentation, autoFitBaseline);
+  const adjustRelativeScale = (delta: number) => {
+    const nextFactor = Math.max(0.01, Math.round((relativeScale + delta) * 20) / 20);
+    onChange(logoPresentationAtRelativeScale(presentation, autoFitBaseline, nextFactor));
+  };
+  const applyAutoFit = () => onChange({ ...autoFitBaselineRef.current });
+  const beginPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    setInteracting(true);
+    const pointers = [...activePointersRef.current.entries()];
+    if (pointers.length === 1) {
+      gestureRef.current = {
+        mode: "drag",
+        pointerId: event.pointerId,
+        presentation: presentationRef.current,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
+      return;
+    }
+    const [, first] = pointers[0];
+    const [, second] = pointers[1];
+    gestureRef.current = {
+      mode: "pinch",
+      startDistance: Math.max(1, Math.hypot(second.x - first.x, second.y - first.y)),
+      startRelativeScale: relativeLogoScale(presentationRef.current, autoFitBaselineRef.current),
+    };
+  };
+  const movePointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!activePointersRef.current.has(event.pointerId)) return;
+    event.preventDefault();
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const gesture = gestureRef.current;
+    const pointers = [...activePointersRef.current.values()];
+    if (gesture?.mode === "pinch" && pointers.length >= 2) {
+      const distance = Math.max(1, Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y));
+      onChange(logoPresentationAtRelativeScale(
+        presentationRef.current,
+        autoFitBaselineRef.current,
+        gesture.startRelativeScale * (distance / gesture.startDistance),
+      ));
+      return;
+    }
+    if (gesture?.mode === "drag" && gesture.pointerId === event.pointerId) {
+      const bounds = event.currentTarget.getBoundingClientRect();
+      onChange(logoPresentationAfterEditorDrag(
+        gesture.presentation,
+        event.clientX - gesture.startX,
+        event.clientY - gesture.startY,
+        bounds.width,
+        bounds.height,
+      ));
+    }
+  };
+  const finishPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const remaining = [...activePointersRef.current.entries()];
+    if (remaining.length === 1) {
+      const [pointerId, pointer] = remaining[0];
+      gestureRef.current = {
+        mode: "drag",
+        pointerId,
+        presentation: presentationRef.current,
+        startX: pointer.x,
+        startY: pointer.y,
+      };
+      return;
+    }
+    if (remaining.length === 0) {
+      gestureRef.current = null;
+      setInteracting(false);
+    }
+  };
+  const zoomWithWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const direction = event.deltaY > 0 || event.deltaX > 0 ? -0.05 : 0.05;
+    const currentScale = relativeLogoScale(presentationRef.current, autoFitBaselineRef.current);
+    onChange(logoPresentationAtRelativeScale(
+      presentationRef.current,
+      autoFitBaselineRef.current,
+      currentScale + direction,
+    ));
+  };
+  const handleEditorKeys = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 0.05 : 0.01;
+    const deltaX = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
+    const deltaY = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+    setManual({
+      positionX: Math.min(1, Math.max(0, presentationRef.current.positionX + deltaX)),
+      positionY: Math.min(1, Math.max(0, presentationRef.current.positionY + deltaY)),
+    });
+  };
+  const previewProps = { logoUrl, name, presentation, primaryColor };
+  const cancelEditor = () => {
+    onChange(openingPresentationRef.current);
+    onClose();
+  };
+
+  return (
+    <AppDrawer
+      className="branding-logo-drawer"
+      description="Positioniere dein Logo direkt in der Vorschau."
+      footer={(
+        <>
+          <button className="button secondary" disabled={saving} onClick={cancelEditor} type="button">Abbrechen</button>
+          <button className="button branding-logo-save" disabled={saving} onClick={onSave} type="button"><Save size={18} /> {saving ? "Wird gespeichert…" : "Anpassung speichern"}</button>
+        </>
+      )}
+      onClose={cancelEditor}
+      open={open}
+      size="workspace"
+      title="Logo anpassen"
+    >
+      <div className="branding-logo-editor">
+        <section className="branding-logo-live" aria-labelledby="branding-logo-live-title">
+          <header className="branding-logo-section-heading">
+            <h3 id="branding-logo-live-title">1. Live-Vorschau</h3>
+            <p id="branding-logo-gesture-help"><Info aria-hidden="true" size={16} /><span className="branding-logo-help-desktop">Ziehe das Logo zum Positionieren. Zoome mit Trackpad/Maus oder +/−.</span><span className="branding-logo-help-mobile">Ziehe das Logo. Mit zwei Fingern kannst du zoomen.</span></p>
+          </header>
+          <div className="branding-logo-live-stage">
+            <div
+              aria-describedby="branding-logo-gesture-help"
+              aria-label="Logo positionieren"
+              className={`branding-logo-safe-area aspect-${imageMetrics.aspect}${interacting ? " is-interacting" : ""}`}
+              onDoubleClick={applyAutoFit}
+              onKeyDown={handleEditorKeys}
+              onPointerCancel={finishPointerGesture}
+              onPointerDown={beginPointerGesture}
+              onPointerMove={movePointerGesture}
+              onPointerUp={finishPointerGesture}
+              onWheel={zoomWithWheel}
+              role="group"
+              style={{ "--branding-logo-source-ratio": imageMetrics.ratio } as React.CSSProperties}
+              tabIndex={0}
+            >
+              <RestaurantLogoStage {...previewProps} className="branding-logo-editor-main" onImageMetrics={setImageMetrics} size="preview" />
+              <div className="branding-logo-zoom-controls" onPointerDown={(event) => event.stopPropagation()}>
+                <button aria-label="Logo verkleinern" onClick={() => adjustRelativeScale(-0.05)} type="button"><Minus aria-hidden="true" size={17} /></button>
+                <output aria-live="polite">Zoom {Math.round(relativeScale * 100)} %</output>
+                <button aria-label="Logo vergrößern" onClick={() => adjustRelativeScale(0.05)} type="button"><Plus aria-hidden="true" size={17} /></button>
+              </div>
+            </div>
+            <span className="branding-logo-safe-area-label">Sicherheitsbereich</span>
+          </div>
+          <div className="branding-logo-editor-actions">
+            <button className="button secondary" onClick={applyAutoFit} type="button"><RotateCcw size={18} /> Automatisch einpassen</button>
+            <button className="button secondary" onClick={() => onChange(openingPresentationRef.current)} type="button"><RotateCcw size={18} /> Zurücksetzen</button>
+          </div>
+        </section>
+
+        <section aria-labelledby="logo-context-preview-title" className="branding-logo-contexts">
+          <div><h3 id="logo-context-preview-title">2. Vorschau im Bonusprogramm</h3><p className="muted">So wirkt dein Logo in den wichtigsten Ansichten.</p></div>
+          <div className="branding-logo-context-grid">
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong></div></div><span>Gäste-Header</span></article>
+            <article><div className="branding-context-header branding-context-owner"><RestaurantLogoStage {...previewProps} className="restaurant-logo-frame" size="header" /><div><small>WUXUAI Bonus</small><strong>{name}</strong><em>Restaurant Portal</em></div></div><span>Restaurant-Portal</span></article>
+            <article><div className="branding-context-header"><RestaurantLogoStage {...previewProps} size="header" /><div><small>Mitarbeiterbereich</small><strong>{name}</strong></div></div><span>Mitarbeiter-Header</span></article>
+            <article><div className="branding-context-detail"><RestaurantLogoStage {...previewProps} size="detail" /><strong>{name}</strong></div><span>Restaurantdetails</span></article>
+            <article><div className="branding-context-print"><div><RestaurantLogoStage {...previewProps} size="print" /><strong>{name}</strong></div><QrCode aria-hidden="true" size={42} /></div><span>QR Starter Kit</span></article>
+          </div>
+        </section>
+      </div>
+    </AppDrawer>
+  );
 }
 
 async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
@@ -198,7 +557,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
   if (!branchOrganizationId) return null;
 
   const trialStartedAt = new Date().toISOString();
-  const trialEndsAt = addDaysIso(trialStartedAt, 30);
+  const trialEndsAt = addV1TrialMonthsIso(trialStartedAt);
   const { data: created, error: createError } = await supabase
     .from("branch_subscriptions")
     .insert({
@@ -216,27 +575,47 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 }
 
 export function SettingsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
   const { section } = useParams();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingCoverUploadPathRef = useRef<string | null>(null);
+  const geocodingRequestRef = useRef(0);
   const [details, setDetails] = useState<RestaurantDetails | null>(null);
   const [restaurantForm, setRestaurantForm] = useState({ name: "", ownerPhone: "" });
   const [openingHours, setOpeningHours] = useState<Record<Weekday, OpeningDay>>(() => normalizeOpeningHours(null));
   const [brandingForm, setBrandingForm] = useState({
     logoUrl: "",
+    logoFitMode: "auto" as "auto" | "manual",
+    logoScale: 1,
+    logoPositionX: 0.5,
+    logoPositionY: 0.5,
     primaryColor: "#0f766e",
     secondaryColor: "#f4a261",
     buttonColor: "#0f766e",
   });
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
+  const [logoEditorOpen, setLogoEditorOpen] = useState(false);
+  const [transparentLogoAdjustment, setTransparentLogoAdjustment] = useState<LogoPresentation | null>(null);
   const [subscription, setSubscription] = useState<BranchSubscription | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocationForm | null>(null);
+  const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>("idle");
+  const [geocodingCandidates, setGeocodingCandidates] = useState<OwnerLocationCandidate[]>([]);
+  const [verifiedLocationKey, setVerifiedLocationKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draggingLogo, setDraggingLogo] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+  const [pointsCollectionMode, setPointsCollectionMode] = useState<PointsCollectionMode>("customer_initiated_only");
+  const [pointsCollectionLimit, setPointsCollectionLimit] = useState("300");
+
+  useEffect(() => () => {
+    const pendingPath = pendingCoverUploadPathRef.current;
+    if (pendingPath && supabase) void supabase.storage.from("restaurant-media").remove([pendingPath]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,27 +657,44 @@ export function SettingsPage() {
           ownerPhone: nextDetails.owner_phone ?? "",
         });
         setOpeningHours(normalizeOpeningHours(nextDetails.opening_hours));
+        const collectionSettings = await loadLoyaltySettings(nextDetails.id);
+        setPointsCollectionMode(collectionSettings.points_collection_mode ?? "customer_initiated_only");
+        setPointsCollectionLimit(String((collectionSettings.points_collection_max_amount_cents ?? 30000) / 100));
 
         if (supabase) {
           const { data: locationData, error: locationError } = await supabase
             .from("branches")
-            .select("id, address, postal_code, city, country, latitude, longitude, is_discoverable, public_short_description, public_cover_image_url")
+            .select("id, address, postal_code, city, country, latitude, longitude, is_discoverable, public_short_description, public_cover_image_url, public_cover_image_zoom, public_cover_image_position_x, public_cover_image_position_y")
             .eq("restaurant_id", nextDetails.id)
             .limit(1)
             .maybeSingle();
           if (locationError) throw locationError;
-          setPartnerLocation(locationData ? {
+          const nextLocation = locationData ? {
             id: locationData.id,
             address: locationData.address ?? "",
             postalCode: locationData.postal_code ?? "",
             city: locationData.city ?? "",
-            country: locationData.country ?? "AT",
+            country: locationData.country ?? "",
             latitude: locationData.latitude === null ? "" : String(locationData.latitude),
             longitude: locationData.longitude === null ? "" : String(locationData.longitude),
             isDiscoverable: Boolean(locationData.is_discoverable),
             shortDescription: locationData.public_short_description ?? "",
             coverImageUrl: locationData.public_cover_image_url ?? "",
-          } : null);
+            coverImagePresentation: {
+              zoom: Number(locationData.public_cover_image_zoom ?? 1),
+              positionX: Number(locationData.public_cover_image_position_x ?? 0.5),
+              positionY: Number(locationData.public_cover_image_position_y ?? 0.5),
+            },
+          } : null;
+          setPartnerLocation(nextLocation);
+          setGeocodingCandidates([]);
+          const storedLatitude = Number(nextLocation?.latitude);
+          const storedLongitude = Number(nextLocation?.longitude);
+          const storedCoordinatesValid = nextLocation && Boolean(nextLocation.latitude.trim()) && Boolean(nextLocation.longitude.trim())
+            && Number.isFinite(storedLatitude) && storedLatitude >= -90 && storedLatitude <= 90
+            && Number.isFinite(storedLongitude) && storedLongitude >= -180 && storedLongitude <= 180;
+          setVerifiedLocationKey(storedCoordinatesValid ? ownerLocationAddressKey(nextLocation) : null);
+          setGeocodingStatus(storedCoordinatesValid ? "found" : "idle");
         } else {
           setPartnerLocation(null);
         }
@@ -334,11 +730,15 @@ export function SettingsPage() {
   useEffect(() => {
     setBrandingForm({
       logoUrl: branding?.logo_url ?? "",
+      logoFitMode: branding?.logo_fit_mode ?? "auto",
+      logoScale: branding?.logo_scale ?? 1,
+      logoPositionX: branding?.logo_position_x ?? 0.5,
+      logoPositionY: branding?.logo_position_y ?? 0.5,
       primaryColor: branding?.primary_color ?? "#0f766e",
       secondaryColor: branding?.secondary_color ?? "#f4a261",
       buttonColor: branding?.button_color ?? "#0f766e",
     });
-  }, [branding?.button_color, branding?.logo_url, branding?.primary_color, branding?.secondary_color]);
+  }, [branding?.button_color, branding?.logo_fit_mode, branding?.logo_position_x, branding?.logo_position_y, branding?.logo_scale, branding?.logo_url, branding?.primary_color, branding?.secondary_color]);
 
   async function saveRestaurantData(event: FormEvent) {
     event.preventDefault();
@@ -376,9 +776,33 @@ export function SettingsPage() {
     }
   }
 
+  async function savePointsCollection(event: FormEvent) {
+    event.preventDefault();
+    if (!details?.id) return;
+    const maxAmountCents = Math.round(Number(pointsCollectionLimit) * 100);
+    if (!Number.isInteger(maxAmountCents) || maxAmountCents < 100 || maxAmountCents > 100000) {
+      setErrorMessage("Bitte wähle einen Maximalbetrag zwischen 1 und 1.000 Euro.");
+      return;
+    }
+    setSaving(true); setStatus(null); setErrorMessage(null);
+    try {
+      await updatePointsCollectionSettings({ restaurantId: details.id, mode: pointsCollectionMode, maxAmountCents });
+      setStatus("Punktevergabe gespeichert.");
+    } catch {
+      setErrorMessage("Punktevergabe konnte nicht gespeichert werden.");
+    } finally { setSaving(false); }
+  }
+
   async function saveOpeningHours(event: FormEvent) {
     event.preventDefault();
     if (!details?.id) return;
+
+    const invalidDay = weekdays.find(({ key }) => validateOpeningDay(openingHours[key]));
+    if (invalidDay) {
+      setErrorMessage(`${invalidDay.label}: ${validateOpeningDay(openingHours[invalidDay.key])}`);
+      document.getElementById(`settings-${invalidDay.key}-open`)?.focus();
+      return;
+    }
 
     setSaving(true);
     setStatus(null);
@@ -411,12 +835,19 @@ export function SettingsPage() {
 
     const latitude = Number(partnerLocation.latitude);
     const longitude = Number(partnerLocation.longitude);
-    const coordinatesValid = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+    const coordinatesValid = Boolean(partnerLocation.latitude.trim()) && Boolean(partnerLocation.longitude.trim())
+      && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
       && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
-    const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim() && partnerLocation.city.trim());
+    const countryValid = isIsoAlpha2CountryCode(partnerLocation.country);
+    const publicDetailsComplete = Boolean(partnerLocation.address.trim() && partnerLocation.postalCode.trim()
+      && partnerLocation.city.trim() && countryValid);
 
-    if (!coordinatesValid) {
-      setErrorMessage("Bitte gib eine gültige Kartenposition ein.");
+    if (!publicDetailsComplete) {
+      setErrorMessage(countryValid ? "Bitte fülle alle Pflichtfelder des Standorts aus." : "Bitte wähle ein gültiges Land aus.");
+      return;
+    }
+    if (!coordinatesValid || verifiedLocationKey !== ownerLocationAddressKey(partnerLocation)) {
+      setErrorMessage("Bitte zeige die aktuelle Adresse zuerst auf der Karte an.");
       return;
     }
     if (partnerLocation.isDiscoverable && (!publicDetailsComplete || details.status !== "active")) {
@@ -435,22 +866,91 @@ export function SettingsPage() {
           address: partnerLocation.address.trim(),
           postal_code: partnerLocation.postalCode.trim(),
           city: partnerLocation.city.trim(),
-          country: partnerLocation.country.trim().toUpperCase() || "AT",
+          country: partnerLocation.country.trim().toUpperCase(),
           latitude,
           longitude,
           is_discoverable: partnerLocation.isDiscoverable,
           public_short_description: partnerLocation.shortDescription.trim() || null,
-          public_cover_image_url: partnerLocation.coverImageUrl.trim() || null,
+          ...coverImagePersistenceFields(partnerLocation),
         })
         .eq("id", partnerLocation.id)
         .eq("restaurant_id", details.id);
       if (error) throw error;
       setStatus("Standort für die Restaurantsuche gespeichert.");
+      smartSetup.complete("location_saved");
     } catch (error) {
       console.error("Standort konnte nicht gespeichert werden.", error);
       setErrorMessage("Standort konnte gerade nicht gespeichert werden.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function updatePartnerAddress(field: "address" | "postalCode" | "city" | "country", value: string) {
+    geocodingRequestRef.current += 1;
+    setPartnerLocation((current) => current ? { ...current, [field]: value, latitude: "", longitude: "" } : current);
+    setVerifiedLocationKey(null);
+    setGeocodingCandidates([]);
+    setGeocodingStatus("stale");
+    setStatus(null);
+  }
+
+  function applyGeocodingCandidate(candidate: OwnerLocationCandidate) {
+    const nextLocation = partnerLocation ? {
+      ...partnerLocation,
+      address: candidate.address,
+      postalCode: candidate.postalCode,
+      city: candidate.city,
+      country: candidate.country,
+      latitude: String(candidate.latitude),
+      longitude: String(candidate.longitude),
+    } : null;
+    setPartnerLocation(nextLocation);
+    setGeocodingCandidates([]);
+    setVerifiedLocationKey(nextLocation ? ownerLocationAddressKey(nextLocation) : null);
+    setGeocodingStatus("found");
+    setStatus(null);
+  }
+
+  async function findPartnerLocation() {
+    if (!details?.id || !partnerLocation) return;
+    const addressComplete = partnerLocation.address.trim() && partnerLocation.postalCode.trim()
+      && partnerLocation.city.trim() && isIsoAlpha2CountryCode(partnerLocation.country);
+    if (!addressComplete) {
+      setErrorMessage(isIsoAlpha2CountryCode(partnerLocation.country)
+        ? "Bitte fülle Adresse, Postleitzahl, Ort und Land aus."
+        : "Bitte wähle ein gültiges Land aus.");
+      return;
+    }
+
+    const requestId = geocodingRequestRef.current + 1;
+    geocodingRequestRef.current = requestId;
+    setGeocodingStatus("searching");
+    setGeocodingCandidates([]);
+    setStatus(null);
+    setErrorMessage(null);
+    try {
+      const candidates = await geocodeOwnerLocation({
+        restaurantId: details.id,
+        address: partnerLocation.address,
+        postalCode: partnerLocation.postalCode,
+        city: partnerLocation.city,
+        country: partnerLocation.country,
+      });
+      if (requestId !== geocodingRequestRef.current) return;
+      if (candidates.length === 0) {
+        setGeocodingStatus("not_found");
+        return;
+      }
+      if (candidates.length === 1) {
+        applyGeocodingCandidate(candidates[0]);
+        return;
+      }
+      setGeocodingCandidates(candidates);
+      setGeocodingStatus("ambiguous");
+    } catch (error) {
+      if (requestId !== geocodingRequestRef.current) return;
+      setGeocodingStatus(error instanceof OwnerLocationGeocodingError && error.code === "RATE_LIMITED" ? "rate_limited" : "error");
     }
   }
 
@@ -468,6 +968,10 @@ export function SettingsPage() {
           {
             restaurant_id: details.id,
             logo_url: brandingForm.logoUrl || null,
+            logo_fit_mode: brandingForm.logoFitMode,
+            logo_scale: brandingForm.logoScale,
+            logo_position_x: brandingForm.logoPositionX,
+            logo_position_y: brandingForm.logoPositionY,
             primary_color: brandingForm.primaryColor,
             secondary_color: brandingForm.secondaryColor,
             button_color: brandingForm.buttonColor,
@@ -477,10 +981,22 @@ export function SettingsPage() {
         );
 
         if (error) throw error;
+
+        if (partnerLocation) {
+          const { error: coverError } = await supabase
+            .from("branches")
+            .update(coverImagePersistenceFields(partnerLocation))
+            .eq("id", partnerLocation.id)
+            .eq("restaurant_id", details.id);
+
+          if (coverError) throw coverError;
+        }
       }
 
+      pendingCoverUploadPathRef.current = null;
       await refreshTenants();
       setStatus("Branding gespeichert.");
+      setLogoEditorOpen(false);
     } catch (error) {
       console.error("Branding konnte nicht gespeichert werden.", error);
       setErrorMessage("Branding konnte nicht gespeichert werden.");
@@ -489,16 +1005,72 @@ export function SettingsPage() {
     }
   }
 
+  async function uploadCoverImage(file: File) {
+    if (!details?.id || !partnerLocation) return;
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+    const maxSize = 5 * 1024 * 1024;
+
+    setStatus(null);
+    setErrorMessage(null);
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage("Bitte wähle PNG, JPG oder WebP.");
+      return;
+    }
+    if (file.size > maxSize) {
+      setErrorMessage("Das Restaurantbild darf maximal 5 MB groß sein.");
+      return;
+    }
+    if (!supabase) {
+      setErrorMessage("Das Restaurantbild kann gerade nicht gespeichert werden.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${details.id}/branding/cover-${Date.now()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("restaurant-media").upload(path, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const publicUrl = supabase.storage.from("restaurant-media").getPublicUrl(path).data.publicUrl;
+      const previousPendingPath = pendingCoverUploadPathRef.current;
+      pendingCoverUploadPathRef.current = path;
+
+      setPartnerLocation((current) => current ? {
+        ...current,
+        coverImagePresentation: { ...DEFAULT_MEDIA_PRESENTATION },
+        coverImageUrl: publicUrl,
+      } : current);
+      if (previousPendingPath) await supabase.storage.from("restaurant-media").remove([previousPendingPath]);
+      setStatus("Restaurantbild hochgeladen. Passe den Ausschnitt an und speichere das Branding.");
+    } catch (error) {
+      console.error("Restaurantbild konnte nicht gespeichert werden.", error);
+      setErrorMessage("Das Restaurantbild konnte nicht gespeichert werden.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCoverInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void uploadCoverImage(file);
+  }
+
   async function uploadLogo(file: File) {
     if (!details?.id) return;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"];
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
     const maxSize = 5 * 1024 * 1024;
 
     setStatus(null);
     setErrorMessage(null);
 
     if (!allowedTypes.includes(file.type)) {
-      setErrorMessage("Bitte wähle PNG, JPG, JPEG oder SVG.");
+      setErrorMessage("Bitte wähle PNG, JPG, JPEG, WebP oder SVG.");
       return;
     }
 
@@ -507,11 +1079,29 @@ export function SettingsPage() {
       return;
     }
 
+    let inspection: Awaited<ReturnType<typeof inspectLogoFile>>;
+    try {
+      inspection = await inspectLogoFile(file);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Das Logo konnte nicht geprüft werden.");
+      return;
+    }
+
+    const initialPresentation = inspection.adjustment ?? defaultLogoPresentation;
     const previewUrl = URL.createObjectURL(file);
     setLogoPreviewUrl((current) => {
       if (current.startsWith("blob:")) URL.revokeObjectURL(current);
       return previewUrl;
     });
+    setBrandingForm((current) => ({
+      ...current,
+      logoFitMode: initialPresentation.fitMode,
+      logoPositionX: initialPresentation.positionX,
+      logoPositionY: initialPresentation.positionY,
+      logoScale: initialPresentation.scale,
+    }));
+    setTransparentLogoAdjustment(inspection.adjustment);
+    setLogoEditorOpen(true);
     setStatus("Logo ausgewählt. Vorschau ist sofort aktiv.");
 
     if (!supabase) return;
@@ -533,6 +1123,10 @@ export function SettingsPage() {
         {
           restaurant_id: details.id,
           logo_url: data.publicUrl,
+          logo_fit_mode: initialPresentation.fitMode,
+          logo_scale: initialPresentation.scale,
+          logo_position_x: initialPresentation.positionX,
+          logo_position_y: initialPresentation.positionY,
           primary_color: brandingForm.primaryColor,
           secondary_color: brandingForm.secondaryColor,
           button_color: brandingForm.buttonColor,
@@ -571,6 +1165,12 @@ export function SettingsPage() {
   }
 
   const currentLogoUrl = logoPreviewUrl || brandingForm.logoUrl;
+  const currentLogoPresentation: LogoPresentation = {
+    fitMode: brandingForm.logoFitMode,
+    positionX: brandingForm.logoPositionX,
+    positionY: brandingForm.logoPositionY,
+    scale: brandingForm.logoScale,
+  };
   const trialDays = remainingTrialDays(subscription?.trial_ends_at);
   const currentSubscriptionStatus = subscription?.subscription_status ?? subscription?.status ?? null;
   const trialExpired = currentSubscriptionStatus === "trialing" && isDatePast(subscription?.trial_ends_at);
@@ -601,17 +1201,20 @@ export function SettingsPage() {
         <SettingsHeader title="Restaurantdaten" description="Passe die wichtigsten Angaben deines Restaurants an." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveRestaurantData}>
+            <RequiredFieldsNote />
             <div className="field">
-              <label htmlFor="restaurant-name">Restaurantname</label>
+              <FormLabel htmlFor="restaurant-name" required>Restaurantname</FormLabel>
               <input
+                aria-required="true"
                 className="input"
                 id="restaurant-name"
+                required
                 value={restaurantForm.name}
                 onChange={(event) => setRestaurantForm((current) => ({ ...current, name: event.target.value }))}
               />
             </div>
             <div className="field">
-              <label htmlFor="restaurant-phone">Telefon</label>
+              <FormLabel htmlFor="restaurant-phone" optional>Telefon</FormLabel>
               <input
                 className="input"
                 id="restaurant-phone"
@@ -621,7 +1224,6 @@ export function SettingsPage() {
               />
             </div>
             <div className="settings-meta-grid">
-              <InfoValue label="Restaurant-Link" value={details.slug} />
               <InfoValue label="Status" value={details.status === "active" ? "Aktiv" : details.status === "draft" ? "Entwurf" : "Pausiert"} />
               <InfoValue label="Sprache" value={details.language === "de" ? "Deutsch" : details.language ?? "Deutsch"} />
             </div>
@@ -639,6 +1241,7 @@ export function SettingsPage() {
         <SettingsHeader title="Branding" description="Logo und Darstellung deines Bonusprogramms." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveBranding}>
+            <RequiredFieldsNote />
             <div className="settings-logo-row">
               <div
                 className={`logo-dropzone${draggingLogo ? " active" : ""}`}
@@ -651,50 +1254,101 @@ export function SettingsPage() {
               >
                 <input
                   ref={logoInputRef}
-                  accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
                   className="visually-hidden"
                   onChange={handleLogoInputChange}
                   type="file"
                 />
-                <div className="logo-preview-box settings-logo-preview">
-                  {currentLogoUrl ? <img alt={`${details.name} Logo`} src={currentLogoUrl} /> : <span>{details.name.charAt(0)}</span>}
-                </div>
+                <RestaurantLogoStage className="settings-logo-preview" logoUrl={currentLogoUrl} name={details.name} presentation={currentLogoPresentation} primaryColor={brandingForm.primaryColor} size="preview" />
                 <button className="button secondary" onClick={() => logoInputRef.current?.click()} type="button">
                   <ImageUp size={18} />
                   Logo auswählen
                 </button>
-                <p className="muted">PNG, JPG, JPEG oder SVG. Maximal 5 MB.</p>
+                {currentLogoUrl ? <button className="button secondary" onClick={() => setLogoEditorOpen(true)} type="button"><Scale size={18} /> Logo anpassen</button> : null}
+                {currentLogoUrl && brandingForm.logoFitMode === "manual" ? <button className="button secondary" onClick={() => setBrandingForm((current) => ({ ...current, logoFitMode: "auto", logoPositionX: 0.5, logoPositionY: 0.5, logoScale: 1 }))} type="button"><RotateCcw size={18} /> Zurücksetzen</button> : null}
+                <p className="muted">PNG, JPG, JPEG, WebP oder SVG. Maximal 5 MB.</p>
+                <p className="muted">Empfohlen: 1024 × 1024 Pixel. Mindestens 512 Pixel Breite oder Höhe.</p>
               </div>
               <div className="settings-info-card">
                 <h2>Aktuelles Branding</h2>
-                <p className="muted">Diese Darstellung wird für Gäste-App, QR-Material und Highlights verwendet.</p>
+                <p className="muted">Das Logo wird automatisch passend dargestellt. Du kannst Größe und Position bei Bedarf anpassen.</p>
               </div>
             </div>
             <div className="grid two">
               <div className="field">
-                <label htmlFor="primary-color">Markenfarbe</label>
+                <FormLabel htmlFor="primary-color" required>Markenfarbe</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="primary-color"
+                  required
                   type="color"
                   value={brandingForm.primaryColor}
                   onChange={(event) => setBrandingForm((current) => ({ ...current, primaryColor: event.target.value }))}
                 />
               </div>
               <div className="field">
-                <label htmlFor="button-color">Buttonfarbe</label>
+                <FormLabel htmlFor="button-color" required>Buttonfarbe</FormLabel>
                 <input
+                  aria-required="true"
                   className="input"
                   id="button-color"
+                  required
                   type="color"
                   value={brandingForm.buttonColor}
                   onChange={(event) => setBrandingForm((current) => ({ ...current, buttonColor: event.target.value }))}
                 />
               </div>
             </div>
+            <section className="settings-cover-section" aria-labelledby="restaurant-cover-title">
+              <div>
+                <h2 id="restaurant-cover-title">Restaurantbild / Titelbild</h2>
+                <p className="muted">Dieses Bild erscheint in der Restaurantsuche und in deinen Restaurantdetails.</p>
+              </div>
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                className="visually-hidden"
+                onChange={handleCoverInputChange}
+                ref={coverInputRef}
+                type="file"
+              />
+              <button className="button secondary" disabled={saving} onClick={() => coverInputRef.current?.click()} type="button">
+                <ImageUp aria-hidden="true" size={18} />
+                {partnerLocation?.coverImageUrl ? "Restaurantbild ändern" : "Restaurantbild auswählen"}
+              </button>
+              {partnerLocation?.coverImageUrl.trim() ? (
+                <SmartMediaEditor
+                  disabled={saving}
+                  imageUrl={partnerLocation.coverImageUrl.trim()}
+                  label={`${details.name} Titelbild`}
+                  onPresentationChange={(coverImagePresentation) => setPartnerLocation((current) => current ? { ...current, coverImagePresentation } : current)}
+                  presentation={partnerLocation.coverImagePresentation}
+                />
+              ) : (
+                <p className="muted">JPG, PNG oder WebP. Maximal 5 MB.</p>
+              )}
+            </section>
             <FormActions saving={saving} submitLabel="Branding speichern" />
           </form>
         </section>
+        <BrandingLogoEditor
+          adjustment={transparentLogoAdjustment}
+          logoUrl={currentLogoUrl}
+          name={details.name}
+          onChange={(presentation) => setBrandingForm((current) => ({
+            ...current,
+            logoFitMode: presentation.fitMode,
+            logoPositionX: presentation.positionX,
+            logoPositionY: presentation.positionY,
+            logoScale: presentation.scale,
+          }))}
+          onClose={() => setLogoEditorOpen(false)}
+          onSave={() => void saveBranding()}
+          open={logoEditorOpen && Boolean(currentLogoUrl)}
+          presentation={currentLogoPresentation}
+          primaryColor={brandingForm.primaryColor}
+          saving={saving}
+        />
         <StatusMessages errorMessage={errorMessage} status={status} />
       </>
     );
@@ -706,32 +1360,18 @@ export function SettingsPage() {
         <SettingsHeader title="Öffnungszeiten" description="Lege fest, wann dein Restaurant geöffnet ist." />
         <section className="card settings-detail-card">
           <form className="form" onSubmit={saveOpeningHours}>
+            <RequiredFieldsNote />
             <div className="settings-hours-grid">
-              {weekdays.map(({ key, label }) => (
-                <article className="settings-hours-row" key={key}>
-                  <label className="inline-check">
-                    <input
-                      checked={openingHours[key].enabled}
-                      onChange={(event) => updateOpeningDay(key, { enabled: event.target.checked })}
-                      type="checkbox"
-                    />
-                    {label}
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!openingHours[key].enabled}
-                    type="time"
-                    value={openingHours[key].open}
-                    onChange={(event) => updateOpeningDay(key, { open: event.target.value })}
-                  />
-                  <input
-                    className="input"
-                    disabled={!openingHours[key].enabled}
-                    type="time"
-                    value={openingHours[key].close}
-                    onChange={(event) => updateOpeningDay(key, { close: event.target.value })}
-                  />
-                </article>
+              <OpeningHoursEditor dayLabel="Montag" idPrefix="settings-mon" onChange={(patch) => updateOpeningDay("mon", patch)} value={openingHours.mon} />
+              <OpeningHoursCopyAction
+                destinationKeys={weekdays.slice(1).map(({ key }) => key)}
+                onChange={setOpeningHours}
+                openingHours={openingHours}
+                sourceKey="mon"
+                sourceLabel="Montag"
+              />
+              {weekdays.slice(1).map(({ key, label }) => (
+                <OpeningHoursEditor dayLabel={label} idPrefix={`settings-${key}`} key={key} onChange={(patch) => updateOpeningDay(key, patch)} value={openingHours[key]} />
               ))}
             </div>
             <FormActions saving={saving} submitLabel="Öffnungszeiten speichern" />
@@ -745,7 +1385,8 @@ export function SettingsPage() {
   if (section === "standort") {
     const latitude = Number(partnerLocation?.latitude);
     const longitude = Number(partnerLocation?.longitude);
-    const previewAvailable = partnerLocation && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+    const previewAvailable = partnerLocation && Boolean(partnerLocation.latitude.trim()) && Boolean(partnerLocation.longitude.trim())
+      && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
       && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
     const previewLocation: PartnerRestaurant | null = previewAvailable ? {
       restaurant_id: details.id,
@@ -760,10 +1401,14 @@ export function SettingsPage() {
       longitude,
       logo_url: branding?.logo_url ?? null,
       cover_image_url: partnerLocation.coverImageUrl || null,
+      cover_image_zoom: partnerLocation.coverImagePresentation.zoom,
+      cover_image_position_x: partnerLocation.coverImagePresentation.positionX,
+      cover_image_position_y: partnerLocation.coverImagePresentation.positionY,
       short_description: partnerLocation.shortDescription || null,
       opening_hours: details.opening_hours,
       welcome_reward_available: false,
       active_reward_count: 0,
+      offers: [],
       membership: null,
       distance_km: null,
     } : null;
@@ -774,20 +1419,40 @@ export function SettingsPage() {
         <section className="card settings-detail-card">
           {partnerLocation ? (
             <form className="form" onSubmit={savePartnerLocation}>
+              <RequiredFieldsNote />
               <div className="grid two">
-                <div className="field"><label htmlFor="location-address">Adresse</label><input className="input" id="location-address" onChange={(event) => setPartnerLocation((current) => current ? { ...current, address: event.target.value } : current)} value={partnerLocation.address} /></div>
-                <div className="field"><label htmlFor="location-postal-code">Postleitzahl</label><input className="input" id="location-postal-code" inputMode="numeric" onChange={(event) => setPartnerLocation((current) => current ? { ...current, postalCode: event.target.value } : current)} value={partnerLocation.postalCode} /></div>
-                <div className="field"><label htmlFor="location-city">Ort</label><input className="input" id="location-city" onChange={(event) => setPartnerLocation((current) => current ? { ...current, city: event.target.value } : current)} value={partnerLocation.city} /></div>
-                <div className="field"><label htmlFor="location-country">Land</label><input className="input" id="location-country" maxLength={2} onChange={(event) => setPartnerLocation((current) => current ? { ...current, country: event.target.value } : current)} value={partnerLocation.country} /></div>
-                <div className="field"><label htmlFor="location-latitude">Breitengrad</label><input className="input" id="location-latitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, latitude: event.target.value } : current)} placeholder="48.208174" value={partnerLocation.latitude} /></div>
-                <div className="field"><label htmlFor="location-longitude">Längengrad</label><input className="input" id="location-longitude" inputMode="decimal" onChange={(event) => setPartnerLocation((current) => current ? { ...current, longitude: event.target.value } : current)} placeholder="16.373819" value={partnerLocation.longitude} /></div>
+                <div className="field"><FormLabel htmlFor="location-address" required>Adresse</FormLabel><input aria-required="true" className="input" id="location-address" maxLength={180} onChange={(event) => updatePartnerAddress("address", event.target.value)} required value={partnerLocation.address} /></div>
+                <div className="field"><FormLabel htmlFor="location-postal-code" required>Postleitzahl</FormLabel><input aria-required="true" className="input" id="location-postal-code" inputMode="numeric" maxLength={24} onChange={(event) => updatePartnerAddress("postalCode", event.target.value)} required value={partnerLocation.postalCode} /></div>
+                <div className="field"><FormLabel htmlFor="location-city" required>Ort</FormLabel><input aria-required="true" className="input" id="location-city" maxLength={100} onChange={(event) => updatePartnerAddress("city", event.target.value)} required value={partnerLocation.city} /></div>
+                <div className="field"><FormLabel htmlFor="location-country" required>Land</FormLabel><CountrySelect id="location-country" locale={details.language ?? "de"} onChange={(countryCode) => updatePartnerAddress("country", countryCode)} required value={partnerLocation.country} /></div>
               </div>
-              <div className="field"><label htmlFor="location-description">Öffentliche Kurzbeschreibung</label><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
-              <div className="field"><label htmlFor="location-cover">Öffentliches Bild (HTTPS-Adresse)</label><input className="input" id="location-cover" onChange={(event) => setPartnerLocation((current) => current ? { ...current, coverImageUrl: event.target.value } : current)} placeholder="https://…" type="url" value={partnerLocation.coverImageUrl} /></div>
+              <div className="settings-location-geocoding">
+                <button className="button secondary settings-location-geocode-button" disabled={geocodingStatus === "searching"} onClick={findPartnerLocation} type="button">
+                  {geocodingStatus === "searching" ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <MapPinned aria-hidden="true" size={18} />}
+                  {geocodingStatus === "searching" ? "Adresse wird gesucht …" : ["not_found", "error", "rate_limited"].includes(geocodingStatus) ? "Erneut suchen" : "Adresse auf Karte anzeigen"}
+                </button>
+                {geocodingStatus === "found" ? <p className="settings-location-found" role="status">✓ Standort gefunden</p> : null}
+                {geocodingStatus === "stale" ? <p className="muted">Die Adresse wurde geändert. Bitte prüfe die neue Kartenposition.</p> : null}
+                {geocodingStatus === "not_found" ? <p className="status-message error">Adresse konnte nicht eindeutig gefunden werden. Bitte überprüfe Straße, Hausnummer, Postleitzahl und Ort.</p> : null}
+                {geocodingStatus === "rate_limited" ? <p className="status-message error">Die Kartensuche ist gerade ausgelastet. Bitte versuche es in einem Moment erneut.</p> : null}
+                {geocodingStatus === "error" ? <p className="status-message error">Die Adresse konnte gerade nicht gesucht werden. Bitte versuche es erneut.</p> : null}
+                {geocodingStatus === "ambiguous" ? (
+                  <div className="settings-location-results" aria-live="polite">
+                    <strong>Welche Adresse meinst du?</strong>
+                    {geocodingCandidates.map((candidate) => (
+                      <button className="settings-location-result" key={`${candidate.latitude}:${candidate.longitude}`} onClick={() => applyGeocodingCandidate(candidate)} type="button">
+                        <MapPinned aria-hidden="true" size={18} />
+                        <span>{candidate.displayName}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div className="field"><FormLabel htmlFor="location-description" optional>Öffentliche Kurzbeschreibung</FormLabel><textarea className="input settings-location-description" id="location-description" maxLength={280} onChange={(event) => setPartnerLocation((current) => current ? { ...current, shortDescription: event.target.value } : current)} value={partnerLocation.shortDescription} /></div>
               <label className="settings-location-toggle"><input checked={partnerLocation.isDiscoverable} onChange={(event) => setPartnerLocation((current) => current ? { ...current, isDiscoverable: event.target.checked } : current)} type="checkbox" /><span><strong>In Restaurantsuche sichtbar</strong><small>Nur aktive Restaurants mit vollständiger Adresse und gültiger Kartenposition werden öffentlich angezeigt.</small></span></label>
               {previewLocation ? (
                 <div className="settings-location-preview"><h2>Markervorschau</h2><LazyPartnerRestaurantMap locations={[previewLocation]} onSelect={() => undefined} selectedId={previewLocation.branch_id} userLocation={null} /></div>
-              ) : <p className="muted">Gib gültige Koordinaten ein, um die Kartenposition zu prüfen.</p>}
+              ) : <p className="muted">Zeige deine Adresse auf der Karte an, um die Position zu prüfen.</p>}
               <FormActions saving={saving} submitLabel="Standort speichern" />
             </form>
           ) : <p className="status-message error">Für dieses Restaurant wurde kein primärer Standort gefunden.</p>}
@@ -803,6 +1468,13 @@ export function SettingsPage() {
         <SettingsHeader title="Bonusprogramm" description="Verwalte die echten Bereiche deines Bonusprogramms." />
         <section className="grid two">
           <SettingsLinkCard
+            description="Lege fest, ob dein Team den Kunden-QR scannt oder Gäste den Vorgang starten."
+            icon={ScanLine}
+            label="Punktevergabe einstellen"
+            title="Punkte sammeln"
+            to="/admin/settings/punkte-sammeln"
+          />
+          <SettingsLinkCard
             description="Lege Produkte fest, die Gäste mit Punkten einlösen können."
             icon={ShoppingBag}
             label="Punkteeinlösung verwalten"
@@ -816,9 +1488,56 @@ export function SettingsPage() {
             title="Willkommensgeschenke"
             to="/admin/welcome-gifts"
           />
+          <SettingsLinkCard
+            description="Lege Aktivierung, Bonusdauer und monatliches Einladungslimit fest."
+            icon={Users}
+            label="2× Bonus einstellen"
+            title="Freunde einladen & 2× Bonus"
+            to="/admin/loyalty#freundschaftsbonus"
+          />
+          <SettingsLinkCard
+            description="Plane letzte Punktevergabe, Kundenhinweis und Einlösefrist."
+            icon={Scale}
+            label="Programmende sicher planen"
+            title="Bonusprogramm beenden"
+            to="/admin/settings/program-end"
+          />
         </section>
       </>
     );
+  }
+
+  if (section === "punkte-sammeln") {
+    const options: Array<{ value: PointsCollectionMode; title: string; description: string; recommended?: boolean }> = [
+      { value: "restaurant_controlled_only", title: "Restaurant scannt Kunden-QR", description: "Das Restaurant kontrolliert den Vorgang. Der Gast zeigt nur seinen persönlichen Bonus-QR.", recommended: true },
+      { value: "customer_initiated_only", title: "Gast scannt Restaurant-QR", description: "Der Gast startet den Sammelvorgang. Das Restaurant bestätigt anschließend." },
+      { value: "both", title: "Beide Möglichkeiten", description: "Je nach Situation können beide Abläufe verwendet werden." },
+    ];
+    return <>
+      <SettingsHeader title="Punkte sammeln" description="Lege fest, wie Gäste in deinem Restaurant Punkte sammeln." />
+      <section className="card settings-detail-card">
+        <form className="form" onSubmit={savePointsCollection}>
+          <fieldset className="points-mode-fieldset">
+            <legend>Wie können Gäste Punkte sammeln?</legend>
+            <div className="choice-grid points-mode-grid">
+              {options.map((option) => <label className={`choice-card${pointsCollectionMode === option.value ? " active" : ""}`} key={option.value}>
+                <input checked={pointsCollectionMode === option.value} name="points-mode" onChange={() => setPointsCollectionMode(option.value)} type="radio" />
+                <span><strong>{option.title}</strong>{option.recommended ? <small>Empfohlen</small> : null}</span>
+                <small>{option.description}</small>
+              </label>)}
+            </div>
+          </fieldset>
+          <div className="field">
+            <FormLabel htmlFor="points-collection-limit" required>Maximal bonusberechtigter Betrag pro Buchung</FormLabel>
+            <div className="points-limit-input"><input aria-required="true" className="input" id="points-collection-limit" inputMode="decimal" max="1000" min="1" onChange={(event) => setPointsCollectionLimit(event.target.value)} required step="1" type="number" value={pointsCollectionLimit} /><span>EUR</span></div>
+            <p className="muted">Standard 300 EUR. Erlaubt sind 1 bis 1.000 EUR. Höhere Beträge werden serverseitig abgelehnt.</p>
+          </div>
+          <div className="settings-info-card"><strong>Nicht bonusberechtigt</strong><p className="muted">Trinkgeld, Gutscheinkäufe und Bestellungen über externe Lieferplattformen zählen nicht zum bonusberechtigten Betrag.</p></div>
+          <FormActions saving={saving} submitLabel="Punktevergabe speichern" />
+        </form>
+      </section>
+      <StatusMessages errorMessage={errorMessage} status={status} />
+    </>;
   }
 
   if (section === "konto-testphase") {
@@ -844,25 +1563,25 @@ export function SettingsPage() {
                 {trialActive ? (
                   <p>Noch {trialDays ?? 0} Tage kostenlos.</p>
                 ) : trialExpired ? (
-                  <p>Nach der Testphase kannst du dein Monatsabo aktivieren.</p>
+                  <p>{V1_COMMERCIAL_COPY.price}</p>
                 ) : (
-                  <p>Plan: Restaurant Bonus</p>
+                  <p>Plan: WUXUAI Bonus</p>
                 )}
               </div>
               <div className="settings-meta-grid">
                 <InfoValue label="Abo-Status" value={subscriptionLabels[currentSubscriptionStatus ?? ""] ?? "Nicht gesetzt"} />
                 <InfoValue
                   label="Zahlungsstatus"
-                  value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Zahlung wird bald aktiviert"}
+                  value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Automatische Abrechnung nicht aktiv"}
                 />
-                <InfoValue label="Plan" value={subscription.plan_key === "pilot" ? "Monatsabo nach Testphase" : subscription.plan_key || "Monatsabo nach Testphase"} />
+                <InfoValue label="Plan" value={`${V1_COMMERCIAL_CONTRACT.productName} · ${V1_COMMERCIAL_COPY.price.replace("Danach ", "")}`} />
                 <InfoValue label="Testphase Start" value={formatDate(subscription.trial_started_at)} />
                 <InfoValue label="Testphase Ende" value={formatDate(subscription.trial_ends_at)} />
                 <InfoValue label="Verbleibende Tage" value={trialDays === null ? "Nicht gesetzt" : `${trialDays} Tage`} />
               </div>
               <div className="settings-subscription-note">
-                <p>Keine Kreditkarte in der Testphase.</p>
-                <p>Zahlung wird bald aktiviert.</p>
+                <p>{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
+                <p>Automatische Abrechnung ist noch nicht aktiv.</p>
               </div>
               {trialExpired ? (
                 <button className="button secondary" disabled type="button">
@@ -874,7 +1593,7 @@ export function SettingsPage() {
             <div className="settings-info-card">
               <h2>Kein Abo eingerichtet</h2>
               <p className="muted">Die Testphase wird automatisch eingerichtet, sobald dein Restaurantkonto bereit ist.</p>
-              <p className="muted">Zahlung wird bald aktiviert.</p>
+              <p className="muted">{V1_COMMERCIAL_COPY.price} Automatische Abrechnung ist noch nicht aktiv.</p>
             </div>
           )}
         </section>
@@ -893,10 +1612,10 @@ export function SettingsPage() {
 
       <section className="grid two">
         <SettingsLinkCard
-          description="Impressum, Teilnahmebedingungen, Datenschutz und Programmende."
+          description="Unternehmensdaten, Impressum, Teilnahmebedingungen und Datenschutz."
           icon={Scale}
-          label="Rechtliche Bereitschaft prüfen"
-          title="Rechtliches & Datenschutz"
+          label="Unternehmensdaten und Dokumente prüfen"
+          title="Unternehmensdaten & Rechtliches"
           to="/admin/legal"
         />
         <SettingsLinkCard
@@ -942,6 +1661,13 @@ export function SettingsPage() {
           to="/admin/welcome-gifts"
         />
         <SettingsLinkCard
+          description="Lege Aktivierung, Bonusdauer und monatliches Einladungslimit fest."
+          icon={Users}
+          label="2× Bonus einstellen"
+          title="Freunde einladen & 2× Bonus"
+          to="/admin/loyalty#freundschaftsbonus"
+        />
+        <SettingsLinkCard
           description="Öffne den Mitarbeiterbereich und sieh die heutige Tages-PIN."
           icon={KeyRound}
           label="Mitarbeiterbereich öffnen"
@@ -954,6 +1680,13 @@ export function SettingsPage() {
           label="QR Center öffnen"
           title="QR & Starter Kit"
           to="/admin/qr"
+        />
+        <SettingsLinkCard
+          description="Prüfe und verwalte die wichtigsten Einstellungen deines Bonusprogramms."
+          icon={ListChecks}
+          label="Einrichtung prüfen"
+          title="Setup & Einrichtung"
+          to="/admin/settings/setup"
         />
         <SettingsLinkCard
           description="Sieh Testphase, Abo-Status und Zahlungsstatus."

@@ -4,12 +4,13 @@ import { X } from "lucide-react";
 
 type AppDrawerProps = {
   children: ReactNode;
+  className?: string;
   description?: string;
   dismissOnOverlay?: boolean;
   footer?: ReactNode;
   onClose: () => void;
   open: boolean;
-  size?: "compact" | "standard" | "large";
+  size?: "compact" | "standard" | "large" | "workspace";
   title: string;
 };
 
@@ -24,6 +25,7 @@ const focusableSelector = [
 
 export function AppDrawer({
   children,
+  className = "",
   description,
   dismissOnOverlay = true,
   footer,
@@ -99,7 +101,7 @@ export function AppDrawer({
 
   return createPortal(
     <div
-      className="app-drawer-overlay"
+      className={`app-drawer-overlay app-drawer-overlay-${size}`}
       onClick={(event) => {
         if (dismissOnOverlay && event.target === event.currentTarget) closeRef.current();
       }}
@@ -109,7 +111,7 @@ export function AppDrawer({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`app-drawer-panel app-drawer-${size}`}
+        className={`app-drawer-panel app-drawer-${size}${className ? ` ${className}` : ""}`}
         ref={panelRef}
         role="dialog"
         tabIndex={-1}

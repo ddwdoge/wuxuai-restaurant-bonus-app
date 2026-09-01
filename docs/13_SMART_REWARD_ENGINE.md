@@ -305,18 +305,21 @@ mehr verwendet.
 Die Engine kennt:
 
 - Produktpreis
-- gespeicherte Einlösequote des Restaurants
+- bewusst ausgewählte Einlösequote von 1 % bis 10 %
 - Punkte-pro-Euro-Regel über `amount_per_point`
 
 Sie berechnet:
 
 ```text
 Geschätzte Konsumation = Produktpreis / Einlösequote
-Benötigte Punkte = Geschätzte Konsumation / amount_per_point
+Benötigte Punkte = ceil(Geschätzte Konsumation - Punkte pro Euro)
 ```
 
-Wenn das Restaurant später mehr Punkte pro Euro vergibt, wird die benötigte
-Punktzahl entsprechend höher, während der Euro-Gegenwert gleich bleibt.
+Der Standardwert der Einlösequote ist 3 %. Die Auswahl enthält ausschließlich
+ganze Prozentwerte von 1 bis 10. Ein Legacy-Wert außerhalb dieses Bereichs wird
+nicht automatisch ersetzt; der Owner muss für eine Änderung aktiv einen
+gültigen Wert wählen. Historische Einlösungen und deren Punktesnapshots bleiben
+unverändert.
 
 ### 8.5 Anzeige
 
@@ -1193,3 +1196,38 @@ V1 besitzt keinen separaten Geburtstagsgeschenk-Editor. Ein täglicher idempoten
 Die Entscheidung vom 22.07.2026 ersetzt den beschriebenen 14-Tage-Autojob. Im Zeitraum 3 Tage vor bis 7 Tage nach dem Geburtstag löst der Gast die Auslosung mit „Geschenk abholen“ aus. Der Server wählt genau eine aktive, für den Geburtstag freigegebene Vorlage aus dem vorhandenen Willkommensgeschenk-Pool. Die Auswahl wird mit der bestehenden Eindeutigkeitsregel pro Gast, Restaurant/Filiale und Kalenderjahr dauerhaft gespeichert und über den vorhandenen sicheren Einlösecode-Flow verwendet.
 
 Ablauf-Erinnerungen werden serverseitig anhand der Restaurant-Zeitzone erzeugt. Die Redemption-RPC bleibt für Gültigkeit und Einlösbarkeit die letzte Autorität; Clientzeit und Push-Nachricht können keine Einlösung freigeben.
+
+## CTO-Ergänzung 2026-08-03: Abschluss normaler Punktebelohnungen
+
+Normale Punktebelohnungen werden mit der Kundenbestätigung wirtschaftlich und
+technisch endgültig gebucht. Die Engine prüft den Punktestand, zieht die Punkte
+genau einmal ab und schreibt den unveränderbaren Snapshot beim Start des
+Präsentationsfensters. Der spätere Zeitablauf verändert keine Punkte mehr.
+Willkommens- und Geburtstagsgeschenke bleiben davon getrennt.
+
+## CTO-Ergänzung 2026-08-09: Automatischer Geburtstagspool
+
+Die automatische Zuteilung 14 Tage vor dem Geburtstag ist wieder der
+verbindliche V1-Flow und ersetzt den manuellen Draw vom 22.07. Ein täglicher,
+idempotenter Serverjob wählt zufällig genau eine aktive Vorlage mit
+`birthday_pool_enabled = true`. Pro Kunde, Restaurant und Geburtstagsjahr ist
+nur eine Zuteilung erlaubt. Das Geschenk ist vom Beginn des 14. Tages vor dem
+Geburtstag bis zum Beginn des 15. Tages danach gültig. Ein fehlender Pool
+erzeugt keine leere Zuteilung. Die Einlösung verwendet das einheitliche
+15-Minuten-Präsentationsfenster.
+
+## CTO-Ergänzung 2026-08-31: 14-Tage-Eligibility-Catch-up
+
+Der automatische Geburtstagspool verwendet nicht mehr nur den exakten
+Zuteilungstag. Ein aktiver Restaurantkunde ist ab 14 lokalen Kalendertagen vor
+dem Geburtstag bis einschliesslich des Geburtstags berechtigt. Bei einer
+Registrierung oder Membership-Aktivierung innerhalb dieses Fensters wird die
+kanonische Zuteilung sofort ausgefuehrt; der taegliche Job holt denselben Check
+idempotent nach. Ab 15 Tagen vor dem Geburtstag besteht noch keine
+Berechtigung, und ein bereits vergangener Geburtstag wird durch diese Regel
+nicht rueckwirkend zugeteilt.
+
+Pool, Restaurant-Zeitzone, 29.-Februar-Regel, Geltungsdauer, Audit und private
+Transaktions-E-Mail bleiben unveraendert. Die Datenbank erzwingt hoechstens
+eine Zuteilung pro Customer, Restaurant und Geburtstagsjahr. Weder Besuch noch
+Punktebuchung sind Voraussetzung.

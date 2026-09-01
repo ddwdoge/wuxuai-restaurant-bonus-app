@@ -39,6 +39,17 @@ Staff- oder Plattform-Portal. Gold bleibt auf Hauptaktionen, Fortschritt und
 aktive Navigation begrenzt. Lucide-Icons ersetzen Emoji-Icons in der
 eigentlichen Kundenoberfläche.
 
+Horizontale Customer-Discovery-Flächen verwenden einen gemeinsamen nativen
+Swipe-Baustein. Auf Mobile belegt eine Karte 83 Prozent der verfügbaren
+Breite und lässt 12 bis 15 Prozent der nächsten Karte sichtbar. Pfeile besitzen
+mindestens 44 Pixel Touchfläche; die Position bleibt sekundär, und es gibt
+keine automatische Rotation.
+
+Offers, Punkteeinlösungen, Willkommens- und Geburtstagsgeschenke verwenden die
+kanonischen Customer-Card-Tokens für Breite, 13-Pixel-Abstand, 18-Pixel-Radius,
+12-Pixel-Innenabstand und 16:9-Medien. Lange Inhalte dürfen die Kartenhöhe leicht
+variieren, die Module bleiben jedoch sichtbar in derselben kompakten Größenklasse.
+
 Das Design soll nicht wie ein technisches Admin-System wirken.
 
 Es soll wirken wie:
@@ -597,9 +608,24 @@ Regeln:
 
 ### 9.4 Logo
 
-Logo proportional.
+Logo proportional und mit derselben Smart-Logo-Praesentation wie in Owner-,
+Customer- und Staff-Oberflaechen.
 
 Kein fester quadratischer Zwang.
+
+- Fit-Modus, Skalierung und normalisierte X-/Y-Position gelten auch im PDF.
+- Quadratische Logos erhalten im A6-Header eine kompakte Stage mit klarer
+  Markenpraesenz; breite und hohe Logos werden adaptiv eingepasst.
+- Transparente Logos liegen direkt auf dem warmen Seitenhintergrund. Die
+  LogoStage erzeugt keine zusaetzliche weisse oder graue Bildbox.
+- Eine groessere LogoStage darf weder QR-Groesse noch QR-Ruhezone reduzieren.
+- Starter-Kit-Seiten verwenden eine echte A6-MediaBox von `105 x 148 mm`.
+  Wichtige Inhalte bleiben mindestens 8 mm von jeder Papierkante entfernt.
+- Die LogoStage beginnt auf allen Seiten bei etwa 9 bis 10 mm Abstand zur
+  physischen Oberkante. Das Logo wird fuer den Druckrand nicht verkleinert.
+- Vollflaechige Linien oder andere wichtige Gestaltungselemente direkt an der
+  Papierkante sind nicht Bestandteil des A6-Druckvertrags. Der Footer bleibt
+  mindestens 8 mm oberhalb der unteren Papierkante.
 
 Technische Regel:
 
@@ -619,19 +645,22 @@ Klein, grau, dezent.
 
 Nicht als Werbung.
 
-### 9.6 Bonus Boost KPI-Box
+### 9.6 Freundschaftsbonus-Hinweis
 
-PDF darf eine kurze KPI-Box enthalten:
+Beide Gaesteseiten duerfen denselben kompakten Hinweis enthalten:
 
 ```text
-💡 Freunde einladen
+Freunde einladen lohnt sich
 
-🔥 Du 2× Punkte
-👥 Freund 2× Punkte
-📅 +30 Tage Bonus Boost
+🔥 Du bekommst          👥 Dein Freund bekommt
+   2× Punkte               2× Punkte
+
+Aktiv nach dem ersten qualifizierten Besuch deines Freundes.
 ```
 
-Keine langen Texte.
+Keine dritte Laufzeit-Zelle und keine feste Laufzeit im Druck. Die konfigurierte
+Dauer wird nur dynamisch in der Anwendung angezeigt. Die Staff-Seite enthaelt
+keinen Freundschaftsbonus-Hinweis.
 
 ---
 
@@ -1061,6 +1090,25 @@ Wenn Daten fehlen, zeigt die UI einen ruhigen deutschen Status statt Demo-Daten.
 
 ---
 
+## 23.1 Customer Restaurant-Schnellwechsel
+
+- Der kompakte Restaurant-Header bleibt eine gemeinsame Komponente auf allen
+  restaurantbezogenen Customer-Seiten. Logo, einzeilig gekürzter Name und
+  Chevron bilden zusammen ein mindestens 44 Pixel hohes Auswahlziel.
+- Die Informationstaste bleibt ein separates 44-Pixel-Ziel und darf auch bei
+  langen Restaurantnamen nicht verdrängt werden.
+- Der Switcher verwendet den bestehenden Premium-Drawer. Auf Mobile ist er
+  höchstens 76 dVH hoch; bei vielen Memberships scrollt nur die Restaurantliste.
+- Das aktuelle Restaurant steht zuerst. Zeilen enthalten ausschließlich Logo,
+  Name, optional Ort, Punktestand und den Status `Aktuell`.
+- Lange Namen werden innerhalb der verfügbaren Breite gekürzt. Header, Drawer
+  und Zeilen dürfen keine horizontale Seitenbreite erzeugen.
+- Während des serverseitigen Wechsels ersetzt ein ruhiger Status
+  `Restaurant wird gewechselt…` die Liste. Ein Fehler bleibt im Drawer und
+  bietet eine klar beschriftete Wiederholung an.
+
+---
+
 ## 24. V2 Hinweise
 
 V2 Design kann enthalten:
@@ -1118,3 +1166,26 @@ Wenn Codex UI baut:
 ---
 
 Endstatus: **LOCK**
+
+## Gemeinsame Smart LogoStage
+
+- Alle aktiven V1-Portale verwenden `RestaurantLogoStage` als gemeinsame
+  Darstellung für Restaurantlogos.
+- Auto-Fit ist proportional (`contain`) und setzt je nach Seitenverhältnis etwa
+  8 bis 12 Prozent optische Ruhezone. Ein starrer quadratischer weißer Rahmen
+  darf nicht erzwungen werden.
+- Manuelle Darstellung speichert nur Fit-Modus, Skalierung und normalisierte
+  X-/Y-Position. Die Originaldatei bleibt erhalten.
+- Transparente Dateien liegen direkt auf einer neutralen warmen Fläche. Eigene
+  feste Bildhintergründe bleiben Teil des Logos.
+- Ein Ladefehler behält die Abmessungen und wechselt genau einmal auf den
+  Restaurant-Fallback, ohne Retry-Schleife, Fehlerbild oder sichtbaren Alttext.
+- Der Owner-Editor verwendet einen zentrierten Workspace mit maximal 90 Prozent
+  Viewporthöhe, kompaktem Kopf und festem Aktionsbereich. Nur der mittlere
+  Inhalt darf auf kleinen Höhen scrollen.
+- Die Bearbeitungsansicht zeigt einen gestrichelten Sicherheitsrahmen, drei
+  gleichwertige 44-Pixel-Schrittsteuerungen und vier kompakte Vorschauen über
+  die gemeinsame `RestaurantLogoStage`. Der Rahmen gehört ausschließlich zum
+  Editor und erscheint nie in Customer-, Staff- oder Druckansichten.
+- Unter 600 Pixel werden Steuerungen und Vorschauen einspaltig angeordnet;
+  Speichern und Abbrechen bleiben am unteren Rand erreichbar.

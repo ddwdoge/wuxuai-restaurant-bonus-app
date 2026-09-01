@@ -25,21 +25,19 @@ test("eindeutige Serverantworten erhalten eigene sichere Zustände", () => {
   assert.doesNotMatch(errorMap, /wurde vom Restaurant deaktiviert/);
 });
 
-test("Netzwerkfehler vor und nach Consume werden unterschiedlich behandelt", () => {
+test("Legacy-Netzwerkfehler bleiben klassifiziert ohne primäre Consume-UX", () => {
   assert.ok(errorMap.includes('phase === "consume" ? "consume_unknown" : "preview_network_error"'));
   assert.ok(errorMap.includes("Einlösung konnte nicht eindeutig bestätigt werden"));
-  assert.ok(staffPortal.includes('redemptionErrorKind === "preview_network_error" || redemptionErrorKind === "consume_unknown"'));
-  assert.ok(staffPortal.includes("void runRedemptionPreview()"));
-  assert.equal(staffPortal.split("consumeRedemptionCode(restaurantId, redemptionCode)").length - 1, 1);
+  assert.equal(staffPortal.includes("runRedemptionPreview"), false);
+  assert.equal(staffPortal.includes("consumeRedemptionCode"), false);
   assert.equal(staffPortal.includes("setTimeout(() => consumeRedemptionCode"), false);
 });
 
-test("Fehlerkarten geben keine technischen Details aus und steuern den Fokus", () => {
-  assert.ok(staffPortal.includes("staffRedemptionErrorContent[redemptionErrorKind].title"));
-  assert.ok(staffPortal.includes("redemptionErrorHeadingRef.current?.focus()"));
-  assert.ok(staffPortal.includes("redemptionInputRefs.current[0]?.focus()"));
-  assert.ok(staffPortal.includes('event.key !== "Escape"'));
-  assert.doesNotMatch(staffPortal, /staffRedemptionErrorContent\[redemptionErrorKind\]\.(?:code|details|hint|message)/);
+test("Legacy-Fehlertexte geben keine technischen Details aus", () => {
+  assert.match(errorMap, /title: "Code nicht gefunden"/);
+  assert.match(errorMap, /title: "Etwas ist schiefgegangen"/);
+  assert.doesNotMatch(errorMap, /stack|postgres|sqlstate|details:/i);
+  assert.doesNotMatch(staffPortal, /staffRedemptionErrorContent|redemptionErrorHeadingRef|redemptionInputRefs/);
 });
 
 test("Premium-Fehlerzustände bleiben responsiv und berührungsfreundlich", () => {

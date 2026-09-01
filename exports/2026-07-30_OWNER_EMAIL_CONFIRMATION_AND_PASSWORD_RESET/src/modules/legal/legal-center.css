@@ -1,0 +1,41 @@
+.legal-center-shell { background: #f8f5ef; color: #1f1f1f; display: grid; gap: 22px; margin: 0 auto; min-height: 100vh; padding: 18px 16px calc(42px + env(safe-area-inset-bottom)); width: min(100%, 860px); }
+.legal-center-header { align-items: start; background: #fffdf9; border: 1px solid #ebe5dc; border-radius: 18px; box-shadow: 0 8px 30px rgba(50,40,25,.06); display: grid; gap: 13px; grid-template-columns: 48px minmax(0,1fr) 32px; padding: 15px; }
+.legal-center-header > a { align-items: center; border: 1px solid #ded5c8; border-radius: 13px; display: flex; height: 46px; justify-content: center; width: 46px; }
+.legal-center-header > div { min-width: 0; }
+.legal-center-header span { color: #956820; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.legal-center-header h1 { font-family: Georgia,"Times New Roman",serif; font-size: clamp(27px,7vw,40px); font-weight: 600; line-height: 1.05; margin: 4px 0 8px; }
+.legal-center-header p { color: #6f6a63; line-height: 1.45; margin: 0; }
+.legal-center-header > svg { color: #956820; margin-top: 10px; }
+.legal-role-card { align-items: start; background: #1d1c19; border-radius: 18px; color: #fff; display: grid; gap: 13px; grid-template-columns: auto minmax(0,1fr); padding: 18px; }
+.legal-role-card svg { color: #e5c886; }
+.legal-role-card strong { font-weight: 600; }
+.legal-role-card p { color: #d3cec4; line-height: 1.5; margin: 5px 0 0; }
+.legal-product-notice { background: #f3e6cc; border-radius: 15px; color: #725320; line-height: 1.5; margin: 0; padding: 15px 17px; }
+.legal-reacceptance { align-items: center; background: #f3e6cc; border-radius: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0,1fr) auto; padding: 16px 18px; }
+.legal-reacceptance p { color: #665334; line-height: 1.45; margin: 5px 0 0; }
+.legal-reacceptance button { background: #1d1c19; border: 0; border-radius: 12px; color: #fff; cursor: pointer; font: inherit; font-weight: 600; min-height: 46px; padding: 0 16px; }
+.legal-jump-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.legal-jump-links a { background: #fff; border: 1px solid #ded5c8; border-radius: 999px; min-height: 44px; padding: 11px 14px; }
+.legal-document-card,.legal-personal-section { background: #fff; border: 1px solid #ebe5dc; border-radius: 20px; box-shadow: 0 8px 30px rgba(50,40,25,.05); display: grid; gap: 17px; padding: 20px; }
+.legal-document-card header { align-items: start; display: grid; gap: 12px; grid-template-columns: auto minmax(0,1fr); }
+.legal-document-card header svg { color: #956820; margin-top: 2px; }
+.legal-document-card h2,.legal-personal-section h2 { font-size: 22px; font-weight: 600; margin: 0; }
+.legal-document-card header p,.legal-personal-section > div:first-child p { color: #6f6a63; margin: 5px 0 0; }
+.legal-document-card > p { line-height: 1.6; margin: 0; }
+.legal-document-card dl { display: grid; gap: 1px; margin: 0; }
+.legal-document-card dl div { background: #fcfaf6; display: grid; gap: 5px; grid-template-columns: minmax(120px,.8fr) minmax(0,1.5fr); padding: 11px 12px; }
+.legal-document-card dl div:first-child { border-radius: 12px 12px 0 0; }.legal-document-card dl div:last-child { border-radius: 0 0 12px 12px; }
+.legal-document-card dt { color: #6f6a63; font-size: 12px; text-transform: capitalize; }.legal-document-card dd { margin: 0; overflow-wrap: anywhere; }
+.legal-platform-note { border-top: 1px solid #ebe5dc; padding-top: 14px; }
+.legal-secondary-action { align-items: center; background: #f8f5ef; border-radius: 13px; display: flex; justify-content: space-between; min-height: 48px; padding: 0 14px; width: 100%; }
+.legal-personal-section > div:first-child > span { color: #956820; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.legal-consent-list,.legal-action-list { display: grid; gap: 8px; }
+.legal-consent-list label { align-items: center; background: #fcfaf6; border-radius: 14px; cursor: pointer; display: grid; gap: 14px; grid-template-columns: minmax(0,1fr) auto; min-height: 66px; padding: 12px 14px; }
+.legal-consent-list label span { display: grid; gap: 4px; }.legal-consent-list small,.legal-action-list small { color: #6f6a63; line-height: 1.35; }
+.legal-consent-list input { accent-color: #bf8f36; height: 24px; width: 24px; }
+.legal-action-list button { align-items: center; background: #fcfaf6; border-radius: 14px; color: #1f1f1f; display: grid; gap: 12px; grid-template-columns: auto minmax(0,1fr) auto; min-height: 62px; padding: 11px 14px; text-align: left; width: 100%; }
+.legal-action-list button > svg:first-child { color: #956820; }.legal-action-list button > span { display: grid; gap: 3px; }.legal-action-list button.danger > svg:first-child,.legal-action-list button.danger strong { color: #9a4848; }
+.legal-status { align-items: center; background: #eaf3ec; border-radius: 14px; color: #3d6b4b; display: flex; gap: 9px; margin: 0; padding: 14px; }
+.legal-center-shell footer { color: #777169; font-size: 13px; text-align: center; }
+.legal-center-shell :focus-visible { outline: 3px solid rgba(191,143,54,.35); outline-offset: 3px; }
+@media (max-width: 520px) { .legal-document-card dl div { grid-template-columns: 1fr; }.legal-center-header { grid-template-columns: 48px minmax(0,1fr); }.legal-center-header > svg { display: none; }.legal-reacceptance { grid-template-columns: minmax(0,1fr); }.legal-reacceptance button { width: 100%; } }

@@ -1,63 +1,126 @@
-const customerTokenStoreKey = "wuxuai_customer_tokens";
+import {
+  persistCustomerAccess,
+  readCustomerAccess,
+  removeCustomerAccess,
+  type StoredCustomerAccess,
+} from "./customerAccessStorage.mjs";
+export { isPermanentCustomerAccessError } from "./customerAccessErrors.mjs";
 
 type StoredCustomerTokenEntry = {
   customer_token: string;
   restaurant_id?: string | null;
-  saved_at: string;
-  customer_name?: string;
+  customer_id?: string | null;
+  membership_id?: string | null;
+  device_id?: string | null;
 };
 
-type StoredCustomerTokens = Record<string, StoredCustomerTokenEntry>;
+export type CustomerAccessDiagnosticEvent =
+  | "CUSTOMER_ACCESS_LOOKUP_STARTED"
+  | "CUSTOMER_ACCESS_FOUND"
+  | "CUSTOMER_ACCESS_NOT_FOUND"
+  | "CUSTOMER_ACCESS_INVALID"
+  | "CUSTOMER_ACCESS_PERSISTED"
+  | "CUSTOMER_ACCESS_PERSIST_FAILED"
+  | "CUSTOMER_EXISTING_MEMBERSHIP_RESTORED";
 
-function readStoredCustomerTokens(): StoredCustomerTokens {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(customerTokenStoreKey) ?? "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as StoredCustomerTokens : {};
-  } catch {
-    return {};
-  }
+export function emitCustomerAccessDiagnostic(eventType: CustomerAccessDiagnosticEvent, restaurantSlug: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("wuxuai:customer-access", {
+    detail: {
+      event_type: eventType,
+      restaurant_slug: restaurantSlug.trim().toLowerCase(),
+      occurred_at: new Date().toISOString(),
+    },
+  }));
 }
 
-export function readStoredCustomerToken(restaurantSlug: string) {
-  if (!restaurantSlug) return null;
+export function readStoredCustomerAccess(restaurantSlug: string): StoredCustomerAccess | null {
+  if (!restaurantSlug || typeof window === "undefined") return null;
+  emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_LOOKUP_STARTED", restaurantSlug);
   try {
-    const storedTokens = readStoredCustomerTokens();
-    return storedTokens[restaurantSlug]?.customer_token ?? localStorage.getItem(`wuxuai-customer-token:${restaurantSlug}`);
+    const result = readCustomerAccess(window.localStorage, restaurantSlug);
+    emitCustomerAccessDiagnostic(
+      result.status === "found"
+        ? "CUSTOMER_ACCESS_FOUND"
+        : result.status === "missing"
+          ? "CUSTOMER_ACCESS_NOT_FOUND"
+          : "CUSTOMER_ACCESS_INVALID",
+      restaurantSlug,
+    );
+    return result.status === "found" ? result.access : null;
   } catch {
+    emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_INVALID", restaurantSlug);
     return null;
   }
 }
 
+export function readStoredCustomerToken(restaurantSlug: string) {
+  return readStoredCustomerAccess(restaurantSlug)?.customer_token ?? null;
+}
+
+export function readStoredCustomerTokens(limit = 100): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const slugs = new Set<string>();
+
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith("wuxuai_customer_access:")) {
+        const encodedSlug = key.slice("wuxuai_customer_access:".length);
+        try { slugs.add(decodeURIComponent(encodedSlug)); } catch { /* Ignore malformed legacy keys. */ }
+      } else if (key?.startsWith("wuxuai-customer-token:")) {
+        slugs.add(key.slice("wuxuai-customer-token:".length));
+      }
+    }
+
+    const legacy = JSON.parse(window.localStorage.getItem("wuxuai_customer_tokens") ?? "{}");
+    if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+      Object.keys(legacy).forEach((slug) => slugs.add(slug));
+    }
+  } catch {
+    return {};
+  }
+
+  const tokens: Record<string, string> = {};
+  for (const slug of [...slugs].sort().slice(0, Math.max(0, Math.min(limit, 100)))) {
+    const normalizedSlug = slug.trim().toLowerCase();
+    const token = readStoredCustomerToken(normalizedSlug);
+    if (normalizedSlug && token) tokens[normalizedSlug] = token;
+  }
+  return tokens;
+}
+
 export function saveStoredCustomerToken(
   restaurantSlug: string,
-  entry: Omit<StoredCustomerTokenEntry, "saved_at">,
+  entry: StoredCustomerTokenEntry,
 ) {
-  if (!restaurantSlug || !entry.customer_token) return;
+  if (!restaurantSlug || !entry.customer_token || typeof window === "undefined") return false;
   try {
-    const storedTokens = readStoredCustomerTokens();
-    storedTokens[restaurantSlug] = {
-      ...entry,
-      saved_at: new Date().toISOString(),
-    };
-    localStorage.setItem(customerTokenStoreKey, JSON.stringify(storedTokens));
-    localStorage.setItem(`wuxuai-customer-token:${restaurantSlug}`, entry.customer_token);
+    const persisted = persistCustomerAccess(window.localStorage, {
+      restaurantSlug,
+      customerToken: entry.customer_token,
+      restaurantId: entry.restaurant_id,
+      customerId: entry.customer_id,
+      membershipId: entry.membership_id,
+      deviceId: entry.device_id,
+      createdAt: readStoredCustomerAccess(restaurantSlug)?.created_at,
+    }).ok;
+    emitCustomerAccessDiagnostic(
+      persisted ? "CUSTOMER_ACCESS_PERSISTED" : "CUSTOMER_ACCESS_PERSIST_FAILED",
+      restaurantSlug,
+    );
+    return persisted;
   } catch {
-    // Der Bonus funktioniert weiter; nur das automatische Merken ist dann nicht verfuegbar.
+    emitCustomerAccessDiagnostic("CUSTOMER_ACCESS_PERSIST_FAILED", restaurantSlug);
+    return false;
   }
 }
 
 export function removeStoredCustomerToken(restaurantSlug: string) {
-  if (!restaurantSlug) return;
+  if (!restaurantSlug || typeof window === "undefined") return false;
   try {
-    const storedTokens = readStoredCustomerTokens();
-    delete storedTokens[restaurantSlug];
-    localStorage.setItem(customerTokenStoreKey, JSON.stringify(storedTokens));
-    localStorage.removeItem(`wuxuai-customer-token:${restaurantSlug}`);
+    return removeCustomerAccess(window.localStorage, restaurantSlug);
   } catch {
-    // Wenn der Browser Speicher blockiert, gibt es lokal nichts Verlaessliches zu entfernen.
+    return false;
   }
-}
-
-export function isInvalidCustomerTokenError(error: unknown) {
-  return error instanceof Error && error.message.toLowerCase().includes("customer token not valid");
 }

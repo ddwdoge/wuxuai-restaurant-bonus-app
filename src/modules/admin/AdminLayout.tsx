@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  ArrowRight,
   ChevronDown,
   Gift,
   Home,
   Lock,
   LogOut,
   Menu,
+  Newspaper,
   QrCode,
+  ScrollText,
   Settings,
   Smartphone,
   Users,
 } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
@@ -44,7 +48,7 @@ export function AdminLayout() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const { restaurantRole, signOut, user } = useAuth();
+  const { portalAccess, restaurantRole, signOut, user } = useAuth();
   const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
   const restaurantStatus = activeRestaurant?.status ?? "draft";
   const restaurantStatusLabel =
@@ -62,9 +66,11 @@ export function AdminLayout() {
     { to: "/admin", label: "Dashboard", icon: Home, end: true },
     { to: "/admin/rewards", label: "Punkteeinlösung", icon: Gift },
     { to: "/admin/welcome-gifts", label: "Willkommensgeschenke", icon: Gift },
+    { to: "/admin/offers", label: "Aktuelles & Angebote", icon: Newspaper },
     { to: "/admin/customers", label: "Gäste", icon: Users },
     { to: "/admin/qr", label: "QR Center", icon: QrCode },
     { to: "/admin/staff", label: "Mitarbeiter", icon: Smartphone },
+    { to: "/admin/reports", label: "Berichte", icon: ScrollText },
     { to: "/admin/settings", label: "Einstellungen", icon: Settings },
   ];
 
@@ -150,6 +156,9 @@ export function AdminLayout() {
       </button>
       {profileMenuOpen ? (
         <div className="profile-menu-popover" role="menu">
+          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Kundenbereich</button> : null}
+          {portalAccess.staff_access ? <button onClick={() => navigate(portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Mitarbeiterbereich</button> : null}
+          {portalAccess.platform_access ? <button onClick={() => navigate("/platform-admin")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />WUXUAI Admin</button> : null}
           <button disabled={loggingOut} onClick={handleLogout} role="menuitem" type="button">
             <LogOut aria-hidden="true" size={18} />
             {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
@@ -209,14 +218,12 @@ export function AdminLayout() {
   if (isOnboardingRoute) {
     return (
       <div className="setup-shell">
-        <div className="setup-session-actions">
-          {profileMenu}
-          <button className="button secondary setup-mobile-logout" disabled={loggingOut} onClick={handleLogout} type="button">
-            <LogOut size={18} />
-            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
-          </button>
-        </div>
-        <Outlet />
+        <Outlet
+          context={{
+            onboardingAccountAction: profileMenu,
+            onboardingRestaurantAction: <TenantSwitcher />,
+          }}
+        />
       </div>
     );
   }
@@ -225,19 +232,7 @@ export function AdminLayout() {
     <div className="app-shell premium-owner-shell">
       <header className="topbar premium-owner-topbar">
         <div className="restaurant-brand-header admin-restaurant-brand">
-          <span className="restaurant-logo-frame">
-            {branding?.logo_url ? (
-              <img
-                alt={`${activeRestaurant?.name ?? "Restaurant"} Logo`}
-                className="restaurant-logo-image"
-                src={branding.logo_url}
-              />
-            ) : (
-              <span className="restaurant-logo-placeholder">
-                {(activeRestaurant?.name.trim().charAt(0) || "W").toUpperCase()}
-              </span>
-            )}
-          </span>
+          <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={activeRestaurant?.name ?? "Restaurant"} presentation={branding} primaryColor={branding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="admin-brand-kicker">WUXUAI Bonus</span>
             <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant Portal"}</span>

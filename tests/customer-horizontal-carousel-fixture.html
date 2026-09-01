@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Carousel Fixture</title>
+  <link rel="stylesheet" href="../src/modules/customer/customer-premium.css" />
+  <link rel="stylesheet" href="../src/modules/customer/components/premium-horizontal-carousel.css" />
+  <link rel="stylesheet" href="../src/modules/customer/components/restaurant-offer-card.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .fixture-title { font: 600 24px/1.2 system-ui, sans-serif; margin: 0; }
+    .fixture-copy { color: #6f6a63; font: 14px/1.4 system-ui, sans-serif; margin: 0; }
+    .premium-reward-card { font-family: system-ui, sans-serif; }
+    .premium-reward-media { align-items: center; display: flex; justify-content: center; }
+    .premium-reward-media span { color: #956820; font-size: 34px; }
+    .fixture-section { display: grid; gap: 8px; }
+    .fixture-section h2 { font: 600 20px/1.2 system-ui, sans-serif; margin: 0; }
+    .customer-offer-card-media { align-items: center; display: flex; justify-content: center; }
+    .customer-offer-card-media > span { color: #956820; font: 700 22px/1 system-ui, sans-serif; }
+  </style>
+</head>
+<body class="customer-premium-shell">
+  <main class="customer-page-container">
+    <h1 class="fixture-title">Einlösen</h1>
+    <p class="fixture-copy">Wähle deinen nächsten Vorteil.</p>
+    <section class="fixture-section" data-fixture-kind="offer">
+      <h2>Aktuelles &amp; Angebote</h2>
+      <div class="premium-horizontal-carousel is-multiple" aria-label="Aktuelles und Angebote">
+        <div class="premium-horizontal-carousel-viewport" tabindex="0">
+          <div class="premium-horizontal-carousel-item" data-carousel-item>
+            <article class="customer-offer-card premium-compact-customer-card">
+              <div class="customer-offer-card-media"><span>ANGEBOT</span></div>
+              <div class="customer-offer-card-body">
+                <h3>Sommerfrühstückswochenendsonderangebot</h3>
+                <p>Frühstück mit Heißgetränk und einer kleinen Überraschung aus unserer Backstube.</p>
+                <div class="customer-offer-card-validity-row"><span class="customer-offer-validity current">Aktuell gültig</span><span class="customer-offer-schedule">Täglich 08:00–12:00</span></div>
+                <div class="customer-offer-card-meta"><span>27.08.–30.09.2026</span><div class="customer-offer-price"><strong class="customer-offer-discount-badge">-66%</strong><del>14,52 €</del><span class="customer-offer-current-price">5,00 €</span></div></div>
+                <button class="premium-button premium-button-secondary" type="button">Angebot ansehen</button>
+              </div>
+            </article>
+          </div>
+          <div class="premium-horizontal-carousel-item" data-carousel-item><article class="customer-offer-card premium-compact-customer-card"><div class="customer-offer-card-media"><span>NEU</span></div><div class="customer-offer-card-body"><h3>Hausgemachte Mehlspeise</h3><p>Heute frisch für dich vorbereitet.</p><div class="customer-offer-card-validity-row"><span class="customer-offer-validity current">Aktuell gültig</span><span class="customer-offer-schedule">Während der Öffnungszeiten</span></div><div class="customer-offer-card-meta"><span>27.08.–30.09.2026</span><strong>€ 4,90</strong></div><button class="premium-button premium-button-secondary" type="button">Angebot ansehen</button></div></article></div>
+        </div>
+        <div class="premium-horizontal-carousel-controls"><button aria-label="Vorheriges Angebot" disabled>‹</button><span class="premium-horizontal-carousel-position"><strong>1</strong> / 2</span><button aria-label="Nächstes Angebot">›</button></div>
+      </div>
+    </section>
+    <section class="fixture-section" data-fixture-kind="reward">
+      <h2>Mit Punkten einlösbar</h2>
+      <div class="premium-horizontal-carousel is-multiple" aria-label="Belohnungen">
+      <div class="premium-horizontal-carousel-viewport" tabindex="0">
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-compact-customer-card premium-reward-card state-available">
+            <div class="premium-reward-media"><span>01</span></div>
+            <div class="premium-reward-copy"><span>Vorspeise</span><h3>Doppelespressomitkaramellsirupundwillkommensüberraschung</h3><strong>148 Punkte</strong><p class="premium-reward-status state-available">Jetzt einlösbar</p></div>
+            <button class="premium-button premium-button-primary" type="button">Details ansehen</button>
+          </article>
+        </div>
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-compact-customer-card premium-reward-card state-locked">
+            <div class="premium-reward-media"><span>02</span></div>
+            <div class="premium-reward-copy"><span>Dessert</span><h3>Hausgemachte Überraschung</h3><strong>300 Punkte</strong><p class="premium-reward-status state-locked">Noch 207 Punkte</p></div>
+            <button class="premium-button premium-button-secondary" type="button">Details ansehen</button>
+          </article>
+        </div>
+        <div class="premium-horizontal-carousel-item" data-carousel-item>
+          <article class="premium-card premium-compact-customer-card premium-reward-card state-locked">
+            <div class="premium-reward-media"><span>03</span></div>
+            <div class="premium-reward-copy"><span>Getränk</span><h3>Lieblingsgetränk</h3><strong>420 Punkte</strong><p class="premium-reward-status state-locked">Noch 327 Punkte</p></div>
+            <button class="premium-button premium-button-secondary" type="button">Details ansehen</button>
+          </article>
+        </div>
+      </div>
+      <div class="premium-horizontal-carousel-controls"><button aria-label="Vorherige Belohnung" disabled>‹</button><span class="premium-horizontal-carousel-position"><strong>1</strong> / 3</span><button aria-label="Nächste Belohnung">›</button></div>
+      </div>
+    </section>
+    <section class="fixture-section" data-fixture-kind="gift">
+      <h2>Deine Geschenke</h2>
+      <div class="premium-horizontal-carousel is-multiple" aria-label="Deine Geschenke">
+        <div class="premium-horizontal-carousel-viewport" tabindex="0">
+          <div class="premium-horizontal-carousel-item" data-carousel-item><article class="premium-card premium-compact-customer-card premium-reward-card state-available"><div class="premium-reward-media"><span>GIFT</span></div><div class="premium-reward-copy"><span>Geburtstagsgeschenk</span><h3>Geburtstagsüberraschung</h3><strong>Für deinen Geburtstag</strong><p class="premium-reward-status state-available">Geschenk einlösbar</p></div><button class="premium-button premium-button-primary" type="button">Details ansehen</button></article></div>
+          <div class="premium-horizontal-carousel-item" data-carousel-item><article class="premium-card premium-compact-customer-card premium-reward-card state-available"><div class="premium-reward-media"><span>GIFT</span></div><div class="premium-reward-copy"><span>Willkommensgeschenk</span><h3>Kleine Überraschung für deinen nächsten Besuch</h3><strong>Für dich reserviert</strong><p class="premium-reward-status state-available">Geschenk einlösbar</p></div><button class="premium-button premium-button-primary" type="button">Details ansehen</button></article></div>
+        </div>
+        <div class="premium-horizontal-carousel-controls"><button aria-label="Vorheriges Geschenk" disabled>‹</button><span class="premium-horizontal-carousel-position"><strong>1</strong> / 2</span><button aria-label="Nächstes Geschenk">›</button></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

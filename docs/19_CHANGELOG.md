@@ -1,9 +1,1044 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Kontextbezogene Onboarding-Hilfe, Verteilungslogik eingefroren
+
+- Alle sieben bestehenden Onboarding-Schritte beantworten nun kompakt:
+  `Was richtest du ein?`, `Warum ist das wichtig?` und
+  `Worauf solltest du achten?`.
+- Die Hilfe bleibt im vorhandenen Drawer und visuell sekundaer zum Formular;
+  die mobile Hilfe-Aktion bleibt mindestens 48 Pixel gross.
+- Schritt 5 erklaert die automatische Geschenkverteilung algorithmusneutral.
+  Individuelle Prozentsaetze, Gleich-/Gewichtungsbehauptungen, erwartete
+  Zuteilungen und unbestaetigte Kostenrechnungen werden nicht angezeigt.
+- Restaurants erhalten keine Eingabe fuer Quote, Gewicht oder
+  Systemverteilung.
+- Der historische Audit fand die Founder-Dokumentation und die gewichtete SQL-
+  Implementierung von Juli 2026. Die aktive Verteilungslogik wurde nicht
+  geaendert; die unangewendete Regelversions-Migration wurde aus V1 entfernt
+  und `DEFERRED`.
+- Bereits zugeteilte Geschenke bleiben unveraendert. Die aktive V1-Deutsch-
+  only-Regel bleibt erhalten; weitere UI-Sprachen wurden nicht gegen den
+  kanonischen Vertrag eingefuehrt.
+- Der Founder hat die originale wertorientierte Kategoriengewichtung,
+  gewichtete Zufallsauswahl und Normalisierung nach dem historischen Audit als
+  `FINAL LOCK` bestaetigt. Es erfolgte keine Aenderung dieser Logik.
+
+## 2026-09-01 - Bestehendes Passwort in Owner-Registrierung hervorgehoben
+
+- Den bereits kanonischen Inline-Flow fuer vorhandene Customer-/Staff-E-Mails
+  beibehalten und die Eingabe des bestehenden Passworts mit einem hellgruenen
+  Hinweis, gruenem Feldrahmen, Schloss-Symbol und automatischem Fokus
+  unmissverstaendlich gemacht.
+- Falsche bestehende Passwoerter werden direkt am Passwortfeld verstaendlich
+  angezeigt. Passwort, Pending Intent, Supabase-Authentifizierung und atomare
+  Owner-Provisionierung bleiben unveraendert.
+- Keine separate Loginseite, keine `returnTo`-Logik, keine Formular-Draft-
+  Speicherung, keine Migration und keine Production-Aktion.
+
+## 2026-09-01 - Owner-Betreiberzugriff erfuellt Staff-Setup
+
+- Smart Setup akzeptiert fuer den Mitarbeiter-Schritt jetzt den bestehenden
+  autoritativen Betreiberzugriff des aktuellen Owners oder alternativ einen
+  kanonisch aktiven eingeladenen Staff-Zugang.
+- Owner-geführte Restaurants muessen keinen unnoetigen zweiten Benutzer
+  einladen. Staff-Einladungen und Teamverwaltung bleiben optional verfuegbar.
+- Owner-Rolle und Actor-Zuordnung bleiben erhalten; es wird keine Staff-Zeile,
+  Membership oder Impersonation erzeugt.
+- Separate Staff-Nutzer behalten unveraendert Einladung, Aktivierung und
+  tenantgebundene Zugangspruefung.
+- Keine Migration sowie keine Aenderung an Staff-Autorisierung, Punkte-,
+  Multi-Role- oder Tenantlogik.
+
+## 2026-09-01 - Smart Setup False-Complete korrigiert
+
+- Die Staff-Bereitschaft vom rohen `staff_members.active`-Zaehler auf den
+  bestehenden tenantgebundenen Owner-Staff-Vertrag umgestellt. Nur ein
+  kanonisch aktiver Zugang schliesst den Mitarbeiter-Schritt ab.
+- Publikation auf die gemeinsame Erfuellung von aktivem Restaurant,
+  serverseitig freigegebener Kundenregistrierung und vollstaendiger
+  oeffentlicher Standort-/Discovery-Bereitschaft verengt.
+- QR-Bereitschaft auf aktiven Restaurantstatus und einen gueltigen
+  kanonischen Slug beschraenkt; physischer Druck bleibt kein gespeicherter
+  Setup-Nachweis.
+- Prioritaet, Birthday-, Reward- und Offer-Vertraege sowie die Entfernung der
+  permanenten `operational_new_offer`-Empfehlung bleiben unveraendert.
+- Keine Migration und keine Aenderung an Staff-Berechtigungen, RLS, RPCs oder
+  Businesslogik.
+
+## 2026-09-01 - Smart Setup oben und nur bei echtem Handlungsbedarf
+
+- `Heute fuer dich` bei offenem Setup oder objektiver Aktion direkt unter den
+  Dashboard-Kopf und damit vor Kennzahlen und Schnellzugriffen verschoben.
+- Den Offer-Setup-Vertrag zentralisiert: Ein veroeffentlichtes, aktives und
+  noch nicht abgelaufenes Angebot zaehlt auch bei zukuenftigem Start sowie
+  Wochentags- oder Zeitbegrenzung; Entwurf, deaktiviert und abgelaufen zaehlen
+  nicht.
+- Die permanente Empfehlung `Neues Angebot erstellen` nach vollstaendig
+  abgeschlossenem Setup entfernt; ohne offene Aktion bleibt die Karte
+  verborgen.
+- Die bestehende ungesehene Warnung zu einem ungewoehnlich hohen
+  Buchungsbetrag in denselben Ein-Aktions-Resolver aufgenommen und die
+  parallele Dashboard-Warnkarte entfernt.
+- Keine Migration und keine Aenderung an Offer-, Punkte-, Birthday-, Legal-,
+  Referral-, Tenant- oder Berechtigungslogik.
+
+## 2026-09-01 - Smart Setup nach erfolgreichem Speichern fortgesetzt
+
+- `Heute fuer dich` uebergibt beim Oeffnen eines Setup-Bereichs einen streng
+  validierten, kurzlebigen Router-Kontext ohne Datenbankpersistenz.
+- Erfolgreicher Standort-, Reward-, Offer-, Birthday-Pool-, Staff-, Legal- oder
+  Onboarding-Abschluss fuehrt nur aus diesem Kontext mit fester Erfolgsmeldung
+  zum Dashboard zurueck.
+- Das Dashboard verbraucht den Erfolgskontext, laedt den kanonischen
+  Restaurant-/Setup-Zustand neu und berechnet mit dem bestehenden zentralen
+  Resolver die naechste offene Empfehlung.
+- Direkte Bearbeitung, Abbruch und fehlgeschlagene Saves bleiben unveraendert;
+  QR-Bereitschaft erhaelt keinen erfundenen Abschlussnachweis.
+- Keine Migration und keine Aenderung an Businesslogik, Prioritaet,
+  Berechtigung, Tenant-Scope, Legal Readiness oder QR-Vertrag.
+
+## 2026-09-01 - Punkteinformation auf Customer Home verdichtet
+
+- Den dauerhaft sichtbaren rechtlichen Punktehinweis zwischen Punktekarte und
+  `Aktuelles & Angebote` aus dem normalen Startseitenfluss entfernt.
+- Direkt neben `Deine Punkte` einen barrierefreien Infobutton mit
+  44-Pixel-Touchflaeche ergänzt, der denselben vollständigen Wortlaut im
+  bestehenden `AppDrawer` öffnet.
+- Punktekarte, Balance, Bonus-Boost, Gültigkeit, Fortschritt, Offers, Rewards,
+  Gifts, Referral und Legal Center blieben unverändert.
+- Keine Migration und keine Punkte- oder Businesslogikänderung.
+
+## 2026-08-31 - Durchsuchbare Laenderauswahl fuer Restaurantstandort
+
+- Freies technisches Zwei-Zeichen-Feld im Owner-Standortformular durch eine
+  touch- und tastaturbedienbare Combobox mit weltweiter Laendersuche ersetzt.
+- Vollstaendige ISO-3166-1-Alpha-2-Codebasis zentral ergaenzt und Anzeigenamen
+  ueber `Intl.DisplayNames` fuer DE, EN, FR, IT und ES lokalisiert.
+- Bestehende Codes wie `AT` erscheinen als lokalisierter Laendername, waehrend
+  Persistenz und Geocoding weiterhin ausschliesslich den ISO-Code erhalten.
+- Stillen `AT`-Fallback bei fehlendem Standortland entfernt und Save sowie
+  Geocoding gegen beliebige Freitexte abgesichert.
+- Keine Migration und keine Aenderung an Publication, Legal, Discovery,
+  Kartenmarker, RLS oder Tenantlogik.
+
+## 2026-08-31 - Owner Dashboard Smart Setup Assistant
+
+- Die statische schwarze Karte `Heute fuer dich` auf genau eine zentrale,
+  zustandsabhaengige Setup- oder Betriebsempfehlung umgestellt und den
+  parallelen Dashboard-Hinweis entfernt.
+- Prioritaet auf Publikation/Standort, Punkteeinloesung, Angebot,
+  Geburtstagspool, QR Center und Mitarbeiterzugang festgelegt; direkte Links
+  fuehren in die bestehenden Owner-Bereiche.
+- Publikationszustand aus Legal Readiness, Restaurantstatus und aktivem,
+  auffindbarem Standort abgeleitet; Angebots- und Staff-Zustaende bleiben
+  tenantgebundene Empfehlungen.
+- Neue Welcome-/Starter-Gifts in den aktuellen Erstellungswegen standardmaessig
+  fuer den Birthday-Pool aktiviert. Bestehende Pool-Entscheidungen bleiben
+  erhalten und der Owner kann die Nutzung pro Geschenk deaktivieren.
+- Kein QR-Download-/Drucktracking erfunden; keine Migration und keine Aenderung
+  an Birthday Eligibility, Punkten, Legal, Referral, Multi-Role oder Stripe.
+
+## 2026-08-31 - Bonus-Setup im Owner-Onboarding vereinfacht
+
+- Editierbare Durchschnittsbon-, Besuchs- und wirkungslose Einloeseart-Felder
+  aus dem Owner-Onboarding entfernt.
+- Die bestehende Beispielrechnung auf feste V1-Richtwerte von 20 EUR mal fuenf
+  Besuche und damit 100 EUR Referenzkonsumation umgestellt.
+- Bestehende Rueckgabequoten von 3, 5, 8 und 10 Prozent sowie ihre kanonische
+  Persistenz unveraendert beibehalten; Richtwerte explizit als unverbindliches
+  Rechenbeispiel erklaert.
+- Das optionale Registrierungsfeld als `Mobiltelefonnummer (empfohlen)` mit
+  Zukunftshinweis gekennzeichnet; `type=tel`, internationale Eingabe und
+  fehlende SMS-Aktivierung bleiben unveraendert.
+- Keine Migration sowie keine Punkte-, Einloesungs-, Gift-, Referral-, Legal-,
+  Commercial- oder Tenant-Aenderung.
+
+## 2026-08-31 - Geburtstagsgeschenk innerhalb von 14 Tagen nachholbar
+
+- Birthday Eligibility vom exakten Tag `Geburtstag - 14` auf das inklusive
+  lokale Fenster von heute bis heute plus 14 Kalendertage erweitert.
+- Taeglicher Cron und unmittelbare Account-Membership-Aktivierung verwenden
+  denselben internen Zuteilungshelper.
+- Eindeutigkeit auf genau ein Geschenk pro Customer, Restaurant und
+  Geburtstagsjahr verstaerkt; bestehende Pool-, Audit-, E-Mail-, Zeitzonen-
+  und 29.-Februar-Vertraege beibehalten.
+- Keine Besuchs-, Punkte-, Redemption-, Referral- oder Stripe-Logik geaendert.
+- Additive Migration:
+  `20260831001000_birthday_gift_14_day_catch_up.sql`.
+
+## 2026-08-31 - Release-Evidenz Referral und Multi-Role reconciled
+
+- Spaetere Founder-/Live-Nachweise schliessen die historischen offenen Gates
+  fuer Referral und Multi-Role; die Businessflows wurden nicht wiederholt.
+- Referral ist inklusive Native Share, bestehendem Konto, Legal Consent,
+  qualifizierendem Besuch, 2x-Bonus und Continuation ohne zweiten Login als
+  bestanden dokumentiert.
+- Multi-Role ist fuer Deployment
+  `9cbb8de7-3a07-40f0-a30e-ba7650041513` / Commit `bb6ce42` mit genau einer
+  Membership, gleicher Auth-Identitaet, erhaltener Staff-Rolle und
+  blockiertem Cross-Tenant-Zugriff als bestanden dokumentiert.
+- Die aktuelle Release-Zaehlung laesst Point-Anomaly-Attribution und das noch
+  nicht abgeschlossene Discovery-Direct-Join-Live-/iPhone-Gate offen.
+- Keine Anwendungscode-, Businesslogik-, Datenbank- oder Migrationsaenderung.
+
+## 2026-08-31 - Direkter Customer-Beitritt aus Restaurant Discovery
+
+- Restaurantdetails unterscheiden jetzt zwischen bestehenden Mitgliedern mit
+  `Restaurant öffnen` und Nichtmitgliedern mit `Bonusprogramm beitreten`.
+- Der direkte Beitritt verwendet den bestehenden Legal-Consent-Flow und den
+  authentifizierten, tenantgebundenen, idempotenten Membership-RPC.
+- Nach erfolgreichem Join wird derselbe servervalidierte Restaurant-Opener wie
+  beim globalen Schnellwechsel verwendet und der neue Kontext ohne Reload
+  angezeigt.
+- Die sichtbare Join-Bestätigung hängt nicht vom internen Idempotenzfeld ab und
+  bleibt dadurch auch bei einem serverseitig bereits vollzogenen Retry klar.
+- Join erzeugt keine Punkte, keinen Besuch und keine Referral-Zuordnung;
+  Willkommensgeschenk-, Punkte- und Visit-Verträge bleiben unverändert.
+- Keine Datenbankmigration, keine RLS- oder Businesslogikänderung.
+
+## 2026-08-30 - Restaurantbeitritt nach kontofremdem lokalem Zugang wiederhergestellt
+
+- Der zentrale Customer-Beitritt erkennt einen lokal gespeicherten
+  Restaurantzugang, der ungültig oder bereits mit einer anderen
+  Auth-Identität verbunden ist.
+- Nur in diesen beiden serverseitig bestätigten Fehlerfällen wird der lokale
+  Zugang entfernt und der Join genau einmal ohne den fremden Token wiederholt.
+- Tenant-, Telefon-, Legal- und Membership-Prüfungen bleiben vollständig beim
+  bestehenden RPC; es gibt weder eine Token-Übernahme noch eine zweite
+  Auth-Identität oder eine Datenbankmigration.
+
+## 2026-08-30 - Referral-Freigabe, E-Mail-Callback und Multi-Role vorbereitet
+
+- Referral-Karten um native Web-Share-Freigabe, sicheren Clipboard-Fallback
+  und bestaetigtes Kopierfeedback ergaenzt; QR, Referral-URL, Attribution und
+  Bonuslogik bleiben unveraendert.
+- Customer- und Owner-Bestaetigungsseiten verarbeiten gueltige Supabase-
+  Callbackdaten automatisch, zeigen Erfolg sichtbar und behalten sichere
+  Resend-/Recovery-Zustaende mit 60-Sekunden-Clientcooldown.
+- Bestehende bestaetigte Auth-Benutzer koennen Customer- oder Owner-Zugriff
+  additiv aktivieren; Bereichswechsel zeigt nur serververifizierte Rollen.
+- Additive Migration `20260830002000_multi_role_account_foundation.sql`
+  ergaenzt eine transaktionsgesperrte Customer-Aktivierung und entfernt nur den
+  globalen Staff-Konflikt mit anderen Rollen. Same-Restaurant-Ownerkonflikt,
+  Tenantpruefung, RLS, Grants und Audit bleiben erhalten.
+- Migration `20260830002000_multi_role_account_foundation.sql` kontrolliert auf
+  Development/Test-Supabase `bwhvfjuwixgwduoeqaya` angewendet; Migration
+  History ist synchron, der anschliessende Dry-Run leer und der DB-Linter bei
+  0 Fehlern. Frontend-Deployment, Mailzustellung, reale Mehrfachrollen-Flows
+  und physische Mobile-Gates bleiben offen; Production bleibt gesperrt und
+  Stripe aufgeschoben.
+
+## 2026-08-30 - A6-Vorschau auf eine kanonische Seitenskalierung umgestellt
+
+- Die QR-Center-Druckvorschau rendert Logo, Restaurantname, Texte, QR-Code,
+  Empfehlungsblock und Footer gemeinsam im kanonischen `1240 × 1748`-Raster.
+- Die vollständige A6-Seite erhält nur noch einen gemeinsamen, aus der
+  sichtbaren Seitenbreite abgeleiteten Skalierungsfaktor.
+- Die Smart-Logo-Platzierung verwendet vor der äußeren Skalierung die
+  unskalierten Stage-Maße; gespeicherte Zoom-, X-, Y- und Crop-Werte bleiben
+  erhalten.
+- Normalisierte Geometrietests decken 320 bis 1440 Pixel sowie alle drei
+  Druckseiten und die Abstände zwischen Brand, Text und QR-Ruhezone ab.
+- PDF-Geometrie, QR-Payloads, Carousel, Businesslogik und Datenbank bleiben
+  unverändert.
+
+## 2026-08-29 - Legal Operator von Restaurantmarke getrennt
+
+- Die bestehende Organization-Ebene als kanonischen rechtlichen Betreiber
+  festgelegt und strukturierte Angaben in `organization_legal_profiles`
+  gebündelt.
+- Restaurantmarke und Branch-/Standortkontext unverändert gelassen; keine
+  Multi-Location-UI eingeführt.
+- Restaurantadresse nur noch nach ausdrücklicher Owner-Auswahl als
+  Geschäftsanschrift referenziert; andernfalls separate rechtliche Adresse.
+- Bestehendes `restaurant_legal_profiles` als explizit verknüpfte
+  Kompatibilitätsprojektion erhalten und den alten direkten Save-RPC für
+  Browserrollen geschlossen.
+- Legal-Dokumentgenerator und Public Legal Center verwenden den kanonischen
+  Unternehmensnamen als Programmbetreiber, ohne neue Rechtstexte zu erfinden
+  oder Dokumente automatisch zu veröffentlichen.
+- Keine Stripe-, Subscription- oder externe Billing-Aktion ergänzt.
+
+## 2026-08-29 - Owner Onboarding und rechtliche Freigabe vereinheitlicht
+
+- Die Owner-Legal-Seite verwendet für Unternehmensdaten, Pflichtdokumente,
+  Veröffentlichung, Programmstatus und Kundenregistrierung einen zentralen
+  Darstellungsresolver auf Basis des bestehenden serverseitigen
+  `get_restaurant_legal_setup`-Vertrags.
+- Eine blockierte Kundenregistrierung wegen fehlender aktiver Pflichtdokumente
+  kann nicht mehr gleichzeitig als abgeschlossene Veröffentlichung erscheinen.
+- Die Owner-Reise zeigt kompakt die drei Schritte Unternehmensdaten,
+  Dokumentprüfung und Veröffentlichung sowie die separate Freigabe der
+  Kundenregistrierung.
+- Publikationsfehler benennen fehlendes Gültigkeitsdatum, fehlende
+  Teilnahmebedingungen, fehlende Datenschutzerklärung oder unvollständige
+  Vorschau verständlich, ohne interne RPC-Fehler anzuzeigen.
+- Die Willkommensgeschenk-Auswahl ist bis 699 Pixel einspaltig; Auswahlregeln
+  und zufällige spätere Zuteilung bleiben unverändert.
+- Keine Migration, RLS-, Audit-, Legal-Versionierungs- oder Businesslogik wurde
+  geändert.
+
+## 2026-08-28 - Owner-Bonusprogramm auf V1-Referral reduziert
+
+- Die Owner-Seite `Bonusprogramm` zeigt nur noch `Freunde einladen & 2× Bonus`
+  mit Aktivierung, festem Multiplikator, Dauer und monatlichem Einladungslimit.
+- Historische Modus-, Einlösequoten-, Stempel-, Bonstufen- und Regel-Editoren
+  sowie der technische Aktivstatus wurden aus dieser Oberfläche entfernt.
+- Punkte-, Einlösungs-, Tages-PIN-, Referral- und Datenbankverträge bleiben
+  unverändert; Legacy-Tabellen und Services wurden nicht gelöscht.
+
+## 2026-08-28 - Restaurantbilder direkt positionierbar gemacht
+
+- Ein gemeinsamer Smart-Media-Kern steuert 16:9-Bilder fuer Angebote,
+  Punkteeinloesungen, Willkommens- und Geburtstagsgeschenke sowie Titelbilder.
+- Owner koennen Fotos direkt ziehen, per Zwei-Finger-Geste oder Trackpad zoomen
+  und zwischen gespeichertem Ausschnitt und zentriertem Auto-Fit wechseln.
+- Die additive Migration
+  `20260828001000_global_restaurant_media_presentation.sql` ergaenzt nur
+  normalisierte Darstellungswerte fuer Angebote und Branch-Titelbilder.
+- Originaldateien, Logo-Vertrag, Sichtbarkeit, Punkte, Eligibility, Einloesung,
+  Referral und bestehende Tenant-RLS bleiben unveraendert.
+
+## 2026-08-28 - Cloudflare-Build gegen fehlende Supabase-Variablen gesperrt
+
+- Den Repository-Build um einen Fail-Closed-Guard fuer
+  `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` erweitert; fehlende Werte
+  stoppen den Build vor TypeScript und Vite, ohne Inhalte auszugeben.
+- Tests fuer vollstaendige, teilweise und fehlende Buildvariablen ergaenzt.
+- Die automatische GitHub-Cloudflare-Verbindung bleibt bis zur autorisierten
+  Neuinstallation der GitHub App fuer das tatsaechliche Repository gesperrt.
+
+## 2026-08-28 - Smart Logo im Restaurant-Portal vereinheitlicht
+
+- Den Restaurant-Portal-Header von einer zusaetzlichen historischen Rahmen-,
+  Schatten- und Innenabstandsregel befreit, damit er die gespeicherte Smart-
+  Logo-Skalierung und -Position unveraendert wie der Editor rendert.
+- Den Branding-Editor um die echte Vorschau `Restaurant-Portal` erweitert und
+  die fuenf Vorschauen in die Produktreihenfolge Gaeste, Restaurant-Portal,
+  Mitarbeiter, Restaurantdetails und QR Starter Kit gebracht.
+- Die verbliebene rohe Logo-Vorschau im Onboarding auf die gemeinsame
+  `RestaurantLogoStage` umgestellt; Logo-Dateien, Persistenzvertrag,
+  Bonuslogik und Datenbank bleiben unveraendert.
+
+## 2026-08-27 - Smart-Logo-Editor direkt bedienbar gemacht
+
+- Den Owner-Logo-Editor auf direkte Manipulation in der Live-Vorschau
+  umgestellt: Ziehen positioniert das Logo, Zwei-Finger-Geste und Mausrad zoomen.
+- Den großen Reglerbereich entfernt und nur kompakte Plus-/Minus-Aktionen,
+  automatische Anpassung, Zurücksetzen und vier horizontal durchsuchbare
+  Kontextvorschauen beibehalten.
+- Tastatursteuerung, Bewegungs- und Zoomgrenzen sowie synchrone Live-Vorschauen
+  ergänzt; Smart-Logo-Algorithmus, Persistenzvertrag und Bonuslogik bleiben
+  unverändert.
+
+## 2026-08-27 - Smart-Logo-Editor als kompakter Workspace umgesetzt
+
+- Den Owner-Editor auf einen zentrierten Arbeitsbereich mit maximal 90 Prozent
+  Viewporthöhe, kompaktem Kopf und fest sichtbarem Aktionsbereich umgestellt.
+- Live-Vorschau mit Bearbeitungs-Sicherheitsrahmen, drei kompakten
+  Schrittsteuerungen und vier echten `RestaurantLogoStage`-Kontexten gemeinsam
+  sichtbar gemacht.
+- Mobile Steuerungen und Vorschauen einspaltig angeordnet; Smart-Logo-
+  Algorithmus, Bilddateien, Persistenzvertrag und Bonuslogik unverändert gelassen.
+
+## 2026-08-27 - A6-Starter-Kit gegen physische Druckraender abgesichert
+
+- Beide Starter-Kit-Generatoren auf eine echte A6-MediaBox von `105 x 148 mm`
+  und einen kanonischen Sicherheitsabstand von mindestens 8 mm vereinheitlicht.
+- Logo und Restaurantidentitaet auf allen Seiten bei rund 9 bis 10 mm
+  Oberkantenabstand ausgerichtet, ohne Smart-Logo- oder QR-Groesse zu reduzieren.
+- Die randabhaengige obere Farblinie entfernt und den Footer innerhalb des
+  unteren Druckbereichs positioniert; Referral-, Staff- und QR-Vertraege bleiben
+  unveraendert.
+
+## 2026-08-27 - Starter-Kit-Logo und Referral-Druckvertrag finalisiert
+
+- Die A6-LogoStage adaptiv um rund 35 Prozent vergroessert, ohne QR-Groesse,
+  Ruhezone, Payload oder vertikale QR-Position zu veraendern.
+- Beide Gaesteseiten zeigen zwei kompakte 2x-Vorteilszellen und den kurzen
+  Qualifikationshinweis; feste oder konfigurierbare Laufzeiten werden nicht
+  gedruckt, die Staff-Seite bleibt referralfrei.
+- Geladene Logos zeigen in Headern, Karten und Listen keinen kuenstlichen
+  grauen Stage-Hintergrund mehr; die Stage-Breite folgt quadratischem, breitem
+  oder hohem Seitenverhaeltnis, ohne die Originaldatei zu veraendern.
+
+## 2026-08-27 - Smart-Logo-Autoanpassung dauerhaft gespeichert
+
+- Logo-Darstellung fuer Owner, Customer, Staff und Starter Kit ueber gemeinsame
+  Praesentationswerte fuer Skalierung und Position vereinheitlicht.
+- Bei PNG-/WebP-Logos erkannte transparente Innenabstaende werden beim Upload
+  jetzt sofort zusammen mit der Bildadresse gespeichert und nicht mehr durch
+  den anschliessenden Tenant-Refresh auf Standardwerte zurueckgesetzt.
+- Die Originaldatei bleibt unveraendert; bestehende Logo-Adressen, RLS,
+  QR-Payloads und fachliche Bonuslogik bleiben unberuehrt.
+
+## 2026-08-27 - Kunden-Abmeldung beendet zentrale Sitzung
+
+- Den restaurantbezogenen Abmeldeweg an die zentrale Supabase-Kundensitzung
+  angebunden, statt nur den lokal gespeicherten Restaurantzugang zu entfernen.
+- Nach der Abmeldung wird die Kunden-Loginseite geöffnet; Reload und direktes
+  erneutes Öffnen eines Restaurants stellen keine Kundendaten automatisch
+  wieder her.
+- Membership, Punkte, Restaurantzuordnung, RLS und Datenbankverträge bleiben
+  unverändert.
+
+## 2026-08-27 - Customer-Angebote und Belohnungen horizontal durchsuchbar
+
+- Einen gemeinsamen barrierefreien Horizontal-Carousel-Baustein für
+  `Aktuelles & Angebote` auf der Customer-Startseite und beide Reward-Tabs
+  eingeführt.
+- Nativen Touch-Swipe, Scroll Snap, Einzelschritt-Pfeile, Tastaturnavigation
+  und kompakte Positionsanzeige ohne automatische Rotation umgesetzt.
+- Einzelkarten bleiben vollbreit; leere persönliche Belohnungen behalten den
+  bestehenden synchronisierten Empty State.
+- Eligibility, Detailansicht, Tenant-Scope und serverseitigen
+  15-Minuten-Einlöseflow unverändert gelassen.
+
+## 2026-08-27 - Globale Staging-Supabase-Verbindung wiederhergestellt
+
+- Einen Cloudflare-Staging-Build ohne exportierte `VITE_SUPABASE_URL` und
+  `VITE_SUPABASE_ANON_KEY` als Ursache des globalen Live-Daten-Ausfalls
+  nachgewiesen; dadurch wurde im Browser kein Supabase-Client erzeugt.
+- Den unveränderten autoritativen App-Stand mit der bestätigten
+  Staging-Konfiguration neu gebaut und ausschließlich auf Staging ausgerollt.
+- Supabase Auth, PostgREST, Datenbankerreichbarkeit, Staff-Restaurantkontext und
+  die öffentlichen Login-Einstiege nach dem Rollout geprüft.
+- Keine Code-, Datenbank-, RLS-, Rollen- oder Tenantdatenänderung vorgenommen.
+
+## 2026-08-26 - Starter Kit QR-Druckseiten vereinheitlicht
+
+- Drei A6-Druckseiten im QR Center und Onboarding auf eine gemeinsame ruhige
+  Gestaltung mit großen, unverzerrten QR-Codes und konsistenten Abständen
+  vereinheitlicht.
+- Operative Platzierungslabels aus den Gastseiten entfernt; die Staff-Seite
+  kennzeichnet den internen Zweck außerhalb der QR-Fläche.
+- Den kleinteiligen Referral-Bereich durch einen kompakten Hinweis ohne feste
+  oder veraltete Laufzeit ersetzt.
+- QR-Payloads, Routen, Rollen- und Businesslogik unverändert gelassen.
+
+## 2026-08-26 - Angebots-Sichtbarkeit von Gültigkeit getrennt
+
+- Veröffentlichte aktive Restaurantangebote bleiben bis zum finalen Ablauf im
+  Customer-Marketingfeed sichtbar, auch vor Startdatum oder außerhalb von
+  Wochentag und täglichem Zeitfenster.
+- Europe/Vienna-Gültigkeitsstatus, Zeitplan und Zeitraum werden in Customer-
+  und Owner-Ansicht ausdrücklich angezeigt; Owner sehen Veröffentlichung,
+  Kundensichtbarkeit und aktuelle Gültigkeit getrennt.
+- Customer-Karten auf 320 bis 430 Pixel mit 16:9-Bildfläche, stabiler
+  Fallbackfläche, begrenzten Textzeilen und voller CTA-Breite normalisiert.
+- Additive Migration
+  `20260826001000_customer_offer_visibility_validity_split.sql`; Reward-,
+  Einlöse-, RLS- und Tenant-Verträge bleiben unverändert.
+
+## 2026-08-25 - Globale Post-Login-Hydration stabilisiert
+
+- Owner-, Staff- und Customer-Passwortlogin verwenden denselben zentralen
+  Session- und Autorisierungsabschluss vor der ersten Portalnavigation.
+- Erfolgreiche Autorisierung invalidiert den restaurantbezogenen Tenant-Kontext
+  gezielt, auch bei derselben Identitaet in einem lange geoeffneten Tab.
+- Safari-BFCache und die Rueckkehr in einen sichtbaren geschuetzten Tab validieren
+  Session und Portalzugriff kontrolliert neu, ohne normalen Full-Page-Reload.
+- Temporaere Autorisierungs-, Tenant- und Staff-Kontextfehler behalten die
+  Sitzung und bieten einen lokalen Wiederholungsversuch statt einer leeren
+  Ansicht.
+- Keine Migration, keine RLS-/Grant-Aenderung und keine fachliche Aenderung.
+
+## 2026-08-25 - Restaurant-Titelbilder gegen fehlerhafte Quellen abgesichert
+
+- Fehlerhafte oder fehlende Titelbild-Adressen im Customer-Partnerfinder zeigen
+  keinen Browser-Fehlerzustand und keinen sichtbaren Alternativtext mehr.
+- Gemeinsamen Bildzustand fuer Laden, gueltiges Bild, fehlendes Bild und
+  Ladefehler eingefuehrt; Restaurantlogo und neutraler Lokal-Fallback folgen
+  in dieser Reihenfolge.
+- Hero-Abmessungen im Detail-Drawer von 320 bis 1024 Pixel stabil gehalten;
+  Finder-, Karten-, Auth-, Punkte- und Rewardlogik bleiben unveraendert.
+
+## 2026-08-25 - Customer Redeem Tabs geometrisch synchronisiert
+
+- `Alle Belohnungen` und `Meine Belohnungen` auf eine gemeinsame, unveraenderliche
+  Seiten- und Content-Grid-Struktur vereinheitlicht.
+- Kurze Empty-State-Inhalte im Safari-Grid oben verankert, damit Header, Titel,
+  Tabs, Punktezeile und Rechtshinweis beim Tabwechsel nicht mehr gestreckt werden.
+- Karten- und Empty-State-Breite von 320 bis 1440 Pixel geometrisch verglichen;
+  Bottom Navigation, Reward-Design und Einloeselogik bleiben unveraendert.
+
+## 2026-08-25 - Rollenbewusste Portal-Anmeldung live freigegeben
+
+- Freigegebenen Commit `a2c9904` mit bestaetigter Staging-Supabase-Konfiguration
+  auf die bestehende Cloudflare-Staging-App ausgerollt.
+- Reale Customer-, Staff-, Owner- und Platform-Admin-Sitzungen positiv und
+  negativ gegeneinander geprueft; legitime Owner-/Platform-Admin-Mischrolle
+  bleibt in beiden Portalen autorisiert.
+- Falsche Portalzugriffe enden vor den Fachoberflaechen mit klarer Rollenkarte,
+  bestaetigtem Ziel und sicherem Kontowechsel; die mobile Rollenkarte ist von
+  320 bis 1024 Pixel ohne horizontalen Ueberlauf geprueft.
+
+## 2026-08-25 - Rollenbewusste Portal-Anmeldung abgesichert
+
+- Gemeinsamen serverseitigen Zugriffsvertrag fuer Customer-, Staff-, Owner- und
+  Platform-Admin-Portale ergaenzt, ohne Rollen aus Metadaten, E-Mail-Mustern
+  oder lokalem Browserzustand abzuleiten.
+- Nach erfolgreicher Authentifizierung werden falsche Portalzugriffe mit einer
+  klaren deutschen Meldung, einem bestaetigten Portalziel und sicherem
+  Kontowechsel beendet.
+- Customer-Datenaufrufe werden bei einem bestaetigten Rollenfehler vor dem
+  Rendern des Customer-Portals verhindert; bestehende Auth-, Tenant- und
+  Fachvertraege bleiben unveraendert.
+
+## 2026-08-25 - Staff-QR als unmittelbaren operativen Drawer umgesetzt
+
+- Primäre Bottom-Navigation `QR scannen` öffnet nun mit einem Tap einen
+  fokussierten Scanner-Drawer, dessen bestehende ZXing-Kamera auf Mobilgeräten
+  direkt unter dem kompakten Header sichtbar ist.
+- Erkennung, sichere Kundenvorschau, Punkteformular, Tages-PIN, Fehler und
+  Erfolg bleiben in einem zustandsbasierten Drawer ohne verschachtelte Modale.
+- Kamera-, QR-, Punkte-, Tenant-, Staff-/Owner- und Actor-Verträge unverändert
+  gelassen; Gastwechsel und nächster Gast starten dieselbe Kamera kontrolliert
+  neu.
+
+## 2026-08-25 - Staff-Kundenflow nach Vorgangspriorität geordnet
+
+- Aktive Rückmeldung, Kundenkarte, Punktevergabe und Schnellsuche im Staff- und Betreiberzugriff verbindlich in dieser Reihenfolge angeordnet.
+- Leerer Zustand führt weiterhin direkt zur Suche; bei Preview-Fehlern bleibt die Punktevergabe gesperrt und Retry oder Gastwechsel verfügbar.
+- QR-, Punkte-, Tages-PIN-, Actor- und Tenantverträge unverändert gelassen und die Reihenfolge für 320 bis 1024 Pixel abgesichert.
+
+## 2026-08-25 - Staging Staff-Login Live-Daten Diagnose
+
+- Aktiven Cloudflare-Build, eingebettete Staging-Supabase-Konfiguration, Auth-Erreichbarkeit und öffentlichen Staff-Kontext geprüft.
+- iPhone-Meldung auf einen alten, bereits geladenen Frontend-Zustand ohne Supabase-Client eingegrenzt; keine Code-, RLS-, RPC- oder Datenbankänderung erforderlich.
+- Diagnose in `docs/reports/2026-08-25_STAGING_STAFF_LOGIN_LIVE_DATA_DIAGNOSIS_REPORT.md` dokumentiert.
+
+## 2026-08-25 - Operative QR-Codes fuer physische Kameras gehaertet
+
+- Neue-Gaeste-, Mitarbeiter- und kompatible Kassa-QRs auf eine gemeinsame
+  schwarz-weisse Renderkonfiguration mit vier Modulen Ruhezone umgestellt.
+- Bildschirmdarstellung auf 270 Pixel sowie PNG- und Starter-Kit-Ausgaben auf
+  hochaufloesende, geglaettungsfreie Rasterpfade angehoben.
+- Staff- und Gaeste-Nutzlasten programmgesteuert aus dem erzeugten QR-Raster
+  dekodiert; Loginroute, Authentifizierung, Rollen und RLS bleiben unveraendert.
+
+## 2026-08-25 - Betreiberzugriff auf eigenen Mitarbeiterbereich
+
+- Staff-Routen fuer autoritative Owner-, Admin- und Manager-Beziehungen des
+  konkret angefragten Restaurants geoeffnet; fremde Tenants und reine
+  Plattformrollen bleiben gesperrt.
+- Betreiberzugriff ohne Staff-Zeile, Rollenwechsel oder Staff-Impersonation
+  umgesetzt und in der UI als Betreiberzugriff gekennzeichnet.
+- Bestehende operative Audit-Aufrufe normalisieren den echten Betreiberakteur
+  auf `admin`, behalten `auth.uid()` und dokumentieren die Restaurantrolle.
+
+## 2026-08-25 - Staff QR auf persönlichen Mitarbeiter-Login geroutet
+
+- Neuen restaurantbezogenen `/staff/login` mit persönlicher E-Mail und
+  persönlichem Passwort ergänzt; Owner-Texte und Owner-Registrierungslogik
+  werden nicht wiederverwendet.
+- Aktive Staff-/Supervisor-Zuordnung für den exakten QR-Slug serverseitig
+  geprüft; die spätere Betreiberzugriffsentscheidung erlaubt zusätzlich
+  autoritative Owner-/Admin-/Manager-Zuordnungen für den eigenen Tenant.
+  Plattformadmin, Customer, gesperrte und fremde Staff-Konten bleiben allein
+  durch diese Rollen ausgeschlossen.
+- Neue Staff-QRs und Starter Kits auf den Mitarbeiter-Login umgestellt und
+  bestehende `/staff/:slug`-Drucke kompatibel weitergeleitet.
+
+## 2026-08-25 - Owner-Teamverwaltung mit persönlichen Staff-Zugängen
+
+- Bestehende `staff_members`-Architektur additiv um persönliche
+  Supabase-Auth-Bindung und auditierte Account-Status erweitert.
+- Owner-Oberfläche für Einladen, erneutes Senden, Sperren, Reaktivieren und
+  Entfernen umgesetzt.
+- Staff-Einladung über serverseitige Edge Function und explizite persönliche
+  Annahme abgesichert; QR bleibt reiner Login-Einstieg.
+- Staff-Routen an die aktive restaurantbezogene Mitgliedschaft gebunden und
+  bestehende Tages-PIN-, Punkte- und Einlöseflows unverändert gelassen.
+
+## 2026-08-24 - QR Center auf aktive V1-Zwecke fokussiert
+
+- Neue-Gäste-QR und Mitarbeiter-QR als zwei primäre QR-Center-Zwecke
+  festgeschrieben.
+- Technisch identischen Kassa-Aufsteller aus Owner-UI und Starter Kit entfernt.
+- Neue Restaurants erhalten im Onboarding zwei Druckvarianten desselben
+  Gäste-QR sowie den Staff-QR; keine zusätzlichen QR-Typen werden erzeugt.
+- Bestehenden `/w/:slug`-Kassa-QR für kundeninitiierte Sammelmodi
+  fail-safe kompatibel gehalten und nur dort als separaten Hinweis angezeigt.
+- Keine Datenbankmigration, keine historischen Datenlöschungen und keine
+  Änderung der Punkte-, Tages-PIN- oder Staff-Autorisierung.
+
+## 2026-08-24 - Platform Admin und Referral Staging Gate gehaertet
+
+- Platform-Admin-Control-Center-Migration `20260824005000` auf Staging
+  aktiviert und einen NULL-basierten Autorisierungsfehler mit der additiven
+  Fail-Closed-Migration `20260824005500` behoben.
+- Referral-Welcome-, Eligibility- und Monatslimit-Migration `20260824006000`
+  auf Staging aktiviert.
+- Mehrdeutige Telefonnummernreferenz in der Referral-Registrierung mit
+  Migration `20260824006100` behoben; Staging-DB-Linter danach ohne Fehler.
+- Referral-Qualifikation, Monatslimit, Welcome Gift, 100-/50-Prozent-Dauer,
+  2x-Punkte und Stacking transaktional gegen Staging verifiziert.
+
+## 2026-08-24 - Referral Customer Lifecycle UX integriert
+
+- Serverseitigen Referral-Statusvertrag um wartende Registrierung,
+  ausstehende Qualifikation, aktiv und abgelaufen erweitert.
+- Referrer- und Friend-Texte getrennt sowie exakten Ablaufzeitpunkt und
+  praezise Restzeit in das Kundenportal aufgenommen.
+- Aktive Dauer weiterhin dynamisch aus Owner-Konfiguration und serverseitigem
+  Boost-Enddatum; keine 30-/15-Tage-Laufzeit in der aktiven Customer-UI.
+- Qualifikation, 100-/50-Prozent-Regel, Stacking, Punkte-Engine und
+  Tenant-Sicherheit unveraendert gelassen.
+
+## 2026-08-24 - Referral Welcome Gift, Eligibility und Monatslimit integriert
+
+- Referral-Erstregistrierung an den bestehenden einmaligen Welcome-Gift-
+  Assignment-Flow angebunden; Geschenk bleibt bis zur ersten Punktebuchung
+  gesperrt.
+- Einladungserstellung serverseitig an die erste positive Punktebuchung des
+  Referrers im selben Restaurant gebunden.
+- Restaurantbezogenes Monatslimit mit Default 5, Owner-Bereich 1 bis 100,
+  lokaler Restaurant-Zeitzone und atomarem Idempotenzschutz vorbereitet.
+- Customer-UI fuer gesperrt, Monatslimit und angenommen-aber-pending ergaenzt.
+- Migration `20260824006000_referral_welcome_eligibility_monthly_quota.sql`
+  lokal vorbereitet; Staging-Anwendung bleibt wegen Migrationsreihenfolge offen.
+
+## 2026-08-24 - Platform Admin Restaurant Control Center Backendvertrag
+
+- additive Migration `20260824005000_platform_admin_restaurant_control_center.sql` vorbereitet
+- autoritative Restaurant-, Abo-, Nutzungs-, Referral-, Einlösungs- und Health-Aggregation ergänzt
+- Nullwerte, fehlende Telemetrie und RPC-Fehler explizit getrennt
+- Plattformrolle serverseitig geprüft; normale Tenant-RLS unverändert
+- keine UI-Umstellung, keine Staging-Anwendung und keine Production-Aktion
+
+## 2026-08-24 - Referral-Einladung an zentrale Kundenregistrierung angebunden
+
+- Vereinfachtes Referral-Sonderformular entfernt und die Einladung an den
+  bestehenden Customer-Auth-Flow mit E-Mail-Bestaetigung und Doppelpasswort
+  angebunden.
+- Streng validierten Referral-Rueckweg fuer den Auth-Callback ergaenzt.
+- Additive authenticated-only RPC-Bruecke fuer atomare Referral-, Customer- und
+  Membership-Zuordnung vorbereitet; bestehende Qualifizierung und Booster-
+  Engine bleiben unveraendert.
+- Freunde-Dauer fuer 7/14/28 Tage sichtbar als 84 Stunden, 7 Tage und 14 Tage
+  vereinheitlicht.
+
+## 2026-08-24 - Platform Admin V1 Foundation gehaertet
+
+- Bestehende Plattform-Admin-Routen und RPCs wiederverwendet statt ein zweites
+  Adminsystem aufzubauen.
+- Plattformrollen im Client zentralisiert und ausschliesslich ueber den
+  serververifizierten Rollen-RPC geladen.
+- `platform_admins` als einzige Laufzeitautoritaet vorbereitet; direkte
+  Browserrechte und direkte Helper-Ausfuehrung entzogen.
+- Owner, Staff, Customer und Anon bleiben von Plattformfunktionen getrennt.
+- Bestehender Plattform-Auditvertrag mit Actor, Aktion, Ziel, Vorher-/Nachher-
+  Zustand und optionalem Grund bleibt erhalten.
+
+## 2026-08-24 - Referral Final Gate und autoritative Testbasis verifiziert
+
+- Referral-Owner-Audit auf den bestehenden Actor-Vertrag `admin` korrigiert.
+- Booster-KPIs auf aktuelle `POINTS_ADDED`-Events umgestellt und sichere
+  Legacy-Kompatibilitaet mit Deduplizierung beibehalten.
+- Testkunden und Testevents bleiben aus operativen Booster-KPIs ausgeschlossen.
+- Migration `20260824002000_fix_referral_settings_audit_and_boost_kpis.sql` auf
+  Staging angewendet und Local/Remote-Historie synchronisiert.
+- Die vollstaendige autoritative Testsuite im Recovery-Worktree wiederhergestellt;
+  die abweichenden 48 Tests stammten aus einer unvollstaendigen Repository-Kopie.
+
+## 2026-08-24 - Canonical V1 Recovery integriert
+
+- Sichtbares Branding auf WUXUAI Bonus und den Kundenbereich Meine Vorteile
+  vereinheitlicht, ohne Routes oder technische Datenbanknamen umzubenennen.
+- Freundschaftsbonus auf Default 14 Tage, 7/14/28/Custom sowie volle
+  Referrer- und exakt halbe Freundesdauer konsolidiert; 2x bleibt die Obergrenze.
+- Historische Booster bleiben unverändert; neue Grants sind rollenbezogen und
+  idempotent.
+- Canonical Product Contract und Legacy Document Index trennen den aktuellen
+  V1-Vertrag von historischen Reports und Migrationen.
+
+## 2026-08-23 – Staff-Tages-KPIs und Schnellnavigation korrigiert
+
+- Staff-Tages-KPIs lesen gutgeschriebene Punkte aus `points_transactions` und
+  finalisierte Einlösungen aus dem unveränderbaren Aktivitätsjournal.
+- Lokale Tagesgrenzen stammen aus der Restaurant-Zeitzone; Testkunden und
+  Testeinlösungen bleiben aus operativen Werten ausgeschlossen.
+- Erfolgreiche Punktebuchungen laden die Tagesübersicht neu, während
+  Abfragefehler weiterhin nicht als echte Null-Aktivität erscheinen.
+- Die Staff-Bottom-Navigation bietet fünf direkte Ziele: Start, QR scannen,
+  Tages-PIN, Gast suchen und Mehr. Bestehende Handler und Businesslogik bleiben
+  unverändert.
+- Die kollidierende lokale Reporting-Migrationsnummer wurde vor dem
+  Staging-Lauf eindeutig auf `20260823001500` korrigiert.
+
+## 2026-08-23 – Customer-Kartendetail über Leaflet stabilisiert
+
+- Das Restaurantdetail in der mobilen Kartenansicht verwendet den bestehenden
+  Body-Portal-Drawer statt eines innerhalb der Finder-Seite fixierten Elements.
+- Kartencontainer und Leaflet-Laufzeit bilden einen isolierten Stacking-Kontext,
+  sodass Tiles, Marker, Popups und Controls den Drawer nicht mehr überlagern.
+- Der Drawer sperrt Hintergrundinteraktionen, scrollt auf iOS-taugliche Weise
+  intern und gibt Karteninteraktion sowie Body-Scroll nach dem Schließen frei.
+- Bottom-Navigation und Safe Areas bleiben berücksichtigt; Restaurant-, Karten-,
+  Punkte-, Reward- und Geschenklogik wurden nicht geändert.
+
+## 2026-08-23 – Customer-Chips und Restaurantlogos mobil korrigiert
+
+- Filter in „Meine Lokale“ und „Lokale entdecken“ bleiben einzeilig,
+  horizontal scrollbar und erhalten rechts ausreichend Scroll-Abstand für den
+  letzten vollständig sichtbaren Chip.
+- Customer-spezifische Restaurantlogos verwenden durchgehend `object-fit:
+  contain`, erhalten breitere Markenflächen und werden nicht mehr durch
+  `overflow: hidden` abgeschnitten.
+- Lokalkarten begrenzen ihre Breite, lassen lange Namen und Adressen umbrechen
+  und behalten den bestehenden Safe-Area-Abstand zur Bottom-Navigation.
+- Keine Business-, Datenbank-, API-, Auth-, Reward-, Punkte- oder Geschenklogik
+  geändert.
+
+## 2026-08-23 – Customer Mobile UI stabilisiert
+
+- Customer-Shell verwendet normalen vertikalen Seitenfluss statt eines
+  verschachtelten, gesperrten `100dvh`-Scrollcontainers.
+- Customer Home, Rewards, Geschenke und Konto erhalten kompaktere Karten,
+  Typografie und Abstände bei unveränderten Handlern und Datenverträgen.
+- Zentrale Lokalkarten wechseln auf kleinen Geräten in ein lesbares 2x2-KPI-
+  Raster; lange Namen, Adressen und Statuswerte dürfen umbrechen.
+- Finder-Suche, Umschalter und Filter bleiben mindestens 44 Pixel hoch, nutzen
+  auf 320 bis 430 Pixeln sichere Spalten und reservieren Platz für die feste
+  Bottom-Navigation.
+- Karten-Bottom-Sheet, Kartenfläche und Seiteninhalt berücksichtigen iOS Safe
+  Areas; es wurde keine Datenbank-, RLS-, Auth- oder Bonuslogik geändert.
+
+## 2026-08-23 – Geschäftsadresse automatisch geocodiert
+
+- Owner geben im Standortformular nur noch Adresse, Postleitzahl, Ort und Land
+  ein; Koordinaten werden nach ausdrücklichem Klick serverseitig ermittelt.
+- Neue tenantgeschützte Supabase Edge Function übermittelt ausschließlich die
+  Geschäftsadresse an den fest definierten Nominatim-Endpunkt.
+- Zeitlich begrenzter Cache und atomarer globaler Provider-Slot verhindern
+  unnötige oder schnell aufeinanderfolgende externe Requests.
+- Mehrere Treffer, kein Treffer, Rate Limit und Adressänderungen besitzen klare
+  deutsche UI-Zustände; alte Koordinaten gelten nach Adressänderung nicht fort.
+- Legal-V0.9 bleibt unverändert; ein separates ungeprüftes Addendum dokumentiert
+  Datenschutz, Drittanbieterhinweis und spätere Production-Prüfung.
+
+## 2026-08-23 – Owner-Standortkarte stabilisiert
+
+- Karten- und Markerstyles aus der Finder-Route in den lazy geladenen
+  Kartenbaustein verschoben, damit die Owner-Markervorschau unabhängig von der
+  vorherigen Navigation vollständig dargestellt wird.
+- Leaflet synchronisiert seine Größe nach dem sichtbaren Render und bei echten
+  Containeränderungen kontrolliert über `invalidateSize()`.
+- OpenStreetMap verwendet die kanonische HTTPS-Kacheladresse; ein fehlgeschlagener
+  Kachelabruf zeigt einen kompakten deutschen Fehlerzustand mit Retry.
+- Keine Standort-, Finder-, Datenbank-, RLS- oder Tenantlogik geändert.
+
+## 2026-08-09 – V1 Release-Finishing für Geschenke und Benachrichtigungen
+
+- Willkommens- und Geburtstagsgeschenke verwenden additiv das bestehende
+  15-Minuten-Präsentationsprinzip; historische Codes bleiben kompatibel.
+- Geburtstagsgeschenke werden 14 Tage vorher einmalig und serverseitig aus dem
+  freigegebenen Willkommensgeschenk-Pool zugeteilt.
+- Private idempotente Queues für Zuteilungs-, Ablauf- und
+  Punkte-Schwellen-E-Mails ergänzt; Versandfehler beeinflussen keine Buchung.
+- Dashboard-Resolver führt bei fehlendem Pool direkt zur bestehenden
+  Geschenkverwaltung.
+- Stripe wurde nicht implementiert und bleibt ein separater letzter Sprint.
+
+## 2026-08-05 – Kunden-E-Mail-Bestätigung prefetch-sicher vorbereitet
+
+- konkreten Staging-Fehler als `One-time token not found` auf `GET /verify`
+  identifiziert.
+- Kunden- und Owner-Callback auf eine bewusste Zwei-Schritt-Bestätigung
+  vorbereitet; der erste Seitenaufruf verbraucht keinen Einmal-Link mehr.
+- `token_hash`, PKCE-Code und vollständiger Legacy-Hash werden zentral validiert;
+  parallele Verarbeitung wird per Single Flight zusammengeführt.
+- Kunden-Resend mit generischer Antwort, Cooldown und sicherem Rückkehrkontext
+  ergänzt.
+- Supabase-Template- und Redirect-Umstellung bewusst noch nicht aktiviert, da
+  dafür zuerst der kompatible App-Build auf Staging bereitstehen muss.
+
+## 2026-08-04 – Zentraler Kundenbereich und Angebots-E-Mail-Vertrag
+
+- `Mein WUXUAI` mit zentraler Route und fünfteiliger Navigation ergänzt.
+- bereits validierte restaurantbezogene Memberships serverseitig verknüpft;
+  Punkte bleiben getrennt und werden nicht summiert.
+- Finder und `Aktuelles` von Browser-Tokenaggregation auf zentralen Account-RPC
+  umgestellt.
+- freiwilliges, restaurantbezogenes E-Mail-Consent-/DOI-/Abmeldemodell und
+  idempotentes Digest-Delivery-Log additiv vorbereitet.
+- Marketingversand mangels freigegebenem Provider weiterhin deaktiviert.
+- Owner-Ansicht auf aggregierte E-Mail-Kennzahlen ohne Empfängerlisten begrenzt.
+- Migration nicht angewendet; kein Deployment durchgeführt.
+
+## 2026-08-04 – Aktuelles & Angebote technisch umgesetzt
+
+- eigenstaendiges, tenantgebundenes Angebotsmodell ohne Reward- oder
+  Punktebeziehung ergaenzt
+- serverseitige Fuenfergrenze mit Schutz gegen parallele Veroeffentlichung
+  vorbereitet
+- Owner-Verwaltung mit Entwurf, Vorschau, Veroeffentlichung, Deaktivierung,
+  Duplizierung und Archivierung ergaenzt
+- sicherer bestehender Owner-Bildupload wiederverwendet
+- CustomerPortal, zentrale Aktuelles-Seite und Partnerlokal-Finder angebunden
+- Analytics auf PII-freie Tagesaggregate begrenzt
+- Migration nur im Staging-Dry-Run geprueft und nicht angewendet
+
+## 2026-08-04 – V1-Modul Aktuelles & Angebote freigegeben
+
+- `Aktuelles & Angebote` als eng begrenztes Informationsmodul fuer Restaurants
+  in V1 dokumentiert.
+- Wochen-, Monats- und Mittagsangebote, neue Gerichte, Saisonhinweise,
+  Veranstaltungen und Neuigkeiten als zulaessige Beitragstypen festgelegt.
+- Maximal fuenf gleichzeitig veroeffentlichte Beitraege pro Restaurant
+  verbindlich festgelegt.
+- Strikte Trennung von Rewards, Punkten, Geschenken, Coupons, Codes und
+  Einloesungen dokumentiert.
+- Kundenportal und Partnerlokal-Finder als reine Anzeigeflaechen vorgesehen;
+  QR- und Kundenkontext bleiben unveraendert.
+- V1-Auswertung auf personenbezugsfreie aggregierte Kennzahlen begrenzt.
+- Automatisierung, Push, Segmentierung, Personalisierung, Attribution und
+  A/B-Tests bleiben V2.
+- Rechtliche Pruefung von Preisangaben, Verfuegbarkeit, Bildrechten,
+  Produktinformationen, Allergenen und Veranstaltungsangaben vor Production
+  festgehalten.
+- Nur Dokumentation aktualisiert; keine Produkt-, Datenbank-, RLS- oder
+  Laufzeitaenderung vorgenommen.
+
+## 2026-08-03 – Punkte-Präsentationsfenster
+
+- Normale Punktebelohnungen auf verbindliche Kundenbestätigung mit sofortigem,
+  atomarem Punkteabzug umgestellt.
+- Serverzeitgebundenes 15-Minuten-Fenster mit Live-Anzeige und idempotentem
+  Abschluss ergänzt.
+- Journal und Audit werden bereits bei Aktivierung geschrieben.
+- Owner-/Support-Storno bucht Punkte atomar zurück; Geschenk-Codeflow bleibt
+  unverändert.
+- Neue Legal-Vorlage bleibt `DRAFT_LEGAL_REVIEW_REQUIRED`.
+
+## 2026-08-03 – Dynamischer nächster Schritt im Owner-Dashboard
+
+- Dauerhafte grüne Legal-Statuskarte durch einen zentral priorisierten
+  `Nächster Schritt`-Resolver ersetzt.
+- Echte Legal-Warnungen bleiben nicht schließbar und haben höchste Priorität.
+- Kernschritte für Punkte-Einlösung, Punktevergabe, Willkommensgeschenk und QR
+  werden aus bestehenden tenantgebundenen Statusdaten abgeleitet.
+- Optionale Hinweise und die einmalige Startklar-Meldung werden pro Restaurant
+  und Admin-Benutzer persistent mit RLS gespeichert.
+- Ohne offene Aufgabe wird kein Hinweiscontainer und kein Leerraum gerendert.
+
+## 2026-08-03 – Partnerlokal-Finder mit eigenen Bonusständen
+
+- Kundenseite als `Lokale entdecken` mit Karte, Liste und sechs V1-Filtern
+  vereinheitlicht.
+- Öffnungsstatus einschließlich Mittagspause nach Europe/Vienna ergänzt.
+- Restaurantbezogene Punkte, Besuche und Belohnungen in einem begrenzten,
+  tokengeprüften Aggregat-RPC zusammengeführt und N+1-Abfragen entfernt.
+- Karteninteraktion bleibt rein lesend und verändert keinen aktiven QR-Kontext.
+
+## 2026-08-03 – Bonnummer aus dem aktiven V1-Punkteflow entfernt
+
+- Bonnummer-Eingabe aus Staff UI und Servicevertrag entfernt.
+- Oeffentlichen restaurantgesteuerten Confirm-RPC auf fuenf Parameter reduziert.
+- Historischen sechsparametrigen Vertrag fuer Browserrollen gesperrt.
+- Bonnummer-Eindeutigkeitsindex entfernt, ohne historische Werte oder Spalten zu
+  loeschen.
+- Reverse-Fingerprint an Tenant, Operation, Originaltransaktion,
+  serverautorisierte Rolle und normalisierte Begruendung gebunden.
+
+## 2026-08-01 – Gemeinsame serverseitige Punkte-Engine
+
+- Customer- und restaurantgesteuerte Buchungen auf eine gemeinsame Berechnung umgestellt.
+- Aktiven Referral-Boost einschließlich Snapshot und Ablauf serverseitig integriert.
+- Erstbuchungsqualifizierung atomar und genau einmal nach erfolgreicher Buchung umgesetzt.
+- Preview bleibt zustandslos; Confirmation rechnet unter Lock erneut.
+- Legacy-Direktfunktionen für Browserrollen gesperrt und Parallel-Retry nach QR-Lock abgesichert.
+
+## 2026-07-31 – Owner-konfigurierbare Punkte-Sammel-Modi
+
+- Kurzlebigen Single-Use-Kunden-QR und atomare restaurantgesteuerte Punktebuchung ergänzt.
+- Bestandsrestaurants rückwärtskompatibel auf den bisherigen Sammelweg gesetzt.
+- Owner-Einstellung für Modus und Maximalbetrag ergänzt.
+
+## 2026-07-30 – Ungültige Supabase-Refresh-Tokens kontrolliert bereinigen
+
+- Strukturierte Fehler für fehlende, bereits verwendete, widerrufene,
+  abgelaufene oder anderweitig ungültige Refresh-Tokens beenden die lokale
+  Auth-Sitzung genau einmal.
+- Der projektbezogene Supabase-Auth-Storage wird nach lokalem Sign-out gezielt
+  entfernt und geschützte Ansichten leiten kontrolliert zum Restaurant-Login.
+- Temporäre Netzwerk-, Timeout- und Serverfehler löschen keine gültige lokale
+  Sitzung.
+- Ein Single-Flight-Controller verhindert parallele Refresh-Anfragen und
+  wiederholte 400-Schleifen; öffentliche Seiten starten keinen Refresh.
+- React Strict Mode erzeugt durch Effekt-Cleanup weder doppelte Listener noch
+  parallele Refresh-Intervalle.
+- Der normale App-Client bleibt ein Singleton. Der getrennte Recovery-Client
+  bleibt absichtlich tabgebunden, besitzt eigenen Storage und keinen
+  Auto-Refresh.
+
+## 2026-07-30 – Initiales Legal-Paket transaktional mit Onboarding veröffentlichen
+
+- Schritt 7 verlangt nun die ausdrückliche Owner-Bestätigung zur Veröffentlichung der automatisch vorbereiteten Dokumente.
+- Der neue owner- und tenantgeschützte RPC `complete_restaurant_onboarding` veröffentlicht das vollständige Legal-Paket und aktiviert erst danach das bestehende Restaurant.
+- Fehlende Pflichtdokumente, ungültige Drafts oder fehlende Registration-Readiness rollen den Abschluss vollständig zurück.
+- Der bestehende Restaurant-Slug bleibt unverändert; es gibt keinen Restaurant-Insert und keine Fallback-Aktivierung.
+- Gültigkeitsdaten verwenden das lokale Kalenderdatum in `Europe/Vienna`.
+- Initiale Veröffentlichung räumt den Dirty-State auf; spätere echte Änderungen erzeugen weiterhin neue unveränderliche Drafts.
+- Migration `20260730002000_onboarding_initial_legal_package_publication.sql` wurde nach erfolgreichem Dry-Run auf `wuxuai-bonus-staging` angewendet.
+- RLS blieb unverändert; der neue RPC ist für `anon` gesperrt.
+
+## 2026-07-30 – Kontextbezogene Hilfe im Restaurant-Onboarding
+
+- Der Onboarding-Hilfedrawer zeigt fuer jeden der sieben Schritte einen
+  eigenen kurzen Hilfetext.
+- Titel und Hilfebutton verwenden die klare Bezeichnung
+  `Hilfe zu diesem Schritt` beziehungsweise `Hilfe`.
+- Jede Hilfe beschraenkt sich auf die aktuelle Entscheidung und enthaelt eine
+  kleine Zeit- oder Tippzeile.
+- Die allgemeine Zusammenfassung spaeterer Onboarding-Inhalte wurde entfernt;
+  Businesslogik, Navigation und Datenbank bleiben unveraendert.
+
+## 2026-07-30 – Restaurantfokussierte V1 wiederhergestellt
+
+- Die validierte restaurantfokussierte Baseline `b9b2647` ist der offizielle
+  V1-Ausgangspunkt auf `release/v1-restaurant-bonus`.
+- Die branchenneutrale Phase 1/2 ist auf `future/v2-business-neutral` und mit
+  dem Tag `v2-business-neutral-snapshot-2026-07-30` vollstaendig archiviert.
+- V1 wird als `WUXUAI Restaurant Bonus` fertiggestellt; Branchenprofile,
+  neutrale Produktsprache und Bonusprogramm-Assistent bleiben V2.
+- Alle vorhandenen Sicherheits-, Legal-, Identity-, QR-, Audit- und
+  Onboarding-Migrationen bleiben erhalten; es gibt keinen Schema-Rollback.
+- Decision Record:
+  `docs/product/DECISION_2026-07-30_V1_RESTAURANT_FIRST_V2_DEFERRED.md`
+
+## 2026-07-29 – Automatisiertes Legal-Paket im Restaurant-Onboarding
+
+- Das siebenstufige Onboarding bleibt erhalten und ergänzt Schritt 1 um
+  kompakte rechtliche Unternehmensstammdaten ohne juristische Freitexte.
+- Zentrale versionierte Mastervorlagen erzeugen tenantgebunden Impressum,
+  Teilnahmebedingungen, Datenschutz, Bonusregeln und Kassenabgrenzung.
+- Pilotrestaurants dürfen gekennzeichnete Testvorlagen automatisch als
+  Entwurf erzeugen; die Veröffentlichung verlangt eine ausdrückliche
+  Owner-Bestätigung. Production verlangt zentral geprüfte Mastervorlagen.
+- Das Owner Legal Center zeigt eine kompakte Dokumentübersicht mit
+  verständlichen Statusbezeichnungen und progressiver Detailbearbeitung.
+- Das Dashboard zeigt einen serverseitig berechneten grünen, gelben oder roten
+  Legal-Status mit Ursache, Aktualisierungszeitpunkt und direktem Zugang.
+- Dokumentdetails enthalten Version, Erstellungs- und Veröffentlichungszeit,
+  Gültigkeit, Acceptance-Anzahl, verantwortlichen Owner und Mastertemplate.
+- Bestehende Kundenbestätigungen bleiben historisch unverändert; eine erneute
+  Zustimmung wird niemals still aktiviert.
+- Programmende ist ein eigener bestätigter Owner-Flow.
+- Änderungen relevanter Bonuskonfigurationen markieren eine neue
+  Dokumentversion als erforderlich, ohne veröffentlichte Altversionen zu
+  überschreiben.
+
+## 2026-07-29 – Legal Readiness für Kundenregistrierung
+
+- Teilnahmebedingungen und Datenschutzerklärung gelten öffentlich nur, wenn
+  beide Versionen veröffentlicht und am aktuellen Datum bereits gültig sind.
+- Der interne Legal-Template-Helper ist nicht mehr anonym oder über normale
+  Browserrollen ausführbar.
+- Das Owner Legal Center zeigt Version, Veröffentlichungsstatus, Gültigkeitsdatum
+  und die tatsächliche Bereitschaft der Kundenregistrierung je Pflichtdokument.
+- Staging-Testtexte bleiben ausdrücklich als `DRAFT_LEGAL_REVIEW_REQUIRED`
+  gekennzeichnet und sind keine anwaltlich freigegebenen Production-Texte.
+
+## 2026-07-29 – Öffentliche Seiten ohne vorschnellen Auth-Refresh
+
+- Öffentliche Routen initialisieren keine persistierte Supabase-Session mehr
+  und lösen deshalb keinen unnötigen Refresh-Request aus.
+- Automatische Token-Aktualisierung startet ausschließlich auf geschützten
+  Owner-, Staff- und Plattform-Routen.
+- Fehler beim Laden einer geschützten Session werden kontrolliert als
+  ausgeloggter Zustand behandelt, ohne technische Fehlermeldung in der UI.
+- Anmeldung und dauerhaft gespeicherte Sessions bleiben für geschützte Routen
+  erhalten; Datenbank, RLS und Auth-Verträge wurden nicht geändert.
+
+## 2026-07-29 – Einlösequote als feste Auswahl
+
+- Restaurant-Einstellungen und Reward-Dialog verwenden eine native Auswahl mit
+  exakt 1 % bis 10 % statt einer freien Zahleneingabe.
+- Der Standardwert für neue Einstellungen ist 3 %.
+- Konsumation, benötigte Punkte und wirtschaftliche Einordnung reagieren sofort
+  auf die Auswahl.
+- Legacy-Werte außerhalb des gültigen Bereichs bleiben sichtbar und müssen vom
+  Owner bewusst ersetzt werden; historische Einlösungen bleiben unverändert.
+- Die Datenbankmigration erweitert den zulässigen Bereich ohne Backfill oder
+  Überschreiben bestehender Werte.
+
 # WUXUAI Bonus V1 – Changelog
 
+## 2026-08-31 - Owner-Onboarding Öffnungszeiten kopieren
+
+- Die gemeinsame Öffnungszeiten-Eingabe in Onboarding und Einstellungen bietet
+  nun `Auf alle Tage übertragen` für die vollständige Montagskonfiguration.
+- Abweichende Zielzeiten werden nicht ohne Bestätigung überschrieben; einzelne
+  Tage bleiben nach dem Kopieren frei bearbeitbar.
+- Der Onboarding-Klick speichert nicht automatisch. Erst `Weiter` übernimmt
+  den lokalen Stand in den bestehenden Entwurfsvertrag.
+- Keine Migration und keine Änderung an Zeitzone, Validierung oder öffentlicher
+  Öffnungsstatuslogik.
+
+## 2026-08-30 - Einheitlicher Login und Passwortwiederherstellung integriert
+
+- Customer-, Staff- und Restaurant-Login verwenden denselben kontextgebundenen
+  Supabase-Passwortwiederherstellungsflow und dieselbe Passwortidentitaet.
+- Alle drei Loginseiten verlinken kompakt auf die jeweils anderen oeffentlichen
+  Bereiche; der private Plattformzugang wird nicht beworben.
+- Bestehende Mitarbeiter koennen den Mitarbeiter-Login ohne QR direkt oeffnen;
+  vorhandener Restaurantkontext wird weiterhin exakt serverseitig geprueft.
+- Anti-Enumeration, Recovery-Session-Isolation, E-Mail-Bestaetigung,
+  Rollenautoritaet und Tenantgrenzen bleiben unveraendert.
+- Keine Migration; echte Reset-Mail-, Callback-, Rollen- und iPhone-Gates sind
+  bis zum Development/Test-Deployment offen.
+
+## 2026-08-19 - Offers-Audit-400 auf Staging behoben
+
+- reproduzierbaren `save_restaurant_offer`-Fehler auf den unzulässigen Audit-Akteurstyp `restaurant_user` eingegrenzt
+- additive Forward-Migration stellt alle vier Offers-Schreib-RPCs auf den bestehenden Typ `admin` um
+- Offers-Schema, RLS, Grants, Fünfergrenze und Mandantentrennung unverändert beibehalten
+- Staging auf 92/92 Migrationen synchronisiert; DB-Linter 0 Fehler und CRUD-Smoke vollständig mit explizitem Rollback bestanden
+- Loading-, Empty- und Error-Zustand der Owner-Seite sprachlich eindeutig getrennt
+- keine Marketing-Mail-, Reward-, Punkte-, Production- oder Stripe-Änderung
+
 Status: **LOCK**
+
+## 29.07.2026 - Customer Identity Security-Verifikation auf Staging
+
+- Fremde Restauranttokens werden nach einem leeren Token-Lookup unmittelbar
+  als ungültig abgelehnt, bevor Membership-Status geprüft werden.
+- Der kontrollierte Owner-Supportpfad verwendet den bestehenden erlaubten
+  Audit-Akteurtyp `admin` und bleibt tenantgebunden.
+- Keine RPC-Signatur und keine RLS-Policy wurde gelockert.
+- Beide Fehler wurden durch rollback-sichere Live-Verhaltenstests auf Staging
+  nachgewiesen und nach der additiven Migration erneut erfolgreich geprüft.
+
+## 28.07.2026 - Wiedererkennung nach erneutem Restaurant-QR
+
+- Kundenzugänge werden vor dem ersten Portal-Request synchron und getrennt je
+  Restaurant-Slug aus einem versionierten lokalen Zugangsspeicher gelesen.
+- Bestehende Legacy-Tokens werden in den neuen restaurantbezogenen Schlüssel
+  übernommen; Restaurant A und Restaurant B überschreiben sich nicht.
+- Eine Registrierung gilt im Browser erst nach verifiziertem Speichern des
+  Zugangs als abgeschlossen. Bei blockiertem Safari-Speicher wird nur das
+  Speichern wiederholt und kein zweites Kundenkonto angelegt.
+- URL-Tokens werden nach erfolgreicher Servervalidierung und lokaler
+  Persistierung aus der Browseradresse entfernt.
+- Fokus, Sichtbarkeitswechsel und Safari-BFCache lösen eine erneute
+  serverseitige Zugangsprüfung aus.
+- Keine Punkte-, Reward-, Tages-PIN-, RLS- oder Datenbanklogik wurde geändert.
+
+## 27.07.2026 - Optionale Einwilligungen und Restaurant-Neuscan
+
+- Der Registrierungsabschluss verlangt nur noch gültige Pflichtfelder,
+  Teilnahmebedingungen und Datenschutzbestätigung.
+- Freiwillige Geburtstags- und Marketingeinwilligungen dürfen deaktiviert
+  bleiben und erzeugen dadurch keinen aktiven Marketingstatus.
+- Der Sammel-Flow bietet einen echten kamerabasierten Restaurant-QR-Scanner.
+- Ein neuer Scan übernimmt ausschließlich den neuen Restaurant-Slug und keine
+  Token oder Query-Daten aus dem gescannten Link.
+- Ungültige und fremde QR-Codes aktivieren keinen alten Restaurantkontext;
+  Abbrechen führt bewusst zum neutralen Gast-Bonus-Einstieg.
+- Keine Datenbank-, RLS-, Punkte- oder Rewardlogik wurde geändert.
 
 ## 24.07.2026 - Legal- und Karten-Hardening
 
@@ -2180,3 +3215,506 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - sichtbare Labels, Autofill, Live-Regionen, Tastaturbedienung und mindestens 44 px große Touchziele vereinheitlicht
 - Responsive-Abnahme bei 320, 375, 390, 430, 768, 1024 und 1440 px ohne horizontalen Overflow durchgeführt
 - keine Auth-, Registrierungs-, Routing-, Supabase-, Datenbank-, RLS- oder Portal-Logik verändert
+
+## 2026-07-27 – Mobiler QR- und Registrierungsablauf stabilisiert
+
+- ein temporär fehlgeschlagener öffentlicher Portalaufruf wird einmal kontrolliert wiederholt, bevor der endgültige Fehlerzustand erscheint
+- URL-Slug und Kundenzugang bleiben während des Retries unverändert; ein Route-Wechsel bricht den alten Wiederholungsversuch vor dem nächsten Request ab
+- ungültige Restaurants und ungültige Kundenzugänge werden nicht automatisch wiederholt
+- Registrierungsformular erzwingt auf der weißen Karte dunklen Primär- und Sekundärtext
+- Pflicht- und freiwillige Checkboxen starten sichtbar leer; bestehende serverseitige Consent-Defaults bleiben `false`
+- das bestehende native Geburtstagsfeld und seine freiwillige Verarbeitung bleiben unverändert
+- `Fertig` wird erst bei gültigem Vornamen, gültiger Telefonnummer und beiden Pflichtbestätigungen aktiv
+- freiwillige Einwilligungen sind mobil kompakt einklappbar; Abschlussaktionen bleiben oberhalb der Safe Area erreichbar
+- keine Datenbank-, RPC-, RLS-, QR-, Tages-PIN- oder Punktelogik geändert
+
+## 2026-07-27 – Aktiver Restaurantkontext strikt an QR-URL gebunden
+
+- `/customer/:slug` und `/w/:slug` werden zentral aus dem aktuellen URL-Pfad validiert; ohne gültigen Restaurantpfad wird kein Customer Portal initialisiert
+- QR-Wechsel A → B erzeugt eine neue Portalinstanz und verwirft Restaurant-, Branding-, Reward-, Bonstufen- und Ladezustand von A
+- Kundenzugänge bleiben ausschließlich restaurantbezogen gespeichert; ein globaler aktiver Restaurantkontext wird weder in Local Storage noch Session Storage geschrieben
+- Safari-BFCache wird über `pageshow` erkannt und initialisiert das Portal erneut aus der aktuell sichtbaren URL
+- ein kontrollierter Retry verwendet weiterhin nur den beim aktuellen Scan validierten Slug und Kundenzugang
+- `/customer` zeigt ohne QR-Kontext den Hinweis „Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen.“
+- der Service Worker besitzt keinen Fetch-Handler und hält deshalb keine Restaurant- oder Portalantworten im PWA-Cache
+- keine Datenbank-, RPC-, RLS-, Punkte-, Tages-PIN-, Geburtstags- oder Portalrollenlogik geändert
+
+## 2026-07-27 – Kundenidentität V1 ohne SMS-OTP gehärtet
+
+- österreichische Telefonnummern werden zentral normalisiert und pro Restaurant eindeutig abgesichert
+- bekannte Telefonnummern erzeugen bei erneuter öffentlicher Registrierung weder ein zweites Konto noch einen neuen Zugang
+- unbekannte Geräte erhalten eine neutrale Supportmeldung; bekannte Geräte verwenden weiterhin ihren restaurantbezogenen Token
+- Kunden können Telefonnummer und Geburtstag nach der Erfassung nicht selbst ändern
+- kontrollierter Owner/Admin-Supportpfad mit Identitätsprüfung, Änderungsgrund, Audit und Token-/Gerätewiderruf ergänzt
+- Owner- und Staff-Kundenlisten auf maskierte, minimierte Felder umgestellt
+- SMS-Verifizierung nur als deaktivierte spätere Konfiguration vorbereitet; keine OTP- oder Provider-Abhängigkeit ergänzt
+- Migration `20260727001000_customer_identity_v1_no_sms.sql` im Staging-Dry-Run als einzige ausstehende Migration bestätigt und nicht angewendet
+## 2026-07-28 - V1 Bonus-Aktivitätsprotokoll
+
+- Append-only Journal für final bestätigte Einlösungen vorbereitet.
+- Unveränderbare Reward-, Punkte-, Mengen-, Rollen- und Zeit-Snapshots ergänzt.
+- Legacy-Einlösungen ohne sichere Snapshotwerte werden sichtbar gekennzeichnet.
+- Owner-Bereich `Berichte` mit Monats-, Jahres- und Journalansicht ergänzt.
+- CSV-Detailprotokoll und druckbare Zusammenfassung ergänzt.
+- Testkunden sind standardmäßig ausgeschlossen; Zeiträume verwenden `Europe/Vienna`.
+- Bestehender Export-RPC bleibt kompatibel und liest aus dem Journal.
+- Sichtbare Kassen-/Steuerbezeichnungen wurden durch klare Bonusprogramm-Begriffe ersetzt.
+- Keine RKSV-, Kassen-, Steuer- oder Buchhaltungsfunktion eingeführt.
+
+## 2026-07-28 - Dauer des Freundschaftsbonus konfigurierbar
+
+- Owner-Bereich `Bonusprogramm` um eine eigene Einstellung für den Freundschaftsbonus ergänzt.
+- Standard bleibt 2× für 30 Tage; Dauer-Presets 7/14/30/60/90 sowie eigene Werte von 1 bis 365 Tagen ergänzt.
+- Owner/Admin-RPC ist restaurantbezogen und auditiert Änderungen als `REFERRAL_BONUS_SETTINGS_UPDATED`.
+- Manager, Mitarbeiter, Kunden, anonyme Aufrufe und fremde Restaurants können die Einstellung nicht ändern.
+- Neue Empfehlungen verwenden die aktuell gespeicherte Dauer; laufende Bonuszeiträume bleiben unverändert.
+- Keine Änderung an Reward-, Tages-PIN-, Einlösecode-, Customer-Identity- oder Legal-Logik.
+
+## 2026-07-30 - Mittagspause und einheitliche Pflichtfelder
+
+- Öffnungszeiten im Onboarding und in den Restaurant-Einstellungen unterstützen optional zwei Öffnungsblöcke mit einer Mittagspause.
+- Die bestehende `opening_hours`-JSON-Struktur wurde rückwärtskompatibel erweitert; eine Datenbankmigration war nicht erforderlich.
+- Überlappende oder unvollständige Zeitfenster werden vor dem Fortfahren beziehungsweise Speichern blockiert.
+- Das Kundenportal zeigt beide Öffnungsblöcke und während der Pause den Zeitpunkt der Wiederöffnung in `Europe/Vienna` an.
+- Eine gemeinsame Formularbeschriftung kennzeichnet Pflichtfelder sichtbar mit `*`, ergänzt Screenreader-Text und vereinheitlicht optionale Felder.
+- Zentrale V1-Formulare enthalten einen einheitlichen Pflichtfeldhinweis sowie `required` und `aria-required`, wo das Feld fachlich verpflichtend ist.
+- Keine Migration, RLS-, Auth-, Punkte-, Reward-, PIN- oder Tenant-Logik geändert.
+
+## 2026-07-30 - Automatischer Mittagspausenvorschlag
+
+- `Mittagspause hinzufügen` berechnet aus einer mindestens achtstündigen Tagesöffnung automatisch zwei sinnvolle Öffnungsblöcke.
+- Restauranttypische Zeiten wie 11:00–22:00 ergeben 14:00–17:00 Pause; 10:00–20:00 ergibt 14:00–16:30.
+- Vor und nach der Pause bleiben mindestens 90 Minuten Öffnungszeit; Blockgrenzen und Pausengrenzen müssen exakt zusammenpassen.
+- Kurze Öffnungstage bleiben unverändert und zeigen einen verständlichen Hinweis statt ungültiger Zeitfelder.
+- Gespeicherte oder manuell angepasste Pausen werden nicht still neu berechnet.
+- Beim Entfernen der Pause wird das Ende des zweiten Blocks wieder als Ende der durchgehenden Tagesöffnung verwendet.
+- Mobile Zeitfelder stehen bei 390 und 430 px untereinander; keine Migration oder Businesslogik außerhalb der Öffnungszeiten geändert.
+
+## 2026-07-30 - Legal Center gegen fehlende aktive Dokumentinhalte gehärtet
+
+- Der Owner-Legal-Datenvertrag erlaubt bei vorbereiteten Dokumenthüllen ausdrücklich `content = null`, solange keine veröffentlichte Version existiert.
+- Punktegültigkeit wird nur aus dem Inhalt einer aktiven Teilnahmebedingungen-Version angezeigt; Entwürfe und fehlende Werte erzeugen keinen erfundenen Standard.
+- Neue Restaurants sehen verständliche Einrichtungs- beziehungsweise Veröffentlichungszustände statt eines White Screens.
+- Loader-Fehler und fehlende Berechtigung werden neutral behandelt und können kontrolliert erneut geladen werden.
+- Eine lokale Error Boundary schützt die geschützte Owner-Legal-Route vor unerwarteten Renderfehlern.
+- Keine Migration, RLS-, Legal-Template-, Onboarding-, Bonus- oder Tenant-Logik geändert.
+## 2026-08-04 – Zentraler Kundenlogin und Restaurantkontext vorbereitet
+
+- `customer_accounts` additiv an bestätigte Supabase-Auth-Nutzer gebunden
+- Kundenlogin, Kundenregistrierung und eigener Bestätigungs-Callback ergänzt
+- QR-Slug bleibt über Anmeldung und Bestätigung erhalten
+- Restaurantbeitritt mit Legal-Prüfung, ausdrücklicher Zustimmung, Tenant-Lock
+  und bestehender Willkommenslogik umgesetzt
+- zentrale Navigation auf Start, Meine Lokale, Entdecken und Konto reduziert
+- global gemischten Angebotsfeed entfernt; Angebote nur im Restaurantkontext
+- keine Migration angewendet und kein Versand aktiviert
+
+## 2026-08-11 – V1-Transaktionsmail-Dispatcher technisch vorbereitet
+
+- bestehende private Geburtstag-/Reminder-/Punkteschwellen-Outbox um
+  Verarbeitungs-Lease, persistente Fehlerzeit und begrenzte exponentielle
+  Wiederholungen erweitert
+- serverseitige Edge Function für die drei vorhandenen V1-Transaktionsmails
+  ergänzt; kein paralleles Queue- oder Marketingsystem eingeführt
+- kontrollierte deutsche Templates mit HTTPS-Restaurant-Rückkehr und ohne
+  Kundentokens oder sichtbare interne IDs ergänzt
+- SMTP-, Scheduler- und Absenderwerte bleiben ausschließlich manuell zu
+  setzende Edge-Function-Secrets
+- zentrale Kundenkonto-, Restaurantkontext-, Geschenk-/Benachrichtigungs- und
+  Dispatcher-Reparaturmigration auf Staging angewendet; Remote-Stand synchron
+- Dispatcher mangels verfügbarer SMTP- und Scheduler-Secrets nicht deployt
+- Stripe weiterhin ausdrücklich zurückgestellt
+
+## 2026-08-11 – Passwortbestätigung in der Owner-Registrierung
+
+- `/register` um das Pflichtfeld „Passwort bestätigen“ ergänzt
+- Abweichung erst nach Feldnutzung oder Submit verständlich angezeigt
+- Submit bei fehlender, ungültiger oder abweichender Passwortbestätigung blockiert
+- Bestätigungswert bleibt ausschließlich lokaler Formularzustand und wird weder
+  gespeichert noch an Supabase oder den Owner-Registrierungsservice übergeben
+- Signup-, Trial-, Restaurant-, Onboarding-, E-Mail- und Legal-Flows unverändert
+
+## 2026-08-21 – Kundenregistrierung und E-Mail-Bestätigung gehärtet
+
+- Kundenregistrierung um die Pflichtangabe „Passwort bestätigen“ ergänzt; der
+  Bestätigungswert bleibt ausschließlich lokaler Formularzustand.
+- Signup-Antworten unterscheiden jetzt eine tatsächlich angeforderte
+  Bestätigungs-E-Mail von Supabase-Anti-Enumeration-Antworten für bestehende
+  Adressen.
+- Erfolg wird nur angezeigt, wenn Supabase einen neuen unbestätigten Nutzer mit
+  versendeter Bestätigung meldet.
+- Kontrolliertes erneutes Senden mit Rate-Limit-Rückmeldung und 60-Sekunden-
+  Sperre ergänzt.
+- Customer-Callback, Restaurant-Rückkehr, optionale Geburtstagsangabe und
+  bestehende Owner-Registrierung bleiben unverändert.
+
+## 2026-08-23 – Gäste-Suche bei Restaurantwechsel stabilisiert
+
+- Suchzustand der Owner-Gästeliste ist jetzt an das aktive Restaurant gebunden
+  und wird bei einem Tenantwechsel zuverlässig zurückgesetzt.
+- Gästeliste und optionale Berechtigung für Identitätskorrekturen laden
+  unabhängig, damit ein Supportfehler keine vorhandenen Gäste ausblendet.
+- Loading-, Empty- und Error-Zustände sind getrennt; fehlgeschlagene Requests
+  besitzen einen kontrollierten Retry.
+- Der bestehende minimierte, restaurantgebundene Gäste-RPC bleibt unverändert.
+
+## 2026-08-23 – V1-Einlösung und Einlösungsberichte vereinheitlicht
+
+- Die normale Staff-Oberfläche enthält keine sechsstellige Codeprüfung mehr;
+  historische Code-Daten und Kompatibilitäts-RPCs bleiben unverändert erhalten.
+- Punkte-, Willkommens- und Geburtstagsbelohnungen verwenden in der Kunden-UX
+  den gemeinsamen serverzeitgesteuerten 15-Minuten-Präsentationsflow.
+- Das unveränderliche Aktivitätsjournal erhält additive Start-, Finalisierungs-
+  und optionale Referenzwert-Snapshots; fehlende historische Geldwerte werden
+  nicht rekonstruiert.
+- Der Owner-Bericht unterstützt Heute, Gestern, Wochen-, Monats-, Jahres- und
+  benutzerdefinierte Zeiträume mit serverseitiger Aggregation und begrenzten
+  Detailzeilen.
+- CSV und Druckansicht enthalten keine direkten Kundendaten; Testvorgänge sind
+  immer ausgeschlossen und Zeitgrenzen folgen der Restaurant-Zeitzone.
+
+## 2026-08-23 – Geschlossenen Live-Einlösungs-Drawer respektieren
+
+- Eine bewusst gestartete Einlösung öffnet den Präsentations-Drawer weiterhin
+  einmalig.
+- Nach dem Schließen aktualisieren Hydration, Polling und Abschluss nur noch den
+  serverseitigen Status und öffnen den Drawer nicht erneut.
+- Eine aktive Einlösung bleibt mit Titel, Restzeit und manueller Aktion als
+  kompakter Hinweis im normalen Seitenfluss erreichbar.
+- Einlöse-, Punkte-, Reporting-, Sicherheits- und Datenbanklogik bleiben
+  unverändert.
+
+## 2026-08-23 – Kunden-QR als primäre Staff-Aktion
+
+- Die Staff-Startseite zeigt den bestehenden Kunden-QR-Scanner direkt nach der
+  Begrüßung als wichtigste Serviceaktion.
+- Die Tages-PIN bleibt vollständig erhalten, wird aber in einer kompakten
+  weißen Karte mit vier gleich großen Ziffernfeldern sekundär dargestellt.
+- Heute-KPIs und Gast-Suche folgen in klarer Reihenfolge; die bestehende
+  dreiteilige Bottom-Navigation bleibt ohne Routing-Umbau bestehen.
+- Ein synchroner UI-Guard verhindert mehrfaches Öffnen der Kamera durch schnelle
+  Mehrfachklicks.
+- Keine Scanner-, Punkte-, PIN-, Reporting-, Berechtigungs- oder Datenbanklogik
+  geändert.
+
+## 2026-08-24 – Owner-Login und Restaurantzugang getrennt behandelt
+
+- Erfolgreiche Supabase-Sessions werden vor der Dashboard-Navigation direkt in
+  den Auth-Provider übernommen, damit kein veralteter Guard-Zustand entsteht.
+- Restaurantrollen werden ausschließlich aus der autoritativen
+  Restaurant-Mitgliedschaft abgeleitet, nicht aus Auth-Metadaten.
+- Temporäre Restaurant-Lookup-Fehler und fehlende Restaurantzuordnungen zeigen
+  einen sicheren Retry-/Supportzustand, ohne die gültige Auth-Session zu löschen
+  oder zur Login-Seite zurückzuleiten.
+- Platform-Admin-, Customer-, Staff-, Trial- und Onboarding-Verträge bleiben
+  unverändert.
+
+## 2026-08-25 – Platform Admin Referral-Limit vervollständigt
+
+- Der bestehende Restaurant-Control-Center-RPC liefert das autoritative,
+  restaurantbezogene monatliche Einladungslimit.
+- Die Platform-Admin-Oberfläche zeigt den echten Wert und unterscheidet ihn von
+  fehlenden Daten; Abfragefehler werden nicht als Standardwert 5 dargestellt.
+- Rollenprüfung, Grants, Tenant-RLS und Referral-Geschäftslogik bleiben
+  unverändert.
+
+## 2026-08-25 – Owner- und Staff-Betriebszugriff auf Staging verifiziert
+
+- Owner, Admin und Manager können den Mitarbeiterbereich ausschließlich für
+  das eigene Restaurant im klar gekennzeichneten Betreiberzugriff öffnen.
+- Aktive persönliche Staff-Konten können die minimierte Gästeliste ihres
+  Restaurants laden; gesperrte oder fremde Staff-Zugänge bleiben blockiert.
+- Punkteaktionen werden im Audit getrennt der echten Administration oder dem
+  echten Staff-Mitglied zugeordnet, ohne Staff-Impersonation.
+- Ein neuer Punkte-QR löscht vor der serverseitigen Vorschau jede alte sichtbare
+  Kundenauswahl und zeigt die kurzlebige QR-Referenz nicht im Suchfeld an.
+- Migrationen `20260825005000` und `20260825006000` sind auf Staging angewendet;
+  Remote-Historie und lokaler Stand sind synchron, der DB-Linter meldet null
+  Fehler.
+- Production bleibt gesperrt; physische Owner-/Staff-QR-Scans auf einem echten
+  iPhone bleiben ein separates manuelles Gate.
+
+## 2026-08-25 – Mobilen Kunden-QR-Scanner für iPhone Safari gehärtet
+
+- Der Staff-Scanner verwendet für die QR-Decodierung jetzt den bereits im
+  Kundenportal bewährten ZXing-Reader statt ausschließlich der nicht
+  verlässlich verfügbaren nativen `BarcodeDetector`-Schnittstelle.
+- Staff und Betreiberzugriff teilen weiterhin dieselbe Scannerkomponente; die
+  Rückkamera, der vollständige Videoframe und ein Single-Scan-Schutz bleiben
+  für beide Rollen identisch.
+- Der kurzlebige persönliche Punkte-QR verwendet den zentralen kontrastreichen
+  QR-Standard mit 270 Pixeln und vier Modulen Ruhezone.
+- QR-Inhalt, fünfminütige Gültigkeit, serverseitige Restaurantbindung,
+  Einmalverwendung, Tages-PIN und Punkteberechnung bleiben unverändert.
+- Fremde, ungültige oder abgelaufene QR-Referenzen erzeugen eine sichere
+  verständliche Meldung, ohne interne RPC-Daten oder Tokens anzuzeigen.
+- Im Staff-Kundenbereich steht der ausgewählte beziehungsweise erkannte Gast
+  jetzt vor Schnellsuche und Punkteformular; ohne Auswahl bleibt der
+  Punktebereich inaktiv.
+- Manuelle Suche und QR-Scan verwenden dieselbe Kundenkarte und denselben
+  Gastwechsel. Der aktive Freundschaftsbonus erscheint dort, sobald ihn die
+  bestehende serverseitige Punkte-Vorschau bestätigt.
+
+## 2026-08-26 – Alte Deployment-Chunks ohne White Screen abgefangen
+
+- Cloudflare liefert für fehlende Dateien unter `/assets/*` eine echte
+  `404`-Antwort statt der HTML-SPA-Seite.
+- Hash-basierte Vite-Assets werden ein Jahr unveränderlich gecacht; HTML- und
+  SPA-Dokumente bleiben revalidierungspflichtig.
+- `vite:preloadError` und bekannte Dynamic-Import-Fehler lösen genau einen
+  kontrollierten Reload aus.
+- Ein kurzlebiger, buildbezogener Session-Guard verhindert Reload-Schleifen
+  und zeigt bei wiederholtem Fehler eine verständliche Aktualisierungsseite.
+- BFCache-Wiederherstellungen vergleichen den geladenen Entry-Build mit dem
+  aktuellen Dokument, ohne bei normalen Netzwerkfehlern blind neu zu laden.
+- Der bestehende Auth-Refresh- und lokale Logout-Cleanup blieb unverändert.
+- Der echte Staging-Alt-Tab-Test wechselte ohne manuellen Refresh vom nicht
+  mehr vorhandenen Lazy-Chunk auf den aktuellen Build; Production blieb
+  gesperrt.
+# 2026-08-26 - Starter Kit Premium QR Print Cleanup
+
+- QR-Center und Onboarding erzeugen dieselbe dreiseitige Starter-Kit-Familie
+  fuer zwei Gaesteseiten und den internen Mitarbeiterbereich.
+- Operative Platzierungslabels wurden aus den QR-Druckseiten entfernt; die
+  QR-Rahmen enthalten nur den unveraenderten QR auf weissem Hintergrund.
+- Der bisherige kleinteilige Referral-Block und die feste 30-Tage-Aussage
+  wurden durch einen kompakten, laufzeitneutralen Hinweis ersetzt.
+- QR-Groesse, Ruhezone, Typografie und Footer-Lesbarkeit wurden fuer A6
+  verbessert, ohne QR-Payload, Route oder Bonuslogik zu veraendern.
+
+## 2026-08-29 - Optionale Betreiberdaten im Onboarding vereinheitlicht
+
+- Der erste Onboarding-Schritt erfasst den rechtlichen Unternehmensnamen und
+  bietet Firmenbuchnummer, UID sowie vertretungsberechtigte Person als
+  optionale Zusatzangaben an.
+- Onboarding und `Unternehmensdaten & Rechtliches` schreiben dieselbe
+  restaurantgebundene Legal-Profilquelle; es wurde keine zweite
+  Unternehmensdaten-Tabelle eingeführt.
+- FN und UID werden für Österreich zurückhaltend normalisiert und bleiben aus
+  Checklist, Readiness und Aktivierungs-Gate ausgeschlossen.
+- Die additive Migration `20260829001000` übernimmt vorhandene optionale Werte
+  in zukünftige Impressumsentwürfe und auditiert nur geänderte Feldnamen.
+- Bestehende Restaurants und veröffentlichte Dokumentversionen bleiben
+  unverändert; automatische Veröffentlichung wurde nicht ergänzt.
+## 2026-08-27 - Customer Premium Cards kompakt vereinheitlicht
+
+- Angebote, Punkteeinlösungen und persönliche Geschenke verwenden eine gemeinsame
+  kompakte Customer-Kartenklasse und zentrale Geometrie-Tokens.
+- Mobile Carousel-Karten belegen 83 Prozent der Contentbreite und zeigen bei
+  13 Pixel Abstand 12 bis 15 Prozent der nächsten Karte.
+- Offer-Metadaten wurden ohne Informationsverlust verdichtet; Beschreibung und
+  Titel bleiben auf jeweils maximal zwei Zeilen begrenzt.
+- Die Punkteeinlösungen der Customer-Startseite verwenden statt des mobilen
+  Zwei-Spalten-Rasters den bestehenden horizontalen Discovery-Baustein.
+- Offer-Sichtbarkeit, Reward-/Gift-Eligibility, Punkte und Einlösung blieben
+  unverändert.
+
+## 2026-08-27 - Globalen Customer-Restaurantwechsel ergänzt
+
+- Logo, Restaurantname und Chevron im gemeinsamen Customer-Header öffnen einen
+  kompakten Restaurant-Switcher; die Informationstaste bleibt unabhängig.
+- Der Switcher lädt ausschließlich aktive Memberships aus dem autoritativen
+  zentralen Kundenkonto und zeigt Restaurantpunktestände einschließlich null.
+- Manuelle Auswahl und Restaurant-QR verwenden denselben servervalidierten
+  Restaurantzugang und denselben kanonischen URL-Kontext.
+- Ein atomarer Route-Guard entfernt alten Portalinhalt vor dem Wechsel und
+  verhindert gemischte Punkte-, Reward-, Gift-, Offer- oder Referral-Zustände.
+- Die mobile Darstellung wurde mit langen Namen und 20 Restaurants von 320 bis
+  1440 Pixel ohne horizontalen Seiten-Overflow geprüft.
+
+## 2026-08-27 - Adaptive Restaurantlogo-Darstellung ergänzt
+
+- Eine gemeinsame Smart LogoStage ersetzt unterschiedliche feste Logo-Rahmen
+  in Owner-, Customer-, Staff-, Onboarding- und QR-Starter-Kit-Oberflächen.
+- Auto-Fit behandelt quadratische, breite und hohe Logos proportional; defekte
+  oder fehlende Dateien wechseln auf den kanonischen Restaurant-Fallback.
+- Der Owner kann Zoom und Position nicht-destruktiv anpassen und die Wirkung in
+  vier realen Kontexten prüfen.
+- Die additive Migration `20260827001000_restaurant_logo_presentation.sql`
+  speichert nur Fit-Modus, Skalierung und normalisierte Position.
+- Punkte-, Rewards-, Referral-, Auth-, Tenant- und QR-Payload-Logik blieben
+  unverändert.
+
+## 2026-08-27 - Smart Logo Editor Auto-Fit-Basis korrigiert
+
+- 100 Prozent im Owner-Editor bezeichnet jetzt die empfohlene Auto-Fit-Basis;
+  manuelle Größenänderungen werden relativ dazu dargestellt.
+- Die Sicherheitsfläche folgt dem echten Bildformat und zeigt breite,
+  quadratische und hohe Logos ohne eine irreführende große Leerfläche.
+- Die vier Programmvorschauen fokussieren die jeweilige Logo- und Namenszone
+  und bleiben von 390 bis 1440 Pixel ohne globalen horizontalen Überlauf.
+- Gespeicherte Logo-Präsentationswerte, Customer-/Staff-Ausgabe, Starter Kit,
+  RLS und Businesslogik blieben unverändert.
+
+## 2026-08-28 - Owner-Standort und Medienverwaltung bereinigt
+
+- Der Owner bearbeitet das Restaurant-Titelbild nur noch unter Branding; der
+  Standortbereich enthält keinen zweiten Medieneditor und keine rohe Bild-URL.
+- Technische Koordinaten, der bloße Restaurant-Slug und der manuelle
+  Onboarding-Logo-Link wurden aus der normalen Owner-Oberfläche entfernt.
+- Der V1-fremde Restaurant-/Filialwähler bei Angeboten ist verborgen, während
+  die bestehende interne Branch-Zuordnung unverändert gespeichert wird.
+- Titelbilddaten, Finder-Ausgabe, RLS, RPCs und Businesslogik blieben erhalten.
+
+## 2026-08-28 - Vollständigen Reward-Katalog auf Customer Home freigegeben
+
+- `Mit Punkten einlösbar` zeigt nicht mehr nur zwei Vorschaukarten, sondern
+  alle bereits customer-sichtbaren Punktebelohnungen des aktiven Restaurants.
+- Das bestehende Premium-Carousel übernimmt Swipe, Einzelschritt-Pfeile,
+  echte Positionszählung sowie Ein- und Leerzustände ohne zusätzliche Query.
+- Restaurantkontext, Sichtbarkeit, Eligibility, Punkte und der bestehende
+  15-Minuten-Einlöseflow blieben unverändert.
+
+## 2026-08-29 - Atomare Live-Swipe-Einlösung vorbereitet
+
+- Das Öffnen einer 15-Minuten-Präsentation verbraucht bei neuen Vorgängen weder
+  Punkte noch Welcome-/Birthday-Geschenke.
+- Eine gemeinsame serverseitige Bestätigungs-RPC führt den finalen Verbrauch
+  mit Tenantprüfung, Row Locks, Compare-and-Set, Idempotenz, Audit und Journal
+  in einer Transaktion aus.
+- Der Customer-Drawer zeigt vor dem Swipe eine eindeutige Warnung und danach
+  einen visuell getrennten Erfolg mit autoritativem Serverzeitpunkt.
+- Parallele Geräte, Doppelswipes, Reload und Netzwerkunsicherheit werden über
+  den gespeicherten Präsentationsstatus aufgelöst; genau ein Request gewinnt.
+- Die additive Migration
+  `20260829002000_customer_swipe_redemption_atomic_confirmation.sql` ist lokal
+  vorbereitet und noch nicht auf Staging oder Production angewendet.
+
+## 2026-08-30 - Legal-Operator-Adressquelle auf Staging repariert
+
+- Die Legal-Company-Foundation `20260829001000` wurde kontrolliert auf Staging
+  angewendet.
+- Ein realer DB-Lint-Lauf zeigte, dass die neue Legal-Funktion die Anschrift
+  fälschlich auf `restaurants` statt aus dem kanonischen `branches`-Datensatz
+  las.
+- Der additive Forward-Fix `20260829001500` ergänzt die explizite Branch-
+  Beziehung und bindet die Adressquelle an dasselbe Restaurant und dieselbe
+  Organisation.
+- Der Tenant-Kontext lädt die Standortadresse nun RLS-geschützt aus `branches`
+  und bevorzugt bei mehreren Standorten den kanonischen Primary Branch.
+- Staging DB-Linter, 1126 Tests, 126 Legal-Tests, Typecheck, Lint und Build sind
+  grün. Production und Stripe blieben unangetastet; `20260829002000` bleibt
+  offen.
+
+## 2026-08-30 - V1 Commercial Contract auf drei Monate und 59 EUR vereinheitlicht
+
+- Eine zentrale Produktkonfiguration definiert Trial, Basispaket, Währung,
+  USt.-Darstellung, Abrechnungsintervall, Stripe-Status und den leeren
+  Erweiterungspunkt für spätere Zusatzpakete.
+- Startseite, Owner-Registrierung und Aboansicht verwenden dieselbe Copy:
+  drei Monate kostenlos, danach 59 EUR pro Monat exkl. USt.
+- Die additive Migration
+  `20260830001000_v1_commercial_contract_three_month_trial.sql` setzt neue
+  Owner-Trials auf drei Kalendermonate und bewahrt Idempotenz, Grants, Audit
+  und vorhandene Subscription-Daten.
+- Bestehende Trial-Enddaten werden nicht rückwirkend geändert. Stripe,
+  automatische Abrechnung und Zusatzpakete bleiben deaktiviert.
+
+## 2026-08-30 - Mobile A6-Druckvorschau als kontrolliertes Carousel
+
+- Das QR Center zeigt auf 320 bis 430 Pixel genau eine vollständige, einheitlich
+  skalierte A6-Seite und rund zehn Prozent der nächsten Seite.
+- Native horizontale Navigation verwendet verpflichtendes Scroll-Snap,
+  Einzelschritt-Pfeile mit 44-Pixel-Touchfläche und eine aktuelle Seitenanzeige.
+- Ab 768 Pixel bleiben die vollständigen Druckseiten als Drei-Spalten-Grid
+  sichtbar; die einzelne QR-Sektion wurde nicht umgebaut.
+- Kanonisches A6-Modell, PDF-Renderer, Smart-Media-Ausschnitt, QR-Payload,
+  QR-Ruhezone, Referral, Staff-Seite und Businesslogik blieben unverändert.
+
+## 2026-08-30 - AI Implementation Guardrails formalisiert
+
+- Der fehlende Pflichtvertrag `docs/AI_IMPLEMENTATION_GUARDRAILS.md` wurde
+  ausschliesslich aus aktiven Repository-, Security-, Datenbank-, Deployment-
+  und Commercial-Vertraegen konsolidiert.
+- `AGENTS.md` verweist nun explizit auf den Guardrails-Vertrag; ein
+  Contract-Test sichert Referenz, Pflichtbereiche und kommerzielle Werte.
+- Nicht nachweisbare historische Regeln wurden nicht als Projektwahrheit
+  rekonstruiert. Anwendungscode, Businesslogik, Datenbank und Production
+  blieben unveraendert.
+
+## 2026-08-30 - Referral-Rueckweg nach Customer-Aktivierung fortgesetzt
+
+- Oeffentliche Referral-Routen hydratisieren jetzt eine vorhandene Supabase-
+  Session, ohne selbst zu geschuetzten Routen zu werden.
+- Bestehende Customer sowie neu aktivierte Staff-/Owner-Mehrfachrollen gelangen
+  nach Login oder Aktivierung direkt zur servervalidierten Einladungsannahme.
+- Der E-Mail-Callback verwendet weiterhin nur den validierten Referral-
+  Rueckweg; eine alte ungueltige Session laesst die oeffentliche Einladung als
+  anonymen Einstieg offen und erzeugt keine Redirect-Schleife.
+- AGB- und Datenschutzbestaetigung bleiben explizit. Referral-Attribution,
+  Qualifikation, 2x-Bonus, Duplikatschutz, Monatslimit, Tenantgrenzen und
+  Datenbank wurden nicht geaendert.
+
+## 2026-08-30 - Owner-Hinweis fuer hohe einzelne Punktebuchungen
+
+- Das Owner-Dashboard zeigt bestehende `HIGH_POINTS_AMOUNT_REVIEW` Events als
+  kompakten Hinweis mit pruefbarer Buchungsdetailansicht.
+- Einziger V1-Warnwert bleibt 80 Prozent des restaurantbezogenen konfigurierten
+  Maximalbetrags. Es wurden keine Staff-, Customer- oder Restaurant-
+  Tageswarnungen und keine neuen Limits eingefuehrt.
+- Die bestehende serverseitige Owner-/Staff-Attribution wird uebernommen; die
+  Warnung ist tenantgebunden und veraendert weder Punkte noch Zugaenge.
+- Keine Migration, keine automatische Rueckbuchung und keine automatische
+  Sperre.
+
+## 2026-08-31 - Discovery-Join-CTA im mobilen Portal-Drawer sichtbar gemacht
+
+- Der per `document.body`-Portal gerenderte Restaurantdetails-Drawer definiert
+  nun denselben Primary-Farbvertrag wie die Customer-Premium-Shell.
+- Dadurch bleibt `Bonusprogramm beitreten` auf 320 bis 430 Pixel als goldener
+  Primary-CTA mit weisser Schrift sichtbar; `Route starten` bleibt die
+  sekundaere Aktion.
+- Drawer-Scroll, iPhone-Safe-Area, 48-Pixel-Touchflaechen und die bestehende
+  Direct-Join-Logik blieben unveraendert.
+- Keine Migration, kein Deployment und keine Aenderung an Punkten, Gifts,
+  Referral, Multi-Role, QR oder Starter Kit.
+## 2026-08-31 - Mehrere aktive Geschenke auf Customer Home
+
+- Customer Home reduziert persönliche Geschenke nicht mehr auf ein bevorzugtes
+  Geburtstags- oder Willkommensgeschenk, sondern zeigt alle aktuell sichtbaren
+  Geschenkzuweisungen.
+- Zwei oder mehr Geschenke verwenden den bestehenden horizontalen Premium-
+  Carousel mit Swipe, Scroll Snap, Pfeilen und Positionsanzeige.
+- Birthday steht deterministisch vor Welcome; weitere Geschenktypen folgen
+  stabil. Gift-Zuweisung, Einlösung, Punkte, Visits, Audit und E-Mail blieben
+  unverändert.
+
+## 2026-08-31 - Angebotsrabatt automatisch aus Preisen dargestellt
+
+- Eine zentrale Präsentationsfunktion leitet den ganzzahligen Preisvorteil aus
+  vorhandenem aktuellem und vorherigem Preis ab; `14,52 EUR` auf `5,00 EUR`
+  ergibt sichtbar `-66%`.
+- Kundenkarte, Angebotsdetail, Restaurantdetails und Owner-Vorschau verwenden
+  denselben Rabattwert, Streichpreis und hervorgehobenen aktuellen Preis.
+- Fehlende, gleiche oder niedrigere Vergleichspreise erzeugen keine
+  Rabattdarstellung. Es wurde kein Prozentfeld und kein Datenbankwert ergänzt.
+- Angebotsgueltigkeit, Zeitplanung, Aktivierung, Punkte, Geschenke, Referral,
+  Einloesung, RLS und Datenbank blieben unveraendert.
+
+## 2026-09-01 - Persistente Setup-Uebersicht in Owner-Einstellungen
+
+- `Einstellungen -> Setup & Einrichtung` zeigt jederzeit alle sechs
+  Setup-Bereiche mit objektivem Status und kompaktem Fortschritt.
+- Dashboard-Assistent und Settings-Uebersicht verwenden dieselbe zentrale
+  Statusaufloesung; es gibt keine manuellen Abschlussflags und keine neue
+  Datenbanktabelle.
+- Ein eigener validierter Router-Kontext fuehrt nach bestaetigtem Save aus der
+  Uebersicht dorthin zurueck. Der bestehende `Heute fuer dich`-Kontext kehrt
+  weiterhin zum Dashboard zurueck; normale Settings-Navigation bleibt gleich.
+- Owner-Betreiberzugriff, geplante Angebote, Legal-/Publication-Readiness,
+  Birthday-Pool und objektive QR-Bereitschaft behalten ihre kanonischen
+  Vertraege. Keine Migration und keine neue Berechtigung.
+
+## 2026-09-01 - Bestehende Customer-E-Mail fuer Owner-Registrierung
+
+- Die Owner-Registrierung erkennt das von Supabase verschleierte Ergebnis
+  einer bereits vorhandenen E-Mail und fuehrt neutral zur Anmeldung mit dem
+  bestehenden Passwort, statt auf eine unnoetige zweite Bestaetigungsmail zu
+  warten.
+- Nach erfolgreicher Authentifizierung wird der passwortfreie Pending-Intent
+  mit derselben Auth-Identitaet fortgesetzt. Bestaetigte Konten benoetigen
+  keine neue E-Mail-Bestaetigung; unbestaetigte Konten verwenden weiterhin
+  Resend, Cooldown und den bestehenden Callback.
+- Customer- und Staff-Beziehungen bleiben erhalten. Owner-Provisionierung,
+  Tenantgrenzen, atomarer Trial, Commercial Contract und Datenbankvertrag
+  wurden nicht geaendert; keine Migration.

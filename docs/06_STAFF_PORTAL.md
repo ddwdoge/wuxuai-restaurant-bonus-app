@@ -1,5 +1,30 @@
 # 06_STAFF_PORTAL.md
 
+## Current Lock 2026-08-24
+
+QR-Scan ist die primäre Staff-Aktion. Die Bottom Navigation lautet Start, QR,
+Tages-PIN, Suchen und Mehr. Die normale Einlösung ist eine serverzeitgebundene
+15-Minuten-Präsentation; eine sechsstellige Codeprüfung ist kein aktiver
+Primärflow. Ältere widersprechende Abschnitte sind nur Legacy-Historie.
+
+Der Mitarbeiter-QR führt auf `/staff/login?restaurant=:slug` und ist nur ein
+bequemer Einstieg in den geschützten Mitarbeiterbereich. Bereits gedruckte
+QRs mit `/staff/:slug` werden ohne Berechtigungswirkung auf denselben Login
+weitergeleitet. Der QR enthält keine Staff-PIN, keinen Auth-Token und keine
+Rollenberechtigung. Erst die persönliche Authentifizierung und die exakte,
+aktive serverseitige Staff-Zuordnung zum Restaurant erlauben Zugriff. Owner-,
+Customer- und Plattformrollen verleihen keinen Staff-Zugriff. Danach ist
+„Kunden-QR scannen“ die primäre Aktion.
+
+## Punktevergabe ab 31.07.2026
+
+Die frühere Regel „keine Punktevergabe im Staff Portal“ ist **partially superseded**. Wenn der Owner `restaurant_controlled_only` oder `both` aktiviert, scannt das Team den kurzlebigen Kunden-QR, erfasst den bonusberechtigten Betrag und bestätigt mit der bestehenden Tages-PIN. Der Browser übermittelt keine vertrauenswürdige Punktezahl; Vorschau und Buchung kommen aus getrennten Server-RPCs.
+
+Seit 03.08.2026 ist fuer V1 verbindlich: Das Team erfasst keine Bonnummer und
+keine Belegreferenz. Die Staff-Oberflaeche zeigt dafuer kein Feld. Wiederholung,
+Missbrauchsschutz und Audit werden durch QR-Single-Use, Tages-PIN,
+serverseitige Betragsgrenzen, Idempotenz und Rate Limits abgesichert.
+
 # WUXUAI Bonus V1 – Restaurant Tablet / Mitarbeiter-Portal
 
 Status: **LOCK**
@@ -61,7 +86,7 @@ Das Kundenportal ist für Gäste.
 
 Gäste können dort:
 
-- Mein Bonus öffnen
+- Meine Vorteile öffnen
 - QR zeigen
 - Punkte sehen
 - Bonus Boost sehen
@@ -139,7 +164,7 @@ Kellner-PIN auf dem Kundenhandy.
 
 Ablauf:
 
-1. Gast öffnet „Mein Bonus“.
+1. Gast öffnet „Meine Vorteile“.
 2. Gast öffnet eine freigeschaltete Belohnung.
 3. Gast bestätigt final:
 
@@ -602,3 +627,43 @@ Endstatus: **LOCK**
 Die Tages-PIN bleibt ausschließlich für Punktebuchungen. Bei Punkteeinlösungen, Willkommensgeschenken und Geburtstagsgeschenken gibt der Mitarbeiter keine PIN ein.
 
 Nach der verbindlichen Kundenbestätigung zeigt der Gast einen sechsstelligen Code. Die Mitarbeiteransicht prüft diesen Code serverseitig. Der Code ist 15 Minuten gültig, nur einmal verwendbar und wird nach Verwendung oder Ablauf deaktiviert. Diese Regel ersetzt ältere Hinweise, nach denen eine reine Bestätigungsansicht ohne prüfbaren Code ausreicht.
+
+## CTO-Ergänzung 2026-08-03: Punktebelohnungen ohne Staff-Code
+
+Die vorherige Code-Regel bleibt für Willkommens- und Geburtstagsgeschenke aktiv.
+Für normale Punktebelohnungen wird sie ersetzt: Der Kunde bestätigt selbst, die
+Punkte werden sofort serverseitig abgezogen und das Team kontrolliert nur den
+15 Minuten aktiven Präsentationsbildschirm. Das Staff Portal führt für normale
+Punktebelohnungen weder Code-, PIN- noch QR-Bestätigung aus.
+
+## CTO-Ergänzung 2026-08-25: Persönliche Staff-Zugänge in V1
+
+- Jeder aktive Mitarbeiter verwendet eine eigene bestätigte Supabase-Auth-
+  Identität mit persönlicher E-Mail-Adresse und eigenem Passwort.
+- Die Staff-Rolle stammt ausschließlich aus der serverseitigen,
+  restaurantbezogenen Mitgliedschaft. Client-Metadaten und der Staff-QR sind
+  keine Rollenautorität.
+- Einladungen bleiben bis zur persönlichen Annahme inaktiv. Gesperrte oder
+  entfernte Zugänge verlieren den Restaurantzugriff sofort.
+- Punkteaktionen verwenden weiterhin die bestehende Tages-PIN und werden über
+  `auth.uid()` dem handelnden Teamkonto zugeordnet.
+- Die bestehende sechsstellige Geschenkbestätigung und das
+  Punkte-Präsentationsfenster bleiben unverändert.
+- Alte `staff_members`-PIN-Zeilen bleiben kompatibel, begründen aber keinen
+  persönlichen Auth-Zugang und erscheinen nicht als eingeladene Teamkonten.
+
+## CTO-Ergänzung 2026-08-25: Betreiberzugriff auf den eigenen Mitarbeiterbereich
+
+- Owner, Admins und Manager dürfen den operativen Mitarbeiterbereich nur für
+  Restaurants öffnen, denen sie über eine autoritative `restaurant_members`-
+  Beziehung zugeordnet sind.
+- Dieser Zugriff erzeugt keine `staff_members`-Zeile, ändert keine Rolle und
+  stellt keine Mitarbeiteridentität nach. Die Sitzung bleibt dem tatsächlichen
+  Betreiberkonto zugeordnet.
+- Reine Plattformrollen, Kunden, anonyme Nutzer und Betreiber fremder
+  Restaurants erhalten keinen Zugriff.
+- Punkte- und andere operative Aktionen verwenden weiterhin `auth.uid()` als
+  Akteur. Der Audit-Vertrag kennzeichnet Betreiberaktionen als `admin` und
+  bewahrt die konkrete Restaurantrolle in den Metadaten.
+- Ein gesperrter Mitarbeiterzugang hat keine Auswirkung auf die unabhängige
+  Betreiberberechtigung.

@@ -25,11 +25,14 @@ Wenn Codex, ein Entwickler oder ein späteres Teammitglied eine Entscheidung tre
 
 ## 2. Projektname und Produktidentität
 
-### 2.1 Offizieller Produktname für V1
+### 2.1 Offizieller Produktname fuer V1
 
 **WUXUAI Bonus**
 
-Frühere Bezeichnungen wie „Restaurant Bonus“, „Restaurant Growth OS“ oder „Restaurant Bonus OS“ dürfen im Code oder in internen technischen Dateinamen vorkommen, sind aber nicht die langfristige Produktpositionierung.
+Der zentrale Kundenbereich heißt sichtbar **Meine Vorteile**. Frühere
+Produktnamen dürfen nur in unveränderbaren technischen Legacy-Namen,
+historischen Migrationen und archivierten Berichten vorkommen. Der aktuelle
+Vertrag steht in `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
 
 ### 2.2 V1 Marktfokus
 
@@ -55,7 +58,10 @@ V2 soll die Plattform auf weitere lokale Betriebe erweitern:
 - Vinotheken
 - weitere lokale Geschäfte
 
-Die Architektur soll deshalb langfristig geschäftsneutral bleiben. Die V1-UX bleibt aber Restaurant-fokussiert.
+Die Architektur darf langfristig geschaeftsneutral bleiben. Die
+branchenneutrale Produktsprache, Branchenprofile und der Bonusprogramm-Assistent
+sind jedoch V2 und duerfen nicht in die restaurantfokussierte V1 gemischt
+werden.
 
 ---
 
@@ -183,7 +189,7 @@ Für Gäste.
 Aufgaben:
 
 - Mitglied werden
-- Mein Bonus ansehen
+- Meine Vorteile ansehen
 - Punkte sehen
 - Belohnungen sehen
 - Bonus Boost sehen
@@ -234,7 +240,8 @@ Beispiele:
 
 - Deutsch zuerst.
 - Mobile First.
-- Aktionen aus V1 entfernen.
+- Generische Aktionen und Kampagnen aus V1 entfernen; das eng begrenzte
+  Informationsmodul `Aktuelles & Angebote` ist die einzige Ausnahme.
 - Onboarding als Installationsassistent.
 - Willkommensgeschenke eigener Bereich.
 - Punkte werden automatisch aus Europreisen berechnet.
@@ -247,7 +254,7 @@ Beispiele:
 
 - Filialen zusammenführen.
 - Wochenplan für Belohnungen.
-- Dynamische Promotionflächen.
+- Dynamische, personalisierte oder automatisierte Promotionflächen.
 - Mehrsprachigkeit.
 - Enterprise-Regeln.
 
@@ -452,7 +459,7 @@ Einzelne QR-Downloads, Sticker, Flyer und weitere Druckoptionen gehören später
 Das Starter Kit enthält:
 
 - Restaurant QR für neue Gäste
-- Mein Bonus QR für Punkte sammeln
+- QR für Meine Vorteile zum Punkte sammeln
 - Kassen-Aufsteller
 - Eingangs-Aufsteller
 - dezenter Footer „Powered by WUXUAI Bonus • www.wuxuaisbi.com“
@@ -479,7 +486,10 @@ Es beantwortet in 5 Sekunden:
 
 Das Dashboard zeigt keine technischen Warnungen, keine leeren Diagramme und keine Entwicklerdaten.
 
-Das Modul „Aktionen“ wird aus V1 entfernt. Der Button „Neue Aktion starten“ darf nicht mehr erscheinen.
+Das generische Modul „Aktionen“ bleibt aus V1 entfernt. Der Button „Neue Aktion
+starten“ darf nicht erscheinen. Davon getrennt ist `Aktuelles & Angebote` als
+kleines Informationsmodul für höchstens fünf gleichzeitig veröffentlichte
+Restaurantbeiträge Bestandteil von V1.
 
 ---
 
@@ -565,11 +575,11 @@ Bonus Boost ist in V1 ein sichtbarer emotionaler Kern:
 - mit „Heute sammelst du 2× Punkte“
 - im Starter Kit als KPI-Kommunikation
 
-Starter Kit KPI-Box:
+Starter-Kit-Hinweis:
 
-- 🔥 Du 2× Punkte
-- 👥 Freund 2× Punkte
-- 📅 +30 Tage Bonus Boost
+- Freunde einladen lohnt sich
+- Nach dem ersten Besuch koennen Gaeste Freunde einladen und 2× Bonus erhalten
+- keine feste Laufzeit im Druck; die restaurantbezogene Dauer bleibt dynamisch
 
 ---
 
@@ -625,7 +635,8 @@ Codex darf nicht:
 - englische UI-Texte erzeugen
 - technische Begriffe in UI schreiben
 - Onboarding verkomplizieren
-- Aktionen wieder einführen
+- generische Aktionen, Coupons oder Kampagnen wieder einführen; ausgenommen ist
+  nur das freigegebene Informationsmodul `Aktuelles & Angebote`
 - Punkte manuell vom Restaurant erfassen lassen
 - Willkommensgeschenke mit Punkte-Belohnungen vermischen
 - V2 Features in V1 aktivieren, wenn sie nur vorbereitet werden sollen

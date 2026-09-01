@@ -3,11 +3,13 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260722003000_v1_retention_features.sql", import.meta.url), "utf8");
+const currentReferralMigration = readFileSync(new URL("../supabase/migrations/20260824001000_v1_referral_owner_duration_split.sql", import.meta.url), "utf8");
 const giftMigration = readFileSync(new URL("../supabase/migrations/20260714002000_daily_pin_booking_gifts_redemption_v1.sql", import.meta.url), "utf8");
 const portal = readFileSync(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const retentionService = readFileSync(new URL("../src/modules/customer/retentionService.ts", import.meta.url), "utf8");
 const serviceWorker = readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
 const pushFunction = readFileSync(new URL("../supabase/functions/expiry-reminders/index.ts", import.meta.url), "utf8");
+const releaseMigration = readFileSync(new URL("../supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", import.meta.url), "utf8");
 
 test("expiry reminders are unique for the four V1 stages", () => {
   assert.match(migration, /reminder_stage in \(7, 3, 1, 0\)/);
@@ -33,32 +35,36 @@ test("push remains opt-in and opens only the customer reward route", () => {
   assert.match(portal, /setRedemptionDrawerOpen\(true\)/);
 });
 
-test("birthday gift draw is server-side, idempotent, and uses only active pool rewards", () => {
-  assert.match(migration, /draw_customer_birthday_gift/);
+test("birthday gifts are assigned automatically, idempotently and only from the active pool", () => {
+  assert.match(releaseMigration, /create or replace function public\.issue_birthday_gifts/);
   assert.match(giftMigration, /customer_rewards_one_birthday_gift_year_idx/);
-  assert.match(migration, /birthday_pool_enabled = true and active = true/);
-  assert.match(migration, /order by encode\(extensions\.gen_random_bytes\(16\), 'hex'\)/);
-  assert.match(migration, /exception when unique_violation/);
-  assert.match(migration, /BIRTHDAY_GIFT_DRAWN/);
-  assert.match(migration, /BIRTHDAY_GIFT_DRAW_BLOCKED/);
-  assert.match(portal, /Geschenk abholen/);
+  assert.match(releaseMigration, /birthday_pool_enabled = true and active = true/);
+  assert.match(releaseMigration, /order by encode\(extensions\.gen_random_bytes\(16\), 'hex'\)/);
+  assert.match(releaseMigration, /pg_advisory_xact_lock/);
+  assert.match(releaseMigration, /birthday_date_value - 14/);
+  assert.match(releaseMigration, /birthday_date_value \+ 15/);
+  assert.doesNotMatch(portal, /Geschenk abholen/);
 });
 
-test("legacy birthday cron is disabled in favor of explicit customer draw", () => {
-  assert.match(migration, /wuxuai-v1-birthday-gifts-daily/);
-  assert.match(migration, /cron\.unschedule\(existing_job\)/);
-  assert.match(migration, /'mode', 'customer_draw'/);
+test("automatic birthday cron replaces the historical explicit customer draw", () => {
+  assert.match(releaseMigration, /wuxuai-v1-birthday-gifts-daily/);
+  assert.match(releaseMigration, /select public\.issue_birthday_gifts\(now\(\)\)/);
+  assert.match(releaseMigration, /revoke execute on function public\.draw_customer_birthday_gift[\s\S]*anon, authenticated/);
+  assert.match(releaseMigration, /'mode', 'automatic_14_days'/);
 });
 
-test("referral boost is fixed to 2x for both customers and extends by 30 days", () => {
+test("historical retention stays intact while the current referral rule is atomic", () => {
   assert.match(migration, /set referral_boost_multiplier = 2, referral_boost_duration_days = 30/);
   assert.match(migration, /now\(\) \+ interval '30 days'/);
   assert.match(migration, /extension_base \+ interval '30 days'/);
-  assert.match(migration, /pg_advisory_xact_lock/);
-  assert.match(migration, /BONUS_BOOST_ACTIVATED/);
-  assert.match(migration, /BONUS_BOOST_EXTENDED/);
-  assert.match(portal, /const referralBoostMultiplier = 2/);
-  assert.match(portal, /const referralBoostDurationDays = 30/);
+  assert.match(currentReferralMigration, /referral_boost_duration_days set default 14/);
+  assert.match(currentReferralMigration, /input_beneficiary_role text/);
+  assert.match(currentReferralMigration, /input_granted_duration interval/);
+  assert.match(currentReferralMigration, /pg_advisory_xact_lock/);
+  assert.match(currentReferralMigration, /BONUS_BOOST_ACTIVATED/);
+  assert.match(currentReferralMigration, /BONUS_BOOST_EXTENDED/);
+  assert.match(portal, /referralBonusMultiplier as finalReferralBonusMultiplier/);
+  assert.match(portal, /const referralBoostMultiplier = finalReferralBonusMultiplier/);
   assert.match(migration, /and not c\.is_test_customer/);
   assert.match(migration, /and not is_test_event/);
 });

@@ -1,6 +1,39 @@
 
 # 10_FLOW_03_BELOHNUNG_EINLOESEN.md
 
+## Current Lock 2026-08-24
+
+Der V1-Primärflow ist die serverzeitgebundene 15-Minuten-Live-Präsentation für
+Punkte-, Welcome- und Birthday-Einlösungen. Die normale Staff-Oberfläche besitzt
+keine sechsstellige Codeprüfung. Historische Codes bleiben ausschließlich als
+Legacy-Kompatibilität bestehen und werden nicht für neue Einlösungen erzeugt.
+
+## Current Contract 2026-08-29: Live-Swipe und Exactly Once
+
+Diese Produktentscheidung ersetzt ausschließlich den Zeitpunkt der finalen
+Einlösung in den Präsentationsentscheidungen vom 03.08. und 09.08.:
+
+1. Das Öffnen der 15-Minuten-Präsentation bereitet eine Einlösung nur vor.
+2. Punkte, Geschenkzuteilung, Journal und Redemption-Historie bleiben dabei
+   unverändert.
+3. Direkt vor dem Mitarbeiter bestätigt der Kunde mit einem bewussten
+   Links-nach-rechts-Swipe.
+4. Erst dieser Swipe ruft die gemeinsame atomare Serverbestätigung auf.
+5. Der Server sperrt Präsentation und Kundenzustand, prüft Kunde, Restaurant,
+   Filiale, Reward, Gültigkeit und Berechtigung und führt den Übergang
+   `REDEMPTION_STARTED -> REDEEMED` bedingt genau einmal aus.
+6. Zwei Geräte oder parallele Requests können deshalb höchstens einen
+   erfolgreichen Vorgang erzeugen. Ein anderer zweiter Request erhält
+   `Bereits eingelöst` und den autoritativen Serverzeitpunkt.
+7. Läuft das Fenster vor dem Swipe ab, wird nichts eingelöst. Punkte bleiben
+   erhalten; ein noch gültiges Welcome- oder Birthday-Geschenk wird wieder
+   verfügbar.
+8. Bei unsicherer Netzwerkantwort fragt der Client zuerst den Serverstatus ab
+   und zeigt niemals optimistisch einen Erfolg.
+
+Der Swipe ist nur die sichtbare Kundeninteraktion. Tabellenzugriff,
+Single-Use-Schutz und Serverzeit bleiben ausschließlich serverseitig.
+
 # WUXUAI Bonus V1 – Flow 03: Punkteeinlösung verwenden
 
 Status: **LOCK**
@@ -25,7 +58,7 @@ Das Ziel von Flow 03 lautet:
 Der Ablauf soll für den Gast und für das Restaurant sofort verständlich sein:
 
 ```text
-Gast öffnet Mein Bonus
+Gast öffnet Meine Vorteile
 → Gast öffnet freigeschaltete Punkteeinlösung
 → Gast bestätigt final
 → System löst serverseitig ein
@@ -799,3 +832,32 @@ Aktiver V1-Ablauf:
 Ein abgelaufener Geschenkcode bleibt verbraucht. Bei einer normalen Punkteeinlösung ist ein neuer Versuch nur durch eine neue ausdrückliche Kundenbestätigung mit neuer Idempotency-ID möglich; der Punktestand wird erneut geprüft und Punkte werden erneut abgezogen. Screenshots alter Codes funktionieren nicht.
 
 Die Tages-PIN wird weiterhin niemals für Einlösungen verwendet. Aussagen in älteren Abschnitten, wonach die Einlösung unmittelbar nach dem Kundenbutton vollständig abgeschlossen ist oder eine reine Bestätigungsansicht ausreicht, sind durch diese Entscheidung ersetzt.
+
+## CTO-Entscheidung 2026-08-03: Präsentationsfenster für Punktebelohnungen
+
+🟢 **LOCKED / V1 / VORRANG FÜR NORMALE PUNKTEBELOHNUNGEN**
+
+Für normale Punktebelohnungen ersetzt diese Entscheidung den sechsstelligen
+Mitarbeitercode. Der Kunde bestätigt verbindlich; der Server zieht Punkte
+atomar und endgültig ab, schreibt Journal und Audit und startet exakt ein
+15-minütiges Präsentationsfenster. Das Team kontrolliert nur den aktiven
+Bildschirm. Serverzeit und `expires_at` sind maßgeblich.
+
+Nach Ablauf wechselt der Status idempotent von `REDEEMED_ACTIVE` zu
+`REDEEMED_COMPLETED`. Eine Korrektur ist nur als atomarer Owner-/Support-Storno
+mit Begründung und Punkterückbuchung zulässig. Geschenk-Einlösungen bleiben im
+sechsstelligen Code-Flow.
+
+## CTO-Entscheidung 2026-08-09: Präsentationsfenster auch für Geschenke
+
+🟢 **LOCKED / V1 / VORRANG VOR DEM SECHSSTELLIGEN GESCHENKCODE**
+
+Willkommens- und Geburtstagsgeschenke verwenden nach ausdrücklicher
+Kundenbestätigung das bestehende 15-Minuten-Präsentationsprinzip. Der Server
+prüft Kundenzugang, Restaurant, konkrete Zuteilung, Status, Reward-Aktivität und
+Gültigkeit atomar. Pro Zuteilung kann nur ein Vorgang entstehen. Der Ablauf
+markiert die Zuteilung serverseitig als eingelöst, schreibt Audit und Journal
+und löscht keine Historie. Das Restaurantpersonal kontrolliert nur den aktiven
+Live-Bildschirm; Mitarbeiter-PIN, QR-Scan, Bonnummer und Kassenschnittstelle
+sind nicht Teil dieses V1-Flows. Historische bereits erzeugte Codes bleiben als
+abwärtskompatibler Restore-Pfad erhalten.

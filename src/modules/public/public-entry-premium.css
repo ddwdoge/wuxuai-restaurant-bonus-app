@@ -11,6 +11,11 @@
   width: 100%;
 }
 
+.public-premium-shell,
+.public-premium-shell * {
+  box-sizing: border-box;
+}
+
 .public-premium-page {
   display: grid;
   gap: 22px;
@@ -58,6 +63,12 @@
   line-height: 1.55;
   margin: 0;
   max-width: 55ch;
+}
+
+@media (max-width: 340px) {
+  .public-premium-hero h1 {
+    font-size: 1.8rem;
+  }
 }
 
 .public-premium-card {
@@ -158,6 +169,50 @@
   color: #176447;
 }
 
+.owner-existing-account-notice {
+  font-weight: 600;
+}
+
+.owner-existing-password-stage {
+  background: #f1faf5;
+  border: 2px solid #63a985;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.owner-existing-password-stage-title {
+  align-items: center;
+  color: #176447;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.owner-existing-password-stage .public-premium-field input {
+  background: #ffffff;
+  border-color: #398663;
+}
+
+.owner-existing-password-stage .public-premium-field input:focus-visible {
+  border-color: #176447;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #63a985 28%, transparent);
+}
+
+.public-premium-status-icon {
+  align-items: center;
+  background: var(--wux-gold-soft);
+  border-radius: 14px;
+  color: var(--wux-gold-dark);
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  width: 52px;
+}
+
 .public-premium-primary-button {
   align-items: center;
   background: var(--public-action);
@@ -185,10 +240,25 @@
 
 .public-premium-primary-button:focus-visible,
 .public-premium-secondary-link:focus-visible,
+.public-premium-text-button:focus-visible,
 .public-premium-entry-card:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--wux-gold) 36%, transparent);
   outline-offset: 3px;
 }
+
+.public-premium-text-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--wux-gold-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 11px 2px;
+}
+
+.public-premium-text-button:hover { color: var(--wux-text); }
 
 .public-premium-primary-button:disabled {
   cursor: not-allowed;
@@ -210,10 +280,18 @@
 }
 
 .public-premium-secondary-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
   color: var(--wux-gold-dark);
+  display: inline-flex;
   font-weight: 700;
+  gap: 7px;
+  justify-content: center;
   min-height: 44px;
   padding: 11px 2px;
+  text-align: center;
+  width: 100%;
 }
 
 .public-premium-trust-note {

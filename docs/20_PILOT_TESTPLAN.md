@@ -87,7 +87,7 @@ V1 ist:
 Ein Restaurant
 Ein Standort
 Deutsch
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 QR-basiert
 ohne Kassensystem
 ohne SMS/WhatsApp
@@ -376,11 +376,23 @@ Gast zeigt einlösbare Belohnung
 Test:
 
 ```text
-Gast scannt Bonus QR
-→ Rechnungsbereich
+Restaurantgesteuert: Gast zeigt persoenlichen QR
+→ Team erfasst Betrag ohne Bonnummer
+→ Tages-PIN
+→ Punkte genau einmal erhalten
+→ Retry liefert dasselbe Ergebnis
+
+Kundeninitiiert: Gast scannt Restaurant-QR
+→ Rechnungsbereich ohne Bonnummer
+→ Tages-PIN
 → Punkte erhalten
 → Fortschritt sichtbar
 ```
+
+Zusaetzlich pruefen: geaenderter Betrag, Gast oder QR mit demselben
+Idempotenzschluessel wird abgelehnt; Earn und Reverse duerfen denselben
+Client-Schluessel als unterschiedliche Operationen verwenden; Storno-Retry
+erzeugt keine zweite Gegenbuchung.
 
 ### Flow 05 – Bonus Boost
 
@@ -449,17 +461,18 @@ Gast wird in unter 30 Sekunden Mitglied.
 2. Restaurant wird erkannt.
 3. Vorteil sehen.
 4. „Jetzt Mitglied werden“ klicken.
-5. Vorname eingeben.
-6. Telefonnummer eingeben.
-7. Optional Geburtstag.
-8. Registrierung abschließen.
-9. Mein Bonus öffnen.
-10. Persönlichen QR sehen.
+5. E-Mail-Adresse, Passwort, Vorname und Telefonnummer eingeben.
+6. Optional Geburtstag eingeben.
+7. E-Mail-Adresse bestätigen.
+8. Zum gescannten Restaurant zurückkehren.
+9. Beitritt ausdrücklich bestätigen.
+10. Mein Bonus und den persönlichen QR öffnen.
 
 ### 10.3 Erwartung
 
 - keine App-Installation,
-- kein Passwort,
+- Passwortverwaltung ausschließlich über Supabase Auth,
+- bestätigte E-Mail-Adresse,
 - keine SMS,
 - kein WhatsApp,
 - kein Restaurant-Suchen,
@@ -893,7 +906,7 @@ Fragen:
 5. Welche Funktion wurde genutzt?
 6. Welche Funktion wurde ignoriert?
 7. Wo entstand Supportbedarf?
-8. Würde Restaurant nach 30 Tagen zahlen?
+8. Würde Restaurant nach drei Kalendermonaten 59 € pro Monat exkl. USt. zahlen?
 9. Welche V1-Fixes sind Pflicht?
 10. Welche Ideen gehören V2?
 
@@ -956,7 +969,7 @@ Entscheidung:
 V1 Testphase:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte
 Keine Nachzahlung
 ```

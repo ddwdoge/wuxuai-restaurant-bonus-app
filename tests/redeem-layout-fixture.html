@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redeem Layout Fixture</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/modules/customer/customer-premium.css" />
+  </head>
+  <body>
+    <main class="customer-premium-shell">
+      <div class="customer-page-container customer-portal-page premium-redemption-page">
+        <header class="premium-customer-header compact" data-geometry="header">
+          <span class="premium-restaurant-logo"><span style="background:#092954">W</span></span>
+          <div><strong>Kaffee Konditorei bäckerei</strong></div>
+          <button aria-label="Information" class="premium-icon-button" type="button">i</button>
+        </header>
+
+        <section class="premium-view-stack premium-redemption-content" aria-labelledby="redemptions-title">
+          <div class="premium-page-heading" data-geometry="title">
+            <span aria-hidden="true"></span>
+            <div><h1 id="redemptions-title">Einlösen</h1><p>Wähle deinen nächsten Vorteil.</p></div>
+          </div>
+          <div aria-label="Belohnungsansicht" class="premium-segmented-control" data-geometry="tabs" role="tablist">
+            <button id="all-tab" role="tab" type="button">Alle Belohnungen</button>
+            <button id="mine-tab" role="tab" type="button">Meine Belohnungen</button>
+          </div>
+          <div class="premium-redemption-summary" data-geometry="points">
+            <div><span>Deine Punkte</span><strong>93</strong></div>
+            <p id="reward-count"></p>
+          </div>
+          <p class="premium-legal-notice" data-geometry="notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
+          <div class="premium-redemption-rewards" data-geometry="content" id="reward-overview" role="tabpanel"></div>
+        </section>
+
+        <nav aria-label="Meine Vorteile Navigation" class="premium-bottom-navigation">
+          <button type="button"><span>Start</span></button>
+          <button class="active" type="button"><span>Einlösen</span></button>
+          <button class="primary-action" type="button"><span>Sammeln</span></button>
+          <button type="button"><span>Konto</span></button>
+        </nav>
+      </div>
+    </main>
+    <template id="reward-template">
+      <article class="premium-card premium-card-standard premium-reward-card state-locked">
+        <div class="premium-reward-media"></div>
+        <div class="premium-reward-copy"><span>Vorspeise</span><h3>Gratis Vorspeise</h3><strong>148 Punkte</strong><p class="premium-reward-status state-locked">Noch gesperrt</p></div>
+        <button class="premium-button premium-button-secondary" type="button">Details ansehen</button>
+      </article>
+    </template>
+    <template id="empty-template">
+      <article class="premium-card premium-card-standard premium-state-card"><h3>Noch keine persönlichen Belohnungen</h3><p>Sobald etwas für dich bereitsteht, erscheint es hier.</p></article>
+    </template>
+    <script>
+      const content = document.querySelector("#reward-overview");
+      const rewardCount = document.querySelector("#reward-count");
+      const allTab = document.querySelector("#all-tab");
+      const mineTab = document.querySelector("#mine-tab");
+
+      function render(state) {
+        const all = state === "all";
+        content.replaceChildren(document.querySelector(all ? "#reward-template" : "#empty-template").content.cloneNode(true));
+        rewardCount.textContent = all ? "1 Belohnung im Restaurant" : "0 persönliche Vorteile";
+        allTab.classList.toggle("active", all);
+        mineTab.classList.toggle("active", !all);
+        allTab.setAttribute("aria-selected", String(all));
+        mineTab.setAttribute("aria-selected", String(!all));
+      }
+
+      allTab.addEventListener("click", () => render("all"));
+      mineTab.addEventListener("click", () => render("mine"));
+      render(new URLSearchParams(location.search).get("state") === "mine" ? "mine" : "all");
+    </script>
+  </body>
+</html>

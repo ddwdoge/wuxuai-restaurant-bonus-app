@@ -18,7 +18,7 @@ WUXUAI Bonus soll für Restaurants leicht verständlich, risikofrei testbar und 
 
 Dieses Dokument legt fest:
 
-- wie die 30-Tage-Testphase funktioniert,
+- wie die Testphase von drei Kalendermonaten funktioniert,
 - wann Restaurants zahlen,
 - warum keine rückwirkende Zahlung verlangt wird,
 - welche Preismodell-Entscheidung für V1 gilt,
@@ -35,7 +35,7 @@ Dieses Dokument ist eine Spezifikation und Go-Live-Vorbereitung.
 
 ---
 
-## 2. Grundentscheidung: 30 Tage kostenlos
+## 2. Grundentscheidung: 3 Kalendermonate kostenlos
 
 🟢 **FIX**
 
@@ -44,7 +44,7 @@ Jedes Restaurant erhält in V1 eine kostenlose Testphase.
 Regel:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 Keine Kreditkarte erforderlich
 Keine Nachzahlung
 Jederzeit kündbar
@@ -68,13 +68,13 @@ Nicht:
 
 🟢 **FIX**
 
-WUXUAI Bonus verlangt nach der Testphase keine rückwirkende Zahlung für die kostenlosen 30 Tage.
+WUXUAI Bonus verlangt nach der Testphase keine rückwirkende Zahlung für die kostenlosen drei Kalendermonate.
 
 Verboten:
 
 ```text
-30 Tage gratis
-→ danach die letzten 30 Tage nachzahlen
+3 Kalendermonate gratis
+→ danach die Testphase nachzahlen
 ```
 
 ### Warum?
@@ -85,7 +85,7 @@ Beispiel:
 
 ```text
 59 €/Monat
-nach 30 Tagen plötzlich 59 € rückwirkend + 59 € neuer Monat
+nach der Testphase plötzlich 59 € rückwirkend + 59 € neuer Monat
 ```
 
 Das fühlt sich für Restaurants wie eine versteckte Rechnung an.
@@ -93,7 +93,7 @@ Das fühlt sich für Restaurants wie eine versteckte Rechnung an.
 Stattdessen:
 
 ```text
-30 Tage testen
+3 Kalendermonate testen
 → Nutzen sehen
 → freiwillig Abo starten
 ```
@@ -106,12 +106,12 @@ Stattdessen:
 
 V1 startet mit einem einfachen Paket.
 
-Empfehlung:
+Verbindlicher V1-Vertrag:
 
 ```text
-WUXUAI Bonus
-59–69 € / Monat
-30 Tage kostenlos
+WUXUAI Bonus V1
+59 € / Monat exkl. USt.
+3 Kalendermonate kostenlos
 monatlich kündbar
 ```
 
@@ -256,7 +256,7 @@ Ablauf:
 → Branch
 → restaurant_members role owner
 → branch_subscriptions status trialing
-→ trial_ends_at = now + 30 Tage
+→ trial_ends_at = derselbe Kalendertag drei Monate nach Trial-Start
 ```
 
 ### 8.2 RPC
@@ -994,7 +994,7 @@ V2 kann enthalten:
 V1 bleibt:
 
 ```text
-30 Tage kostenlos
+3 Kalendermonate kostenlos
 ein Paket
 kein rückwirkendes Zahlen
 ```
@@ -1005,7 +1005,7 @@ kein rückwirkendes Zahlen
 
 Payment & Stripe Plan gilt als LOCK, wenn:
 
-- 30 Tage Trial klar definiert
+- drei Kalendermonate Trial klar definiert
 - keine rückwirkende Zahlung klar definiert
 - ein Paket V1 klar definiert
 - branch_subscriptions Logik dokumentiert

@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet.markercluster";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "./partner-restaurant-map.css";
 import type { PartnerRestaurant } from "./partnerRestaurantService";
 import { markerStatus } from "./partnerRestaurantFinder.mjs";
 
@@ -14,11 +15,46 @@ export type PartnerRestaurantMapProps = {
   onSelect: (location: PartnerRestaurant) => void;
   selectedId: string | null;
   userLocation: { latitude: number; longitude: number } | null;
+  tileUrl?: string;
 };
+
+export const OPENSTREETMAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+function MapSizeSync() {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => map.invalidateSize({ animate: false }));
+    });
+    let previousWidth = container.clientWidth;
+    let previousHeight = container.clientHeight;
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width <= 0 || height <= 0 || (width === previousWidth && height === previousHeight)) return;
+      previousWidth = width;
+      previousHeight = height;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => map.invalidateSize({ animate: false }));
+    });
+
+    observer?.observe(container);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
 
 function markerIcon(location: PartnerRestaurant, selected: boolean, current: boolean) {
   const status = markerStatus(location);
-  const statusLabel = status === "reward"
+  const statusLabel = status === "closed"
+    ? "Aktuell geschlossen"
+    : status === "reward"
     ? "Punkteeinlösung verfügbar"
     : status === "near"
       ? "Nächste Punkteeinlösung fast erreicht"
@@ -26,11 +62,13 @@ function markerIcon(location: PartnerRestaurant, selected: boolean, current: boo
       ? "Punkte vorhanden"
       : status === "registered"
         ? "Registriert"
-        : "Partnerrestaurant";
+        : "Partnerlokal";
+  const visitedLabel = (location.membership?.visits_count ?? 0) > 0 ? "Bereits besucht. " : "Noch nicht besucht. ";
+  const markerSymbol = status === "closed" ? "–" : status === "reward" ? "!" : status === "near" ? "+" : status === "member" ? "P" : status === "registered" ? "✓" : "·";
 
   return L.divIcon({
     className: "partner-map-marker-shell",
-    html: `<span class="partner-map-marker ${status}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? `Aktueller Restaurantkontext. ${statusLabel}` : statusLabel}"><span></span></span>`,
+    html: `<span class="partner-map-marker ${status}${(location.membership?.visits_count ?? 0) > 0 ? " visited" : ""}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? "Aktueller Restaurantkontext. " : ""}${visitedLabel}${statusLabel}"><span aria-hidden="true">${markerSymbol}</span></span>`,
     iconAnchor: [20, 40],
     iconSize: [40, 40],
   });
@@ -82,20 +120,56 @@ function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLoca
   return null;
 }
 
-export function PartnerRestaurantMap(props: PartnerRestaurantMapProps) {
+export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...props }: PartnerRestaurantMapProps) {
+  const [tileAttempt, setTileAttempt] = useState(0);
+  const [tileState, setTileState] = useState<"loading" | "loaded" | "failed">("loading");
+  const tileLoadedRef = useRef(false);
+
+  useEffect(() => {
+    tileLoadedRef.current = false;
+    setTileState("loading");
+    const timeout = window.setTimeout(() => {
+      if (!tileLoadedRef.current) setTileState("failed");
+    }, 8_000);
+    return () => window.clearTimeout(timeout);
+  }, [tileAttempt, tileUrl]);
+
+  const retryTiles = useCallback(() => {
+    setTileAttempt((attempt) => attempt + 1);
+  }, []);
+
   return (
-    <MapContainer
-      center={[47.8, 13.2]}
-      className="partner-map-canvas"
-      scrollWheelZoom
-      zoom={7}
-      zoomControl
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <PartnerMarkers {...props} />
-    </MapContainer>
+    <div className="partner-map-runtime">
+      <MapContainer
+        center={[47.8, 13.2]}
+        className="partner-map-canvas"
+        scrollWheelZoom
+        zoom={7}
+        zoomControl
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
+          eventHandlers={{
+            tileload: () => {
+              tileLoadedRef.current = true;
+              setTileState("loaded");
+            },
+            tileerror: () => {
+              if (!tileLoadedRef.current) setTileState("failed");
+            },
+          }}
+          key={`${tileUrl}-${tileAttempt}`}
+          url={tileUrl}
+        />
+        <MapSizeSync />
+        <PartnerMarkers {...props} />
+      </MapContainer>
+      {tileState === "failed" ? (
+        <div className="partner-map-tile-error" role="alert">
+          <strong>Karte konnte nicht geladen werden.</strong>
+          <button className="button secondary" onClick={retryTiles} type="button">Erneut versuchen</button>
+        </div>
+      ) : null}
+    </div>
   );
 }
