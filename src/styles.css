@@ -2745,6 +2745,34 @@ a {
   border-color: #b7ded5;
 }
 
+.welcome-distribution-notice {
+  background: #eef8f5;
+  border: 1px solid #91c9bd;
+  border-radius: 8px;
+  color: #174f48;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.welcome-distribution-notice p {
+  margin: 0;
+}
+
+.onboarding-help-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.onboarding-help-section {
+  border-bottom: 1px solid #e4e9ef;
+  padding-bottom: 14px;
+}
+
+.onboarding-help-section > p {
+  margin: 6px 0 0;
+}
+
 .template-selection-grid {
   display: grid;
   align-items: stretch;

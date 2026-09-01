@@ -140,67 +140,45 @@ const stepTitles = [
 
 const stepHelp = [
   {
-    sentences: [
-      "Trage den Namen und die Art deines Restaurants ein.",
-      "Ergänze die rechtlichen Pflichtangaben vollständig.",
-      "Die Kontakt-E-Mail wird auch als Beschwerdekontakt verwendet, wenn du keinen eigenen angibst.",
-      "Prüfe besonders Adresse und Rechtsform, bevor du weitergehst.",
-    ],
+    configure: "Restaurantname, Betriebsart sowie korrekte Unternehmens-, Kontakt- und Adressdaten.",
+    importance: "Diese Angaben identifizieren deinen Betrieb in WUXUAI, in der Restaurantsuche und in den rechtlichen Dokumenten.",
+    attention: "Prüfe Firmenname und vollständige Adresse sorgfältig. Eine Mobiltelefonnummer wird bereits bei der Restaurantregistrierung für zukünftige SMS-Funktionen empfohlen; SMS ist derzeit nicht aktiv.",
     note: "Dauer: ca. 2 Minuten",
   },
   {
-    sentences: [
-      "Lade dein Restaurantlogo hoch und wähle deine Markenfarben.",
-      "Die Vorschau zeigt sofort, wie dein Bonusprogramm für Gäste wirkt.",
-      "Achte darauf, dass Logo und Texte gut lesbar bleiben.",
-      "Der Beispielbutton dient nur der Vorschau und öffnet kein Kundenkonto.",
-    ],
+    configure: "Logo und Markenfarben für den Auftritt deines Restaurants.",
+    importance: "Deine Kunden sehen dieses Erscheinungsbild im Bonusprogramm und auf dem Druckmaterial.",
+    attention: "Verwende ein scharfes Logo und gut lesbare Farben. Du kannst das Aussehen später jederzeit bearbeiten.",
     note: "Tipp: Du kannst das Aussehen später jederzeit ändern.",
   },
   {
-    sentences: [
-      "Aktiviere alle Tage, an denen dein Restaurant geöffnet ist.",
-      "Trage für jeden aktiven Tag Öffnungs- und Schließzeit ein.",
-      "Urlaub oder einzelne Schließtage kannst du als Hinweis ergänzen.",
-      "Der sichtbare Geöffnet-Status richtet sich nach diesen Angaben.",
-    ],
+    configure: "Reguläre Öffnungszeiten, geschlossene Tage und besondere Hinweise.",
+    importance: "Kunden können dadurch erkennen, wann dein Lokal geöffnet ist.",
+    attention: "Richte zuerst Montag ein und nutze bei gleichen Zeiten „Auf alle Tage übertragen“. Abweichende Tage kannst du danach einzeln anpassen.",
     note: "Dauer: ca. 1 Minute",
   },
   {
-    sentences: [
-      "Wähle eine der vier V1-Stufen für die Großzügigkeit deines Bonusprogramms.",
-      "WUXUAI zeigt den ungefähren Gegenwert anhand einer festen Referenzrechnung.",
-      "20 Euro und fünf Besuche sind nur Richtwerte und keine Voraussetzung für Gäste.",
-      "Die Punkte-Einlösung wird weiterhin automatisch berechnet.",
-    ],
+    configure: "Den gewünschten Bonus-Prozentsatz von 3, 5, 8 oder 10 Prozent.",
+    importance: "Damit legst du fest, wie attraktiv dein Bonusprogramm für Stammkunden ist.",
+    attention: "Du wählst nur den Prozentsatz. Die interne Referenzrechnung mit 20 EUR und fünf Besuchen übernimmt WUXUAI automatisch.",
     note: "Dauer: ca. 1 Minute",
   },
   {
-    sentences: [
-      "Wähle mindestens ein Willkommensgeschenk aus.",
-      "Empfohlen sind drei bis fünf verschiedene Geschenke.",
-      "Ein erneuter Klick entfernt eine Auswahl wieder.",
-      "Neue Gäste erhalten später zufällig eines der ausgewählten Geschenke.",
-    ],
+    configure: "Welche Willkommensgeschenke für neue Kunden verfügbar sind.",
+    importance: "Ein berechtigter neuer Kunde erhält nach der bestehenden Systemlogik ein Willkommensgeschenk.",
+    attention: "Aktiviere nur Geschenke, die dein Restaurant zuverlässig anbieten kann. WUXUAI verteilt sie automatisch; du musst keine Verteilung einstellen.",
     note: "Tipp: Produkte und Bilder kannst du später bearbeiten.",
   },
   {
-    sentences: [
-      "Hier findest du die fertigen QR-Codes für dein Restaurant.",
-      "Nutze den Restaurant-QR für die Anmeldung neuer Gäste.",
-      "Der Mitarbeiter-QR führt dein Team in den geschützten Mitarbeiterbereich.",
-      "Lade das Starter Kit herunter und platziere es gut sichtbar.",
-    ],
+    configure: "Das fertige Starter Kit mit Gäste- und Mitarbeiter-QR.",
+    importance: "Die QR-Codes führen Gäste und Mitarbeiter in den jeweils richtigen Bereich.",
+    attention: "Prüfe die Druckseiten und bewahre den Mitarbeiter-QR nur im geschützten Arbeitsbereich auf.",
     note: "Dauer: ca. 1 Minute",
   },
   {
-    sentences: [
-      "Prüfe, ob alle Punkte der Checkliste abgeschlossen sind.",
-      "Offene Angaben werden direkt in der Checkliste angezeigt.",
-      "Mit „Restaurant starten“ aktivierst du das bestehende Restaurant.",
-      "Vor dem Start bestätigst du die Veröffentlichung der automatisch vorbereiteten Dokumente.",
-      "Ein erneuter Klick legt kein zweites Restaurant an.",
-    ],
+    configure: "Die abschließende Prüfung deiner Grundeinrichtung und der vorbereiteten Dokumente.",
+    importance: "So startet dein Restaurant mit vollständigen Basisdaten und einem verständlichen Bonusprogramm.",
+    attention: "Nach dem Start zeigt „Heute für dich“ den nächsten wichtigen Schritt. Unter „Einstellungen → Setup & Einrichtung“ kannst du alle Bereiche später erneut prüfen und bearbeiten.",
     note: "Dauer: weniger als 1 Minute",
   },
 ] as const;
@@ -1971,7 +1949,14 @@ export function RestaurantOnboarding() {
             <section className="wizard-screen">
               <article className="calculation-card">
                 <strong>Welche Willkommensgeschenke möchtest du anbieten?</strong>
-                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Jeder neue Gast erhält zufällig eines davon.</p>
+                <p className="muted">Empfohlen: 3–5 Willkommensgeschenke. Das System teilt jedem neuen Mitglied automatisch eines davon zu.</p>
+              </article>
+
+              <article className="welcome-distribution-notice">
+                <strong>Automatische Geschenkverteilung</strong>
+                <p>
+                  Die verfügbaren Willkommensgeschenke werden automatisch durch WUXUAI zugeteilt. Du legst fest, welche Geschenke verfügbar sind – die Verteilung übernimmt das System automatisch.
+                </p>
               </article>
 
               {!starterRewardConfirmationOpen ? (
@@ -2017,7 +2002,7 @@ export function RestaurantOnboarding() {
                     ))}
                   </div>
                   <p className="muted">
-                    Jeder neue Gast erhält zufällig eines dieser Willkommensgeschenke.
+                    Jeder neue Gast erhält automatisch eines dieser Willkommensgeschenke.
                   </p>
                   <p className="muted">
                     Welches konkrete Produkt du verschenkst, entscheidest du später im Bereich Willkommensgeschenke.
@@ -2172,9 +2157,16 @@ export function RestaurantOnboarding() {
         size="compact"
         title="Hilfe zu diesem Schritt"
       >
-        <div className="rule-list">
-          {currentStepHelp.sentences.map((line) => (
-            <p className="muted" key={line}>{line}</p>
+        <div className="onboarding-help-sections">
+          {[
+            ["Was richtest du ein?", currentStepHelp.configure],
+            ["Warum ist das wichtig?", currentStepHelp.importance],
+            ["Worauf solltest du achten?", currentStepHelp.attention],
+          ].map(([title, content]) => (
+            <section className="onboarding-help-section" key={title}>
+              <strong>{title}</strong>
+              <p className="muted">{content}</p>
+            </section>
           ))}
         </div>
         <article className="calculation-card">

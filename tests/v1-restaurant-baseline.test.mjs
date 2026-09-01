@@ -17,7 +17,8 @@ test("Willkommensgeschenke bleiben eine Mehrfachauswahl mit mindestens einem Ges
   assert.match(onboarding, /starterRewards:\s*\[\s*\.\.\.current\.starterRewards/);
   assert.match(onboarding, /Bitte waehle mindestens ein Willkommensgeschenk\.|Bitte wähle mindestens ein Willkommensgeschenk\./);
   assert.match(onboarding, /Empfohlen: 3–5 Willkommensgeschenke/);
-  assert.match(onboarding, /Jeder neue Gast erhaelt zufaellig eines davon|Jeder neue Gast erhält zufällig eines davon/);
+  assert.match(onboarding, /Das System teilt jedem neuen Mitglied automatisch eines davon zu/);
+  assert.match(onboarding, /Automatische Geschenkverteilung/);
 });
 
 test("Punkteeinloesung verwendet feste Referenzwerte und die V1-Grosszuegigkeitsstufen", () => {

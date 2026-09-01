@@ -889,4 +889,39 @@ Wenn Codex an Flow 01 arbeitet:
 
 ------------------------------------------------------------------------
 
+## 25. Kontextbezogene Hilfe und automatische Geschenkverteilung
+
+Jeder der sieben Schritte besitzt eine eigene Hilfe. Sie erklaert verbindlich:
+
+1.  was der Owner in diesem Schritt einrichtet,
+2.  warum dies wichtig ist,
+3.  worauf der Owner konkret achten soll.
+
+Die Hilfe bleibt kurz, praktisch und als kompakter Drawer hinter dem
+vorhandenen Hilfe-Button erreichbar. Sie veraendert weder Schrittfolge noch
+Formular-, Speicher- oder Abschlusslogik.
+
+Restaurants waehlen bei Willkommensgeschenken ausschliesslich Geschenkarten
+und spaeter deren konkrete Bezeichnung, Beschreibung, Gueltigkeit,
+Einloesebedingungen und Verfuegbarkeit. Die Owner-Hilfe bleibt bewusst
+algorithmusneutral: Sie zeigt weder Prozentsaetze noch Gleichverteilungs- oder
+Gewichtungsbehauptungen, erwartete Zuteilungen oder daraus abgeleitete Kosten.
+Restaurants erhalten keine Eingabe fuer Quote, Gewicht oder Systemverteilung.
+
+Die verfuegbaren Willkommensgeschenke werden automatisch durch WUXUAI
+zugeteilt. Das Restaurant legt fest, welche Geschenke verfuegbar sind; die
+Verteilung uebernimmt das System automatisch. Aenderungen an der Auswahl gelten
+nur fuer zukuenftige Zuteilungen. Bereits zugeteilte Geschenke bleiben
+unveraendert.
+
+Die rechtliche Veroeffentlichung bleibt ein ausdruecklicher Owner-Schritt.
+Bestehende Dokumente werden weder automatisch akzeptiert noch automatisch neu
+veroeffentlicht.
+
+Die urspruengliche wertorientierte Kategoriengewichtung, ihre gewichtete
+Zufallsauswahl und Normalisierung sind `FINAL LOCK`. Interne Gewichte und
+Wahrscheinlichkeiten bleiben aus der Owner-Hilfe ausgeschlossen.
+
+------------------------------------------------------------------------
+
 Endstatus: **LOCK**

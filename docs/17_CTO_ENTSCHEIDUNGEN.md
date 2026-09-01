@@ -2433,3 +2433,25 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
   unfertigen Pakete im Owner-Portal anzeigen oder aktivieren.
 - Diese Entscheidung ersetzt frühere aktive Aussagen zu `30 Tage kostenlos`
   und zur Preisrange `59–69 EUR` im V1-Vertrag.
+
+## CTO-Entscheidung 2026-09-01: Originale Verteilungslogik FINAL LOCK, Hilfe neutral
+
+🟢 **FOUNDER FINAL LOCK / HELP-ONLY**
+
+- Die historisch belegte wertorientierte Kategoriengewichtung, gewichtete
+  Zufallsauswahl und Normalisierung sind der originale Founder-Vertrag und
+  `FINAL LOCK`.
+- Restaurants koennen Geschenkarten und konkrete Geschenkbedingungen waehlen,
+  aber keine Quote, Gewichtung oder Systemverteilung bearbeiten.
+- Die Owner-Hilfe erklaert nur die automatische Zuteilung. Sie zeigt keine
+  individuellen Prozentsaetze, keine Gleich- oder Gewichtungsbehauptung, keine
+  erwarteten Zuteilungen und keine daraus abgeleiteten Kosten.
+- Die unangewendete Migration
+  `20260901001000_welcome_gift_system_rule_snapshot.sql` wurde aus dem V1-
+  Arbeitsstand entfernt und ist `DEFERRED`.
+- Welcome Assignment, Birthday Assignment, Duplicate Protection, Eligibility,
+  RLS, Tenant Isolation, Redemption, Audit und Customer Rewards bleiben
+  unveraendert.
+- Alle sieben bestehenden Onboarding-Schritte verwenden eine kompakte Hilfe
+  mit exakt drei praktischen Fragen. Schrittfolge, Formulare und Businesslogik
+  werden dafuer nicht umgebaut.

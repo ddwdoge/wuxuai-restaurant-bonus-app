@@ -512,3 +512,25 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   Erweiterungspunkt. Unfertige Zusatzpakete sind fuer Owner nicht sichtbar.
 - Stripe bleibt `DEFERRED`; es gibt keinen Fake-Checkout und keine vorgetaeuschte
   automatische Umwandlung in ein bezahltes Abo.
+
+## Onboarding-Hilfe und Welcome-Gift-Verteilungsfreeze - CODE LOCK
+
+- Alle sieben Onboarding-Schritte verwenden dieselbe kontextbezogene
+  Hilfestruktur: `Was richtest du ein?`, `Warum ist das wichtig?` und
+  `Worauf solltest du achten?`. Der kompakte Drawer bleibt visuell sekundaer
+  zum jeweiligen Formular und nutzt den vorhandenen mobilen Hilfe-Button.
+- Die Owner-Hilfe zur automatischen Geschenkverteilung bleibt
+  algorithmusneutral. Sie zeigt keine individuellen Prozentsaetze, keine
+  Aussage zu Gleich- oder Gewichtungsverteilung, keine erwarteten Zuteilungen
+  und keine daraus abgeleitete Kostenrechnung.
+- Restaurants konfigurieren keine Quote, Gewichtung oder Systemverteilung.
+- Die bestehende serverseitige wertorientierte Kategoriengewichtung,
+  gewichtete Zufallsauswahl und Normalisierung sind nach dem historischen
+  Founder-Audit `FINAL LOCK` und bleiben unveraendert. Die unangewendete Migration
+  `20260901001000_welcome_gift_system_rule_snapshot.sql` gehoert nicht zu V1
+  und ist `DEFERRED`.
+- Welcome Assignment, Birthday Assignment, Duplicate Protection, Eligibility,
+  RLS, Tenant Isolation, Redemption, Audit und Customer Rewards bleiben
+  unveraendert.
+- V1 bleibt gemaess aktiver Dokumentationshierarchie deutschsprachig. Weitere
+  UI-Sprachen benoetigen eine ausdrueckliche Aenderung dieses Vertrags.

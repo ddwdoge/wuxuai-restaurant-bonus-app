@@ -1,6 +1,29 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Kontextbezogene Onboarding-Hilfe, Verteilungslogik eingefroren
+
+- Alle sieben bestehenden Onboarding-Schritte beantworten nun kompakt:
+  `Was richtest du ein?`, `Warum ist das wichtig?` und
+  `Worauf solltest du achten?`.
+- Die Hilfe bleibt im vorhandenen Drawer und visuell sekundaer zum Formular;
+  die mobile Hilfe-Aktion bleibt mindestens 48 Pixel gross.
+- Schritt 5 erklaert die automatische Geschenkverteilung algorithmusneutral.
+  Individuelle Prozentsaetze, Gleich-/Gewichtungsbehauptungen, erwartete
+  Zuteilungen und unbestaetigte Kostenrechnungen werden nicht angezeigt.
+- Restaurants erhalten keine Eingabe fuer Quote, Gewicht oder
+  Systemverteilung.
+- Der historische Audit fand die Founder-Dokumentation und die gewichtete SQL-
+  Implementierung von Juli 2026. Die aktive Verteilungslogik wurde nicht
+  geaendert; die unangewendete Regelversions-Migration wurde aus V1 entfernt
+  und `DEFERRED`.
+- Bereits zugeteilte Geschenke bleiben unveraendert. Die aktive V1-Deutsch-
+  only-Regel bleibt erhalten; weitere UI-Sprachen wurden nicht gegen den
+  kanonischen Vertrag eingefuehrt.
+- Der Founder hat die originale wertorientierte Kategoriengewichtung,
+  gewichtete Zufallsauswahl und Normalisierung nach dem historischen Audit als
+  `FINAL LOCK` bestaetigt. Es erfolgte keine Aenderung dieser Logik.
+
 ## 2026-09-01 - Bestehendes Passwort in Owner-Registrierung hervorgehoben
 
 - Den bereits kanonischen Inline-Flow fuer vorhandene Customer-/Staff-E-Mails
