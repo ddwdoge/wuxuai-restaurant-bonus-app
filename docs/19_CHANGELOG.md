@@ -1,6 +1,22 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Smart Setup False-Complete korrigiert
+
+- Die Staff-Bereitschaft vom rohen `staff_members.active`-Zaehler auf den
+  bestehenden tenantgebundenen Owner-Staff-Vertrag umgestellt. Nur ein
+  kanonisch aktiver Zugang schliesst den Mitarbeiter-Schritt ab.
+- Publikation auf die gemeinsame Erfuellung von aktivem Restaurant,
+  serverseitig freigegebener Kundenregistrierung und vollstaendiger
+  oeffentlicher Standort-/Discovery-Bereitschaft verengt.
+- QR-Bereitschaft auf aktiven Restaurantstatus und einen gueltigen
+  kanonischen Slug beschraenkt; physischer Druck bleibt kein gespeicherter
+  Setup-Nachweis.
+- Prioritaet, Birthday-, Reward- und Offer-Vertraege sowie die Entfernung der
+  permanenten `operational_new_offer`-Empfehlung bleiben unveraendert.
+- Keine Migration und keine Aenderung an Staff-Berechtigungen, RLS, RPCs oder
+  Businesslogik.
+
 ## 2026-09-01 - Smart Setup oben und nur bei echtem Handlungsbedarf
 
 - `Heute fuer dich` bei offenem Setup oder objektiver Aktion direkt unter den

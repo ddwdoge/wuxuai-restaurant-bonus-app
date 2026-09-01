@@ -74,6 +74,10 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - V1 speichert keinen erfundenen QR-Download- oder Drucknachweis. Die
   QR-Empfehlung kann nur die objektive technische QR-Bereitschaft auswerten;
   die physische Platzierung bleibt ausserhalb des autoritativen App-Zustands.
+- Der Mitarbeiter-Schritt verwendet den bestehenden tenantgebundenen
+  Owner-Staff-Vertrag. Mindestens ein kanonisch aktiver Staff-Zugang erfuellt
+  ihn; rohe Legacy-Zeilen, Einladungen sowie gesperrte oder archivierte
+  Zugaenge duerfen keinen vollstaendigen Setup-Zustand erzeugen.
 - Neue geeignete Welcome-/Starter-Gifts werden in den aktiven
   Erstellungswegen mit `birthday_pool_enabled = true` angelegt. Der Owner kann
   die Verwendung pro Geschenk mit `Fuer Geburtstagsgeschenke verwenden`

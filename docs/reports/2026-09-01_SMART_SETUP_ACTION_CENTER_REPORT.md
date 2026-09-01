@@ -14,20 +14,39 @@ kanonischer Vertrag implementiert.
 
 ## Aktueller Development/Test-Zustand
 
-Der oeffentliche kanonische Offer-RPC fuer `wu-und-xu-group-gmbh` lieferte am
-2026-09-01 genau drei veroeffentlichte und nutzbare Angebote: `test`, `Kopie
-von Kopie von Kopie von testte` und `miso`.
+Die erste Diagnose verwendete versehentlich den historischen Pilot-Slug
+`wu-und-xu-group-gmbh`. Dieser Tenant ist nicht der im aktuellen
+Founder-Gate geoeffnete Betrieb und darf dessen Setup-Zustand nicht belegen.
+Der aktuelle Betrieb ist `WUXUAI Bonus Testbetrieb` mit dem Slug
+`wuxuai-bonus`.
 
-- CURRENT OFFER COUNT: 3
-- OFFER SETUP COMPLETE: YES
-- BIRTHDAY COMPLETE: YES, belegt durch drei aktive branchpassende Rewards im
-  Birthday-Pool und den spaeteren Birthday-Catch-up-Live-Gate.
-- QR COMPLETE: YES, der aktive Restaurant-Slug und QR-Center-Final-Lock sind
-  vorhanden.
-- STAFF COMPLETE: YES, der aktive Staff-Zugang und der spaetere
-  Staff-/Multi-Role-Live-Gate sind dokumentiert.
-- NEXT RECOMMENDATION: NONE, sofern keine ungesehene objektive Aktion vorliegt.
-- HEUTE FUER DICH: HIDDEN, sofern keine ungesehene objektive Aktion vorliegt.
+Die am 2026-09-01 erneut gelesenen oeffentlichen autoritativen Vertraege
+belegen fuer diesen aktuellen Betrieb:
+
+- PUBLICATION COMPLETE: YES. Restaurant und Standort sind aktiv und
+  auffindbar, die Adresse und Koordinaten sind vollstaendig; das Legal Center
+  meldet `legal_ready = true`, `missing_configuration = false`, ein aktives
+  Programm und alle fuenf Pflichtdokumente als veroeffentlicht.
+- POINT REDEMPTION COMPLETE: YES. Der Partner-Finder meldet eine aktive
+  Nicht-Starter-Punkteeinloesung.
+- OFFER SETUP COMPLETE: YES. Vier `PUBLISHED`, aktive und am Prueftag nicht
+  abgelaufene Angebote (`kaka`, `tako`, `torte`, `tisch`) sind vorhanden.
+- BIRTHDAY COMPLETE: YES. Der authentifizierte Dashboard-Vertrag meldete den
+  Geburtstagspool als bereit; der oeffentliche Finder bestaetigt unabhaengig
+  den aktiven Starter-Gift-Pool.
+- QR COMPLETE: YES. Restaurantstatus `active` und kanonischer Slug
+  `wuxuai-bonus` bilden die objektiv erkennbare technische QR-Bereitschaft.
+  Ein physischer Drucknachweis wird weiterhin nicht erfunden.
+- STAFF COMPLETE: NO. Der bisherige Loader zaehlte eine rohe historische
+  `staff_members.active`-Zeile. Der bestehende Owner-Staff-Vertrag liefert
+  keinen kanonisch aktiven und damit nutzbaren Staff-Zugang fuer den aktuellen
+  Betrieb.
+- CURRENT RESOLVER RESULT: `null`, weil der rohe Staff-Zaehler faelschlich
+  `staffReady = true` lieferte und damit alle sechs Gates als erfuellt galten.
+- EXPECTED RESOLVER RESULT: `setup_staff_access`.
+- NEXT RECOMMENDATION: `Mitarbeiterzugang einrichten`.
+- HEUTE FUER DICH: VISIBLE, direkt unter dem Dashboard-Kopf, nach Auslieferung
+  dieses Fixes. Der physische Founder-Gate bleibt bis zum Deployment offen.
 
 ## Geaenderte Dateien
 
@@ -59,6 +78,14 @@ von Kopie von Kopie von testte` und `miso`.
 - Nach erfolgreichem Save laedt der bereits vorhandene Fortsetzungsvertrag den
   Serverzustand neu und berechnet die naechste Empfehlung ohne manuellen
   Refresh.
+- Die Staff-Bereitschaft verwendet jetzt denselben tenantgebundenen
+  Owner-Staff-RPC wie die Teamverwaltung und akzeptiert ausschliesslich den
+  Status `active`; Legacy-, invited-, suspended- und archived-Zustaende sind
+  nicht vollstaendig.
+- Publikation ist nur vollstaendig, wenn Restaurantstatus, Legal-Freigabe der
+  Kundenregistrierung und oeffentliche Discovery-Bereitschaft gemeinsam
+  erfuellt sind. QR-Bereitschaft verlangt einen aktiven Restaurantstatus und
+  einen gueltigen kanonischen Slug.
 
 ## Was wurde nicht geaendert
 
@@ -70,8 +97,8 @@ von Kopie von Kopie von testte` und `miso`.
 
 ## Pruefung
 
-- Fokustests: 31/31 PASS.
-- Gesamttests: 1229/1229 PASS.
+- Fokustests inklusive False-Complete-Regression: 15/15 PASS.
+- Gesamttests: 1231/1231 PASS.
 - Typecheck: PASS.
 - Lint: PASS, 0 Fehler; 7 bereits vorhandene Warnungen ausserhalb des Scopes.
 - Build: PASS mit Fail-Closed-Build-Guard und nicht geheimen Testplatzhaltern.
@@ -87,8 +114,8 @@ von Kopie von Kopie von testte` und `miso`.
 
 - Migration: Keine.
 - RLS/Security: Keine Regel, Policy, Grant oder RPC geaendert.
-- Tenant-Scope: Der bestehende tenantgebundene Setup- und Warnungsloader bleibt
-  unveraendert.
+- Tenant-Scope: Setup-, Staff- und Warnungsloader bleiben an die konkrete
+  `restaurant_id` und die bestehenden Owner-Berechtigungen gebunden.
 
 ## Risiken und Status
 

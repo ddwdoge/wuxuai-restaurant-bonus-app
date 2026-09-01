@@ -63,6 +63,12 @@ Der QR-Schritt verwendet nur objektiv vorhandene QR-Bereitschaft. Ein Download
 oder physischer Ausdruck wird nicht als abgeschlossen gespeichert oder
 behauptet, weil V1 dafür keinen autoritativen Nachweis besitzt.
 
+Der Mitarbeiter-Schritt ist erst abgeschlossen, wenn derselbe kanonische
+Owner-Staff-Vertrag wie in der Teamverwaltung mindestens einen Zugang mit
+`account_status = active` liefert. Eine rohe historische
+`staff_members.active`-Zeile, ein nur eingeladener, gesperrter, archivierter
+oder nicht aktivierter Zugang erfuellt den Setup-Schritt nicht.
+
 ## Punkte sammeln konfigurieren
 
 Der erlaubte Sammelweg und der Maximalbetrag bleiben tenantgebundene,

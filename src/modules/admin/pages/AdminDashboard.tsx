@@ -17,6 +17,7 @@ import { resolveOwnerDashboardRecommendation } from "../ownerDashboardRecommenda
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { loadOwnerPointAnomalyWarnings, type OwnerPointAnomalyWarning } from "../pointAnomalyService";
 import { pointAnomalyNoticeKey } from "../pointAnomalyPolicy.mjs";
+import { isAuthoritativePublicationReady, isQrSetupReady } from "../ownerDashboardSetupStatus.mjs";
 import {
   ownerSmartSetupLaunchState,
   readOwnerSmartSetupSuccessState,
@@ -182,13 +183,17 @@ export function AdminDashboard() {
     restaurantStatus: { active: activeRestaurant?.status === "active" },
     onboardingStatus: activeRestaurant?.onboarding_status,
     legalStatus: legalRegistration ?? null,
-    publicationStatus: { ready: setupStatus?.publicationReady ?? false },
+    publicationStatus: { ready: isAuthoritativePublicationReady({
+      restaurantActive: activeRestaurant?.status === "active",
+      registrationAllowed: legalRegistration?.registration_allowed === true,
+      publicDiscoveryReady: setupStatus?.publicationReady === true,
+    }) },
     rewardStatus: {
       pointsRedemptionReady: setupStatus?.pointsRedemptionReady ?? false,
       birthdayPoolReady: setupStatus?.birthdayPoolReady ?? false,
     },
     offerStatus: { ready: setupStatus?.offerReady ?? false },
-    qrStatus: { ready: Boolean(activeRestaurant?.slug) },
+    qrStatus: { ready: isQrSetupReady(activeRestaurant) },
     staffStatus: { ready: setupStatus?.staffReady ?? false },
     emailStatus: { confirmed: Boolean(user?.email_confirmed_at) },
     actionStatus: { pointAnomalyOpen: Boolean(pointAnomaly) },

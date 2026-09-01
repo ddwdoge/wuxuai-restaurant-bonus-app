@@ -1,6 +1,7 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import { loadRestaurantOffers } from "../offers/restaurantOfferService";
-import { hasUsablePublishedOffer } from "./ownerDashboardSetupStatus.mjs";
+import { loadOwnerStaffMembers } from "./staffManagementService";
+import { hasUsablePublishedOffer, hasUsableStaffAccess } from "./ownerDashboardSetupStatus.mjs";
 
 export type DashboardSetupStatus = {
   pointsRedemptionReady: boolean;
@@ -16,7 +17,7 @@ export type DashboardSetupStatus = {
 export async function loadDashboardSetupStatus(restaurantId: string): Promise<DashboardSetupStatus> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
 
-  const [rewardsResult, couponsResult, settingsResult, branchResult, staffResult, offers] = await Promise.all([
+  const [rewardsResult, couponsResult, settingsResult, branchResult, staffMembers, offers] = await Promise.all([
     supabase
       .from("rewards")
       .select("id, active, is_starter_reward, birthday_pool_enabled, required_points, required_stamps, expires_at")
@@ -37,11 +38,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       .eq("status", "active")
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from("staff_members")
-      .select("id", { count: "exact", head: true })
-      .eq("restaurant_id", restaurantId)
-      .eq("active", true),
+    loadOwnerStaffMembers(restaurantId),
     loadRestaurantOffers(restaurantId),
   ]);
 
@@ -49,7 +46,6 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
   if (couponsResult.error) throw couponsResult.error;
   if (settingsResult.error) throw settingsResult.error;
   if (branchResult.error) throw branchResult.error;
-  if (staffResult.error) throw staffResult.error;
 
   const rewards = (rewardsResult.data ?? []) as Array<{
     active: boolean;
@@ -121,7 +117,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       && branch.is_discoverable
       && addressComplete
       && coordinatesPresent),
-    staffReady: Number(staffResult.count ?? 0) > 0,
+    staffReady: hasUsableStaffAccess(staffMembers),
   };
 }
 

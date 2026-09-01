@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { resolveOwnerDashboardRecommendation } from "../src/modules/admin/ownerDashboardRecommendation.mjs";
-import { hasUsablePublishedOffer, isOfferSetupReady } from "../src/modules/admin/ownerDashboardSetupStatus.mjs";
+import {
+  hasUsablePublishedOffer,
+  hasUsableStaffAccess,
+  isAuthoritativePublicationReady,
+  isOfferSetupReady,
+  isQrSetupReady,
+} from "../src/modules/admin/ownerDashboardSetupStatus.mjs";
 
 const dashboard = await readFile(new URL("../src/modules/admin/pages/AdminDashboard.tsx", import.meta.url), "utf8");
 const setupService = await readFile(new URL("../src/modules/admin/dashboardNoticeService.ts", import.meta.url), "utf8");
@@ -63,6 +69,20 @@ test("danach folgen Geburtstag, QR und Mitarbeiterzugang", () => {
   assert.equal(staff.id, "setup_staff_access");
 });
 
+test("jeder einzelne fehlende Gate liefert exakt den ersten offenen Setup-Schritt", () => {
+  const cases = [
+    ["publication_location_incomplete", { publicationStatus: { ready: false } }],
+    ["setup_points_redemption", { rewardStatus: { pointsRedemptionReady: false, birthdayPoolReady: true } }],
+    ["setup_first_offer", { offerStatus: { ready: false } }],
+    ["setup_birthday_gift_pool", { rewardStatus: { pointsRedemptionReady: true, birthdayPoolReady: false } }],
+    ["setup_qr_center", { qrStatus: { ready: false } }],
+    ["setup_staff_access", { staffStatus: { ready: false } }],
+  ];
+  for (const [expectedId, overrides] of cases) {
+    assert.equal(resolveOwnerDashboardRecommendation(readyInput(overrides)).id, expectedId);
+  }
+});
+
 test("vollständige Einrichtung blendet den Assistenten ohne erfundene Empfehlung aus", () => {
   const result = resolveOwnerDashboardRecommendation(readyInput());
   assert.equal(result, null);
@@ -84,6 +104,18 @@ test("Entwurf, deaktiviertes und abgelaufenes Angebot erfüllen Setup nicht", ()
   assert.equal(isOfferSetupReady({ status: "DRAFT", is_active: true, valid_to: "2026-09-10T10:00:00Z" }, now), false);
   assert.equal(isOfferSetupReady({ status: "PUBLISHED", is_active: false, valid_to: "2026-09-10T10:00:00Z" }, now), false);
   assert.equal(isOfferSetupReady({ status: "PUBLISHED", is_active: true, valid_to: "2026-08-31T10:00:00Z" }, now), false);
+});
+
+test("Publikation, QR und Staff verwenden ihre vollständigen autoritativen Gates", () => {
+  assert.equal(isAuthoritativePublicationReady({ restaurantActive: true, registrationAllowed: true, publicDiscoveryReady: true }), true);
+  assert.equal(isAuthoritativePublicationReady({ restaurantActive: true, registrationAllowed: false, publicDiscoveryReady: true }), false);
+  assert.equal(isAuthoritativePublicationReady({ restaurantActive: true, registrationAllowed: true, publicDiscoveryReady: false }), false);
+  assert.equal(isQrSetupReady({ status: "active", slug: "wuxuai-bonus" }), true);
+  assert.equal(isQrSetupReady({ status: "active", slug: "" }), false);
+  assert.equal(isQrSetupReady({ status: "inactive", slug: "wuxuai-bonus" }), false);
+  assert.equal(hasUsableStaffAccess([{ status: "active" }]), true);
+  assert.equal(hasUsableStaffAccess([{ status: "invited" }, { status: "suspended" }]), false);
+  assert.equal(hasUsableStaffAccess([]), false);
 });
 
 test("Action Center erscheint nach vollständigem Setup nur für objektive Punktewarnung", () => {
@@ -115,7 +147,8 @@ test("Setup-Daten bleiben tenantgebunden und verwenden objektive Zustände", () 
   assert.match(setupService, /is_discoverable/);
   assert.match(setupService, /latitude/);
   assert.match(setupService, /loadRestaurantOffers\(restaurantId\)/);
-  assert.match(setupService, /staff_members/);
+  assert.match(setupService, /loadOwnerStaffMembers\(restaurantId\)/);
+  assert.doesNotMatch(setupService, /from\("staff_members"\)/);
   assert.doesNotMatch(setupService, /customer_profiles|customer_name|phone_number|birth_date/i);
 });
 

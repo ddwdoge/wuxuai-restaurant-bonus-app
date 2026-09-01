@@ -10,3 +10,10 @@ export type OwnerDashboardOfferState = {
 
 export function isOfferSetupReady(offer: OwnerDashboardOfferState, now?: number): boolean;
 export function hasUsablePublishedOffer(offers: OwnerDashboardOfferState[], now?: number): boolean;
+export function hasUsableStaffAccess(staffMembers: Array<{ status?: string | null }>): boolean;
+export function isQrSetupReady(restaurant: { status?: string | null; slug?: string | null } | null | undefined): boolean;
+export function isAuthoritativePublicationReady(input: {
+  restaurantActive?: boolean;
+  registrationAllowed?: boolean;
+  publicDiscoveryReady?: boolean;
+}): boolean;
