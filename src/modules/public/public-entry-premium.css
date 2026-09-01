@@ -169,6 +169,39 @@
   color: #176447;
 }
 
+.owner-existing-account-notice {
+  font-weight: 600;
+}
+
+.owner-existing-password-stage {
+  background: #f1faf5;
+  border: 2px solid #63a985;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.owner-existing-password-stage-title {
+  align-items: center;
+  color: #176447;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.owner-existing-password-stage .public-premium-field input {
+  background: #ffffff;
+  border-color: #398663;
+}
+
+.owner-existing-password-stage .public-premium-field input:focus-visible {
+  border-color: #176447;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #63a985 28%, transparent);
+}
+
 .public-premium-status-icon {
   align-items: center;
   background: var(--wux-gold-soft);

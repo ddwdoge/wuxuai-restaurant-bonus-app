@@ -56,6 +56,13 @@ Staff-Rollen bleiben erhalten; die atomare Owner-Provisionierung erzeugt keine
 doppelte Identitaet und keinen zweiten Trial fuer ein bereits vorhandenes
 Owner-Restaurant.
 
+Nach der neutralen Erkennung einer bereits verwendbaren E-Mail bleibt die
+Person im Restaurant-Registrierungsformular. Ein hellgruener Hinweis und ein
+visuell hervorgehobenes, automatisch fokussiertes Feld `Bestehendes Passwort`
+fuehren durch die Authentifizierung; eine zusaetzliche Loginseite oder ein
+zweiter Aktivierungsweg wird nicht eingefuehrt. Falsche Zugangsdaten werden
+direkt am bestehenden Passwortfeld verstaendlich angezeigt.
+
 Flow 01 ist erfolgreich, wenn der Restaurantbesitzer denkt:
 
 > „Mein Bonusprogramm ist jetzt bereit."

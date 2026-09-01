@@ -157,6 +157,10 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   zweite Bestaetigung. Ein noch unbestaetigtes Konto nutzt den bestehenden
   Resend-/Cooldown-/Callback-Weg. Im Pending Intent wird kein Passwort
   gespeichert.
+- Der bestehende Passwortweg bleibt direkt im Restaurant-Registrierungsformular.
+  Nach neutraler Kontoerkennung wird das Feld `Bestehendes Passwort` sichtbar
+  hervorgehoben und fokussiert; es gibt weder einen zusaetzlichen Login-CTA
+  noch eine automatische Weiterleitung auf eine separate Loginseite.
 - Customer und Staff bleiben beim Hinzufuegen des Owner-Bereichs erhalten.
   Aktiver Staff blockiert die Owner-Registrierung nicht. Die bestehende
   Owner-Provisionierung bleibt authentifiziert, tenantgebunden, atomar und fuer

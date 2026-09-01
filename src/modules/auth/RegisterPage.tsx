@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { LockKeyhole, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import {
@@ -125,7 +125,7 @@ export function RegisterPage() {
         setConfirmPassword("");
         setConfirmPasswordTouched(false);
         setSubmitAttempted(false);
-        setMessage("Diese E-Mail kann bereits verwendet werden. Melde dich an, um fortzufahren.");
+        setMessage("Bestehendes WUXUAI®-Bonus-Konto erkannt. Gib oben dein bestehendes Passwort ein und aktiviere anschließend den Restaurantbereich.");
         return;
       }
 
@@ -136,7 +136,12 @@ export function RegisterPage() {
 
       window.location.assign("/admin/onboarding");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Registrierung fehlgeschlagen.");
+      const caughtMessage = caught instanceof Error ? caught.message : "Registrierung fehlgeschlagen.";
+      setError(
+        existingIdentityFlow && caughtMessage === "E-Mail-Adresse oder Passwort ist nicht korrekt."
+          ? "Das bestehende Passwort ist nicht korrekt."
+          : caughtMessage,
+      );
     } finally {
       setLoading(false);
     }
@@ -176,7 +181,33 @@ export function RegisterPage() {
           ) : (
             <>
               <PublicFormField autoComplete="email" disabled={loading || existingIdentityFlow} id="register-email" label="E-Mail" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-              <PublicFormField autoComplete={existingIdentityFlow ? "current-password" : "new-password"} disabled={loading} hint={existingIdentityFlow ? undefined : "Mindestens 8 Zeichen, nicht leicht erratbar"} id="register-password" label={existingIdentityFlow ? "Bestehendes Passwort" : "Passwort"} minLength={existingIdentityFlow ? undefined : 8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              {existingIdentityFlow ? (
+                <>
+                  <p className="public-premium-alert public-premium-alert-success owner-existing-account-notice" role="status" aria-live="polite">
+                    Konto erkannt – gib jetzt dein bestehendes Passwort ein, um den Restaurantbereich zu aktivieren.
+                  </p>
+                  <div className="owner-existing-password-stage">
+                    <div className="owner-existing-password-stage-title">
+                      <LockKeyhole aria-hidden="true" size={18} />
+                      <span>Bestehendes Konto</span>
+                    </div>
+                    <PublicFormField
+                      autoComplete="current-password"
+                      autoFocus
+                      disabled={loading}
+                      error={error}
+                      id="register-password"
+                      label="Bestehendes Passwort"
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                      type="password"
+                      value={password}
+                    />
+                  </div>
+                </>
+              ) : (
+                <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              )}
               {!existingIdentityFlow ? (
                 <PublicFormField
                   autoComplete="new-password"
@@ -208,7 +239,7 @@ export function RegisterPage() {
           />
 
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
-          {error ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
+          {error && !existingIdentityFlow ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
             {activatingExistingAccount || existingIdentityFlow ? "Restaurantbereich aktivieren" : V1_COMMERCIAL_COPY.registrationCta}

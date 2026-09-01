@@ -7,6 +7,7 @@ import { classifyOwnerSignUpResult } from "../src/modules/auth/ownerAuthFlow.mjs
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const registerPage = read("../src/modules/auth/RegisterPage.tsx");
 const registerService = read("../src/modules/auth/registerOwnerService.ts");
+const publicEntryStyles = read("../src/modules/public/public-entry-premium.css");
 const loginPage = read("../src/modules/auth/LoginPage.tsx");
 const confirmEmailPage = read("../src/modules/auth/ConfirmEmailPage.tsx");
 const trialMigration = read("../supabase/migrations/20260830001000_v1_commercial_contract_three_month_trial.sql");
@@ -21,12 +22,21 @@ test("Signup-Ergebnis unterscheidet neue und verschleierte bestehende Identitaet
   );
 });
 
-test("bestehende E-Mail wechselt neutral in die sichere Anmeldung", () => {
+test("bestehende E-Mail wechselt neutral in die hervorgehobene Passwort-Anmeldung", () => {
   assert.match(registerService, /signUpResult === "existing_or_obfuscated"/);
   assert.match(registerService, /requiresAuthentication: true/);
-  assert.match(registerPage, /Diese E-Mail kann bereits verwendet werden\. Melde dich an, um fortzufahren\./);
-  assert.match(registerPage, /autoComplete=\{existingIdentityFlow \? "current-password" : "new-password"\}/);
-  assert.match(registerPage, /label=\{existingIdentityFlow \? "Bestehendes Passwort" : "Passwort"\}/);
+  assert.match(registerPage, /Bestehendes WUXUAI®-Bonus-Konto erkannt\. Gib oben dein bestehendes Passwort ein und aktiviere anschließend den Restaurantbereich\./);
+  assert.match(registerPage, /Konto erkannt – gib jetzt dein bestehendes Passwort ein, um den Restaurantbereich zu aktivieren\./);
+  assert.match(registerPage, /className="owner-existing-password-stage"/);
+  assert.match(registerPage, /<LockKeyhole aria-hidden="true" size=\{18\}/);
+  assert.match(registerPage, /autoComplete="current-password"/);
+  assert.match(registerPage, /autoFocus/);
+  assert.match(registerPage, /label="Bestehendes Passwort"/);
+  assert.match(registerPage, /error=\{error\}/);
+  assert.match(registerPage, /Das bestehende Passwort ist nicht korrekt\./);
+  assert.doesNotMatch(registerPage, /Jetzt anmelden und fortfahren|ownerRegistrationContinuation|returnTo/);
+  assert.match(publicEntryStyles, /\.owner-existing-password-stage \{[\s\S]*background: #f1faf5;[\s\S]*border: 2px solid #63a985;/);
+  assert.match(publicEntryStyles, /\.owner-existing-password-stage \.public-premium-field input:focus-visible/);
   assert.doesNotMatch(registerPage, /existiert bereits als Kunde|Customer-Konto gefunden|Kundenkonto gefunden/i);
   assert.doesNotMatch(registerService, /from\(["'](?:profiles|customers|customer_memberships|restaurant_members)["']\).*eq\(["']email["']/s);
 });

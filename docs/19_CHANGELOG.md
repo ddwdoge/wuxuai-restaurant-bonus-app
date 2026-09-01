@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Bestehendes Passwort in Owner-Registrierung hervorgehoben
+
+- Den bereits kanonischen Inline-Flow fuer vorhandene Customer-/Staff-E-Mails
+  beibehalten und die Eingabe des bestehenden Passworts mit einem hellgruenen
+  Hinweis, gruenem Feldrahmen, Schloss-Symbol und automatischem Fokus
+  unmissverstaendlich gemacht.
+- Falsche bestehende Passwoerter werden direkt am Passwortfeld verstaendlich
+  angezeigt. Passwort, Pending Intent, Supabase-Authentifizierung und atomare
+  Owner-Provisionierung bleiben unveraendert.
+- Keine separate Loginseite, keine `returnTo`-Logik, keine Formular-Draft-
+  Speicherung, keine Migration und keine Production-Aktion.
+
 ## 2026-09-01 - Owner-Betreiberzugriff erfuellt Staff-Setup
 
 - Smart Setup akzeptiert fuer den Mitarbeiter-Schritt jetzt den bestehenden
