@@ -469,12 +469,20 @@ Jeder größere Release zuerst als Preview prüfen.
 
 ## 10. Domain-Strategie
 
-### 10.1 Kurzfristig
-
-Aktuelle Marke / Website:
+### 10.1 Verbindliche Domain-Zuordnung
 
 ```text
 wuxuaisbi.com
+→ zentrale WUXUAI SaaS-Plattform
+
+bonus.wuxuaisbi.com
+→ WUXUAI Bonus Landingpage / Marketing
+
+app.bonus.wuxuaisbi.com
+→ WUXUAI Bonus Production-Anwendung
+
+book.wuxuaisbi.com
+→ WUXUAI Book Website
 ```
 
 Starter Kit Footer:
@@ -483,22 +491,15 @@ Starter Kit Footer:
 Powered by WUXUAI Bonus • www.wuxuaisbi.com
 ```
 
-### 10.2 App-Domain
+### 10.2 Umgebungs- und Routentrennung
 
-Für Production braucht die App eine stabile URL.
-
-Beispiele:
-
-```text
-bonus.wuxuaisbi.com
-app.wuxuaisbi.com
-```
-
-oder später:
-
-```text
-bonus.wuxu.ai
-```
+- Production verwendet verbindlich `app.bonus.wuxuaisbi.com`.
+- Staging verwendet eine separate, eindeutig als Non-Production erkennbare
+  Domain.
+- Landingpage und Production-Anwendung duerfen niemals dieselbe
+  Cloudflare-Route oder denselben Worker verwenden.
+- Domain- oder Worker-Zuordnungen werden nicht zwischen Staging und Production
+  geteilt.
 
 ### 10.3 QR-Stabilität
 

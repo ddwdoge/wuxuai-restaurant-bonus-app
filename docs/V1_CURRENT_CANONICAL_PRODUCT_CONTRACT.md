@@ -492,6 +492,14 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
 ## Staging und Production
 
+- Die verbindliche Domain-Zuordnung lautet:
+  - `wuxuaisbi.com`: zentrale WUXUAI SaaS-Plattform.
+  - `bonus.wuxuaisbi.com`: WUXUAI Bonus Landingpage und Marketing.
+  - `app.bonus.wuxuaisbi.com`: WUXUAI Bonus Production-Anwendung.
+  - `book.wuxuaisbi.com`: WUXUAI Book Website.
+- Staging verwendet eine eigene, eindeutig als Non-Production erkennbare Domain.
+- Landingpage und Production-Anwendung duerfen niemals dieselbe Cloudflare-Route
+  oder denselben Worker verwenden.
 - Local/Remote Migration History ist bis einschließlich `20260831001000`
   synchron; der Post-Dry-Run meldet keine offenen Migrationen.
 - Development/Test-DB-Linter: 0 Fehler.
