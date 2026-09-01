@@ -1,7 +1,7 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-Status: **V1 CODE LOCK / OWNER-ONBOARDING DEVELOPMENT-TEST GATE OPEN**
-Stand: 2026-08-31
+Status: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**
+Stand: 2026-09-01
 Authoritative Branch: `codex/v1-canonical-recovery`
 Recovery Branch: `codex/v1-canonical-recovery`
 
@@ -12,6 +12,8 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
 ## Owner, Onboarding und Legal Company Data - FINAL LOCK
 
+- Das aktuelle Owner-Onboarding und seine kontextbezogene Hilfe sind physisch
+  durch den Founder geprueft und fuer V1 als `FINAL LOCK` bestaetigt.
 - Der Owner-Flow lautet Registrierung, E-Mail-Bestaetigung, Login, Onboarding,
   Organization, Restaurant, Primary Branch, Owner-/Admin-Zuordnung, Legal
   Operator, Unternehmensdaten und Legal Readiness.
@@ -496,8 +498,13 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Referral, Multi-Role, Birthday Catch-up, Multi-Gift, Discovery Direct Join,
   Point Anomaly, QR/Starter Kit und E-Mail-Bestaetigung/Resend sind durch
   spaetere Live-/Founder-Evidenz geschlossen.
-- Offene verpflichtende V1-Produkt- oder physische Founder-Gates: 0.
-- Production: `DEFERRED / LOCKED`.
+- Open P0: 0.
+- Open P1: 0.
+- Offene verpflichtende V1-Produkt-Release-Blocker: 0.
+- Offene physische Founder-Gates: 0.
+- V1 Final Lock: `YES`.
+- Ready for Founder Main Merge: `YES`.
+- Production: `LOCKED` bis zur ausdruecklichen Founder-Release-Freigabe.
 - Stripe: `DEFERRED`.
 
 ## Commercial Contract - APPROVED
@@ -513,7 +520,7 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Stripe bleibt `DEFERRED`; es gibt keinen Fake-Checkout und keine vorgetaeuschte
   automatische Umwandlung in ein bezahltes Abo.
 
-## Onboarding-Hilfe und Welcome-Gift-Verteilungsfreeze - CODE LOCK
+## Onboarding-Hilfe und Welcome-Gift-Verteilungsfreeze - FINAL LOCK
 
 - Alle sieben Onboarding-Schritte verwenden dieselbe kontextbezogene
   Hilfestruktur: `Was richtest du ein?`, `Warum ist das wichtig?` und
