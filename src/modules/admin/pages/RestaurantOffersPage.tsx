@@ -25,6 +25,7 @@ import {
   removeOwnerRewardImageUpload,
   uploadOwnerRewardImage,
 } from "../services/ownerRewardImageService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 import {
   changeRestaurantOfferStatus,
   deleteRestaurantOfferDraft,
@@ -154,6 +155,7 @@ function OfferPreviewPrice({ offer }: { offer: RestaurantOffer }) {
 }
 
 export function RestaurantOffersPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [offers, setOffers] = useState<RestaurantOffer[]>([]);
@@ -323,6 +325,7 @@ export function RestaurantOffersPage() {
       await changeRestaurantOfferStatus(activeRestaurant.id, offer.id, action);
       setStatusMessage(action === "PUBLISH" ? "Angebot veröffentlicht." : action === "DISABLE" ? "Angebot deaktiviert." : "Angebot archiviert.");
       await reload();
+      if (action === "PUBLISH") smartSetup.complete("offer_published");
     } catch (nextError) {
       setStatusMessage(nextError instanceof Error ? nextError.message : "Die Aktion konnte nicht abgeschlossen werden.");
     }

@@ -34,6 +34,7 @@ import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type WelcomeGiftMode = "value_limit" | "fixed_product";
 
@@ -149,6 +150,7 @@ function giftStatus(gift: RewardOffer) {
 }
 
 export function WelcomeGiftsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [gifts, setGifts] = useState<RewardOffer[]>([]);
@@ -295,6 +297,7 @@ export function WelcomeGiftsPage() {
       setEditing(null);
       setPhotoFile(null);
       setStatus(original ? "Willkommensgeschenk aktualisiert." : "Willkommensgeschenk erstellt.");
+      if (saved.active && saved.birthday_pool_enabled) smartSetup.complete("birthday_pool_saved");
     } catch (error) {
       if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Willkommensgeschenk konnte nicht gespeichert werden.", error);
@@ -312,6 +315,7 @@ export function WelcomeGiftsPage() {
       setGifts((current) => current.map((item) => item.id === updated.id ? updated : item));
       setStatus(updated.active ? "Willkommensgeschenk aktiviert." : "Willkommensgeschenk deaktiviert.");
       setPendingStatusGift(null);
+      if (updated.active && updated.birthday_pool_enabled) smartSetup.complete("birthday_pool_saved");
     } catch (error) {
       console.error("Willkommensgeschenk-Status konnte nicht geändert werden.", error);
       setStatus("Status konnte gerade nicht geändert werden.");

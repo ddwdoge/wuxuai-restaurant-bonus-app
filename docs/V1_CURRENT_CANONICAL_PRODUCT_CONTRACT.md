@@ -52,6 +52,14 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Jede CTA fuehrt direkt in den bestehenden verantwortlichen Bereich. Nach
   vollstaendiger Einrichtung wechselt dieselbe Karte deterministisch in den
   Betriebsmodus und empfiehlt ein neues Angebot.
+- Nur bei einem Start ueber `Heute fuer dich` fuehrt ein bestaetigter
+  erfolgreicher Abschluss automatisch zum Dashboard zurueck. Das Dashboard
+  laedt den kanonischen Setup-Zustand neu und laesst den zentralen Resolver die
+  naechste tatsaechlich offene Empfehlung bestimmen. Direkte Bearbeitung,
+  Abbruch und fehlgeschlagene Saves bleiben im verantwortlichen Editor.
+- Der kurzlebige Fortsetzungskontext lebt ausschliesslich im Router-State,
+  besitzt eine feste Quellenkennung und feste Erfolgscodes, wird nach der
+  Anzeige verbraucht und veraendert weder Tenant, Berechtigungen noch Datenbank.
 - V1 speichert keinen erfundenen QR-Download- oder Drucknachweis. Die
   QR-Empfehlung kann nur die objektive technische QR-Bereitschaft auswerten;
   die physische Platzierung bleibt ausserhalb des autoritativen App-Zustands.

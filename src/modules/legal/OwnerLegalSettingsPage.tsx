@@ -37,6 +37,7 @@ import {
   type LegalDocumentView,
   type RestaurantLegalSetup,
 } from "./legalService";
+import { useOwnerSmartSetupContinuation } from "../admin/useOwnerSmartSetupContinuation";
 
 const requiredProfileFields = [
   ["company_name", "Unternehmensname"],
@@ -101,6 +102,7 @@ function formatDate(value?: string | null) {
 }
 
 export function OwnerLegalSettingsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const [setup, setSetup] = useState<RestaurantLegalSetup | null>(null);
   const [profile, setProfile] = useState<Record<string, string | null>>({});
@@ -246,6 +248,7 @@ export function OwnerLegalSettingsPage() {
       setPublicationConfirmed(false);
       setReacceptanceRequired(false);
       setMessage("Die geprüften Dokumentversionen wurden veröffentlicht.");
+      smartSetup.complete("legal_published");
     } catch (publicationError: unknown) {
       const safeError = safeLegalRpcError(publicationError);
       setError(legalPublicationErrorMessage(safeError));

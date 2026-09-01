@@ -42,6 +42,7 @@ import {
   vatIdLabel,
 } from "../../legal/legalCompanyData.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
@@ -1095,6 +1096,7 @@ function getStepBlocker(
 
 export function RestaurantOnboarding() {
   const navigate = useNavigate();
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
   const { activeRestaurant, branding: tenantBranding, loading: tenantLoading, refreshTenants } = useTenant();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -1573,7 +1575,7 @@ export function RestaurantOnboarding() {
       await refreshTenants();
       setStatus(`${result.restaurant.name} ist startklar.`);
       setStep(steps.length - 1);
-      navigate("/admin", { replace: true });
+      if (!smartSetup.complete("onboarding_completed")) navigate("/admin", { replace: true });
     } catch (error) {
       console.error("Onboarding-Abschluss fehlgeschlagen.", safeLegalRpcError(error));
       setStatus(onboardingCompletionErrorMessage(error));

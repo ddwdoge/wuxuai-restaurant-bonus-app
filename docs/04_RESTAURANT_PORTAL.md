@@ -40,6 +40,15 @@ wechselt dieselbe Karte deterministisch in den Betriebsmodus. Das Dashboard
 zeigt keine parallele Setup-Checkliste und keinen zweiten `Nächster Schritt`-
 Container oberhalb der Kennzahlen.
 
+Wurde ein verantwortlicher Editor über `Heute für dich` geöffnet, übergibt die
+Navigation einen kurzlebigen, validierten Smart-Setup-Kontext. Erst ein
+serverseitig bestätigter erfolgreicher Abschluss führt mit einer festen
+Erfolgsmeldung zum Dashboard zurück. Dort werden Legal-, Restaurant- und
+Setup-Zustand neu geladen und derselbe zentrale Resolver erneut ausgeführt.
+Direkt oder über Einstellungen geöffnete Editoren bleiben nach dem Speichern
+an Ort und Stelle; Fehler und Abbruch lösen keine Rücknavigation aus. Dieser
+Kontext ist reine Router-UI und verleiht keine Berechtigung.
+
 Der QR-Schritt verwendet nur objektiv vorhandene QR-Bereitschaft. Ein Download
 oder physischer Ausdruck wird nicht als abgeschlossen gespeichert oder
 behauptet, weil V1 dafür keinen autoritativen Nachweis besitzt.

@@ -1,6 +1,21 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Smart Setup nach erfolgreichem Speichern fortgesetzt
+
+- `Heute fuer dich` uebergibt beim Oeffnen eines Setup-Bereichs einen streng
+  validierten, kurzlebigen Router-Kontext ohne Datenbankpersistenz.
+- Erfolgreicher Standort-, Reward-, Offer-, Birthday-Pool-, Staff-, Legal- oder
+  Onboarding-Abschluss fuehrt nur aus diesem Kontext mit fester Erfolgsmeldung
+  zum Dashboard zurueck.
+- Das Dashboard verbraucht den Erfolgskontext, laedt den kanonischen
+  Restaurant-/Setup-Zustand neu und berechnet mit dem bestehenden zentralen
+  Resolver die naechste offene Empfehlung.
+- Direkte Bearbeitung, Abbruch und fehlgeschlagene Saves bleiben unveraendert;
+  QR-Bereitschaft erhaelt keinen erfundenen Abschlussnachweis.
+- Keine Migration und keine Aenderung an Businesslogik, Prioritaet,
+  Berechtigung, Tenant-Scope, Legal Readiness oder QR-Vertrag.
+
 ## 2026-09-01 - Punkteinformation auf Customer Home verdichtet
 
 - Den dauerhaft sichtbaren rechtlichen Punktehinweis zwischen Punktekarte und

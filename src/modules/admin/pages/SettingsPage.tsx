@@ -68,6 +68,7 @@ import {
   type OwnerLocationCandidate,
 } from "../ownerLocationGeocodingService";
 import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -573,6 +574,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 }
 
 export function SettingsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
   const { section } = useParams();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -874,6 +876,7 @@ export function SettingsPage() {
         .eq("restaurant_id", details.id);
       if (error) throw error;
       setStatus("Standort für die Restaurantsuche gespeichert.");
+      smartSetup.complete("location_saved");
     } catch (error) {
       console.error("Standort konnte nicht gespeichert werden.", error);
       setErrorMessage("Standort konnte gerade nicht gespeichert werden.");

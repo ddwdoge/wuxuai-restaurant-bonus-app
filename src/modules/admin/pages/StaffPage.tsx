@@ -14,6 +14,7 @@ import {
   resendOwnerStaffInvitation,
   type OwnerStaffMember,
 } from "../staffManagementService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type PendingAction = { action: "suspend" | "reactivate" | "archive"; member: OwnerStaffMember };
 
@@ -23,6 +24,7 @@ function formatDate(value: string | null) {
 }
 
 export function StaffPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { restaurantRole } = useAuth();
   const { activeRestaurant } = useTenant();
   const [members, setMembers] = useState<OwnerStaffMember[]>([]);
@@ -75,6 +77,7 @@ export function StaffPage() {
       setInviteOpen(false);
       setMessage("Die Einladung wurde versendet.");
       await refreshMembers();
+      smartSetup.complete("staff_access_saved");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Die Einladung konnte nicht versendet werden.");
     } finally {
@@ -98,13 +101,15 @@ export function StaffPage() {
 
   async function confirmAction() {
     if (!pendingAction) return;
+    const action = pendingAction;
     setSaving(true);
     setError(null);
     try {
-      await changeOwnerStaffStatus(restaurantId, pendingAction.member.id, pendingAction.action);
-      setMessage(pendingAction.action === "suspend" ? "Der Zugang wurde gesperrt." : pendingAction.action === "reactivate" ? "Der Zugang ist wieder aktiv." : "Der Teamzugang wurde entfernt.");
+      await changeOwnerStaffStatus(restaurantId, action.member.id, action.action);
+      setMessage(action.action === "suspend" ? "Der Zugang wurde gesperrt." : action.action === "reactivate" ? "Der Zugang ist wieder aktiv." : "Der Teamzugang wurde entfernt.");
       setPendingAction(null);
       await refreshMembers();
+      if (action.action === "reactivate") smartSetup.complete("staff_access_saved");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Teamzugang konnte nicht aktualisiert werden.");
     } finally {

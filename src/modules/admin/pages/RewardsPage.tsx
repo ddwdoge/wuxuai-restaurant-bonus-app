@@ -46,6 +46,7 @@ import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
+import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type RewardCalculationSettings = {
@@ -143,6 +144,7 @@ function formatValidity(expiresAt: string | null) {
 }
 
 export function RewardsPage() {
+  const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [offers, setOffers] = useState<RewardOffer[]>([]);
@@ -338,6 +340,7 @@ export function RewardsPage() {
       setEditorOpen(false);
       resetWizard();
       setStatus(wasEditing ? "Punkteeinlösung aktualisiert." : "Punkteeinlösung erstellt.");
+      smartSetup.complete("reward_saved");
     } catch (error) {
       if (uploadedObjectPath) await removeOwnerRewardImageUpload(uploadedObjectPath);
       console.error("Punkteeinlösung konnte nicht gespeichert werden.", error);

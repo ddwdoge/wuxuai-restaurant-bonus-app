@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, ArrowRight, CakeSlice, Gift, MapPinned, Newspaper, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
 import { loadBonusBoostKpis, type BonusBoostKpis } from "../../loyalty/loyaltyService";
@@ -17,6 +17,10 @@ import { resolveOwnerDashboardRecommendation } from "../ownerDashboardRecommenda
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { loadOwnerPointAnomalyWarnings, type OwnerPointAnomalyWarning } from "../pointAnomalyService";
 import { pointAnomalyNoticeKey } from "../pointAnomalyPolicy.mjs";
+import {
+  ownerSmartSetupLaunchState,
+  readOwnerSmartSetupSuccessState,
+} from "../ownerSmartSetupContinuation.mjs";
 
 const emptyKpis: RewardKpis = {
   rewardsRedeemedToday: 0,
@@ -46,6 +50,8 @@ function formatAnomalyTimestamp(value: string) {
 }
 
 export function AdminDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
@@ -61,6 +67,16 @@ export function AdminDashboard() {
   const [pointAnomalies, setPointAnomalies] = useState<OwnerPointAnomalyWarning[]>([]);
   const [selectedPointAnomaly, setSelectedPointAnomaly] = useState<OwnerPointAnomalyWarning | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [smartSetupSuccess, setSmartSetupSuccess] = useState(
+    () => readOwnerSmartSetupSuccessState(location.state)?.message ?? null,
+  );
+
+  useEffect(() => {
+    const success = readOwnerSmartSetupSuccessState(location.state);
+    if (!success) return;
+    setSmartSetupSuccess(success.message);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const reloadDashboard = useCallback(() => {
     setReloadKey((current) => current + 1);
@@ -208,6 +224,8 @@ export function AdminDashboard() {
         </div>
       </header>
 
+      {smartSetupSuccess ? <p className="status-message" role="status">{smartSetupSuccess}</p> : null}
+
       {pointAnomaly ? (
         <section className="card dashboard-point-anomaly" aria-labelledby="point-anomaly-title" role="status">
           <span className="dashboard-point-anomaly-icon"><AlertTriangle aria-hidden="true" size={22} /></span>
@@ -306,7 +324,7 @@ export function AdminDashboard() {
           <p className="muted">Der wichtigste nächste Schritt für dein Restaurant.</p>
         </div>
         {recommendation.ctaHref ? (
-          <Link className="dashboard-recommendation" to={recommendation.ctaHref}>
+          <Link className="dashboard-recommendation" state={ownerSmartSetupLaunchState(recommendation.id)} to={recommendation.ctaHref}>
             <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
             <span>
               <strong id="owner-recommendation-title">{recommendation.title}</strong>
