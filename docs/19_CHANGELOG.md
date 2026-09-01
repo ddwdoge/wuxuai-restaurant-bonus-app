@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Owner-Betreiberzugriff erfuellt Staff-Setup
+
+- Smart Setup akzeptiert fuer den Mitarbeiter-Schritt jetzt den bestehenden
+  autoritativen Betreiberzugriff des aktuellen Owners oder alternativ einen
+  kanonisch aktiven eingeladenen Staff-Zugang.
+- Owner-geführte Restaurants muessen keinen unnoetigen zweiten Benutzer
+  einladen. Staff-Einladungen und Teamverwaltung bleiben optional verfuegbar.
+- Owner-Rolle und Actor-Zuordnung bleiben erhalten; es wird keine Staff-Zeile,
+  Membership oder Impersonation erzeugt.
+- Separate Staff-Nutzer behalten unveraendert Einladung, Aktivierung und
+  tenantgebundene Zugangspruefung.
+- Keine Migration sowie keine Aenderung an Staff-Autorisierung, Punkte-,
+  Multi-Role- oder Tenantlogik.
+
 ## 2026-09-01 - Smart Setup False-Complete korrigiert
 
 - Die Staff-Bereitschaft vom rohen `staff_members.active`-Zaehler auf den

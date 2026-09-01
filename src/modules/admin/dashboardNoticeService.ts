@@ -1,7 +1,8 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
+import { resolveMyStaffRestaurantAccess } from "../auth/staffLoginService";
 import { loadRestaurantOffers } from "../offers/restaurantOfferService";
 import { loadOwnerStaffMembers } from "./staffManagementService";
-import { hasUsablePublishedOffer, hasUsableStaffAccess } from "./ownerDashboardSetupStatus.mjs";
+import { hasOperationalStaffReadiness, hasUsablePublishedOffer } from "./ownerDashboardSetupStatus.mjs";
 
 export type DashboardSetupStatus = {
   pointsRedemptionReady: boolean;
@@ -14,10 +15,10 @@ export type DashboardSetupStatus = {
   staffReady: boolean;
 };
 
-export async function loadDashboardSetupStatus(restaurantId: string): Promise<DashboardSetupStatus> {
+export async function loadDashboardSetupStatus(restaurantId: string, restaurantSlug: string): Promise<DashboardSetupStatus> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
 
-  const [rewardsResult, couponsResult, settingsResult, branchResult, staffMembers, offers] = await Promise.all([
+  const [rewardsResult, couponsResult, settingsResult, branchResult, staffEvidence, offers] = await Promise.all([
     supabase
       .from("rewards")
       .select("id, active, is_starter_reward, birthday_pool_enabled, required_points, required_stamps, expires_at")
@@ -38,7 +39,10 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       .eq("status", "active")
       .limit(1)
       .maybeSingle(),
-    loadOwnerStaffMembers(restaurantId),
+    Promise.allSettled([
+      resolveMyStaffRestaurantAccess(restaurantSlug),
+      loadOwnerStaffMembers(restaurantId),
+    ]),
     loadRestaurantOffers(restaurantId),
   ]);
 
@@ -46,6 +50,18 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
   if (couponsResult.error) throw couponsResult.error;
   if (settingsResult.error) throw settingsResult.error;
   if (branchResult.error) throw branchResult.error;
+
+  const [operatorAccessResult, staffMembersResult] = staffEvidence;
+  const ownerOperationalAccess = operatorAccessResult.status === "fulfilled"
+    && operatorAccessResult.value.success
+    && operatorAccessResult.value.access_mode === "operator"
+    && operatorAccessResult.value.restaurant_id === restaurantId
+    && operatorAccessResult.value.restaurant_slug === restaurantSlug;
+  const staffMembers = staffMembersResult.status === "fulfilled" ? staffMembersResult.value : [];
+  const staffReady = hasOperationalStaffReadiness({ ownerOperationalAccess, staffMembers });
+  if (!staffReady && (operatorAccessResult.status === "rejected" || staffMembersResult.status === "rejected")) {
+    throw new Error("Der operative Mitarbeiterzugang konnte nicht vollstaendig geprueft werden.");
+  }
 
   const rewards = (rewardsResult.data ?? []) as Array<{
     active: boolean;
@@ -117,7 +133,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       && branch.is_discoverable
       && addressComplete
       && coordinatesPresent),
-    staffReady: hasUsableStaffAccess(staffMembers),
+    staffReady,
   };
 }
 

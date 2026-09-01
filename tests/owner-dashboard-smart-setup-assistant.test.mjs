@@ -4,6 +4,7 @@ import test from "node:test";
 import { resolveOwnerDashboardRecommendation } from "../src/modules/admin/ownerDashboardRecommendation.mjs";
 import {
   hasUsablePublishedOffer,
+  hasOperationalStaffReadiness,
   hasUsableStaffAccess,
   isAuthoritativePublicationReady,
   isOfferSetupReady,
@@ -118,6 +119,19 @@ test("Publikation, QR und Staff verwenden ihre vollständigen autoritativen Gate
   assert.equal(hasUsableStaffAccess([]), false);
 });
 
+test("Owner-Betreiberzugriff oder aktiver Staff erfuellen den Staff-Setup-Gate", () => {
+  assert.equal(hasOperationalStaffReadiness({ ownerOperationalAccess: true, staffMembers: [] }), true);
+  assert.equal(hasOperationalStaffReadiness({ ownerOperationalAccess: false, staffMembers: [{ status: "active" }] }), true);
+  assert.equal(hasOperationalStaffReadiness({ ownerOperationalAccess: true, staffMembers: [{ status: "invited" }] }), true);
+  assert.equal(hasOperationalStaffReadiness({ ownerOperationalAccess: false, staffMembers: [{ status: "invited" }] }), false);
+  assert.equal(hasOperationalStaffReadiness({ ownerOperationalAccess: false, staffMembers: [] }), false);
+});
+
+test("Owner-only Restaurant blendet die Staff-Empfehlung bei sonst vollstaendigem Setup aus", () => {
+  const staffReady = hasOperationalStaffReadiness({ ownerOperationalAccess: true, staffMembers: [] });
+  assert.equal(resolveOwnerDashboardRecommendation(readyInput({ staffStatus: { ready: staffReady } })), null);
+});
+
 test("Action Center erscheint nach vollständigem Setup nur für objektive Punktewarnung", () => {
   const result = resolveOwnerDashboardRecommendation(readyInput({ actionStatus: { pointAnomalyOpen: true } }));
   assert.equal(result.id, "action_point_anomaly");
@@ -147,7 +161,11 @@ test("Setup-Daten bleiben tenantgebunden und verwenden objektive Zustände", () 
   assert.match(setupService, /is_discoverable/);
   assert.match(setupService, /latitude/);
   assert.match(setupService, /loadRestaurantOffers\(restaurantId\)/);
+  assert.match(setupService, /resolveMyStaffRestaurantAccess\(restaurantSlug\)/);
+  assert.match(setupService, /access_mode === "operator"/);
+  assert.match(setupService, /restaurant_id === restaurantId/);
   assert.match(setupService, /loadOwnerStaffMembers\(restaurantId\)/);
+  assert.match(setupService, /Promise\.allSettled/);
   assert.doesNotMatch(setupService, /from\("staff_members"\)/);
   assert.doesNotMatch(setupService, /customer_profiles|customer_name|phone_number|birth_date/i);
 });

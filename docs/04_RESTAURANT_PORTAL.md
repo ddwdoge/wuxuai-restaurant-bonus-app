@@ -63,11 +63,13 @@ Der QR-Schritt verwendet nur objektiv vorhandene QR-Bereitschaft. Ein Download
 oder physischer Ausdruck wird nicht als abgeschlossen gespeichert oder
 behauptet, weil V1 dafür keinen autoritativen Nachweis besitzt.
 
-Der Mitarbeiter-Schritt ist erst abgeschlossen, wenn derselbe kanonische
-Owner-Staff-Vertrag wie in der Teamverwaltung mindestens einen Zugang mit
-`account_status = active` liefert. Eine rohe historische
-`staff_members.active`-Zeile, ein nur eingeladener, gesperrter, archivierter
-oder nicht aktivierter Zugang erfuellt den Setup-Schritt nicht.
+Der Mitarbeiter-Schritt ist abgeschlossen, wenn der aktuelle Owner seinen
+bereits autorisierten Betreiberzugriff auf den Mitarbeiterbereich besitzt oder
+die Teamverwaltung mindestens einen kanonisch aktiven Staff-Zugang liefert.
+Eine separate Staff-Einladung ist fuer Owner-geführte Kleinbetriebe optional.
+Der Owner bleibt Owner; es wird keine Staff-Zeile oder zweite Membership
+erzeugt. Ohne Betreiberzugriff erfuellen rohe Legacy-Zeilen, Einladungen sowie
+gesperrte, archivierte oder nicht aktivierte Staff-Zugaenge den Schritt nicht.
 
 ## Punkte sammeln konfigurieren
 

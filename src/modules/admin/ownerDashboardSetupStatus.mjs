@@ -15,6 +15,10 @@ export function hasUsableStaffAccess(staffMembers) {
     && staffMembers.some((member) => member?.status === "active");
 }
 
+export function hasOperationalStaffReadiness({ ownerOperationalAccess, staffMembers }) {
+  return ownerOperationalAccess === true || hasUsableStaffAccess(staffMembers);
+}
+
 export function isQrSetupReady(restaurant) {
   const slug = typeof restaurant?.slug === "string" ? restaurant.slug.trim() : "";
   return restaurant?.status === "active"

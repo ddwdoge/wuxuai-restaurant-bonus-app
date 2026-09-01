@@ -139,7 +139,7 @@ export function AdminDashboard() {
 
     Promise.allSettled([
       loadRestaurantLegalSetup(activeRestaurant.id),
-      loadDashboardSetupStatus(activeRestaurant.id),
+      loadDashboardSetupStatus(activeRestaurant.id, activeRestaurant.slug),
       loadSeenDashboardNotices(activeRestaurant.id),
       loadOwnerPointAnomalyWarnings(activeRestaurant.id, activeRestaurant.name),
     ]).then(([legalResult, setupResult, noticesResult, anomalyResult]) => {
@@ -156,7 +156,7 @@ export function AdminDashboard() {
       setNextStepLoading(false);
     });
     return () => { cancelled = true; };
-  }, [activeRestaurant?.id, activeRestaurant?.name, reloadKey]);
+  }, [activeRestaurant?.id, activeRestaurant?.name, activeRestaurant?.slug, reloadKey]);
 
   const staffPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const dashboardKpis = [

@@ -39,7 +39,7 @@ test("Dashboard startet den Kontext, verbraucht Erfolg einmalig und rehydriert d
   assert.match(dashboard, /readOwnerSmartSetupSuccessState\(location\.state\)/);
   assert.match(dashboard, /navigate\(location\.pathname, \{ replace: true, state: null \}\)/);
   assert.match(dashboard, /className="status-message" role="status"/);
-  assert.match(dashboard, /loadDashboardSetupStatus\(activeRestaurant\.id\)/);
+  assert.match(dashboard, /loadDashboardSetupStatus\(activeRestaurant\.id, activeRestaurant\.slug\)/);
   assert.equal((dashboard.match(/resolveOwnerDashboardRecommendation\(/g) ?? []).length, 1);
 });
 
