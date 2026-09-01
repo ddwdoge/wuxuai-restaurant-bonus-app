@@ -134,13 +134,16 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  return recommendation({
-    id: "operational_new_offer",
-    category: "operational",
-    icon: "offer",
-    title: "Neues Angebot erstellen",
-    description: "Halte deine Gäste mit einem aktuellen Angebot über Neues aus deinem Restaurant auf dem Laufenden.",
-    ctaLabel: "Angebot erstellen",
-    ctaHref: "/admin/offers",
-  });
+  if (input.actionStatus?.pointAnomalyOpen) {
+    return recommendation({
+      id: "action_point_anomaly",
+      category: "action",
+      icon: "warning",
+      title: "Ungewöhnlich hohen Buchungsbetrag prüfen",
+      description: "Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag. Bitte prüfe die Buchung.",
+      ctaLabel: "Prüfen",
+    });
+  }
+
+  return null;
 }

@@ -498,8 +498,13 @@
   box-shadow: 0 16px 34px rgba(31, 27, 21, 0.14);
   color: #ffffff;
   gap: 14px;
-  margin-top: 32px;
+  margin: 0 0 18px;
   padding: 20px;
+}
+
+.premium-owner-shell .dashboard-recommendation-card.action {
+  background: #30291d;
+  box-shadow: 0 16px 34px rgba(78, 55, 16, 0.16);
 }
 
 .premium-owner-shell .dashboard-recommendation-card h2 {
@@ -813,9 +818,12 @@
     width: 100%;
   }
 
-  .premium-dashboard-section,
-  .premium-owner-shell .dashboard-recommendation-card {
+  .premium-dashboard-section {
     margin-top: 26px;
+  }
+
+  .premium-owner-shell .dashboard-recommendation-card {
+    margin: 0 0 16px;
   }
 }
 

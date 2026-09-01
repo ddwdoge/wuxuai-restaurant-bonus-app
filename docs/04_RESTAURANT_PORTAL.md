@@ -27,18 +27,28 @@ oder gelöscht werden.
 
 ## Smart Setup Assistant im Dashboard
 
-Die bestehende schwarze Karte `Heute für dich` zeigt genau eine zentrale,
-tenantbezogene Empfehlung. Die Priorität lautet: Veröffentlichung und Standort,
-erste Punkteeinlösung, erstes aktuelles Angebot, Geburtstagspool, QR Center und
-Mitarbeiterzugang. Legal Readiness und öffentliche Auffindbarkeit bleiben die
-autoritativen Publikationsverträge; Angebot und Mitarbeiterzugang sind keine
+Die Karte `Heute für dich` steht direkt unter dem Dashboard-Kopf, solange eine
+Einrichtung oder objektiv erkennbare Owner-Aktion offen ist. Sie zeigt genau
+eine zentrale, tenantbezogene Empfehlung. Die Priorität lautet:
+Veröffentlichung und Standort, erste Punkteeinlösung, erstes veröffentlichtes
+und noch nutzbares Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang.
+Legal Readiness und öffentliche Auffindbarkeit bleiben die autoritativen
+Publikationsverträge; Angebot und Mitarbeiterzugang sind keine
 Publikationsvoraussetzungen.
+
+Ein veröffentlichtes, aktives und noch nicht abgelaufenes Angebot erfüllt den
+Setup-Schritt auch dann, wenn sein Start in der Zukunft liegt oder seine
+Sichtbarkeit auf Wochentage beziehungsweise Uhrzeiten begrenzt ist. Entwürfe,
+deaktivierte und abgelaufene Angebote erfüllen ihn nicht.
 
 Nach Erledigung eines Schritts löst der zentrale Resolver automatisch die
 nächste offene Empfehlung auf. Sind alle Einrichtungsempfehlungen erfüllt,
-wechselt dieselbe Karte deterministisch in den Betriebsmodus. Das Dashboard
-zeigt keine parallele Setup-Checkliste und keinen zweiten `Nächster Schritt`-
-Container oberhalb der Kennzahlen.
+wird die Karte verborgen. Sie erscheint danach nur für einen objektiv
+feststellbaren Handlungsbedarf, derzeit insbesondere eine ungesehene Warnung
+zu einem ungewöhnlich hohen Buchungsbetrag. Kritische Publikations- und
+Legal-Zustände haben weiterhin Vorrang. Das Dashboard zeigt keine parallele
+Setup-Checkliste, keine separate Warnkarte und keinen zweiten `Nächster
+Schritt`-Container.
 
 Wurde ein verantwortlicher Editor über `Heute für dich` geöffnet, übergibt die
 Navigation einen kurzlebigen, validierten Smart-Setup-Kontext. Erst ein
@@ -288,12 +298,13 @@ Das Dashboard besitzt eine Karte:
 
 **Heute für dich**
 
-Diese Karte zeigt genau eine zustandsabhängige Empfehlung und führt direkt in
-den bestehenden zuständigen Bereich. Veröffentlichung und Standort haben
-Vorrang, danach folgen Punkteeinlösung, Angebot, Geburtstagspool, QR Center und
-Mitarbeiterzugang. Nach vollständiger Einrichtung erscheint eine
-deterministische betriebliche Empfehlung. Keine Liste und keine doppelte
-Dashboard-Empfehlung.
+Diese Karte steht bei offenem Setup oder objektivem Handlungsbedarf direkt
+unter dem Dashboard-Kopf. Sie zeigt genau eine zustandsabhängige Empfehlung
+und führt direkt in den bestehenden zuständigen Bereich. Veröffentlichung und
+Standort haben Vorrang, danach folgen Punkteeinlösung, Angebot,
+Geburtstagspool, QR Center und Mitarbeiterzugang. Nach vollständiger
+Einrichtung und ohne offene Aktion wird sie verborgen. Keine erfundene
+Wachstumsempfehlung, keine Liste und keine doppelte Dashboard-Empfehlung.
 
 ------------------------------------------------------------------------
 

@@ -1,6 +1,23 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-01 - Smart Setup oben und nur bei echtem Handlungsbedarf
+
+- `Heute fuer dich` bei offenem Setup oder objektiver Aktion direkt unter den
+  Dashboard-Kopf und damit vor Kennzahlen und Schnellzugriffen verschoben.
+- Den Offer-Setup-Vertrag zentralisiert: Ein veroeffentlichtes, aktives und
+  noch nicht abgelaufenes Angebot zaehlt auch bei zukuenftigem Start sowie
+  Wochentags- oder Zeitbegrenzung; Entwurf, deaktiviert und abgelaufen zaehlen
+  nicht.
+- Die permanente Empfehlung `Neues Angebot erstellen` nach vollstaendig
+  abgeschlossenem Setup entfernt; ohne offene Aktion bleibt die Karte
+  verborgen.
+- Die bestehende ungesehene Warnung zu einem ungewoehnlich hohen
+  Buchungsbetrag in denselben Ein-Aktions-Resolver aufgenommen und die
+  parallele Dashboard-Warnkarte entfernt.
+- Keine Migration und keine Aenderung an Offer-, Punkte-, Birthday-, Legal-,
+  Referral-, Tenant- oder Berechtigungslogik.
+
 ## 2026-09-01 - Smart Setup nach erfolgreichem Speichern fortgesetzt
 
 - `Heute fuer dich` uebergibt beim Oeffnen eines Setup-Bereichs einen streng

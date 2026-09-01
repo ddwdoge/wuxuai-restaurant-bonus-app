@@ -174,6 +174,10 @@ export function AdminDashboard() {
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
   const legalRegistration = legalSetup?.readiness.registration;
+  const pointAnomaly = useMemo(
+    () => pointAnomalies.find((warning) => !seenNoticeIds.has(pointAnomalyNoticeKey(warning.id))) ?? null,
+    [pointAnomalies, seenNoticeIds],
+  );
   const recommendation = useMemo(() => nextStepLoading ? null : resolveOwnerDashboardRecommendation({
     restaurantStatus: { active: activeRestaurant?.status === "active" },
     onboardingStatus: activeRestaurant?.onboarding_status,
@@ -187,8 +191,9 @@ export function AdminDashboard() {
     qrStatus: { ready: Boolean(activeRestaurant?.slug) },
     staffStatus: { ready: setupStatus?.staffReady ?? false },
     emailStatus: { confirmed: Boolean(user?.email_confirmed_at) },
+    actionStatus: { pointAnomalyOpen: Boolean(pointAnomaly) },
     statusLoadFailed: legalLoadFailed || setupLoadFailed,
-  }), [activeRestaurant, legalLoadFailed, legalRegistration, nextStepLoading, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
+  }), [activeRestaurant, legalLoadFailed, legalRegistration, nextStepLoading, pointAnomaly, setupLoadFailed, setupStatus, user?.email_confirmed_at]);
   const RecommendationIcon = recommendation?.icon === "publication"
     ? MapPinned
     : recommendation?.icon === "reward"
@@ -199,11 +204,9 @@ export function AdminDashboard() {
           ? QrCode
           : recommendation?.icon === "staff"
             ? Smartphone
-            : Newspaper;
-  const pointAnomaly = useMemo(
-    () => pointAnomalies.find((warning) => !seenNoticeIds.has(pointAnomalyNoticeKey(warning.id))) ?? null,
-    [pointAnomalies, seenNoticeIds],
-  );
+            : recommendation?.icon === "warning"
+              ? AlertTriangle
+              : Newspaper;
 
   function reviewPointAnomaly(warning: OwnerPointAnomalyWarning) {
     setSelectedPointAnomaly(warning);
@@ -226,19 +229,37 @@ export function AdminDashboard() {
 
       {smartSetupSuccess ? <p className="status-message" role="status">{smartSetupSuccess}</p> : null}
 
-      {pointAnomaly ? (
-        <section className="card dashboard-point-anomaly" aria-labelledby="point-anomaly-title" role="status">
-          <span className="dashboard-point-anomaly-icon"><AlertTriangle aria-hidden="true" size={22} /></span>
-          <div>
-            <span className="premium-dashboard-kicker">Hinweis zur Punktevergabe</span>
-            <h2 id="point-anomaly-title">Ungewöhnlich hoher Buchungsbetrag</h2>
-            <p>Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag. Bitte prüfe die Buchung.</p>
-          </div>
-          <button className="button secondary" onClick={() => reviewPointAnomaly(pointAnomaly)} type="button">
-            Prüfen <ArrowRight aria-hidden="true" size={17} />
+      {recommendation ? <section className={`card dashboard-recommendation-card ${recommendation.category}`} aria-labelledby="owner-recommendation-title" aria-live="polite">
+        <div>
+          <h2>Heute für dich</h2>
+          <p className="muted">Der wichtigste nächste Schritt für dein Restaurant.</p>
+        </div>
+        {recommendation.ctaHref ? (
+          <Link className="dashboard-recommendation" state={ownerSmartSetupLaunchState(recommendation.id)} to={recommendation.ctaHref}>
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            <ArrowRight aria-hidden="true" size={20} />
+          </Link>
+        ) : (
+          <button
+            className="dashboard-recommendation"
+            onClick={() => recommendation.id === "action_point_anomaly" && pointAnomaly ? reviewPointAnomaly(pointAnomaly) : reloadDashboard()}
+            type="button"
+          >
+            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
+            <span>
+              <strong id="owner-recommendation-title">{recommendation.title}</strong>
+              <p className="muted">{recommendation.description}</p>
+              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
+            </span>
+            {recommendation.id === "action_point_anomaly" ? <ArrowRight aria-hidden="true" size={20} /> : <RefreshCw aria-hidden="true" size={20} />}
           </button>
-        </section>
-      ) : null}
+        )}
+      </section> : null}
 
       {loading ? (
         <section className="dashboard-kpi-grid" aria-label="Dashboard wird geladen" aria-busy="true">
@@ -317,34 +338,6 @@ export function AdminDashboard() {
           <article className="card dashboard-quick-card"><span className="dashboard-quick-icon"><Star size={22} /></span><span><strong>{boostKpis.boostExtraPoints}</strong><small>Zusatzpunkte durch Boost</small></span></article>
         </div>
       </section>
-
-      {recommendation ? <section className="card dashboard-recommendation-card" aria-labelledby="owner-recommendation-title" aria-live="polite">
-        <div>
-          <h2>Heute für dich</h2>
-          <p className="muted">Der wichtigste nächste Schritt für dein Restaurant.</p>
-        </div>
-        {recommendation.ctaHref ? (
-          <Link className="dashboard-recommendation" state={ownerSmartSetupLaunchState(recommendation.id)} to={recommendation.ctaHref}>
-            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
-            <span>
-              <strong id="owner-recommendation-title">{recommendation.title}</strong>
-              <p className="muted">{recommendation.description}</p>
-              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
-            </span>
-            <ArrowRight aria-hidden="true" size={20} />
-          </Link>
-        ) : (
-          <button className="dashboard-recommendation" onClick={reloadDashboard} type="button">
-            <span className="dashboard-recommendation-icon"><RecommendationIcon aria-hidden="true" size={22} /></span>
-            <span>
-              <strong id="owner-recommendation-title">{recommendation.title}</strong>
-              <p className="muted">{recommendation.description}</p>
-              <small className="dashboard-recommendation-cta">{recommendation.ctaLabel}</small>
-            </span>
-            <RefreshCw aria-hidden="true" size={20} />
-          </button>
-        )}
-      </section> : null}
 
       <AppDrawer
         description="Dieser Hinweis dient ausschließlich der Prüfung und verändert weder Punkte noch Kontozugänge."

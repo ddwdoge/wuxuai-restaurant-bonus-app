@@ -1,5 +1,6 @@
 import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase";
 import { loadRestaurantOffers } from "../offers/restaurantOfferService";
+import { hasUsablePublishedOffer } from "./ownerDashboardSetupStatus.mjs";
 
 export type DashboardSetupStatus = {
   pointsRedemptionReady: boolean;
@@ -115,9 +116,7 @@ export async function loadDashboardSetupStatus(restaurantId: string): Promise<Da
       && Number(settings.points_collection_max_amount_cents) >= 100
       && Number(settings.points_collection_max_amount_cents) <= 100000),
     referralEnabled: Boolean(settings?.referral_boost_enabled),
-    offerReady: offers.some((offer) => offer.status === "PUBLISHED"
-      && offer.is_active
-      && new Date(offer.valid_to).getTime() >= now),
+    offerReady: hasUsablePublishedOffer(offers, now),
     publicationReady: Boolean(branch?.status === "active"
       && branch.is_discoverable
       && addressComplete

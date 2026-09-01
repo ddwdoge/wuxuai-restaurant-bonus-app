@@ -1,7 +1,7 @@
 export type OwnerDashboardRecommendation = {
   id: string;
-  category: "critical" | "setup" | "operational";
-  icon: "publication" | "reward" | "offer" | "birthday" | "qr" | "staff";
+  category: "critical" | "setup" | "action";
+  icon: "publication" | "reward" | "offer" | "birthday" | "qr" | "staff" | "warning";
   title: string;
   description: string;
   ctaLabel: string;
@@ -18,7 +18,8 @@ export type OwnerDashboardRecommendationInput = {
   qrStatus: { ready: boolean };
   staffStatus: { ready: boolean };
   emailStatus: { confirmed: boolean };
+  actionStatus?: { pointAnomalyOpen: boolean };
   statusLoadFailed: boolean;
 };
 
-export function resolveOwnerDashboardRecommendation(input: OwnerDashboardRecommendationInput): OwnerDashboardRecommendation;
+export function resolveOwnerDashboardRecommendation(input: OwnerDashboardRecommendationInput): OwnerDashboardRecommendation | null;

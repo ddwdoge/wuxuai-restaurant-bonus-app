@@ -11,8 +11,9 @@ import {
 } from "../src/modules/admin/pointAnomalyPolicy.mjs";
 
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
-const [dashboard, service, basePointsMigration, actorMigration, settings] = await Promise.all([
+const [dashboard, recommendationResolver, service, basePointsMigration, actorMigration, settings] = await Promise.all([
   read("../src/modules/admin/pages/AdminDashboard.tsx"),
+  read("../src/modules/admin/ownerDashboardRecommendation.mjs"),
   read("../src/modules/admin/pointAnomalyService.ts"),
   read("../supabase/migrations/20260731001000_restaurant_controlled_points_collection.sql"),
   read("../supabase/migrations/20260825005000_owner_own_staff_portal_access.sql"),
@@ -46,9 +47,9 @@ test("V1 monitoring consumes only the existing single high amount audit event", 
 });
 
 test("owner dashboard warning is compact, reviewable and informational only", () => {
-  assert.match(dashboard, /Ungewöhnlich hoher Buchungsbetrag/);
-  assert.match(dashboard, /Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag/);
-  assert.match(dashboard, />\s*Prüfen\s*</);
+  assert.match(recommendationResolver, /Ungewöhnlich hohen Buchungsbetrag prüfen/);
+  assert.match(recommendationResolver, /Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag/);
+  assert.match(recommendationResolver, /ctaLabel: "Prüfen"/);
   for (const label of ["Zeitpunkt", "Betrag", "Gutgeschriebene Punkte", "Gast", "Ausgeführt von", "Restaurant", "Buchungsreferenz"]) {
     assert.match(dashboard, new RegExp(label));
   }

@@ -81,6 +81,6 @@ test("Prioritätsauflösung überspringt bereits fertige Schritte und endet im B
     emailStatus: { confirmed: true },
     statusLoadFailed: false,
   };
-  assert.equal(resolveOwnerDashboardRecommendation(base).id, "operational_new_offer");
+  assert.equal(resolveOwnerDashboardRecommendation(base), null);
   assert.equal(resolveOwnerDashboardRecommendation({ ...base, offerStatus: { ready: false } }).id, "setup_first_offer");
 });

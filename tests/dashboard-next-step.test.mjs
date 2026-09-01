@@ -98,10 +98,13 @@ test("Dashboard rendert den zentralen Assistenten ausschließlich in Heute für 
   assert.match(dashboard, /resolveOwnerDashboardRecommendation/);
   assert.match(dashboard, /const recommendation = useMemo/);
   assert.match(dashboard, /dashboard-recommendation-card/);
+  assert.ok(dashboard.indexOf("dashboard-recommendation-card") < dashboard.indexOf("dashboard-kpi-grid"));
+  assert.doesNotMatch(dashboard, /<section className="card dashboard-point-anomaly"/);
   assert.doesNotMatch(dashboard, /\{nextStep \? \(/);
   assert.doesNotMatch(dashboard, /dashboard-legal-status|Status wird geprüft/);
   assert.match(styles, /dashboard-recommendation-card[\s\S]*background: #25231f/);
   assert.match(styles, /@media \(max-width: 430px\)[\s\S]*dashboard-recommendation[\s\S]*min-height: 48px/);
+  assert.match(styles, /dashboard-recommendation-card[\s\S]*margin: 0 0 18px/);
 });
 
 test("Gesehen-Status ist pro Restaurant und Benutzer mit enger RLS gespeichert", () => {

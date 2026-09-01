@@ -6,6 +6,7 @@
     <title>Point Anomaly Monitoring Visual Fixture</title>
     <link rel="stylesheet" href="../src/styles.css" />
     <link rel="stylesheet" href="../src/modules/admin/admin-premium.css" />
+    <style>[hidden] { display: none !important; }</style>
   </head>
   <body>
     <main class="premium-owner-shell">
@@ -14,10 +15,13 @@
           <header class="page-header dashboard-page-header">
             <div><span class="premium-dashboard-kicker">Dashboard</span><h1>Heute im Restaurant</h1><p class="muted">Dein Bonusprogramm auf einen Blick.</p></div>
           </header>
-          <section class="card dashboard-point-anomaly" aria-labelledby="point-anomaly-title" role="status">
-            <span class="dashboard-point-anomaly-icon" aria-hidden="true">!</span>
-            <div><span class="premium-dashboard-kicker">Hinweis zur Punktevergabe</span><h2 id="point-anomaly-title">Ungewöhnlich hoher Buchungsbetrag</h2><p>Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag. Bitte prüfe die Buchung.</p></div>
-            <button class="button secondary" id="review" type="button">Prüfen →</button>
+          <section class="card dashboard-recommendation-card action" aria-labelledby="owner-recommendation-title" aria-live="polite">
+            <div><h2>Heute für dich</h2><p class="muted">Der wichtigste nächste Schritt für dein Restaurant.</p></div>
+            <button class="dashboard-recommendation" id="review" type="button">
+              <span class="dashboard-recommendation-icon" aria-hidden="true">!</span>
+              <span><strong id="owner-recommendation-title">Ungewöhnlich hohen Buchungsbetrag prüfen</strong><p class="muted">Eine Punktebuchung liegt nahe am festgelegten Maximalbetrag. Bitte prüfe die Buchung.</p><small class="dashboard-recommendation-cta">Prüfen</small></span>
+              <span aria-hidden="true">→</span>
+            </button>
           </section>
           <section class="dashboard-kpi-grid" aria-label="Heute im Bonusprogramm">
             <article class="card dashboard-kpi-card"><span class="dashboard-kpi-icon">★</span><strong>240</strong><p>Vergebene Bonuspunkte heute</p></article>

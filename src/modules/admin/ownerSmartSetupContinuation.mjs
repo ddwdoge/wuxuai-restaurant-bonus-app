@@ -11,7 +11,6 @@ const recommendationIds = new Set([
   "setup_birthday_gift_pool",
   "setup_qr_center",
   "setup_staff_access",
-  "operational_new_offer",
 ]);
 
 const successMessages = Object.freeze({

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { resolveOwnerDashboardRecommendation } from "../src/modules/admin/ownerDashboardRecommendation.mjs";
+import { hasUsablePublishedOffer, isOfferSetupReady } from "../src/modules/admin/ownerDashboardSetupStatus.mjs";
 
 const dashboard = await readFile(new URL("../src/modules/admin/pages/AdminDashboard.tsx", import.meta.url), "utf8");
 const setupService = await readFile(new URL("../src/modules/admin/dashboardNoticeService.ts", import.meta.url), "utf8");
@@ -62,14 +63,48 @@ test("danach folgen Geburtstag, QR und Mitarbeiterzugang", () => {
   assert.equal(staff.id, "setup_staff_access");
 });
 
-test("vollständige Einrichtung wechselt deterministisch in den Betriebsmodus", () => {
+test("vollständige Einrichtung blendet den Assistenten ohne erfundene Empfehlung aus", () => {
   const result = resolveOwnerDashboardRecommendation(readyInput());
-  assert.equal(result.id, "operational_new_offer");
-  assert.equal(result.title, "Neues Angebot erstellen");
+  assert.equal(result, null);
+});
+
+test("veröffentlichte zukünftige und zeitlich eingeschränkte Angebote erfüllen den Setup-Vertrag", () => {
+  const now = Date.parse("2026-09-01T10:00:00Z");
+  const future = { status: "PUBLISHED", is_active: true, valid_from: "2026-09-05T10:00:00Z", valid_to: "2026-09-10T10:00:00Z" };
+  const weekday = { status: "PUBLISHED", is_active: true, valid_to: "2026-09-10T10:00:00Z", weekdays: [6, 7] };
+  const timed = { status: "PUBLISHED", is_active: true, valid_to: "2026-09-10T10:00:00Z", time_from: "18:00", time_to: "22:00" };
+  assert.equal(isOfferSetupReady(future, now), true);
+  assert.equal(isOfferSetupReady(weekday, now), true);
+  assert.equal(isOfferSetupReady(timed, now), true);
+  assert.equal(hasUsablePublishedOffer([future, weekday, timed], now), true);
+});
+
+test("Entwurf, deaktiviertes und abgelaufenes Angebot erfüllen Setup nicht", () => {
+  const now = Date.parse("2026-09-01T10:00:00Z");
+  assert.equal(isOfferSetupReady({ status: "DRAFT", is_active: true, valid_to: "2026-09-10T10:00:00Z" }, now), false);
+  assert.equal(isOfferSetupReady({ status: "PUBLISHED", is_active: false, valid_to: "2026-09-10T10:00:00Z" }, now), false);
+  assert.equal(isOfferSetupReady({ status: "PUBLISHED", is_active: true, valid_to: "2026-08-31T10:00:00Z" }, now), false);
+});
+
+test("Action Center erscheint nach vollständigem Setup nur für objektive Punktewarnung", () => {
+  const result = resolveOwnerDashboardRecommendation(readyInput({ actionStatus: { pointAnomalyOpen: true } }));
+  assert.equal(result.id, "action_point_anomaly");
+  assert.equal(result.category, "action");
+  assert.equal(result.ctaLabel, "Prüfen");
+});
+
+test("kritische Publikation bleibt vor Action-Center-Warnungen", () => {
+  const result = resolveOwnerDashboardRecommendation(readyInput({
+    legalStatus: { status: "red", reason: "Dokumente fehlen." },
+    actionStatus: { pointAnomalyOpen: true },
+  }));
+  assert.equal(result.id, "publication_legal_readiness");
 });
 
 test("Dashboard zeigt genau eine aufgelöste Empfehlung und direkte bestehende Ziele", () => {
   assert.equal((dashboard.match(/resolveOwnerDashboardRecommendation\(/g) ?? []).length, 1);
+  assert.ok(dashboard.indexOf("dashboard-recommendation-card") < dashboard.indexOf("dashboard-kpi-grid"));
+  assert.doesNotMatch(dashboard, /<section className="card dashboard-point-anomaly"/);
   for (const href of ["/admin/settings/standort", "/admin/rewards", "/admin/offers", "/admin/welcome-gifts", "/admin/qr", "/admin/staff"]) {
     assert.match(resolverSource, new RegExp(href.replaceAll("/", "\\/")));
   }

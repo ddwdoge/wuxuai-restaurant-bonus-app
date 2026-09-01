@@ -44,14 +44,25 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Die bestehende schwarze Karte `Heute fuer dich` zeigt genau eine Empfehlung
   aus dem zentralen Resolver `resolveOwnerDashboardRecommendation`.
 - Die feste Reihenfolge lautet: Publikation/Standort, Punkteeinloesung,
-  aktuelles Angebot, Geburtstagspool, QR Center und Mitarbeiterzugang.
+  veroeffentlichtes nutzbares Angebot, Geburtstagspool, QR Center und
+  Mitarbeiterzugang.
 - Publikation verwendet dieselbe Legal Readiness, den aktiven Restaurantstatus
   sowie den aktiven, auffindbaren Standort mit vollstaendiger Adresse und
   gueltigen Koordinaten. Angebot und Mitarbeiterzugang bleiben Empfehlungen
   und sind keine Legal- oder Publikationsvoraussetzungen.
-- Jede CTA fuehrt direkt in den bestehenden verantwortlichen Bereich. Nach
-  vollstaendiger Einrichtung wechselt dieselbe Karte deterministisch in den
-  Betriebsmodus und empfiehlt ein neues Angebot.
+- Ein `PUBLISHED`, aktives und noch nicht abgelaufenes Angebot erfuellt den
+  Setup-Schritt auch bei zukuenftigem Start oder einer Wochentags-/Zeitregel.
+  Entwurf, deaktiviertes oder abgelaufenes Angebot erfuellen ihn nicht.
+- Jede CTA fuehrt direkt in den bestehenden verantwortlichen Bereich. Solange
+  Setup oder objektiver Handlungsbedarf besteht, steht `Heute fuer dich`
+  direkt unter dem Dashboard-Kopf. Nach vollstaendiger Einrichtung ohne offene
+  Aktion wird die Karte verborgen und erfindet keine neue
+  Wachstumsempfehlung.
+- Nach dem Setup darf derselbe Container nur fuer objektiv feststellbare
+  Aktionen wieder erscheinen. Die bestehende ungesehene Warnung zu einem
+  ungewoehnlich hohen Buchungsbetrag wird dort als einzelne Aktion gezeigt;
+  kritische Publikations-/Legal-Zustaende bleiben hoeher priorisiert. Es gibt
+  keine parallele Warn- oder Setup-Karte.
 - Nur bei einem Start ueber `Heute fuer dich` fuehrt ein bestaetigter
   erfolgreicher Abschluss automatisch zum Dashboard zurueck. Das Dashboard
   laedt den kanonischen Setup-Zustand neu und laesst den zentralen Resolver die
