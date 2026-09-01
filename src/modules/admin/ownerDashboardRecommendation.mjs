@@ -2,6 +2,23 @@ function recommendation(input) {
   return Object.freeze(input);
 }
 
+export function resolveOwnerSetupAreas(input) {
+  const publicationReady = input.emailStatus.confirmed
+    && (input.onboardingStatus === "completed" || input.onboardingStatus === "ready")
+    && input.legalStatus?.status === "green"
+    && input.restaurantStatus.active
+    && input.publicationStatus.ready;
+
+  return Object.freeze([
+    Object.freeze({ id: "restaurant_location", ready: publicationReady }),
+    Object.freeze({ id: "points_redemption", ready: input.rewardStatus.pointsRedemptionReady }),
+    Object.freeze({ id: "offer", ready: input.offerStatus.ready }),
+    Object.freeze({ id: "birthday", ready: input.rewardStatus.birthdayPoolReady }),
+    Object.freeze({ id: "qr", ready: input.qrStatus.ready }),
+    Object.freeze({ id: "staff", ready: input.staffStatus.ready }),
+  ]);
+}
+
 export function resolveOwnerDashboardRecommendation(input) {
   if (input.statusLoadFailed) {
     return recommendation({
@@ -62,7 +79,10 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.publicationStatus.ready) {
+  const setupAreas = resolveOwnerSetupAreas(input);
+  const setupReady = Object.fromEntries(setupAreas.map((area) => [area.id, area.ready]));
+
+  if (!setupReady.restaurant_location) {
     return recommendation({
       id: "publication_location_incomplete",
       category: "setup",
@@ -74,7 +94,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.rewardStatus.pointsRedemptionReady) {
+  if (!setupReady.points_redemption) {
     return recommendation({
       id: "setup_points_redemption",
       category: "setup",
@@ -86,7 +106,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.offerStatus.ready) {
+  if (!setupReady.offer) {
     return recommendation({
       id: "setup_first_offer",
       category: "setup",
@@ -98,7 +118,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.rewardStatus.birthdayPoolReady) {
+  if (!setupReady.birthday) {
     return recommendation({
       id: "setup_birthday_gift_pool",
       category: "setup",
@@ -110,7 +130,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.qrStatus.ready) {
+  if (!setupReady.qr) {
     return recommendation({
       id: "setup_qr_center",
       category: "setup",
@@ -122,7 +142,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (!input.staffStatus.ready) {
+  if (!setupReady.staff) {
     return recommendation({
       id: "setup_staff_access",
       category: "setup",

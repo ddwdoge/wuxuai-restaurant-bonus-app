@@ -90,6 +90,28 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Birthday Eligibility, 14-Tage-Catch-up, Einmaligkeit, Einloesung, Audit und
   E-Mail bleiben unveraendert.
 
+## Owner Settings Setup-Uebersicht - CODE LOCK
+
+- `Einstellungen -> Setup & Einrichtung` bleibt jederzeit erreichbar, auch
+  wenn alle sechs Bereiche eingerichtet sind und `Heute fuer dich` deshalb
+  nicht mehr erscheint.
+- Die persistente Uebersicht und der automatische Dashboard-Assistent verwenden
+  dieselbe zentrale Statusaufloesung fuer Restaurant/Standort,
+  Punkteeinloesungen, Angebote, Geburtstagspool, QR Center und
+  Mitarbeiterzugang. Es gibt keine manuelle Erledigt-Markierung und keinen
+  separat gespeicherten Fortschritt.
+- Publikation, geplante nutzbare Angebote, objektive QR-Bereitschaft,
+  Birthday-Pool und Owner-/Staff-Betreiberzugriff behalten ihre bestehenden
+  autoritativen Vertraege. Ein Owner mit kanonischem Betreiberzugriff erfuellt
+  den Mitarbeiter-Schritt ohne separate Staff-Einladung.
+- Jede Zeile fuehrt in den bestehenden verantwortlichen Editor. Nur bei einem
+  Start aus `Setup & Einrichtung` kehrt ein bestaetigter erfolgreicher Save zur
+  Uebersicht zurueck und laedt den Status neu. `Heute fuer dich` kehrt weiterhin
+  zum Dashboard zurueck; normale Settings-Navigation bleibt unveraendert.
+- Der getrennte Fortsetzungskontext lebt nur im validierten Router-State. Er
+  startet weder Onboarding noch Trial neu, speichert keine Setup-Flags und
+  erweitert keine Berechtigung.
+
 ## Branding - IMPLEMENTED
 
 - Sichtbarer Produktname: **WUXUAI Bonus**.

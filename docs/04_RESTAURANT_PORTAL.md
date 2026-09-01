@@ -71,6 +71,25 @@ Der Owner bleibt Owner; es wird keine Staff-Zeile oder zweite Membership
 erzeugt. Ohne Betreiberzugriff erfuellen rohe Legacy-Zeilen, Einladungen sowie
 gesperrte, archivierte oder nicht aktivierte Staff-Zugaenge den Schritt nicht.
 
+## Persistente Setup-Uebersicht in Einstellungen
+
+`Einstellungen -> Setup & Einrichtung` ist die jederzeit erreichbare manuelle
+Gesamtansicht. Sie bleibt von `Heute fuer dich` getrennt: Der Dashboard-
+Assistent zeigt automatisch nur die hoechste offene Aktion, waehrend die
+Settings-Uebersicht alle sechs Bereiche und den kompakten Fortschritt zeigt.
+
+Die Bereiche Restaurant/Standort, Punkteeinloesungen, Aktuelles/Angebote,
+Geburtstagsgeschenke, QR Center und Mitarbeiterzugang verwenden dieselben
+kanonischen Zustandsresolver wie der Dashboard-Assistent. Der Owner bestaetigt
+nichts manuell; der Status folgt ausschliesslich echtem Restaurant-, Legal-,
+Reward-, Offer-, QR- und Zugriffsstatus.
+
+Jede Zeile oeffnet den bestehenden Editor. Ein erfolgreicher Save kehrt nur
+dann zur Setup-Uebersicht zurueck, wenn der Editor von dort gestartet wurde.
+Ein Start ueber `Heute fuer dich` kehrt weiterhin zum Dashboard zurueck;
+normale Settings-Saves bleiben an ihrem bisherigen Ziel. Der Router-Kontext
+speichert keine Businessdaten und verleiht keine Berechtigung.
+
 ## Punkte sammeln konfigurieren
 
 Der erlaubte Sammelweg und der Maximalbetrag bleiben tenantgebundene,
@@ -530,8 +549,8 @@ Lieblingsbelohnungen - Wochenplanung
 
 Einstellungen sind ein Menü, kein langes Formular.
 
-Unterseiten: - Restaurantdaten - Aussehen - Öffnungszeiten -
-Bonusprogramm - Konto & Testphase
+Unterseiten: - Setup & Einrichtung - Restaurantdaten - Aussehen -
+Öffnungszeiten - Bonusprogramm - Konto & Testphase
 
 Regel: Jede Karte ist klickbar. Jede Unterseite hat ein klares Ziel.
 

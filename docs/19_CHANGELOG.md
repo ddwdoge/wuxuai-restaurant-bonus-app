@@ -3655,3 +3655,17 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Rabattdarstellung. Es wurde kein Prozentfeld und kein Datenbankwert ergänzt.
 - Angebotsgueltigkeit, Zeitplanung, Aktivierung, Punkte, Geschenke, Referral,
   Einloesung, RLS und Datenbank blieben unveraendert.
+
+## 2026-09-01 - Persistente Setup-Uebersicht in Owner-Einstellungen
+
+- `Einstellungen -> Setup & Einrichtung` zeigt jederzeit alle sechs
+  Setup-Bereiche mit objektivem Status und kompaktem Fortschritt.
+- Dashboard-Assistent und Settings-Uebersicht verwenden dieselbe zentrale
+  Statusaufloesung; es gibt keine manuellen Abschlussflags und keine neue
+  Datenbanktabelle.
+- Ein eigener validierter Router-Kontext fuehrt nach bestaetigtem Save aus der
+  Uebersicht dorthin zurueck. Der bestehende `Heute fuer dich`-Kontext kehrt
+  weiterhin zum Dashboard zurueck; normale Settings-Navigation bleibt gleich.
+- Owner-Betreiberzugriff, geplante Angebote, Legal-/Publication-Readiness,
+  Birthday-Pool und objektive QR-Bereitschaft behalten ihre kanonischen
+  Vertraege. Keine Migration und keine neue Berechtigung.

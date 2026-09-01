@@ -19,6 +19,7 @@ import {
   ImageUp,
   Info,
   KeyRound,
+  ListChecks,
   LoaderCircle,
   MapPinned,
   Minus,
@@ -1679,6 +1680,13 @@ export function SettingsPage() {
           label="QR Center öffnen"
           title="QR & Starter Kit"
           to="/admin/qr"
+        />
+        <SettingsLinkCard
+          description="Prüfe und verwalte die wichtigsten Einstellungen deines Bonusprogramms."
+          icon={ListChecks}
+          label="Einrichtung prüfen"
+          title="Setup & Einrichtung"
+          to="/admin/settings/setup"
         />
         <SettingsLinkCard
           description="Sieh Testphase, Abo-Status und Zahlungsstatus."

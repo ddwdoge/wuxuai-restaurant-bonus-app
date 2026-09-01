@@ -463,6 +463,179 @@ a {
   transform: translateY(-2px);
 }
 
+.owner-setup-overview {
+  display: grid;
+  gap: 18px;
+  max-width: 860px;
+  min-width: 0;
+  width: 100%;
+}
+
+.owner-setup-overview-header {
+  align-items: start;
+}
+
+.owner-setup-progress {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.owner-setup-progress > div:first-child {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.owner-setup-progress span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.owner-setup-progress strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.owner-setup-progress-track {
+  background: #eee8dc;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.owner-setup-progress-track span {
+  background: var(--gold);
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.owner-setup-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.owner-setup-row {
+  align-items: center;
+  color: inherit;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 44px minmax(0, 1fr) auto 20px;
+  min-height: 72px;
+  min-width: 0;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.owner-setup-row:hover {
+  border-color: color-mix(in srgb, var(--gold) 52%, var(--border));
+  transform: translateY(-1px);
+}
+
+.owner-setup-row:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--gold) 38%, transparent);
+  outline-offset: 2px;
+}
+
+.owner-setup-row-icon {
+  align-items: center;
+  background: #f7edda;
+  border-radius: 12px;
+  color: #956820;
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.owner-setup-row-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.owner-setup-row-copy strong,
+.owner-setup-row-copy small {
+  overflow-wrap: anywhere;
+}
+
+.owner-setup-row-copy strong {
+  font-size: 16px;
+}
+
+.owner-setup-row-copy small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.owner-setup-row-status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.owner-setup-row-status.ready { color: #2f6f4e; }
+.owner-setup-row-status.open { color: #94681f; }
+.owner-setup-row-arrow { color: var(--muted); }
+
+.owner-setup-load-error {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 20px;
+}
+
+.owner-setup-load-error > svg { color: #94681f; }
+.owner-setup-load-error h2,
+.owner-setup-load-error p { margin: 0; }
+
+@media (max-width: 600px) {
+  .owner-setup-overview-header .button {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .owner-setup-progress > div:first-child {
+    align-items: start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .owner-setup-row {
+    grid-template-columns: 44px minmax(0, 1fr) 20px;
+  }
+
+  .owner-setup-row-status {
+    grid-column: 2 / 4;
+    white-space: normal;
+  }
+
+  .owner-setup-row-arrow {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .owner-setup-load-error {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .owner-setup-load-error .button {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    width: 100%;
+  }
+}
+
 .settings-page-actions {
   display: flex;
   flex-wrap: wrap;

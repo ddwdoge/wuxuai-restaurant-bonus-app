@@ -53,6 +53,9 @@ const StaffPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("../modules/admin/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
 );
+const OwnerSetupOverviewPage = lazy(() =>
+  import("../modules/admin/pages/OwnerSetupOverviewPage").then((module) => ({ default: module.OwnerSetupOverviewPage })),
+);
 const PlatformAdminPage = lazy(() =>
   import("../modules/platform/PlatformAdminPage").then((module) => ({ default: module.PlatformAdminPage })),
 );
@@ -221,6 +224,7 @@ export function App() {
         <Route index element={withFallback(<AdminDashboard />, <AdminLoading />)} />
         <Route path="onboarding" element={withFallback(<RestaurantOnboarding />, <AdminLoading />)} />
         <Route path="settings" element={withFallback(<SettingsPage />, <AdminLoading />)} />
+        <Route path="settings/setup" element={withFallback(<OwnerSetupOverviewPage />, <AdminLoading />)} />
         <Route path="settings/program-end" element={withFallback(<ProgramTerminationPage />, <AdminLoading />)} />
         <Route path="settings/:section" element={withFallback(<SettingsPage />, <AdminLoading />)} />
         <Route path="branding" element={withFallback(<BrandingPage />, <AdminLoading />)} />
