@@ -119,8 +119,9 @@ Quellen: `AGENTS.md` Abschnitte 1, 2 und 12;
   Marketing-Domain.
 - `app.bonus.wuxuaisbi.com` ist die WUXUAI Bonus Production-Anwendung.
 - `book.wuxuaisbi.com` ist die WUXUAI Book Website.
-- Staging verwendet eine eigene, eindeutig als Non-Production erkennbare
-  Domain. Landingpage und Production-Anwendung duerfen niemals dieselbe
+- `staging-app.bonus.wuxuaisbi.com` ist die WUXUAI Bonus Staging-Anwendung.
+  Auth-Redirects, Edge-Function-CORS und serverseitig erzeugte App-Links sind
+  strikt umgebungsgebunden. Landingpage und Production-Anwendung duerfen niemals dieselbe
   Cloudflare-Route oder denselben Worker verwenden.
 - Production bleibt bis zur bewussten Founder-Freigabe und dem Release ueber
   `main` gesperrt. Keine Production-Migration, kein Production-Deployment und

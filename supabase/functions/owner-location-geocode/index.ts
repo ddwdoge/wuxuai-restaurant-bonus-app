@@ -5,14 +5,11 @@ import {
   normalizeNominatimResults,
   normalizeOwnerAddress,
 } from "../_shared/ownerGeocoding.mjs";
+import { allowedAppOrigins } from "../_shared/appOrigin.mjs";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const allowedOrigins = new Set([
-  "https://bonus.wuxuaisbi.com",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:4192",
-]);
+const allowedOrigins = allowedAppOrigins(Deno.env.get("APP_BASE_URL"));
 const cacheLifetimeHours = 24;
 
 function responseHeaders(origin: string | null) {
