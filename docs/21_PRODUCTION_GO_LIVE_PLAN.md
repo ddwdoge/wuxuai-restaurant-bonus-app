@@ -422,7 +422,7 @@ Optional später:
 `VITE_APP_BASE_URL` ist die öffentliche Basis-URL der Live-App, zum Beispiel:
 
 ```text
-https://wuxuai-restaurant-bonus-os.dongdongwu4899.workers.dev
+https://app.bonus.wuxuaisbi.com
 ```
 
 QR Center und Starter-Kit verwenden diese URL für öffentliche Kunden-, Bonus-
@@ -496,9 +496,24 @@ app.wuxuaisbi.com
 
 oder später:
 
+- Production verwendet verbindlich `app.bonus.wuxuaisbi.com`.
+- Staging verwendet verbindlich `staging-app.bonus.wuxuaisbi.com`.
+- Landingpage und Production-Anwendung duerfen niemals dieselbe
+  Cloudflare-Route oder denselben Worker verwenden.
+- Domain- oder Worker-Zuordnungen werden nicht zwischen Staging und Production
+  geteilt.
+
+Supabase Edge Functions verwenden denselben strikt validierten
+`APP_BASE_URL`-Vertrag:
+
 ```text
-bonus.wuxu.ai
+Production: https://app.bonus.wuxuaisbi.com
+Staging:    https://staging-app.bonus.wuxuaisbi.com
 ```
+
+Die Variable steuert die exakte CORS-Allowlist, Staff-Einladungslinks und
+Links aus Transaktions-E-Mails. `bonus.wuxuaisbi.com` ist dafür nicht zulässig;
+Wildcard-CORS bleibt verboten.
 
 ### 10.3 QR-Stabilität
 

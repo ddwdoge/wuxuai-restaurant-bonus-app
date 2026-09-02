@@ -1,13 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
+import { allowedAppOrigins, configuredAppOrigin } from "../_shared/appOrigin.mjs";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const allowedOrigins = new Set([
-  "https://bonus.wuxuaisbi.com",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:4192",
-]);
+const appBaseUrl = configuredAppOrigin(Deno.env.get("APP_BASE_URL"));
+const allowedOrigins = allowedAppOrigins(Deno.env.get("APP_BASE_URL"));
 
 function responseHeaders(origin: string | null) {
   const headers = new Headers({
@@ -58,7 +56,8 @@ Deno.serve(async (request) => {
   if (origin && !allowedOrigins.has(origin)) return json({ error: "ORIGIN_NOT_ALLOWED" }, 403, null);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(origin) });
   if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405, origin);
-  if (!supabaseUrl || !serviceRoleKey || !anonKey) return json({ error: "SERVICE_NOT_CONFIGURED" }, 503, origin);
+  const requestAppBaseUrl = origin && allowedOrigins.has(origin) ? origin : appBaseUrl;
+  if (!supabaseUrl || !serviceRoleKey || !anonKey || !requestAppBaseUrl) return json({ error: "SERVICE_NOT_CONFIGURED" }, 503, origin);
 
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.toLowerCase().startsWith("bearer ")) return json({ error: "NOT_AUTHORIZED" }, 401, origin);
@@ -114,7 +113,7 @@ Deno.serve(async (request) => {
       authUserId = data.auth_user_id ?? null;
     }
 
-    const redirectUrl = new URL("/auth/staff-invite", origin && allowedOrigins.has(origin) ? origin : "https://bonus.wuxuaisbi.com");
+    const redirectUrl = new URL("/auth/staff-invite", requestAppBaseUrl);
     redirectUrl.searchParams.set("staff", staffMemberId);
     const redirectTo = redirectUrl.toString();
     const existingUser = authUserId

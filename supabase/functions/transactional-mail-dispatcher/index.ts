@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import nodemailer from "npm:nodemailer@6.9.16";
 import { renderTransactionalMail } from "../_shared/transactionalMailTemplates.mjs";
+import { configuredAppOrigin } from "../_shared/appOrigin.mjs";
 
 type ReservedDelivery = {
   delivery_id: string;
@@ -15,7 +16,7 @@ type ReservedDelivery = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const schedulerSecret = Deno.env.get("TRANSACTIONAL_MAIL_SCHEDULER_SECRET") ?? "";
-const appBaseUrl = Deno.env.get("APP_BASE_URL") ?? "";
+const appBaseUrl = configuredAppOrigin(Deno.env.get("APP_BASE_URL")) ?? "";
 const smtpHost = Deno.env.get("SMTP_HOST") ?? "";
 const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "587");
 const smtpUsername = Deno.env.get("SMTP_USERNAME") ?? "";
