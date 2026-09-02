@@ -116,6 +116,11 @@ Deno.serve(async (request) => {
     const redirectUrl = new URL("/auth/staff-invite", requestAppBaseUrl);
     redirectUrl.searchParams.set("staff", staffMemberId);
     const redirectTo = redirectUrl.toString();
+    const { data: restaurant } = await adminClient
+      .from("restaurants")
+      .select("name")
+      .eq("id", restaurantId)
+      .maybeSingle();
     const existingUser = authUserId
       ? (await adminClient.auth.admin.getUserById(authUserId)).data.user
       : await findAuthUserByEmail(adminClient, email);
@@ -123,7 +128,14 @@ Deno.serve(async (request) => {
     let invitedUser = existingUser;
     let binding: { success?: boolean; status?: string } | null = null;
     if (!existingUser) {
-      const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, { redirectTo });
+      const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        data: {
+          app_language: "en",
+          restaurant_name: typeof restaurant?.name === "string" ? restaurant.name.trim().slice(0, 120) : null,
+          staff_first_name: typeof body.name === "string" ? body.name.trim().split(/\s+/)[0].slice(0, 80) : null,
+        },
+        redirectTo,
+      });
       if (error) return json({ error: "STAFF_INVITE_DELIVERY_FAILED" }, 502, origin);
       invitedUser = data.user;
     } else {
