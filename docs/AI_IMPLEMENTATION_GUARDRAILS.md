@@ -114,8 +114,15 @@ Quellen: `AGENTS.md` Abschnitte 1, 2 und 12;
 
 ## 6. Deployment und Umgebungen
 
-- In der aktuellen Entwicklungsphase ist `bonus.wuxuaisbi.com` die
-  Development/Test-Umgebung des Workers `wuxuai-restaurant-bonus-app`.
+- `wuxuaisbi.com` ist die zentrale WUXUAI SaaS-Plattform.
+- `bonus.wuxuaisbi.com` ist ausschliesslich die WUXUAI Bonus Landingpage und
+  Marketing-Domain.
+- `app.bonus.wuxuaisbi.com` ist die WUXUAI Bonus Production-Anwendung.
+- `book.wuxuaisbi.com` ist die WUXUAI Book Website.
+- `staging-app.bonus.wuxuaisbi.com` ist die WUXUAI Bonus Staging-Anwendung.
+  Auth-Redirects, Edge-Function-CORS und serverseitig erzeugte App-Links sind
+  strikt umgebungsgebunden. Landingpage und Production-Anwendung duerfen niemals dieselbe
+  Cloudflare-Route oder denselben Worker verwenden.
 - Production bleibt bis zur bewussten Founder-Freigabe und dem Release ueber
   `main` gesperrt. Keine Production-Migration, kein Production-Deployment und
   keine Stripe-Aktion aus einem Development/Test-Gate ableiten.
