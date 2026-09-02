@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { browserEmailLanguage } from "../../shared/emailLanguage.mjs";
 import { supabase } from "../../shared/lib/supabase";
 import { classifyCustomerSignUpResult, type CustomerSignUpState } from "./customerAuthFlow.mjs";
 
@@ -29,6 +30,7 @@ export async function registerCustomerAuthAccount(
     options: {
       emailRedirectTo: callbackUrl.toString(),
       data: {
+        app_language: browserEmailLanguage(),
         customer_first_name: input.firstName.trim(),
         customer_phone: input.phone,
         customer_birthday: input.birthday || null,

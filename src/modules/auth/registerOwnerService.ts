@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { browserEmailLanguage } from "../../shared/emailLanguage.mjs";
 import { liveDataUnavailableMessage, supabase, supabaseAuthStorageKey } from "../../shared/lib/supabase";
 import {
   buildOwnerAuthRedirect,
@@ -210,6 +211,7 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
     password: input.password,
     options: {
       data: {
+        app_language: browserEmailLanguage(),
         full_name: input.ownerName.trim(),
         restaurant_name: input.restaurantName.trim(),
         phone: input.phone.trim() || null,

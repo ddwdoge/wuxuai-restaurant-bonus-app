@@ -1,7 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import nodemailer from "npm:nodemailer@6.9.16";
-import { renderTransactionalMail } from "../_shared/transactionalMailTemplates.mjs";
 import { configuredAppOrigin } from "../_shared/appOrigin.mjs";
+import {
+  renderTransactionalMail,
+  resolveTransactionalMailLanguage,
+} from "../_shared/transactionalMailTemplates.mjs";
 
 type ReservedDelivery = {
   delivery_id: string;
@@ -22,7 +25,7 @@ const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "587");
 const smtpUsername = Deno.env.get("SMTP_USERNAME") ?? "";
 const smtpPassword = Deno.env.get("SMTP_PASSWORD") ?? "";
 const smtpFromEmail = Deno.env.get("SMTP_FROM_EMAIL") ?? "";
-const smtpFromName = Deno.env.get("SMTP_FROM_NAME") ?? "WUXU Group Support";
+const smtpFromName = Deno.env.get("SMTP_FROM_NAME") ?? "WUXUAI® Bonus";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -61,6 +64,53 @@ function logDelivery(level: "info" | "error", event: string, delivery?: Reserved
     detail: detail ?? null,
   };
   console[level](JSON.stringify(output));
+}
+
+function safeFirstName(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().replace(/\s+/g, " ").slice(0, 80);
+  return normalized || null;
+}
+
+async function resolveRecipientContext(
+  adminClient: ReturnType<typeof createClient>,
+  email: string,
+) {
+  const { data: accounts, error } = await adminClient
+    .from("customer_accounts")
+    .select("auth_user_id, first_name")
+    .eq("email", email)
+    .is("disabled_at", null)
+    .limit(2);
+  if (error || accounts?.length !== 1) return { firstName: null, language: null };
+
+  const account = accounts[0];
+  let metadata: Record<string, unknown> = {};
+  if (account.auth_user_id) {
+    const { data } = await adminClient.auth.admin.getUserById(account.auth_user_id);
+    metadata = data.user?.user_metadata ?? {};
+  }
+  const fullName = safeFirstName(metadata.full_name)?.split(" ")[0] ?? null;
+  const languageCandidates = [
+    metadata.preferred_language,
+    metadata.account_language,
+    metadata.app_language,
+    metadata.browser_language,
+  ];
+  return {
+    firstName: safeFirstName(account.first_name)
+      ?? safeFirstName(metadata.customer_first_name)
+      ?? safeFirstName(metadata.staff_first_name)
+      ?? fullName,
+    language: languageCandidates.some((candidate) => typeof candidate === "string" && candidate.trim())
+      ? resolveTransactionalMailLanguage({
+        preferredLanguage: metadata.preferred_language,
+        accountLanguage: metadata.account_language,
+        appLanguage: metadata.app_language,
+        browserLanguage: metadata.browser_language,
+      })
+      : null,
+  };
 }
 
 Deno.serve(async (request) => {
@@ -109,12 +159,15 @@ Deno.serve(async (request) => {
   let failed = 0;
   for (const delivery of deliveries) {
     try {
+      const recipient = await resolveRecipientContext(supabase, delivery.email);
       const mail = renderTransactionalMail({
         templateKey: delivery.event_type,
         restaurantName: delivery.restaurant_name,
         restaurantSlug: delivery.restaurant_slug,
         payload: delivery.payload ?? {},
         appBaseUrl,
+        language: recipient.language,
+        firstName: recipient.firstName,
       });
       const messageIdDomain = smtpFromEmail.split("@")[1] || "wuxuaisbi.com";
       const result = await transporter.sendMail({
