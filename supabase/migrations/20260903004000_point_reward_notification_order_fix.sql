@@ -64,4 +64,3 @@ $$;
 
 revoke execute on function public.sync_point_reward_notification_state()
 from public, anon, authenticated;
-
