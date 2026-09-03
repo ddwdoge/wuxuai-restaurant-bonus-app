@@ -297,6 +297,10 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
 ## Punkte sammeln - FINAL LOCK
 
+- Die Gaestesuche dient ausschliesslich der Suche und Anzeige. Sie autorisiert
+  niemals eine Punktebuchung. Eine Punktevergabe setzt den gueltigen,
+  persoenlichen und zeitlich begrenzten Customer-Punkte-QR voraus und wird erst
+  nach der anschliessenden Tages-PIN-Bestaetigung abgeschlossen.
 - Buchungsbetrag: mindestens 1 EUR; Standardmaximum 300 EUR; Owner-
   Konfiguration 1 bis 1.000 EUR.
 - Pro Customer, Restaurant und lokalem Kalendertag sind hoechstens zwei
