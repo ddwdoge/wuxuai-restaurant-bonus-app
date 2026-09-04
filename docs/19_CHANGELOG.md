@@ -1,6 +1,25 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-04 - Platform Admin V1 Betriebsstatus finalisiert
+
+- Minimalen globalen Betriebsstatus fuer Cron/Scheduler, transaktionale
+  E-Mail und Registrierungen auf Basis vorhandener Staging-Nachweise ergaenzt.
+- Explizite Zustaende trennen `Betriebsbereit`, `Keine aktuellen Ereignisse`,
+  `Eingeschraenkt`, `Fehler` und `Nicht verfuegbar`; fehlende Telemetrie wird
+  nicht als gesund dargestellt.
+- Den read-only RPC strikt auf die separate Plattform-Admin-Rolle begrenzt;
+  Owner-, Staff-, Customer- und anonyme Zugriffe bleiben gesperrt, ohne
+  Service-Role im Frontend oder RLS-Lockerung.
+- Die sieben kanonischen Staging-Jobs werden mit Aktivierungs- und
+  Laufnachweis aggregiert. E-Mail- und Registrierungsdaten bleiben
+  datensparsame Betriebszaehler ohne Identitaets- oder Secret-Ausgabe.
+- Betroffene Audit-Aktionen auf mindestens 44 Pixel Touchhoehe gebracht und
+  physisch bei 320, 375, 390, 414, 430, 768 und 1024+ Pixel ohne horizontalen
+  Ueberlauf geprueft.
+- Migration `20260904001000_platform_admin_v1_operational_telemetry.sql` nur
+  auf Staging `bwhvfjuwixgwduoeqaya` angewendet; Production blieb unveraendert.
+
 ## 2026-09-01 - Kontextbezogene Onboarding-Hilfe, Verteilungslogik eingefroren
 
 - Alle sieben bestehenden Onboarding-Schritte beantworten nun kompakt:
