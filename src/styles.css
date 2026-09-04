@@ -1231,6 +1231,174 @@ a {
   grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1.38fr);
 }
 
+.platform-operations-panel {
+  background: #fff;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.platform-operations-header,
+.platform-support-stack article > header,
+.platform-operation-notice {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.platform-operations-header h3,
+.platform-support-stack h4,
+.platform-operations-grid h4,
+.platform-operation-notice h4 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.platform-operations-header p,
+.platform-support-stack p,
+.platform-operation-notice p {
+  color: #607080;
+  margin: 4px 0 0;
+}
+
+.platform-operations-tabs {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  overflow-x: auto;
+}
+
+.platform-operations-tabs button {
+  background: #f6f8fa;
+  border: 1px solid #d8e0e7;
+  border-radius: 6px;
+  color: #465463;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  min-width: 104px;
+  padding: 8px 10px;
+}
+
+.platform-operations-tabs button.active {
+  background: #e7f5f2;
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.platform-operations-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-operations-grid article,
+.platform-support-stack article,
+.platform-operation-notice {
+  background: #f7f9fb;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px;
+}
+
+.platform-operations-grid dl,
+.platform-summary-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.platform-operations-grid dl div,
+.platform-summary-list div {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.platform-operations-grid dd,
+.platform-summary-list dd {
+  font-weight: 800;
+  margin: 0;
+  text-align: right;
+}
+
+.platform-support-stack,
+.platform-support-list,
+.platform-data-table,
+.platform-confirmation-form {
+  display: grid;
+  gap: 10px;
+}
+
+.platform-support-list > div,
+.platform-data-table > div {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 11px;
+}
+
+.platform-support-list > div > span,
+.platform-support-list small {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.platform-data-table > div {
+  display: grid;
+  grid-template-columns: minmax(130px, .7fr) minmax(90px, .4fr) minmax(180px, 1fr);
+}
+
+.platform-operation-state {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.platform-operation-state.success { color: #0f766e; }
+.platform-operation-state.warning { color: #a16207; }
+.platform-operation-empty { color: #607080; margin: 0; }
+
+.platform-correction-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) minmax(100px, .35fr) auto;
+}
+
+.platform-critical-zone {
+  background: #fff7ed !important;
+  border-color: #fdba74 !important;
+}
+
+.button.danger {
+  background: #b42318;
+  color: #fff;
+}
+
+.platform-operations-panel .button,
+.platform-operations-panel input,
+.platform-operations-panel select {
+  min-height: 44px;
+}
+
 .platform-restaurant-list-card,
 .platform-detail-card {
   display: grid;
@@ -5377,6 +5545,26 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .platform-operations-grid,
+  .platform-correction-form {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-operations-header,
+  .platform-support-list > div {
+    display: grid;
+  }
+
+  .platform-operations-header .button,
+  .platform-support-list .button,
+  .platform-correction-form .button {
+    width: 100%;
+  }
+
+  .platform-data-table > div {
+    grid-template-columns: 1fr;
+  }
+
   .platform-audit-toggle-row {
     align-items: stretch;
     display: grid;
@@ -5481,6 +5669,16 @@ a {
     display: grid;
   }
 
+}
+
+@media (max-width: 430px) {
+  .platform-operations-panel {
+    padding: 12px;
+  }
+
+  .platform-operations-tabs {
+    grid-template-columns: repeat(6, minmax(112px, 1fr));
+  }
 }
 
 @media (max-width: 699px) {
