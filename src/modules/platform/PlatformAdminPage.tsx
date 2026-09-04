@@ -4,15 +4,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   loadPlatformRestaurantControlCenter,
   loadPlatformRestaurants,
+  loadPlatformOperationalTelemetry,
   updatePlatformRestaurantSubscription,
   type PaymentStatus,
   type PlatformRestaurant,
   type PlatformRestaurantControlCenter,
+  type PlatformOperationalTelemetry,
   type PlatformSummary,
   type RestaurantStatus,
   type SubscriptionStatus,
 } from "./platformAdminService";
 import { PlatformRestaurantControlCenter as RestaurantControlCenter } from "./PlatformRestaurantControlCenter";
+import { PlatformOperationalTelemetry as OperationalTelemetry } from "./PlatformOperationalTelemetry";
 import { useAuth } from "../auth/AuthProvider";
 import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
 
@@ -97,6 +100,9 @@ export function PlatformAdminPage() {
   const [restaurants, setRestaurants] = useState<PlatformRestaurant[]>([]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(restaurantId ?? null);
   const [detail, setDetail] = useState<PlatformRestaurantControlCenter | null>(null);
+  const [telemetry, setTelemetry] = useState<PlatformOperationalTelemetry | null>(null);
+  const [telemetryLoading, setTelemetryLoading] = useState(true);
+  const [telemetryError, setTelemetryError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(true);
@@ -109,7 +115,17 @@ export function PlatformAdminPage() {
 
   async function loadData(preferredId = selectedRestaurantId) {
     setLoading(true);
+    setTelemetryLoading(true);
     setErrorMessage("");
+    setTelemetryError("");
+    const telemetryRequest = loadPlatformOperationalTelemetry()
+      .then(setTelemetry)
+      .catch((error) => {
+        console.error("Betriebsstatus konnte nicht geladen werden.", error);
+        setTelemetry(null);
+        setTelemetryError("Die globale Telemetriequelle ist nicht erreichbar.");
+      })
+      .finally(() => setTelemetryLoading(false));
     try {
       const data = await loadPlatformRestaurants();
       setSummary(computeSummary(data.restaurants, data.summary));
@@ -124,6 +140,7 @@ export function PlatformAdminPage() {
       setSelectedRestaurantId(null);
     } finally {
       setLoading(false);
+      await telemetryRequest;
     }
   }
 
@@ -216,6 +233,8 @@ export function PlatformAdminPage() {
       <section className="platform-kpi-grid" aria-label="WUXUAI Admin Übersicht">
         {summaryCards.map((card) => { const Icon = card.icon; return <article className="card platform-kpi-card" key={card.label}><Icon size={22} /><strong>{card.value}</strong><span>{card.label}</span></article>; })}
       </section>
+
+      <OperationalTelemetry data={telemetry} error={telemetryError} loading={telemetryLoading} />
 
       <section className="platform-admin-grid">
         <div className="card platform-restaurant-list-card">

@@ -4,6 +4,31 @@
 
 Status: **LOCK**
 
+## Current Lock 2026-09-04 - Platform Admin V1 Betriebsstatus
+
+- Die Plattform-Startseite zeigt einen minimalen, read-only Betriebsstatus
+  fuer Cron/Scheduler, transaktionale E-Mail und Registrierungen.
+- Jeder Bereich unterscheidet belegbar zwischen `Betriebsbereit`, `Keine
+  aktuellen Ereignisse`, `Eingeschraenkt`, `Fehler` und `Nicht verfuegbar`.
+  Fehlende Nachweise werden niemals als gesunder Zustand ausgegeben.
+- Cron zeigt die sieben kanonischen Staging-Jobs samt Konfiguration,
+  Aktivierung, letzter vorhandener Laufspur und Fehlerlage.
+- E-Mail verwendet ausschliesslich vorhandene Versandwarteschlangen- und
+  Zustellnachweise. Auth-SMTP-Konfiguration wird nicht aus der Datenbank
+  behauptet, wenn sie dort nicht pruefbar ist.
+- Registrierung verwendet ausschliesslich sichere, aggregierte Auditdaten und
+  zeigt keine Passwoerter, Tokens oder sensiblen Identitaetsdaten.
+- Der Vertrag `get_platform_operational_telemetry` ist durch die separate
+  `platform_admins`-Rolle geschuetzt. Owner-, Staff- und Customer-Rollen allein
+  verleihen keinen Zugriff; anonyme Aufrufe sind gesperrt.
+- Die Migration
+  `20260904001000_platform_admin_v1_operational_telemetry.sql` wurde auf
+  Staging `bwhvfjuwixgwduoeqaya` angewendet. Production blieb unveraendert.
+- Audit-Aktionen besitzen auf allen geprueften Breiten von 320 bis 1024+ Pixel
+  mindestens 44 Pixel Touchhoehe und erzeugen keinen horizontalen Ueberlauf.
+
+Status: **FINAL LOCK (STAGING)**
+
 ## Loop 3A - Restaurant Control Center Backendvertrag
 
 Der read-only Vertrag `get_platform_restaurant_control_center` bündelt

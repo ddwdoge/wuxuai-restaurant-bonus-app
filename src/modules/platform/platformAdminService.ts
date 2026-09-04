@@ -160,6 +160,47 @@ export type PlatformMetric<T> =
 
 export type PlatformSubsystemHealth = "healthy" | "warning" | "error" | "unavailable";
 
+export type PlatformOperationalStatus = "healthy" | "no_recent_events" | "degraded" | "error" | "unavailable";
+
+export type PlatformOperationalTelemetry = {
+  contract_version: "platform_operational_telemetry_v1";
+  generated_at: string;
+  cron: {
+    status: PlatformOperationalStatus;
+    reason: string | null;
+    expected_job_count: number;
+    configured_job_count: number;
+    enabled_job_count: number;
+    last_run_at: string | null;
+    last_success_at: string | null;
+    last_failure_at: string | null;
+    failures_24h: number;
+    jobs: Array<{ name: string; configured: boolean; enabled: boolean; schedule: string | null; last_status: string | null; last_run_at: string | null }>;
+  };
+  email: {
+    status: PlatformOperationalStatus;
+    reason: string | null;
+    configuration_status: "unavailable";
+    configuration_reason: string;
+    pending_count: number;
+    processing_count: number;
+    failed_count: number;
+    sent_24h_count: number;
+    last_sent_at: string | null;
+    last_failure_at: string | null;
+  };
+  registration: {
+    status: PlatformOperationalStatus;
+    reason: string | null;
+    success_24h: number;
+    success_7d: number;
+    failures_24h: number;
+    failures_7d: number;
+    last_success_at: string | null;
+    last_failure_at: string | null;
+  };
+};
+
 export type PlatformRestaurantControlCenter = {
   contract_version: "platform_restaurant_control_center_v1";
   generated_at: string;
@@ -322,6 +363,19 @@ export async function loadPlatformRestaurantControlCenter(
   }
 
   return data as PlatformRestaurantControlCenter;
+}
+
+export async function loadPlatformOperationalTelemetry(): Promise<PlatformOperationalTelemetry> {
+  if (!supabase) {
+    throw new Error("Supabase ist nicht konfiguriert.");
+  }
+
+  const { data, error } = await supabase.rpc("get_platform_operational_telemetry");
+  if (error) {
+    throw error;
+  }
+
+  return data as PlatformOperationalTelemetry;
 }
 
 export async function updatePlatformRestaurantSubscription(input: {
