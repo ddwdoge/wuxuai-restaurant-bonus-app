@@ -19,7 +19,6 @@ import type {
   PlatformMetric,
   PlatformRestaurant,
   PlatformRestaurantControlCenter,
-  RestaurantStatus,
   SubscriptionStatus,
 } from "./platformAdminService";
 import {
@@ -31,11 +30,11 @@ import {
   getSetupLabel,
 } from "./platformControlCenterView.mjs";
 import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
+import { PlatformOperationsPanel } from "./PlatformOperationsPanel";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
   paymentStatus?: PaymentStatus | null;
-  restaurantStatus?: RestaurantStatus | null;
   trialExtensionDays?: number | null;
   reason?: string | null;
 };
@@ -129,13 +128,11 @@ export function PlatformRestaurantControlCenter({
   restaurant,
   saving,
 }: PlatformRestaurantControlCenterProps) {
-  const [statusDraft, setStatusDraft] = useState<RestaurantStatus>(restaurant.status);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   useEffect(() => {
-    setStatusDraft(data?.account.restaurant_status ?? restaurant.status);
     setPendingAction(null);
-  }, [data?.account.restaurant_id, data?.account.restaurant_status, restaurant.id, restaurant.status]);
+  }, [data?.account.restaurant_id, restaurant.id]);
 
   if (loading) return <PlatformControlCenterSkeleton />;
 
@@ -161,20 +158,6 @@ export function PlatformRestaurantControlCenter({
     : "–";
   const portalOrigin = window.location.origin;
   const internalTest = account.internal_test.status === "available" && account.internal_test.value;
-
-  function requestStatusChange() {
-    if (statusDraft === account.restaurant_status) return;
-    setPendingAction({
-      actionLabel: "Restaurantstatus",
-      description: `Von ${currentRestaurantStatus} zu ${getRestaurantStatusLabel(statusDraft)}.`,
-      impact: "Der Restaurantzugriff wird gemäß dem bestehenden Lifecycle-Vertrag eingeschränkt oder freigegeben. Daten bleiben erhalten.",
-      payload: {
-        restaurantStatus: statusDraft,
-        reason: `Restaurantstatus im WUXUAI Admin auf ${getRestaurantStatusLabel(statusDraft)} gesetzt`,
-      },
-      title: "Restaurantstatus ändern?",
-    });
-  }
 
   async function confirmAction() {
     if (!pendingAction) return;
@@ -306,9 +289,8 @@ export function PlatformRestaurantControlCenter({
 
       <div className="platform-control-columns">
         <section className="platform-control-section">
-          <div className="section-heading"><h3>Status & Vertrag verwalten</h3><p className="muted">Änderungen werden erst nach Bestätigung serverseitig gespeichert und auditiert.</p></div>
-          <label className="field" htmlFor="platform-status"><span>Restaurantstatus</span><select className="input" disabled={!canWrite || saving} id="platform-status" onChange={(event) => setStatusDraft(event.target.value as RestaurantStatus)} value={statusDraft}><option value="active">Aktiv</option><option value="draft">Inaktiv</option><option value="suspended">Gesperrt</option></select></label>
-          {canWrite ? <div className="platform-actions"><button className="button primary" disabled={saving || statusDraft === account.restaurant_status} onClick={requestStatusChange} type="button">Status ändern</button><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo aktivieren?", actionLabel: "Abo aktiviert", description: "Der manuell geführte SaaS-Status wird auf Aktiv gesetzt.", impact: "Es wird keine Stripe-Zahlung ausgelöst.", payload: { subscriptionStatus: "active", reason: "Abo manuell im WUXUAI Admin aktiviert" }})} type="button">Abo aktivieren</button><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo pausieren?", actionLabel: "Abo pausiert", description: "Der manuell geführte SaaS-Status wird pausiert.", impact: "Restaurantdaten bleiben erhalten.", payload: { subscriptionStatus: "paused", reason: "Abo manuell im WUXUAI Admin pausiert" }})} type="button">Abo pausieren</button><button className="button secondary" disabled={saving || subscription.status !== "available"} onClick={() => setPendingAction({ title: "Testphase verlängern?", actionLabel: "Testphase verlängert", description: `Aktuelles Ende: ${formatDate(subscriptionValue?.trial_ends_at)}. Verlängerung: 14 Tage.`, impact: "Die bestehende Testphase wird über den freigegebenen Vertrag verlängert.", payload: { trialExtensionDays: 14, reason: "Testphase manuell um 14 Tage verlängert" }})} type="button">Testphase um 14 Tage verlängern</button></div> : <p className="muted">Nur Ansicht. Deine Plattformrolle darf keine Änderungen speichern.</p>}
+          <div className="section-heading"><h3>Vertrag verwalten</h3><p className="muted">Restaurantbetrieb und Veröffentlichung werden getrennt im Bereich Support & Verwaltung gesteuert.</p></div>
+          {canWrite ? <div className="platform-actions"><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo aktivieren?", actionLabel: "Abo aktiviert", description: "Der SaaS-Vertragsstatus wird auf Aktiv gesetzt.", impact: "Es wird keine Stripe-Zahlung ausgelöst und kein Zahlungsstatus gesetzt.", payload: { subscriptionStatus: "active", reason: "Abo im WUXUAI Admin aktiviert" }})} type="button">Abo aktivieren</button><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo pausieren?", actionLabel: "Abo pausiert", description: "Der SaaS-Vertragsstatus wird pausiert.", impact: "Restaurantdaten und Betriebsstatus bleiben erhalten.", payload: { subscriptionStatus: "paused", reason: "Abo im WUXUAI Admin pausiert" }})} type="button">Abo pausieren</button><button className="button secondary" disabled={saving || subscription.status !== "available"} onClick={() => setPendingAction({ title: "Testphase verlängern?", actionLabel: "Testphase verlängert", description: `Aktuelles Ende: ${formatDate(subscriptionValue?.trial_ends_at)}. Verlängerung: 14 Tage.`, impact: "Die bestehende Testphase wird über den freigegebenen Vertrag verlängert.", payload: { trialExtensionDays: 14, reason: "Testphase manuell um 14 Tage verlängert" }})} type="button">Testphase um 14 Tage verlängern</button></div> : <p className="muted">Nur Ansicht. Deine Plattformrolle darf keine Änderungen speichern.</p>}
         </section>
 
         <section className="platform-control-section">
@@ -334,6 +316,8 @@ export function PlatformRestaurantControlCenter({
           <DetailRow label="Zeitzone" value={data.timezone} />
         </dl>
       </details>
+
+      <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} />
 
       <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
         <p>{pendingAction?.impact}</p>

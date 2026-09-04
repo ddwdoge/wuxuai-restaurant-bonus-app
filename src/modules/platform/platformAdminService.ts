@@ -314,6 +314,30 @@ export type PlatformRestaurantControlCenter = {
   };
 };
 
+export type PlatformOperationAction =
+  | "restaurant_activate" | "restaurant_inactivate" | "restaurant_publish" | "restaurant_unpublish"
+  | "tenant_suspend" | "tenant_unsuspend" | "security_flag_set" | "security_flag_clear"
+  | "owner_membership_repair" | "staff_suspend" | "staff_reactivate" | "staff_invitation_revoke"
+  | "customer_membership_repair" | "customer_deactivate" | "customer_reactivate"
+  | "points_support_correction" | "qr_invalidate" | "gift_presentation_expire" | "transactional_mail_retry";
+
+export type PlatformRestaurantOperations = {
+  contract_version: "platform_admin_operations_v1_1";
+  restaurant: { id: string; name: string; status: RestaurantStatus; organization_status: RestaurantStatus | null; published: boolean; branch_id: string | null };
+  owner: { user_id: string; email: string | null; email_confirmed: boolean; last_sign_in_at: string | null; membership_present: boolean; memberships: Array<{ restaurant_id: string; role: string; created_at: string }> };
+  staff: Array<{ id: string; name: string; email: string | null; role: string; status: string; active: boolean; auth_linked: boolean; membership_present: boolean; last_invited_at: string | null }>;
+  customers: Array<{ id: string; name: string; points_balance: number; membership_status: string; auth_linked: boolean; central_membership_present: boolean; account_disabled: boolean }>;
+  points_journal: Array<{ id: string; customer_id: string; type: string; points: number; reason: string; source: string | null; staff_user_id: string | null; created_at: string }>;
+  gifts: Array<{ id: string; customer_id: string; reward_id: string; status: string; gift_type: string | null; created_at: string; redeemed_at: string | null }>;
+  gift_presentations: Array<{ id: string; customer_id: string; customer_reward_id: string; status: string; expires_at: string; redeemed_at: string | null; expired_at: string | null; created_at: string }>;
+  redemptions: Array<{ id: string; customer_id: string | null; reward_type: string; status: string; redeemed_at: string; actor_role: string }>;
+  qr_evidence: Array<{ id: string; customer_id: string; expires_at: string; consumed_at: string | null; revoked_at: string | null; created_at: string }>;
+  pin_evidence: Array<{ id: string; customer_id: string; valid_date: string; failed_attempts: number; locked_until: string | null; last_failed_at: string | null }>;
+  mail_queue: Array<{ id: string; customer_id: string; event_type: string; status: string; attempt_count: number; available_at: string; failed_at: string | null; last_error_code: string | null }>;
+  security_flags: Array<{ id: string; flag_key: string; status: string; reason: string; opened_at: string; cleared_at: string | null }>;
+  operations: Array<{ id: string; action_type: string; entity_type: string; entity_id: string | null; severity: "NORMAL" | "SENSITIVE" | "CRITICAL"; reason: string | null; support_reference: string | null; result: string; created_at: string }>;
+};
+
 export async function loadPlatformRestaurants() {
   if (!supabase) {
     return { summary: emptySummary, restaurants: [] };
@@ -376,6 +400,51 @@ export async function loadPlatformOperationalTelemetry(): Promise<PlatformOperat
   }
 
   return data as PlatformOperationalTelemetry;
+}
+
+export async function loadPlatformRestaurantOperations(restaurantId: string): Promise<PlatformRestaurantOperations> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_restaurant_operations", { input_restaurant_id: restaurantId });
+  if (error) throw error;
+  return data as PlatformRestaurantOperations;
+}
+
+export async function executePlatformAdminOperation(input: {
+  restaurantId: string;
+  action: PlatformOperationAction;
+  entityId?: string | null;
+  reason?: string;
+  supportReference?: string;
+  confirmation?: string;
+  payload?: Record<string, unknown>;
+}) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("execute_platform_admin_operation", {
+    input_restaurant_id: input.restaurantId,
+    input_action: input.action,
+    input_entity_id: input.entityId ?? null,
+    input_reason: input.reason ?? null,
+    input_support_reference: input.supportReference ?? null,
+    input_confirmation: input.confirmation ?? null,
+    input_idempotency_key: crypto.randomUUID(),
+    input_payload: input.payload ?? {},
+  });
+  if (error) throw error;
+  return data as { success: boolean; operation_id: string };
+}
+
+export async function requestPlatformAuthSupport(input: {
+  restaurantId: string;
+  entityId: string;
+  action: "owner_confirmation_resend" | "owner_password_recovery" | "staff_invitation_resend";
+  reason: string;
+  supportReference?: string;
+}) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { error } = await supabase.functions.invoke("platform-support-auth", {
+    body: { ...input, idempotencyKey: crypto.randomUUID() },
+  });
+  if (error) throw new Error("E-Mail-Aktion konnte nicht ausgeführt werden.");
 }
 
 export async function updatePlatformRestaurantSubscription(input: {

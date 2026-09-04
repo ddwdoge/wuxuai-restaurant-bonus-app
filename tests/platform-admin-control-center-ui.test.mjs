@@ -52,9 +52,12 @@ test("bestehende Detailroute verwendet ausschließlich den Control-Center-Vertra
   assert.match(page, /<RestaurantControlCenter/);
 });
 
-test("Lifecycle-Aktionen verlangen Bestätigung und laden Serverdaten neu", () => {
+test("Lifecycle und Vertrag bleiben getrennt und bestätigte Vertragsaktionen laden Serverdaten neu", () => {
   assert.match(controlCenter, /<AppDrawer/);
-  assert.match(controlCenter, /Restaurantstatus ändern\?/);
+  assert.match(controlCenter, /<PlatformOperationsPanel/);
+  assert.match(controlCenter, /Restaurantbetrieb und Veröffentlichung werden getrennt/);
+  assert.doesNotMatch(controlCenter, /Restaurantstatus ändern\?/);
+  assert.doesNotMatch(controlCenter, /restaurantStatus:/);
   assert.match(controlCenter, /Abo aktivieren\?/);
   assert.match(controlCenter, /Abo pausieren\?/);
   assert.match(controlCenter, /Testphase verlängern\?/);
