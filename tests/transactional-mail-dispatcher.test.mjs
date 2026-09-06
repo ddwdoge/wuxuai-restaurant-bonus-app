@@ -12,10 +12,11 @@ import {
 const migration = await readFile(new URL("../supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", import.meta.url), "utf8");
 const dispatcher = await readFile(new URL("../supabase/functions/transactional-mail-dispatcher/index.ts", import.meta.url), "utf8");
 
-test("dispatcher supports exactly the existing V1 transactional templates", () => {
+test("dispatcher supports the existing transactional templates and the gated PRO offer event", () => {
   assert.deepEqual([...supportedTransactionalMailTemplates].sort(), [
     "BIRTHDAY_GIFT_ASSIGNED",
     "BIRTHDAY_GIFT_EXPIRY_REMINDER",
+    "OFFER_PUBLISHED",
     "POINT_REWARD_AVAILABLE",
   ]);
 });
@@ -75,6 +76,20 @@ test("reminder and threshold templates expose no token or internal entity identi
     assert.match(mail.text, /Kaffee/);
     assert.doesNotMatch(mail.text + mail.html + mail.actionUrl, /secret|private/);
   }
+});
+
+test("published-offer template preserves owner content and exposes no internal identifier", () => {
+  const mail = renderTransactionalMail({
+    templateKey: "OFFER_PUBLISHED",
+    restaurantName: "Morgen Café",
+    restaurantSlug: "morgen-cafe",
+    payload: { offer_title: "Herbstmenü", offer_id: "internal-offer-id" },
+    appBaseUrl: "https://app.bonus.wuxuaisbi.com",
+    language: "de",
+  });
+  assert.match(mail.text, /Herbstmenü/);
+  assert.match(mail.text, /Morgen Café/);
+  assert.doesNotMatch(mail.text + mail.html, /internal-offer-id/);
 });
 
 test("mail links reject localhost, non-HTTPS and malformed restaurant slugs", () => {

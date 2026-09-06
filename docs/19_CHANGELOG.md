@@ -1,6 +1,27 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-05 - PRO-Paket technisch auf Staging vorbereitet
+
+- Zentrale, tenantgebundene Plaene BASIC, PRO und das nicht oeffentlich
+  freigegebene PREMIUM samt serverseitiger Berechtigungsaufloesung ergaenzt.
+- Platform Admin kann Plan, Angebotslimit 1 bis 7 oder unbegrenzt sowie
+  Angebots- und Reward-Benachrichtigungsrechte begruendet, bestaetigt,
+  idempotent und unveraenderbar auditiert verwalten.
+- Owner sehen Paket und aktiven Angebotsverbrauch nur lesend. BASIC begrenzt
+  aktive Restaurant-Marketingangebote auf fuenf; PRO hebt nur dieses Limit
+  auf. Gift-, Reward-, Punkte- und Redemption-Logik bleiben getrennt.
+- `OFFER_PUBLISHED` nutzt den bestehenden Mail-Queue-, Sprach-, Consent- und
+  Deduplizierungsvertrag. BASIC erzeugt kein Ereignis, PRO genau ein Ereignis
+  je Publikationsversion und berechtigtem Customer.
+- Reward-Benachrichtigungen verwenden weiterhin den bestehenden
+  `POINT_REWARD_AVAILABLE`-Schwellenvertrag und erhalten nur ein zentrales
+  Entitlement-Gate; die Punkte- und Reward-Logik wurde nicht neu gebaut.
+- Migration `20260905004000_pro_package_entitlements.sql` und der aktualisierte
+  `transactional-mail-dispatcher` wurden nur auf Staging ausgerollt.
+  Production, Stripe, DNS und oeffentliche Preis-/Verkaufsseiten blieben
+  unveraendert.
+
 ## 2026-09-04 - Platform Admin V1 Betriebsstatus finalisiert
 
 - Minimalen globalen Betriebsstatus fuer Cron/Scheduler, transaktionale

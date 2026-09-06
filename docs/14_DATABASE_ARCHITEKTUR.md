@@ -1,6 +1,32 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-09-05 - Staging-PRO-Plan- und Berechtigungsvertrag
+
+`commercial_plan_catalog` definiert die zentralen Plaene BASIC, PRO und das nur
+architektonisch vorbereitete PREMIUM. Die wirksamen Berechtigungen werden aus
+der primaeren Branch-Subscription und optional genau einer
+`branch_entitlement_overrides`-Zeile aufgeloest. Das Angebotslimit akzeptiert
+nur 1 bis 7 oder die serverseitige Darstellung `unbegrenzt`.
+
+Direkte Browserrechte auf Plan- und Override-Tabellen sind entzogen. Lesen ist
+nur fuer autorisierte Restaurant-Admins des eigenen Tenants oder Platform
+Admins ueber `get_restaurant_entitlements` moeglich. Aenderungen erfolgen nur
+ueber `update_platform_restaurant_entitlements`, verlangen eine aktive
+Platform-Admin-Rolle, Begruendung, `CONFIRMED`, Idempotenzschluessel und einen
+unveraenderbaren Vorher-/Nachher-Auditdatensatz.
+
+Das Angebotslimit gilt ausschliesslich fuer aktive `restaurant_offers` und
+niemals fuer Welcome Gifts, Birthday Gifts, Points Rewards,
+`customer_rewards` oder Einloesungen. Angebots- und Reward-Benachrichtigungen
+werden serverseitig vor dem Einreihen gegen die wirksame Berechtigung geprueft.
+`OFFER_PUBLISHED` verwendet Restaurant, Publikationsversion und Customer als
+Deduplizierungsvertrag und respektiert aktive, bestaetigte
+Angebots-E-Mail-Einwilligungen.
+
+Migration: `20260905004000_pro_package_entitlements.sql`, nur Staging. Keine
+Production-Anwendung.
+
 ## 2026-08-29 - Rechtlicher Betreiber auf Organization-Ebene
 
 Die bestehende `organizations`-Entität ist der kanonische Beziehungsknoten für

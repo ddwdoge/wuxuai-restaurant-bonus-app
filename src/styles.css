@@ -1721,6 +1721,48 @@ a {
   font-size: 19px;
 }
 
+.platform-entitlement-summary,
+.platform-entitlement-controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.platform-entitlement-controls {
+  border-top: 1px solid #e9e2d7;
+  padding-top: 14px;
+}
+
+.platform-entitlement-controls > label {
+  display: grid;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.platform-entitlement-controls input,
+.platform-entitlement-controls select,
+.platform-entitlement-controls textarea {
+  box-sizing: border-box;
+  font: inherit;
+  min-height: 44px;
+  width: 100%;
+}
+
+.platform-entitlement-toggle-row {
+  align-items: center;
+  border: 1px solid #e9e2d7;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 10px;
+}
+
+.platform-entitlement-toggle-row > span {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
 .platform-control-columns {
   display: grid;
   gap: 14px;
@@ -5887,6 +5929,11 @@ a {
   .platform-overall-health strong {
     grid-column: 1 / -1;
     margin-left: 0;
+  }
+
+  .platform-entitlement-toggle-row {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .customer-phone-field-grid { grid-template-columns: minmax(118px, 0.8fr) minmax(0, 1.4fr); }

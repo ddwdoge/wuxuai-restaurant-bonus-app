@@ -31,6 +31,7 @@ import {
 } from "./platformControlCenterView.mjs";
 import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
 import { PlatformOperationsPanel } from "./PlatformOperationsPanel";
+import { PlatformPlanEntitlementsPanel } from "./PlatformPlanEntitlementsPanel";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
@@ -318,6 +319,7 @@ export function PlatformRestaurantControlCenter({
       </details>
 
       <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} />
+      <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} />
 
       <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
         <p>{pendingAction?.impact}</p>

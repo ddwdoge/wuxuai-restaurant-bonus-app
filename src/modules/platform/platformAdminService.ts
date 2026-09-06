@@ -3,6 +3,33 @@ import { supabase } from "../../shared/lib/supabase";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused";
 export type PaymentStatus = "not_required" | "pending" | "paid" | "failed" | "manual";
 export type RestaurantStatus = "active" | "draft" | "suspended";
+export type CommercialPlan = "BASIC" | "PRO" | "PREMIUM";
+
+export type RestaurantEntitlements = {
+  restaurant_id: string;
+  subscription_id: string | null;
+  plan_key: CommercialPlan;
+  monthly_price_eur_ex_vat: number;
+  publicly_available: boolean;
+  active_offer_count: number;
+  commercial_default: EntitlementValues;
+  override: (Partial<EntitlementValues> & {
+    reason: string;
+    changed_by: string;
+    changed_at: string;
+  }) | null;
+  effective: EntitlementValues;
+  stripe_mapping: { lookup_key: string | null; configured: false };
+};
+
+export type EntitlementValues = {
+  offer_limit: number | null;
+  offer_limit_unlimited: boolean;
+  offer_notifications: boolean;
+  reward_notifications: boolean;
+  gift_cards: false;
+  pos_integration: false;
+};
 
 export type PlatformSummary = {
   restaurants_total: number;
@@ -407,6 +434,41 @@ export async function loadPlatformRestaurantOperations(restaurantId: string): Pr
   const { data, error } = await supabase.rpc("get_platform_restaurant_operations", { input_restaurant_id: restaurantId });
   if (error) throw error;
   return data as PlatformRestaurantOperations;
+}
+
+export async function loadRestaurantEntitlements(restaurantId: string): Promise<RestaurantEntitlements> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_restaurant_entitlements", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw error;
+  return data as RestaurantEntitlements;
+}
+
+export async function updatePlatformRestaurantEntitlements(input: {
+  restaurantId: string;
+  action: "PLAN_CHANGED" | "OFFER_LIMIT_OVERRIDE_CHANGED" | "OFFER_NOTIFICATIONS_CHANGED" | "REWARD_NOTIFICATIONS_CHANGED" | "ENTITLEMENT_OVERRIDE_CLEARED";
+  planKey?: CommercialPlan;
+  offerLimit?: number | null;
+  offerLimitUnlimited?: boolean | null;
+  enabled?: boolean | null;
+  reason: string;
+  confirmation: "CONFIRMED";
+}) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("update_platform_restaurant_entitlements", {
+    input_restaurant_id: input.restaurantId,
+    input_action: input.action,
+    input_plan_key: input.planKey ?? null,
+    input_offer_limit: input.offerLimit ?? null,
+    input_offer_limit_unlimited: input.offerLimitUnlimited ?? null,
+    input_enabled: input.enabled ?? null,
+    input_reason: input.reason,
+    input_confirmation: input.confirmation,
+    input_idempotency_key: crypto.randomUUID(),
+  });
+  if (error) throw error;
+  return data as { success: boolean; operation_id: string; entitlements: RestaurantEntitlements };
 }
 
 export async function executePlatformAdminOperation(input: {

@@ -4,6 +4,11 @@
 .restaurant-offers-legal-note { align-items: flex-start; background: #fffaf0; border: 1px solid #ead7a7; border-radius: 8px; color: #322b20; display: flex; gap: 12px; margin: 18px 0; padding: 14px 16px; }
 .restaurant-offers-legal-note svg { color: #a77916; flex: 0 0 auto; margin-top: 2px; }
 .restaurant-offers-legal-note p { margin: 0; }
+.restaurant-offer-entitlement-summary { align-items: center; background: #f7f8f4; border: 1px solid #dce3d6; border-radius: 8px; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 18px 0; padding: 14px 16px; }
+.restaurant-offer-entitlement-summary > div { display: grid; gap: 3px; min-width: 0; }
+.restaurant-offer-entitlement-summary span { color: #686f62; font-size: .78rem; }
+.restaurant-offer-entitlement-summary strong { overflow-wrap: anywhere; }
+.restaurant-offer-entitlement-summary p { color: #62685d; grid-column: 1 / -1; margin: 0; }
 .restaurant-offer-email-summary { display: grid; gap: 13px; margin: 0 0 18px; padding: 15px 16px; border: 1px solid #e6ded0; border-radius: 8px; background: #fff; box-shadow: 0 9px 25px rgba(45, 37, 26, .05); }
 .restaurant-offer-email-summary-heading { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .restaurant-offer-email-summary-heading > svg { color: #a77916; flex: 0 0 auto; }
@@ -89,6 +94,8 @@
   .restaurant-offer-email-summary-heading { align-items: flex-start; flex-wrap: wrap; }
   .restaurant-offer-email-summary-heading > strong { margin-left: 32px; }
   .restaurant-offer-email-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .restaurant-offer-entitlement-summary { grid-template-columns: minmax(0, 1fr); }
+  .restaurant-offer-entitlement-summary p { grid-column: auto; }
 }
 @media (max-width: 390px) { .restaurant-offer-actions { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .restaurant-offer-skeleton { animation: none; } }

@@ -4,6 +4,31 @@
 
 Status: **LOCK**
 
+## Staging-Vorbereitung 2026-09-05 - PRO-Paket und Berechtigungen
+
+- Der kommerzielle Plan ist tenantgebunden und zentral als `BASIC`, `PRO` oder
+  `PREMIUM` aufgeloest. BASIC bleibt das einzige oeffentlich freigegebene
+  V1-Paket; PRO und PREMIUM sind nicht oeffentlich verfuegbar.
+- Platform Admin verwaltet Plan und Support-Ausnahmen im Restaurantdetail unter
+  `Plan & Funktionen`. Planwechsel, Angebotslimit und Benachrichtigungsrechte
+  laufen ausschliesslich ueber einen serverseitigen, tenantgebundenen und als
+  `SENSITIVE` auditierten Vertrag mit Begruendung und `CONFIRMED`.
+- Restaurant Owner sehen Paket, wirksames Angebotslimit und Verbrauch nur
+  lesend. Owner, Staff, Customer und anonyme Benutzer koennen weder Plan noch
+  Berechtigungen direkt aendern.
+- BASIC erlaubt standardmaessig maximal fuenf gleichzeitig aktive, vom
+  Restaurant erstellte Marketingangebote. PRO verwendet ein unbegrenztes
+  Angebotslimit. Geschenke, Rewards, Punkte und Einloesungen werden nicht
+  mitgezaehlt.
+- Geschenkkarten und Kassenanbindung bleiben fuer alle Plaene technisch
+  deaktiviert. Stripe-Zuordnungen sind nur als interne Lookup-Vorbereitung
+  vorhanden; Checkout, Webhook und Verkauf wurden nicht aktiviert.
+- Die Forward-Migration
+  `20260905004000_pro_package_entitlements.sql` wurde ausschliesslich auf
+  Staging `bwhvfjuwixgwduoeqaya` angewendet. Production blieb unveraendert.
+
+Status: **STAGING FINAL LOCK / PRO PUBLIC RELEASE NO**
+
 ## Current Lock 2026-09-04 - Platform Admin V1 Betriebsstatus
 
 - Die Plattform-Startseite zeigt einen minimalen, read-only Betriebsstatus
