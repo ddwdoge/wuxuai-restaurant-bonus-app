@@ -2,6 +2,7 @@ const TEMPLATE_KEYS = new Set([
   "BIRTHDAY_GIFT_ASSIGNED",
   "BIRTHDAY_GIFT_EXPIRY_REMINDER",
   "POINT_REWARD_AVAILABLE",
+  "OFFER_PUBLISHED",
 ]);
 
 export const supportedTransactionalMailLanguages = Object.freeze(["de", "en", "fr", "it", "es", "zh", "ko"]);
@@ -45,6 +46,15 @@ const COPY = {
     es: { subject: "Ya puedes canjear una recompensa | WUXUAI® Bonus", headline: "Tu recompensa está disponible", intro: (r, g) => `Has acumulado suficientes puntos en ${r} para ${g}.`, points: (p) => `La recompensa está disponible a partir de ${p} puntos.`, ready: "La recompensa ya está disponible en tu cuenta Bonus.", cta: "Ver recompensa" },
     zh: { subject: "您现在可以兑换奖励 | WUXUAI® Bonus", headline: "您的奖励已可兑换", intro: (r, g) => `您在 ${r} 已积累足够积分，可兑换${g}。`, points: (p) => `该奖励需要 ${p} 积分。`, ready: "该奖励现已在您的 Bonus 账户中开放。", cta: "查看奖励" },
     ko: { subject: "이제 리워드를 사용할 수 있습니다 | WUXUAI® Bonus", headline: "리워드를 사용할 수 있어요", intro: (r, g) => `${r}에서 ${g}에 필요한 포인트를 모았습니다.`, points: (p) => `이 리워드는 ${p}포인트부터 사용할 수 있습니다.`, ready: "이 리워드는 이제 Bonus 계정에서 사용할 수 있습니다.", cta: "리워드 보기" },
+  },
+  OFFER_PUBLISHED: {
+    de: { subject: "Neues Angebot bei deinem Restaurant | WUXUAI® Bonus", headline: "Ein neues Angebot ist verfügbar", intro: (r) => `${r} hat ein neues Angebot veröffentlicht.`, detail: (o) => `${o} findest du jetzt in deinem Bonuskonto.`, cta: "Angebot ansehen" },
+    en: { subject: "A new offer from your restaurant | WUXUAI® Bonus", headline: "A new offer is available", intro: (r) => `${r} has published a new offer.`, detail: (o) => `${o} is now available in your bonus account.`, cta: "View offer" },
+    fr: { subject: "Une nouvelle offre de votre restaurant | WUXUAI® Bonus", headline: "Une nouvelle offre est disponible", intro: (r) => `${r} a publié une nouvelle offre.`, detail: (o) => `${o} est maintenant disponible dans votre compte Bonus.`, cta: "Voir l’offre" },
+    it: { subject: "Una nuova offerta dal tuo ristorante | WUXUAI® Bonus", headline: "È disponibile una nuova offerta", intro: (r) => `${r} ha pubblicato una nuova offerta.`, detail: (o) => `${o} è ora disponibile nel tuo account Bonus.`, cta: "Vedi l’offerta" },
+    es: { subject: "Una nueva oferta de tu restaurante | WUXUAI® Bonus", headline: "Hay una nueva oferta disponible", intro: (r) => `${r} ha publicado una nueva oferta.`, detail: (o) => `${o} ya está disponible en tu cuenta Bonus.`, cta: "Ver oferta" },
+    zh: { subject: "您关注的餐厅发布了新优惠 | WUXUAI® Bonus", headline: "新优惠已上线", intro: (r) => `${r} 发布了新的优惠。`, detail: (o) => `您现在可以在 Bonus 账户中查看${o}。`, cta: "查看优惠" },
+    ko: { subject: "새로운 레스토랑 혜택 | WUXUAI® Bonus", headline: "새로운 혜택이 도착했습니다", intro: (r) => `${r}에서 새로운 혜택을 공개했습니다.`, detail: (o) => `${o}을(를) Bonus 계정에서 확인할 수 있습니다.`, cta: "혜택 보기" },
   },
 };
 
@@ -103,16 +113,21 @@ export function renderTransactionalMail({ templateKey, restaurantName, restauran
   const copy = COPY[templateKey][resolvedLanguage];
   const restaurant = cleanText(restaurantName, resolvedLanguage === "de" ? "deinem Restaurant" : "your restaurant");
   const reward = cleanText(payload?.reward_name, resolvedLanguage === "de" ? "deine Belohnung" : "your reward");
+  const offer = cleanText(payload?.offer_title, resolvedLanguage === "de" ? "Das neue Angebot" : "The new offer");
   const recipient = cleanText(firstName ?? payload?.first_name, "", 80);
   const greeting = recipient ? `${common.greeting} ${recipient},` : `${common.greeting},`;
   const requiredPoints = Number.isInteger(payload?.required_points) && payload.required_points > 0
     ? payload.required_points
     : null;
   const actionUrl = customerPortalMailUrl(appBaseUrl, restaurantSlug);
-  const intro = templateKey === "POINT_REWARD_AVAILABLE" ? copy.intro(restaurant, reward) : copy.intro(restaurant);
+  const intro = templateKey === "POINT_REWARD_AVAILABLE"
+    ? copy.intro(restaurant, reward)
+    : copy.intro(restaurant);
   const detail = templateKey === "POINT_REWARD_AVAILABLE"
     ? (requiredPoints ? copy.points(requiredPoints) : copy.ready)
-    : copy.detail(reward);
+    : templateKey === "OFFER_PUBLISHED"
+      ? copy.detail(offer)
+      : copy.detail(reward);
   const text = `${greeting}\n\n${intro}\n\n${detail}\n\n${copy.cta}: ${actionUrl}\n\n${common.accountNote}\n${common.support}\n\nWUXUAI® Bonus`;
 
   return {

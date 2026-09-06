@@ -3,6 +3,26 @@
 
 # WUXUAI Bonus V1 – Payment & Stripe Plan
 
+## Founder-Ergaenzung 2026-09-05 - PRO technisch vorbereitet, nicht verkauft
+
+Der oeffentliche V1-Vertrag bleibt BASIC mit 59 EUR pro Monat exkl. USt. PRO
+(99 EUR) und PREMIUM (199 EUR) duerfen auf Staging technisch als
+tenantgebundene Planwerte und Berechtigungen vorbereitet werden, sind aber
+nicht oeffentlich freigegeben und nicht ueber Stripe kaufbar.
+
+Die interne spaetere Zuordnung ist vorbereitet als:
+
+```text
+wuxuai_bonus_basic_monthly -> BASIC
+wuxuai_bonus_pro_monthly   -> PRO
+PREMIUM                    -> noch kein Lookup
+```
+
+Diese Lookup-Werte sind keine Stripe-Konfiguration. Es wurden keine Products,
+Prices, Keys, Checkout-Sessions oder Webhooks angelegt. Geschenkkarten und
+Kassenanbindung bleiben deaktiviert, bis die jeweiligen Module gebaut und
+separat freigegeben sind.
+
 Status: **LOCK**
 
 Dieses Dokument beschreibt den offiziellen Zahlungs-, Testphasen- und Stripe-Plan für WUXUAI Bonus.

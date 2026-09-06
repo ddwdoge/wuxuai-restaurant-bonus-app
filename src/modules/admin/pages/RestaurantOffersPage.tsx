@@ -34,6 +34,7 @@ import {
   loadRestaurantOfferBranches,
   loadRestaurantOfferEmailSummary,
   loadRestaurantOffers,
+  loadOwnerOfferEntitlements,
   restaurantOfferCustomerVisibility,
   restaurantOfferDisplayStatus,
   restaurantOfferPricePresentation,
@@ -45,6 +46,7 @@ import {
   type RestaurantOfferBranch,
   type RestaurantOfferEmailSummary,
   type RestaurantOfferType,
+  type OwnerOfferEntitlements,
 } from "../../offers/restaurantOfferService";
 import "./restaurant-offers.css";
 
@@ -161,6 +163,7 @@ export function RestaurantOffersPage() {
   const [offers, setOffers] = useState<RestaurantOffer[]>([]);
   const [branches, setBranches] = useState<RestaurantOfferBranch[]>([]);
   const [emailSummary, setEmailSummary] = useState<RestaurantOfferEmailSummary | null>(null);
+  const [entitlements, setEntitlements] = useState<OwnerOfferEntitlements | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -179,18 +182,21 @@ export function RestaurantOffersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextOffers, nextBranches, nextEmailSummary] = await Promise.all([
+      const [nextOffers, nextBranches, nextEmailSummary, nextEntitlements] = await Promise.all([
         loadRestaurantOffers(restaurantId),
         loadRestaurantOfferBranches(restaurantId),
         loadRestaurantOfferEmailSummary(restaurantId).catch(() => null),
+        loadOwnerOfferEntitlements(restaurantId).catch(() => null),
       ]);
       setOffers(nextOffers);
       setBranches(nextBranches);
       setEmailSummary(nextEmailSummary);
+      setEntitlements(nextEntitlements);
     } catch (nextError) {
       setOffers([]);
       setBranches([]);
       setEmailSummary(null);
+      setEntitlements(null);
       setError(nextError instanceof Error ? nextError.message : "Angebote konnten nicht geladen werden.");
     } finally {
       setLoading(false);
@@ -358,9 +364,11 @@ export function RestaurantOffersPage() {
   return (
     <div className="premium-owner-page restaurant-offers-page">
       <header className="premium-owner-page-header restaurant-offers-heading">
-        <div><span className="premium-owner-kicker">Informationen für deine Gäste</span><h1>Aktuelles & Angebote</h1><p>Veröffentliche Menüs, Veranstaltungen und Neuigkeiten. Maximal fünf Beiträge können gleichzeitig aktiv sein.</p></div>
+        <div><span className="premium-owner-kicker">Informationen für deine Gäste</span><h1>Aktuelles & Angebote</h1><p>Veröffentliche Menüs, Veranstaltungen und Neuigkeiten. Dein Paket bestimmt die Anzahl gleichzeitig aktiver Angebote.</p></div>
         <button className="button premium-owner-primary-action" onClick={startCreate} type="button"><Plus aria-hidden="true" size={19} />Neues Angebot erstellen</button>
       </header>
+
+      {entitlements ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotslimit"><div><span>Aktuelles Paket</span><strong>{entitlements.plan_key === "BASIC" ? "Basic" : entitlements.plan_key === "PRO" ? "Pro" : "Premium"}</strong></div><div><span>Aktive Angebote</span><strong>{entitlements.effective.offer_limit_unlimited ? `${entitlements.active_offer_count} · unbegrenzt` : `${entitlements.active_offer_count} / ${entitlements.effective.offer_limit}`}</strong></div><p>Plan und Funktionen werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
 
       <section className="restaurant-offers-legal-note">
         <Newspaper aria-hidden="true" size={21} />

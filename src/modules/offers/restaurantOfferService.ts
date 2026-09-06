@@ -20,6 +20,17 @@ export type RestaurantOfferType = (typeof restaurantOfferTypes)[number];
 export type RestaurantOfferStatus = "DRAFT" | "PUBLISHED" | "DISABLED" | "ARCHIVED";
 export type RestaurantOfferEvent = "OFFER_VIEWED" | "OFFER_CTA_CLICKED" | "OFFER_ROUTE_CLICKED" | "OFFER_BONUS_OPENED";
 
+export type OwnerOfferEntitlements = {
+  plan_key: "BASIC" | "PRO" | "PREMIUM";
+  active_offer_count: number;
+  effective: {
+    offer_limit: number | null;
+    offer_limit_unlimited: boolean;
+    offer_notifications: boolean;
+    reward_notifications: boolean;
+  };
+};
+
 export type RestaurantOffer = {
   id: string;
   restaurant_id: string;
@@ -164,13 +175,26 @@ function requireClient() {
 
 function offerError(error: { message?: string } | null) {
   const message = error?.message ?? "";
-  if (message.includes("OFFER_ACTIVE_LIMIT_REACHED")) return new Error("Du kannst maximal fünf Angebote gleichzeitig veröffentlichen.");
+  if (message.includes("OFFER_ACTIVE_LIMIT_REACHED")) {
+    const limit = message.match(/OFFER_ACTIVE_LIMIT_REACHED:(\d+)/)?.[1];
+    return new Error(limit
+      ? `Du hast dein Limit von ${limit} aktiven Angeboten erreicht. Deaktiviere zuerst ein Angebot.`
+      : "Du hast dein Limit für aktive Angebote erreicht. Deaktiviere zuerst ein Angebot.");
+  }
   if (message.includes("OFFER_ACCESS_DENIED")) return new Error("Du darfst Angebote für dieses Restaurant nicht verwalten.");
   if (message.includes("OFFER_BRANCH")) return new Error("Bitte wähle den Standort dieses Restaurants aus.");
   if (message.includes("OFFER_LUNCH_WINDOW_REQUIRED")) return new Error("Für ein Mittagsmenü werden mindestens ein Wochentag und ein Zeitfenster benötigt.");
   if (message.includes("OFFER_PERIOD_EXPIRED")) return new Error("Der gewählte Zeitraum ist bereits abgelaufen.");
   if (message.includes("restaurant_offers_previous_price")) return new Error("Der vorherige Preis muss über dem aktuellen Preis liegen.");
   return new Error("Das Angebot konnte gerade nicht gespeichert werden. Bitte versuche es erneut.");
+}
+
+export async function loadOwnerOfferEntitlements(restaurantId: string): Promise<OwnerOfferEntitlements> {
+  const { data, error } = await requireClient().rpc("get_restaurant_entitlements", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw new Error("Paket und Angebotslimit konnten nicht geladen werden.");
+  return data as OwnerOfferEntitlements;
 }
 
 function offerLoadError() {
