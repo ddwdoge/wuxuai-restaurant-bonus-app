@@ -213,6 +213,7 @@ export function RestaurantOffersPage() {
     if (filter === "inactive") return ["Deaktiviert", "Abgelaufen", "Archiviert"].includes(displayStatus);
     return true;
   }), [filter, offers]);
+  const activeOfferCount = offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
 
   function resetPhoto() {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -401,7 +402,13 @@ export function RestaurantOffersPage() {
             <button aria-pressed={filter === value} className={filter === value ? "active" : ""} key={value} onClick={() => setFilter(value)} type="button">{label}</button>
           ))}
         </div>
-        <span>{offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length} von 5 veröffentlicht und sichtbar</span>
+        <span>
+          {entitlements?.effective.offer_limit_unlimited ? (
+            <><span>Aktive Angebote</span>:{" "}<strong><span>Unbegrenzt</span></strong></>
+          ) : (
+            <><strong>{entitlements ? `${activeOfferCount} / ${entitlements.effective.offer_limit}` : activeOfferCount}</strong>{" "}<span>Aktive Angebote</span></>
+          )}
+        </span>
       </div>
 
       {statusMessage ? <p aria-live="polite" className="restaurant-offers-message">{statusMessage}</p> : null}

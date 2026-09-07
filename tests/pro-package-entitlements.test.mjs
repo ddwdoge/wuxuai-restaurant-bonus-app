@@ -78,6 +78,19 @@ test("Platform Admin and Owner views expose effective values without self-upgrad
   assert.match(offerService, /get_restaurant_entitlements/);
 });
 
+test("Owner offer counter renders Basic five, overrides one through seven and Pro unlimited", () => {
+  assert.match(migration, /'BASIC', 59, true, 5, false, false, false, false/);
+  assert.match(migration, /'PRO', 99, false, null, true, true, false, false/);
+  assert.match(migration, /offer_limit integer check \(offer_limit between 1 and 7\)/);
+  assert.match(offerPage, /const activeOfferCount = offers\.filter/);
+  assert.match(offerPage, /entitlements\.effective\.offer_limit_unlimited/);
+  assert.match(offerPage, /`\$\{activeOfferCount\} \/ \$\{entitlements\.effective\.offer_limit\}`/);
+  assert.match(offerPage, /<span>Aktive Angebote<\/span>/);
+  assert.match(offerPage, /<span>Unbegrenzt<\/span>/);
+  assert.doesNotMatch(offerPage, /von 5 veröffentlicht und sichtbar/);
+  assert.doesNotMatch(offerPage, /plan_key === "BASIC"[^\n]*activeOfferCount/);
+});
+
 test("responsive entitlement controls retain 44px targets and mobile single-column layout", () => {
   assert.match(styles, /\.platform-entitlement-controls input,[\s\S]*min-height: 44px/);
   assert.match(styles, /@media \(max-width: 430px\)[\s\S]*\.platform-entitlement-toggle-row[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
