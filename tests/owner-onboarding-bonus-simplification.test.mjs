@@ -25,7 +25,7 @@ test("kanonische Rueckgabequoten und Persistenz bleiben erhalten", () => {
 
 test("optionale Mobiltelefonnummer ist international nutzbar und aktiviert kein SMS", () => {
   assert.match(registration, /label="Mobiltelefonnummer \(empfohlen\)"/);
-  assert.match(registration, /hint="Empfohlen für zukünftige SMS-Benachrichtigungen\."/);
+  assert.match(registration, /hint=\{t\("auth\.register\.phoneHint"\)\}/);
   assert.match(registration, /autoComplete="tel"/);
   assert.match(registration, /optional/);
   assert.match(registration, /type="tel"/);

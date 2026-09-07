@@ -35,9 +35,10 @@ test("alle aktiven Owner-Akquiseflächen verwenden die zentrale Vertragsquelle",
     assert.match(source, /commercialContract\.mjs/);
     assert.doesNotMatch(source, /30 Tage kostenlos|149\s*(?:€|EUR)/);
   }
-  assert.match(registerPage, /V1_COMMERCIAL_COPY\.registrationCta/);
-  assert.match(registerPage, /V1_COMMERCIAL_COPY\.price/);
-  assert.match(publicHome, /V1_COMMERCIAL_COPY\.trial/);
+  assert.match(registerPage, /V1_COMMERCIAL_CONTRACT\.trial\.calendarMonths/);
+  assert.match(registerPage, /V1_COMMERCIAL_CONTRACT\.basePlan\.monthlyPrice/);
+  assert.match(publicHome, /V1_COMMERCIAL_CONTRACT\.trial\.calendarMonths/);
+  assert.match(publicHome, /V1_COMMERCIAL_CONTRACT\.basePlan\.monthlyPrice/);
   assert.match(settingsPage, /addV1TrialMonthsIso/);
 });
 

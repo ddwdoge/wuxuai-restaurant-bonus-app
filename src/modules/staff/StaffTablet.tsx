@@ -26,6 +26,7 @@ import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
 import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
@@ -171,6 +172,7 @@ function extractCustomerToken(value: string) {
 }
 
 export function StaffTablet() {
+  const { translateKey } = useI18n();
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { signOut, user } = useAuth();
@@ -1111,8 +1113,8 @@ export function StaffTablet() {
           <h2>{recognizedCustomerName ? `Punkte für ${recognizedCustomerName} vergeben` : pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
           {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
           {pointsQrReference ? <div className="restaurant-controlled-credit">
-            <p className="muted">Erfasse nur den direkt im Restaurant bezahlten Betrag nach Rabatten. Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht.</p>
-            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel><input aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /></div>
+            <p className="muted">{translateKey("staff.kassa.supportedPurchase")}</p>
+            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel><input aria-describedby="bonus-amount-help" aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /><small id="bonus-amount-help">{translateKey("staff.kassa.amountHelp")}</small></div>
             {!pointsPreview ? <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
               <span>{pointsPreview.customer_label} · aktuell {pointsPreview.points_balance} Punkte</span>
               <strong>+{pointsPreview.expected_points} Punkte</strong>
@@ -1445,9 +1447,9 @@ export function StaffTablet() {
 
               <section className="staff-operational-points-form" aria-labelledby="staff-scanner-points-title">
                 <div><span className="staff-premium-kicker">Punkte gutschreiben</span><h3 id="staff-scanner-points-title">Bezahlten Betrag erfassen</h3></div>
-                <p className="muted">Nur der direkt im Restaurant bezahlte Betrag nach Rabatten zählt.</p>
+                <p className="muted">{translateKey("staff.kassa.supportedPurchase")}</p>
                 <div className="field">
-                  <FormLabel htmlFor="scanner-controlled-bill-amount" required>Bonusberechtigter Betrag</FormLabel>
+                  <FormLabel htmlFor="scanner-controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel>
                   <input
                     aria-required="true"
                     className="input"
@@ -1544,7 +1546,7 @@ export function StaffTablet() {
 
           <aside className="staff-premium-help-card">
             <HelpCircle aria-hidden="true" size={22} />
-            <div><strong>Hilfe im Service</strong><p>Bei Fragen zu einem Vorgang wende dich an die Restaurantleitung.</p></div>
+            <div><strong>Hilfe im Service</strong><p><strong>{translateKey("staff.kassa.afterRedemption")}</strong> {translateKey("staff.kassa.recordInstruction")}</p><p>Bei Fragen zu einem Vorgang wende dich an die Restaurantleitung.</p></div>
           </aside>
 
           <div className="staff-premium-session-card">

@@ -52,8 +52,8 @@ test("protected portals show loading and retry states instead of a blank page", 
   assert.ok(protectedRoute.indexOf("if (loading)") < protectedRoute.indexOf("if (!user)"));
   assert.match(protectedRoute, /Lade Sitzung/);
   assert.match(protectedRoute, /onClick=\{retryAuthorization\}/);
-  assert.match(app, /Restaurantdaten konnten nicht geladen werden/);
-  assert.match(app, /onClick=\{\(\) => void refreshTenants\(\)\}/);
+  assert.match(app, /errors\.restaurantData/);
+  assert.match(app, /retry=\{\(\) => void refreshTenants\(\)\}/);
   assert.match(staffRouteGate, /onClick=\{\(\) => setRevision/);
   assert.match(staffRouteGate, /Erneut versuchen/);
 });

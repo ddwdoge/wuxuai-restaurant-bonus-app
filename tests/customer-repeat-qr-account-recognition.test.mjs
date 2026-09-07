@@ -17,6 +17,7 @@ import {
 const portalSource = await readFile(new URL("../src/modules/customer/CustomerPortal.tsx", import.meta.url), "utf8");
 const tokenStorageSource = await readFile(new URL("../src/modules/customer/customerTokenStorage.ts", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../src/app/App.tsx", import.meta.url), "utf8");
+const i18nCatalog = await readFile(new URL("../src/shared/i18n/catalog.mjs", import.meta.url), "utf8");
 const identityMigration = await readFile(new URL("../supabase/migrations/20260727001000_customer_identity_v1_no_sms.sql", import.meta.url), "utf8");
 const deviceMigration = await readFile(new URL("../supabase/migrations/20260704242000_flow_05_device_referral_abuse_protection.sql", import.meta.url), "utf8");
 const portalMigration = await readFile(new URL("../supabase/migrations/20260726002000_reward_image_crop_metadata.sql", import.meta.url), "utf8");
@@ -98,7 +99,8 @@ test("Portal liest den Zugang synchron vor dem ersten Load und zeigt keinen Regi
   assert.match(portalSource, /useState<string \| null>\(\(\) => \([\s\S]*readStoredCustomerToken\(restaurantSlug\)/);
   assert.doesNotMatch(portalSource, /useEffect\(\(\) => \{\s*if \(!isUsableRestaurantSlug\(restaurantSlug\)\) return;\s*setStoredCustomerToken/);
   assert.match(portalSource, /LoadingState description="Dein Bonuskonto wird erkannt …"/);
-  assert.match(appSource, /Dein Bonuskonto wird erkannt …/);
+  assert.match(appSource, /t\("auth\.customerLoading"\)/);
+  assert.match(i18nCatalog, /"auth\.customerLoading": "Dein Bonuskonto wird erkannt …"/);
 });
 
 test("Registrierung wird erst nach verifizierter Speicherung als fertig angezeigt", () => {

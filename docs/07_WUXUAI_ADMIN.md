@@ -966,3 +966,6 @@ unverändert ausgegeben. Fehlt die Restaurantkonfiguration, zeigt die Oberfläch
 Der Datenbankstandard für neue Einstellungen bleibt 5, der zulässige
 Owner-Bereich 1 bis 100. Zugriff auf den Aggregationsvertrag bleibt auf aktive,
 serverseitig geprüfte Platform Admins begrenzt.
+# Ergänzung: Sprache und Rechtsraum
+
+Platform Admin erhält eine ausschließlich lesende Diagnose für Betriebssprache, Geschäftsland, Rechtsraum, rechtlichen Prüfstatus sowie veröffentlichte und angenommene Dokumentstände. Der Rechtsraum wird serverseitig aus dem Geschäfts-/Organisationsvertrag ermittelt und nie aus der UI-Sprache. Rechtstexte oder Rechtsräume können in Phase 1 nicht frei bearbeitet werden.

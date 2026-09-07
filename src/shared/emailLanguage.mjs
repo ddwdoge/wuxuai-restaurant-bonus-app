@@ -1,22 +1,19 @@
-export const SUPPORTED_EMAIL_LANGUAGES = Object.freeze(["de", "en", "fr", "it", "es", "zh", "ko"]);
+import {
+  normalizeUiLanguage,
+  resolveUiLanguage,
+  SUPPORTED_UI_LANGUAGES,
+} from "./i18n/language.mjs";
 
-const SUPPORTED = new Set(SUPPORTED_EMAIL_LANGUAGES);
+export const SUPPORTED_EMAIL_LANGUAGES = SUPPORTED_UI_LANGUAGES;
 
 export function normalizeEmailLanguage(value, fallback = "en") {
-  const candidate = typeof value === "string"
-    ? value.trim().toLowerCase().replace("_", "-").split("-")[0]
-    : "";
-  return SUPPORTED.has(candidate) ? candidate : fallback;
+  return normalizeUiLanguage(value, fallback);
 }
 
 export function browserEmailLanguage(navigatorLike = globalThis.navigator ?? null) {
-  const candidates = [
+  const deviceLanguages = [
     ...(Array.isArray(navigatorLike?.languages) ? navigatorLike.languages : []),
     navigatorLike?.language,
   ];
-  for (const candidate of candidates) {
-    const normalized = normalizeEmailLanguage(candidate, "");
-    if (normalized) return normalized;
-  }
-  return "en";
+  return resolveUiLanguage({ deviceLanguages }).language;
 }

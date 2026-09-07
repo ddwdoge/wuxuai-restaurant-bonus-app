@@ -35,6 +35,58 @@ body {
   overflow-x: hidden;
 }
 
+.wux-language-selector {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #d8d2c7;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(39, 32, 22, 0.1);
+  display: inline-flex;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 8px;
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: max(12px, env(safe-area-inset-top));
+  z-index: 120;
+}
+
+.wux-language-selector select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #2f2b25;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0 22px 0 0;
+}
+
+.wux-language-selector:focus-within {
+  outline: 3px solid rgba(69, 119, 82, 0.28);
+  outline-offset: 2px;
+}
+
+html.cjk body {
+  font-family: Inter, "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  line-break: strict;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media (max-width: 430px) {
+  .wux-language-selector {
+    right: 8px;
+    top: max(8px, env(safe-area-inset-top));
+  }
+
+  .wux-language-selector select {
+    max-width: 116px;
+  }
+}
+
 button,
 input,
 select,
@@ -1870,6 +1922,63 @@ a {
   border: 1px solid #e5dfd2;
   border-radius: 8px;
   padding: 0 16px 16px;
+}
+
+.platform-legal-error {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.platform-legal-error p {
+  flex: 1;
+  margin: 0;
+}
+
+.platform-legal-documents {
+  margin-top: 20px;
+}
+
+.platform-legal-documents article {
+  align-items: center;
+  border-top: 1px solid #e5dfd2;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  padding: 14px 0;
+}
+
+.platform-legal-documents article div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.platform-legal-documents article span,
+.platform-legal-documents article small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .platform-legal-error {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .platform-legal-error .button {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .platform-legal-documents article {
+    align-items: start;
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .platform-legal-documents article small {
+    grid-column: 2;
+  }
 }
 
 .platform-technical-details summary {

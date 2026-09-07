@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { translateStructural } from "../i18n/catalog.mjs";
 
 type AppDrawerProps = {
   children: ReactNode;
@@ -122,7 +123,7 @@ export function AppDrawer({
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
-          <button aria-label="Ansicht schließen" className="app-drawer-close" onClick={onClose} type="button">
+          <button aria-label={translateStructural("common.close", "de")} className="app-drawer-close" onClick={onClose} type="button">
             <X aria-hidden="true" size={20} />
           </button>
         </header>

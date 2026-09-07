@@ -7,6 +7,7 @@ const page = readFileSync("src/modules/reports/BonusActivityReportsPage.tsx", "u
 const service = readFileSync("src/modules/reports/bonusActivityService.ts", "utf8");
 const router = readFileSync("src/app/App.tsx", "utf8");
 const layout = readFileSync("src/modules/admin/AdminLayout.tsx", "utf8");
+const i18nCatalog = readFileSync("src/shared/i18n/catalog.mjs", "utf8");
 const legalPage = readFileSync("src/modules/legal/OwnerLegalSettingsPage.tsx", "utf8");
 
 test("journal is an additive dedicated table", () => {
@@ -130,7 +131,8 @@ test("CSV includes legal and snapshot metadata", () => {
 
 test("owner route and navigation expose reports", () => {
   assert.match(router, /path="reports"/);
-  assert.match(layout, /to: "\/admin\/reports", label: "Berichte"/);
+  assert.match(layout, /to: "\/admin\/reports", label: t\("owner\.reports"\)/);
+  assert.match(i18nCatalog, /"owner\.reports": "Berichte"/);
 });
 
 test("owner page provides period selection and redemption journal", () => {

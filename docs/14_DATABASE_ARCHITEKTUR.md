@@ -1451,3 +1451,16 @@ Eindeutige Indizes verhindern doppelte Willkommensgeschenke und doppelte Geburts
   von `staff`/`supervisor` in `restaurant_members` sind nicht erlaubt.
 - Entfernen ist eine auditierte Archivierung; historische Aktionen und
   Auditdaten bleiben erhalten.
+# Ergänzung: Rechtsraum je Dokumentversion
+
+`legal_document_version_jurisdictions` ergänzt die bestehende unveränderbare Rechtsdokument-Versionierung um den zweistelligen Rechtsraum. Die Zuordnung ist nach Erstellung unveränderbar, hat keine Browser-Grants und wird aus der Organisations-/Geschäftsadresse abgeleitet. Fehlende Rechtsraumdaten führen zu `unavailable`; sie dürfen nie durch das Land der UI-Sprache ersetzt werden.
+# Kassa-Compliance V3 (Staging-Vorbereitung 2026-09-06)
+
+WUXUAI® Bonus bleibt vom Kassensystem, RKSV, Steuerberechnung und Belegwesen
+getrennt. `kassa_redemption_workflows` referenziert das unveränderliche
+`redemption_activity_journal` und dokumentiert ausschließlich den internen
+Restaurant-Arbeitsschritt `OPEN -> RECORDED -> OWNER_REVIEWED`. Browserzugriff
+auf beide neuen Tabellen ist entzogen; Statuswechsel erfolgen tenantgebunden,
+idempotent und auditiert über benannte RPCs. Die versionierte Bestätigung
+`kassa-separation-de-v1` wird append-only mit Serverzeit, Akteur, UI-Sprache und
+rechtlicher Jurisdiktion gespeichert.

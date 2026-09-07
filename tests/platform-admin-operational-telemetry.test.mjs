@@ -6,6 +6,7 @@ import { getOperationalReasonLabel, getOperationalStatusPresentation } from "../
 const migration = readFileSync(new URL("../supabase/migrations/20260904001000_platform_admin_v1_operational_telemetry.sql", import.meta.url), "utf8");
 const page = readFileSync(new URL("../src/modules/platform/PlatformAdminPage.tsx", import.meta.url), "utf8");
 const component = readFileSync(new URL("../src/modules/platform/PlatformOperationalTelemetry.tsx", import.meta.url), "utf8");
+const i18nCatalog = readFileSync(new URL("../src/shared/i18n/catalog.mjs", import.meta.url), "utf8");
 const service = readFileSync(new URL("../src/modules/platform/platformAdminService.ts", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
@@ -67,9 +68,8 @@ test("Dashboard lädt den eng begrenzten RPC und zeigt die drei freigegebenen Be
   assert.match(service, /supabase\.rpc\("get_platform_operational_telemetry"\)/);
   assert.doesNotMatch(service, /loadPlatformOperationalTelemetry[\s\S]{0,600}\.from\(/);
   assert.match(page, /<OperationalTelemetry/);
-  for (const label of ["Cron \/ Scheduler", "Transaktions-E-Mail", "Registrierungen"]) {
-    assert.match(component, new RegExp(label));
-  }
+  for (const key of ["platform.cron", "platform.email", "platform.registrations"]) assert.match(component, new RegExp(`t\\("${key.replace(".", "\\.")}"\\)`));
+  for (const label of ["Cron \/ Scheduler", "Transaktions-E-Mail", "Registrierungen"]) assert.match(i18nCatalog, new RegExp(label));
   assert.match(component, /Nicht aus der Datenbank prüfbar/);
 });
 

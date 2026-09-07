@@ -55,7 +55,7 @@ test("expiry is formatted for Vienna and active customer copy distinguishes bene
 
 test("customer UX uses current owner duration and contains no active 30 or 15 day referral copy", () => {
   assert.match(portal, /normalizeReferralBonusDuration\(settings\?\.referral_boost_duration_days\)/);
-  assert.match(portal, /formatInvitedReferralDuration\(referralBoostDurationDays\)/);
+  assert.match(portal, /formatInvitedReferralDuration\(referralBoostDurationDays, language\)/);
   assert.doesNotMatch(portal, /30 Tage|15 Tage/);
 });
 

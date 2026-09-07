@@ -15,7 +15,7 @@ test("AppDrawer besitzt Dialogsemantik und zentrale Schließwege", () => {
   assert.match(drawer, /role="dialog"/);
   assert.match(drawer, /event\.key === "Escape"/);
   assert.match(drawer, /event\.target === event\.currentTarget/);
-  assert.match(drawer, /aria-label="Ansicht schließen"/);
+  assert.match(drawer, /aria-label=\{translateStructural\("common\.close", "de"\)\}/);
 });
 
 test("AppDrawer hält den Fokus und gibt ihn beim Schließen zurück", () => {

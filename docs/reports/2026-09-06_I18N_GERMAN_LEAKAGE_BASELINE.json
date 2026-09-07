@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-09-07T23:23:33.575Z",
+  "detector": "Static rendered-copy recovery inventory; physical DOM QA remains mandatory after translation.",
+  "ready": true,
+  "locales": {
+    "en": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 58
+    },
+    "fr": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 19
+    },
+    "it": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 24
+    },
+    "es": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 22
+    },
+    "zh": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 16
+    },
+    "ko": {
+      "untranslated_count": 0,
+      "examples": [],
+      "intentionally_invariant_count": 11
+    }
+  },
+  "excluded_local_only_count": 30,
+  "user_visible_unclassified": 0
+}

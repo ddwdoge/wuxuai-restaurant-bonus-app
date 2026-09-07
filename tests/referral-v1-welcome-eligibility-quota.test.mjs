@@ -85,7 +85,7 @@ test("customer UI is locked before eligibility and reports quota and pending sta
   assert.match(customerPortal, /referralInviteStatus\?\.eligible === true/);
   assert.match(customerPortal, /Nach deinem ersten qualifizierten Besuch kannst du Freunde einladen/);
   assert.match(customerPortal, /Einladungen diesen Monat:/);
-  assert.match(customerPortal, /Du kannst noch/);
+  assert.match(customerPortal, /customer\.invitesRemaining/);
   assert.match(customerPortal, /Monatslimit erreicht/);
   assert.match(customerPortal, /referralResetLabel/);
   assert.match(customerPortal, /Freund erfolgreich eingeladen/);

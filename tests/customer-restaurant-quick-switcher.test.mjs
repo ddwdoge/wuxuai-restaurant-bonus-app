@@ -12,6 +12,7 @@ const [portal, header, switcher, switcherCss, access, service, migration] = awai
   readFile(new URL("../src/modules/customer/customerAccountService.ts", import.meta.url), "utf8"),
   readFile(new URL("../supabase/migrations/20260804003000_central_customer_login_restaurant_context.sql", import.meta.url), "utf8"),
 ]);
+const i18nCatalog = await readFile(new URL("../src/shared/i18n/catalog.mjs", import.meta.url), "utf8");
 
 function membership(index, overrides = {}) {
   return {
@@ -27,7 +28,8 @@ function membership(index, overrides = {}) {
 }
 
 test("Header trennt Restaurantwechsel und Restaurantinformation", () => {
-  assert.match(header, /aria-label="Aktuelles Restaurant wechseln"/);
+  assert.match(header, /aria-label=\{t\("customer\.restaurantSwitch"\)\}/);
+  assert.match(i18nCatalog, /"customer\.restaurantSwitch": "Aktuelles Restaurant wechseln"/);
   assert.match(header, /premium-customer-restaurant-selector/);
   assert.match(header, /<ChevronDown/);
   assert.match(header, /className="premium-icon-button" onClick=\{onInfo\}/);

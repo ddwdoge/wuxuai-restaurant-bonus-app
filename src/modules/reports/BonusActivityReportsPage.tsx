@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ban, CalendarDays, Download, FileClock, Gift, Printer, RefreshCw, ShieldAlert, Users } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
 import { useTenant } from "../tenant/TenantProvider";
 import {
@@ -16,6 +17,7 @@ import {
   type RestaurantBranch,
 } from "./bonusActivityService";
 import "./bonus-activity-reports.css";
+import { loadKassaReconciliation, recordKassaRedemption, reviewKassaRedemption, type KassaReconciliation } from "../kassa/kassaComplianceService";
 
 const periodOptions: Array<{ value: RedemptionReportPeriod; label: string }> = [
   { value: "today", label: "Heute" },
@@ -48,6 +50,7 @@ function formatReportTime(value: string, timezone: string) {
 }
 
 export function BonusActivityReportsPage() {
+  const { translateKey } = useI18n();
   const { restaurantRole } = useAuth();
   const { activeRestaurant } = useTenant();
   const [period, setPeriod] = useState<RedemptionReportPeriod>("this_month");
@@ -63,10 +66,29 @@ export function BonusActivityReportsPage() {
   const [cancelTarget, setCancelTarget] = useState<RedemptionReportRow | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [kassa, setKassa] = useState<KassaReconciliation | null>(null);
+  const [kassaBusy, setKassaBusy] = useState<string | null>(null);
+  const [kassaError, setKassaError] = useState<string | null>(null);
 
   const canViewReports = restaurantRole === "owner" || restaurantRole === "admin";
   const restaurantId = activeRestaurant?.id ?? null;
   const customPeriodComplete = period !== "custom" || Boolean(customFrom && customTo);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Vienna", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+  const refreshKassa = useCallback(async () => {
+    if (!restaurantId) return;
+    try { setKassaError(null); setKassa(await loadKassaReconciliation(restaurantId, today)); }
+    catch { setKassaError("Kassa-Abgleich konnte nicht geladen werden."); }
+  }, [restaurantId, today]);
+  useEffect(() => { if (canViewReports) void refreshKassa(); }, [canViewReports, refreshKassa]);
+
+  async function transitionKassa(id: string, review: boolean) {
+    if (!restaurantId || kassaBusy) return;
+    setKassaBusy(id); setKassaError(null);
+    try { if (review) await reviewKassaRedemption(restaurantId, id); else await recordKassaRedemption(restaurantId, id); await refreshKassa(); }
+    catch { setKassaError("Status konnte nicht sicher gespeichert werden."); }
+    finally { setKassaBusy(null); }
+  }
 
   const loadReport = useCallback(async () => {
     if (!restaurantId || !canViewReports || !customPeriodComplete) return;
@@ -159,6 +181,13 @@ export function BonusActivityReportsPage() {
         </section>
 
         {period === "this_year" ? <section className="card bonus-annual-overview"><h2>Jahresübersicht Bonus &amp; Einlösungen</h2><div>{report.monthly_series.map((item) => <span key={item.month}><small>{new Intl.DateTimeFormat("de-AT", { month: "short" }).format(new Date(2026, item.month - 1, 1))}</small><strong>{item.count}</strong></span>)}</div></section> : null}
+
+        <section className="card kassa-reconciliation" aria-label={translateKey("owner.kassa.reconcileTitle")}>
+          <header><div><h2>{translateKey("owner.kassa.reconcileTitle")}</h2><p>{translateKey("owner.kassa.reconcileDescription")}</p></div><button className="button secondary" onClick={() => void refreshKassa()} type="button"><RefreshCw size={17} /> {translateKey("platform.audit.refresh")}</button></header>
+          {kassaError ? <p role="alert">{kassaError}</p> : null}
+          {kassa?.rows.length ? <div className="bonus-report-table-wrap"><table><thead><tr><th>Zeit</th><th>Belohnung</th><th>Status</th><th>Aktion</th></tr></thead><tbody>{kassa.rows.map((row) => <tr key={row.id}><td>{formatReportTime(row.redeemed_at, kassa.timezone)}</td><td>{row.reward_name ?? row.reward_type}</td><td>{translateKey(row.status === "OPEN" ? "owner.kassa.statusOpen" : row.status === "RECORDED" ? "owner.kassa.statusRecorded" : "owner.kassa.statusReviewed")}</td><td>{row.status === "OPEN" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, false)} type="button">{translateKey("owner.kassa.recordAction")}</button> : row.status === "RECORDED" && restaurantRole === "owner" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, true)} type="button">{translateKey("owner.kassa.reviewAction")}</button> : "–"}</td></tr>)}</tbody></table></div> : <p>{translateKey("owner.kassa.empty")}</p>}
+          <details><summary>{translateKey("owner.kassa.helpTitle")}</summary><p>{translateKey("owner.kassa.helpBody")}</p></details>
+        </section>
 
         <section className="bonus-report-journal" aria-label="Einlösungsprotokoll">
           <header><div><h2>Einlösungsprotokoll</h2><p>Zeiten werden nach {report.timezone} angezeigt.</p></div><span>{report.rows.length} Einträge</span></header>
