@@ -68,6 +68,12 @@ test("new qualifications split the saved duration without changing active period
   assert.match(finalMigration, /pg_advisory_xact_lock/);
   assert.equal(formatInvitedReferralDuration(7), "84 Stunden");
   assert.equal(formatInvitedReferralDuration(14), "7 Tage");
+  assert.equal(formatInvitedReferralDuration(14, "en"), "7 days");
+  assert.equal(formatInvitedReferralDuration(14, "fr"), "7 jours");
+  assert.equal(formatInvitedReferralDuration(14, "it"), "7 giorni");
+  assert.equal(formatInvitedReferralDuration(14, "es"), "7 días");
+  assert.equal(formatInvitedReferralDuration(14, "zh"), "7 天");
+  assert.equal(formatInvitedReferralDuration(14, "ko"), "7 일");
 });
 
 test("settings changes create a safe tenant-scoped audit event", () => {
@@ -81,8 +87,10 @@ test("settings changes create a safe tenant-scoped audit event", () => {
 test("customer referral copy distinguishes full and half duration", () => {
   assert.match(referralLanding, /normalizeReferralBonusDuration\(data\.settings\.referral_boost_duration_days\)/);
   assert.match(referralLanding, /formatInvitedReferralDuration/);
+  assert.match(referralLanding, /formatInvitedReferralDuration\(referralDurationDays, language\)/);
   assert.doesNotMatch(referralLanding, /30 Tage lang 2×/);
   assert.match(customerPortal, /invitedReferralDurationLabel/);
+  assert.match(customerPortal, /formatInvitedReferralDuration\(referralBoostDurationDays, language\)/);
   assert.match(customerPortal, /Dein Einladungsbonus/);
   assert.match(customerPortal, /50 % der eingestellten Bonusdauer/);
   assert.match(customerPortal, /die volle Bonusdauer/);

@@ -5,7 +5,9 @@ import { App } from "./app/App";
 import { AuthProvider } from "./modules/auth/AuthProvider";
 import { TenantProvider } from "./modules/tenant/TenantProvider";
 import { installDeploymentRecovery } from "./app/deploymentRecovery.mjs";
+import { I18nProvider } from "./shared/i18n/I18nProvider";
 import "./styles.css";
+import "./shared/ui/ui-system.css";
 
 installDeploymentRecovery();
 
@@ -14,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthProvider>
         <TenantProvider>
-          <App />
+          <I18nProvider>
+            <App />
+          </I18nProvider>
         </TenantProvider>
       </AuthProvider>
     </BrowserRouter>

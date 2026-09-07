@@ -5,20 +5,25 @@ import {
   PublicPageShell,
   PublicPrimaryLink,
 } from "./PublicPageComponents";
-import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { V1_COMMERCIAL_CONTRACT } from "../../shared/commercialContract.mjs";
 
 export function PublicHome() {
+  const { translateKey: t } = useI18n();
+  const registrationDescription = t("public.home.registrationDescription")
+    .replace("{months}", String(V1_COMMERCIAL_CONTRACT.trial.calendarMonths))
+    .replace("{price}", String(V1_COMMERCIAL_CONTRACT.basePlan.monthlyPrice));
   return (
     <PublicPageShell
-      description="Ein Login für Restaurants. Ein QR für Gäste."
-      eyebrow="WUXUAI Bonus"
-      title="Bonusprogramm einfach starten."
+      description={t("public.home.description")}
+      eyebrow="WUXUAI® Bonus"
+      title={t("public.home.title")}
       width="entry"
     >
       <div className="public-premium-entry-grid">
-        <PublicEntryCard action="Öffnen" description="Für Restaurantbesitzer und Manager." icon={Store} title="Restaurant Login" to="/login" />
-        <PublicEntryCard action="Kostenlos starten" description={`Bonusprogramm in wenigen Minuten einrichten. ${V1_COMMERCIAL_COPY.trial}. ${V1_COMMERCIAL_COPY.price}`} icon={Sparkles} title="Restaurant registrieren" to="/register" />
-        <PublicEntryCard action="Öffnen" description="Bonuskonto öffnen oder den QR-Code im Restaurant scannen." icon={QrCode} title="Gast-Bonus öffnen" to="/customer" />
+        <PublicEntryCard action={t("public.home.open")} description={t("public.home.ownerDescription")} icon={Store} title={t("public.home.ownerTitle")} to="/login" />
+        <PublicEntryCard action={t("public.home.startFree")} description={registrationDescription} icon={Sparkles} title={t("public.home.registrationTitle")} to="/register" />
+        <PublicEntryCard action={t("public.home.open")} description={t("public.home.customerDescription")} icon={QrCode} title={t("public.home.customerTitle")} to="/customer" />
       </div>
     </PublicPageShell>
   );

@@ -7,5 +7,5 @@ export function isValidReferralBonusDuration(durationDays: number): boolean;
 export function isReferralBonusDurationPreset(durationDays: number): boolean;
 export function normalizeReferralBonusDuration(durationDays: number | null | undefined): number;
 export function invitedReferralDurationDays(configuredDurationDays: number): number;
-export function formatReferralDuration(durationDays: number): string;
-export function formatInvitedReferralDuration(configuredDurationDays: number): string;
+export function formatReferralDuration(durationDays: number, language?: string): string;
+export function formatInvitedReferralDuration(configuredDurationDays: number, language?: string): string;

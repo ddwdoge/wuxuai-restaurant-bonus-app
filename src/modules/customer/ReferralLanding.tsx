@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -31,6 +32,7 @@ import "./central-customer.css";
 export function ReferralLanding() {
   const { restaurantSlug = "", referralToken = "" } = useParams();
   const { loading: authLoading, portalAccess, user } = useAuth();
+  const { language } = useI18n();
   const [data, setData] = useState<PublicReferralData | null>(null);
   const [legalCenterState, setLegalCenterState] = useState<LegalCenterState>({ status: "loading" });
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -104,7 +106,7 @@ export function ReferralLanding() {
   }
 
   const referralDurationDays = normalizeReferralBonusDuration(data.settings.referral_boost_duration_days);
-  const invitedDurationLabel = formatInvitedReferralDuration(referralDurationDays);
+  const invitedDurationLabel = formatInvitedReferralDuration(referralDurationDays, language);
   const invitationTitle = referralInvitationTitle(inviterFirstName);
   const legalReady = legalCenterState.status === "ready";
 

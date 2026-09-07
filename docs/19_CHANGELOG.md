@@ -1,6 +1,24 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-06 - Unified UI/UX System Phase 2 auf Staging finalisiert
+
+- Gemeinsame Design-Tokens und wiederverwendbare Komponenten fuer Buttons,
+  Formulare, Karten, Status, Dialoge und Standardzustaende eingefuehrt.
+- Bestehende Owner-, Customer-, Staff- und Platform-Oberflaechen an denselben
+  visuellen Vertrag gebunden, ohne rollenbezogene Navigation oder Fachlogik zu
+  veraendern.
+- Bekannten 320-Pixel-Ueberlauf der Registration Telemetry behoben und
+  Tabellen, Fokus, Touchflaechen sowie Latin-/ZH-/KO-Font-Fallbacks vereinheitlicht.
+- Erste strukturelle Translation-Key-Migration reduziert das reproduzierbare
+  Hardcoding-Inventar von 1906 auf 1831; Volluebersetzungen bleiben spaeter.
+- Keine neue Migration, kein Stripe, keine PRO-Freischaltung und keine
+  Production-Aenderung.
+- Finalen Build als Worker-Version
+  `9cddcc52-d3cb-4c94-9fce-0b966dad29f4` nur auf Staging veroeffentlicht und
+  Platform Admin, Owner, Staff sowie Customer physisch ohne Datenmutation
+  geprueft.
+
 ## 2026-09-05 - PRO-Paket technisch auf Staging vorbereitet
 
 - Zentrale, tenantgebundene Plaene BASIC, PRO und das nicht oeffentlich
@@ -3758,3 +3776,30 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Customer- und Staff-Beziehungen bleiben erhalten. Owner-Provisionierung,
   Tenantgrenzen, atomarer Trial, Commercial Contract und Datenbankvertrag
   wurden nicht geaendert; keine Migration.
+# 2026-09-06 – I18N / Legal Architecture Phase 1
+
+- Zentralen Vertrag für DE/EN/FR/IT/ES/ZH/KO mit expliziter Präferenz, Gerätesprache und EN-Fallback vorbereitet.
+- UI-Sprache und rechtlichen Geschäftsraum technisch getrennt.
+- Unveränderbare Rechtsraum-Zuordnung für Dokumentversionen und lesende Platform-Admin-Diagnose vorbereitet.
+- Vorhandene sieben-sprachige E-Mail-Lokalisierung an gemeinsame Sprachkennungen angebunden.
+- 1.906 sichtbare strukturelle UI-Textvorkommen für die nachfolgende Unified-UI-/Übersetzungsphase inventarisiert; keine Vollübersetzung vorgenommen.
+
+## 2026-09-06 - Sieben-Sprachen-First-Pass, physischer Scope-Blocker
+
+- Exakt 1.217 geprüfte statische UI-Quelltexte wurden unter der freigegebenen Datenminimierung als Übersetzungs-First-Pass für DE/EN/FR/IT/ES/ZH/KO verarbeitet; 188 ausgeschlossene Texte blieben lokal.
+- Die sieben Kataloge besitzen 1.405 identische Schlüssel, null fehlende Werte und unveränderte Platzhalter sowie Markenbegriffe. Explizite Präferenz, Gerätesprache, EN-Fallback und locale-aware Formatierung sind technisch angebunden.
+- 1.322 Tests, Typecheck, Lint, Build und eine responsive Matrix aus 245 Zuständen sind grün.
+- Die physische Prüfung fand deutsche Resttexte aus JavaScript-Ausdrücken und zusammengesetzten Template-Strings, die außerhalb des eingefrorenen Inventars lagen. Legal-UI-Texte befinden sich außerdem in der ausgeschlossenen lokalen Gruppe. Phase 3 bleibt deshalb `NOT READY`; kein Staging- oder Production-Deployment wurde ausgeführt.
+
+## 2026-09-06 - Zweite sichere i18n-Positivliste
+
+- Der lokale Recovery-Scanner erfasst zusätzlich sichtbare Ausdrucks-, Ternary-, Template-, Konkatenations-, UI-Konfigurations-, Meldungs- und Copy-Helper-Texte.
+- Die zweite vorgeschlagene Positivliste enthält 755 allgemeine UI-Texte und 265 Legal-UI-Beschriftungen. 9 rechtliche Klausel-/Dokumenttexte, 5 Beispielwerte und 16 technische Kennungen bleiben lokal.
+- Personen-, Legal-Body-, Secret- und Providerdaten in der extern geeigneten Liste: jeweils 0. Für 105 Texte wurden Placeholder-Signaturen separat erfasst.
+- Ein eigener Leakage-Scanner weist den noch roten Übersetzungsstand für alle sechs nichtdeutschen Locales aus. Es wurde nichts extern übertragen und nichts deployt.
+# 2026-09-06 - Kassa-Compliance V3 (Staging)
+
+- Nicht-fiskalische Kassa-Abgrenzung mit versionierter Owner-Bestätigung vorbereitet.
+- Separaten, auditierten Nachbearbeitungsstatus für abgeschlossene Einlösungen ergänzt.
+- Owner-Tagesabgleich, Staff-Hinweis und Platform-Admin-Diagnose ergänzt.
+- Keine POS-, RKSV-, Steuer-, Beleg- oder Umsatzintegration eingeführt.

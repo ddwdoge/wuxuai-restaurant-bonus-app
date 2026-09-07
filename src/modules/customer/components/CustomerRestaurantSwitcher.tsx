@@ -10,6 +10,7 @@ import {
 import { customerSwitcherMemberships } from "../customerRestaurantSwitcher.mjs";
 import { RestaurantLogo } from "./PremiumCustomerUi";
 import "./customer-restaurant-switcher.css";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type CustomerRestaurantSwitcherProps = {
   currentSlug: string;
@@ -24,10 +25,15 @@ type RestaurantRowProps = {
 };
 
 function RestaurantRow({ current, membership, onSelect }: RestaurantRowProps) {
+  const { translateKey: t } = useI18n();
+  const pointsLabel = t("customer.pointsCount").replace("{count}", String(membership.points_balance));
   return (
     <button
       aria-current={current ? "true" : undefined}
-      aria-label={`${membership.name}, ${membership.points_balance} Punkte${current ? ", aktuell ausgewählt" : ""}`}
+      aria-label={t("customer.membershipLabel")
+        .replace("{name}", membership.name)
+        .replace("{points}", pointsLabel)
+        .replace("{current}", current ? `, ${t("customer.currentlySelected")}` : "")}
       className={`customer-restaurant-switcher-row${current ? " current" : ""}`}
       onClick={() => onSelect(membership)}
       type="button"
@@ -37,8 +43,8 @@ function RestaurantRow({ current, membership, onSelect }: RestaurantRowProps) {
         <strong>{membership.name}</strong>
         {membership.city ? <small><MapPin aria-hidden="true" size={13} /> {membership.city}</small> : null}
       </span>
-      <span className="customer-restaurant-switcher-points">{membership.points_balance} Punkte</span>
-      {current ? <span className="customer-restaurant-switcher-current"><Check aria-hidden="true" size={15} /> Aktuell</span> : null}
+      <span className="customer-restaurant-switcher-points">{pointsLabel}</span>
+      {current ? <span className="customer-restaurant-switcher-current"><Check aria-hidden="true" size={15} /> {t("customer.current")}</span> : null}
     </button>
   );
 }

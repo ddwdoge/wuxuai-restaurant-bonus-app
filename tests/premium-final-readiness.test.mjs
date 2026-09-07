@@ -9,6 +9,7 @@ const migration = readFileSync(
 const rewardService = readFileSync(new URL("../src/modules/rewards/rewardService.ts", import.meta.url), "utf8");
 const customerStyles = readFileSync(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
 const customerUi = readFileSync(new URL("../src/modules/customer/components/PremiumCustomerUi.tsx", import.meta.url), "utf8");
+const i18nCatalog = readFileSync(new URL("../src/shared/i18n/catalog.mjs", import.meta.url), "utf8");
 
 test("ein blockierter zweiter Consume schreibt genau einen sicheren Audit-Aufruf", () => {
   const blockedBranch = migration.match(/if code_record\.status = 'redeemed' then([\s\S]*?)end if;/)?.[1] ?? "";
@@ -42,7 +43,8 @@ test("Migration lockert weder RLS noch öffentliche Helper-Rechte", () => {
 });
 
 test("Info-Button hat eine sichtbare Beschriftung und mindestens 44 Pixel Touchfläche", () => {
-  assert.match(customerUi, /aria-label="So funktioniert's öffnen"/);
+  assert.match(customerUi, /aria-label=\{t\("customer\.helpOpen"\)\}/);
+  assert.match(i18nCatalog, /"customer\.helpOpen": "So funktioniert's öffnen"/);
   const rule = customerStyles.match(/\.premium-icon-button\s*\{([\s\S]*?)\}/)?.[1] ?? "";
   assert.match(rule, /height: 44px/);
   assert.match(rule, /min-height: 44px/);

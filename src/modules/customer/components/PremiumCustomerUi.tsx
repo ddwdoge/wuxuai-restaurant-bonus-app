@@ -5,6 +5,10 @@ import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../s
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
+import { translateStructural } from "../../../shared/i18n/catalog.mjs";
+import { UiButton, UiCard, UiStatus } from "../../../shared/ui";
+
+const t = (key: string) => translateStructural(key, "de");
 
 export type CustomerView = "home" | "redemptions" | "collect" | "account";
 
@@ -58,7 +62,7 @@ export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitc
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
       {onSwitchRestaurant ? (
-        <button aria-label="Aktuelles Restaurant wechseln" className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
+        <button aria-label={t("customer.restaurantSwitch")} className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
           <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
           <span className="premium-customer-header-copy">
             {!compact ? <span>{subtitle}</span> : null}
@@ -75,7 +79,7 @@ export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitc
           </span>
         </>
       )}
-      <button aria-label="So funktioniert's öffnen" className="premium-icon-button" onClick={onInfo} type="button">
+      <button aria-label={t("customer.helpOpen")} className="premium-icon-button" onClick={onInfo} type="button">
         <Info aria-hidden="true" size={21} />
       </button>
     </header>
@@ -88,19 +92,19 @@ type BottomNavigationProps = {
 };
 
 const navigationItems = [
-  { label: "Start", value: "home" as const, icon: Home },
-  { label: "Einlösen", value: "redemptions" as const, icon: Gift },
-  { label: "Sammeln", value: "collect" as const, icon: ScanLine, primary: true },
-  { label: "Konto", value: "account" as const, icon: UserRound },
+  { label: t("customer.home"), value: "home" as const, icon: Home },
+  { label: t("customer.redeem"), value: "redemptions" as const, icon: Gift },
+  { label: t("customer.collect"), value: "collect" as const, icon: ScanLine, primary: true },
+  { label: t("customer.account"), value: "account" as const, icon: UserRound },
 ];
 
 export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
   return (
-    <nav aria-label="Meine Vorteile Navigation" className="premium-bottom-navigation">
+    <nav aria-label={t("customer.navigation")} className="premium-bottom-navigation">
       {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}
-          aria-label={primary ? "Punkte sammeln" : undefined}
+          aria-label={primary ? t("customer.collectPoints") : undefined}
           className={`${activeView === value ? "active " : ""}${primary ? "primary-action" : ""}`.trim()}
           key={value}
           onClick={() => onChange(value)}
@@ -133,24 +137,24 @@ type PremiumCardProps = HTMLAttributes<HTMLElement> & {
 
 export function PremiumCard({ children, className = "", variant = "standard", ...props }: PremiumCardProps) {
   return (
-    <article className={`premium-card premium-card-${variant} ${className}`.trim()} {...props}>
+    <UiCard className={`premium-card premium-card-${variant} ${className}`.trim()} variant={variant === "highlight" ? "summary" : "default"} {...props}>
       {children}
-    </article>
+    </UiCard>
   );
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode };
 
 export function PrimaryButton({ children, className = "", ...props }: ButtonProps) {
-  return <button className={`premium-button premium-button-primary ${className}`.trim()} {...props}>{children}</button>;
+  return <UiButton className={`premium-button premium-button-primary ${className}`.trim()} variant="primary" {...props}>{children}</UiButton>;
 }
 
 export function SecondaryButton({ children, className = "", ...props }: ButtonProps) {
-  return <button className={`premium-button premium-button-secondary ${className}`.trim()} {...props}>{children}</button>;
+  return <UiButton className={`premium-button premium-button-secondary ${className}`.trim()} variant="secondary" {...props}>{children}</UiButton>;
 }
 
 export function StatusBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "success" | "warning" | "error" }) {
-  return <span className={`premium-status-badge ${tone}`}>{children}</span>;
+  return <UiStatus className={`premium-status-badge ${tone}`} tone={tone}>{children}</UiStatus>;
 }
 
 export function ProgressBar({ label, value }: { label: string; value: number }) {
@@ -242,14 +246,14 @@ type RewardCardProps = {
 };
 
 const rewardStateMeta: Record<RewardCardState, { icon: typeof LockKeyhole; label: string }> = {
-  available: { icon: CheckCircle2, label: "Einlösbar" },
-  locked: { icon: LockKeyhole, label: "Noch gesperrt" },
-  redeeming: { icon: LoaderCircle, label: "Einlösung läuft" },
-  redeemed: { icon: CheckCircle2, label: "Eingelöst" },
-  expired: { icon: Clock3, label: "Abgelaufen" },
+  available: { icon: CheckCircle2, label: t("rewards.available") },
+  locked: { icon: LockKeyhole, label: t("rewards.locked") },
+  redeeming: { icon: LoaderCircle, label: t("rewards.redeeming") },
+  redeemed: { icon: CheckCircle2, label: t("common.redeemed") },
+  expired: { icon: Clock3, label: t("common.expired") },
 };
 
-export function RewardCard({ actionLabel = "Details ansehen", category, imageCrop, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+export function RewardCard({ actionLabel = t("common.details"), category, imageCrop, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
   const stateMeta = rewardStateMeta[state];
   const StateIcon = stateMeta.icon;
 

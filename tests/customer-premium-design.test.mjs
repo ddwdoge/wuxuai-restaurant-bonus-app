@@ -8,6 +8,7 @@ const staff = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", impor
 const staffErrors = readFileSync(new URL("../src/modules/staff/staffRedemptionError.ts", import.meta.url), "utf8");
 const components = readFileSync(new URL("../src/modules/customer/components/PremiumCustomerUi.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
+const i18nCatalog = readFileSync(new URL("../src/shared/i18n/catalog.mjs", import.meta.url), "utf8");
 
 test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
   assert.match(styles, /--premium-background: #f8f5ef/);
@@ -22,10 +23,8 @@ test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
 });
 
 test("Kundennavigation hat exakt vier verständliche deutsche Hauptpunkte", () => {
-  assert.match(components, /label: "Start"/);
-  assert.match(components, /label: "Einlösen"/);
-  assert.match(components, /label: "Sammeln"/);
-  assert.match(components, /label: "Konto"/);
+  for (const key of ["customer.home", "customer.redeem", "customer.collect", "customer.account"]) assert.match(components, new RegExp(`t\\("${key.replace(".", "\\.")}"\\)`));
+  for (const label of ["Start", "Einlösen", "Sammeln", "Konto"]) assert.match(i18nCatalog, new RegExp(`: "${label}"`));
   assert.match(styles, /grid-template-columns: repeat\(4/);
 });
 

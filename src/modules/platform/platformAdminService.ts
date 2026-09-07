@@ -5,6 +5,24 @@ export type PaymentStatus = "not_required" | "pending" | "paid" | "failed" | "ma
 export type RestaurantStatus = "active" | "draft" | "suspended";
 export type CommercialPlan = "BASIC" | "PRO" | "PREMIUM";
 
+export type PlatformRestaurantLegalI18nStatus = {
+  restaurant_id: string;
+  preferred_language: string | null;
+  business_country: string | null;
+  legal_jurisdiction_status: "available" | "unavailable";
+  legal_jurisdiction: string | null;
+  legal_jurisdiction_source: string | null;
+  legal_review_status: "required" | "in_review" | "reviewed" | null;
+  published_documents: Array<{
+    document_type: string;
+    version: string;
+    language: string;
+    effective_date: string;
+    legal_country: string | null;
+    acceptance_count: number;
+  }>;
+};
+
 export type RestaurantEntitlements = {
   restaurant_id: string;
   subscription_id: string | null;
@@ -414,6 +432,25 @@ export async function loadPlatformRestaurantControlCenter(
   }
 
   return data as PlatformRestaurantControlCenter;
+}
+
+export async function loadPlatformRestaurantLegalI18nStatus(
+  restaurantId: string,
+): Promise<PlatformRestaurantLegalI18nStatus> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_restaurant_legal_i18n_status", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw error;
+  return data as PlatformRestaurantLegalI18nStatus;
+}
+
+export type PlatformKassaComplianceStatus = { contract_version: string; required_text_version: string; acknowledgement_count: number; open_count: number; recorded_count: number; owner_reviewed_count: number; last_transition_at: string | null };
+export async function loadPlatformKassaComplianceStatus(restaurantId: string): Promise<PlatformKassaComplianceStatus> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_kassa_compliance_status", { input_restaurant_id: restaurantId });
+  if (error) throw error;
+  return data as PlatformKassaComplianceStatus;
 }
 
 export async function loadPlatformOperationalTelemetry(): Promise<PlatformOperationalTelemetry> {

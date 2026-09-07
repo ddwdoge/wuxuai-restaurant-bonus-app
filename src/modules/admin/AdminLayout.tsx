@@ -22,6 +22,10 @@ import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 import "./admin-premium.css";
+import { translateStructural } from "../../shared/i18n/catalog.mjs";
+import { KassaAcknowledgementGate } from "../kassa/KassaAcknowledgementGate";
+
+const t = (key: string) => translateStructural(key, "de");
 
 const restaurantRoleLabels = {
   owner: "Owner",
@@ -63,15 +67,15 @@ export function AdminLayout() {
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
   const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
   const navItems = [
-    { to: "/admin", label: "Dashboard", icon: Home, end: true },
-    { to: "/admin/rewards", label: "Punkteeinlösung", icon: Gift },
-    { to: "/admin/welcome-gifts", label: "Willkommensgeschenke", icon: Gift },
-    { to: "/admin/offers", label: "Aktuelles & Angebote", icon: Newspaper },
-    { to: "/admin/customers", label: "Gäste", icon: Users },
-    { to: "/admin/qr", label: "QR Center", icon: QrCode },
-    { to: "/admin/staff", label: "Mitarbeiter", icon: Smartphone },
-    { to: "/admin/reports", label: "Berichte", icon: ScrollText },
-    { to: "/admin/settings", label: "Einstellungen", icon: Settings },
+    { to: "/admin", label: t("owner.dashboard"), icon: Home, end: true },
+    { to: "/admin/rewards", label: t("owner.rewards"), icon: Gift },
+    { to: "/admin/welcome-gifts", label: t("owner.welcomeGifts"), icon: Gift },
+    { to: "/admin/offers", label: t("owner.offers"), icon: Newspaper },
+    { to: "/admin/customers", label: t("owner.customers"), icon: Users },
+    { to: "/admin/qr", label: t("owner.qrCenter"), icon: QrCode },
+    { to: "/admin/staff", label: t("owner.staff"), icon: Smartphone },
+    { to: "/admin/reports", label: t("owner.reports"), icon: ScrollText },
+    { to: "/admin/settings", label: t("owner.settings"), icon: Settings },
   ];
 
   useEffect(() => {
@@ -169,7 +173,7 @@ export function AdminLayout() {
   );
 
   const renderNavigation = (variant: "sidebar" | "drawer") => (
-    <nav aria-label={variant === "drawer" ? "Restaurant Menü" : "Restaurant Portal Navigation"}>
+    <nav aria-label={variant === "drawer" ? t("owner.menu") : t("owner.navigation")}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const locked = setupIncomplete && !isSetupAllowedPath(item.to);
@@ -228,7 +232,7 @@ export function AdminLayout() {
     );
   }
 
-  return (
+  const portal = (
     <div className="app-shell premium-owner-shell">
       <header className="topbar premium-owner-topbar">
         <div className="restaurant-brand-header admin-restaurant-brand">
@@ -250,19 +254,19 @@ export function AdminLayout() {
         </div>
         <button
           aria-expanded={mobileMenuOpen}
-          aria-label="Restaurant Menü öffnen"
+          aria-label={`${t("owner.menu")} öffnen`}
           className="button secondary mobile-menu-button"
           onClick={() => setMobileMenuOpen(true)}
           type="button"
         >
           <Menu size={18} />
-          Menü
+          {t("owner.menu")}
         </button>
       </header>
       <div className="layout">
         <aside className="sidebar premium-owner-sidebar">
           <div className="premium-sidebar-heading">
-            <span>Arbeitsbereich</span>
+            <span>{t("owner.workspace")}</span>
             <strong>Restaurant Portal</strong>
           </div>
           {renderNavigation("sidebar")}
@@ -287,7 +291,7 @@ export function AdminLayout() {
         onClose={() => setMobileMenuOpen(false)}
         open={mobileMenuOpen}
         size="standard"
-        title="Restaurant Menü"
+        title={t("owner.menu")}
       >
         <div className="mobile-menu-navigation">
           {renderNavigation("drawer")}
@@ -300,4 +304,7 @@ export function AdminLayout() {
       </AppDrawer>
     </div>
   );
+  return activeRestaurant && (restaurantRole === "owner" || restaurantRole === "admin")
+    ? <KassaAcknowledgementGate restaurantId={activeRestaurant.id}>{portal}</KassaAcknowledgementGate>
+    : portal;
 }

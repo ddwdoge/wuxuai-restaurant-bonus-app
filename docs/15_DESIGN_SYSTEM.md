@@ -5,6 +5,15 @@
 
 Status: **LOCK**
 
+## Unified UI/UX System Phase 2
+
+Der portalweite Komponenten- und Tokenvertrag ist in
+`docs/UNIFIED_UI_UX_SYSTEM.md` festgehalten. Owner, Customer, Staff und
+Platform Admin teilen visuelle Grundlagen, behalten aber ihre getrennte
+Informationsarchitektur. Der Vertrag verlangt 44-Pixel-Bedienflaechen,
+sichtbaren Tastaturfokus, 320-Pixel-Sicherheit, CJK-faehige Systemfonts und
+wahrheitsgetreue Loading-/Empty-/Error-/Unavailable-Zustaende.
+
 Dieses Dokument beschreibt das verbindliche Design System von WUXUAI Bonus V1.
 
 Das Design System ist nicht nur eine Sammlung von Farben und Buttons.  

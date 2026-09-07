@@ -43,6 +43,8 @@ import {
 } from "../../legal/legalCompanyData.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { acceptKassaSeparation } from "../../kassa/kassaComplianceService";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
@@ -1073,6 +1075,7 @@ function getStepBlocker(
 }
 
 export function RestaurantOnboarding() {
+  const { language: uiLanguage, translateKey } = useI18n();
   const navigate = useNavigate();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
@@ -1090,6 +1093,7 @@ export function RestaurantOnboarding() {
   const [colorStatus, setColorStatus] = useState<string | null>(null);
   const [draggingLogo, setDraggingLogo] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const [kassaAcknowledged, setKassaAcknowledged] = useState(false);
 
   const bonus = useMemo(() => calculateBonus(form.generosity), [form.generosity]);
 
@@ -1113,7 +1117,7 @@ export function RestaurantOnboarding() {
   const checklist = useMemo(() => buildChecklist(effectiveForm, step), [effectiveForm, step]);
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
-  const allReady = Object.values(checklist).every(Boolean);
+  const allReady = Object.values(checklist).every(Boolean) && kassaAcknowledged;
   const stepBlocker = getStepBlocker(step, effectiveForm, checklist);
   const missingItems = missingChecklistItems(checklist);
   const selectedStarterRewardCount = form.starterRewards.length;
@@ -1505,6 +1509,7 @@ export function RestaurantOnboarding() {
     setStatus(null);
 
     try {
+      await acceptKassaSeparation(activeRestaurant.id, uiLanguage);
       const result = await completePilotOnboarding({
         restaurantId: activeRestaurant.id,
         restaurantName: form.restaurantName.trim(),
@@ -2108,6 +2113,15 @@ export function RestaurantOnboarding() {
                   <strong>Ich habe meine Unternehmens- und Bonusprogrammdaten geprüft und möchte die automatisch vorbereiteten Dokumente veröffentlichen.</strong>
                   <small>Die Vorlagen wurden automatisch erstellt und ersetzen keine individuelle Rechtsberatung.</small>
                 </span>
+              </label>
+              <article className="calculation-card">
+                <strong>{translateKey("legal.kassa.title")}</strong>
+                <p>{translateKey("legal.kassa.shortBoundary")}</p>
+                <details><summary><Info size={18} /> {translateKey("legal.kassa.readFull")}</summary><p lang="de">{translateKey("legal.kassa.body")}</p></details>
+              </article>
+              <label className="inline-check large-check onboarding-legal-confirmation">
+                <input checked={kassaAcknowledged} onChange={(event) => setKassaAcknowledged(event.target.checked)} required type="checkbox" />
+                <span><strong>{translateKey("legal.kassa.acknowledgement")}</strong><small>{translateKey("legal.kassa.immutableThis")}</small></span>
               </label>
               {!allReady ? (
                 <div className="status-message">

@@ -20,9 +20,11 @@ import {
   referralBonusMinDurationDays,
 } from "../../loyalty/referralBonusSettings.mjs";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 export function LoyaltyPage() {
   const location = useLocation();
+  const { language } = useI18n();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
@@ -218,7 +220,7 @@ export function LoyaltyPage() {
           <div className="referral-bonus-preview" aria-live="polite">
             Der einladende Gast erhält die volle Bonusdauer: {normalizeReferralBonusDuration(settings.referral_boost_duration_days)} Tage 2×.
             Der eingeladene Freund erhält 50 % der Bonusdauer:{" "}
-            {formatInvitedReferralDuration(normalizeReferralBonusDuration(settings.referral_boost_duration_days))} 2×.
+            {formatInvitedReferralDuration(normalizeReferralBonusDuration(settings.referral_boost_duration_days), language)} 2×.
             Weitere erfolgreiche Einladungen verlängern nur die Laufzeit; der Multiplikator bleibt 2×.
           </div>
 

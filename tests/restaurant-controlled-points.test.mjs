@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { translateStructural } from "../src/shared/i18n/catalog.mjs";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260731001000_restaurant_controlled_points_collection.sql", import.meta.url), "utf8");
 const sharedEngineMigration = readFileSync(new URL("../supabase/migrations/20260801001000_shared_points_bonus_engine.sql", import.meta.url), "utf8");
@@ -138,7 +139,8 @@ test("customer QR payload contains only type and short-lived token", () => {
 });
 
 test("external platform exclusions are visible in staff and owner flows", () => {
-  assert.match(staff, /Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht/);
+  assert.match(staff, /staff\.kassa\.supportedPurchase/);
+  assert.match(translateStructural("staff.kassa.supportedPurchase", "de"), /Trinkgeld, Gutscheinkäufe und Lieferplattformen zählen nicht/);
   assert.match(settings, /Trinkgeld, Gutscheinkäufe und Bestellungen über externe Lieferplattformen/);
 });
 

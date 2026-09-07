@@ -3,6 +3,9 @@ import { ArrowLeft, Filter, RefreshCw, Search, ShieldCheck } from "lucide-react"
 import { Link } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { loadPlatformAuditEvents, loadPlatformRestaurants, type PlatformAuditEvent, type PlatformRestaurant } from "./platformAdminService";
+import { translateStructural } from "../../shared/i18n/catalog.mjs";
+
+const t = (key: string) => translateStructural(key, "de");
 
 const eventLabels: Record<string, string> = {
   CUSTOMER_REGISTERED: "Gast registriert",
@@ -28,7 +31,7 @@ const eventLabels: Record<string, string> = {
   API_ERROR: "Schnittstellenfehler",
 };
 
-const statusLabels = { success: "Erfolgreich", failed: "Fehlgeschlagen", blocked: "Blockiert" } as const;
+const statusLabels = { success: t("common.success"), failed: t("common.failed"), blocked: t("common.blocked") } as const;
 const actorLabels: Record<string, string> = { admin: "Administration", staff: "Mitarbeiter", customer: "Gast", system: "System" };
 
 function formatDateTime(value: string) {
@@ -107,38 +110,38 @@ export function PlatformAuditPage() {
       <header className="platform-admin-header">
         <div>
           <span className="admin-brand-kicker">WUXUAI Admin</span>
-          <h1>Audit-Protokoll</h1>
-          <p>Kritische Abläufe sicher prüfen, ohne sensible Zugangsdaten anzuzeigen.</p>
+          <h1>{t("platform.audit.title")}</h1>
+          <p>{t("platform.audit.description")}</p>
         </div>
         <div className="platform-admin-header-actions">
-          <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />Restaurants</Link>
-          <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />Aktualisieren</button>
+          <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("platform.audit.restaurants")}</Link>
+          <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />{t("platform.audit.refresh")}</button>
         </div>
       </header>
 
       <section className="card platform-audit-filters" aria-label="Audit filtern">
-        <div className="section-heading"><h2><Filter size={20} /> Filter</h2><p className="muted">Bis zu 200 aktuelle Einträge.</p></div>
+        <div className="section-heading"><h2><Filter size={20} /> {t("platform.audit.filters")}</h2><p className="muted">{t("platform.audit.upTo200")}</p></div>
         <div className="platform-audit-filter-grid">
-          <label className="field"><span>Von</span><input className="input" onChange={(event) => setFromDate(event.target.value)} type="date" value={fromDate} /></label>
-          <label className="field"><span>Bis</span><input className="input" onChange={(event) => setToDate(event.target.value)} type="date" value={toDate} /></label>
-          <label className="field"><span>Restaurant</span><select className="input" onChange={(event) => setRestaurantId(event.target.value)} value={restaurantId}><option value="">Alle Restaurants</option>{restaurants.map((restaurant) => <option key={restaurant.id} value={restaurant.id}>{restaurant.name}</option>)}</select></label>
-          <label className="field"><span>Gast-ID</span><div className="platform-audit-search"><Search size={17} /><input onChange={(event) => setCustomerId(event.target.value)} placeholder="UUID" value={customerId} /></div></label>
-          <label className="field"><span>Ereignis</span><select className="input" onChange={(event) => setEventType(event.target.value)} value={eventType}><option value="">Alle Ereignisse</option>{eventOptions.map((value) => <option key={value} value={value}>{eventLabels[value] ?? value}</option>)}</select></label>
-          <label className="field"><span>Status</span><select className="input" onChange={(event) => setStatus(event.target.value)} value={status}><option value="">Alle Status</option><option value="success">Erfolgreich</option><option value="failed">Fehlgeschlagen</option><option value="blocked">Blockiert</option></select></label>
-          <label className="field"><span>Quelle</span><select className="input" onChange={(event) => setSource(event.target.value)} value={source}><option value="">Alle Quellen</option>{sourceOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-          <label className="field"><span>Akteur</span><select className="input" onChange={(event) => setActorType(event.target.value)} value={actorType}><option value="">Alle Akteure</option>{Object.entries(actorLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="field"><span>{t("platform.audit.from")}</span><input className="input" onChange={(event) => setFromDate(event.target.value)} type="date" value={fromDate} /></label>
+          <label className="field"><span>{t("platform.audit.to")}</span><input className="input" onChange={(event) => setToDate(event.target.value)} type="date" value={toDate} /></label>
+          <label className="field"><span>{t("platform.audit.restaurant")}</span><select className="input" onChange={(event) => setRestaurantId(event.target.value)} value={restaurantId}><option value="">{t("platform.audit.allRestaurants")}</option>{restaurants.map((restaurant) => <option key={restaurant.id} value={restaurant.id}>{restaurant.name}</option>)}</select></label>
+          <label className="field"><span>{t("platform.audit.customerId")}</span><div className="platform-audit-search"><Search size={17} /><input onChange={(event) => setCustomerId(event.target.value)} placeholder="UUID" value={customerId} /></div></label>
+          <label className="field"><span>{t("platform.audit.event")}</span><select className="input" onChange={(event) => setEventType(event.target.value)} value={eventType}><option value="">{t("platform.audit.allEvents")}</option>{eventOptions.map((value) => <option key={value} value={value}>{eventLabels[value] ?? value}</option>)}</select></label>
+          <label className="field"><span>{t("platform.audit.status")}</span><select className="input" onChange={(event) => setStatus(event.target.value)} value={status}><option value="">{t("platform.audit.allStatuses")}</option><option value="success">{statusLabels.success}</option><option value="failed">{statusLabels.failed}</option><option value="blocked">{statusLabels.blocked}</option></select></label>
+          <label className="field"><span>{t("platform.audit.source")}</span><select className="input" onChange={(event) => setSource(event.target.value)} value={source}><option value="">{t("platform.audit.allSources")}</option>{sourceOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+          <label className="field"><span>{t("platform.audit.actor")}</span><select className="input" onChange={(event) => setActorType(event.target.value)} value={actorType}><option value="">{t("platform.audit.allActors")}</option>{Object.entries(actorLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         </div>
         <div className="platform-audit-toggle-row">
-          <label><input checked={testOnly} onChange={(event) => setTestOnly(event.target.checked)} type="checkbox" />Nur Testereignisse</label>
-          <label><input checked={failedOnly} onChange={(event) => setFailedOnly(event.target.checked)} type="checkbox" />Nur fehlgeschlagen oder blockiert</label>
-          <button className="button primary" onClick={loadAudit} type="button">Filter anwenden</button>
+          <label><input checked={testOnly} onChange={(event) => setTestOnly(event.target.checked)} type="checkbox" />{t("platform.audit.testOnly")}</label>
+          <label><input checked={failedOnly} onChange={(event) => setFailedOnly(event.target.checked)} type="checkbox" />{t("platform.audit.failedOnly")}</label>
+          <button className="button primary" onClick={loadAudit} type="button">{t("platform.audit.apply")}</button>
         </div>
       </section>
 
       {error ? <p className="status-message error" role="alert">{error}</p> : null}
       <section className="card platform-audit-table-card">
-        {loading ? <p className="muted">Audit-Protokoll wird geladen...</p> : null}
-        {!loading && events.length === 0 ? <div className="empty-state-card"><ShieldCheck size={32} /><h2>Keine Einträge gefunden</h2><p>Für die gewählten Filter liegen keine Audit-Ereignisse vor.</p></div> : null}
+        {loading ? <p className="muted">{t("platform.audit.loading")}</p> : null}
+        {!loading && events.length === 0 ? <div className="empty-state-card"><ShieldCheck size={32} /><h2>{t("platform.audit.empty")}</h2><p>{t("platform.audit.emptyDescription")}</p></div> : null}
         {events.length ? <div className="platform-audit-table-wrap"><table className="platform-audit-table"><thead><tr><th>Zeit</th><th>Restaurant</th><th>Akteur</th><th>Ereignis</th><th>Status</th><th>Quelle</th><th>Entität</th><th>Test</th></tr></thead><tbody>{events.map((event) => <tr key={event.id} onClick={() => setSelected(event)} tabIndex={0} onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter" || keyEvent.key === " ") { keyEvent.preventDefault(); setSelected(event); } }}><td>{formatDateTime(event.created_at)}</td><td>{event.restaurant_name}</td><td>{actorLabels[event.actor_type] ?? event.actor_type}</td><td>{eventLabels[event.event_type] ?? event.event_type}</td><td><span className={`audit-status ${event.status}`}>{statusLabels[event.status]}</span></td><td>{event.source ?? "System"}</td><td>{event.entity_type ?? "-"}</td><td>{event.is_test_event ? "Ja" : "Nein"}</td></tr>)}</tbody></table></div> : null}
       </section>
 

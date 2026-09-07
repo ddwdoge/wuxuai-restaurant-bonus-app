@@ -20,6 +20,9 @@ import {
   customerPortalInstanceKey,
   readCustomerScanContext,
 } from "../modules/customer/customerScanContext.mjs";
+import { useI18n } from "../shared/i18n/I18nProvider";
+import { UiButton, UiState } from "../shared/ui";
+import { LanguageSelector } from "../shared/i18n/LanguageSelector";
 
 const RegisterPage = lazy(() => import("../modules/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout").then((module) => ({ default: module.AdminLayout })));
@@ -104,23 +107,42 @@ const ReferralLanding = lazy(() =>
 );
 
 function RouteLoading() {
-  return <div className="auth-shell">Wird geladen...</div>;
+  const { translateKey: t } = useI18n();
+  return <div className="auth-shell">{t("common.loading")}</div>;
 }
 
 function CustomerLoading() {
-  return <div className="auth-shell">Dein Bonuskonto wird erkannt …</div>;
+  const { translateKey: t } = useI18n();
+  return <div className="auth-shell">{t("auth.customerLoading")}</div>;
 }
 
 function AdminLoading() {
-  return <div className="auth-shell">Restaurant Portal wird geladen...</div>;
+  const { translateKey: t } = useI18n();
+  return <div className="auth-shell">{t("owner.portalLoading")}</div>;
 }
 
 function StaffLoading() {
-  return <div className="auth-shell">Mitarbeiterbereich wird geladen...</div>;
+  const { translateKey: t } = useI18n();
+  return <div className="auth-shell">{t("staff.portalLoading")}</div>;
 }
 
 function PlatformLoading() {
-  return <div className="auth-shell">WUXUAI Admin wird geladen...</div>;
+  const { translateKey: t } = useI18n();
+  return <div className="auth-shell">{t("platform.portalLoading")}</div>;
+}
+
+function AccessLoadError({ restaurant = false, retry }: { restaurant?: boolean; retry: () => void }) {
+  const { translateKey: t } = useI18n();
+  return (
+    <main className="auth-shell">
+      <UiState
+        action={<UiButton onClick={retry} variant="secondary">{t("common.retry")}</UiButton>}
+        description={t("errors.sessionPreserved")}
+        kind="error"
+        title={t(restaurant ? "errors.restaurantData" : "errors.accessCheck")}
+      />
+    </main>
+  );
 }
 
 function withFallback(children: ReactNode, fallback: ReactNode = <RouteLoading />) {
@@ -146,7 +168,7 @@ function CustomerPortalRoute() {
 
   if (!scanContext) return <Navigate to="/customer" replace />;
   if (loading) return <CustomerLoading />;
-  if (user && portalAccessError) return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={retryAuthorization} type="button">Erneut versuchen</button></main>;
+  if (user && portalAccessError) return <AccessLoadError retry={retryAuthorization} />;
   if (user && !portalAccess.customer_access) return <Navigate replace to={`/customer/register?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
 
   return withFallback(
@@ -164,7 +186,7 @@ function CustomerCentralRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading) return <CustomerLoading />;
   if (!user) return <Navigate replace to={`/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
-  if (portalAccessError) return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={retryAuthorization} type="button">Erneut versuchen</button></main>;
+  if (portalAccessError) return <AccessLoadError retry={retryAuthorization} />;
   if (!portalAccess.customer_access) return <Navigate replace to={`/customer/register?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
   return <>{children}</>;
 }
@@ -181,7 +203,7 @@ function RestaurantSetupGate({ children }: { children: ReactNode }) {
   }
 
   if (loadError) {
-    return <main className="auth-shell" role="alert"><h1>Restaurantdaten konnten nicht geladen werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => void refreshTenants()} type="button">Erneut versuchen</button></main>;
+    return <AccessLoadError restaurant retry={() => void refreshTenants()} />;
   }
 
   if (activeRestaurant && !onboardingCompleted && !isSetupAllowedRoute) {
@@ -194,7 +216,7 @@ function RestaurantSetupGate({ children }: { children: ReactNode }) {
 function StaffIndexRoute() {
   const { activeRestaurant, loadError, loading, refreshTenants } = useTenant();
   if (loading) return <StaffLoading />;
-  if (loadError) return <main className="auth-shell" role="alert"><h1>Restaurantdaten konnten nicht geladen werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => void refreshTenants()} type="button">Erneut versuchen</button></main>;
+  if (loadError) return <AccessLoadError restaurant retry={() => void refreshTenants()} />;
   return activeRestaurant
     ? <Navigate replace to={`/staff/${activeRestaurant.slug}`} />
     : <Navigate replace to="/staff/login" />;
@@ -202,7 +224,9 @@ function StaffIndexRoute() {
 
 export function App() {
   return (
-    <Routes>
+    <>
+      <LanguageSelector />
+      <Routes>
       <Route path="/" element={<PublicHome />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/restaurant/login" element={<LoginPage />} />
@@ -329,6 +353,7 @@ export function App() {
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

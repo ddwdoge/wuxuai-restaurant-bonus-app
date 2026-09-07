@@ -119,6 +119,7 @@ import { CustomerRestaurantSwitcher } from "./components/CustomerRestaurantSwitc
 import { SwipeToRedeem } from "./components/SwipeToRedeem";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -259,6 +260,7 @@ type CustomerPortalProps = {
 
 export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug }: CustomerPortalProps) {
   const { portalAccess, signOut } = useAuth();
+  const { language, translateKey: t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
@@ -640,7 +642,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const referralResetLabel = referralInviteStatus?.next_reset_at
     ? new Intl.DateTimeFormat("de-AT", { day: "numeric", month: "long" }).format(new Date(referralInviteStatus.next_reset_at))
     : null;
-  const invitedReferralDurationLabel = formatInvitedReferralDuration(referralBoostDurationDays);
+  const invitedReferralDurationLabel = formatInvitedReferralDuration(referralBoostDurationDays, language);
   const rawBoostEndsAtMs = rawActiveBoost ? new Date(rawActiveBoost.active_until).getTime() : 0;
   const activeBoost = rawActiveBoost && rawBoostEndsAtMs > nowMs ? rawActiveBoost : null;
   const effectiveReferralRole = activeBoost?.beneficiary_role ?? referralLifecycleRole;
@@ -1503,8 +1505,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <div>
                       <strong>{reminder.title}</strong>
                       <span>{reminder.remaining_days === 0
-                        ? "Nur noch heute gültig"
-                        : `Noch ${reminder.remaining_days} ${reminder.remaining_days === 1 ? "Tag" : "Tage"} gültig`}</span>
+                        ? t("customer.validTodayOnly")
+                        : t(reminder.remaining_days === 1 ? "customer.validForOneDay" : "customer.validForDays").replace("{count}", String(reminder.remaining_days))}</span>
                       <small>Ablauf: {new Date(reminder.expires_at).toLocaleDateString("de-AT")}</small>
                     </div>
                     <button className="premium-text-button" onClick={() => openExpiryReminder(reminder)} type="button">Öffnen</button>
@@ -1898,7 +1900,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
           <>
             {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
               <button
-                aria-label={`${activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? "Live-Einlösung"} anzeigen`}
+                aria-label={t("customer.showNamed").replace("{name}", activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? t("customer.liveRedemption"))}
                 className="premium-active-code"
                 onClick={() => setRedemptionDrawerOpen(true)}
                 type="button"
@@ -2141,8 +2143,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <div className="premium-legal-note-small" aria-live="polite">
                       <p>Einladungen diesen Monat: {referralInviteStatus.used} von {referralInviteStatus.limit}</p>
                       <p>{referralInviteLimitReached
-                        ? `Monatslimit erreicht.${referralResetLabel ? ` Ab ${referralResetLabel} kannst du wieder Freunde einladen.` : ""}`
-                        : `Du kannst noch ${referralInviteStatus.remaining} ${referralInviteStatus.remaining === 1 ? "Freund" : "Freunde"} einladen.`}</p>
+                        ? `${t("customer.monthlyInviteLimitReached")}${referralResetLabel ? ` ${t("customer.inviteAgainFrom").replace("{date}", referralResetLabel)}` : ""}`
+                        : t(referralInviteStatus.remaining === 1 ? "customer.oneInviteRemaining" : "customer.invitesRemaining").replace("{count}", String(referralInviteStatus.remaining))}</p>
                     </div>
                   ) : null}
                   <p className="premium-legal-note-small">Der Bonus Boost gilt ausschließlich für das angezeigte Restaurant und ist nicht übertragbar.</p>
@@ -2193,8 +2195,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 <div className="premium-redemption-summary">
                   <div><span>{pointsTitle}</span><strong>{pointsValue}</strong></div>
                   <p>{rewardFilter === "all"
-                    ? `${redemptionCatalog.length} ${redemptionCatalog.length === 1 ? "Belohnung" : "Belohnungen"} im Restaurant`
-                    : `${myRedemptions.length} ${myRedemptions.length === 1 ? "persönlicher Vorteil" : "persönliche Vorteile"}`}</p>
+                    ? `${redemptionCatalog.length} ${t(redemptionCatalog.length === 1 ? "customer.reward.one" : "customer.reward.many")} ${t("customer.inRestaurant")}`
+                    : `${myRedemptions.length} ${t(myRedemptions.length === 1 ? "customer.personalBenefit.one" : "customer.personalBenefit.many")}`}</p>
                 </div>
                 <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
                 <div

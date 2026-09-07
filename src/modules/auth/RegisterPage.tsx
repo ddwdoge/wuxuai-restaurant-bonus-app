@@ -15,9 +15,14 @@ import {
 } from "../public/PublicPageComponents";
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { isOwnerEmailConfirmed, validateOwnerPassword } from "./ownerAuthFlow.mjs";
-import { V1_COMMERCIAL_COPY } from "../../shared/commercialContract.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { V1_COMMERCIAL_CONTRACT } from "../../shared/commercialContract.mjs";
 
 export function RegisterPage() {
+  const { translateKey: t } = useI18n();
+  const commercialValue = (key: string) => t(key)
+    .replace("{months}", String(V1_COMMERCIAL_CONTRACT.trial.calendarMonths))
+    .replace("{price}", String(V1_COMMERCIAL_CONTRACT.basePlan.monthlyPrice));
   const navigate = useNavigate();
   const location = useLocation();
   const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, signIn, user } = useAuth();
@@ -168,9 +173,9 @@ export function RegisterPage() {
 
   return (
     <PublicPageShell
-      description={`Richte dein Bonusprogramm in wenigen Minuten ein. ${V1_COMMERCIAL_COPY.price} ${V1_COMMERCIAL_COPY.noPaymentMethod}`}
-      eyebrow={V1_COMMERCIAL_COPY.trial}
-      title="Restaurant starten"
+      description={commercialValue("auth.register.description")}
+      eyebrow={commercialValue("auth.register.trial")}
+      title={t("auth.register.title")}
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
@@ -206,7 +211,7 @@ export function RegisterPage() {
                   </div>
                 </>
               ) : (
-                <PublicFormField autoComplete="new-password" disabled={loading} hint="Mindestens 8 Zeichen, nicht leicht erratbar" id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+                <PublicFormField autoComplete="new-password" disabled={loading} hint={t("auth.register.passwordHint")} id="register-password" label="Passwort" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
               )}
               {!existingIdentityFlow ? (
                 <PublicFormField
@@ -229,7 +234,7 @@ export function RegisterPage() {
           <PublicFormField
             autoComplete="tel"
             disabled={loading}
-            hint="Empfohlen für zukünftige SMS-Benachrichtigungen."
+            hint={t("auth.register.phoneHint")}
             id="phone"
             label="Mobiltelefonnummer (empfohlen)"
             onChange={(event) => setPhone(event.target.value)}
@@ -242,9 +247,9 @@ export function RegisterPage() {
           {error && !existingIdentityFlow ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
-            {activatingExistingAccount || existingIdentityFlow ? "Restaurantbereich aktivieren" : V1_COMMERCIAL_COPY.registrationCta}
+            {activatingExistingAccount || existingIdentityFlow ? "Restaurantbereich aktivieren" : commercialValue("auth.register.cta")}
           </PublicPrimaryButton>
-          <p className="public-premium-trust-note">{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
+          <p className="public-premium-trust-note">{t("auth.register.noPaymentMethod")}</p>
           <div className="public-premium-secondary-actions">
             {activatingExistingAccount || existingIdentityFlow ? <span>Deine bestehende Anmeldung wird weiterverwendet.</span> : <><span>Bereits registriert?</span><Link className="public-premium-secondary-link" to="/login">Zum Login</Link></>}
           </div>

@@ -19,10 +19,10 @@ const finderStyles = readFileSync(new URL("../src/modules/customer/partner-resta
 test("öffentliche Startseite behält drei echte Hauptwege auf Route /", () => {
   assert.match(app, /<Route path="\/" element=\{<PublicHome \/>\}/);
   assert.equal((publicHome.match(/<PublicEntryCard/g) ?? []).length, 3);
-  assert.match(publicHome, /title="Restaurant Login" to="\/login"/);
-  assert.match(publicHome, /title="Restaurant registrieren" to="\/register"/);
-  assert.match(publicHome, /title="Gast-Bonus öffnen" to="\/customer"/);
-  assert.match(publicHome, /title="Bonusprogramm einfach starten\."/);
+  assert.match(publicHome, /title=\{t\("public\.home\.ownerTitle"\)\} to="\/login"/);
+  assert.match(publicHome, /title=\{t\("public\.home\.registrationTitle"\)\} to="\/register"/);
+  assert.match(publicHome, /title=\{t\("public\.home\.customerTitle"\)\} to="\/customer"/);
+  assert.match(publicHome, /title=\{t\("public\.home\.title"\)\}/);
 });
 
 test("Startseite verwendet zentrale Premium-Tokens und kompakte Mobile-Karten", () => {
