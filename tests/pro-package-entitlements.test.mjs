@@ -87,6 +87,7 @@ test("Owner offer counter renders Basic five, overrides one through seven and Pr
   assert.match(offerPage, /`\$\{activeOfferCount\} \/ \$\{entitlements\.effective\.offer_limit\}`/);
   assert.match(offerPage, /<span>Aktive Angebote<\/span>/);
   assert.match(offerPage, /<span>Unbegrenzt<\/span>/);
+  assert.doesNotMatch(offerPage, /· unbegrenzt/);
   assert.doesNotMatch(offerPage, /von 5 veröffentlicht und sichtbar/);
   assert.doesNotMatch(offerPage, /plan_key === "BASIC"[^\n]*activeOfferCount/);
 });
