@@ -291,7 +291,8 @@ test("Owner UI trennt Veröffentlichung, Kundensichtbarkeit und aktuelle Gültig
   const page = await readFile(ownerPageUrl, "utf8");
   assert.match(page, /Kundensichtbarkeit/);
   assert.match(page, /Aktuelle Gültigkeit/);
-  assert.match(page, /veröffentlicht und sichtbar/);
+  assert.match(page, /Aktive Angebote/);
+  assert.match(page, /activeOfferCount/);
   assert.match(page, /restaurantOfferCustomerVisibility/);
   assert.match(page, /restaurantOfferValidityPresentation/);
 });
