@@ -453,6 +453,115 @@ export async function loadPlatformKassaComplianceStatus(restaurantId: string): P
   return data as PlatformKassaComplianceStatus;
 }
 
+export type PlatformTestTenantCleanupPreflight = {
+  blockers: string[];
+  contract_version: string;
+  deleted?: boolean;
+  eligible: boolean;
+  inventory?: Record<string, number>;
+  restaurant_id?: string;
+  restaurant_name?: string;
+  test_session_id?: string | null;
+};
+
+export async function loadPlatformTestTenantCleanupPreflight(
+  restaurantId: string,
+): Promise<PlatformTestTenantCleanupPreflight> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_test_tenant_cleanup_preflight", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw error;
+  return data as PlatformTestTenantCleanupPreflight;
+}
+
+export async function markPlatformTestTenant(input: {
+  confirmation: string;
+  reason: string;
+  restaurantId: string;
+  testSessionId: string;
+}): Promise<PlatformTestTenantCleanupPreflight> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("mark_platform_test_tenant", {
+    input_confirmation: input.confirmation,
+    input_reason: input.reason,
+    input_restaurant_id: input.restaurantId,
+    input_test_session_id: input.testSessionId,
+  });
+  if (error) throw error;
+  return data as PlatformTestTenantCleanupPreflight;
+}
+
+export async function cleanupPlatformTestTenant(input: {
+  confirmation: string;
+  reason: string;
+  restaurantId: string;
+}): Promise<{ deleted: boolean; inventory: Record<string, number>; restaurant_id: string; test_session_id: string }> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("cleanup_platform_test_tenant", {
+    input_confirmation: input.confirmation,
+    input_reason: input.reason,
+    input_restaurant_id: input.restaurantId,
+  });
+  if (error) throw error;
+  return data as { deleted: boolean; inventory: Record<string, number>; restaurant_id: string; test_session_id: string };
+}
+
+export type PlatformForeignTestCustomerCleanupPreflight = {
+  auth_user_id?: string;
+  blockers: string[];
+  contract_version: string;
+  customer_account_id?: string;
+  customer_id?: string;
+  customer_name?: string;
+  eligible: boolean;
+  foreign_data_to_be_changed?: number;
+  foreign_point_transactions?: number;
+  foreign_restaurant_memberships?: number;
+  local_gifts?: number;
+  local_membership_id?: string;
+  local_notifications?: number;
+  local_point_balance?: number;
+  local_point_transactions?: number;
+  local_redemptions?: number;
+  local_rewards?: number;
+  local_row_ids?: Record<string, string[] | string | null>;
+  local_visits_events?: number;
+  test_tenant?: { id: string; name: string };
+};
+
+export async function loadPlatformForeignTestCustomerCleanupPreflight(
+  restaurantId: string,
+): Promise<PlatformForeignTestCustomerCleanupPreflight> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_foreign_test_customer_cleanup_preflight", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw error;
+  return data as PlatformForeignTestCustomerCleanupPreflight;
+}
+
+export async function cleanupPlatformForeignTestCustomerRelation(input: {
+  accountId: string;
+  confirmation: string;
+  customerId: string;
+  customerName: string;
+  reason: string;
+  restaurantId: string;
+}): Promise<{ removed: boolean; foreign_memberships_preserved: number; foreign_points_preserved: number }> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("cleanup_platform_foreign_test_customer_relation", {
+    input_account_id: input.accountId,
+    input_confirmation: input.confirmation,
+    input_customer_id: input.customerId,
+    input_expected_customer_name: input.customerName,
+    input_reason: input.reason,
+    input_restaurant_id: input.restaurantId,
+  });
+  if (error) throw error;
+  return data as { removed: boolean; foreign_memberships_preserved: number; foreign_points_preserved: number };
+}
+
 export async function loadPlatformOperationalTelemetry(): Promise<PlatformOperationalTelemetry> {
   if (!supabase) {
     throw new Error("Supabase ist nicht konfiguriert.");
@@ -530,6 +639,17 @@ export async function executePlatformAdminOperation(input: {
   });
   if (error) throw error;
   return data as { success: boolean; operation_id: string };
+}
+
+export async function markPlatformCustomerTestMode(customerId: string, testSessionId: string) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("set_platform_customer_test_mode", {
+    input_customer_id: customerId,
+    input_is_test_customer: true,
+    input_test_session_id: testSessionId,
+  });
+  if (error) throw error;
+  return data as { customer_id: string; is_test_customer: boolean; test_session_id: string };
 }
 
 export async function requestPlatformAuthSupport(input: {

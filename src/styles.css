@@ -1773,6 +1773,36 @@ a {
   font-size: 19px;
 }
 
+.platform-test-cleanup,
+.platform-test-cleanup-controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.platform-test-cleanup {
+  border-top: 1px solid #e9e2d7;
+  padding-top: 14px;
+}
+
+.platform-test-cleanup-controls > label {
+  display: grid;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.platform-test-cleanup-controls input,
+.platform-test-cleanup-controls textarea {
+  box-sizing: border-box;
+  font: inherit;
+  min-height: 44px;
+  width: 100%;
+}
+
+.platform-test-cleanup-controls code {
+  overflow-wrap: anywhere;
+}
+
 .platform-entitlement-summary,
 .platform-entitlement-controls {
   display: grid;

@@ -4,6 +4,7 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import {
   executePlatformAdminOperation,
   loadPlatformRestaurantOperations,
+  markPlatformCustomerTestMode,
   requestPlatformAuthSupport,
   type PlatformOperationAction,
   type PlatformRestaurantOperations,
@@ -90,6 +91,19 @@ export function PlatformOperationsPanel({ restaurantId, canWrite }: { restaurant
     finally { setSaving(false); }
   }
 
+  async function markCustomerAsTest(customerIdValue: string) {
+    setSaving(true); setError(""); setMessage("");
+    try {
+      await markPlatformCustomerTestMode(customerIdValue, "kassa-v3-20260908");
+      setMessage("Der Gast wurde dem isolierten Testlauf zugeordnet und auditiert.");
+      await load();
+    } catch {
+      setError("Der Gast konnte nicht als Testgast markiert werden.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <section className="platform-operations-panel"><p>Betriebsdaten werden geladen …</p></section>;
   if (!data) return <section className="platform-operations-panel" role="alert"><p>{error}</p><button className="button secondary" onClick={() => void load()} type="button"><RefreshCw size={18} />Erneut versuchen</button></section>;
 
@@ -117,7 +131,7 @@ export function PlatformOperationsPanel({ restaurantId, canWrite }: { restaurant
           <button className="button secondary" disabled={!canWrite || data.owner.membership_present} onClick={() => open({ action: "owner_membership_repair", entityId: data.owner.user_id, label: "Betreiberzuordnung reparieren", severity: "SENSITIVE" })} type="button">Zuordnung reparieren</button>
         </div></article>
         <article><header><Users size={20} /><div><h4>Mitarbeiter</h4><p>Status, Auth-Verknüpfung und Mitgliedschaft.</p></div></header>{data.staff.length ? <div className="platform-support-list">{data.staff.map((staff) => <div key={staff.id}><span><strong>{staff.name}</strong><small>{staff.email ?? "Keine E-Mail"} · {staff.status} · Auth {staff.auth_linked ? "vorhanden" : "offen"}</small></span><div className="platform-actions"><button className="button secondary" disabled={!canWrite || !staff.email} onClick={() => open({ action: "staff_invitation_resend", entityId: staff.id, label: "Einladung erneut senden", severity: "SENSITIVE" })} type="button">Einladung senden</button><button className="button secondary" disabled={!canWrite} onClick={() => open({ action: staff.active ? "staff_suspend" : "staff_reactivate", entityId: staff.id, label: staff.active ? "Mitarbeiter sperren" : "Mitarbeiter reaktivieren", severity: "SENSITIVE" })} type="button">{staff.active ? "Sperren" : "Reaktivieren"}</button><button className="button secondary" disabled={!canWrite || staff.status !== "invited"} onClick={() => open({ action: "staff_invitation_revoke", entityId: staff.id, label: "Einladung widerrufen", severity: "SENSITIVE" })} type="button">Einladung widerrufen</button></div></div>)}</div> : <Empty>Noch keine Mitarbeiter.</Empty>}</article>
-        <article><header><Users size={20} /><div><h4>Gäste</h4><p>Identität, Mitgliedschaft und Punktestand.</p></div></header>{data.customers.length ? <div className="platform-support-list">{data.customers.map((customer) => <div key={customer.id}><span><strong>{customer.name}</strong><small>{customer.points_balance} Punkte · {customer.membership_status} · Konto {customer.auth_linked ? "verknüpft" : "offen"}</small></span><div className="platform-actions"><button className="button secondary" disabled={!canWrite || customer.central_membership_present || !customer.auth_linked} onClick={() => open({ action: "customer_membership_repair", entityId: customer.id, label: "Kundenzuordnung reparieren", severity: "SENSITIVE" })} type="button">Zuordnung reparieren</button><button className="button secondary" disabled={!canWrite} onClick={() => open({ action: customer.membership_status === "active" ? "customer_deactivate" : "customer_reactivate", entityId: customer.id, label: customer.membership_status === "active" ? "Mitgliedschaft einschränken" : "Mitgliedschaft reaktivieren", severity: "SENSITIVE" })} type="button">{customer.membership_status === "active" ? "Einschränken" : "Reaktivieren"}</button></div></div>)}</div> : <Empty>Noch keine Gäste.</Empty>}</article>
+        <article><header><Users size={20} /><div><h4>Gäste</h4><p>Identität, Mitgliedschaft und Punktestand.</p></div></header>{data.customers.length ? <div className="platform-support-list">{data.customers.map((customer) => <div key={customer.id}><span><strong>{customer.name}</strong><small>{customer.points_balance} Punkte · {customer.membership_status} · Konto {customer.auth_linked ? "verknüpft" : "offen"}</small></span><div className="platform-actions"><button className="button secondary" disabled={!canWrite || saving} onClick={() => void markCustomerAsTest(customer.id)} type="button">Als Testgast markieren</button><button className="button secondary" disabled={!canWrite || customer.central_membership_present || !customer.auth_linked} onClick={() => open({ action: "customer_membership_repair", entityId: customer.id, label: "Kundenzuordnung reparieren", severity: "SENSITIVE" })} type="button">Zuordnung reparieren</button><button className="button secondary" disabled={!canWrite} onClick={() => open({ action: customer.membership_status === "active" ? "customer_deactivate" : "customer_reactivate", entityId: customer.id, label: customer.membership_status === "active" ? "Mitgliedschaft einschränken" : "Mitgliedschaft reaktivieren", severity: "SENSITIVE" })} type="button">{customer.membership_status === "active" ? "Einschränken" : "Reaktivieren"}</button></div></div>)}</div> : <Empty>Noch keine Gäste.</Empty>}</article>
       </div> : null}
 
       {section === "activity" ? <div className="platform-support-stack">
