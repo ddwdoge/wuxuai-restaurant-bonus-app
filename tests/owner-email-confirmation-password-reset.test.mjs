@@ -29,6 +29,15 @@ const ownerAuthService = read("../src/modules/auth/ownerAuthService.ts");
 const emailConfirmationService = read("../src/modules/auth/emailConfirmationService.ts");
 const ownerRecoveryFlow = read("../src/modules/auth/ownerRecoveryFlow.mjs");
 const supabaseClient = read("../src/shared/lib/supabase.ts");
+const ownerTrialBasicPlanMigration = read(
+  "../supabase/migrations/20260908001000_owner_trial_basic_plan_compatibility.sql",
+);
+const ownerBranchBasicPlanMigration = read(
+  "../supabase/migrations/20260908002000_owner_branch_basic_plan_compatibility.sql",
+);
+const ownerTrialLegalPackageMigration = read(
+  "../supabase/migrations/20260908003000_owner_trial_legal_package_compatibility.sql",
+);
 
 test("Owner-Registrierung nutzt den zentralen Bestätigungs-Callback", () => {
   assert.match(registerService, /emailRedirectTo:\s*buildOwnerAuthRedirect\(window\.location\.origin, OWNER_AUTH_PATHS\.callback\)/);
@@ -190,6 +199,43 @@ test("Owner-Callback verarbeitet den bestätigten Link automatisch und genau ein
   assert.doesNotMatch(callback, /onClick=\{completeCallback\}/);
   assert.match(callback, /useEffect\(\(\) => \{[\s\S]*clearSensitiveAuthUrl\(\);[\s\S]*void completeCallback\(\)/);
   assert.match(callback, /async function completeCallback\(\)[\s\S]*establishOwnerAuthSession\(payload\)/);
+});
+
+test("Owner-Callback leitet einen bestätigten noch nicht provisionierten Owner zur sicheren Aktivierung", () => {
+  assert.match(
+    callback,
+    /navigate\(registrationCompleted \? "\/admin\/onboarding" : "\/register", \{ replace: true \}\)/,
+  );
+  assert.doesNotMatch(
+    callback,
+    /navigate\(registrationCompleted \? "\/admin\/onboarding" : "\/admin"/,
+  );
+  assert.match(register, /user && isOwnerEmailConfirmed\(user\).*portalAccess\.owner_access/s);
+  assert.match(register, /await activateRestaurantOwnerForCurrentUser\(\{ ownerName, restaurantName, phone \}\)/);
+});
+
+test("Owner-Aktivierung startet nach Einführung des Plan-Katalogs im BASIC-Paket", () => {
+  assert.match(ownerTrialBasicPlanMigration, /create or replace function public\.start_restaurant_owner_trial/);
+  assert.match(ownerTrialBasicPlanMigration, /'BASIC',\s*'trialing'/);
+  assert.doesNotMatch(ownerTrialBasicPlanMigration, /'pilot'/i);
+  assert.match(ownerTrialBasicPlanMigration, /security definer/);
+  assert.match(ownerTrialBasicPlanMigration, /user_id_value uuid := auth\.uid\(\)/);
+  assert.match(ownerTrialBasicPlanMigration, /on conflict \(restaurant_id, user_id\) do update/);
+  assert.match(ownerTrialBasicPlanMigration, /on conflict \(branch_id\) do update/);
+  assert.match(ownerTrialBasicPlanMigration, /revoke execute[\s\S]*from public, anon/);
+  assert.match(ownerTrialBasicPlanMigration, /grant execute[\s\S]*to authenticated/);
+  assert.match(ownerBranchBasicPlanMigration, /create or replace function public\.ensure_restaurant_branch/);
+  assert.match(ownerBranchBasicPlanMigration, /'trialing',\s*'BASIC'/);
+  assert.doesNotMatch(ownerBranchBasicPlanMigration, /'pilot'/i);
+  assert.match(ownerBranchBasicPlanMigration, /security definer/);
+  assert.match(ownerBranchBasicPlanMigration, /on conflict \(branch_id\) do nothing/);
+  assert.match(ownerTrialLegalPackageMigration, /create or replace function public\.generate_restaurant_legal_package/);
+  assert.match(ownerTrialLegalPackageMigration, /s\.plan_key = 'BASIC' and s\.status = 'trialing'/);
+  assert.match(ownerTrialLegalPackageMigration, /is_trial_context or review_status = 'REVIEWED'/);
+  assert.match(ownerTrialLegalPackageMigration, /security definer/);
+  assert.match(ownerTrialLegalPackageMigration, /LEGAL_PROFILE_NOT_AUTHORIZED/);
+  assert.match(ownerTrialLegalPackageMigration, /revoke execute[\s\S]*from public, anon/);
+  assert.match(ownerTrialLegalPackageMigration, /grant execute[\s\S]*to authenticated/);
 });
 
 test("Fehlerzustände werden ohne technische Supabase-Texte abgebildet", () => {

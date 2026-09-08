@@ -36,7 +36,7 @@ export function AuthCallbackPage() {
         if (cancelled) return;
         setConfirmed(true);
         navigationTimer = window.setTimeout(() => {
-          navigate(registrationCompleted ? "/admin/onboarding" : "/admin", { replace: true });
+          navigate(registrationCompleted ? "/admin/onboarding" : "/register", { replace: true });
         }, 800);
       } catch (caught) {
         if (!cancelled) {
