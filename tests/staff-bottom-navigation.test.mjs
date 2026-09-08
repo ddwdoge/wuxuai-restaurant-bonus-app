@@ -17,11 +17,12 @@ test("Bottom Navigation enthält genau die fünf V1-Schnellzugriffe", () => {
 });
 
 test("Schnellzugriffe verwenden bestehende Staff-Funktionen", () => {
-  assert.match(nav, /openStaffView\("home"\)/);
+  assert.match(nav, /navigateFromScanner\("home"\)/);
   assert.match(nav, /startQrScanner\(\)/);
   assert.match(nav, /setPinDetailOpen\(true\)/);
-  assert.match(nav, /openStaffView\("search"\)/);
+  assert.match(nav, /navigateFromScanner\("search"\)/);
   assert.match(nav, /setMoreOpen\(true\)/);
+  assert.match(staffPortal, /function navigateFromScanner[\s\S]*hasActivePointsTaskRef\.current[\s\S]*minimizeActivePointsTask/);
 });
 
 test("Aktive Zustände und Scanner-Rückkehr sind eindeutig", () => {

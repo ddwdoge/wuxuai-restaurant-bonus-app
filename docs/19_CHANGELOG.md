@@ -1,6 +1,26 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-08 - Minimierbaren Staff-Punktevorgang auf Staging vorbereitet
+
+- Den bestehenden QR- und Tages-PIN-Ablauf um genau einen fluechtigen,
+  minimierbaren Punktevorgang pro Staff-Sitzung erweitert.
+- Minimieren erhaelt QR-Referenz, Betrag, sichere Vorschau und Arbeitsschritt
+  nur im React-Speicher; Tages-PIN-Werte werden nie im Task gespeichert.
+- Ablauf, Rollen- und Restaurantwechsel sowie Logout, erfolgreicher Abschluss,
+  expliziter Abbruch und unveraenderte QR-Ablaufzeit raeumen den Task sicher auf.
+- Start, Tages-PIN, Gaestesuche und Mehr bleiben waehrend eines minimierten
+  Vorgangs erreichbar. Ein neuer Scan verlangt eine ausdrueckliche Entscheidung.
+- Neue Task-Texte fuer DE, EN, FR, IT, ES, ZH und KO ergaenzt; kompakte
+  Bedienflaechen bleiben mindestens 44 Pixel hoch.
+- Keine Migration, keine Server-, QR-, PIN-, RLS-, Gift-, Redemption- oder
+  Kassa-Aenderung. Production blieb unveraendert.
+- Geprueften Build als Worker-Version
+  `ba54c0ad-8c72-4fe6-b5b2-d352e0e6d760` nur auf Staging veroeffentlicht.
+- Automatisierte Tests sind vollstaendig gruen. Der echte Staging-Ablauf mit
+  persoenlichem Kunden-QR, Minimieren, Tages-PIN, Fortsetzen und Abschluss
+  wurde vom Founder physisch bestaetigt; Staff Workflow V2 ist `FINAL LOCK`.
+
 ## 2026-09-06 - Unified UI/UX System Phase 2 auf Staging finalisiert
 
 - Gemeinsame Design-Tokens und wiederverwendbare Komponenten fuer Buttons,
