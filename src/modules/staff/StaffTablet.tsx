@@ -13,12 +13,15 @@ import {
   KeyRound,
   LogOut,
   Menu,
+  Minimize2,
   MoreHorizontal,
+  Play,
   QrCode,
   Search,
   ShieldCheck,
   Stamp,
   UserSearch,
+  X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
@@ -46,6 +49,15 @@ import {
 import { useTenant } from "../tenant/TenantProvider";
 import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
+import {
+  activePointsTaskExpiryMs,
+  activePointsTaskStage,
+  createActivePointsTaskContext,
+  isActivePointsTaskContextValid,
+  isActivePointsTaskExpired,
+  withActivePointsTaskExpiry,
+  type ActivePointsTaskContext,
+} from "./staffActivePointsTask.mjs";
 import "./staff-premium.css";
 
 type StaffView = "home" | "search" | "earn";
@@ -186,6 +198,9 @@ export function StaffTablet() {
   }, [activeRestaurant, restaurants, slug]);
   const staffBranding = activeRestaurant?.id === staffRestaurant?.id ? branding : null;
   const restaurantId = staffRestaurant?.id ?? "";
+  const staffAccessContext = staffPortalAccess?.success
+    ? [staffPortalAccess.access_mode, staffPortalAccess.restaurant_role, staffPortalAccess.staff_role].filter(Boolean).join(":")
+    : "";
   const [view, setView] = useState<StaffView>("home");
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
     defaultSettingsForMode(restaurantId, "menu_points"),
@@ -197,6 +212,10 @@ export function StaffTablet() {
   const [billAmount, setBillAmount] = useState(0);
   const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
   const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
+  const [activePointsTaskContext, setActivePointsTaskContext] = useState<ActivePointsTaskContext | null>(null);
+  const [pointsTaskMinimized, setPointsTaskMinimized] = useState(false);
+  const [cancelTaskPromptOpen, setCancelTaskPromptOpen] = useState(false);
+  const [replaceTaskPromptOpen, setReplaceTaskPromptOpen] = useState(false);
   const [customerPreviewError, setCustomerPreviewError] = useState<string | null>(null);
   const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
@@ -229,6 +248,7 @@ export function StaffTablet() {
   const scannerLaunchPendingRef = useRef(false);
   const scannerReturnViewRef = useRef<StaffView>("home");
   const scannerHistoryEntryRef = useRef(false);
+  const hasActivePointsTaskRef = useRef(false);
   const pinActionFeedbackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -359,9 +379,13 @@ export function StaffTablet() {
     function handleScannerBack() {
       if (!scannerHistoryEntryRef.current) return;
       scannerHistoryEntryRef.current = false;
-      closeScanner(true);
-      resetSelectedCustomerState();
-      openStaffView(scannerReturnViewRef.current);
+      if (hasActivePointsTaskRef.current) {
+        minimizeActivePointsTask(scannerReturnViewRef.current, true);
+      } else {
+        closeScanner(true);
+        resetSelectedCustomerState();
+        openStaffView(scannerReturnViewRef.current);
+      }
     }
 
     window.addEventListener("popstate", handleScannerBack);
@@ -411,6 +435,13 @@ export function StaffTablet() {
   const recognizedCustomerName = pointsPreview?.customer_label ?? selectedCustomer?.name ?? null;
   const recognizedPointsBalance = pointsPreview?.points_balance ?? selectedCustomer?.points_balance ?? null;
   const hasCustomerContext = Boolean(selectedCustomer || pointsQrReference);
+  const hasActivePointsTask = Boolean(pointsQrReference && activePointsTaskContext);
+  const pointsTaskStage = activePointsTaskStage({
+    hasPreview: Boolean(pointsPreview),
+    amountCents: Math.round(billAmount * 100),
+    pinRequired: Boolean(pendingPinAction),
+  });
+  const pointsTaskStatus = translateKey(`staff.activePoints.${pointsTaskStage}`);
   const customerStatusMessage = message
     ?? (pointsPreview
       ? "Kunde erfolgreich geladen."
@@ -426,11 +457,61 @@ export function StaffTablet() {
     [],
   );
 
+  useEffect(() => {
+    hasActivePointsTaskRef.current = hasActivePointsTask;
+  }, [hasActivePointsTask]);
+
+  useEffect(() => {
+    if (!activePointsTaskContext) return;
+    if (isActivePointsTaskContextValid(activePointsTaskContext, {
+      actorId: user?.id,
+      restaurantId,
+      roleContext: staffAccessContext,
+    })) return;
+
+    hasActivePointsTaskRef.current = false;
+    setActivePointsTaskContext(null);
+    setPointsTaskMinimized(false);
+    setPointsQrReference(null);
+    setPointsPreview(null);
+    setPendingPinAction(null);
+    setPinActionFeedback(null);
+    setPinDraft("");
+    setBillAmount(0);
+    setCancelTaskPromptOpen(false);
+    setReplaceTaskPromptOpen(false);
+    stopScanner();
+    setScannerOpen(false);
+    setScannerStarting(false);
+  }, [activePointsTaskContext, restaurantId, staffAccessContext, user?.id]);
+
+  useEffect(() => {
+    if (!pointsTaskMinimized || !activePointsTaskContext) return undefined;
+    const expiry = activePointsTaskExpiryMs(activePointsTaskContext);
+    const remainingMs = Math.max(0, (expiry ?? 0) - Date.now());
+    const timer = window.setTimeout(() => {
+      hasActivePointsTaskRef.current = false;
+      setActivePointsTaskContext(null);
+      setPointsTaskMinimized(false);
+      setPointsQrReference(null);
+      setPointsPreview(null);
+      setPendingPinAction(null);
+      setPinActionFeedback(null);
+      setPinDraft("");
+      setBillAmount(0);
+      setCancelTaskPromptOpen(false);
+      setReplaceTaskPromptOpen(false);
+      setMessage(translateKey("staff.activePoints.expired"));
+    }, remainingMs);
+    return () => window.clearTimeout(timer);
+  }, [activePointsTaskContext, pointsTaskMinimized, translateKey]);
+
   async function handleStaffLogout() {
     setLoggingOut(true);
     setLogoutError(null);
 
     try {
+      resetSelectedCustomerState();
       await signOut();
       navigate(buildStaffLoginPath(slug), { replace: true });
     } catch {
@@ -447,12 +528,17 @@ export function StaffTablet() {
   }
 
   function resetSelectedCustomerState() {
+    hasActivePointsTaskRef.current = false;
     setPendingPinAction(null);
     setPinActionFeedback(null);
     setPinDraft("");
     setSelectedCustomerId("");
     setPointsQrReference(null);
     setPointsPreview(null);
+    setActivePointsTaskContext(null);
+    setPointsTaskMinimized(false);
+    setCancelTaskPromptOpen(false);
+    setReplaceTaskPromptOpen(false);
     setCustomerPreviewError(null);
     setBillAmount(0);
     setQuery("");
@@ -520,7 +606,18 @@ export function StaffTablet() {
     const nextQuery = searchValue.trim();
     const pointsReference = extractCustomerPointsQrReference(nextQuery);
     if (pointsReference && restaurantId && restaurantControlledEnabled) {
+      if (!user?.id || !staffAccessContext) {
+        setMessage("Der Mitarbeiterzugang konnte nicht sicher bestätigt werden.");
+        return;
+      }
       setPointsQrReference(pointsReference);
+      setActivePointsTaskContext(createActivePointsTaskContext({
+        actorId: user.id,
+        restaurantId,
+        roleContext: staffAccessContext,
+      }));
+      hasActivePointsTaskRef.current = true;
+      setPointsTaskMinimized(false);
       setPointsPreview(null);
       setCustomerPreviewError(null);
       setBillAmount(0);
@@ -622,7 +719,7 @@ export function StaffTablet() {
     }
   }
 
-  async function startQrScanner() {
+  async function startFreshQrScanner() {
     if (scannerLaunchPendingRef.current || scannerOpen) return;
     if (!restaurantControlledEnabled) {
       setMessage("Der Kunden-QR-Scanner ist für dieses Restaurant nicht aktiviert.");
@@ -640,6 +737,15 @@ export function StaffTablet() {
     setMessage(null);
     await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     await activateQrScannerCamera();
+  }
+
+  async function startQrScanner() {
+    if (scannerLaunchPendingRef.current || scannerOpen) return;
+    if (hasActivePointsTaskRef.current) {
+      setReplaceTaskPromptOpen(true);
+      return;
+    }
+    await startFreshQrScanner();
   }
 
   async function restartQrScanner() {
@@ -671,9 +777,66 @@ export function StaffTablet() {
   }
 
   function dismissScanner() {
+    if (hasActivePointsTaskRef.current) {
+      minimizeActivePointsTask(scannerReturnViewRef.current);
+      return;
+    }
     closeScanner();
     resetSelectedCustomerState();
     openStaffView(scannerReturnViewRef.current);
+  }
+
+  function minimizeActivePointsTask(nextView: StaffView = "home", fromHistory = false) {
+    if (!hasActivePointsTaskRef.current) {
+      dismissScanner();
+      return;
+    }
+    setPinDraft("");
+    setPointsTaskMinimized(true);
+    closeScanner(fromHistory);
+    openStaffView(nextView);
+  }
+
+  function navigateFromScanner(nextView: StaffView) {
+    if (hasActivePointsTaskRef.current) {
+      minimizeActivePointsTask(nextView);
+      return;
+    }
+    closeScanner();
+    openStaffView(nextView);
+  }
+
+  function terminateActivePointsTask(messageText?: string) {
+    closeScanner();
+    resetSelectedCustomerState();
+    setView("home");
+    if (messageText) setMessage(messageText);
+  }
+
+  function requestActivePointsTaskCancel() {
+    setPinDraft("");
+    setPointsTaskMinimized(true);
+    closeScanner();
+    setCancelTaskPromptOpen(true);
+  }
+
+  function resumeActivePointsTask() {
+    if (!activePointsTaskContext || !hasActivePointsTaskRef.current) return;
+    const validContext = isActivePointsTaskContextValid(activePointsTaskContext, {
+      actorId: user?.id,
+      restaurantId,
+      roleContext: staffAccessContext,
+    });
+    if (!validContext || isActivePointsTaskExpired(activePointsTaskContext)) {
+      terminateActivePointsTask(translateKey("staff.activePoints.expired"));
+      return;
+    }
+    scannerReturnViewRef.current = view;
+    setPinDraft("");
+    setPointsTaskMinimized(false);
+    setPinDetailOpen(false);
+    setMoreOpen(false);
+    setScannerOpen(true);
   }
 
   async function executePinAction(action: PendingPinAction, pin: string) {
@@ -772,7 +935,11 @@ export function StaffTablet() {
     const amountCents = Math.round(billAmount * 100);
     setSaving(true); setMessage(null); setCustomerPreviewError(null);
     try {
-      setPointsPreview(await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents));
+      const preview = await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents);
+      setPointsPreview(preview);
+      setActivePointsTaskContext((current) => current
+        ? withActivePointsTaskExpiry(current, preview.expires_at)
+        : current);
     } catch (error) {
       setPointsPreview(null);
       const nextError = error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.";
@@ -797,7 +964,8 @@ export function StaffTablet() {
       run: async (dailyPin) => {
         const result = await confirmRestaurantControlledPoints({ restaurantId, qrReference: pointsQrReference,
           amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey });
-        setPointsQrReference(null); setPointsPreview(null); setBillAmount(0);
+        hasActivePointsTaskRef.current = false;
+        setPointsQrReference(null); setPointsPreview(null); setActivePointsTaskContext(null); setPointsTaskMinimized(false); setBillAmount(0);
         setActivityRefreshToken((current) => current + 1);
         return {
           title: "Punkte erfolgreich gutgeschrieben",
@@ -854,7 +1022,8 @@ export function StaffTablet() {
     }
     return (
       <>
-        <button className="button secondary" disabled={saving} onClick={inScannerDrawer ? dismissScanner : closePinAction} type="button">Abbrechen</button>
+        <button className="button secondary" disabled={saving} onClick={inScannerDrawer ? requestActivePointsTaskCancel : closePinAction} type="button">{translateKey("staff.activePoints.cancel")}</button>
+        {inScannerDrawer ? <button className="button secondary" disabled={saving} onClick={() => minimizeActivePointsTask()} type="button"><Minimize2 aria-hidden="true" size={17} />{translateKey("staff.activePoints.minimize")}</button> : null}
         <button className="button" disabled={!pinDraft || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? "Wird geprüft …" : "Bestätigen"}</button>
       </>
     );
@@ -946,7 +1115,7 @@ export function StaffTablet() {
   }
 
   return (
-    <main className="tablet-shell staff-premium-shell">
+    <main className={`tablet-shell staff-premium-shell${pointsTaskMinimized && hasActivePointsTask ? " has-active-points-task" : ""}`}>
       <header className="staff-premium-header">
         <div className="restaurant-brand-header staff-premium-brand">
           <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={staffBranding?.logo_url} name={staffRestaurant?.name ?? "Restaurant"} presentation={staffBranding} primaryColor={staffBranding?.primary_color} size="header" />
@@ -1279,11 +1448,34 @@ export function StaffTablet() {
 
       </div>
 
+      {pointsTaskMinimized && hasActivePointsTask ? (
+        <aside aria-label={translateKey("staff.activePoints.title")} className="staff-active-points-task" role="status">
+          <span className="staff-active-points-task-icon"><HandCoins aria-hidden="true" size={20} /></span>
+          <span className="staff-active-points-task-copy">
+            <strong>{translateKey("staff.activePoints.title")}</strong>
+            <small>{pointsTaskStatus}</small>
+          </span>
+          <button className="staff-active-points-task-resume" onClick={resumeActivePointsTask} type="button">
+            <Play aria-hidden="true" size={17} />
+            <span>{translateKey("staff.activePoints.resume")}</span>
+          </button>
+          <button
+            aria-label={translateKey("staff.activePoints.cancel")}
+            className="staff-active-points-task-cancel"
+            onClick={requestActivePointsTaskCancel}
+            title={translateKey("staff.activePoints.cancel")}
+            type="button"
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </aside>
+      ) : null}
+
       <nav aria-label="Mitarbeiter-Navigation" className="staff-premium-bottom-nav">
         <button
           aria-current={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
           className={view === "home" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
-          onClick={() => { closeScanner(); openStaffView("home"); }}
+          onClick={() => navigateFromScanner("home")}
           type="button"
         >
           <Home aria-hidden="true" size={21} />
@@ -1303,7 +1495,11 @@ export function StaffTablet() {
         <button
           aria-current={pinDetailOpen ? "page" : undefined}
           className={pinDetailOpen ? "active" : ""}
-          onClick={() => { closeScanner(); setPinDetailOpen(true); }}
+          onClick={() => {
+            if (hasActivePointsTaskRef.current) minimizeActivePointsTask(view);
+            else closeScanner();
+            setPinDetailOpen(true);
+          }}
           type="button"
         >
           <KeyRound aria-hidden="true" size={21} />
@@ -1312,7 +1508,7 @@ export function StaffTablet() {
         <button
           aria-current={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "page" : undefined}
           className={view === "search" && !scannerOpen && !pinDetailOpen && !moreOpen ? "active" : ""}
-          onClick={() => { closeScanner(); openStaffView("search"); }}
+          onClick={() => navigateFromScanner("search")}
           type="button"
         >
           <UserSearch aria-hidden="true" size={21} />
@@ -1322,7 +1518,11 @@ export function StaffTablet() {
           aria-current={moreOpen ? "page" : undefined}
           aria-expanded={moreOpen}
           className={moreOpen ? "active" : ""}
-          onClick={() => { closeScanner(); setMoreOpen(true); }}
+          onClick={() => {
+            if (hasActivePointsTaskRef.current) minimizeActivePointsTask(view);
+            else closeScanner();
+            setMoreOpen(true);
+          }}
           type="button"
         >
           <MoreHorizontal aria-hidden="true" size={21} />
@@ -1334,7 +1534,7 @@ export function StaffTablet() {
         description={pendingPinAction
           ? pendingPinAction.detail
           : "Scanne den persönlichen Bonus-QR des Gastes und bestätige die Punkte sicher im selben Ablauf."}
-        dismissOnOverlay={false}
+        dismissOnOverlay={hasActivePointsTask}
         footer={pendingPinAction ? renderPinActionFooter(true) : undefined}
         onClose={dismissScanner}
         open={scannerOpen}
@@ -1483,10 +1683,45 @@ export function StaffTablet() {
                   </div>
                 )}
               </section>
-              <button className="button secondary" disabled={saving} onClick={() => void restartQrScanner()} type="button">Anderen Gast wählen</button>
+              <div className="staff-active-points-task-actions">
+                <button className="button secondary" disabled={saving} onClick={() => minimizeActivePointsTask()} type="button"><Minimize2 aria-hidden="true" size={17} />{translateKey("staff.activePoints.minimize")}</button>
+                <button className="button secondary" disabled={saving} onClick={requestActivePointsTaskCancel} type="button">{translateKey("staff.activePoints.cancel")}</button>
+              </div>
             </div>
           ) : null}
         </div>
+      </AppDrawer>
+
+      <AppDrawer
+        description={translateKey("staff.activePoints.cancelDescription")}
+        footer={(
+          <>
+            <button className="button secondary" onClick={() => setCancelTaskPromptOpen(false)} type="button">{translateKey("staff.activePoints.keep")}</button>
+            <button className="button" onClick={() => terminateActivePointsTask()} type="button">{translateKey("staff.activePoints.cancelConfirm")}</button>
+          </>
+        )}
+        onClose={() => setCancelTaskPromptOpen(false)}
+        open={cancelTaskPromptOpen}
+        size="compact"
+        title={translateKey("staff.activePoints.cancelTitle")}
+      >
+        <p className="muted">{translateKey("staff.activePoints.cancelDescription")}</p>
+      </AppDrawer>
+
+      <AppDrawer
+        description={translateKey("staff.activePoints.replaceDescription")}
+        footer={(
+          <>
+            <button className="button secondary" onClick={() => { setReplaceTaskPromptOpen(false); resumeActivePointsTask(); }} type="button">{translateKey("staff.activePoints.continue")}</button>
+            <button className="button" onClick={() => { resetSelectedCustomerState(); void startFreshQrScanner(); }} type="button">{translateKey("staff.activePoints.startNew")}</button>
+          </>
+        )}
+        onClose={() => setReplaceTaskPromptOpen(false)}
+        open={replaceTaskPromptOpen}
+        size="compact"
+        title={translateKey("staff.activePoints.replaceTitle")}
+      >
+        <p className="muted">{translateKey("staff.activePoints.replaceDescription")}</p>
       </AppDrawer>
 
       <AppDrawer
@@ -1567,7 +1802,7 @@ export function StaffTablet() {
         dismissOnOverlay={false}
         footer={renderPinActionFooter()}
         onClose={closePinAction}
-        open={Boolean(pendingPinAction) && !scannerOpen}
+        open={Boolean(pendingPinAction) && !scannerOpen && !pointsTaskMinimized}
         size="compact"
         title={pendingPinAction?.title ?? "Punkte bestätigen"}
       >

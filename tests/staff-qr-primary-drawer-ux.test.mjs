@@ -42,7 +42,7 @@ test("QR-Ablauf hält Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
   assert.match(scannerDrawer, /Punkte serverseitig berechnen/);
   assert.match(scannerDrawer, /Mit Tages-PIN bestätigen/);
   assert.match(scannerDrawer, /renderPinActionContent\(true\)/);
-  assert.match(staffPortal, /open=\{Boolean\(pendingPinAction\) && !scannerOpen\}/);
+  assert.match(staffPortal, /open=\{Boolean\(pendingPinAction\) && !scannerOpen && !pointsTaskMinimized\}/);
 });
 
 test("Vorschaufehler blockiert die finale Buchung", () => {
@@ -61,12 +61,13 @@ test("erfolgreicher Ablauf kann beendet oder für nächsten Gast neu gestartet w
   assert.match(staffPortal, /setPointsPreview\(null\)/);
 });
 
-test("Escape, Schließen und Browser-Zurück räumen Kamera und Kundenzustand auf", () => {
+test("Escape, Schließen und Browser-Zurück minimieren einen aktiven Vorgang", () => {
   assert.match(scannerDrawer, /onClose=\{dismissScanner\}/);
+  assert.match(scannerDrawer, /dismissOnOverlay=\{hasActivePointsTask\}/);
   assert.match(staffPortal, /window\.history\.pushState/);
   assert.match(staffPortal, /window\.addEventListener\("popstate", handleScannerBack\)/);
-  assert.match(staffPortal, /closeScanner\(true\)/);
-  assert.match(staffPortal, /resetSelectedCustomerState\(\)/);
+  assert.match(staffPortal, /minimizeActivePointsTask\(scannerReturnViewRef\.current, true\)/);
+  assert.match(staffPortal, /function requestActivePointsTaskCancel\(\)/);
 });
 
 for (const width of [320, 375, 390, 414, 430, 768, 1024]) {
