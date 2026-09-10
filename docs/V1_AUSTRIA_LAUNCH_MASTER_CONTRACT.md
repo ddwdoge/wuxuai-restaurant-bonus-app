@@ -87,6 +87,13 @@ verpflichtende native App nutzbar.
 
 ## 4. Globale Passwortsichtbarkeit
 
+Implementierungsstatus: **STAGING READY FOR PHYSICAL FINAL LOCK**
+
+Der gemeinsame UI-Vertrag ist implementiert, automatisch vollstaendig und auf
+den oeffentlich erreichbaren Staging-Auth-Routen physisch geprueft. Der
+tokengebundene Passwort-Reset-/Aenderungsweg bleibt Teil des finalen
+Founder-kontrollierten Golden-Path-Nachweises.
+
 Jedes Passwortfeld braucht fuer V1:
 
 - eine Anzeigen-/Ausblenden-Funktion,

@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
+import { PasswordInput } from "../../shared/components/PasswordInput";
 import { customerPhoneValidation, normalizeCustomerLocalPhoneInput } from "./customerIdentity.mjs";
 import { isValidCustomerFirstName } from "./customerRegistration.mjs";
 import {
@@ -193,13 +194,13 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
             ) : (
               <>
                 <div className="central-auth-field"><FormLabel htmlFor="customer-email" required>E-Mail-Adresse</FormLabel><input autoComplete="email" id="customer-email" inputMode="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
-                <div className="central-auth-field"><FormLabel htmlFor="customer-password" required>Passwort</FormLabel><input autoComplete={mode === "login" ? "current-password" : "new-password"} id="customer-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /><small>Mindestens 8 Zeichen</small></div>
+                <div className="central-auth-field"><FormLabel htmlFor="customer-password" required>Passwort</FormLabel><PasswordInput autoComplete={mode === "login" ? "current-password" : "new-password"} id="customer-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required value={password} /><small>Mindestens 8 Zeichen</small></div>
               </>
             )}
             {mode === "register" && !activatingExistingAccount ? (
               <div className="central-auth-field">
                 <FormLabel htmlFor="customer-confirm-password" required>Passwort bestätigen</FormLabel>
-                <input
+                <PasswordInput
                   aria-describedby={confirmPasswordError ? "customer-confirm-password-error" : undefined}
                   aria-invalid={confirmPasswordError ? true : undefined}
                   autoComplete="new-password"
@@ -208,7 +209,6 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
                   onBlur={() => setConfirmPasswordTouched(true)}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   required
-                  type="password"
                   value={confirmPassword}
                 />
                 {confirmPasswordError ? <small className="central-auth-field-error" id="customer-confirm-password-error">{confirmPasswordError}</small> : null}

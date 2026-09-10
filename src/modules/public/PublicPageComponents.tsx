@@ -8,6 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FormLabel } from "../../shared/components/FormLabel";
+import { PasswordInput } from "../../shared/components/PasswordInput";
 import "./public-entry-premium.css";
 
 type PublicPageShellProps = {
@@ -74,17 +75,29 @@ export function PublicFormField({
   const errorId = `${inputId}-error`;
   const hintId = `${inputId}-hint`;
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const { type, ...restInputProps } = inputProps;
 
   return (
     <div className="public-premium-field">
       <FormLabel htmlFor={inputId} optional={optional} required={Boolean(inputProps.required)}>{label}</FormLabel>
-      <input
-        {...inputProps}
-        aria-describedby={describedBy}
-        aria-invalid={error ? true : undefined}
-        aria-required={inputProps.required ? true : undefined}
-        id={inputId}
-      />
+      {type === "password" ? (
+        <PasswordInput
+          {...restInputProps}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : undefined}
+          aria-required={inputProps.required ? true : undefined}
+          id={inputId}
+        />
+      ) : (
+        <input
+          {...restInputProps}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : undefined}
+          aria-required={inputProps.required ? true : undefined}
+          id={inputId}
+          type={type}
+        />
+      )}
       {hint ? <small className="public-premium-field-hint" id={hintId}>{hint}</small> : null}
       {error ? <small className="public-premium-field-error" id={errorId}>{error}</small> : null}
     </div>

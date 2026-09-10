@@ -1,6 +1,25 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-10 - Globale Passwortsichtbarkeit auf Staging bereitgestellt
+
+- Alle elf aktiven Konto-Passwortfelder in Customer-, Owner-, Staff-,
+  Einladungs- und Recovery-Flows an eine gemeinsame Anzeigen-/Ausblenden-
+  Komponente gebunden.
+- Eingaben bleiben standardmaessig verborgen; der barrierearme Eye-/EyeOff-
+  Schalter ist ein nicht sendender Button mit mindestens 44 Pixel Touchflaeche.
+- Anzeigen und erneutes Ausblenden erhalten Wert, Validierung und Browser-
+  Autocomplete. Passwort und Passwortbestaetigung bleiben unabhaengig.
+- Beschriftungen fuer DE, EN, FR, IT, ES, ZH und KO ergaenzt.
+- Tages-PIN-Felder bleiben entsprechend ihrem eigenen Sicherheitsvertrag
+  verborgen und wurden nicht veraendert.
+- Keine Auth-, Session-, Supabase-, RLS-, Datenbank- oder Production-Aenderung.
+- Staging-Worker-Version `d1275d87-415e-4d0e-a4ed-c589088e4649` bestand die
+  physische Matrix fuer 320 bis 1280 Pixel, fuenf oeffentliche Auth-Routen und
+  alle sieben Sprachen.
+- Der tokengebundene Passwort-Reset-/Aenderungsweg bleibt fuer den finalen
+  physischen Golden-Path-Nachweis offen; es wurde kein Konto veraendert.
+
 ## 2026-09-10 - Customer Activation First-Login Setup Drawer
 
 - Der zentrale Kundenbereich oeffnet nach dem ersten erfolgreichen Login einen
