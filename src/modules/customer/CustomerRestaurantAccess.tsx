@@ -66,12 +66,12 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     }
   }
 
-  if (authLoading) return <AppShell className="central-auth-shell"><div className="central-auth-page"><LoadingState description="Dein Kundenkonto wird geprüft." /></div></AppShell>;
+  if (authLoading) return <AppShell className="central-auth-shell"><div className="central-auth-page"><LoadingState description="Dein Gästekonto wird geprüft." /></div></AppShell>;
   if (!user) return (
     <AppShell className="central-auth-shell"><div className="central-auth-page"><PremiumCard className="central-auth-card">
       <div className="central-icon-heading"><Store aria-hidden="true" size={24} /><div><span>Restaurant erkannt</span><h1>{restaurantSlug}</h1></div></div>
-      <p>Melde dich mit deinem WUXUAI-Kundenkonto an. Der gescannte Restaurantkontext bleibt dabei erhalten.</p>
-      <div className="central-auth-actions"><Link className="premium-button premium-button-primary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={19} /> Mit bestehendem Kundenkonto anmelden</Link><Link className="premium-button premium-button-secondary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}><UserPlus aria-hidden="true" size={19} /> Neues Kundenkonto erstellen</Link></div>
+      <p>Melde dich mit deinem WUXUAI-Gästekonto an. Der gescannte Restaurantkontext bleibt dabei erhalten.</p>
+      <div className="central-auth-actions"><Link className="premium-button premium-button-primary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={19} /> Mit bestehendem Gästekonto anmelden</Link><Link className="premium-button premium-button-secondary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}><UserPlus aria-hidden="true" size={19} /> Neues Gästekonto erstellen</Link></div>
     </PremiumCard></div></AppShell>
   );
   if (portalRestaurantSlug) return <CustomerPortal entryMessage={joinSuccessMessage} isBonusCollection={isBonusCollection} restaurantSlug={portalRestaurantSlug} />;
@@ -81,7 +81,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   return <AppShell className="central-auth-shell"><div className="central-auth-page"><PremiumCard className="central-auth-card">
     <div className="central-icon-heading"><Store aria-hidden="true" size={24} /><div><span>Neues Lokal</span><h1>{context.restaurant_name}</h1></div></div>
     <h2>Möchtest du dem Bonusprogramm von {context.restaurant_name} beitreten?</h2>
-    <p>Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Kundenkonto erstellt.</p>
+    <p>Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Gästekonto erstellt.</p>
     {!legalReady ? <p className="central-status-message" role="alert">Dieses Restaurant hat die erforderlichen rechtlichen Dokumente noch nicht vollständig veröffentlicht.</p> : <div className="central-join-consents">
       <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
       <label><input aria-required="true" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} required type="checkbox" /> <span>Ich akzeptiere die Teilnahmebedingungen. *</span></label>

@@ -118,7 +118,7 @@ export function StaffPage() {
   }
 
   if (!canManage) {
-    return <main className="card empty-state-card" role="alert"><Ban size={32} /><h1>Kein Zugriff auf die Teamverwaltung</h1><p className="muted">Nur Owner und berechtigte Restaurant-Administratoren dürfen Teamzugänge verwalten.</p></main>;
+    return <main className="card empty-state-card" role="alert"><Ban size={32} /><h1>Kein Zugriff auf die Teamverwaltung</h1><p className="muted">Nur Inhaber und berechtigte Restaurant-Administratoren dürfen Teamzugänge verwalten.</p></main>;
   }
 
   return (

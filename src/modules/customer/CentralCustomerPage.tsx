@@ -20,6 +20,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { InfoTrigger } from "../../shared/components/InfoTrigger";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
@@ -180,7 +181,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
     try {
       setAccount(await loadCustomerAccount());
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Dein Kundenbereich konnte gerade nicht geladen werden.");
+      setError(nextError instanceof Error ? nextError.message : "Dein Gästeportal konnte gerade nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -346,11 +347,11 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
     <AppShell>
       <div className="central-customer-page">
         <header className="central-customer-header">
-          <div><span>Dein Kundenbereich</span><h1>{heading}</h1><p>{view === "home" ? "Schön, dass du wieder da bist." : view === "locations" ? "Alle deine Bonusprogramme, sauber nach Lokal getrennt." : "Deine Daten und Einstellungen an einem Ort."}</p></div>
+          <div><span>Dein Gästeportal</span><h1>{heading}</h1><p>{view === "home" ? "Schön, dass du wieder da bist." : view === "locations" ? "Alle deine Bonusprogramme, sauber nach Lokal getrennt." : "Deine Daten und Einstellungen an einem Ort."}</p></div>
           <Link className="premium-button premium-button-secondary" to="/customer/restaurants"><Store aria-hidden="true" size={18} /> Lokale entdecken</Link>
         </header>
 
-        {loading ? <LoadingState description="Dein Kundenbereich wird geladen." /> : null}
+        {loading ? <LoadingState description="Dein Gästeportal wird geladen." /> : null}
         {error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => void reload()} type="button">Erneut versuchen</button>} description={error} title="Deine Vorteile konnten nicht geladen werden" /> : null}
         {emptyAccess ? (
           <EmptyState
@@ -452,7 +453,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               <Download aria-hidden="true" size={20} />
               <span><strong>{t("customer.activation.install")}</strong><small>{installState === "installed" ? t("customer.activation.installInstalled") : installState === "prompt_available" ? t("customer.activation.installReady") : installState === "unavailable" ? t("customer.activation.installUnavailable") : t("customer.activation.installManual")}</small></span>
               <StatusBadge tone={installActivationStatus.tone}>{installActivationStatus.label}</StatusBadge>
-              {(installState === "manual_ios" || installState === "manual_browser") ? <button aria-label={t("customer.activation.installHelpOpen")} className="central-activation-info" onClick={() => setActivationHelpOpen((current) => !current)} type="button"><Info aria-hidden="true" size={19} /></button> : null}
+              {(installState === "manual_ios" || installState === "manual_browser") ? <InfoTrigger className="central-activation-info" label={t("customer.activation.installHelpOpen")} onClick={() => setActivationHelpOpen((current) => !current)} /> : null}
             </div> : null}
             {pushState !== "unavailable" && (activationShowAll || activationSummary.steps.push === "pending") ? (
               <div className="central-activation-step">

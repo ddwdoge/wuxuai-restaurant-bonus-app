@@ -19,7 +19,7 @@ test("Punktehinweis ist im fokussierten Drawer statt im Home-Seitenfluss", () =>
 
 test("Punktekarte öffnet den Drawer über einen zugänglichen Infobutton", () => {
   assert.match(portal, /onInfo=\{\(\) => setPointsInfoOpen\(true\)\}/);
-  assert.match(components, /aria-label="Informationen zu Punkten"/);
+  assert.match(components, /<InfoTrigger className="premium-points-info" label="Informationen zu Punkten"/);
   assert.match(components, /className="premium-points-info"/);
   assert.match(styles, /\.premium-points-info \{[^}]*flex: 0 0 44px;[^}]*height: 44px;/s);
   assert.match(styles, /\.premium-points-info:focus-visible/);

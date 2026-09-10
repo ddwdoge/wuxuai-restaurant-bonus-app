@@ -130,7 +130,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
       } else if (signupState === "existing_or_obfuscated") {
         setMessageKind("error");
         setConfirmationPending(true);
-        setMessage("Registrierung konnte nicht abgeschlossen werden. Prüfe, ob du bereits ein Kundenkonto hast, oder fordere eine neue Bestätigungs-E-Mail an.");
+        setMessage("Registrierung konnte nicht abgeschlossen werden. Prüfe, ob du bereits ein Gästekonto hast, oder fordere eine neue Bestätigungs-E-Mail an.");
       } else {
         throw new Error("customer_signup_incomplete");
       }
@@ -179,9 +179,9 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         <PremiumCard className="central-auth-card">
           <div className="central-icon-heading">
             {mode === "login" ? <LogIn aria-hidden="true" size={23} /> : <UserPlus aria-hidden="true" size={23} />}
-            <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Kundenkonto öffnen" : activatingExistingAccount ? "Kundenbereich aktivieren" : "Kundenkonto erstellen"}</h1></div>
+            <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Gästekonto öffnen" : activatingExistingAccount ? "Gästekonto aktivieren" : "Gästekonto erstellen"}</h1></div>
           </div>
-          <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : activatingExistingAccount ? "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für deinen persönlichen Kundenbereich." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
+          <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : activatingExistingAccount ? "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für dein persönliches Gästekonto." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
           <form className="central-auth-form" onSubmit={submit}>
             <RequiredFieldsNote />
             {mode === "register" ? <>
@@ -221,10 +221,10 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
                 {resendCooldown > 0 ? `Erneut senden in ${resendCooldown} Sekunden` : resending ? "E-Mail wird angefordert …" : "Bestätigungs-E-Mail erneut senden"}
               </SecondaryButton>
             ) : null}
-            <PrimaryButton disabled={submitting || (mode === "register" && !registrationValid)} type="submit"><CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Bitte warten …" : mode === "login" ? "Anmelden" : activatingExistingAccount ? "Kundenbereich aktivieren" : "Konto erstellen"}</PrimaryButton>
+            <PrimaryButton disabled={submitting || (mode === "register" && !registrationValid)} type="submit"><CheckCircle2 aria-hidden="true" size={19} /> {submitting ? "Bitte warten …" : mode === "login" ? "Anmelden" : activatingExistingAccount ? "Gästekonto aktivieren" : "Konto erstellen"}</PrimaryButton>
           </form>
           {mode === "login" ? <p className="central-auth-switch"><Link to={buildPasswordRecoveryPath("customer")}>Passwort vergessen?</Link></p> : null}
-          {!activatingExistingAccount ? <p className="central-auth-switch">{mode === "login" ? "Noch kein Kundenkonto?" : "Du hast bereits ein Kundenkonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p> : null}
+          {!activatingExistingAccount ? <p className="central-auth-switch">{mode === "login" ? "Noch kein Gästekonto?" : "Du hast bereits ein Gästekonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p> : null}
           {mode === "login" ? <PortalLoginNavigation currentPortal="customer" /> : null}
         </PremiumCard>
       </div>

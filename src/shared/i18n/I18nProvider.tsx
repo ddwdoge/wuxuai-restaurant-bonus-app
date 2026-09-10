@@ -22,6 +22,42 @@ const originalAttributes = new WeakMap<Element, Map<string, string>>();
 const translatedAttributeValues = new WeakMap<Element, Map<string, string>>();
 const translatedAttributes = ["aria-label", "aria-description", "alt", "description", "label", "placeholder", "title"];
 
+const translationSourceAliases: Record<string, string> = {
+  "Dein Gästekonto ist bestätigt. Jetzt fehlen nur noch die restaurantbezogenen Pflichtbestätigungen.": "Dein Kundenkonto ist bestätigt. Jetzt fehlen nur noch die restaurantbezogenen Pflichtbestätigungen.",
+  "Dein Gästekonto wird geprüft.": "Dein Kundenkonto wird geprüft.",
+  "Dein Gästeportal": "Dein Kundenbereich",
+  "Dein Gästeportal ist gerade nicht verfügbar.": "Dein Kundenbereich ist gerade nicht verfügbar.",
+  "Dein Gästeportal konnte gerade nicht geladen werden.": "Dein Kundenbereich konnte gerade nicht geladen werden.",
+  "Dein Gästeportal wird geladen.": "Dein Kundenbereich wird geladen.",
+  "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für dein persönliches Gästekonto.": "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für deinen persönlichen Kundenbereich.",
+  "Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Gästekonto erstellt.": "Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Kundenkonto erstellt.",
+  "Du hast bereits ein Gästekonto?": "Du hast bereits ein Kundenkonto?",
+  "Gästekonto aktivieren": "Kundenbereich aktivieren",
+  "Gästekonto erstellen": "Kundenkonto erstellen",
+  "Gästekonto öffnen": "Kundenkonto öffnen",
+  "Gästeportal": "Kundenbereich",
+  "Inhaberbereich": "Restaurant-Portal",
+  "Inhaberbereich öffnen": "Restaurant-Portal öffnen",
+  "Inhaberbereich wird geöffnet …": "Restaurant Portal wird geöffnet …",
+  "Inhaberbereich wird geladen...": "Restaurant Portal wird geladen...",
+  "Melde dich mit deinem WUXUAI-Gästekonto an. Der gescannte Restaurantkontext bleibt dabei erhalten.": "Melde dich mit deinem WUXUAI-Kundenkonto an. Der gescannte Restaurantkontext bleibt dabei erhalten.",
+  "Mitarbeiter öffnen den Mitarbeiterbereich und können Kunden-QRs scannen.": "Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.",
+  "Mit bestehendem Gästekonto anmelden": "Mit bestehendem Kundenkonto anmelden",
+  "Navigation im Inhaberbereich": "Navigation im Restaurant Portal",
+  "Neues Gästekonto erstellen": "Neues Kundenkonto erstellen",
+  "Noch kein Gästekonto?": "Noch kein Kundenkonto?",
+  "Nur Inhaber und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren.": "Nur Owner und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren.",
+  "Nur Inhaber und berechtigte Restaurant-Administratoren dürfen Teamzugänge verwalten.": "Nur Owner und berechtigte Restaurant-Administratoren dürfen Teamzugänge verwalten.",
+  "Nur für Inhaber": "Nur für Owner",
+  "Nur Inhaber und Administratoren dürfen Einlösungsberichte öffnen.": "Nur Restaurant-Owner und Administratoren dürfen Einlösungsberichte öffnen.",
+  "Registrierung konnte nicht abgeschlossen werden. Prüfe, ob du bereits ein Gästekonto hast, oder fordere eine neue Bestätigungs-E-Mail an.": "Registrierung konnte nicht abgeschlossen werden. Prüfe, ob du bereits ein Kundenkonto hast, oder fordere eine neue Bestätigungs-E-Mail an.",
+  "Restaurant-Dashboard": "Restaurant Portal",
+  "Restaurant-Dashboard · Anmeldung erforderlich": "Restaurant Portal · Anmeldung erforderlich",
+  "Dieses Konto besitzt keinen Zugang zum Gästeportal.": "Dieses Konto besitzt keinen Zugang zum Kundenbereich.",
+  "Veröffentlichung, Vorlage, Dokument-Hash, Inhaber, Restaurant, Zeitpunkt und Request-ID werden protokolliert.": "Veröffentlichung, Vorlage, Dokument-Hash, Owner, Restaurant, Zeitpunkt und Request-ID werden protokolliert.",
+  "Vom Inhaber geprüft": "Vom Owner geprüft",
+};
+
 function normalized(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -46,7 +82,9 @@ function translateDocument(root: ParentNode, language: UiLanguage) {
   const messages = GENERATED_MESSAGES[language] as Record<string, string>;
   const translateSource = (source: string) => {
     const normalizedSource = normalized(source);
-    const key = GENERATED_SOURCE_TO_KEY[normalizedSource] as string | undefined;
+    const directKey = GENERATED_SOURCE_TO_KEY[normalizedSource] as string | undefined;
+    const aliasedSource = language === "de" ? undefined : translationSourceAliases[normalizedSource];
+    const key = directKey ?? (aliasedSource ? GENERATED_SOURCE_TO_KEY[aliasedSource] as string | undefined : undefined);
     if (key) return messages[key] ?? source;
     for (const dynamic of dynamicSources) {
       const match = normalizedSource.match(dynamic.pattern);

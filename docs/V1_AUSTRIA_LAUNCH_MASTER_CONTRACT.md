@@ -104,6 +104,15 @@ Jedes Passwortfeld braucht fuer V1:
 
 ## 5. UI/UX Consistency Gate
 
+Implementierungsstatus: **STAGING FINAL LOCK**
+
+Der aktive Staging-Stand verwendet den gemeinsamen UI-Vertrag ueber Customer-,
+Owner-, Staff- und Platform-Admin-Oberflaechen. Der Sprachschalter ist in die
+jeweilige Kopf- oder Menuezeile integriert, der kanonische Info-Trigger besitzt
+eine 44-Pixel-Bedienflaeche, und sichtbare deutsche Rollenbegriffe entsprechen
+dem unten festgelegten Vertrag. Die gepruefte Responsive-Matrix umfasst 320 bis
+1280 Pixel sowie alle sieben vorhandenen UI-Sprachen.
+
 Vor Production muessen die aktiven V1-Flows konsistent sein bei:
 
 - Typografie,

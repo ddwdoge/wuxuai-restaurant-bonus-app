@@ -22,7 +22,6 @@ import {
 } from "../modules/customer/customerScanContext.mjs";
 import { useI18n } from "../shared/i18n/I18nProvider";
 import { UiButton, UiState } from "../shared/ui";
-import { LanguageSelector } from "../shared/i18n/LanguageSelector";
 
 const RegisterPage = lazy(() => import("../modules/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout").then((module) => ({ default: module.AdminLayout })));
@@ -225,7 +224,6 @@ function StaffIndexRoute() {
 export function App() {
   return (
     <>
-      <LanguageSelector />
       <Routes>
       <Route path="/" element={<PublicHome />} />
       <Route path="/login" element={<LoginPage />} />

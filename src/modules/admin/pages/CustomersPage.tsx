@@ -283,7 +283,7 @@ export function CustomersPage() {
       </section>
 
       <AppDrawer
-        description="Nur Owner und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
+        description="Nur Inhaber und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
         dismissOnOverlay={!supportSaving}
         footer={supportDetail ? (
           <>

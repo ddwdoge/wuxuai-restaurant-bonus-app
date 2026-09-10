@@ -17,7 +17,7 @@ const cleanupInventoryLabels: Record<string, string> = {
   organization: "Organisation",
   restaurant: "Restaurant",
   branches: "Standorte",
-  owners: "Owner",
+  owners: "Inhaber",
   staff: "Mitarbeiter",
   customers: "Gäste",
   memberships: "Mitgliedschaften",
@@ -30,7 +30,7 @@ const cleanupInventoryLabels: Record<string, string> = {
   kassa_acknowledgements: "Kassa-Bestätigungen",
   kassa_open: "Kassenerfassung offen",
   kassa_recorded: "Kassenerfassung bestätigt",
-  kassa_owner_reviewed: "Vom Owner geprüft",
+  kassa_owner_reviewed: "Vom Inhaber geprüft",
   offers: "Angebote",
   mail_queue: "E-Mail-Warteschlange",
   notification_state: "Benachrichtigungsstatus",
@@ -150,7 +150,7 @@ export function PlatformKassaCompliancePanel({ canWrite, restaurantId }: { canWr
           <p className={`platform-contract-note ${preflight.eligible ? "success" : "warning"}`}>
             {preflight.eligible ? "Preflight bestanden. Mandant ist für die kontrollierte Bereinigung geeignet." : `Preflight blockiert: ${preflight.blockers.join(", ")}`}
           </p>
-          {preflight.inventory ? <dl className="platform-detail-list compact">{Object.entries(preflight.inventory).map(([key, value]) => <div key={key}><dt>{cleanupInventoryLabels[key] ?? key}</dt><dd>{value}</dd></div>)}</dl> : null}
+          {preflight.inventory ? <dl className="platform-detail-list compact">{Object.entries(preflight.inventory).map(([key, value]) => <div key={key}><dt>{key === "owners" ? translateKey("platform.owner") : cleanupInventoryLabels[key] ?? key}</dt><dd>{value}</dd></div>)}</dl> : null}
           {canWrite ? <div className="platform-test-cleanup-controls">
             <label>Begründung<textarea onChange={(event) => setReason(event.target.value)} placeholder="Interner Grund für Testmarkierung und spätere Bereinigung" value={reason} /></label>
             <label>Starke Bestätigung<input onChange={(event) => setConfirmation(event.target.value)} placeholder={strongConfirmation} value={confirmation} /></label>

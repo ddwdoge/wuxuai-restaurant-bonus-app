@@ -2248,7 +2248,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   <PremiumCard className="premium-role-switch" variant="information">
                     <h2>Bereich wechseln</h2>
                     <div className="referral-share-actions">
-                      {portalAccess.owner_access ? <a className="premium-button premium-button-secondary" href="/admin">Restaurant-Portal</a> : null}
+                      {portalAccess.owner_access ? <a className="premium-button premium-button-secondary" href="/admin">Inhaberbereich</a> : null}
                       {portalAccess.staff_access ? <a className="premium-button premium-button-secondary" href={portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff"}>Mitarbeiterbereich</a> : null}
                       {portalAccess.platform_access ? <a className="premium-button premium-button-secondary" href="/platform-admin">WUXUAI Admin</a> : null}
                     </div>

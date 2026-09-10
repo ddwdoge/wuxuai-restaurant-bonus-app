@@ -34,7 +34,7 @@ test("Existing authenticated users receive additive Customer and Owner activatio
   const ownerPage = await read("../src/modules/auth/RegisterPage.tsx");
   const referral = await read("../src/modules/customer/ReferralLanding.tsx");
   assert.match(customerPage, /activateAuthenticatedCustomerAccount/);
-  assert.match(customerPage, /Kundenbereich aktivieren/);
+  assert.match(customerPage, /Gästekonto aktivieren/);
   assert.match(customerPage, /portalAccessError[\s\S]*Es wurde nichts angelegt/);
   assert.match(ownerPage, /activateRestaurantOwnerForCurrentUser/);
   assert.match(ownerPage, /Restaurantbereich aktivieren/);
@@ -49,5 +49,5 @@ test("Role switching keeps one session and exposes only verified available areas
   assert.match(adminLayout, /portalAccess\.customer_access/);
   assert.match(adminLayout, /portalAccess\.staff_access/);
   assert.match(customerPortal, /Bereich wechseln/);
-  assert.doesNotMatch(adminLayout, /signOut\(\)[\s\S]{0,120}Kundenbereich/);
+  assert.doesNotMatch(adminLayout, /signOut\(\)[\s\S]{0,120}Gästeportal/);
 });

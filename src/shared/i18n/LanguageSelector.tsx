@@ -22,12 +22,13 @@ const selectorLabels: Record<UiLanguage, string> = {
   ko: "언어",
 };
 
-export function LanguageSelector() {
+export function LanguageSelector({ className = "" }: { className?: string }) {
   const { language, setLanguage } = useI18n();
   return (
-    <label className="wux-language-selector" data-i18n-skip="true">
+    <label className={`wux-language-selector ${className}`.trim()} data-i18n-skip="true">
       <Languages aria-hidden="true" size={18} />
       <span className="sr-only">{selectorLabels[language]}</span>
+      <span aria-hidden="true" className="wux-language-selector-code">{language.toUpperCase()}</span>
       <select aria-label={selectorLabels[language]} onChange={(event) => setLanguage(event.target.value as UiLanguage)} value={language}>
         {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>

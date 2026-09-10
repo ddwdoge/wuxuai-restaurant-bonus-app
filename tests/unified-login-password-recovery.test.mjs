@@ -41,14 +41,14 @@ test("recovery callback returns only to a validated public portal", () => {
 test("login navigation advertises only the other public areas", () => {
   assert.deepEqual(portalLoginLinks("customer").map(({ label }) => label), [
     "Mitarbeiterbereich",
-    "Restaurant-Portal",
+    "Inhaberbereich",
   ]);
   assert.deepEqual(portalLoginLinks("staff").map(({ label }) => label), [
-    "Kundenbereich",
-    "Restaurant-Portal",
+    "Gästeportal",
+    "Inhaberbereich",
   ]);
   assert.deepEqual(portalLoginLinks("owner").map(({ label }) => label), [
-    "Kundenbereich",
+    "Gästeportal",
     "Mitarbeiterbereich",
   ]);
   assert.equal(portalLoginLinks("owner").some(({ path }) => path.includes("platform")), false);

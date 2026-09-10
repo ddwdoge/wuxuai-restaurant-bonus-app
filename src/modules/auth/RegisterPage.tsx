@@ -154,7 +154,7 @@ export function RegisterPage() {
 
   if (authLoading || (user && portalAccess.owner_access)) {
     return (
-      <PublicPageShell description="Dein Restaurantbereich wird vorbereitet." eyebrow="WUXUAI Bonus" title="Restaurant Portal wird geöffnet …">
+      <PublicPageShell description="Dein Restaurantbereich wird vorbereitet." eyebrow="WUXUAI Bonus" title="Inhaberbereich wird geöffnet …">
         <PublicContentCard><p className="public-premium-alert" role="status">Bitte einen Moment warten.</p></PublicContentCard>
       </PublicPageShell>
     );

@@ -141,7 +141,7 @@ export function ReferralLanding() {
           ) : !user ? (
             <div className="central-auth-actions referral-auth-actions">
               <Link className="premium-button premium-button-primary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}>
-                <UserPlus aria-hidden="true" size={19} /> Kundenkonto erstellen
+                <UserPlus aria-hidden="true" size={19} /> Gästekonto erstellen
               </Link>
               <Link className="premium-button premium-button-secondary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}>
                 <LogIn aria-hidden="true" size={19} /> Mit bestehendem Konto anmelden
@@ -150,10 +150,10 @@ export function ReferralLanding() {
             </div>
           ) : !portalAccess.customer_access ? (
             <div className="central-auth-actions referral-auth-actions">
-              <h2>Kundenbereich aktivieren</h2>
+              <h2>Gästekonto aktivieren</h2>
               <p>Du bist bereits mit deinem WUXUAI-Konto angemeldet. Ergänze einmalig deine Kundenangaben, um diese Einladung anzunehmen.</p>
               <Link className="premium-button premium-button-primary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}>
-                <UserPlus aria-hidden="true" size={19} /> Kundenbereich aktivieren
+                <UserPlus aria-hidden="true" size={19} /> Gästekonto aktivieren
               </Link>
             </div>
           ) : (
@@ -161,7 +161,7 @@ export function ReferralLanding() {
               <div>
                 <span>Fast geschafft</span>
                 <h2>Einladung bei {data.restaurant.name} annehmen</h2>
-                <p>Dein Kundenkonto ist bestätigt. Jetzt fehlen nur noch die restaurantbezogenen Pflichtbestätigungen.</p>
+                <p>Dein Gästekonto ist bestätigt. Jetzt fehlen nur noch die restaurantbezogenen Pflichtbestätigungen.</p>
               </div>
               {!legalReady ? (
                 <div className="customer-legal-load-warning" role="alert">

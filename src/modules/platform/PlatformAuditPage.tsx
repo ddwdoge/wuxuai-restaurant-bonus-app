@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { loadPlatformAuditEvents, loadPlatformRestaurants, type PlatformAuditEvent, type PlatformRestaurant } from "./platformAdminService";
 import { translateStructural } from "../../shared/i18n/catalog.mjs";
+import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 
 const t = (key: string) => translateStructural(key, "de");
 
@@ -114,6 +115,7 @@ export function PlatformAuditPage() {
           <p>{t("platform.audit.description")}</p>
         </div>
         <div className="platform-admin-header-actions">
+          <LanguageSelector />
           <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("platform.audit.restaurants")}</Link>
           <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />{t("platform.audit.refresh")}</button>
         </div>

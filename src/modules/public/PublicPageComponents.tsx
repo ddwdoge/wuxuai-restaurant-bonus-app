@@ -9,6 +9,7 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FormLabel } from "../../shared/components/FormLabel";
 import { PasswordInput } from "../../shared/components/PasswordInput";
+import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import "./public-entry-premium.css";
 
 type PublicPageShellProps = {
@@ -35,7 +36,10 @@ export function PublicPageShell({
         className={`public-premium-page public-premium-page-${width}`}
       >
         <header className="public-premium-hero">
-          <span className="public-premium-eyebrow">{eyebrow}</span>
+          <div className="public-premium-hero-row">
+            <span className="public-premium-eyebrow">{eyebrow}</span>
+            <LanguageSelector />
+          </div>
           <h1 id={titleId}>{title}</h1>
           <p>{description}</p>
         </header>

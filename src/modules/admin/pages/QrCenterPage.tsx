@@ -893,7 +893,7 @@ export function QrCenterPage() {
             <h2>Mitarbeiter QR</h2>
             <p className="muted">Nur für dein Team.</p>
             <OperationalQrCode id="qr-staff" title="QR-Code für den Mitarbeiterbereich" value={staffTabletUrl} />
-            <p className="muted">Mitarbeiter öffnen den Staff-Bereich und können Kunden-QRs scannen.</p>
+            <p className="muted">Mitarbeiter öffnen den Mitarbeiterbereich und können Kunden-QRs scannen.</p>
             <div className="qr-card-actions">
               <a className="button secondary" href={staffTabletUrl}>
                 <QrCode size={18} />

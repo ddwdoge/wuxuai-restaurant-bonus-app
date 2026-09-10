@@ -144,7 +144,7 @@ export function BonusActivityReportsPage() {
   }
 
   if (!canViewReports) {
-    return <section className="card bonus-report-access-denied"><ShieldAlert aria-hidden="true" size={28} /><h1>Berichte sind nicht verfügbar</h1><p>Nur Restaurant-Owner und Administratoren dürfen Einlösungsberichte öffnen.</p></section>;
+    return <section className="card bonus-report-access-denied"><ShieldAlert aria-hidden="true" size={28} /><h1>Berichte sind nicht verfügbar</h1><p>Nur Inhaber und Administratoren dürfen Einlösungsberichte öffnen.</p></section>;
   }
 
   return (

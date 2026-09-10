@@ -33,6 +33,18 @@
   min-width: 0;
 }
 
+.public-premium-hero-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.public-premium-hero-row .wux-language-selector {
+  flex: 0 0 auto;
+}
+
 .public-premium-eyebrow {
   color: var(--wux-gold-dark);
   font-size: 12px;

@@ -9,8 +9,8 @@ test("QR-Route prüft zuerst die zentrale Kundensitzung und behält den Restaura
   assert.match(app, /CustomerRestaurantAccess/);
   assert.match(access, /useAuth\(\)/);
   assert.match(access, /returnTo = `\$\{isBonusCollection \? "\/w" : "\/customer"\}/);
-  assert.match(access, /Mit bestehendem Kundenkonto anmelden/);
-  assert.match(access, /Neues Kundenkonto erstellen/);
+  assert.match(access, /Mit bestehendem Gästekonto anmelden/);
+  assert.match(access, /Neues Gästekonto erstellen/);
   assert.match(returnPath, /isCollectPath = \/\^\\\/w\\\//);
   assert.match(returnPath, /isCustomerPath \|\| isCollectPath \|\| isReferralPath/);
   assert.match(returnPath, /value\.startsWith\("\/\/"\)/);

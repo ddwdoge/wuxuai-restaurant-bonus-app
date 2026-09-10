@@ -111,7 +111,7 @@ test("Owner-Editor unterstützt direkte Manipulation und fünf reale Vorschaukon
   assert.match(settings, /onKeyDown=\{handleEditorKeys\}/);
   assert.match(settings, /Mit zwei Fingern kannst du zoomen/);
   assert.match(settings, /Gäste-Header/);
-  assert.match(settings, /Restaurant-Portal/);
+  assert.match(settings, /Restaurant-Dashboard/);
   assert.match(settings, /Restaurantdetails/);
   assert.match(settings, /QR Starter Kit/);
   assert.match(settings, /Mitarbeiter-Header/);

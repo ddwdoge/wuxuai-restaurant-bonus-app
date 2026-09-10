@@ -1,6 +1,27 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-10 - UI/UX Consistency Gate auf Staging abgeschlossen
+
+- Den global schwebenden Sprachschalter entfernt und als kompakten Locale-
+  Schalter in die normalen Kopf- und Menuezeilen von Customer, Owner, Staff,
+  Platform Admin und oeffentlichen Seiten integriert.
+- Einen kanonischen, nicht sendenden Info-Trigger mit ARIA-Beschriftung,
+  Tastaturfokus und 44 Pixel Bedienflaeche eingefuehrt und fuer kompakte
+  Erklaerungen im Kundenbereich eingesetzt.
+- Sichtbare deutsche Rollenbegriffe auf `Mitarbeiterbereich`,
+  `Mitarbeiteransicht`, `Inhaberbereich`, `Restaurant-Dashboard`,
+  `Gaesteportal` und `Gaestekonto` vereinheitlicht; technische Rollenwerte und
+  Berechtigungen bleiben unveraendert.
+- Die bestehenden sieben Sprachpakete, Customer Activation und alle elf
+  Passwortsichtbarkeitsfelder als Regression abgesichert.
+- 50 fokussierte Tests und 1.408 Gesamttests bestanden; die Browsermatrix mit
+  336 Kombinationen aus acht Breiten, sieben Sprachen und sechs Auth-Routen
+  zeigte keinen horizontalen Ueberlauf und mindestens 44 Pixel Bedienflaechen.
+- Den geprueften Stand als Worker-Version
+  `8e2adff7-4c5b-40f7-bac6-eb2bf1541018` ausschliesslich auf Staging
+  veroeffentlicht. Keine Migration, Datenbank- oder Production-Aenderung.
+
 ## 2026-09-10 - Globale Passwortsichtbarkeit auf Staging bereitgestellt
 
 - Alle elf aktiven Konto-Passwortfelder in Customer-, Owner-, Staff-,

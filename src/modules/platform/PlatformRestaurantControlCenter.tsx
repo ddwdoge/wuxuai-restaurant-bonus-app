@@ -282,7 +282,7 @@ export function PlatformRestaurantControlCenter({
       <section className="platform-control-section">
         <div className="section-heading"><h3>Portale & QR</h3><p className="muted">Links öffnen reguläre geschützte Flows. Es findet keine Identitätsübernahme statt.</p></div>
         <div className="platform-link-grid" aria-label="Restaurant Links">
-          <a className="button secondary" href={`${portalOrigin}/admin`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Restaurant Portal · Anmeldung erforderlich</a>
+          <a className="button secondary" href={`${portalOrigin}/admin`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Restaurant-Dashboard · Anmeldung erforderlich</a>
           <a className="button secondary" href={`${portalOrigin}/customer/${restaurant.slug}`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Gäste-QR-Link öffnen</a>
           <a className="button secondary" href={`${portalOrigin}${buildStaffLoginPath(restaurant.slug)}`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Mitarbeiterbereich · Anmeldung erforderlich</a>
           <a className="button secondary" href={`${portalOrigin}/admin/qr`} rel="noreferrer" target="_blank"><ExternalLink size={18} />QR Center · Anmeldung erforderlich</a>

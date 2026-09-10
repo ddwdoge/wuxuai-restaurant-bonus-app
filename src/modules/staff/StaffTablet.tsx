@@ -30,6 +30,7 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { useAuth } from "../auth/AuthProvider";
 import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
@@ -1124,6 +1125,7 @@ export function StaffTablet() {
             <h1 className="restaurant-brand-title">{staffRestaurant?.name ?? "Restaurant"}</h1>
           </div>
         </div>
+        <LanguageSelector />
         <button
           aria-expanded={moreOpen}
           aria-label="Mitarbeitermenü öffnen"
