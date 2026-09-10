@@ -2,6 +2,18 @@
 
 Status: Phase 1, Staging-Vorbereitung. Diese Datei enthält keine Rechtsberatung und keine länderspezifischen Rechtstexte.
 
+## Austria-Launch-Verhaeltnis - CURRENT 2026-09-10
+
+**SUPERSEDED:** Eine offene vollstaendige QA aller sieben Sprachen darf nicht
+mehr pauschal als Austria-Launch-Blocker gelesen werden. Fuer den Launch sind
+die vollstaendige deutsche Golden-Path-Oberflaeche und ein integrierter,
+nicht ueberlagernder Sprachschalter Pflicht. Die sechs weiteren Zielsprachen
+duerfen nur mit ihrem tatsaechlich geprueften Status bezeichnet werden.
+
+Der aktuelle Scope steht in
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Die Trennung von UI-Sprache und
+Rechtsraum in diesem Dokument bleibt unveraendert verbindlich.
+
 ## Sprachvertrag
 
 Unterstützte UI-Sprachkennungen sind exakt `de`, `en`, `fr`, `it`, `es`, `zh` und `ko`.

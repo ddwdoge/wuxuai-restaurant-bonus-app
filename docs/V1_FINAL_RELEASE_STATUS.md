@@ -1,12 +1,13 @@
 # WUXUAI Bonus V1 - Final Release Status
 
-Status: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**
+Status: **SUPERSEDED STATUS SNAPSHOT / 2026-09-01**
 Stand: 2026-09-01
 Branch: `codex/v1-canonical-recovery`
 
-Dieses Dokument ist die aktuelle Release-Statusquelle unterhalb des Canonical
-Product Contract. Historische Reports und Changelog-Eintraege behalten ihren
-damaligen Status und duerfen dieses Ergebnis nicht zuruecksetzen.
+**SUPERSEDED (2026-09-10):** Dieses Dokument belegt den Stand vom 2026-09-01,
+ist aber keine aktuelle Austria-Launch-Statusquelle mehr. Aktueller Scope und
+Reihenfolge stehen in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`; der aktuelle
+Ist-Status muss gegen diesen Master neu auditiert werden.
 
 ## Produkt- und Founder-Gates
 

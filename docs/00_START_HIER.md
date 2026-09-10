@@ -5,6 +5,9 @@ Status: 🟢 FIX
 Zweck: Einstieg, Arbeitsregeln und Projektwahrheit für Codex, Entwickler und zukünftige Teammitglieder.  
 Sprache: Deutsch als Produkt- und Entwicklungssprache für V1.  
 
+Aktueller Austria-Launch-, Scope- und Roadmapvertrag:
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
+
 ---
 
 ## 1. Warum diese Engineering Bible existiert
@@ -255,7 +258,9 @@ Beispiele:
 - Filialen zusammenführen.
 - Wochenplan für Belohnungen.
 - Dynamische, personalisierte oder automatisierte Promotionflächen.
-- Mehrsprachigkeit.
+- **SUPERSEDED (2026-09-10):** Mehrsprachigkeit ist nicht mehr pauschal V2.
+  Die bestehende Sieben-Sprachen-Architektur bleibt aktiv; ihr Verhaeltnis zum
+  Austria-Launch regelt der aktuelle Mastervertrag.
 - Enterprise-Regeln.
 
 ### 🔵 IDEE
@@ -270,7 +275,14 @@ Codex darf Ideen niemals automatisch bauen.
 
 ### 9.1 V1 Sprache
 
-V1 ist zu 100 % Deutsch.
+**SUPERSEDED (2026-09-10):** Die fruehere Ausschliesslichkeitsregel
+`V1 ist zu 100 % Deutsch` wird durch
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` ersetzt.
+
+Deutsch bleibt die verpflichtende und vollstaendig zu pruefende Austria-
+Launch-Sprache. Die bestehenden Locales `de`, `en`, `fr`, `it`, `es`, `zh`
+und `ko` duerfen bestehen. Eine offene Vollpruefung der sechs weiteren
+Sprachen blockiert den Austria-Launch nicht allein.
 
 Alle sichtbaren Texte müssen Deutsch sein:
 
@@ -283,7 +295,8 @@ Alle sichtbaren Texte müssen Deutsch sein:
 - PDF-Texte
 - Kundenportal-Texte
 
-Englische UI-Texte sind V1-Blocker.
+Unlokalisierte englische oder technische Texte in der deutschen Launch-
+Oberflaeche sind ein V1-Blocker.
 
 ### 9.2 Englisch ist nur erlaubt für technische Begriffe
 

@@ -1131,9 +1131,12 @@ V2 Design kann enthalten:
 - Wochenplan UI
 - Multi-Branch UI
 - Enterprise Branding Kontrolle
-- Mehrsprachigkeit EN/ZH
+- **SUPERSEDED (2026-09-10):** Mehrsprachigkeit ist nicht mehr pauschal V2;
+  die bestehende Sieben-Sprachen-Architektur bleibt aktiv.
 
-V1 bleibt fokussiert und deutsch.
+V1 bleibt auf den Austria-Launch fokussiert. Der aktuelle Sprach-, Compact-
+Info-, Language-Switcher- und Rollenterminologie-Vertrag steht in
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
 
 ---
 
@@ -1153,6 +1156,22 @@ Design System gilt als LOCK, wenn:
 - keine technischen Begriffe sichtbar sind
 - echte Restaurantseiten keine Demo-Daten anzeigen
 - Build erfolgreich ist
+
+### 25.1 Austria Launch UI/UX Gate - CURRENT
+
+Vor Production sind Typografie, Buttons, Formulare, Karten, Dialoge/Sheets,
+Status, Navigation, Lade-/Leer-/Fehlerzustaende, Responsive-Verhalten, Safe
+Areas und Barrierefreiheit ueber die aktiven V1-Flows konsistent zu pruefen.
+
+Primaerflow kommt zuerst; lange sekundaere Erklaerungen werden ueber das
+kanonische Info-Element mit Sheet aufgerufen. Erforderliche Aktionen, Status,
+Preis, Punkte, Ablauf, Fehler sowie Legal-/Security-Einwilligungen bleiben
+direkt sichtbar.
+
+Jedes Passwortfeld besitzt ein mindestens 44 Pixel grosses, zugaengliches
+Anzeigen-/Ausblenden-Ziel und bleibt standardmaessig verborgen. Der kompakte
+Sprachschalter ist Teil der normalen Header-/Menuezeile und darf keine andere
+Aktion ueberdecken.
 
 ---
 

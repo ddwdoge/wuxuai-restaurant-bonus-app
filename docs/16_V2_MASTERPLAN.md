@@ -5,6 +5,29 @@
 
 Status: **LOCK**
 
+## Founder-Strategie 2026-09-10 - CURRENT
+
+Bei Roadmap-Konflikten ist
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` autoritativ. Die verbindliche
+Reihenfolge lautet:
+
+```text
+Austria Restaurant V1 LIVE
+-> reale Marktvalidierung
+-> Core Verticalization Audit
+-> Handel
+-> Dienstleistungen
+-> Oesterreich stabilisieren
+-> Deutschland
+-> DACH
+-> EU
+```
+
+Es gibt einen gemeinsamen Core und keine getrennten App-Klone je Branche.
+Nearby Discovery wird vor jeder V1-Einordnung auditiert. Die monatliche
+Kundenentwicklung ist Post-V1 High Priority, sofern sie nicht als trivialer
+UI-Schritt auf bereits belastbaren Metriken umgesetzt werden kann.
+
 Dieses Dokument beschreibt die offizielle V2-Richtung von WUXUAI Bonus.
 
 V2 ist **nicht** dazu da, V1 zu überladen.  
@@ -120,8 +143,10 @@ V2 umfasst langfristig folgende Erweiterungsbereiche:
 8. POS-QR / signierter Rechnungslink
 9. WUXUAI Admin Portal
 10. Branchen-Erweiterung über Restaurants hinaus
-11. Mehrsprachigkeit
-12. Stripe / SaaS-Abrechnung
+11. **SUPERSEDED:** Mehrsprachigkeit ist bereits als Sieben-Sprachen-
+    Architektur vorhanden; die Austria-Launch-Pflicht steht im Mastervertrag.
+12. **SUPERSEDED fuer die Launch-Reihenfolge:** Stripe Staging/Billing ist
+    Austria-Launch-Gate 6; weitergehende Billing-Ausbaustufen bleiben Post-V1.
 13. Enterprise / White-Label-Optionen
 
 ---
@@ -694,6 +719,11 @@ Architektur bleibt business-neutral vorbereitet.
 
 ## 18. Mehrsprachigkeit
 
+**SUPERSEDED (2026-09-10):** Die folgende fruehere Einordnung ist kein
+aktueller V1-Scope mehr. Die Architektur umfasst `de`, `en`, `fr`, `it`, `es`,
+`zh` und `ko`; Deutsch und der integrierte Sprachschalter bilden den aktuellen
+Austria-Launch-Gate gemaess Mastervertrag.
+
 ### 18.1 V1
 
 Deutsch zuerst.
@@ -742,7 +772,11 @@ WUXUAI Bonus V1
 
 ### 19.3 V2
 
-Stripe Integration:
+**SUPERSEDED fuer die Launch-Reihenfolge (2026-09-10):** Der sichere Stripe-
+Staging-/Billing-Flow ist Austria-Launch-Gate 6. Stripe Live, Production-
+Secrets und weitere Billing-Ausbaustufen bleiben separat freigabepflichtig.
+
+Weitergehende Stripe-Integration:
 
 - Checkout
 - Subscription
@@ -810,11 +844,14 @@ V2 Enterprise kann Branding-Ausblendung erlauben.
 
 Keine SMS.
 Keine WhatsApp.
-Keine Pushpflicht.
+Keine Pflicht zur Zustimmung und keine automatische Push-Kampagne.
+**SUPERSEDED/CLARIFIED (2026-09-10):** V1 enthaelt jedoch Notification
+Readiness und darf die Push-Berechtigung nach einer ausdruecklichen
+Nutzeraktion anbieten. E-Mail und Push bleiben getrennte Konzepte.
 
 ### 21.2 V2
 
-Optionale Benachrichtigungen:
+Automatisierte oder kampagnenbezogene Benachrichtigungen:
 
 - E-Mail
 - Push

@@ -453,7 +453,10 @@ Englisch ist nicht erlaubt in:
 - Restaurantportal
 - PDF-Starter-Kit
 
-Mehrsprachigkeit wird architektonisch vorbereitet, aber erst nach V1 Feature Freeze umgesetzt.
+**SUPERSEDED (2026-09-10):** Mehrsprachigkeit wird nicht mehr erst nach dem V1
+Feature Freeze umgesetzt. Die bestehende Sieben-Sprachen-Architektur bleibt
+aktiv; Deutsch ist die verpflichtende Austria-Launch-Sprache. Der aktuelle
+Launch-Vertrag steht in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
 
 Warum?
 

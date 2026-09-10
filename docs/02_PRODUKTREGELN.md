@@ -84,7 +84,9 @@ Status: LOCK
 - Die kostenlose Testphase beträgt drei Kalendermonate.
 - Danach kostet das Basispaket `WUXUAI Bonus V1` 59 EUR pro Monat exkl. USt.
 - Das Abrechnungsintervall ist monatlich; automatische Abrechnung ist noch
-  nicht aktiv und Stripe bleibt `DEFERRED`.
+  nicht aktiv. **SUPERSEDED fuer die Launch-Reihenfolge (2026-09-10):** Stripe
+  Staging/Billing ist Gate 6 des Austria Launch Master Contract. Stripe Live
+  und Production-Aktivierung bleiben separat freigabepflichtig.
 - Solange kein Zahlungsmittel erhoben wird, muss die Akquise dies klar als
   `Kein Zahlungsmittel erforderlich` ausweisen.
 - Neue Trial-Enddaten werden kalenderbasiert berechnet. Bereits gespeicherte

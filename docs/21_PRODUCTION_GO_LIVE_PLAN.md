@@ -5,6 +5,11 @@
 
 Status: **LOCK**
 
+Aktueller Austria-Launch-Scope und die verbindliche Reihenfolge stehen in
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Aeltere Reihenfolgen in diesem
+Betriebsplan bleiben als Detailcheckliste erhalten, sind aber fuer die
+Priorisierung `SUPERSEDED`.
+
 Dieses Dokument beschreibt den offiziellen Go-Live-Plan für WUXUAI Bonus V1.
 
 Der Go-Live ist nicht der Moment, in dem Code online gestellt wird.  
@@ -129,7 +134,22 @@ Production wird erst genutzt, wenn Staging stabil ist.
 
 ## 4. Go-Live-Reihenfolge
 
-Der Go-Live erfolgt in dieser Reihenfolge:
+**SUPERSEDED (2026-09-10):** Die folgende technische Liste bleibt eine
+vollstaendige Betriebscheckliste, ist aber nicht mehr die kanonische
+Priorisierungsreihenfolge. Diese lautet:
+
+1. Austria Legal Preparation und Professional Review
+2. Customer Activation UX
+3. Password Visibility
+4. UI/UX Consistency Gate inklusive Compact Info, Language Switcher und deutscher Rollenterminologie
+5. Git-/Staging-Konsolidierung
+6. Stripe Staging und Billing
+7. Austria Legal Final nach Stripe
+8. Final Golden Path QA
+9. Production Release
+
+Innerhalb dieser Gates sind weiterhin folgende technischen Schritte zu
+erfuellen:
 
 1. Engineering Bible aktuell
 2. Code Build grün
@@ -603,19 +623,9 @@ Test:
 
 ### 12.2 Email Confirmation
 
-Für Pilot kann Email Confirmation deaktiviert sein.
-
-Für Production muss entschieden werden:
-
-Option A:
-- Email Confirmation aus
-- schneller Start
-
-Option B:
-- Email Confirmation an
-- sicherer, aber mehr Reibung
-
-CTO-Entscheidung vor Production erforderlich.
+**SUPERSEDED:** Die Entscheidung ist gefallen. E-Mail-Bestaetigung, Resend und
+Passwort-Recovery sind fuer Production erforderlich. E-Mail/Passwort bleibt der
+kanonische Login; Telefon-/SMS-Login ist nicht fuer V1 geplant.
 
 ### 12.3 Rollen
 
@@ -654,7 +664,9 @@ Nach Registrierung:
 
 ### 13.3 Nach Trial
 
-Für frühe Production kann Zahlung noch manuell / Stripe später sein, aber Status muss nachvollziehbar sein.
+**SUPERSEDED (2026-09-10):** Stripe Staging/Billing ist ein notwendiger Gate
+vor Production. Stripe Live bleibt separat freigabepflichtig; keine
+Production-Aktivierung wird aus dieser Dokumentation abgeleitet.
 
 ### 13.4 Kein versehentliches Sperren
 

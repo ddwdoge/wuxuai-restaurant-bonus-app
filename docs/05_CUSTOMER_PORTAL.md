@@ -760,12 +760,16 @@ Nicht als harte Sperre.
 V2 vorbereitet:
 - Meine Restaurants Wallet
 - Wochenübersicht für Punkteeinlösungen
-- Push/Email/SMS optional
+- **SUPERSEDED/CLARIFIED (2026-09-10):** PWA-/Home-Screen-Erinnerung,
+  Notification Readiness und die erst durch Nutzeraktion ausgeloeste
+  Push-Berechtigungsabfrage sind V1. Automatisierte Push-/E-Mail-/SMS-
+  Kampagnen und eine grosse Notification Engine bleiben Post-V1.
 - automatische oder personalisierte Nachrichten
 - Multibranch Punkte
 - weitere Branchen
 - Premium-Login
-- App/PWA Erweiterung
+- Native App und groessere PWA-Erweiterungen; der kompakte PWA-/Home-Screen-
+  Aktivierungshinweis ist bereits V1.
 
 ---
 
