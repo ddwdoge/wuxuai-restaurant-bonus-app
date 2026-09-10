@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-10 - Customer Activation First-Login Setup Drawer
+
+- Der zentrale Kundenbereich oeffnet nach dem ersten erfolgreichen Login einen
+  einmaligen kompakten Setup-Drawer fuer E-Mail-Status, Home-Bildschirm und
+  technisch verfuegbare Push-Bereitschaft.
+- `Spaeter` bleibt nicht blockierend und hinterlaesst nur eine kompakte
+  Home-Erinnerung. `App & Benachrichtigungen` oeffnet denselben Status spaeter
+  erneut aus dem Konto.
+- Lokale Daten speichern nur Auto-Erinnerung, Erstansicht und letzten Aufschub.
+  Installation und Push werden weiterhin aus Browser-/Plattformstatus abgeleitet.
+- Die Push-Berechtigung wird ausschliesslich nach einem ausdruecklichen Klick
+  angefragt. Auth-, QR-, Punkte-, Geschenk- und Kassa-Vertraege bleiben
+  unveraendert; keine Migration und keine Production-Aenderung.
+
 ## 2026-09-10 - Austria Launch Master Contract aktualisiert
 
 - Neuer kanonischer Launch-/Scope-/Roadmapvertrag:

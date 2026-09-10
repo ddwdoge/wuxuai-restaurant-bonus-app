@@ -65,6 +65,26 @@ Verboten sind eine vorgetaeuschte E-Mail-Berechtigung und ein neues grosses
 Kampagnen- oder Notification-System. WUXUAI Bonus bleibt als Web-App ohne
 verpflichtende native App nutzbar.
 
+### First-Login Setup Drawer - V1 REQUIRED
+
+- Nach dem ersten erfolgreichen Kundenlogin oeffnet sich einmalig ein kompakter
+  Setup-Drawer.
+- Die Einrichtung ist optional und blockiert den Kundenbereich nicht.
+- `Spaeter` schliesst den Drawer; solange relevante Schritte offen sind, bleibt
+  auf der Startseite nur eine kompakte Erinnerung sichtbar.
+- Nach Abschluss aller auf dem Geraet relevanten Schritte verschwinden Drawer-
+  Automatik und Home-Erinnerung.
+- `Nicht mehr automatisch erinnern` deaktiviert nur das automatische Oeffnen und
+  keine Funktion.
+- `App & Benachrichtigungen` bleibt im Konto jederzeit manuell erreichbar.
+- Push-Berechtigungen werden niemals beim Oeffnen des Drawers, sondern erst nach
+  einer ausdruecklichen Nutzeraktion angefragt.
+- Installation und Push werden ausschliesslich aus dem aktuellen Browser- und
+  Plattformstatus abgeleitet. Ein lokaler Darstellungswert darf keine
+  abgeschlossene Installation vortaeuschen.
+- E-Mail-Bestaetigung, Browserinstallation und Push-Bereitschaft bleiben getrennte
+  Zustaende.
+
 ## 4. Globale Passwortsichtbarkeit
 
 Jedes Passwortfeld braucht fuer V1:
