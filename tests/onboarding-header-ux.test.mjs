@@ -14,7 +14,7 @@ const styles = await readFile(new URL("../src/styles.css", import.meta.url), "ut
 
 test("Onboarding bündelt Restaurantauswahl, Hilfe und Account in einem ruhigen Hauptheader", () => {
   assert.match(adminLayout, /onboardingRestaurantAction: <TenantSwitcher \/>/);
-  assert.match(adminLayout, /onboardingAccountAction: profileMenu/);
+  assert.match(adminLayout, /onboardingAccountAction: <div className="onboarding-account-actions"><LanguageSelector \/>\{profileMenu\}<\/div>/);
   assert.match(onboarding, /className="installation-header"[\s\S]*Restaurant einrichten[\s\S]*Willkommen![\s\S]*Gleich bereit für deine Gäste\./);
 
   const actions = onboarding.slice(

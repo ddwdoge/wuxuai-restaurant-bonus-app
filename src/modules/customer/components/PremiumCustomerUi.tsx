@@ -7,6 +7,8 @@ import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
 import { translateStructural } from "../../../shared/i18n/catalog.mjs";
 import { UiButton, UiCard, UiStatus } from "../../../shared/ui";
+import { InfoTrigger } from "../../../shared/components/InfoTrigger";
+import { LanguageSelector } from "../../../shared/i18n/LanguageSelector";
 
 const t = (key: string) => translateStructural(key, "de");
 
@@ -30,6 +32,7 @@ export function AppShell({ children, className = "", fontFamily, primaryColor }:
           : undefined,
       } as CSSProperties}
     >
+      <div className="customer-language-row"><LanguageSelector /></div>
       {children}
     </main>
   );
@@ -79,9 +82,7 @@ export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitc
           </span>
         </>
       )}
-      <button aria-label={t("customer.helpOpen")} className="premium-icon-button" onClick={onInfo} type="button">
-        <Info aria-hidden="true" size={21} />
-      </button>
+      <InfoTrigger className="premium-icon-button" label={t("customer.helpOpen")} onClick={onInfo} />
     </header>
   );
 }
@@ -184,9 +185,7 @@ export function PointsCard({ boostDetail, boostLabel, label, note, onInfo, progr
         <span className="premium-points-title">
           <span>{label}</span>
           {onInfo ? (
-            <button aria-label="Informationen zu Punkten" className="premium-points-info" onClick={onInfo} type="button">
-              <Info aria-hidden="true" size={21} />
-            </button>
+            <InfoTrigger className="premium-points-info" label="Informationen zu Punkten" onClick={onInfo} />
           ) : null}
         </span>
         {boostLabel ? <StatusBadge tone="warning">{boostLabel}</StatusBadge> : null}

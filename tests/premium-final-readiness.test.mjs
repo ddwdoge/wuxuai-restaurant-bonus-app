@@ -43,7 +43,7 @@ test("Migration lockert weder RLS noch öffentliche Helper-Rechte", () => {
 });
 
 test("Info-Button hat eine sichtbare Beschriftung und mindestens 44 Pixel Touchfläche", () => {
-  assert.match(customerUi, /aria-label=\{t\("customer\.helpOpen"\)\}/);
+  assert.match(customerUi, /<InfoTrigger[^>]+label=\{t\("customer\.helpOpen"\)\}/);
   assert.match(i18nCatalog, /"customer\.helpOpen": "So funktioniert's öffnen"/);
   const rule = customerStyles.match(/\.premium-icon-button\s*\{([\s\S]*?)\}/)?.[1] ?? "";
   assert.match(rule, /height: 44px/);

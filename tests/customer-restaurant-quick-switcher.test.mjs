@@ -32,7 +32,7 @@ test("Header trennt Restaurantwechsel und Restaurantinformation", () => {
   assert.match(i18nCatalog, /"customer\.restaurantSwitch": "Aktuelles Restaurant wechseln"/);
   assert.match(header, /premium-customer-restaurant-selector/);
   assert.match(header, /<ChevronDown/);
-  assert.match(header, /className="premium-icon-button" onClick=\{onInfo\}/);
+  assert.match(header, /<InfoTrigger className="premium-icon-button" label=\{t\("customer\.helpOpen"\)\} onClick=\{onInfo\} \/>/);
   assert.match(portal, /onSwitchRestaurant=\{customer \? \(\) => setRestaurantSwitcherOpen\(true\)/);
 });
 

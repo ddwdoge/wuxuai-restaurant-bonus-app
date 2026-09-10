@@ -35,9 +35,9 @@ export function recoveryLoginPath(context) {
 
 export function portalLoginLinks(currentPortal) {
   const links = [
-    { portal: "customer", label: "Kundenbereich", path: "/customer/login" },
+    { portal: "customer", label: "Gästeportal", path: "/customer/login" },
     { portal: "staff", label: "Mitarbeiterbereich", path: "/staff/login" },
-    { portal: "owner", label: "Restaurant-Portal", path: "/restaurant/login" },
+    { portal: "owner", label: "Inhaberbereich", path: "/restaurant/login" },
   ];
   return links.filter((link) => link.portal !== normalizePublicPortal(currentPortal));
 }

@@ -1,6 +1,60 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-10 - UI/UX Consistency Gate auf Staging abgeschlossen
+
+- Den global schwebenden Sprachschalter entfernt und als kompakten Locale-
+  Schalter in die normalen Kopf- und Menuezeilen von Customer, Owner, Staff,
+  Platform Admin und oeffentlichen Seiten integriert.
+- Einen kanonischen, nicht sendenden Info-Trigger mit ARIA-Beschriftung,
+  Tastaturfokus und 44 Pixel Bedienflaeche eingefuehrt und fuer kompakte
+  Erklaerungen im Kundenbereich eingesetzt.
+- Sichtbare deutsche Rollenbegriffe auf `Mitarbeiterbereich`,
+  `Mitarbeiteransicht`, `Inhaberbereich`, `Restaurant-Dashboard`,
+  `Gaesteportal` und `Gaestekonto` vereinheitlicht; technische Rollenwerte und
+  Berechtigungen bleiben unveraendert.
+- Die bestehenden sieben Sprachpakete, Customer Activation und alle elf
+  Passwortsichtbarkeitsfelder als Regression abgesichert.
+- 50 fokussierte Tests und 1.408 Gesamttests bestanden; die Browsermatrix mit
+  336 Kombinationen aus acht Breiten, sieben Sprachen und sechs Auth-Routen
+  zeigte keinen horizontalen Ueberlauf und mindestens 44 Pixel Bedienflaechen.
+- Den geprueften Stand als Worker-Version
+  `8e2adff7-4c5b-40f7-bac6-eb2bf1541018` ausschliesslich auf Staging
+  veroeffentlicht. Keine Migration, Datenbank- oder Production-Aenderung.
+
+## 2026-09-10 - Globale Passwortsichtbarkeit auf Staging bereitgestellt
+
+- Alle elf aktiven Konto-Passwortfelder in Customer-, Owner-, Staff-,
+  Einladungs- und Recovery-Flows an eine gemeinsame Anzeigen-/Ausblenden-
+  Komponente gebunden.
+- Eingaben bleiben standardmaessig verborgen; der barrierearme Eye-/EyeOff-
+  Schalter ist ein nicht sendender Button mit mindestens 44 Pixel Touchflaeche.
+- Anzeigen und erneutes Ausblenden erhalten Wert, Validierung und Browser-
+  Autocomplete. Passwort und Passwortbestaetigung bleiben unabhaengig.
+- Beschriftungen fuer DE, EN, FR, IT, ES, ZH und KO ergaenzt.
+- Tages-PIN-Felder bleiben entsprechend ihrem eigenen Sicherheitsvertrag
+  verborgen und wurden nicht veraendert.
+- Keine Auth-, Session-, Supabase-, RLS-, Datenbank- oder Production-Aenderung.
+- Staging-Worker-Version `d1275d87-415e-4d0e-a4ed-c589088e4649` bestand die
+  physische Matrix fuer 320 bis 1280 Pixel, fuenf oeffentliche Auth-Routen und
+  alle sieben Sprachen.
+- Der tokengebundene Passwort-Reset-/Aenderungsweg bleibt fuer den finalen
+  physischen Golden-Path-Nachweis offen; es wurde kein Konto veraendert.
+
+## 2026-09-10 - Customer Activation First-Login Setup Drawer
+
+- Der zentrale Kundenbereich oeffnet nach dem ersten erfolgreichen Login einen
+  einmaligen kompakten Setup-Drawer fuer E-Mail-Status, Home-Bildschirm und
+  technisch verfuegbare Push-Bereitschaft.
+- `Spaeter` bleibt nicht blockierend und hinterlaesst nur eine kompakte
+  Home-Erinnerung. `App & Benachrichtigungen` oeffnet denselben Status spaeter
+  erneut aus dem Konto.
+- Lokale Daten speichern nur Auto-Erinnerung, Erstansicht und letzten Aufschub.
+  Installation und Push werden weiterhin aus Browser-/Plattformstatus abgeleitet.
+- Die Push-Berechtigung wird ausschliesslich nach einem ausdruecklichen Klick
+  angefragt. Auth-, QR-, Punkte-, Geschenk- und Kassa-Vertraege bleiben
+  unveraendert; keine Migration und keine Production-Aenderung.
+
 ## 2026-09-10 - Austria Launch Master Contract aktualisiert
 
 - Neuer kanonischer Launch-/Scope-/Roadmapvertrag:

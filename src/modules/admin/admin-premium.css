@@ -47,6 +47,12 @@
   padding: 0;
 }
 
+.onboarding-account-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
 .premium-owner-shell .admin-restaurant-brand .restaurant-logo-image {
   max-height: 40px;
   max-width: 84px;
@@ -665,6 +671,10 @@
     width: 100%;
   }
 
+  .premium-owner-shell .topbar-actions > .wux-language-selector {
+    justify-self: end;
+  }
+
   .premium-owner-shell .mobile-restaurant-status {
     background: #edf7f1;
     color: #246346;
@@ -738,6 +748,7 @@
   }
 
   .premium-owner-shell .topbar-actions .tenant-switcher {
+    grid-column: 1 / -1;
     margin-left: 0;
     max-width: 100%;
     min-width: 0;

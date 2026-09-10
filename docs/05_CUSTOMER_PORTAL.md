@@ -771,6 +771,24 @@ V2 vorbereitet:
 - Native App und groessere PWA-Erweiterungen; der kompakte PWA-/Home-Screen-
   Aktivierungshinweis ist bereits V1.
 
+### 19.1 First-Login Setup Drawer - V1 REQUIRED
+
+Der zentrale Kundenbereich zeigt nach dem ersten erfolgreichen Login genau
+einen kompakten, nicht blockierenden Setup-Drawer. Er fuehrt nur durch aktuell
+relevante Schritte: eine noch offene E-Mail-Bestaetigung, das Hinzufuegen zum
+Home-Bildschirm und eine technisch verfuegbare Push-Bereitschaft.
+
+`Spaeter` schliesst den Drawer. Eine kleine Home-Erinnerung bleibt bis zum
+Abschluss sichtbar. Danach verschwindet sie automatisch. Unter
+`App & Benachrichtigungen` kann der Bereich im Konto jederzeit erneut geoeffnet
+werden. Die optionale Einstellung gegen automatisches Erinnern veraendert nur
+das Oeffnungsverhalten und deaktiviert keine Funktion.
+
+Installations- und Pushstatus stammen ausschliesslich aus Browser- und
+Plattformsignalen. Es gibt keinen lokalen Installiert-Schalter. Eine
+Push-Berechtigung darf erst nach einer ausdruecklichen Aktion und niemals beim
+Oeffnen des Drawers angefragt werden. E-Mail-Bestaetigung ist kein Push-Consent.
+
 ---
 
 ## 20. LOCK Kriterien

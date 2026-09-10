@@ -23,12 +23,13 @@ import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 import "./admin-premium.css";
 import { translateStructural } from "../../shared/i18n/catalog.mjs";
+import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { KassaAcknowledgementGate } from "../kassa/KassaAcknowledgementGate";
 
 const t = (key: string) => translateStructural(key, "de");
 
 const restaurantRoleLabels = {
-  owner: "Owner",
+  owner: "Inhaber",
   admin: "Administrator",
   manager: "Manager",
   staff: "Mitarbeiter",
@@ -160,7 +161,7 @@ export function AdminLayout() {
       </button>
       {profileMenuOpen ? (
         <div className="profile-menu-popover" role="menu">
-          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Kundenbereich</button> : null}
+          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Gästeportal</button> : null}
           {portalAccess.staff_access ? <button onClick={() => navigate(portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Mitarbeiterbereich</button> : null}
           {portalAccess.platform_access ? <button onClick={() => navigate("/platform-admin")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />WUXUAI Admin</button> : null}
           <button disabled={loggingOut} onClick={handleLogout} role="menuitem" type="button">
@@ -212,7 +213,7 @@ export function AdminLayout() {
   );
 
   if (loading) {
-    return <div className="auth-shell">Restaurant Portal wird geladen...</div>;
+    return <div className="auth-shell">Inhaberbereich wird geladen...</div>;
   }
 
   if (setupIncomplete && !isSetupAllowedRoute) {
@@ -224,7 +225,7 @@ export function AdminLayout() {
       <div className="setup-shell">
         <Outlet
           context={{
-            onboardingAccountAction: profileMenu,
+            onboardingAccountAction: <div className="onboarding-account-actions"><LanguageSelector />{profileMenu}</div>,
             onboardingRestaurantAction: <TenantSwitcher />,
           }}
         />
@@ -239,11 +240,12 @@ export function AdminLayout() {
           <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={activeRestaurant?.name ?? "Restaurant"} presentation={branding} primaryColor={branding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="admin-brand-kicker">WUXUAI Bonus</span>
-            <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant Portal"}</span>
-            <span className="restaurant-brand-subtitle">Restaurant Portal</span>
+            <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant-Dashboard"}</span>
+            <span className="restaurant-brand-subtitle">Inhaberbereich</span>
           </div>
         </div>
         <div className="topbar-actions">
+          <LanguageSelector />
           <span className="pill mobile-restaurant-status">{mobileRestaurantStatusLabel}</span>
           <span className={`restaurant-status-badge restaurant-status-${restaurantStatus}`}>
             <span aria-hidden="true" className="restaurant-status-dot" />
@@ -267,7 +269,7 @@ export function AdminLayout() {
         <aside className="sidebar premium-owner-sidebar">
           <div className="premium-sidebar-heading">
             <span>{t("owner.workspace")}</span>
-            <strong>Restaurant Portal</strong>
+            <strong>Restaurant-Dashboard</strong>
           </div>
           {renderNavigation("sidebar")}
           {setupIncomplete ? (
@@ -281,7 +283,7 @@ export function AdminLayout() {
         </main>
       </div>
       <AppDrawer
-        description="Navigation im Restaurant Portal"
+        description="Navigation im Inhaberbereich"
         footer={(
           <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
             <LogOut aria-hidden="true" size={18} />

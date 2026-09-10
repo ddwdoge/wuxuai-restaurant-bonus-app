@@ -29,7 +29,7 @@ export function wrongPortalCopy(portal, access) {
     if (access.owner_access) return "Du bist mit einem Restaurantbetreiber-Konto angemeldet.";
     if (access.staff_access) return "Du bist mit einem Mitarbeiterkonto angemeldet.";
     if (access.platform_access) return "Du bist mit einem internen WUXUAI-Konto angemeldet.";
-    return "Dieses Konto besitzt keinen Zugang zum Kundenbereich.";
+    return "Dieses Konto besitzt keinen Zugang zum Gästeportal.";
   }
   if (portal === "owner") {
     if (access.staff_access && !access.owner_access) return "Dieses Konto ist als Mitarbeiter registriert und hat keinen Betreiberzugang.";

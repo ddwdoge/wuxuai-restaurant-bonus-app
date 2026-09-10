@@ -57,7 +57,7 @@ test("Customer-Formular besitzt Passwortbestätigung und blockiert ungültigen S
   ]);
   assert.match(page, /Passwort bestätigen/);
   assert.match(page, /id="customer-confirm-password"/);
-  assert.match(page, /type="password"/);
+  assert.match(page, /<PasswordInput/);
   assert.match(page, /confirmPasswordTouched \|\| submitAttempted/);
   assert.match(page, /setSubmitAttempted\(true\)/);
   assert.match(flow, /Passwörter stimmen nicht überein\./);

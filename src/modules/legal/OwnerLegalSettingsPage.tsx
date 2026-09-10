@@ -487,7 +487,7 @@ export function OwnerLegalSettingsPage() {
             <label className="field"><span>Gültig ab</span><input className="input" min={viennaCalendarDate()} onChange={(event) => setEffectiveDate(event.target.value)} type="date" value={effectiveDate} /></label>
           </div>
           <label className="owner-legal-toggle"><input checked={reacceptanceRequired} onChange={(event) => setReacceptanceRequired(event.target.checked)} type="checkbox" /><span><strong>Erneute Zustimmung bestehender Gäste erforderlich</strong><small>Nicht automatisch aktiv. Nur auswählen, wenn dies rechtlich oder produktseitig ausdrücklich notwendig ist.</small></span></label>
-          <label className="owner-legal-toggle"><input checked={publicationConfirmed} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><span><strong>Ich habe die Angaben geprüft und möchte diese Version veröffentlichen.</strong><small>Veröffentlichung, Vorlage, Dokument-Hash, Owner, Restaurant, Zeitpunkt und Request-ID werden protokolliert.</small></span></label>
+          <label className="owner-legal-toggle"><input checked={publicationConfirmed} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><span><strong>Ich habe die Angaben geprüft und möchte diese Version veröffentlichen.</strong><small>Veröffentlichung, Vorlage, Dokument-Hash, Inhaber, Restaurant, Zeitpunkt und Request-ID werden protokolliert.</small></span></label>
           <button className="button" disabled={!publicationConfirmed || saving} onClick={() => void handleConfirmedPublication()} type="button">{saving ? "Veröffentlichung läuft …" : "Geprüfte Version veröffentlichen"}</button>
         </section>
       ) : null}

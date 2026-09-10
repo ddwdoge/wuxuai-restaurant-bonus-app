@@ -65,7 +65,34 @@ Verboten sind eine vorgetaeuschte E-Mail-Berechtigung und ein neues grosses
 Kampagnen- oder Notification-System. WUXUAI Bonus bleibt als Web-App ohne
 verpflichtende native App nutzbar.
 
+### First-Login Setup Drawer - V1 REQUIRED
+
+- Nach dem ersten erfolgreichen Kundenlogin oeffnet sich einmalig ein kompakter
+  Setup-Drawer.
+- Die Einrichtung ist optional und blockiert den Kundenbereich nicht.
+- `Spaeter` schliesst den Drawer; solange relevante Schritte offen sind, bleibt
+  auf der Startseite nur eine kompakte Erinnerung sichtbar.
+- Nach Abschluss aller auf dem Geraet relevanten Schritte verschwinden Drawer-
+  Automatik und Home-Erinnerung.
+- `Nicht mehr automatisch erinnern` deaktiviert nur das automatische Oeffnen und
+  keine Funktion.
+- `App & Benachrichtigungen` bleibt im Konto jederzeit manuell erreichbar.
+- Push-Berechtigungen werden niemals beim Oeffnen des Drawers, sondern erst nach
+  einer ausdruecklichen Nutzeraktion angefragt.
+- Installation und Push werden ausschliesslich aus dem aktuellen Browser- und
+  Plattformstatus abgeleitet. Ein lokaler Darstellungswert darf keine
+  abgeschlossene Installation vortaeuschen.
+- E-Mail-Bestaetigung, Browserinstallation und Push-Bereitschaft bleiben getrennte
+  Zustaende.
+
 ## 4. Globale Passwortsichtbarkeit
+
+Implementierungsstatus: **STAGING READY FOR PHYSICAL FINAL LOCK**
+
+Der gemeinsame UI-Vertrag ist implementiert, automatisch vollstaendig und auf
+den oeffentlich erreichbaren Staging-Auth-Routen physisch geprueft. Der
+tokengebundene Passwort-Reset-/Aenderungsweg bleibt Teil des finalen
+Founder-kontrollierten Golden-Path-Nachweises.
 
 Jedes Passwortfeld braucht fuer V1:
 
@@ -76,6 +103,15 @@ Jedes Passwortfeld braucht fuer V1:
 - unveraendertes Auth- und Sicherheitsverhalten.
 
 ## 5. UI/UX Consistency Gate
+
+Implementierungsstatus: **STAGING FINAL LOCK**
+
+Der aktive Staging-Stand verwendet den gemeinsamen UI-Vertrag ueber Customer-,
+Owner-, Staff- und Platform-Admin-Oberflaechen. Der Sprachschalter ist in die
+jeweilige Kopf- oder Menuezeile integriert, der kanonische Info-Trigger besitzt
+eine 44-Pixel-Bedienflaeche, und sichtbare deutsche Rollenbegriffe entsprechen
+dem unten festgelegten Vertrag. Die gepruefte Responsive-Matrix umfasst 320 bis
+1280 Pixel sowie alle sieben vorhandenen UI-Sprachen.
 
 Vor Production muessen die aktiven V1-Flows konsistent sein bei:
 

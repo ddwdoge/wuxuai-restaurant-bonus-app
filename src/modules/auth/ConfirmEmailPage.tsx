@@ -63,7 +63,7 @@ export function ConfirmEmailPage() {
       >
         <PublicContentCard>
           <p className="public-premium-alert public-premium-alert-success" role="status">E-Mail-Adresse bereits bestätigt. Bitte fahre mit deinem bestehenden Konto fort.</p>
-          <Link className="public-premium-secondary-link" to={portalAccess.owner_access ? "/admin" : "/register"}>{portalAccess.owner_access ? "Restaurant-Portal öffnen" : "Restaurantbereich aktivieren"}</Link>
+          <Link className="public-premium-secondary-link" to={portalAccess.owner_access ? "/admin" : "/register"}>{portalAccess.owner_access ? "Inhaberbereich öffnen" : "Restaurantbereich aktivieren"}</Link>
         </PublicContentCard>
       </PublicPageShell>
     );

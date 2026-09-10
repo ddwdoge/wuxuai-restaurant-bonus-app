@@ -61,14 +61,14 @@ export type CustomerRestaurantContext = {
 };
 
 function requireClient() {
-  if (!supabase) throw new Error("Dein Kundenbereich ist gerade nicht verfügbar.");
+  if (!supabase) throw new Error("Dein Gästeportal ist gerade nicht verfügbar.");
   return supabase;
 }
 
 export async function loadCustomerAccount(): Promise<CustomerAccount | null> {
   const { data, error } = await requireClient().rpc("get_customer_account");
   if (error) {
-    throw new Error("Dein Kundenbereich konnte gerade nicht geladen werden.");
+    throw new Error("Dein Gästeportal konnte gerade nicht geladen werden.");
   }
   return data as CustomerAccount;
 }

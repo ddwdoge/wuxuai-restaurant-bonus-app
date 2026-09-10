@@ -18,6 +18,7 @@ import { PlatformRestaurantControlCenter as RestaurantControlCenter } from "./Pl
 import { PlatformOperationalTelemetry as OperationalTelemetry } from "./PlatformOperationalTelemetry";
 import { useAuth } from "../auth/AuthProvider";
 import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
+import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
@@ -220,6 +221,7 @@ export function PlatformAdminPage() {
       <header className="platform-admin-header">
         <div><span className="admin-brand-kicker">WUXUAI Admin</span><h1>WUXUAI Admin</h1><p>Restaurants, Testphasen und Plattformstatus verwalten.</p></div>
         <div className="platform-admin-header-actions">
+          <LanguageSelector />
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
           <button className="button secondary" onClick={() => navigate("/admin/platform/audit")} type="button"><Activity size={18} />Audit-Protokoll</button>
           <button className="button secondary" onClick={() => void loadData(selectedRestaurantId)} type="button"><RefreshCw size={18} />Aktualisieren</button>
