@@ -25,6 +25,15 @@ separat freigegeben sind.
 
 Status: **LOCK**
 
+## Founder-Launchentscheidung 2026-09-10 - CURRENT
+
+**SUPERSEDED fuer die Launch-Reihenfolge:** Stripe ist nicht mehr pauschal ein
+unbestimmter spaeterer Block. `Stripe Staging / Billing` ist Gate 6 des
+aktuellen Austria-Launch-Masters. Stripe Live, Production-Secrets und eine
+Production-Aktivierung bleiben eigene, ausdruecklich freizugebende Schritte.
+
+Quelle: `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
+
 Dieses Dokument beschreibt den offiziellen Zahlungs-, Testphasen- und Stripe-Plan für WUXUAI Bonus.
 
 Die Zahlungslogik ist nicht nur eine technische Integration.  
@@ -364,7 +373,7 @@ Aber V1 muss keine vollständige Self-Service Billing UI haben, bevor Stripe int
 
 ## 11. Stripe-Integration – Grundsatz
 
-🟡 **V2 / Go-Live relevant**
+🟡 **SUPERSEDED EINORDNUNG / GO-LIVE GATE**
 
 Stripe wird integriert, sobald:
 

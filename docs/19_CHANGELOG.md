@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-10 - Austria Launch Master Contract aktualisiert
+
+- Neuer kanonischer Launch-/Scope-/Roadmapvertrag:
+  `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
+- Founder-Entscheidungen zu Launch Freeze, Legal-Status, Customer Activation,
+  Passwortsichtbarkeit, UI/UX, Compact Info, Sprachschalter,
+  Rollenterminologie, E-Mail-Login, Nearby Discovery und Post-V1-Strategie
+  dokumentiert.
+- Acht Alt-Konfliktgruppen wurden nicht geloescht, sondern als `SUPERSEDED`
+  markiert und auf den aktuellen Master verwiesen.
+- Keine Anwendung, Migration, Datenbank oder externe Umgebung geaendert.
+
 ## 2026-09-08 - Minimierbaren Staff-Punktevorgang auf Staging vorbereitet
 
 - Den bestehenden QR- und Tages-PIN-Ablauf um genau einen fluechtigen,

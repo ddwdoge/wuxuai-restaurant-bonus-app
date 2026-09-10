@@ -29,7 +29,9 @@ Das Ziel von Flow 02 lautet:
 
 Der Gast soll nicht suchen.  
 Der Gast soll nicht ein Restaurant auswählen.  
-Der Gast soll keine App installieren.  
+Der Gast soll keine native App installieren muessen.
+**SUPERSEDED/CLARIFIED (2026-09-10):** Ein optionaler Home-Screen-/PWA-
+Aktivierungsweg ist V1 und steht im Austria Launch Master Contract.
 Der Gast soll keine SMS abwarten.  
 Der Gast soll keine lange Erklärung lesen.
 
@@ -257,6 +259,15 @@ Deshalb gilt:
 ---
 
 ## 7. Nach erfolgreicher Registrierung
+
+### 7.0 Aktivierung nach dem Beitritt - CURRENT V1 CONTRACT
+
+**SUPERSEDED/CLARIFIED (2026-09-10):** Eine fruehere Aussage, der Gast
+installiere keine App, bedeutet nur, dass keine native App Voraussetzung ist.
+Der aktuelle Austria Launch Master Contract verlangt eine optionale Home-
+Screen-/PWA-Erinnerung, Android-Installation wo verfuegbar und eine iOS-
+Anleitung. Push wird erst nach ausdruecklicher Nutzeraktion angefragt; E-Mail
+und Push bleiben getrennte Konzepte. Es wird kein Kampagnen-System eingefuehrt.
 
 Nach erfolgreicher Registrierung darf der Gast nicht auf ein Profil-Formular geleitet werden.
 
@@ -808,7 +819,9 @@ Auth verarbeitet; WUXUAI speichert kein eigenes Passwort.
 V2 kann enthalten:
 
 - echtes passwortloses Login mit SMS/WhatsApp optional
-- Push-Benachrichtigungen
+- **SUPERSEDED/CLARIFIED (2026-09-10):** Push-Kampagnen und automatisierte
+  Benachrichtigungen bleiben Post-V1. Notification Readiness und eine erst
+  nach ausdruecklicher Nutzeraktion gestellte Push-Berechtigungsfrage sind V1.
 - Wochenübersicht der Belohnungen
 - Lieblingsbelohnungen
 - Wallet mit mehreren Restaurants

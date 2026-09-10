@@ -897,7 +897,10 @@ Uploads für Kunden dürfen nicht in fremde Restaurantpfade schreiben.
 
 ## 23. Stripe API Regeln
 
-Stripe ist V2/Go-Live.
+**SUPERSEDED fuer die Launch-Reihenfolge (2026-09-10):** Stripe
+Staging/Billing ist Gate 6 des Austria Launch Master Contract. Stripe Live und
+Production-Aktivierung bleiben separat freigabepflichtig. Die folgenden
+serverseitigen Sicherheitsregeln bleiben unveraendert verbindlich.
 
 Regeln:
 

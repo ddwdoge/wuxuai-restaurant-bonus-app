@@ -117,6 +117,10 @@
 - Sichtbare V1-Texte bleiben gemaess dem aktiven Sprachvertrag Deutsch. Eine
   Erweiterung auf EN/FR/IT/ES ist damit nicht Bestandteil dieses V1-Changes.
 
+**SUPERSEDED (2026-09-10):** Diese Scope-Aussage galt fuer den damaligen Change.
+Der aktuelle Austria-Launch-Sprachvertrag steht in
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
+
 ## 2026-09-01 - Bestehende Auth-Identitaet kann Owner-Bereich aktivieren
 
 - Eine bereits als Customer oder Staff verwendete E-Mail darf die
@@ -1357,6 +1361,11 @@ Prompts für Codex im Projekt sind Deutsch.
 
 Englisch nur im Code.
 
+**SUPERSEDED (2026-09-10):** Deutsch bleibt die verpflichtende Austria-Launch-
+Sprache, ist aber nicht mehr die einzige vorhandene UI-Sprache. Fuer
+`de`, `en`, `fr`, `it`, `es`, `zh` und `ko` sowie den Launch-Gate gilt der
+aktuelle Austria Launch Master Contract.
+
 ---
 
 ## 43. Mobile First
@@ -1632,6 +1641,10 @@ Nicht V1.
 🟡 **V2**
 
 EN/ZH nach Feature Freeze.
+
+**SUPERSEDED (2026-09-10):** Die bestehende Architektur umfasst inzwischen
+`de`, `en`, `fr`, `it`, `es`, `zh` und `ko`. Ihr aktueller Launch-Status steht
+im Austria Launch Master Contract.
 
 ---
 

@@ -15,9 +15,10 @@ wird als `CURRENT CODE/CONTRACT MISMATCH` und `NOT READY` gemeldet.
   1. `AGENTS.md`
   2. dieses Guardrail-Dokument
   3. `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
-  4. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege
-  5. `docs/V1_FINAL_RELEASE_STATUS.md`
-  6. historische Reports und Changelog
+  4. `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` fuer Launch-Scope und Roadmap
+  5. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege
+  6. `docs/V1_FINAL_RELEASE_STATUS.md` als historischer Status-Snapshot
+  7. historische Reports und Changelog
 - Der permanente Git-Stand ist die technische Arbeitsgrundlage. Historische
   Reports und Pruef-ZIPs sind Nachweise, aber keine aktive Spezifikation.
 - Fuer die laufende V1-Recovery ist `codex/v1-canonical-recovery` der
@@ -48,7 +49,9 @@ Quellen: `AGENTS.md`, `docs/00_START_HIER.md`,
 - LOCKED Flows werden nur fuer einen reproduzierten Defekt oder einen
   ausdruecklich freigegebenen neuen Vertrag geaendert und danach im betroffenen
   Umfang erneut geprueft.
-- Sichtbare V1-UI bleibt deutsch, mobile-first und rollenspezifisch.
+- **SUPERSEDED (2026-09-10):** Die pauschale Deutsch-only-Regel wird durch den
+  Austria Launch Master Contract ersetzt. Die deutsche Launch-UI bleibt
+  verpflichtend; die bestehende Sieben-Sprachen-Architektur wird nicht entfernt.
 
 Quellen: `AGENTS.md` Abschnitte 3, 4, 6, 7 und 9;
 `docs/18_CODEX_REGELN.md` Abschnitte 4 bis 9.
@@ -143,7 +146,10 @@ vom 2026-08-30.
 
 - Trial: exakt 3 Kalendermonate kostenlos.
 - Basispaket: WUXUAI Bonus V1, 59 EUR pro Monat exkl. USt., monatlich.
-- Automatische Abrechnung ist nicht aktiv; Stripe bleibt `DEFERRED`.
+- Automatische Abrechnung ist nicht aktiv; Stripe bleibt `DEFERRED` als
+  technischer Ist-Status. **SUPERSEDED fuer die Launch-Reihenfolge
+  (2026-09-10):** Stripe Staging/Billing ist ein eigener notwendiger Gate vor
+  Production; dies aktiviert weder Stripe Live noch Production.
 - Aktuell wird kein Zahlungsmittel verlangt. Es gibt keinen Fake-Checkout und
   keine vorgetaeuschte automatische Umwandlung in ein bezahltes Abo.
 - Die zentrale Laufzeitkonfiguration ist `src/shared/commercialContract.mjs`.

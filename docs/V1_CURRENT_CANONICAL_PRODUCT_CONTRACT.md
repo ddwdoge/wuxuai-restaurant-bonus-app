@@ -10,6 +10,11 @@ und physischen Founder-Gates verifizierten V1-Stand. Historische Reports
 behalten den Status zum Zeitpunkt ihrer Erstellung; dieser Vertrag bildet den
 spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
+Founder-Zielscope, Austria-Launch-Reihenfolge und Post-V1-Strategie stehen
+kanonisch in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Dieses Dokument bleibt
+die technische Produktvertrags- und Evidenzquelle. Bei abweichendem Status gilt:
+neuer Zielvertrag bedeutet nicht automatisch implementierten Ist-Stand.
+
 ## Owner, Onboarding und Legal Company Data - FINAL LOCK
 
 - Das aktuelle Owner-Onboarding und seine kontextbezogene Hilfe sind physisch
@@ -496,6 +501,11 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 
 ## Staging und Production
 
+Die folgenden Release-Zahlen dokumentieren den verifizierten technischen
+Snapshot vor der Founder-Entscheidung vom 2026-09-10. **SUPERSEDED fuer die
+aktuelle Launch-Readiness:** Sie duerfen nicht als Nachweis verstanden werden,
+dass die Gates des Austria Launch Master Contract bereits geschlossen sind.
+
 - Die verbindliche Domain-Zuordnung lautet:
   - `wuxuaisbi.com`: zentrale WUXUAI SaaS-Plattform.
   - `bonus.wuxuaisbi.com`: WUXUAI Bonus Landingpage und Marketing.
@@ -519,7 +529,9 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - V1 Final Lock: `YES`.
 - Ready for Founder Main Merge: `YES`.
 - Production: `LOCKED` bis zur ausdruecklichen Founder-Release-Freigabe.
-- Stripe: `DEFERRED`.
+- Stripe war in diesem technischen Snapshot `DEFERRED`. Fuer die aktuelle
+  Launch-Reihenfolge ist Stripe Staging/Billing Gate 6; Stripe Live bleibt
+  separat freigabepflichtig.
 
 ## Commercial Contract - APPROVED
 
@@ -531,7 +543,9 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
   Vertragsdaten werden nicht rueckwirkend umgeschrieben.
 - Die zentrale Produktkonfiguration enthaelt einen leeren Add-on-Katalog als
   Erweiterungspunkt. Unfertige Zusatzpakete sind fuer Owner nicht sichtbar.
-- Stripe bleibt `DEFERRED`; es gibt keinen Fake-Checkout und keine vorgetaeuschte
+- Der damalige technische Stand hatte Stripe `DEFERRED`. **SUPERSEDED fuer die
+  Launch-Reihenfolge:** Stripe Staging/Billing ist ein notwendiger Gate vor
+  Production. Es gibt weiterhin keinen Fake-Checkout und keine vorgetaeuschte
   automatische Umwandlung in ein bezahltes Abo.
 
 ## Onboarding-Hilfe und Welcome-Gift-Verteilungsfreeze - FINAL LOCK
@@ -553,5 +567,7 @@ spaeter nachgewiesenen aktuellen Stand ab. `DEFERRED` ist nicht Teil V1.
 - Welcome Assignment, Birthday Assignment, Duplicate Protection, Eligibility,
   RLS, Tenant Isolation, Redemption, Audit und Customer Rewards bleiben
   unveraendert.
-- V1 bleibt gemaess aktiver Dokumentationshierarchie deutschsprachig. Weitere
-  UI-Sprachen benoetigen eine ausdrueckliche Aenderung dieses Vertrags.
+- **SUPERSEDED (2026-09-10):** Die fruehere Ausschliesslichkeitsregel fuer eine
+  nur deutschsprachige V1 wird durch den Austria Launch Master Contract ersetzt.
+  Deutsch bleibt verpflichtende Launch-Sprache; die bestehende Architektur fuer
+  `de`, `en`, `fr`, `it`, `es`, `zh` und `ko` bleibt erhalten.

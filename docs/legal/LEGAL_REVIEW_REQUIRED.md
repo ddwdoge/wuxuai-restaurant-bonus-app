@@ -2,6 +2,19 @@
 
 Diese technische Umsetzung ist keine Rechts- oder Steuerberatung und keine Production-Freigabe.
 
+Aktueller Founder-Status vom 2026-09-10:
+
+```text
+READY FOR PROFESSIONAL REVIEW
+COMMERCIAL LAUNCH: NOT READY
+```
+
+Offen bleiben Company-/Operator-Platzhalter, B2B-AGB,
+Leistungsbeschreibung, AVV, Datenschutz/Verarbeiter/Transfers/Aufbewahrung,
+aktuelle Teilnahme-/Punktebedingungen sowie professionelle oesterreichische
+Rechts- und Steuerpruefung. Quelle fuer Scope und Reihenfolge:
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
+
 ## Österreichische Rechtsprüfung
 
 - Endfassung von Teilnahmebedingungen, Datenschutz und Impressum je Restaurant

@@ -11,6 +11,8 @@ Codex darf nicht frei planen, nicht frei interpretieren und nicht aus alten Chat
 Die Engineering Bible im Ordner `/docs` ist die verbindliche Wahrheit für dieses Projekt.
 
 Aktueller Produktvertrag: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+Aktueller Austria-Launch-, Scope- und Roadmapvertrag:
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`.
 Verbindliche Implementierungsgrenzen: `docs/AI_IMPLEMENTATION_GUARDRAILS.md`.
 Historische, widersprechende Regeln sind in `docs/LEGACY_DOCUMENT_INDEX.md`
 eingefroren und nicht mehr als aktive Implementierungsanweisung zu verwenden.
@@ -39,9 +41,10 @@ Codex entscheidet immer in dieser Reihenfolge:
 1. `AGENTS.md`
 2. `docs/AI_IMPLEMENTATION_GUARDRAILS.md`
 3. `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
-4. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege in `/docs`
-5. `docs/V1_FINAL_RELEASE_STATUS.md`
-6. historische Reports und `docs/19_CHANGELOG.md`
+4. `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` fuer Launch-Scope und Roadmap
+5. aktuelle Architektur-, Sicherheits-, API- und Business-Vertraege in `/docs`
+6. `docs/V1_FINAL_RELEASE_STATUS.md` als historischer Status-Snapshot
+7. historische Reports und `docs/19_CHANGELOG.md`
 
 Die konkrete aktuelle Founder-Aufgabe bestimmt den erlaubten Scope. Bestehender
 Code, Datenbankzustand sowie Build-, Test- und Live-Evidenz entscheiden, ob der
@@ -98,7 +101,8 @@ V1 bleibt fokussiert:
 - keine Filial-UI
 - `Aktuelles & Angebote` nur als begrenztes Informationsmodul
 - keine komplexen Kampagnen- oder Promotionfunktionen
-- Deutsch als UI-Sprache
+- Deutsch ist die verbindliche Austria-Launch-Sprache; die bestehende
+  Sieben-Sprachen-Architektur bleibt erhalten
 
 ---
 
@@ -208,7 +212,15 @@ docs/19_CHANGELOG.md
 
 ## 6. UI-Sprache
 
-Alle sichtbaren UI-Texte in V1 sind Deutsch.
+**SUPERSEDED (2026-09-10):** Die fruehere Aussage, V1 duerfe ausschliesslich
+deutsche sichtbare UI enthalten, wird durch
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` ersetzt.
+
+Die deutsche Austria-Launch-Oberflaeche muss vollstaendig und ohne rohe
+englische technische Begriffe sein. Die vorhandenen UI-Sprachen `de`, `en`,
+`fr`, `it`, `es`, `zh` und `ko` bleiben Teil der Architektur. Noch nicht final
+gepruefte Zielsprachen duerfen nicht als fertig bezeichnet werden, blockieren
+aber fuer sich allein nicht den Austria-Launch.
 
 Englisch ist nur erlaubt für:
 
@@ -233,6 +245,10 @@ Nicht erlaubt in sichtbarer UI:
 - Debug
 - Threshold
 - required_points
+
+Diese Liste gilt fuer die deutsche Oberflaeche. Andere Locales verwenden
+natuerliche lokalisierte Produkt- und Rollenbegriffe und niemals rohe
+technische Rollen-Enums.
 
 ---
 

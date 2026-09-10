@@ -163,7 +163,8 @@ V2 enthält später:
 - POS-QR mit signierter Rechnung
 - Stripe-Automation
 - vollstaendiges WUXUAI Admin Backoffice ausserhalb der freigegebenen sicheren V1-Basis
-- Mehrsprachigkeit
+- **SUPERSEDED:** Mehrsprachigkeit ist nicht mehr pauschal V2; die bestehende
+  Sieben-Sprachen-Architektur und der Austria-Launch-Gate bleiben aktiv.
 - Smart Recommendation Engine
 - automatisierte oder personalisierte Promotionflächen
 - Branchen-Erweiterung
@@ -177,7 +178,10 @@ Codex darf V2-Ideen nicht ohne ausdrücklichen Auftrag in V1 einbauen.
 
 🟢 **FIX**
 
-Alle sichtbaren UI-Texte in V1 sind Deutsch.
+**SUPERSEDED (2026-09-10):** Die pauschale Deutsch-only-Regel wird durch
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` ersetzt. Deutsch bleibt die
+verpflichtende Austria-Launch-Sprache; die bestehenden Locales `de`, `en`,
+`fr`, `it`, `es`, `zh` und `ko` bleiben erhalten.
 
 Codex-Prompts im Projekt sollen auf Deutsch formuliert sein, damit Codex nicht versehentlich englische UI erzeugt.
 
@@ -1268,6 +1272,17 @@ Jede Änderung muss diesen Rollen helfen.
 Wenn nicht:
 
 Nicht bauen.
+
+## 50.1 Modell-Empfehlung fuer groessere Loops
+
+Jeder groessere Codex-Loop nennt das empfohlene Modell. Richtwert:
+
+- kleiner UI-/Git-Fix: `GPT-5.6 Sol - Medium/High`,
+- normale Implementierung: `GPT-5.6 Sol - High`,
+- kritische Architektur, Security oder Release: `GPT-6 Astra - High`, sofern verfuegbar.
+
+Die Modellwahl ersetzt keine Freigabe, keinen Sicherheitsnachweis und keinen
+Pflichttest.
 
 ---
 

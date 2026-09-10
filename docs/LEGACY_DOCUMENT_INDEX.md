@@ -1,7 +1,9 @@
 # WUXUAI Bonus V1 - Legacy Document Index
 
 Status: **ACTIVE FREEZE**
-Authoritative contract: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+Authoritative product contract: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+Authoritative Austria launch and roadmap contract:
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`
 
 Historische Abschnitte und Reports bleiben als Nachweis erhalten, duerfen aber
 nicht als aktuelle Implementierungsanweisung verwendet werden.
@@ -22,6 +24,12 @@ nicht als aktuelle Implementierungsanweisung verwendet werden.
 | Birthday-Zuweisung nur exakt 14 Tage vorher oder manueller Draw | inklusives lokales Fenster Geburtstag heute bis +14 Tage, sofort bei Membership und taeglicher Cron | alte Birthday-, Retention- und Reward-Abschnitte |
 | Exklusive globale Owner-/Staff-/Customer-Rolle je E-Mail | eine Auth-Identitaet mit additiven tenantgebundenen Rollen | alte Rollen-, Invite- und Login-Abschnitte |
 | Manuelle Birthday-Zuweisung als V1-Hauptflow | automatische kanonische, deduplizierte Assignment-Engine | alte Birthday-Draw- und Release-Finishing-Abschnitte |
+| V1 ausschliesslich Deutsch; Mehrsprachigkeit erst V2/EN-ZH | Deutsch ist verpflichtende Austria-Launch-Sprache; bestehende Architektur fuer DE/EN/FR/IT/ES/ZH/KO bleibt erhalten | `AGENTS`, `00`, `15`, `17`, Guardrails und aeltere i18n-Statussaetze |
+| Kein Installationshinweis nach Customer-Registrierung | optionale PWA-/Home-Screen-Aktivierung ist V1; keine native App ist Pflicht | aeltere Customer-Flow-Aussagen |
+| Stripe unbestimmt spaeter oder nur V2 | Stripe Staging/Billing ist Austria-Launch-Gate 6; Stripe Live bleibt separat freigabepflichtig | `21`, `22`, Guardrails und Release-Snapshot vom 2026-09-01 |
+| V1 bereits ohne offene Launch-Gates releasebereit | Legal, Activation UX, Password Visibility, UI/UX, Konsolidierung, Billing, Legal Final und Golden Path sind nach aktuellem Master noch zu auditieren | `V1_FINAL_RELEASE_STATUS.md` vom 2026-09-01 |
+| Alte technische Go-live-Liste als Priorisierungsreihenfolge | aktuelle neunstufige Austria-Launch-Reihenfolge | `21_PRODUCTION_GO_LIVE_PLAN.md` |
+| E-Mail-Bestaetigung fuer Production noch unentschieden | E-Mail-Bestaetigung, Resend und Recovery sind Production-Pflicht | `21_PRODUCTION_GO_LIVE_PLAN.md` |
 
 ## Aktive Fachdateien mit historischen Abschnitten
 
