@@ -7,6 +7,7 @@ import {
   shouldSkipCompletedOnboarding,
 } from "./restaurantOnboardingActivation.mjs";
 import { syncRestaurantAddressFromLegalProfile } from "../legal/legalAddressSourceService";
+import { requireRegistrationCountry } from "./countryLaunchService";
 
 export type PilotOnboardingInput = {
   restaurantId: string;
@@ -94,6 +95,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     return completedResult;
   }
 
+  await requireRegistrationCountry(String(input.legalProfile.country ?? ""));
   const { error: brandingError } = await supabase.from("restaurant_branding").upsert(
     {
       restaurant_id: restaurantId,

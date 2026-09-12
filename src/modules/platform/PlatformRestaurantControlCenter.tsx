@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import type {
   PaymentStatus,
   PlatformMetric,
@@ -55,7 +56,7 @@ type PlatformRestaurantControlCenterProps = {
   data: PlatformRestaurantControlCenter | null;
   error: string;
   loading: boolean;
-  onAction: (actionLabel: string, payload: UpdatePayload) => Promise<void>;
+  onAction: (actionLabel: string, payload: UpdatePayload & { restaurantId: string; confirmation: string; idempotencyKey: string }) => Promise<void>;
   onRetry: () => void;
   restaurant: PlatformRestaurant;
   saving: boolean;
@@ -131,10 +132,21 @@ export function PlatformRestaurantControlCenter({
   restaurant,
   saving,
 }: PlatformRestaurantControlCenterProps) {
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const { translateKey } = useI18n();
+  const [pendingAction, updatePendingAction] = useState<(PendingAction & { restaurantId: string; idempotencyKey: string }) | null>(null);
+  const [reason, setReason] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function setPendingAction(action: PendingAction | null) {
+    updatePendingAction(action ? { ...action, restaurantId: restaurant.id, idempotencyKey: crypto.randomUUID() } : null);
+    setReason(action?.payload.reason ?? "");
+    setConfirmation("");
+    setSubmitted(false);
+  }
 
   useEffect(() => {
-    setPendingAction(null);
+    updatePendingAction(null);
   }, [data?.account.restaurant_id, restaurant.id]);
 
   if (loading) return <PlatformControlCenterSkeleton />;
@@ -163,10 +175,13 @@ export function PlatformRestaurantControlCenter({
   const internalTest = account.internal_test.status === "available" && account.internal_test.value;
 
   async function confirmAction() {
-    if (!pendingAction) return;
+    if (!pendingAction || !canWrite || saving || pendingAction.restaurantId !== account.restaurant_id
+      || confirmation !== "CONFIRMED" || reason.trim().length < 10) return;
     const action = pendingAction;
+    setSubmitted(true);
     try {
-      await onAction(action.actionLabel, action.payload);
+      await onAction(action.actionLabel, { ...action.payload, restaurantId: action.restaurantId,
+        reason: reason.trim(), confirmation, idempotencyKey: action.idempotencyKey });
       setPendingAction(null);
     } catch {
       // The page-level alert retains the safe error message and the drawer stays open.
@@ -325,8 +340,16 @@ export function PlatformRestaurantControlCenter({
       <PlatformLegalI18nPanel restaurantId={account.restaurant_id} />
       <PlatformKassaCompliancePanel canWrite={canWrite} restaurantId={account.restaurant_id} />
 
-      <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
+      <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving || confirmation !== "CONFIRMED" || reason.trim().length < 10} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
         <p>{pendingAction?.impact}</p>
+        <label className="field">
+          <span>{translateKey("platform.planOverride.reason")}</span>
+          <textarea disabled={saving || submitted} minLength={10} onChange={(event) => setReason(event.target.value)} required value={reason} />
+        </label>
+        <label className="field">
+          <span>{translateKey("platform.planOverride.confirmation")}</span>
+          <input autoComplete="off" disabled={saving || submitted} onChange={(event) => setConfirmation(event.target.value)} required value={confirmation} />
+        </label>
       </AppDrawer>
     </section>
   );

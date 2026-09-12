@@ -161,9 +161,16 @@ test("Recovery verwendet einen tabgebundenen Supabase-Client", () => {
   assert.match(supabaseClient, /detectSessionInUrl:\s*false/);
 });
 
-test("Update-Seite bereinigt URL erst nach erfolgreichem Session-Aufbau", () => {
-  assert.match(updatePassword, /await establishOwnerRecoverySession\(\);[\s\S]*clearSensitiveAuthUrl\(\)/);
-  assert.doesNotMatch(updatePassword, /catch[\s\S]{0,160}clearSensitiveAuthUrl/);
+test("Recovery-Service entfernt sensible URL-Werte vor jedem Session-Aufbau", () => {
+  const recoverySessionBody = ownerAuthService.match(
+    /export async function establishOwnerRecoverySession[\s\S]*?\n\}/,
+  )?.[0] ?? "";
+  assert.match(recoverySessionBody, /clearSensitiveAuthUrl\(\)/);
+  assert.ok(
+    recoverySessionBody.indexOf("clearSensitiveAuthUrl()")
+      < recoverySessionBody.indexOf("requireRecoveryAuthClient()"),
+  );
+  assert.doesNotMatch(updatePassword, /clearSensitiveAuthUrl/);
   assert.match(updatePassword, /acquireOwnerRecoveryLifecycle\(\)/);
   assert.match(updatePassword, /releaseRecoveryLifecycle\(\)/);
 });
@@ -211,7 +218,7 @@ test("Owner-Callback leitet einen bestätigten noch nicht provisionierten Owner 
     /navigate\(registrationCompleted \? "\/admin\/onboarding" : "\/admin"/,
   );
   assert.match(register, /user && isOwnerEmailConfirmed\(user\).*portalAccess\.owner_access/s);
-  assert.match(register, /await activateRestaurantOwnerForCurrentUser\(\{ ownerName, restaurantName, phone \}\)/);
+  assert.match(register, /await activateRestaurantOwnerForCurrentUser\(\{ ownerName, restaurantName, phone, country \}\)/);
 });
 
 test("Owner-Aktivierung startet nach Einführung des Plan-Katalogs im BASIC-Paket", () => {

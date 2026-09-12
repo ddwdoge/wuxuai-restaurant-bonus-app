@@ -256,6 +256,42 @@ neuer Zielvertrag bedeutet nicht automatisch implementierten Ist-Stand.
 
 ## Geocoding - IMPLEMENTED
 
+### Country Launch Gate - Staging FINAL LOCK (2026-09-11)
+
+- Founder-approved registration/onboarding extension: the server-owned
+  `country_launch_policy` is the launch-country source of truth. Initial Staging
+  configuration: AT enabled; DE, CH, FR, IT and ES prepared but disabled.
+- Missing, malformed, unknown and disabled business/legal countries fail closed.
+  UI language and Customer location do not grant or restrict launch eligibility.
+- New organization, restaurant, branch, trial/subscription and onboarding/legal
+  writes pass country guards. Private transaction-bound registration/onboarding
+  context cannot be supplied through browser DML or a caller-controlled setting.
+- Existing completed businesses are identified by a protected admission registry;
+  rollout does not update their business records. Existing Owner resume is a
+  read-only lookup, not a country-less new-registration route.
+- Platform Admin country changes require separate platform authority, a reason,
+  exact `CONFIRMED:<country code>`, an idempotency key and immutable audit evidence.
+  Browser table writes and private legacy delegates remain inaccessible.
+- Staging readiness completion (`20260911005000`): server-provided currencies,
+  technical registration and public market readiness are separate. Public launch
+  requires all eight protected readiness checks, valid evidence and legal-version
+  references. Missing or expired evidence blocks activation, including direct
+  RPC requests. AT remains technically enabled; no public market is declared live.
+  The initial 48 readiness records are honestly `not_configured`; they are not
+  legal, tax or Stripe approvals. Evidence configuration needs separately reviewed
+  server-side evidence, not browser table writes. Country history is read-only.
+  Country cards and confirmation copy support DE/EN/FR/IT/ES/ZH/KO.
+- The worldwide location vocabulary below remains available for geographic data.
+  It is not a promise of launch availability: new business registration and
+  changed business/legal countries must additionally pass the server launch gate.
+- The isolated TEST_ONLY Owner onboarding completed exactly once with operating
+  and legal/business country `AT`. The immutable Country audit contains one
+  allowed onboarding event; no blocked country was enabled or admitted.
+- Country and PRO Phase 1 evidence remains reported separately. The same physical
+  TEST_ONLY flow confirms the server-resolved BASIC plan, offer limit 5, disabled
+  offer/reward notifications and no active or future PRO override. Both scopes
+  have Staging FINAL LOCK; Production remains unchanged.
+
 - Owner geben Strasse, PLZ, Ort und Land an.
 - Die Standortseite zeigt eine durchsuchbare weltweite Laenderauswahl. Die
   Namen werden fuer DE, EN, FR, IT und ES lokalisiert; gespeichert und an den

@@ -117,7 +117,7 @@ test("activation copy exists in all seven supported languages with preserved cou
     assert.notEqual(translateStructural("customer.activation.descriptionOne", language), "customer.activation.descriptionOne");
   }
   assert.match(drawer, /useI18n\(\)/);
-  assert.match(drawer, /aria-label=\{t\("common\.close"\)\}/);
+  assert.match(drawer, /aria-label=\{closeLabel \?\? t\("common\.close"\)\}/);
 });
 
 test("activation controls meet touch, safe-area and narrow-layout contracts", () => {

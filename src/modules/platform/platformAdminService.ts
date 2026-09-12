@@ -24,6 +24,15 @@ export type PlatformRestaurantLegalI18nStatus = {
 };
 
 export type RestaurantEntitlements = {
+  contract_version?: string;
+  effective_plan?: CommercialPlan;
+  stored_plan_key?: CommercialPlan | null;
+  entitlement_source?: string;
+  effective_from?: string | null;
+  effective_until?: string | null;
+  override_status?: string;
+  subscription_status?: string | null;
+  payment_status?: string | null;
   restaurant_id: string;
   subscription_id: string | null;
   plan_key: CommercialPlan;
@@ -32,6 +41,11 @@ export type RestaurantEntitlements = {
   active_offer_count: number;
   commercial_default: EntitlementValues;
   override: (Partial<EntitlementValues> & {
+    id?: string | null;
+    plan_key?: CommercialPlan | null;
+    status?: string;
+    effective_from?: string | null;
+    expires_at?: string | null;
     reason: string;
     changed_by: string;
     changed_at: string;
@@ -244,6 +258,66 @@ export type PlatformOperationalTelemetry = {
     last_success_at: string | null;
     last_failure_at: string | null;
   };
+};
+
+export type PlatformHealthSeverity = "P0" | "P1" | "P2" | "P3";
+export type PlatformHealthCategory = "ONBOARDING" | "LOCATION" | "LEGAL" | "PLAN" | "BONUS" | "COUNTRY" | "SYSTEM";
+
+export type PlatformHealthFinding = {
+  id: string;
+  type: string;
+  severity: PlatformHealthSeverity;
+  category: PlatformHealthCategory;
+  current: unknown;
+  expected: unknown;
+  first_seen_at: string | null;
+  first_seen_status: "unavailable";
+  last_checked_at: string;
+  recommendation: string;
+  audit: { status?: string; id?: string; timestamp?: string; event_key?: string };
+  target: {
+    type: "restaurant" | "country" | "system";
+    restaurant_id?: string;
+    restaurant_name?: string;
+    location_id?: string;
+    country?: string;
+    plan?: string;
+    system_area?: string;
+    route: string;
+  };
+};
+
+export type PlatformHealthRestaurantTarget = {
+  restaurant_id: string;
+  restaurant_name: string;
+  location_id?: string;
+  country?: string;
+  plan?: string;
+  finding_count: number;
+  status: "HEALTHY" | "ATTENTION";
+  route: string;
+};
+
+export type PlatformHealthCenter = {
+  contract_version: "platform_health_center_v1";
+  generated_at: string;
+  freshness: {
+    status: "current";
+    generated_at: string;
+    claim: "snapshot_at_request_time";
+    automatic_refresh: false;
+  };
+  summary: {
+    critical: number;
+    errors: number;
+    warnings: number;
+    notices: number;
+    healthy: number;
+    findings_total: number;
+    restaurants_checked: number;
+  };
+  findings: PlatformHealthFinding[];
+  restaurant_targets: PlatformHealthRestaurantTarget[];
 };
 
 export type PlatformRestaurantControlCenter = {
@@ -575,6 +649,13 @@ export async function loadPlatformOperationalTelemetry(): Promise<PlatformOperat
   return data as PlatformOperationalTelemetry;
 }
 
+export async function loadPlatformHealthCenter(): Promise<PlatformHealthCenter> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_health_center");
+  if (error) throw error;
+  return data as PlatformHealthCenter;
+}
+
 export async function loadPlatformRestaurantOperations(restaurantId: string): Promise<PlatformRestaurantOperations> {
   if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
   const { data, error } = await supabase.rpc("get_platform_restaurant_operations", { input_restaurant_id: restaurantId });
@@ -591,30 +672,23 @@ export async function loadRestaurantEntitlements(restaurantId: string): Promise<
   return data as RestaurantEntitlements;
 }
 
-export async function updatePlatformRestaurantEntitlements(input: {
-  restaurantId: string;
-  action: "PLAN_CHANGED" | "OFFER_LIMIT_OVERRIDE_CHANGED" | "OFFER_NOTIFICATIONS_CHANGED" | "REWARD_NOTIFICATIONS_CHANGED" | "ENTITLEMENT_OVERRIDE_CLEARED";
-  planKey?: CommercialPlan;
-  offerLimit?: number | null;
-  offerLimitUnlimited?: boolean | null;
-  enabled?: boolean | null;
-  reason: string;
-  confirmation: "CONFIRMED";
-}) {
-  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
-  const { data, error } = await supabase.rpc("update_platform_restaurant_entitlements", {
+
+export async function submitPlatformPlanOverride(input: import('./planOverrideRequest.mjs').PlanOverrideRequest) {
+  if (!supabase) throw new Error('Supabase ist nicht konfiguriert.');
+  const common = {
     input_restaurant_id: input.restaurantId,
-    input_action: input.action,
-    input_plan_key: input.planKey ?? null,
-    input_offer_limit: input.offerLimit ?? null,
-    input_offer_limit_unlimited: input.offerLimitUnlimited ?? null,
-    input_enabled: input.enabled ?? null,
     input_reason: input.reason,
     input_confirmation: input.confirmation,
-    input_idempotency_key: crypto.randomUUID(),
-  });
+    input_idempotency_key: input.idempotencyKey,
+  };
+  const { data, error } = input.action === 'activate'
+    ? await supabase.rpc('set_platform_restaurant_plan_override', {
+      ...common, input_plan_key: 'PRO', input_expires_at: input.expiresAt,
+      input_starts_at: input.startsAt,
+    })
+    : await supabase.rpc('end_platform_restaurant_plan_override', { ...common, input_override_id: input.overrideId });
   if (error) throw error;
-  return data as { success: boolean; operation_id: string; entitlements: RestaurantEntitlements };
+  return data as { success: boolean; idempotent: boolean; operation_id: string; entitlements: RestaurantEntitlements };
 }
 
 export async function executePlatformAdminOperation(input: {
@@ -668,6 +742,8 @@ export async function requestPlatformAuthSupport(input: {
 
 export async function updatePlatformRestaurantSubscription(input: {
   restaurantId: string;
+  confirmation: string;
+  idempotencyKey: string;
   subscriptionStatus?: SubscriptionStatus | null;
   paymentStatus?: PaymentStatus | null;
   restaurantStatus?: RestaurantStatus | null;
@@ -678,13 +754,15 @@ export async function updatePlatformRestaurantSubscription(input: {
     throw new Error("Supabase ist nicht konfiguriert.");
   }
 
-  const { error } = await supabase.rpc("update_platform_restaurant_subscription", {
+  const { error } = await supabase.rpc("update_platform_restaurant_subscription_confirmed", {
     input_restaurant_id: input.restaurantId,
     input_subscription_status: input.subscriptionStatus ?? null,
     input_payment_status: input.paymentStatus ?? null,
     input_restaurant_status: input.restaurantStatus ?? null,
     input_trial_extension_days: input.trialExtensionDays ?? null,
     input_reason: input.reason ?? null,
+    input_confirmation: input.confirmation,
+    input_idempotency_key: input.idempotencyKey,
   });
 
   if (error) {

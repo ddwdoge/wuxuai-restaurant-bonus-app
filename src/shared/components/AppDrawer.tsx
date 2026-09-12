@@ -6,9 +6,11 @@ import { useI18n } from "../i18n/I18nProvider";
 type AppDrawerProps = {
   children: ReactNode;
   className?: string;
+  closeLabel?: string;
   description?: string;
   dismissOnOverlay?: boolean;
   footer?: ReactNode;
+  fitVisualViewport?: boolean;
   onClose: () => void;
   open: boolean;
   size?: "compact" | "standard" | "large" | "workspace";
@@ -27,9 +29,11 @@ const focusableSelector = [
 export function AppDrawer({
   children,
   className = "",
+  closeLabel,
   description,
   dismissOnOverlay = true,
   footer,
+  fitVisualViewport = false,
   onClose,
   open,
   size = "standard",
@@ -39,11 +43,32 @@ export function AppDrawer({
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef(onClose);
 
   useEffect(() => {
     closeRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    if (!open || !fitVisualViewport || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const overlay = overlayRef.current;
+    // Mobile keyboards can shrink/pan the visual viewport without changing dvh.
+    const updateViewport = () => {
+      overlay?.style.setProperty("--drawer-viewport-height", `${viewport.height}px`);
+      overlay?.style.setProperty("--drawer-viewport-top", `${viewport.offsetTop}px`);
+    };
+    updateViewport();
+    viewport.addEventListener("resize", updateViewport);
+    viewport.addEventListener("scroll", updateViewport);
+    return () => {
+      viewport.removeEventListener("resize", updateViewport);
+      viewport.removeEventListener("scroll", updateViewport);
+      overlay?.style.removeProperty("--drawer-viewport-height");
+      overlay?.style.removeProperty("--drawer-viewport-top");
+    };
+  }, [open, fitVisualViewport]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,7 +128,8 @@ export function AppDrawer({
 
   return createPortal(
     <div
-      className={`app-drawer-overlay app-drawer-overlay-${size}`}
+      className={`app-drawer-overlay app-drawer-overlay-${size}${fitVisualViewport ? " app-drawer-visual-viewport" : ""}`}
+      ref={overlayRef}
       onClick={(event) => {
         if (dismissOnOverlay && event.target === event.currentTarget) closeRef.current();
       }}
@@ -124,7 +150,7 @@ export function AppDrawer({
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
-          <button aria-label={t("common.close")} className="app-drawer-close" onClick={onClose} type="button">
+          <button aria-label={closeLabel ?? t("common.close")} className="app-drawer-close" onClick={onClose} type="button">
             <X aria-hidden="true" size={20} />
           </button>
         </header>

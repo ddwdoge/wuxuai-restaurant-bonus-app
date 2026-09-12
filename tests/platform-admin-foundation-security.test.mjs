@@ -60,7 +60,9 @@ test("Client akzeptiert keine Plattformrolle aus Metadaten", () => {
 test("dedizierter Plattform-Service verwendet nur eng begrenzte RPCs", () => {
   assert.match(service, /supabase\.rpc\("get_platform_restaurants"\)/);
   assert.match(service, /supabase\.rpc\("get_platform_restaurant_detail"/);
-  assert.match(service, /supabase\.rpc\("update_platform_restaurant_subscription"/);
+  assert.match(service, /supabase\.rpc\("update_platform_restaurant_subscription_confirmed"/);
+  assert.match(service, /input_confirmation: input.confirmation/);
+  assert.match(service, /input_idempotency_key: input.idempotencyKey/);
   assert.match(service, /supabase\.rpc\("get_platform_audit_events"/);
   assert.doesNotMatch(service, /\.from\(/);
   assert.doesNotMatch(service, /service[_-]?role/i);

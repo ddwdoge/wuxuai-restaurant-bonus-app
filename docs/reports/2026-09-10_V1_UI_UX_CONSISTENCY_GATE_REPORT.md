@@ -123,3 +123,64 @@ UI/UX CONSISTENCY GATE: FINAL LOCK
 OPEN UI P0: 0
 
 OPEN UI P1: 0
+
+## Fortsetzungspruefung auf der autoritativen 1504er-Baseline (2026-09-11)
+
+Der Phase-4-Commit `04da298dc5a58801df7241bcef2c7ff01d003065`
+ist ueber PR #17 Bestandteil der autoritativen Baseline
+`0458bfd961774d0f74d42dd375ee701c10bcf080`. Die danach auf dieser Baseline
+Staging-geprueften Country-, PRO-, Password- und Customer-Activation-Aenderungen
+sowie der mobile PIN-Abstandsfix wurden nicht zurueckgesetzt oder ueberschrieben.
+
+### Kombinierte Verifikation
+
+- Fokussierte UI/UX-, PIN-, Customer-Activation-, Country-, PRO- und
+  Password-Regressionen: 134/134 PASS.
+- Password/Auth/Country/PRO/UI-Matrix: 162/162 PASS.
+- Vollstaendige Tests: 1504/1504 PASS.
+- Typecheck: PASS.
+- Lint: PASS, 0 Fehler; 9 bereits bestehende Warnungen.
+- Build: PASS. Der lokale Compile-Build verwendete die kanonische Staging-URL
+  und einen nicht funktionsfaehigen Build-Sentinel anstelle eines Credentials;
+  der echte Staging-Runtime-Build bleibt Version
+  `c8ed1cf2-4a82-4a38-a846-547d81e1dac6`.
+- `git diff --check`: PASS.
+- Secret Scan des kombinierten Task-Scopes und dieses Reports: PASS.
+
+### Aktuelle physische Staging-Evidenz
+
+- Public/Auth: DE, EN, FR, IT, ES, ZH und KO physisch gerendert; genau ein
+  integrierter Sprachschalter pro Ansicht und keine globale schwebende Ebene.
+- Inhaber-, Gaeste- und Mitarbeiter-Einstiege: korrekte deutsche sichtbare
+  Rollenbegriffe, je ein 44-Pixel-Sprachschalter und kein horizontaler
+  Ueberlauf.
+- Platform Admin: ohne aktive Plattform-Sitzung weiterhin geschuetzt und zum
+  Inhaber-Login umgeleitet; es wurde keine Rollen- oder Datenmutation
+  ausgefuehrt.
+- Browserkonsole: 0 Warnungen und 0 Fehler im aktuellen Lauf.
+- Responsive Einstiegsmatrix: kein horizontaler Ueberlauf bei den geprueften
+  mobilen und Desktop-Zustaenden. Die bereits auf demselben Phase-4-Code
+  dokumentierte 320-1280-Matrix bleibt durch die aktuelle Vollsuite und die
+  unveraenderten Shell-Komponenten reproduzierbar.
+- PIN-Sheet: inhaltsabhaengige Hoehe, 20-Pixel-Abstand zwischen Inhalt und
+  Aktionen, volle Breite fuer `Bestaetigen`, mindestens 46 Pixel hohe Aktionen,
+  iPhone-Safe-Area sowie `visualViewport`-Anpassung fuer geoeffnete Tastaturen.
+  PIN-, Punkte-, Tageslimit-, QR- und Sicherheitslogik sind unveraendert.
+
+### Erhaltene Final Locks
+
+- Country Launch Gate: PASS / erhalten.
+- PRO Phase 1: PASS / erhalten.
+- Global Password Visibility Physical Recovery Gate: PASS / erhalten.
+- Customer Activation UX: PASS / erhalten.
+- Datenbankmigration fuer Phase 4: keine.
+- Reale Staging-Geschaeftsdaten geaendert: nein.
+- Production geaendert: nein.
+
+### Abschluss 2026-09-11
+
+PHASE 4 UI/UX CONSISTENCY: FINAL LOCK
+
+OPEN UI P0: 0
+
+OPEN UI P1: 0

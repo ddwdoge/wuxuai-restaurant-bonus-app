@@ -80,6 +80,7 @@ export function acquireOwnerRecoveryLifecycle() {
 }
 
 export async function establishOwnerRecoverySession(url = new URL(window.location.href)) {
+  clearSensitiveAuthUrl();
   const auth = requireRecoveryAuthClient();
   try {
     const result = await establishRecoveryOnce({

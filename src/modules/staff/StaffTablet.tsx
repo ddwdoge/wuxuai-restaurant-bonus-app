@@ -1023,9 +1023,9 @@ export function StaffTablet() {
     }
     return (
       <>
+        <button className="button staff-pin-confirm-primary" disabled={!pinDraft || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? "Wird geprüft …" : "Bestätigen"}</button>
         <button className="button secondary" disabled={saving} onClick={inScannerDrawer ? requestActivePointsTaskCancel : closePinAction} type="button">{translateKey("staff.activePoints.cancel")}</button>
         {inScannerDrawer ? <button className="button secondary" disabled={saving} onClick={() => minimizeActivePointsTask()} type="button"><Minimize2 aria-hidden="true" size={17} />{translateKey("staff.activePoints.minimize")}</button> : null}
-        <button className="button" disabled={!pinDraft || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? "Wird geprüft …" : "Bestätigen"}</button>
       </>
     );
   }
@@ -1533,6 +1533,8 @@ export function StaffTablet() {
       </nav>
 
       <AppDrawer
+        className={pendingPinAction ? "staff-pin-sheet" : undefined}
+        fitVisualViewport={Boolean(pendingPinAction)}
         description={pendingPinAction
           ? pendingPinAction.detail
           : "Scanne den persönlichen Bonus-QR des Gastes und bestätige die Punkte sicher im selben Ablauf."}
@@ -1800,6 +1802,8 @@ export function StaffTablet() {
       {view === "home" && message ? <p className="status-message">{message}</p> : null}
 
       <AppDrawer
+        className="staff-pin-sheet"
+        fitVisualViewport
         description={pendingPinAction?.detail}
         dismissOnOverlay={false}
         footer={renderPinActionFooter()}

@@ -66,12 +66,15 @@ test("notification gates are server-side and preserve the existing queue", () =>
 });
 
 test("Platform Admin and Owner views expose effective values without self-upgrade controls", () => {
-  for (const label of ["Plan &amp; Funktionen", "Paketstandard Angebote", "Manuelle Ausnahme", "Wirksames Angebotslimit", "Nicht verfügbar / noch nicht aktiviert"]) {
-    assert.match(platformPanel, new RegExp(label));
+  for (const key of ['effective', 'subscription', 'source', 'start', 'end', 'offers', 'override']) {
+    assert.ok(platformPanel.includes(`t("${key}")`));
   }
+  assert.match(platformPanel, /submitPlatformPlanOverride/);
+  assert.doesNotMatch(platformPanel, /updatePlatformRestaurantEntitlements|PLAN_CHANGED|ENTITLEMENT_OVERRIDE_CLEARED/);
   assert.match(platformPanel, /CONFIRMED/);
   assert.match(platformService, /get_restaurant_entitlements/);
-  assert.match(platformService, /update_platform_restaurant_entitlements/);
+  assert.match(platformService, /set_platform_restaurant_plan_override/);
+  assert.doesNotMatch(platformService, /update_platform_restaurant_entitlements/);
   assert.match(offerPage, /Aktuelles Paket/);
   assert.match(offerPage, /Plan und Funktionen werden ausschließlich durch WUXUAI verwaltet/);
   assert.doesNotMatch(offerPage, /Paket wechseln|Upgrade kaufen|Plan ändern/);

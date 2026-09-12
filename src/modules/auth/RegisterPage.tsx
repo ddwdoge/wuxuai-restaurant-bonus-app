@@ -17,6 +17,7 @@ import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { isOwnerEmailConfirmed, validateOwnerPassword } from "./ownerAuthFlow.mjs";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { V1_COMMERCIAL_CONTRACT } from "../../shared/commercialContract.mjs";
+import { LaunchCountrySelect } from "../onboarding/LaunchCountrySelect";
 
 export function RegisterPage() {
   const { translateKey: t } = useI18n();
@@ -37,6 +38,7 @@ export function RegisterPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [restaurantName, setRestaurantName] = useState("");
   const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("");
   const [loading, setLoading] = useState(false);
   const [existingIdentityFlow, setExistingIdentityFlow] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -56,6 +58,7 @@ export function RegisterPage() {
   const formValid = Boolean(
     ownerName.trim()
     && restaurantName.trim()
+    && country
     && (
       activatingExistingAccount
       || (existingIdentityFlow ? Boolean(password) : (
@@ -95,7 +98,7 @@ export function RegisterPage() {
       }
       setLoading(true);
       if (activatingExistingAccount) {
-        await activateRestaurantOwnerForCurrentUser({ ownerName, restaurantName, phone });
+        await activateRestaurantOwnerForCurrentUser({ ownerName, restaurantName, phone, country });
         retryAuthorization();
         window.location.assign("/admin/onboarding");
         return;
@@ -122,6 +125,7 @@ export function RegisterPage() {
         password,
         restaurantName,
         phone,
+        country,
       });
 
       if (result.requiresAuthentication) {
@@ -231,6 +235,8 @@ export function RegisterPage() {
             </>
           )}
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
+          <label htmlFor="registration-country">{t("platform.country.label")} *</label>
+          <LaunchCountrySelect id="registration-country" value={country} onChange={setCountry} disabled={loading} />
           <PublicFormField
             autoComplete="tel"
             disabled={loading}

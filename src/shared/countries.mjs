@@ -14,7 +14,15 @@ export const ISO_ALPHA_2_COUNTRY_CODES = Object.freeze([
   "UA", "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW",
 ]);
 
-const SUPPORTED_DISPLAY_LOCALES = Object.freeze(["de", "en", "fr", "it", "es"]);
+const SUPPORTED_DISPLAY_LOCALES = Object.freeze(["de", "en", "fr", "it", "es", "zh", "ko"]);
+const LAUNCH_COUNTRY_NAMES = Object.freeze({
+  AT: ['Österreich', 'Austria', 'Autriche', 'Austria', 'Austria', '奥地利', '오스트리아'],
+  DE: ['Deutschland', 'Germany', 'Allemagne', 'Germania', 'Alemania', '德国', '독일'],
+  CH: ['Schweiz', 'Switzerland', 'Suisse', 'Svizzera', 'Suiza', '瑞士', '스위스'],
+  FR: ['Frankreich', 'France', 'France', 'Francia', 'Francia', '法国', '프랑스'],
+  IT: ['Italien', 'Italy', 'Italie', 'Italia', 'Italia', '意大利', '이탈리아'],
+  ES: ['Spanien', 'Spain', 'Espagne', 'Spagna', 'España', '西班牙', '스페인'],
+});
 const COUNTRY_CODE_SET = new Set(ISO_ALPHA_2_COUNTRY_CODES);
 const optionCache = new Map();
 
@@ -32,8 +40,12 @@ function normalizeSearchText(value) {
 }
 
 function countryDisplayName(code, locale) {
-  if (typeof Intl.DisplayNames !== "function") return code;
-  return new Intl.DisplayNames([locale], { type: "region" }).of(code) || code;
+  const fallback = LAUNCH_COUNTRY_NAMES[code]?.[SUPPORTED_DISPLAY_LOCALES.indexOf(locale)] ?? code;
+  if (typeof Intl.DisplayNames !== "function") return fallback;
+  try {
+    if (!Intl.DisplayNames.supportedLocalesOf([locale]).length) return fallback;
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) || fallback;
+  } catch { return fallback; }
 }
 
 export function isIsoAlpha2CountryCode(value) {

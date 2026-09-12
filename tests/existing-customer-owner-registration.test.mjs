@@ -51,7 +51,7 @@ test("bestehende Identitaet wird authentifiziert und danach als Owner fortgesetz
 
 test("bestaetigte bestehende Session braucht weder Passwort noch neue Bestaetigung", () => {
   assert.match(registerPage, /user && isOwnerEmailConfirmed\(user\).*![\s\S]*portalAccess\.owner_access/s);
-  assert.match(registerPage, /await activateRestaurantOwnerForCurrentUser\(\{ ownerName, restaurantName, phone \}\)/);
+  assert.match(registerPage, /await activateRestaurantOwnerForCurrentUser\(\{ ownerName, restaurantName, phone, country \}\)/);
   assert.match(registerPage, /label="Bestätigte E-Mail"/);
   assert.doesNotMatch(registerService, /activateRestaurantOwnerForCurrentUser[\s\S]*auth\.signUp/s);
 });

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertCircle, Building2, CheckCircle2, Clock, Lock, RefreshCw, Search } from "lucide-react";
+import { Activity, AlertCircle, Building2, CheckCircle2, Clock, HeartPulse, Lock, RefreshCw, Search } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   loadPlatformRestaurantControlCenter,
@@ -19,6 +19,7 @@ import { PlatformOperationalTelemetry as OperationalTelemetry } from "./Platform
 import { useAuth } from "../auth/AuthProvider";
 import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
+import { PlatformCountryLaunchPanel } from "./PlatformCountryLaunchPanel";
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
@@ -61,7 +62,7 @@ const roleLabels: Record<string, string> = {
   viewer: "Nur Ansicht",
 };
 
-type FilterKey = "all" | "active" | "paused" | "suspended" | "trial" | "setup";
+type FilterKey = "all" | "active" | "paused" | "suspended" | "trial" | "expiring" | "new" | "setup";
 
 function isToday(value: string | null | undefined) {
   if (!value) return false;
@@ -174,7 +175,7 @@ export function PlatformAdminPage() {
     const term = searchTerm.trim().toLowerCase();
     return restaurants.filter((restaurant) => {
       const matchesSearch = !term || restaurant.name.toLowerCase().includes(term) || restaurant.slug.toLowerCase().includes(term) || (restaurant.owner_email ?? "").toLowerCase().includes(term);
-      const matchesFilter = filter === "all" || (filter === "active" && restaurant.status === "active") || (filter === "paused" && restaurant.status === "draft") || (filter === "suspended" && restaurant.status === "suspended") || (filter === "trial" && restaurant.subscription_status === "trialing") || (filter === "setup" && restaurant.onboarding_status !== "completed" && restaurant.onboarding_status !== "ready");
+      const matchesFilter = filter === "all" || (filter === "active" && restaurant.status === "active") || (filter === "paused" && restaurant.status === "draft") || (filter === "suspended" && restaurant.status === "suspended") || (filter === "trial" && restaurant.subscription_status === "trialing") || (filter === "expiring" && restaurant.subscription_status === "trialing" && restaurant.trial_days_left !== null && restaurant.trial_days_left <= 7) || (filter === "new" && isToday(restaurant.created_at)) || (filter === "setup" && restaurant.onboarding_status !== "completed" && restaurant.onboarding_status !== "ready");
       return matchesSearch && matchesFilter;
     });
   }, [filter, restaurants, searchTerm]);
@@ -184,13 +185,13 @@ export function PlatformAdminPage() {
     navigate(`/admin/platform/restaurants/${id}`, { replace: false });
   }
 
-  async function runSubscriptionAction(actionLabel: string, payload: { subscriptionStatus?: SubscriptionStatus | null; paymentStatus?: PaymentStatus | null; restaurantStatus?: RestaurantStatus | null; trialExtensionDays?: number | null; reason?: string | null }) {
-    if (!selectedRestaurant) return;
+  async function runSubscriptionAction(actionLabel: string, payload: { restaurantId: string; confirmation: string; idempotencyKey: string; subscriptionStatus?: SubscriptionStatus | null; paymentStatus?: PaymentStatus | null; restaurantStatus?: RestaurantStatus | null; trialExtensionDays?: number | null; reason?: string | null }) {
+    if (!selectedRestaurant || payload.restaurantId !== selectedRestaurant.id) throw new Error("Restaurant changed");
     setSavingId(selectedRestaurant.id);
     setMessage("");
     setErrorMessage("");
     try {
-      await updatePlatformRestaurantSubscription({ restaurantId: selectedRestaurant.id, ...payload });
+      await updatePlatformRestaurantSubscription(payload);
       setMessage(`${actionLabel} wurde gespeichert.`);
       await loadData(selectedRestaurant.id);
       await loadDetail(selectedRestaurant.id);
@@ -203,13 +204,13 @@ export function PlatformAdminPage() {
     }
   }
 
-  const summaryCards = [
-    { label: "Restaurants gesamt", value: summary.restaurants_total, icon: Building2 },
-    { label: "Aktive Restaurants", value: summary.active_restaurants ?? 0, icon: CheckCircle2 },
-    { label: "Testphasen aktiv", value: summary.active_trials, icon: Clock },
-    { label: "Testphasen bald ablaufend", value: summary.expiring_trials ?? 0, icon: AlertCircle },
-    { label: "Gesperrte Restaurants", value: summary.suspended_restaurants ?? 0, icon: Lock },
-    { label: "Neue Restaurants heute", value: summary.new_restaurants_today ?? 0, icon: RefreshCw },
+  const summaryCards: Array<{ label: string; value: number; icon: typeof Building2; filter: FilterKey }> = [
+    { label: "Restaurants gesamt", value: summary.restaurants_total, icon: Building2, filter: "all" },
+    { label: "Aktive Restaurants", value: summary.active_restaurants ?? 0, icon: CheckCircle2, filter: "active" },
+    { label: "Testphasen aktiv", value: summary.active_trials, icon: Clock, filter: "trial" },
+    { label: "Testphasen bald ablaufend", value: summary.expiring_trials ?? 0, icon: AlertCircle, filter: "expiring" },
+    { label: "Gesperrte Restaurants", value: summary.suspended_restaurants ?? 0, icon: Lock, filter: "suspended" },
+    { label: "Neue Restaurants heute", value: summary.new_restaurants_today ?? 0, icon: RefreshCw, filter: "new" },
   ];
   const filterOptions: { key: FilterKey; label: string }[] = [
     { key: "all", label: "Alle" }, { key: "active", label: "Aktiv" }, { key: "paused", label: "Inaktiv" },
@@ -223,6 +224,7 @@ export function PlatformAdminPage() {
         <div className="platform-admin-header-actions">
           <LanguageSelector />
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
+          <button className="button secondary" onClick={() => navigate("/admin/platform/health")} type="button"><HeartPulse size={18} />Operations &amp; Health Center</button>
           <button className="button secondary" onClick={() => navigate("/admin/platform/audit")} type="button"><Activity size={18} />Audit-Protokoll</button>
           <button className="button secondary" onClick={() => void loadData(selectedRestaurantId)} type="button"><RefreshCw size={18} />Aktualisieren</button>
           <button className="button secondary" onClick={signOut} type="button">Abmelden</button>
@@ -233,13 +235,14 @@ export function PlatformAdminPage() {
       {errorMessage ? <p className="status-message error" role="alert">{errorMessage}</p> : null}
 
       <section className="platform-kpi-grid" aria-label="WUXUAI Admin Übersicht">
-        {summaryCards.map((card) => { const Icon = card.icon; return <article className="card platform-kpi-card" key={card.label}><Icon size={22} /><strong>{card.value}</strong><span>{card.label}</span></article>; })}
+        {summaryCards.map((card) => { const Icon = card.icon; return <button aria-pressed={filter === card.filter} className={`card platform-kpi-card${filter === card.filter ? " active" : ""}`} key={card.label} onClick={() => { setFilter(card.filter); document.getElementById("platform-restaurant-list")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} type="button"><Icon size={22} /><strong>{card.value}</strong><span>{card.label}</span></button>; })}
       </section>
 
       <OperationalTelemetry data={telemetry} error={telemetryError} loading={telemetryLoading} />
+      <PlatformCountryLaunchPanel role={platformRole} />
 
       <section className="platform-admin-grid">
-        <div className="card platform-restaurant-list-card">
+        <div className="card platform-restaurant-list-card" id="platform-restaurant-list">
           <div className="section-heading"><h2>Restaurantliste</h2><p className="muted">Nur interne Plattformrollen sehen diese Daten.</p></div>
           <div className="platform-toolbar">
             <label className="platform-search" htmlFor="platform-restaurant-search"><Search size={18} /><input id="platform-restaurant-search" onChange={(event) => setSearchTerm(event.target.value)} placeholder="Restaurant suchen" type="search" value={searchTerm} /></label>

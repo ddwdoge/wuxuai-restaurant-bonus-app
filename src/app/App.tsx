@@ -64,6 +64,9 @@ const PlatformAdminPage = lazy(() =>
 const PlatformAuditPage = lazy(() =>
   import("../modules/platform/PlatformAuditPage").then((module) => ({ default: module.PlatformAuditPage })),
 );
+const PlatformHealthCenterPage = lazy(() =>
+  import("../modules/platform/PlatformHealthCenterPage").then((module) => ({ default: module.PlatformHealthCenterPage })),
+);
 const RestaurantOnboarding = lazy(() =>
   import("../modules/admin/pages/RestaurantOnboarding").then((module) => ({ default: module.RestaurantOnboarding })),
 );
@@ -281,6 +284,18 @@ export function App() {
             roleScope="platform"
           >
             {withFallback(<PlatformAuditPage />, <PlatformLoading />)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/platform/health"
+        element={
+          <ProtectedRoute
+            allowedRoles={[...PLATFORM_ADMIN_ROLES]}
+            portalKind="platform"
+            roleScope="platform"
+          >
+            {withFallback(<PlatformHealthCenterPage />, <PlatformLoading />)}
           </ProtectedRoute>
         }
       />

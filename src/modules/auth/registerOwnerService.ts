@@ -9,6 +9,7 @@ import {
   ownerAuthErrorMessage,
 } from "./ownerAuthFlow.mjs";
 import { clearSupabaseAuthStorage, createInvalidRefreshSessionHandler } from "./authSessionGuard.mjs";
+import { requireRegistrationCountry } from "../onboarding/countryLaunchService";
 
 export type RegisterOwnerInput = {
   ownerName: string;
@@ -16,6 +17,7 @@ export type RegisterOwnerInput = {
   password: string;
   restaurantName: string;
   phone: string;
+  country: string;
 };
 
 export type RegisterOwnerResult = {
@@ -69,6 +71,7 @@ function storePendingRegistration(input: RegisterOwnerInput) {
       email: input.email.trim().toLowerCase(),
       restaurantName: input.restaurantName.trim(),
       phone: input.phone.trim(),
+      country: input.country,
     }),
   );
 }
@@ -155,6 +158,7 @@ async function startOwnerTrial(input: RegisterOwnerInput, sessionRetries = 1) {
     input_owner_name: input.ownerName.trim(),
     input_restaurant_name: input.restaurantName.trim(),
     input_phone: input.phone.trim() || null,
+    input_country: input.country || null,
   });
 
   if (trialError) {
@@ -171,6 +175,9 @@ function registrationErrorMessage(error: unknown): string {
       ? error.message
       : "Registrierung fehlgeschlagen.";
   const message = rawMessage.toLowerCase();
+  if (message.includes("country_")) {
+    return "Bitte wähle ein freigegebenes Betriebsland und prüfe deine Länderangaben.";
+  }
 
   if (
     message.includes("already registered") ||
@@ -206,6 +213,7 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
     throw new Error(liveDataUnavailableMessage);
   }
 
+  await requireRegistrationCountry(input.country);
   const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
     password: input.password,
@@ -215,6 +223,7 @@ export async function registerRestaurantOwner(input: RegisterOwnerInput): Promis
         full_name: input.ownerName.trim(),
         restaurant_name: input.restaurantName.trim(),
         phone: input.phone.trim() || null,
+        business_country: input.country,
       },
       emailRedirectTo: buildOwnerAuthRedirect(window.location.origin, OWNER_AUTH_PATHS.callback),
     },
@@ -292,6 +301,7 @@ export async function completeConfirmedOwnerRegistration(user: User): Promise<bo
           password: "",
           restaurantName: metadata.restaurant_name,
           phone: typeof metadata.phone === "string" ? metadata.phone : "",
+          country: typeof metadata.business_country === "string" ? metadata.business_country : "",
         }
       : null;
   const registration = pendingRegistration ?? metadataRegistration;

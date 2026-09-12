@@ -526,11 +526,10 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
   if (!supabase || !restaurant?.id) return null;
 
   let branchId = restaurant.primary_branch_id ?? null;
-  let branchOrganizationId = restaurant.organization_id ?? null;
   if (!branchId) {
     const { data: branch, error: branchError } = await supabase
       .from("branches")
-      .select("id, organization_id")
+      .select("id")
       .eq("restaurant_id", restaurant.id)
       .order("created_at", { ascending: true })
       .limit(1)
@@ -538,7 +537,6 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 
     if (branchError) throw branchError;
     branchId = branch?.id ?? null;
-    branchOrganizationId = branch?.organization_id ?? branchOrganizationId;
   }
 
   if (!branchId) return null;
@@ -551,27 +549,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 
   if (error) throw error;
 
-  const existing = normalizeSubscription(data as Partial<BranchSubscription> | null);
-  if (existing) return existing;
-
-  if (!branchOrganizationId) return null;
-
-  const trialStartedAt = new Date().toISOString();
-  const trialEndsAt = addV1TrialMonthsIso(trialStartedAt);
-  const { data: created, error: createError } = await supabase
-    .from("branch_subscriptions")
-    .insert({
-      organization_id: branchOrganizationId,
-      branch_id: branchId,
-      status: "trialing",
-      plan_key: "pilot",
-      current_period_ends_at: trialEndsAt,
-    })
-    .select("id, organization_id, branch_id, status, plan_key, current_period_ends_at, created_at")
-    .single();
-
-  if (createError) throw createError;
-  return normalizeSubscription(created as Partial<BranchSubscription>);
+  return normalizeSubscription(data as Partial<BranchSubscription> | null);
 }
 
 export function SettingsPage() {

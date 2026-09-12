@@ -1,0 +1,462 @@
+{
+  "capturedDate": "2026-09-12",
+  "workdir": "/private/tmp/wuxuai-pro-phase1-authoritative",
+  "branch": "codex/pro-phase-1-entitlement-lifecycle",
+  "head": "0458bfd961774d0f74d42dd375ee701c10bcf080",
+  "tracked": 32,
+  "untracked": 58,
+  "total": 90,
+  "migrationCount": 149,
+  "entries": [
+    {
+      "status": " M",
+      "path": "docs/19_CHANGELOG.md",
+      "sha256": "3225b10026d2aa55007a39c344ee8bcee1431aabc90ed6f11eb5bb7eb672864a"
+    },
+    {
+      "status": " M",
+      "path": "docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md",
+      "sha256": "c0f6c894629221326007ed8554f8e667c1a3973fa4abe9b2bc8bb6a08c937aed"
+    },
+    {
+      "status": " M",
+      "path": "docs/reports/2026-09-10_V1_UI_UX_CONSISTENCY_GATE_REPORT.md",
+      "sha256": "3f61a8ffdc7761887c40fce3caac9751c5dbc6f035a4918e0b98e2577a103e6b"
+    },
+    {
+      "status": " M",
+      "path": "src/app/App.tsx",
+      "sha256": "5f9e5c6e89bb5e4197157948b084945592c5646fbb751fbd6d44251f2e35f62a"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/admin/pages/RestaurantOffersPage.tsx",
+      "sha256": "04c7144e02eace58639b304dd518347f9c2f6e466d65d483200d4539573f6076"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/admin/pages/RestaurantOnboarding.tsx",
+      "sha256": "cb86e2897e294c04945801dad4f208a44348416239ab57173ce276d299dda212"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/admin/pages/SettingsPage.tsx",
+      "sha256": "53dd7e94526c02aeff0d9faa777fd8120cb46fea1f481b669f88bf6266030b31"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/auth/RegisterPage.tsx",
+      "sha256": "3bc2456383e99b8fe57e473c46722aec63ccee2669d0e4ef7da661f412beb9f7"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/auth/UpdatePasswordPage.tsx",
+      "sha256": "8911b1bb82cd35ba37c57b6dde3e9a48869ddafb5674459f6119a7d799bddcb8"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/auth/ownerAuthService.ts",
+      "sha256": "0c2924d76f106456903347100fc41a2aa5cc44e2300ed2607836f56ad73e69ab"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/auth/registerOwnerService.ts",
+      "sha256": "c2b973f1c3290c9c146decf42279f7484e1f0fbbaeddb607b6363b9e794865a8"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/offers/restaurantOfferService.ts",
+      "sha256": "33242358277cc4ba2a915c899f1910518067b4928e0420e4fe570a69fc72f49c"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/onboarding/pilotOnboardingService.ts",
+      "sha256": "87219e6b08f49cdf5461929244c9b185f1624016d8bf9c501cd8229fea9e1598"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/platform/PlatformAdminPage.tsx",
+      "sha256": "dd61e7fbb154339abeafe25a1769720bfb27c9eecd125b832a2990a99a157d46"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/platform/PlatformKassaCompliancePanel.tsx",
+      "sha256": "297bdaf684b070b190d08dc0c5b83c9b2e962998dad05103b6a37c38aceab9bb"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/platform/PlatformPlanEntitlementsPanel.tsx",
+      "sha256": "fba5b03178c619999c59c60935794763f3b5a76b15c0c2e2b800c10f5b3e8287"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/platform/PlatformRestaurantControlCenter.tsx",
+      "sha256": "56bf646a069663a174ad4e0cfeec9281f8326cd46a78c432c3e3d630952dce4b"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/platform/platformAdminService.ts",
+      "sha256": "53867fde427d62f95b36d79c2e4a7183d5577ccc8865713408fee4dda1a072db"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/staff/StaffTablet.tsx",
+      "sha256": "a451a89dbd4d60310c60f39c2cc314a1dbefddc0a86547ec18a4dc23e5051bf7"
+    },
+    {
+      "status": " M",
+      "path": "src/modules/staff/staff-premium.css",
+      "sha256": "34a5d26df4d4217895e9b5eccd99717e667de4a526c48940b72a1c2c8011de6a"
+    },
+    {
+      "status": " M",
+      "path": "src/shared/components/AppDrawer.tsx",
+      "sha256": "d574ceb8af402f8409628a5e53cb8afcce5a8237d3cd5348b697dd6a8c91e836"
+    },
+    {
+      "status": " M",
+      "path": "src/shared/countries.mjs",
+      "sha256": "a1b6020c32f9c7593cbd519976d4a5da0a62986abaf7b76644bd1983c6853246"
+    },
+    {
+      "status": " M",
+      "path": "src/shared/i18n/catalog.mjs",
+      "sha256": "aa8406848e8500512692f8d763c893e80372e604df0abdf80bf6aa47a95927b1"
+    },
+    {
+      "status": " M",
+      "path": "src/styles.css",
+      "sha256": "287f31741b2d033492f450083d467abe699a10a06ec9fad973ab07ae2f0e40fb"
+    },
+    {
+      "status": " M",
+      "path": "supabase/.temp/cli-latest",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "status": " M",
+      "path": "tests/customer-activation-setup.test.mjs",
+      "sha256": "0cb4ea0815bcd57b81d6deff52adb783173f99a2186dcfcb0884d562eafabb00"
+    },
+    {
+      "status": " M",
+      "path": "tests/existing-customer-owner-registration.test.mjs",
+      "sha256": "9633cbb982d8621e54984ab741bb1c543705c00fa6dd66f1e05509cbf162db4b"
+    },
+    {
+      "status": " M",
+      "path": "tests/kassa-test-tenant-cleanup-contract.test.mjs",
+      "sha256": "43d5c1a5512a13ab94193f8176e681d0cc7269a0978ea8241f752cb378d69be8"
+    },
+    {
+      "status": " M",
+      "path": "tests/kpi-drawer-ux.test.mjs",
+      "sha256": "b66ba5fceee3b1255db09e8ff61f7658a831cf5091e0e668593ae1b435542aee"
+    },
+    {
+      "status": " M",
+      "path": "tests/owner-email-confirmation-password-reset.test.mjs",
+      "sha256": "4f13bdf0849141a9ed1341a32a73581ec01dd1e2e30e8fcf92524c8ddff5be77"
+    },
+    {
+      "status": " M",
+      "path": "tests/platform-admin-foundation-security.test.mjs",
+      "sha256": "ff7bdb83f6f5b7833e360db6a7b2ae4133382c6bc7a8e9220268328afd6b80fa"
+    },
+    {
+      "status": " M",
+      "path": "tests/pro-package-entitlements.test.mjs",
+      "sha256": "5250e3aa6a50730a7c4675db63ad00284c7381092add9f1ba9003107b0fb14fc"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-10_WUXUAI_BONUS_PRO_PHASE_1_ENTITLEMENT_LIFECYCLE.md",
+      "sha256": "418acbce69e969bee36239d1b17e048b14ae4e6d3ba2fae77425888f64541d1e"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-11_COUNTRY_LAUNCH_GATE_REPORT.md",
+      "sha256": "1807857a29f61be1ee80121d0b3eba18036734c45d4f78ddc39bac595a112e25"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-11_COUNTRY_PRO_COMBINED_PHYSICAL_GATE_REPORT.md",
+      "sha256": "a559af5552cf86f1d7a20c6612ba621db1f16cb93e3bb03fe99cc8945c290e2b"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-11_GLOBAL_PASSWORD_VISIBILITY_PHYSICAL_FINAL_GATE.md",
+      "sha256": "f0941c9af9ecbc1ed5a4b84584ddc752e2ca30d83c0195e05fec9f16c3b00640"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-11_PLATFORM_ADMIN_OPERATIONS_HEALTH_CENTER_PHASE_5A_AUDIT.md",
+      "sha256": "48d784d94df2b319b22b126fa8959355d5b30620fd02525adc44028f9840b630"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-11_STAFF_PIN_MOBILE_SPACING_REPORT.md",
+      "sha256": "59e7578760d5aa7260049b7a038cc8c10327770314e4ef9ca2986c0f868670c0"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/2026-09-12_PLATFORM_ADMIN_OPERATIONS_HEALTH_CENTER_PHASE_5_REPORT.md",
+      "sha256": "32412ab15ba1e7b6141e5cc14afa8bd06dd951beea25ac495abac148e3a06f40"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/assets/2026-09-11_country_pro_combined_gate/01-onboarding-complete.png",
+      "sha256": "ef4cff5bac60010eca6e3a621c6f200d063e2e1a83bda79927b1d0f59381ea46"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/assets/2026-09-11_country_pro_combined_gate/02-owner-basic-plan.png",
+      "sha256": "fce400ec9c35e7e4f7dcc836cd51d8bbc8aad6cf96bbd287ce4a825489110a57"
+    },
+    {
+      "status": "??",
+      "path": "docs/reports/assets/2026-09-11_country_pro_combined_gate/03-owner-offers.png",
+      "sha256": "21a77998890e370e0240c41888dbf54d346d3e3eda7ed23b4b586ec7e1200a66"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/onboarding/LaunchCountrySelect.tsx",
+      "sha256": "b37b6aa4c1da44833545ae44d70a1347ded4221bf1e0c43e4af3dfd09b963db2"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/onboarding/countryLaunchService.ts",
+      "sha256": "3db0590875d12864c5ac6011629bddf07d6115f953691df8d8f8d593083d5d07"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/PlatformCountryLaunchPanel.tsx",
+      "sha256": "931b1f4f470c15e937c759362e71052ed82053a4ac83157eec98c4cc9cd87ae4"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/PlatformHealthCenterPage.tsx",
+      "sha256": "d126151bc046380ac2bb4dce6e42cb3bab0c8201df4262ffbf18ee304962c691"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/countryLaunchReadiness.d.mts",
+      "sha256": "5b45bc2c6f611270f5aae86f5b313501c09b5c366a2c607be84ee66928802d28"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/countryLaunchReadiness.mjs",
+      "sha256": "fd8744adaf908b809e326147f8492f36f8ae5f1fecd4f23c3133dd052ed6b3aa"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/planOverrideRequest.d.mts",
+      "sha256": "ee0be976c1f9dc1c01cf2299dfd089431564885cc2c7f7b36f26a36348bcc2b4"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/planOverrideRequest.mjs",
+      "sha256": "509baf699086f305105f67aabd001b115916cbf43bc9e0210401a61bf7cd9758"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/platformHealthCenterView.d.mts",
+      "sha256": "e3e242b6e93df1adfd273a8e2d4ee2cb277efc7f5381ee60a4f3aeef4c37ed7f"
+    },
+    {
+      "status": "??",
+      "path": "src/modules/platform/platformHealthCenterView.mjs",
+      "sha256": "160d04abe3bb8e60d2c3a4454053e5495748e0f77ebfb8ea7af3b9e4fc78a1b1"
+    },
+    {
+      "status": "??",
+      "path": "src/shared/i18n/countryLaunchMessages.mjs",
+      "sha256": "4775ef14de3d7c22402a9c6094883e51b38832f1c087dda8e0cef6a02016523b"
+    },
+    {
+      "status": "??",
+      "path": "src/shared/i18n/planOverrideMessages.d.mts",
+      "sha256": "6b19663854545e2cd993981de8d5cb3f855344e0a4d6688f22f55bb6baf42f01"
+    },
+    {
+      "status": "??",
+      "path": "src/shared/i18n/planOverrideMessages.mjs",
+      "sha256": "27aed4b8e68047ca495f07a0eaf62acc22590483748a8e65d1830ede3736f1c2"
+    },
+    {
+      "status": "??",
+      "path": "src/shared/i18n/platformHealthMessages.mjs",
+      "sha256": "a1f9c885883bf7f2152b41f4d6a510590e83ad855bff94521368e6bc7d935910"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260910001000_pro_entitlement_lifecycle.sql",
+      "sha256": "026685370d476aabad0e7409cae4357062a7267c8c4fa268efa7759f92039577"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260910002000_pro_lifecycle_null_guards.sql",
+      "sha256": "d58f8cef2fedc06a8bc343f3442e2fb39e076e80216ebcd1da2315d54e5b3257"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911001000_pro_override_window_and_termination.sql",
+      "sha256": "5a0d40ae237e633fb2ff6febe92e52db509de7249623a876929321766616a93f"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911002000_subscription_browser_write_lock.sql",
+      "sha256": "851fa0e34090612ca68121409e3c760fc5842de97fa6fd43f7c2f083021d0824"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911003000_subscription_admin_request_contract.sql",
+      "sha256": "728433bf8af8cf3f5ba45ea929b9befa94b1317a8442acd4a1e60bb5f7f2caea"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911004000_country_launch_gate.sql",
+      "sha256": "6cf5b10b52edb06e6a1137a217ee88fe2af17b092f8dacf408cefd9bb98d67e3"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911005000_country_launch_readiness.sql",
+      "sha256": "6a5454901f6cc72221160369077f5e4786a010360f9262fffa63b226f567a907"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911006000_legal_template_country_guard_compatibility.sql",
+      "sha256": "efa1e5e604e2b455d692e2445d9d60521f2a4778816ae572cb7befc8fc0675f7"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260911007000_platform_admin_health_center_read_model.sql",
+      "sha256": "a7cff80a8c291ebfd78642381f3c5aee1dccceb63f1519a1f8bdf0d2831c5da0"
+    },
+    {
+      "status": "??",
+      "path": "supabase/migrations/20260912001000_platform_health_snapshot_volatility_contract.sql",
+      "sha256": "db83df11b1b52e689d12981c19c3e4442b10862a7a1bf0af709ba384028a4253"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-gate.sql",
+      "sha256": "4ca5fe7f1baef6b62bcb0dba03e3b071ee2a4c4e5b669c8d10ecbe48b3954e8f"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-gate.test.mjs",
+      "sha256": "e99685304ff2c448301b6968adaa4ab22e34d73f722a72a61628f07aa2f4953d"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-readiness-local.sql",
+      "sha256": "1019f488459ce5048a7360852601009b0f2bf3dfd6a96049905eae78b49da8d5"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-readiness.test.mjs",
+      "sha256": "67071b0f331bf168d81e8f73dcaa76984d563e9ab1a82eff3db71c9736e88deb"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-staging-rollback.sql",
+      "sha256": "e1c34bf0ed94721daa2b0bb3ec67ff0404558ad8ab67ccbd2b5187d95e464254"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-launch-ui-render.test.mjs",
+      "sha256": "b6ab3ef57ef50daab812656f8734f56336e4ee81475273fe40a19f2cd31b30a3"
+    },
+    {
+      "status": "??",
+      "path": "tests/country-readiness-staging-negative.sql",
+      "sha256": "19109818a045391bdb9da29c4f4f16e0502ef059c529d074117ee9f3c6ed44de"
+    },
+    {
+      "status": "??",
+      "path": "tests/legal-template-country-guard-compatibility.test.mjs",
+      "sha256": "0ddd58789dbefcd494583e16d12ad7836c8623b20f1c715405ce41289f1bd6d0"
+    },
+    {
+      "status": "??",
+      "path": "tests/platform-health-center-read-model.test.mjs",
+      "sha256": "037925a79be4aaa336f335921d836fd742420432f3f0cbde0b62fac7ef1b3266"
+    },
+    {
+      "status": "??",
+      "path": "tests/platform-health-center-ui.test.mjs",
+      "sha256": "81d4917fe4872502f3c74a8607a90878f2d9d4206f8bf932b0f5d25a34a4c5ab"
+    },
+    {
+      "status": "??",
+      "path": "tests/platform-health-snapshot-volatility-contract.test.mjs",
+      "sha256": "74c00b9c0ed27f9660e95cf1c35104aa520ece3ac9f0d23d9ed109173bd55f98"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-admin-override-ui.test.mjs",
+      "sha256": "c9be0cc8ae41233b8dc4dcbced6479aacbd1e6c9102e91cb369094701339e249"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-entitlement-lifecycle.test.mjs",
+      "sha256": "152a12ae3230a4a730fd70d8b872508f60ea85a574c290d4fe2d0e1769025f4f"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-lifecycle-null-guards.sql",
+      "sha256": "1a056ddaa8d57989d3b2c91d2689a8e1f1985c29ebff5a8a7728205534f718f2"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-override-concurrency.mjs",
+      "sha256": "eadd76b005b82f32f0dc982da3e62cdd4128789d09a9cdb9dd18fefd0c004973"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-override-forward.test.mjs",
+      "sha256": "80c7d791a3ef6b3b4deb25b314bd5667f8582de7d0d4f710d6f39d5ac2f194dd"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-override-window.sql",
+      "sha256": "68922ab9fce246c569b5a845fb20e07bdaf2e2970235f13239f6cf7a38c07d36"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-admin-concurrency.mjs",
+      "sha256": "7e5a1d44a05f99f80bd986e8b293b340de143462bd1d3d1df140fa5445a5101f"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-admin-request.sql",
+      "sha256": "858e9776e51d7fe2d08b6a746d1abb10505bf7c060637787d8d3273396636ab2"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-admin-request.test.mjs",
+      "sha256": "c14deec21214f30c8a68130cc2c3b479fb005c3cedacc2a8d88547b855b863c8"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-concurrency.mjs",
+      "sha256": "60e4e45a9f8f5a99c88bf86feb9e96d6cbd3f465a26e7402d5b54bbde825fb55"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-write-lock.sql",
+      "sha256": "d74b36c5c0b7423dcd81e4b87c0c4cd69267ac54aab61321f80115a05fb9f76c"
+    },
+    {
+      "status": "??",
+      "path": "tests/pro-subscription-write-lock.test.mjs",
+      "sha256": "5607067d567b6fb7ec195c94ed7155e83cc00934242d47dd76e204bfe1e0118b"
+    },
+    {
+      "status": "??",
+      "path": "tests/staff-pin-mobile-layout.test.mjs",
+      "sha256": "17ddba598ce7f6291faad2453859938221483571800731673206e5c499166774"
+    }
+  ]
+}

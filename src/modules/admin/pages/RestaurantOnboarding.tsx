@@ -43,6 +43,7 @@ import {
 } from "../../legal/legalCompanyData.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
+import { LaunchCountrySelect } from "../../onboarding/LaunchCountrySelect";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { acceptKassaSeparation } from "../../kassa/kassaComplianceService";
 
@@ -303,7 +304,7 @@ function createDefaultForm(): OnboardingForm {
     legalStreet: "",
     legalPostalCode: "",
     legalCity: "",
-    legalCountry: "Österreich",
+    legalCountry: "",
     legalEmail: "",
     legalCompanyRegistrationNumber: "",
     legalVatId: "",
@@ -1167,7 +1168,7 @@ export function RestaurantOnboarding() {
               legalStreet: activeRestaurant.address ?? "",
               legalPostalCode: activeRestaurant.postal_code ?? "",
               legalCity: activeRestaurant.city ?? "",
-              legalCountry: activeRestaurant.country ?? "AT",
+              legalCountry: activeRestaurant.country ?? "",
             }
           : restoredForm);
         setStep(draft.currentStep);
@@ -1419,7 +1420,7 @@ export function RestaurantOnboarding() {
         legalStreet: activeRestaurant?.address ?? "",
         legalPostalCode: activeRestaurant?.postal_code ?? "",
         legalCity: activeRestaurant?.city ?? "",
-        legalCountry: activeRestaurant?.country ?? "AT",
+        legalCountry: activeRestaurant?.country ?? "",
       } : {}),
     }));
   }
@@ -1715,7 +1716,7 @@ export function RestaurantOnboarding() {
                   </div>
                   <div className="field">
                     <FormLabel htmlFor="legal-country" required>Land</FormLabel>
-                    <input aria-required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} className="input" disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-country" onChange={(event) => setForm((current) => ({ ...current, legalCountry: event.target.value }))} required={!form.legalAddressMatchesRestaurant || !restaurantAddressComplete} value={form.legalCountry} />
+                    <LaunchCountrySelect disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-country" onChange={(country) => setForm((current) => ({ ...current, legalCountry: country }))} value={form.legalCountry} />
                   </div>
                 </div>
                 <details className="advanced-panel">

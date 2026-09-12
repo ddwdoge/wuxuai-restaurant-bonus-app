@@ -129,6 +129,20 @@ test("isolated customer uses the existing canonical Platform Admin test marker",
   assert.doesNotMatch(operationsPanel, /\.from\(["']customers/);
 });
 
+test("tenant marking uses a stable tenant-specific session without reusing retained cleanup evidence", () => {
+  assert.match(panel, /testSessionId: `test-tenant-\$\{restaurantId\}`/);
+  assert.doesNotMatch(panel, /testSessionId: ["']kassa-v3-20260908["']/);
+  const sessionFor = (id) => `test-tenant-${id}`;
+  const first = sessionFor("11111111-1111-4111-8111-111111111111");
+  const second = sessionFor("22222222-2222-4222-8222-222222222222");
+  assert.notEqual(first, second);
+  assert.equal(first, sessionFor("11111111-1111-4111-8111-111111111111"));
+  assert.match(first, /^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$/);
+  assert.match(migration, /unique \(test_session_id\)/);
+  assert.match(migration, /TEST_TENANT_PREFLIGHT_BLOCKED/);
+  assert.match(migration, /TEST_TENANT_STRONG_CONFIRMATION_REQUIRED/);
+});
+
 test("foreign customer cleanup preflight reports exact local and preserved foreign scope", () => {
   assert.match(foreignCustomerCleanup, /get_platform_foreign_test_customer_cleanup_preflight/);
   for (const key of [

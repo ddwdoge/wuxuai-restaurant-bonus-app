@@ -1,6 +1,89 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-12 - Platform Admin Health Center auf Staging finalisiert
+
+- Die einzeln freigegebene Migration
+  `20260911007000_platform_admin_health_center_read_model.sql` fuegt nur den
+  read-only RPC `get_platform_health_center()` hinzu. Tabellen, Views,
+  Trigger, RLS, bestehende Grants und Schreibwege bleiben unveraendert.
+- Die separat freigegebene additive Migration
+  `20260912001000_platform_health_snapshot_volatility_contract.sql` ersetzt
+  ausschliesslich den Health-RPC und berechnet die benoetigten Betriebs- und
+  Laendernachweise in einem gemeinsamen CTE-Snapshot. Die zwei bestehenden
+  `VOLATILE`-RPCs bleiben unveraendert und werden nicht mehr aufgerufen.
+- Die geschuetzte Health-Center-Oberflaeche mit P0-P3-Findings, anklickbaren
+  KPIs, URL-Filtern, Datenstand und sieben Sprachen wurde als Staging-Version
+  `54984d05-3da6-4163-ba37-be79f07e5410` veroeffentlicht.
+- Rollenmatrix, parallele Snapshot-Pruefung, 20 fokussierte und 1524
+  Gesamttests, Typecheck, Lint, Build, Secret Scan und Diff Check sind gruen.
+  Migrationshistorie 149/149 ist synchron; der Health-RPC erzeugt keine neue
+  Linter-Warnung.
+- Die physische Staging-QA bestaetigt 54 konsistente Findings,
+  funktionierende KPI-/Such-/Detailfilter, sieben Sprachen,
+  44-Pixel-Bedienflaechen und keinen horizontalen Ueberlauf von 320 bis
+  1024+ Pixel.
+- Production und reale Betriebsdaten blieben unveraendert. Details:
+  `reports/2026-09-12_PLATFORM_ADMIN_OPERATIONS_HEALTH_CENTER_PHASE_5_REPORT.md`.
+
+## 2026-09-11 - Country Gate und PRO Phase 1 physisch abgeschlossen
+
+- Additive Staging-Migration
+  `20260911006000_legal_template_country_guard_compatibility.sql` entfernt nur
+  den veralteten landlosen Legal-Profil-Placeholder und validiert vorhandene
+  Profile fail closed. Legal-/Retention-Backfill, Function Owner,
+  `SECURITY DEFINER`, Search Path, Grants, RLS und Country Guard bleiben
+  unveraendert.
+- Das isolierte AT-Onboarding wurde genau einmal abgeschlossen. Betriebs- und
+  Geschaeftsland sind `AT`; DE, CH, FR, IT und ES bleiben gesperrt.
+- Owner-Anzeige und Serverresolver bestaetigen BASIC, Angebotslimit 5 sowie
+  deaktivierte Offer-/Reward-Notifications. Kein aktiver oder zukuenftiger
+  PRO-Override; Aktivierung und Beendigung sind je einmal auditiert.
+- Migration-History 147/147, Post-Dry-Run sauber, 88 fokussierte und 1504
+  Gesamttests sowie Typecheck, Lint, Build, Secret Scan und Diff Check PASS.
+- Vergleichsbetrieb und Production unveraendert. Country Launch Gate und PRO
+  Phase 1 erreichen den getrennten Staging `FINAL LOCK`.
+
+## 2026-09-11 - Country UI und Readiness auf Staging vervollstaendigt
+
+- Fehlende serverseitige Waehrung, Marktreife und acht Readiness-Kategorien mit
+  additiver Migration `20260911005000_country_launch_readiness.sql` ergaenzt.
+  Keine angewendete Migration geaendert. Historie 146/146, nichts offen.
+- AT technisch aktiv bleibt getrennt von oeffentlicher Freigabe. Alle 48
+  Nachweisfelder ehrlich nicht konfiguriert; keine Legal-/Stripe-Freigabe erfunden.
+- Unvollstaendige Aktivierung wird in UI, RPC und Tabellen-Trigger blockiert;
+  RLS/Grants und bestaetigte, idempotente Auditierung bleiben erhalten.
+- Waehrungen, Audit-Leerzustand, ZH/KO-Laendernamen und sieben Sprachdialoge
+  physisch geprueft. Country-Texte werden nicht nochmals vom DOM-Uebersetzer
+  veraendert. Optionales Schliessen-Label nur im Country-Dialog genutzt;
+  Standardverhalten anderer AppDrawer-Aufrufer bleibt unveraendert.
+- 31 fokussierte Tests, 1498 Gesamttests, 22 lokale und 34 Staging-SQL-Checks
+  sowie 5 REST-Pruefungen bestanden. Typecheck/Lint/Build bestanden.
+- Staging-Version `1c570058-231a-44e4-86db-eb0b3d235528`.
+  Kein Country-Status, TEST_ONLY-Onboarding, realer Betrieb oder Production
+  veraendert. Physisches AT-TEST_ONLY-Onboarding bleibt der naechste Founder-Gate.
+  Country/PRO-Gesamt-FINAL-LOCK bleibt bis zu diesem Nachweis offen.
+
+## 2026-09-11 - Country Launch Gate auf Staging, physischer Abschluss offen
+
+- Zentrale serverseitige Laenderfreigabe, private Erstellungs-Kontexte und
+  fail-closed Guards fuer neue Betriebs- und Onboarding-Wege ergaenzt.
+- AT aktiv; DE, CH, FR, IT und ES vorbereitet und gesperrt. Separate,
+  bestaetigte Platform-Admin-Steuerung mit Idempotenz und unveraenderlichem Audit.
+- Migration `20260911004000_country_launch_gate.sql` nur auf Staging angewendet.
+  Historie 145/145, Post-Dry-Run ohne offene Migrationen, DB-Linter ohne Fehler.
+- 1472 Gesamttests, 38 lokale Country-SQL-Pruefungen und 36 Staging-
+  Rollback-Pruefungen bestanden. Bestehende Betriebe und Production nicht
+  veraendert. TEST_ONLY-Onboarding bleibt unvollstaendig.
+- Platform-Admin-Laenderuebersicht und Bestaetigungsdialog physisch geprueft.
+  Einen 42px-Button im portalierten Country-Dialog eng begrenzt auf 44px
+  korrigiert; acht Breiten von 320 bis 1280px ohne horizontalen Ueberlauf.
+  Staging-Version: `f9b846f7-cf9c-4062-92c5-c6408101411e`.
+- Zwischenstatus: `PHYSICAL AUSTRIA ONBOARDING READY`. Keine Laenderfreigabe
+  gespeichert; Founder muss den isolierten AT-Onboarding-Nachweis noch liefern.
+- Kein FINAL LOCK: separater physischer Country-/PRO-Nachweis bleibt offen.
+  Details: `reports/2026-09-11_COUNTRY_LAUNCH_GATE_REPORT.md`.
+
 ## 2026-09-10 - UI/UX Consistency Gate auf Staging abgeschlossen
 
 - Den global schwebenden Sprachschalter entfernt und als kompakten Locale-

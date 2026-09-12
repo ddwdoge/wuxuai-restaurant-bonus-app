@@ -92,7 +92,7 @@ export function PlatformKassaCompliancePanel({ canWrite, restaurantId }: { canWr
         confirmation,
         reason,
         restaurantId,
-        testSessionId: "kassa-v3-20260908",
+        testSessionId: `test-tenant-${restaurantId}`,
       });
       setPreflight(result);
     } catch {

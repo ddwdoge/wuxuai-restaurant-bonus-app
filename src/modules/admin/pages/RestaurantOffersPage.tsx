@@ -19,6 +19,8 @@ import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { DEFAULT_REWARD_IMAGE_CROP, rewardImageCropFromRecord, type RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { useTenant } from "../../tenant/TenantProvider";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { formatLocaleDate } from "../../../shared/i18n/formatters.mjs";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import {
@@ -157,6 +159,7 @@ function OfferPreviewPrice({ offer }: { offer: RestaurantOffer }) {
 }
 
 export function RestaurantOffersPage() {
+  const { language, translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
@@ -370,6 +373,9 @@ export function RestaurantOffersPage() {
       </header>
 
       {entitlements ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotslimit"><div><span>Aktuelles Paket</span><strong>{entitlements.plan_key === "BASIC" ? "Basic" : entitlements.plan_key === "PRO" ? "Pro" : "Premium"}</strong></div><div><span>Aktive Angebote</span><strong>{entitlements.effective.offer_limit_unlimited ? <>{entitlements.active_offer_count} · <span>Unbegrenzt</span></> : `${entitlements.active_offer_count} / ${entitlements.effective.offer_limit}`}</strong></div><p>Plan und Funktionen werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
+      {entitlements?.effective_from || entitlements?.effective_until ? <dl className="platform-detail-list" data-i18n-skip="true">
+        {([['start', entitlements.effective_from], ['end', entitlements.effective_until]] as const).map(([key, value]) => value && Number.isFinite(Date.parse(value)) ? <div key={key}><dt>{translateKey(`platform.planOverride.${key}`)}</dt><dd>{formatLocaleDate(value, language, { dateStyle: "medium", timeStyle: "short" })}</dd></div> : null)}
+      </dl> : null}
 
       <section className="restaurant-offers-legal-note">
         <Newspaper aria-hidden="true" size={21} />

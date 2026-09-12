@@ -22,6 +22,8 @@ export type RestaurantOfferEvent = "OFFER_VIEWED" | "OFFER_CTA_CLICKED" | "OFFER
 
 export type OwnerOfferEntitlements = {
   plan_key: "BASIC" | "PRO" | "PREMIUM";
+  effective_from?: string | null;
+  effective_until?: string | null;
   active_offer_count: number;
   effective: {
     offer_limit: number | null;

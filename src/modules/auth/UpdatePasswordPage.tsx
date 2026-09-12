@@ -11,7 +11,6 @@ import {
 import { validateOwnerPassword } from "./ownerAuthFlow.mjs";
 import {
   acquireOwnerRecoveryLifecycle,
-  clearSensitiveAuthUrl,
   establishOwnerRecoverySession,
   updateOwnerPassword,
 } from "./ownerAuthService";
@@ -38,7 +37,6 @@ export function UpdatePasswordPage() {
       try {
         const result = await establishOwnerRecoverySession();
         recoverySessionEstablishedRef.current = true;
-        clearSensitiveAuthUrl();
         if (!result.user) {
           throw new Error("Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.");
         }
