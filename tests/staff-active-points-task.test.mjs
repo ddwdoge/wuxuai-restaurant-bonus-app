@@ -32,8 +32,9 @@ test("2 secure preview keeps the full canonical customer label", () => {
   assert.doesNotMatch(staff, /pointsPreview\.customer_label\.split/);
 });
 
-test("3 outside dismissal minimizes instead of cancelling", () => {
-  assert.match(staff, /dismissOnOverlay=\{hasActivePointsTask\}/);
+test("3 outside dismissal is blocked while explicit minimization remains available", () => {
+  assert.match(staff, /dismissOnOverlay=\{false\}/);
+  assert.match(staff, /dismissOnEscape=\{!hasActivePointsTask\}/);
   assert.match(staff, /function dismissScanner\(\)[\s\S]*hasActivePointsTaskRef\.current[\s\S]*minimizeActivePointsTask/);
 });
 
@@ -123,8 +124,8 @@ test("19 preview leaves transaction creation to final server confirmation", () =
 });
 
 test("20 final submit without a valid PIN remains blocked", () => {
-  assert.match(staff, /if \(!pin\.trim\(\)\)/);
-  assert.match(staff, /disabled=\{!pinDraft \|\| saving\}/);
+  assert.match(staff, /if \(!\/\^\\d\{4\}\$\/\.test\(pin\.trim\(\)\)\)/);
+  assert.match(staff, /disabled=\{!\/\^\\d\{4\}\$\/\.test\(pinDraft\) \|\| saving\}/);
 });
 
 test("21 wrong-PIN handling remains delegated to the existing server contract", () => {

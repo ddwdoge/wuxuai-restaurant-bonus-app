@@ -8,8 +8,8 @@ const css = readFileSync(new URL("../src/modules/staff/staff-premium.css", impor
 const block = (selector) => css.slice(css.lastIndexOf(`${selector} {`)).split("}")[0];
 
 test("PIN mobile sheet overrides scanner fixed height without changing camera layout", () => {
-  assert.match(staff, /className=\{pendingPinAction \? "staff-pin-sheet" : undefined\}/);
-  assert.match(staff, /fitVisualViewport=\{Boolean\(pendingPinAction\)\}/);
+  assert.match(staff, /className=\{pendingPinAction \? "staff-pin-sheet" : pointsQrReference \? "staff-points-sheet" : undefined\}/);
+  assert.match(staff, /fitVisualViewport=\{Boolean\(pendingPinAction \|\| pointsQrReference\)\}/);
   assert.match(block(".app-drawer-panel.staff-pin-sheet"), /height: auto/);
   assert.match(block(".app-drawer-panel.staff-pin-sheet"), /min-height: 0/);
   assert.match(block(".app-drawer-panel.staff-pin-sheet"), /--drawer-viewport-height, 100dvh/);
@@ -32,7 +32,9 @@ test("confirm is first in DOM and spans both mobile columns", () => {
 });
 
 test("PIN validation, submit target, cancellation and minimization remain canonical", () => {
-  assert.match(staff, /disabled=\{!pinDraft \|\| saving\} form=\{inScannerDrawer \? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"\}/);
+  assert.match(staff, /disabled=\{!\/\^\\d\{4\}\$\/\.test\(pinDraft\) \|\| saving\} form=\{inScannerDrawer \? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"\}/);
+  assert.match(staff, /minLength=\{4\}/);
+  assert.match(staff, /pattern="\[0-9\]\{4\}"/);
   assert.match(staff, /onClick=\{inScannerDrawer \? requestActivePointsTaskCancel : closePinAction\}/);
   assert.match(staff, /onClick=\{\(\) => minimizeActivePointsTask\(\)\}/);
   assert.match(staff, /void executePinAction\(pendingPinAction, pinDraft\)/);

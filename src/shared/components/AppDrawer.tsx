@@ -8,6 +8,7 @@ type AppDrawerProps = {
   className?: string;
   closeLabel?: string;
   description?: string;
+  dismissOnEscape?: boolean;
   dismissOnOverlay?: boolean;
   footer?: ReactNode;
   fitVisualViewport?: boolean;
@@ -31,6 +32,7 @@ export function AppDrawer({
   className = "",
   closeLabel,
   description,
+  dismissOnEscape = true,
   dismissOnOverlay = true,
   footer,
   fitVisualViewport = false,
@@ -84,7 +86,7 @@ export function AppDrawer({
     }, 0);
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && dismissOnEscape) {
         event.preventDefault();
         closeRef.current();
         return;
@@ -122,7 +124,7 @@ export function AppDrawer({
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus({ preventScroll: true });
     };
-  }, [open]);
+  }, [dismissOnEscape, open]);
 
   if (!open) return null;
 

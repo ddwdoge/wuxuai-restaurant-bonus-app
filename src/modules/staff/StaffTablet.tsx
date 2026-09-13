@@ -72,6 +72,7 @@ type PendingPinAction = {
   customerName: string;
   currentPoints: number | null;
   intendedPoints: number | null;
+  amountCents: number | null;
   boostMultiplier: number;
   boostExpiresAt?: string | null;
   run: (dailyPin: string) => Promise<PinActionSuccess>;
@@ -435,6 +436,11 @@ export function StaffTablet() {
       .slice(0, 8);
   }, [customers, scannerManualValue]);
   const calculatedPoints = Math.max(0, Math.floor(billAmount / settings.amount_per_point));
+  const pointsAmountMaxCents = Math.max(1, settings.points_collection_max_amount_cents ?? 30000);
+  const pointsAmountCents = Math.round(billAmount * 100);
+  const pointsAmountIsValid = Number.isFinite(billAmount)
+    && pointsAmountCents >= 1
+    && pointsAmountCents <= pointsAmountMaxCents;
   const restaurantControlledEnabled = settings.points_collection_mode === "restaurant_controlled_only"
     || settings.points_collection_mode === "both";
   const customerInitiatedStaffToolsEnabled = settings.points_collection_mode !== "restaurant_controlled_only";
@@ -466,6 +472,10 @@ export function StaffTablet() {
     () => new Intl.DateTimeFormat(localeTag(language), { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
     [language],
   );
+
+  function formatCurrency(amountCents: number) {
+    return new Intl.NumberFormat(localeTag(language), { style: "currency", currency: "EUR" }).format(amountCents / 100);
+  }
 
   useEffect(() => {
     hasActivePointsTaskRef.current = hasActivePointsTask;
@@ -770,6 +780,14 @@ export function StaffTablet() {
     await activateQrScannerCamera();
   }
 
+  async function retryQrScannerCamera() {
+    if (scannerStarting) return;
+    setScannerStarting(true);
+    setScannerError(null);
+    setScannerStatus(tr("staff.drawer.cameraStarting"));
+    await activateQrScannerCamera();
+  }
+
   function closeScanner(fromHistory = false) {
     scannerLaunchPendingRef.current = false;
     stopScanner();
@@ -851,7 +869,7 @@ export function StaffTablet() {
 
   async function executePinAction(action: PendingPinAction, pin: string) {
     if (!restaurantId) return;
-    if (!pin.trim()) {
+    if (!/^\d{4}$/.test(pin.trim())) {
       setPinActionFeedback({
         kind: "error",
         pinError: true,
@@ -910,6 +928,7 @@ export function StaffTablet() {
       customerName: selectedCustomer.name,
       currentPoints: selectedCustomer.points_balance,
       intendedPoints: payload.points || null,
+      amountCents: payload.billAmount ? Math.round(payload.billAmount * 100) : null,
       boostMultiplier: 1,
       run: async (dailyPin) => {
         const result = await applyStaffLoyaltyAction({
@@ -941,8 +960,8 @@ export function StaffTablet() {
   }
 
   async function handleRestaurantControlledPreview() {
-    if (!restaurantId || !pointsQrReference) return;
-    const amountCents = Math.round(billAmount * 100);
+    if (!restaurantId || !pointsQrReference || !pointsAmountIsValid) return;
+    const amountCents = pointsAmountCents;
     setSaving(true); setMessage(null); setCustomerPreviewError(null);
     try {
       const preview = await previewRestaurantControlledPoints(restaurantId, pointsQrReference, amountCents);
@@ -969,6 +988,7 @@ export function StaffTablet() {
       customerName: pointsPreview.customer_label,
       currentPoints: pointsPreview.points_balance,
       intendedPoints: pointsPreview.expected_points,
+      amountCents: pointsPreview.amount_cents,
       boostMultiplier: pointsPreview.boost_multiplier,
       boostExpiresAt: pointsPreview.boost_expires_at,
       run: async (dailyPin) => {
@@ -1012,6 +1032,30 @@ export function StaffTablet() {
     setView("earn");
   }
 
+  function renderProcessOverview(currentStep: number) {
+    const steps = [
+      "staff.process.scan",
+      "staff.process.customer",
+      "staff.process.amount",
+      "staff.process.pin",
+      "staff.process.confirm",
+    ];
+
+    return (
+      <section className="staff-process-overview" aria-label={translateKey("staff.process.title")}>
+        <strong>{translateKey("staff.process.title")}</strong>
+        <ol>
+          {steps.map((key, index) => (
+            <li className={index < currentStep ? "is-complete" : index === currentStep ? "is-current" : ""} key={key}>
+              <span aria-hidden="true">{index < currentStep ? "✓" : index + 1}</span>
+              <small aria-current={index === currentStep ? "step" : undefined}>{translateKey(key)}</small>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
   function renderPinActionFooter(inScannerDrawer = false) {
     if (!pendingPinAction) return null;
     if (pinActionFeedback?.kind === "blocked") {
@@ -1032,7 +1076,7 @@ export function StaffTablet() {
     }
     return (
       <>
-        <button className="button staff-pin-confirm-primary" disabled={!pinDraft || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? "Wird geprüft …" : "Bestätigen"}</button>
+        <button className="button staff-pin-confirm-primary" disabled={!/^\d{4}$/.test(pinDraft) || saving} form={inScannerDrawer ? "staff-scanner-pin-confirmation" : "staff-pin-confirmation"} type="submit">{saving ? tr("staff.drawer.checking") : tr("staff.drawer.confirm")}</button>
         <button className="button secondary" disabled={saving} onClick={inScannerDrawer ? requestActivePointsTaskCancel : closePinAction} type="button">{translateKey("staff.activePoints.cancel")}</button>
         {inScannerDrawer ? <button className="button secondary" disabled={saving} onClick={() => minimizeActivePointsTask()} type="button"><Minimize2 aria-hidden="true" size={17} />{translateKey("staff.activePoints.minimize")}</button> : null}
       </>
@@ -1059,6 +1103,7 @@ export function StaffTablet() {
             </p>
           ) : null}
           {pendingPinAction.intendedPoints !== null ? <p className="staff-points-drawer-intent">{tr("staff.drawer.plannedPoints", { count: pendingPinAction.intendedPoints })}</p> : null}
+          {pendingPinAction.amountCents !== null ? <p className="staff-points-drawer-intent">{tr("staff.drawer.paidAmount", { amount: formatCurrency(pendingPinAction.amountCents) })}</p> : null}
         </section>
 
         {pinActionFeedback && !pinActionFeedback.pinError ? (
@@ -1105,6 +1150,8 @@ export function StaffTablet() {
                 id={inputId}
                 inputMode="numeric"
                 maxLength={4}
+                minLength={4}
+                pattern="[0-9]{4}"
                 placeholder={tr("staff.drawer.pinPlaceholder")}
                 required
                 type="password"
@@ -1155,10 +1202,13 @@ export function StaffTablet() {
         {view === "home" ? (
           <>
             <section className="staff-premium-intro">
+              <p className="staff-premium-mobile-context"><ShieldCheck aria-hidden="true" size={15} />{staffPortalAccess?.access_mode === "operator" ? tr("staff.header.operatorArea") : tr("staff.header.area")}<span aria-hidden="true">·</span>{currentDateLabel}</p>
               <span className="staff-premium-kicker">Heute im Service</span>
               <h2>Bereit für den nächsten Gast.</h2>
               <p>Kunden-QR scannen, Punkte sicher gutschreiben oder einen Gast schnell finden.</p>
             </section>
+
+            {renderProcessOverview(0)}
 
             <div className="staff-premium-priority-grid">
               {restaurantControlledEnabled ? (
@@ -1275,7 +1325,7 @@ export function StaffTablet() {
                 {customerPreviewError ? "Kundendaten nicht verfügbar" : "Kunden-QR erkannt"}
               </span>
               <h2>{customerPreviewError ? "Gast konnte nicht sicher geladen werden" : saving ? "Kundendaten werden geladen …" : "Gast wird sicher geprüft"}</h2>
-              <p className="muted">{customerPreviewErrorMessage ?? "Name und Punktestand erscheinen mit der sicheren serverseitigen Punkte-Vorschau."}</p>
+              <p className="muted">{customerPreviewErrorMessage ?? tr("staff.drawer.previewServer")}</p>
               {customerPreviewError ? <button className="button" onClick={() => { setCustomerPreviewError(null); setMessage(null); }} type="button">Erneut versuchen</button> : null}
               <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
             </>
@@ -1294,8 +1344,8 @@ export function StaffTablet() {
           {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
           {pointsQrReference ? <div className="restaurant-controlled-credit">
             <p className="muted">{translateKey("staff.kassa.supportedPurchase")}</p>
-            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel><input aria-describedby="bonus-amount-help" aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={(settings.points_collection_max_amount_cents ?? 30000) / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} /><small id="bonus-amount-help">{translateKey("staff.kassa.amountHelp")}</small></div>
-            {!pointsPreview ? <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
+            <div className="field"><FormLabel htmlFor="controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel><input aria-describedby={billAmount !== 0 && !pointsAmountIsValid ? "bonus-amount-error" : "bonus-amount-help"} aria-invalid={billAmount !== 0 && !pointsAmountIsValid || undefined} aria-required="true" className="input" id="controlled-bill-amount" inputMode="decimal" max={pointsAmountMaxCents / 100} min="0.01" onChange={(event) => { setBillAmount(Number(event.target.value) || 0); setPointsPreview(null); }} required step="0.01" type="number" value={billAmount || ""} />{billAmount !== 0 && !pointsAmountIsValid ? <small className="staff-points-drawer-pin-error" id="bonus-amount-error" role="alert">{tr("staff.kassa.invalidAmount", { min: formatCurrency(1), max: formatCurrency(pointsAmountMaxCents) })}</small> : <small id="bonus-amount-help">{translateKey("staff.kassa.amountHelp")}</small>}</div>
+            {!pointsPreview ? <button className="button" disabled={saving || !pointsAmountIsValid} onClick={() => void handleRestaurantControlledPreview()} type="button">Punkte serverseitig berechnen</button> : <div className="settings-info-card">
               <span>{pointsPreview.customer_label} · aktuell {pointsPreview.points_balance} Punkte</span>
               <strong>+{pointsPreview.expected_points} Punkte</strong>
               {pointsPreview.boost_multiplier > 1 ? <p className="muted">{pointsPreview.base_points} Basispunkte · {pointsPreview.boost_multiplier}× Freundschaftsbonus</p> : null}
@@ -1542,12 +1592,13 @@ export function StaffTablet() {
       </nav>
 
       <AppDrawer
-        className={pendingPinAction ? "staff-pin-sheet" : undefined}
-        fitVisualViewport={Boolean(pendingPinAction)}
+        className={pendingPinAction ? "staff-pin-sheet" : pointsQrReference ? "staff-points-sheet" : undefined}
+        fitVisualViewport={Boolean(pendingPinAction || pointsQrReference)}
         description={pendingPinAction
           ? pendingPinAction.detail
           : tr("staff.drawer.scannerDescription")}
-        dismissOnOverlay={hasActivePointsTask}
+        dismissOnEscape={!hasActivePointsTask}
+        dismissOnOverlay={false}
         footer={pendingPinAction ? renderPinActionFooter(true) : undefined}
         onClose={dismissScanner}
         open={scannerOpen}
@@ -1556,6 +1607,7 @@ export function StaffTablet() {
           ?? (pointsQrReference ? tr("staff.drawer.pointsTitle") : scannerManualSearchOpen ? tr("staff.drawer.searchTitle") : tr("staff.drawer.scannerTitle"))}
       >
         <div className="staff-operational-scanner">
+          {renderProcessOverview(pinActionFeedback?.kind === "success" ? 4 : pendingPinAction ? 3 : pointsQrReference ? (pointsPreview || billAmount > 0 ? 2 : 1) : selectedCustomer ? 1 : 0)}
           {pendingPinAction ? renderPinActionContent(true) : null}
 
           {!pendingPinAction && !pointsQrReference && !selectedCustomer && !scannerManualSearchOpen ? (
@@ -1569,7 +1621,12 @@ export function StaffTablet() {
                   <QrCode aria-hidden="true" size={20} />
                   <div><strong>{scannerStatus ?? tr("staff.drawer.captureQr")}</strong><span>{tr("staff.drawer.frameQr")}</span></div>
                 </div>
-                {scannerError ? <div className="staff-operational-scanner-error" role="alert"><CircleAlert aria-hidden="true" size={20} /><span>{scannerError}</span></div> : null}
+                {scannerError ? (
+                  <div className="staff-operational-scanner-recovery">
+                    <div className="staff-operational-scanner-error" role="alert"><CircleAlert aria-hidden="true" size={20} /><span>{scannerError}</span></div>
+                    <button className="button" disabled={scannerStarting} onClick={() => void retryQrScannerCamera()} type="button">{translateKey("staff.camera.retry")}</button>
+                  </div>
+                ) : null}
               </div>
               <button
                 className="staff-operational-manual-link"
@@ -1664,11 +1721,13 @@ export function StaffTablet() {
                 <div className="field">
                   <FormLabel htmlFor="scanner-controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel>
                   <input
+                    aria-describedby={billAmount !== 0 && !pointsAmountIsValid ? "scanner-bonus-amount-error" : "scanner-bonus-amount-help"}
+                    aria-invalid={billAmount !== 0 && !pointsAmountIsValid || undefined}
                     aria-required="true"
                     className="input"
                     id="scanner-controlled-bill-amount"
                     inputMode="decimal"
-                    max={(settings.points_collection_max_amount_cents ?? 30000) / 100}
+                    max={pointsAmountMaxCents / 100}
                     min="0.01"
                     onChange={(event) => {
                       setBillAmount(Number(event.target.value) || 0);
@@ -1680,9 +1739,10 @@ export function StaffTablet() {
                     type="number"
                     value={billAmount || ""}
                   />
+                  {billAmount !== 0 && !pointsAmountIsValid ? <small className="staff-points-drawer-pin-error" id="scanner-bonus-amount-error" role="alert">{tr("staff.kassa.invalidAmount", { min: formatCurrency(1), max: formatCurrency(pointsAmountMaxCents) })}</small> : <small id="scanner-bonus-amount-help">{translateKey("staff.kassa.amountHelp")}</small>}
                 </div>
                 {!pointsPreview ? (
-                  <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">{saving ? tr("staff.drawer.previewLoading") : customerPreviewError ? translateKey("common.retry") : tr("staff.drawer.calculatePoints")}</button>
+                  <button className="button" disabled={saving || !pointsAmountIsValid} onClick={() => void handleRestaurantControlledPreview()} type="button">{saving ? tr("staff.drawer.previewLoading") : customerPreviewError ? translateKey("common.retry") : tr("staff.drawer.calculatePoints")}</button>
                 ) : (
                   <div className="staff-operational-points-preview">
                     <dl>
@@ -1814,6 +1874,7 @@ export function StaffTablet() {
         className="staff-pin-sheet"
         fitVisualViewport
         description={pendingPinAction?.detail}
+        dismissOnEscape={false}
         dismissOnOverlay={false}
         footer={renderPinActionFooter()}
         onClose={closePinAction}

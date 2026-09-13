@@ -48,7 +48,7 @@ test("QR-Ablauf hält Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
 test("Vorschaufehler blockiert die finale Buchung", () => {
   assert.match(scannerDrawer, /customerPreviewError/);
   assert.match(scannerDrawer, /pointsPreview \? \(/);
-  assert.match(scannerDrawer, /disabled=\{saving \|\| billAmount <= 0\}/);
+  assert.match(scannerDrawer, /disabled=\{saving \|\| !pointsAmountIsValid\}/);
   assert.match(scannerDrawer, /common\.retry/);
   assert.match(scannerDrawer, /staff\.drawer\.chooseOther/);
 });
@@ -63,7 +63,8 @@ test("erfolgreicher Ablauf kann beendet oder für nächsten Gast neu gestartet w
 
 test("Overlay und Escape sind im aktiven Vorgang gesperrt; Schließen und Browser-Zurück minimieren kontrolliert", () => {
   assert.match(scannerDrawer, /onClose=\{dismissScanner\}/);
-  assert.match(scannerDrawer, /dismissOnOverlay=\{hasActivePointsTask\}/);
+  assert.match(scannerDrawer, /dismissOnOverlay=\{false\}/);
+  assert.match(scannerDrawer, /dismissOnEscape=\{!hasActivePointsTask\}/);
   assert.match(staffPortal, /window\.history\.pushState/);
   assert.match(staffPortal, /window\.addEventListener\("popstate", handleScannerBack\)/);
   assert.match(staffPortal, /minimizeActivePointsTask\(scannerReturnViewRef\.current, true\)/);

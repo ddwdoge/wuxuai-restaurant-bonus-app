@@ -178,6 +178,100 @@
   min-width: 0;
 }
 
+.staff-premium-mobile-context {
+  display: none;
+}
+
+.staff-process-overview {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(65, 58, 48, 0.09);
+  border-radius: 16px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.staff-process-overview > strong {
+  color: var(--staff-ink);
+  font-size: 0.82rem;
+}
+
+.staff-process-overview ol {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.staff-process-overview li {
+  align-items: center;
+  color: var(--staff-muted);
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  min-width: 0;
+  position: relative;
+  text-align: center;
+}
+
+.staff-process-overview li::before {
+  background: rgba(65, 58, 48, 0.14);
+  content: "";
+  height: 2px;
+  left: calc(-50% + 14px);
+  position: absolute;
+  right: calc(50% + 14px);
+  top: 13px;
+}
+
+.staff-process-overview li:first-child::before {
+  display: none;
+}
+
+.staff-process-overview li > span {
+  align-items: center;
+  background: var(--staff-cream-deep);
+  border: 1px solid rgba(65, 58, 48, 0.12);
+  border-radius: 50%;
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  position: relative;
+  width: 28px;
+  z-index: 1;
+}
+
+.staff-process-overview li > small {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.staff-process-overview li.is-complete,
+.staff-process-overview li.is-current {
+  color: var(--staff-gold-dark);
+  font-weight: 750;
+}
+
+.staff-process-overview li.is-complete::before,
+.staff-process-overview li.is-current::before,
+.staff-process-overview li.is-complete > span,
+.staff-process-overview li.is-current > span {
+  background: var(--staff-gold-soft);
+  border-color: rgba(149, 104, 32, 0.3);
+}
+
+.staff-process-overview li.is-current > span {
+  box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--staff-gold-dark);
+}
+
 .staff-premium-intro h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.9rem, 9vw, 2.65rem);
@@ -1415,6 +1509,16 @@
   line-height: 1.45;
 }
 
+.staff-operational-scanner-recovery {
+  display: grid;
+  gap: 10px;
+}
+
+.staff-operational-scanner-recovery .button {
+  min-height: 48px;
+  width: 100%;
+}
+
 .staff-operational-scanner-status > svg,
 .staff-operational-scanner-error > svg,
 .staff-operational-detected > svg {
@@ -1969,6 +2073,50 @@
   }
 }
 
+@media (max-width: 699px) {
+  .staff-premium-header {
+    gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  }
+
+  .staff-premium-header-meta {
+    display: none;
+  }
+
+  .staff-premium-brand .restaurant-logo-frame {
+    height: 44px;
+    min-height: 44px;
+    min-width: 44px;
+    width: 44px;
+  }
+
+  .staff-premium-workspace {
+    gap: 16px;
+    padding-top: 16px;
+  }
+
+  .staff-premium-mobile-context {
+    align-items: center;
+    color: var(--staff-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.73rem;
+    gap: 5px;
+    line-height: 1.35;
+    margin: 0 0 8px;
+  }
+
+  .staff-premium-intro h2 {
+    font-size: clamp(1.55rem, 7.5vw, 1.85rem);
+    margin-top: 5px;
+  }
+
+  .staff-premium-intro > p:last-child {
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+}
+
 @media (max-width: 390px) {
   .staff-premium-nav-label-wide {
     display: none;
@@ -1986,6 +2134,16 @@
     max-height: calc(100dvh - env(safe-area-inset-top) - 8px);
     max-width: none;
     width: 100%;
+  }
+
+  .app-drawer-panel.staff-points-sheet {
+    height: auto;
+    max-height: min(85dvh, calc(100dvh - env(safe-area-inset-top) - 8px));
+  }
+
+  .app-drawer-panel.staff-points-sheet > .app-drawer-body {
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .app-drawer-panel:has(.staff-operational-scanner) .app-drawer-header {
@@ -2038,6 +2196,14 @@
 
   .staff-operational-camera .scanner-video-frame {
     height: 216px;
+  }
+
+  .staff-process-overview {
+    padding-inline: 12px;
+  }
+
+  .staff-process-overview li > small {
+    font-size: 0.62rem;
   }
 }
 

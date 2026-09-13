@@ -41,7 +41,7 @@ test("QR und manuelle Suche verwenden dieselbe obere Kundenkarte", () => {
 
 test("QR-Vorschau zeigt einen expliziten Ladezustand vor der sicheren Kundenkarte", () => {
   assert.match(customerFlow, /Kundendaten werden geladen …/);
-  assert.match(customerFlow, /sicheren serverseitigen Punkte-Vorschau/);
+  assert.match(customerFlow, /staff\.drawer\.previewServer/);
   assert.match(customerFlow, /Punkte für \$\{recognizedCustomerName\} vergeben/);
 });
 
