@@ -173,7 +173,7 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
         }}
       />
       <div className="partner-detail-heading">
-        <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
+        <RestaurantLogoImage alt={text("detailLogoAlt", { name: location.name })} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
         <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? text("mapCurrentContext") : (membership?.visits_count ?? 0) > 0 ? text("finderVisited") : isMember ? text("detailMember") : text("detailNoMember")}</StatusBadge><h2 data-i18n-skip="true">{location.name}</h2><p data-i18n-skip="true">{locationAddress(location)}</p>{formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description" data-i18n-skip="true">{location.short_description}</p> : null}

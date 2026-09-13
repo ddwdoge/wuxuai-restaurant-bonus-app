@@ -136,6 +136,7 @@ test("Discovery lokalisiert dynamische Zähler, Distanz und Zeit ohne Restaurant
     assert.match(finder, new RegExp(`"${key}"`));
   }
   assert.match(finder, /function openingStatusPresentation/);
+  assert.match(finder, /RestaurantLogoImage alt=\{text\("detailLogoAlt", \{ name: location\.name \}\)\}/);
   assert.doesNotMatch(finder, /\{location\.opening_status\.message\}/);
 });
 
