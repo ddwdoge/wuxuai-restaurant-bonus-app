@@ -26,7 +26,7 @@ test("Mitarbeiter-Navigation bietet fünf klare V1-Schnellzugriffe", () => {
   assert.match(staffPortal, /QR scannen/);
   assert.match(staffPortal, />Tages-PIN</);
   assert.match(staffPortal, /Gast suchen/);
-  assert.match(staffPortal, />Mehr</);
+  assert.match(staffPortal, /staff\.more\.title/);
   assert.match(staffPortal, /<AppDrawer/);
 });
 

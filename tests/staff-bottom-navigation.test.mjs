@@ -10,7 +10,7 @@ const nav = staffPortal.slice(navStart, navEnd);
 
 test("Bottom Navigation enthält genau die fünf V1-Schnellzugriffe", () => {
   assert.equal((nav.match(/<button/g) ?? []).length, 5);
-  for (const label of ["Start", "QR scannen", "Tages-PIN", "Gast suchen", "Mehr"]) {
+  for (const label of ["Start", "QR scannen", "Tages-PIN", "Gast suchen", "staff.more.title"]) {
     assert.match(nav, new RegExp(label));
   }
   assert.doesNotMatch(nav, /Code prüfen|Einlösecode/);

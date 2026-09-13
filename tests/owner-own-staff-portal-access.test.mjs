@@ -54,7 +54,7 @@ test("the Staff UI clearly labels authoritative operator access", () => {
   assert.match(gate, /StaffPortalAccessContext\.Provider value=\{access\}/);
   assert.match(accessContext, /export function useStaffPortalAccess/);
   assert.match(staffTablet, /useStaffPortalAccess\(\)/);
-  assert.match(staffTablet, /Mitarbeiterbereich – Betreiberzugriff/);
+  assert.match(staffTablet, /staff\.header\.operatorArea/);
   assert.match(loginPage, /Mit deinem persönlichen Konto anmelden\./);
 });
 

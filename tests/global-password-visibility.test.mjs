@@ -54,7 +54,7 @@ test("daily PIN fields remain hidden and outside the account-password visibility
   const customerPortal = read("src/modules/customer/CustomerPortal.tsx");
   const staffTablet = read("src/modules/staff/StaffTablet.tsx");
   assert.match(customerPortal, /Tages-PIN Ziffer[\s\S]*type="password"/);
-  assert.match(staffTablet, /placeholder="Tages-PIN eingeben"[\s\S]*type="password"/);
+  assert.match(staffTablet, /placeholder=\{tr\("staff\.drawer\.pinPlaceholder"\)\}[\s\S]*type="password"/);
   assert.doesNotMatch(customerPortal, /PasswordInput/);
   assert.doesNotMatch(staffTablet, /PasswordInput/);
 });

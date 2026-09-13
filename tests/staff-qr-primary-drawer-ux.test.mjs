@@ -27,7 +27,7 @@ test("Scanner verwendet genau ein ZXing-Video statt einer zweiten Kameraarchitek
 
 test("Kamera steht im Drawer vor manuellem Fallback und Punkteablauf", () => {
   const camera = scannerDrawer.indexOf("staff-operational-camera");
-  const fallback = scannerDrawer.indexOf("QR nicht verfügbar? Gast suchen");
+  const fallback = scannerDrawer.indexOf("staff.drawer.qrUnavailableSearch");
   const points = scannerDrawer.indexOf("staff-operational-points-flow");
   assert.ok(camera > -1);
   assert.ok(fallback > camera);
@@ -35,12 +35,12 @@ test("Kamera steht im Drawer vor manuellem Fallback und Punkteablauf", () => {
 });
 
 test("QR-Ablauf hält Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
-  assert.match(scannerDrawer, /Kunden-QR erkannt/);
+  assert.match(scannerDrawer, /staff\.drawer\.qrRecognized/);
   assert.match(scannerDrawer, /pointsPreview\.customer_label/);
   assert.match(scannerDrawer, /pointsPreview\.points_balance/);
   assert.match(scannerDrawer, /pointsPreview\.boost_multiplier/);
-  assert.match(scannerDrawer, /Punkte serverseitig berechnen/);
-  assert.match(scannerDrawer, /Mit Tages-PIN bestätigen/);
+  assert.match(scannerDrawer, /staff\.drawer\.calculatePoints/);
+  assert.match(scannerDrawer, /staff\.drawer\.confirmDailyPin/);
   assert.match(scannerDrawer, /renderPinActionContent\(true\)/);
   assert.match(staffPortal, /open=\{Boolean\(pendingPinAction\) && !scannerOpen && !pointsTaskMinimized\}/);
 });
@@ -49,19 +49,19 @@ test("Vorschaufehler blockiert die finale Buchung", () => {
   assert.match(scannerDrawer, /customerPreviewError/);
   assert.match(scannerDrawer, /pointsPreview \? \(/);
   assert.match(scannerDrawer, /disabled=\{saving \|\| billAmount <= 0\}/);
-  assert.match(scannerDrawer, /Erneut versuchen/);
-  assert.match(scannerDrawer, /Anderen Gast wählen/);
+  assert.match(scannerDrawer, /common\.retry/);
+  assert.match(scannerDrawer, /staff\.drawer\.chooseOther/);
 });
 
 test("erfolgreicher Ablauf kann beendet oder für nächsten Gast neu gestartet werden", () => {
-  assert.match(staffPortal, /Nächsten Gast scannen/);
+  assert.match(staffPortal, /staff\.drawer\.nextCustomer/);
   assert.match(staffPortal, /function restartQrScanner\(\)/);
   assert.match(staffPortal, /function finishOperationalScanner\(\)/);
   assert.match(staffPortal, /setPointsQrReference\(null\)/);
   assert.match(staffPortal, /setPointsPreview\(null\)/);
 });
 
-test("Escape, Schließen und Browser-Zurück minimieren einen aktiven Vorgang", () => {
+test("Overlay und Escape sind im aktiven Vorgang gesperrt; Schließen und Browser-Zurück minimieren kontrolliert", () => {
   assert.match(scannerDrawer, /onClose=\{dismissScanner\}/);
   assert.match(scannerDrawer, /dismissOnOverlay=\{hasActivePointsTask\}/);
   assert.match(staffPortal, /window\.history\.pushState/);

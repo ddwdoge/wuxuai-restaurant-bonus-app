@@ -44,7 +44,7 @@ test("language selection and persistence keep the one existing provider path", (
 test("other role headers retain their existing shared selector inside action groups", () => {
   assert.match(read("src/modules/public/PublicPageComponents.tsx"), /public-premium-hero-row[\s\S]*<LanguageSelector \/>/);
   assert.match(read("src/modules/staff/StaffTablet.tsx"), /staff-premium-header[\s\S]*<LanguageSelector \/>/);
-  assert.match(read("src/modules/admin/AdminLayout.tsx"), /topbar-actions[\s\S]*<LanguageSelector \/>/);
+  assert.match(read("src/modules/admin/AdminLayout.tsx"), /owner-header-primary-actions[\s\S]*<LanguageSelector \/>/);
   for (const page of ["PlatformAdminPage", "PlatformAuditPage", "PlatformHealthCenterPage"]) {
     assert.match(read(`src/modules/platform/${page}.tsx`), /platform-admin-header-actions[\s\S]*<LanguageSelector \/>/);
   }

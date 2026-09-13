@@ -7,7 +7,7 @@ const tenantSwitcher = readFileSync(new URL("../src/modules/tenant/TenantSwitche
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 test("Desktop-Header zeigt Status, Restaurant und Profil als gemeinsame Gruppe", () => {
-  assert.match(adminLayout, /className="topbar-actions"/);
+  assert.match(adminLayout, /className="topbar-actions owner-restaurant-context-actions"/);
   assert.match(adminLayout, /restaurant-status-badge/);
   assert.match(adminLayout, /restaurant-status-dot/);
   assert.match(adminLayout, /<TenantSwitcher \/>/);
@@ -18,10 +18,8 @@ test("Desktop-Header zeigt Status, Restaurant und Profil als gemeinsame Gruppe",
 
 test("Status und Restaurantrolle stammen aus vorhandenen Laufzeitdaten", () => {
   assert.match(adminLayout, /activeRestaurant\?\.status/);
-  assert.match(adminLayout, /restaurantRoleLabels\[restaurantRole\]/);
-  assert.match(adminLayout, /owner: "Inhaber"/);
-  assert.match(adminLayout, /manager: "Manager"/);
-  assert.match(adminLayout, /staff: "Mitarbeiter"/);
+  assert.match(adminLayout, /owner\.profile\.\$\{restaurantRole === "supervisor" \? "staff" : restaurantRole\}/);
+  assert.match(adminLayout, /translateKey: t/);
   assert.match(adminLayout, /user\?\.user_metadata\?\.full_name/);
 });
 

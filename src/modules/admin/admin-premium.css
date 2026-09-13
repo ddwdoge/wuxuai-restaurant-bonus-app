@@ -31,12 +31,21 @@
 
 .premium-owner-shell .admin-restaurant-brand,
 .premium-owner-shell .admin-restaurant-brand .restaurant-brand-copy,
+.premium-owner-shell .owner-header-primary-actions,
 .premium-owner-shell .topbar-actions,
 .premium-owner-shell .topbar-actions > *,
 .premium-owner-shell .layout,
 .premium-owner-shell .premium-owner-content {
   max-width: 100%;
   min-width: 0;
+}
+
+.premium-owner-shell .owner-header-primary-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .premium-owner-shell .admin-restaurant-brand .restaurant-logo-frame {
@@ -667,12 +676,23 @@
   }
 
   .premium-owner-shell .topbar-actions {
+    align-items: end;
+    display: grid;
+    gap: 8px;
+    grid-column: 1 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
     margin-top: 2px;
     width: 100%;
   }
 
-  .premium-owner-shell .topbar-actions > .wux-language-selector {
-    justify-self: end;
+  .premium-owner-shell .owner-header-primary-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .premium-owner-shell .owner-header-primary-actions .wux-language-selector,
+  .premium-owner-shell .owner-header-primary-actions .mobile-menu-button {
+    min-height: 44px;
   }
 
   .premium-owner-shell .mobile-restaurant-status {
@@ -742,13 +762,14 @@
   }
 
   .premium-owner-shell .mobile-restaurant-status {
+    align-self: end;
     font-size: 11px;
-    margin-bottom: 9px;
+    margin-bottom: 0;
     padding: 4px 8px;
   }
 
   .premium-owner-shell .topbar-actions .tenant-switcher {
-    grid-column: 1 / -1;
+    grid-column: 2;
     margin-left: 0;
     max-width: 100%;
     min-width: 0;
@@ -835,6 +856,26 @@
 
   .premium-owner-shell .dashboard-recommendation-card {
     margin: 0 0 16px;
+  }
+}
+
+@media (max-width: 359px) {
+  .premium-owner-shell .owner-header-primary-actions {
+    gap: 6px;
+  }
+
+  .premium-owner-shell .owner-header-primary-actions .wux-language-selector {
+    min-width: 44px;
+    padding-inline: 8px;
+  }
+
+  .premium-owner-shell .owner-mobile-menu-label {
+    display: none;
+  }
+
+  .premium-owner-shell .button.mobile-menu-button {
+    padding-inline: 0;
+    width: 44px;
   }
 }
 

@@ -22,31 +22,21 @@ import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 import "./admin-premium.css";
-import { translateStructural } from "../../shared/i18n/catalog.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { KassaAcknowledgementGate } from "../kassa/KassaAcknowledgementGate";
 
-const t = (key: string) => translateStructural(key, "de");
-
-const restaurantRoleLabels = {
-  owner: "Inhaber",
-  admin: "Administrator",
-  manager: "Manager",
-  staff: "Mitarbeiter",
-  supervisor: "Mitarbeiter",
-  customer: "Gast",
-} as const;
-
-function readProfileName(user: ReturnType<typeof useAuth>["user"]) {
+function readProfileName(user: ReturnType<typeof useAuth>["user"], fallback: string) {
   const metadataName = user?.user_metadata?.full_name ?? user?.user_metadata?.name;
   if (typeof metadataName === "string" && metadataName.trim()) {
     return metadataName.trim();
   }
 
-  return user?.email?.split("@")[0] || "Restaurantkonto";
+  return user?.email?.split("@")[0] || fallback;
 }
 
 export function AdminLayout() {
+  const { translateKey: t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -57,12 +47,12 @@ export function AdminLayout() {
   const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
   const restaurantStatus = activeRestaurant?.status ?? "draft";
   const restaurantStatusLabel =
-    restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Einrichtung offen" : "Gesperrt";
-  const mobileRestaurantStatusLabel =
-    restaurantStatus === "active" ? "Aktiv" : restaurantStatus === "draft" ? "Entwurf" : "Gesperrt";
-  const profileName = readProfileName(user);
+    restaurantStatus === "active" ? t("owner.status.active") : restaurantStatus === "draft" ? t("owner.status.draft") : t("owner.status.blocked");
+  const profileName = readProfileName(user, t("owner.profile.account"));
   const profileInitial = profileName.charAt(0).toLocaleUpperCase("de-AT") || "R";
-  const profileRoleLabel = restaurantRole ? restaurantRoleLabels[restaurantRole] : "Restaurantkonto";
+  const profileRoleLabel = restaurantRole
+    ? t(`owner.profile.${restaurantRole === "supervisor" ? "staff" : restaurantRole}`)
+    : t("owner.profile.account");
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
@@ -131,7 +121,7 @@ export function AdminLayout() {
     try {
       await signOut();
     } catch {
-      logoutMessage = "Deine lokale Sitzung wurde beendet. Die Online-Abmeldung konnte gerade nicht vollständig bestätigt werden.";
+      logoutMessage = t("owner.logoutError");
     } finally {
       clearTenantState();
       navigate("/restaurant/login", {
@@ -161,12 +151,12 @@ export function AdminLayout() {
       </button>
       {profileMenuOpen ? (
         <div className="profile-menu-popover" role="menu">
-          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Gästeportal</button> : null}
-          {portalAccess.staff_access ? <button onClick={() => navigate(portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />Mitarbeiterbereich</button> : null}
-          {portalAccess.platform_access ? <button onClick={() => navigate("/platform-admin")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />WUXUAI Admin</button> : null}
+          {portalAccess.customer_access ? <button onClick={() => navigate("/customer")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />{t("owner.profile.customerPortal")}</button> : null}
+          {portalAccess.staff_access ? <button onClick={() => navigate(portalAccess.preferred_staff_slug ? `/staff/${encodeURIComponent(portalAccess.preferred_staff_slug)}` : "/staff")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />{t("owner.profile.staffPortal")}</button> : null}
+          {portalAccess.platform_access ? <button onClick={() => navigate("/platform-admin")} role="menuitem" type="button"><ArrowRight aria-hidden="true" size={18} />{t("owner.profile.platformPortal")}</button> : null}
           <button disabled={loggingOut} onClick={handleLogout} role="menuitem" type="button">
             <LogOut aria-hidden="true" size={18} />
-            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+            {loggingOut ? t("owner.logoutPending") : t("owner.logout")}
           </button>
         </div>
       ) : null}
@@ -213,7 +203,7 @@ export function AdminLayout() {
   );
 
   if (loading) {
-    return <div className="auth-shell">Inhaberbereich wird geladen...</div>;
+    return <div className="auth-shell">{t("owner.header.loading")}</div>;
   }
 
   if (setupIncomplete && !isSetupAllowedRoute) {
@@ -240,13 +230,26 @@ export function AdminLayout() {
           <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={activeRestaurant?.name ?? "Restaurant"} presentation={branding} primaryColor={branding?.primary_color} size="header" />
           <div className="restaurant-brand-copy">
             <span className="admin-brand-kicker">WUXUAI Bonus</span>
-            <span className="restaurant-brand-title">{activeRestaurant?.name ?? "Restaurant-Dashboard"}</span>
-            <span className="restaurant-brand-subtitle">Inhaberbereich</span>
+            <span className="restaurant-brand-title">{activeRestaurant?.name ?? t("owner.dashboardTitle")}</span>
+            <span className="restaurant-brand-subtitle">{t("owner.header.area")}</span>
           </div>
         </div>
-        <div className="topbar-actions">
+        <div className="owner-header-primary-actions">
           <LanguageSelector />
-          <span className="pill mobile-restaurant-status">{mobileRestaurantStatusLabel}</span>
+          <button
+            aria-expanded={mobileMenuOpen}
+            aria-label={t("owner.header.menuOpen")}
+            className="button secondary mobile-menu-button"
+            onClick={() => setMobileMenuOpen(true)}
+            title={t("owner.menu")}
+            type="button"
+          >
+            <Menu aria-hidden="true" size={18} />
+            <span className="owner-mobile-menu-label">{t("owner.menu")}</span>
+          </button>
+        </div>
+        <div className="topbar-actions owner-restaurant-context-actions">
+          <span className="pill mobile-restaurant-status">{restaurantStatusLabel}</span>
           <span className={`restaurant-status-badge restaurant-status-${restaurantStatus}`}>
             <span aria-hidden="true" className="restaurant-status-dot" />
             {restaurantStatusLabel}
@@ -254,27 +257,17 @@ export function AdminLayout() {
           <TenantSwitcher />
           {profileMenu}
         </div>
-        <button
-          aria-expanded={mobileMenuOpen}
-          aria-label={`${t("owner.menu")} öffnen`}
-          className="button secondary mobile-menu-button"
-          onClick={() => setMobileMenuOpen(true)}
-          type="button"
-        >
-          <Menu size={18} />
-          {t("owner.menu")}
-        </button>
       </header>
       <div className="layout">
         <aside className="sidebar premium-owner-sidebar">
           <div className="premium-sidebar-heading">
             <span>{t("owner.workspace")}</span>
-            <strong>Restaurant-Dashboard</strong>
+            <strong>{t("owner.dashboardTitle")}</strong>
           </div>
           {renderNavigation("sidebar")}
           {setupIncomplete ? (
             <p className="sidebar-lock-message">
-              Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
+              {t("owner.setup.required")}
             </p>
           ) : null}
         </aside>
@@ -283,11 +276,11 @@ export function AdminLayout() {
         </main>
       </div>
       <AppDrawer
-        description="Navigation im Inhaberbereich"
+        description={t("owner.header.menuDescription")}
         footer={(
           <button className="mobile-menu-logout" disabled={loggingOut} onClick={handleLogout} type="button">
             <LogOut aria-hidden="true" size={18} />
-            {loggingOut ? "Abmeldung läuft..." : "Abmelden"}
+            {loggingOut ? t("owner.logoutPending") : t("owner.logout")}
           </button>
         )}
         onClose={() => setMobileMenuOpen(false)}
@@ -299,7 +292,7 @@ export function AdminLayout() {
           {renderNavigation("drawer")}
           {setupIncomplete ? (
             <p className="sidebar-lock-message">
-              Bitte beende zuerst die Einrichtung. Danach wird dein Restaurant-Arbeitsbereich freigeschaltet.
+              {t("owner.setup.required")}
             </p>
           ) : null}
         </div>

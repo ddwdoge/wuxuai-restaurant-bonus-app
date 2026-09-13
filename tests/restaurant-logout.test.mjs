@@ -34,6 +34,6 @@ test("Desktop und Mobile bieten echte Logout-Aktionen", () => {
   assert.match(adminLayout, /profile-menu desktop-profile-menu/);
   assert.match(adminLayout, /role="menuitem"/);
   assert.match(adminLayout, /className="mobile-menu-logout"/);
-  assert.match(adminLayout, /Abmelden/);
+  assert.match(adminLayout, /owner\.logout/);
   assert.match(adminLayout, /disabled=\{loggingOut\}/);
 });

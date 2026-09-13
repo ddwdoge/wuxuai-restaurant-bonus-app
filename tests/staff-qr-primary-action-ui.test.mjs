@@ -76,7 +76,7 @@ test("Bottom Navigation bietet fünf direkte V1-Ziele", () => {
   assert.match(staffPortal, /QR scannen/);
   assert.match(staffPortal, />Tages-PIN</);
   assert.match(staffPortal, /Gast suchen/);
-  assert.match(staffPortal, />Mehr</);
+  assert.match(staffPortal, /staff\.more\.title/);
   assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
 });
 

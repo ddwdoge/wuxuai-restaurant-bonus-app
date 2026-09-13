@@ -24,11 +24,11 @@ test("PIN-Drawer besitzt seinen Fehlerzustand statt den Seitenstatus zu verwende
 test("Tageslimit wird ruhig blockiert und nennt den betroffenen Gast", () => {
   assert.match(staffPortal, /normalized\.includes\("buchungslimit"\)/);
   assert.match(staffPortal, /kind: "blocked"/);
-  assert.match(staffPortal, /Keine weitere Punktebuchung möglich/);
-  assert.match(staffPortal, /Für \$\{customerName\} wurde das heutige Buchungslimit bereits erreicht\./);
+  assert.match(staffPortal, /staff\.error\.dailyLimitTitle/);
+  assert.match(staffPortal, /staff\.error\.dailyLimitMessage/);
   assert.match(pointsDrawer, /pinActionFeedback\?\.kind === "blocked"/);
-  assert.match(pointsDrawer, /Anderen Gast wählen/);
-  assert.match(pointsDrawer, />Schließen</);
+  assert.match(pointsDrawer, /staff\.drawer\.chooseOther/);
+  assert.match(pointsDrawer, /staff\.drawer\.close/);
 });
 
 test("blockierter Drawer bietet keine scheinbar ausführbare Bestätigung", () => {
@@ -39,7 +39,7 @@ test("blockierter Drawer bietet keine scheinbar ausführbare Bestätigung", () =
 });
 
 test("falscher Tages-PIN bleibt direkt am Feld und kann erneut eingegeben werden", () => {
-  assert.match(staffPortal, /Der Tages-PIN ist nicht korrekt\./);
+  assert.match(staffPortal, /staff\.error\.pinIncorrectMessage/);
   assert.match(pointsDrawer, /aria-describedby=\{pinActionFeedback\?\.pinError/);
   assert.match(pointsDrawer, /aria-invalid=\{pinActionFeedback\?\.pinError/);
   assert.match(pointsDrawer, /staff-points-drawer-pin-error/);
@@ -48,18 +48,18 @@ test("falscher Tages-PIN bleibt direkt am Feld und kann erneut eingegeben werden
 });
 
 test("unbekannte Serverfehler werden ohne technische Details sicher dargestellt", () => {
-  assert.match(staffPortal, /Punkte konnten nicht gutgeschrieben werden/);
-  assert.match(staffPortal, /Bitte prüfe die Verbindung und versuche es erneut\./);
+  assert.match(staffPortal, /staff\.error\.genericTitle/);
+  assert.match(staffPortal, /staff\.error\.genericMessage/);
   assert.doesNotMatch(pointsDrawer, /SQLSTATE|RPC|database|token/i);
 });
 
 test("Erfolg bleibt bis Fertig im Drawer und zeigt die echte Punktewirkung", () => {
   assert.match(executePinAction, /setPinActionFeedback\(\{ kind: "success", \.\.\.success \}\)/);
-  assert.match(pointsDrawer, /Basis/);
-  assert.match(pointsDrawer, /× Bonus/);
-  assert.match(pointsDrawer, /Gutgeschrieben/);
-  assert.match(pointsDrawer, />Fertig</);
-  assert.match(staffPortal, /Punkte wurden \$\{pointsPreview\.customer_label\} gutgeschrieben/);
+  assert.match(pointsDrawer, /staff\.drawer\.base/);
+  assert.match(pointsDrawer, /staff\.drawer\.boostActive/);
+  assert.match(pointsDrawer, /staff\.drawer\.credited/);
+  assert.match(pointsDrawer, /staff\.drawer\.done/);
+  assert.match(staffPortal, /staff\.success\.pointsCredited/);
 });
 
 test("Drawer hält Gast, Punktestand, Bonus und geplante Punkte sichtbar", () => {

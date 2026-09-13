@@ -31,6 +31,7 @@ import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
+import { localeTag } from "../../shared/i18n/formatters.mjs";
 import { useAuth } from "../auth/AuthProvider";
 import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
@@ -94,6 +95,8 @@ type PinActionFeedback = {
   awardedPoints?: number | null;
 };
 
+type StaffTranslator = (key: string, values?: Record<string, string | number>) => string;
+
 function pointsActionErrorText(error: unknown) {
   if (error instanceof Error) return error.message;
   if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
@@ -102,66 +105,66 @@ function pointsActionErrorText(error: unknown) {
   return "";
 }
 
-function classifyPointsActionError(error: unknown, customerName: string): PinActionFeedback {
+function classifyPointsActionError(error: unknown, customerName: string, translate: StaffTranslator): PinActionFeedback {
   const errorText = pointsActionErrorText(error);
   const normalized = errorText.toLowerCase();
 
   if (normalized.includes("buchungslimit") || normalized.includes("points_daily_limit")) {
     return {
       kind: "blocked",
-      title: "Keine weitere Punktebuchung möglich",
-      message: `Für ${customerName} wurde das heutige Buchungslimit bereits erreicht.`,
+      title: translate("staff.error.dailyLimitTitle"),
+      message: translate("staff.error.dailyLimitMessage", { name: customerName }),
     };
   }
   if (normalized.includes("tages-pin") && normalized.includes("nicht korrekt")) {
     return {
       kind: "error",
       pinError: true,
-      title: "Tages-PIN prüfen",
-      message: "Der Tages-PIN ist nicht korrekt.",
+      title: translate("staff.error.pinIncorrectTitle"),
+      message: translate("staff.error.pinIncorrectMessage"),
     };
   }
   if (normalized.includes("tages-pin") && normalized.includes("nicht mehr gültig")) {
     return {
       kind: "error",
       pinError: true,
-      title: "Tages-PIN nicht mehr gültig",
-      message: "Bitte gib die heutige Tages-PIN ein.",
+      title: translate("staff.error.pinExpiredTitle"),
+      message: translate("staff.error.pinExpiredMessage"),
     };
   }
   if (normalized.includes("zu viele falsche versuche")) {
     return {
       kind: "blocked",
-      title: "Punktebuchung vorübergehend gesperrt",
-      message: "Zu viele falsche PIN-Versuche. Bitte wende dich an die Restaurantleitung.",
+      title: translate("staff.error.pinBlockedTitle"),
+      message: translate("staff.error.pinBlockedMessage"),
     };
   }
   if (normalized.includes("qr-code") && /(ungültig|abgelaufen|verwendet|nicht gefunden)/i.test(errorText)) {
     return {
       kind: "blocked",
-      title: "Kunden-QR nicht mehr gültig",
-      message: "Bitte öffne den aktuellen Kunden-QR erneut und scanne ihn noch einmal.",
+      title: translate("staff.error.qrTitle"),
+      message: translate("staff.error.qrMessage"),
     };
   }
   if (normalized.includes("gast") && normalized.includes("nicht gefunden")) {
     return {
       kind: "blocked",
-      title: "Gast nicht verfügbar",
-      message: "Die Kundendaten konnten nicht geladen werden. Bitte wähle den Gast erneut aus.",
+      title: translate("staff.error.customerTitle"),
+      message: translate("staff.error.customerMessage"),
     };
   }
   if (normalized.includes("überschreitet") && normalized.includes("limit")) {
     return {
       kind: "blocked",
-      title: "Betrag nicht zulässig",
-      message: "Der Betrag überschreitet das für dieses Restaurant festgelegte Limit.",
+      title: translate("staff.error.amountTitle"),
+      message: translate("staff.error.amountMessage"),
     };
   }
 
   return {
     kind: "error",
-    title: "Punkte konnten nicht gutgeschrieben werden",
-    message: "Bitte prüfe die Verbindung und versuche es erneut.",
+    title: translate("staff.error.genericTitle"),
+    message: translate("staff.error.genericMessage"),
   };
 }
 
@@ -185,7 +188,12 @@ function extractCustomerToken(value: string) {
 }
 
 export function StaffTablet() {
-  const { translateKey } = useI18n();
+  const { language, translateKey } = useI18n();
+  const tr: StaffTranslator = (key, values = {}) => {
+    let message = translateKey(key);
+    for (const [name, value] of Object.entries(values)) message = message.split(`{${name}}`).join(String(value));
+    return message;
+  };
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { signOut, user } = useAuth();
@@ -351,7 +359,7 @@ export function StaffTablet() {
         console.error("Tages-PIN konnte nicht geladen werden.", error);
         if (!cancelled) {
           setTodayPin(null);
-          setTodayPinError("Tages-PIN konnte gerade nicht geladen werden.");
+          setTodayPinError("staff.pin.loadError");
         }
       })
       .finally(() => {
@@ -443,6 +451,7 @@ export function StaffTablet() {
     pinRequired: Boolean(pendingPinAction),
   });
   const pointsTaskStatus = translateKey(`staff.activePoints.${pointsTaskStage}`);
+  const customerPreviewErrorMessage = customerPreviewError ? translateKey(customerPreviewError) : null;
   const customerStatusMessage = message
     ?? (pointsPreview
       ? "Kunde erfolgreich geladen."
@@ -454,8 +463,8 @@ export function StaffTablet() {
   const customerStatusIsError = Boolean(customerPreviewError)
     || Boolean(message && /(nicht|konnte|ungültig|abgelaufen|fehler|überschreitet|zu viele)/i.test(message));
   const currentDateLabel = useMemo(
-    () => new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
-    [],
+    () => new Intl.DateTimeFormat(localeTag(language), { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
+    [language],
   );
 
   useEffect(() => {
@@ -516,7 +525,7 @@ export function StaffTablet() {
       await signOut();
       navigate(buildStaffLoginPath(slug), { replace: true });
     } catch {
-      setLogoutError("Abmelden ist gerade nicht möglich. Bitte versuche es erneut.");
+      setLogoutError(tr("staff.error.logout"));
     } finally {
       setLoggingOut(false);
     }
@@ -552,7 +561,7 @@ export function StaffTablet() {
   }
 
   function formatBoostExpiry(expiresAt: string) {
-    return new Intl.DateTimeFormat("de-AT", {
+    return new Intl.DateTimeFormat(localeTag(language), {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -588,19 +597,19 @@ export function StaffTablet() {
   function scannerErrorMessage(error: unknown) {
     if (error instanceof DOMException) {
       if (error.name === "NotAllowedError") {
-        return "Kamera-Zugriff wurde abgelehnt. Bitte erlaube die Kamera oder suche den Gast manuell.";
+        return tr("staff.error.cameraDenied");
       }
 
       if (error.name === "NotFoundError") {
-        return "Keine Kamera gefunden. Bitte suche den Gast manuell.";
+        return tr("staff.error.cameraMissing");
       }
 
       if (error.name === "NotReadableError") {
-        return "Die Kamera ist gerade nicht verfügbar. Bitte schließe andere Kamera-Apps oder suche den Gast manuell.";
+        return tr("staff.error.cameraBusy");
       }
     }
 
-    return "QR-Scanner konnte nicht geöffnet werden. Bitte suche den Gast manuell.";
+    return tr("staff.error.scannerOpen");
   }
 
   async function findCustomerFromSearch(searchValue: string) {
@@ -660,7 +669,7 @@ export function StaffTablet() {
   async function handleScannerValue(value: string) {
     stopScanner();
     setScannerStarting(false);
-    setScannerStatus("Kunden-QR erkannt.");
+    setScannerStatus(tr("staff.drawer.qrRecognized"));
     setScannerManualSearchOpen(false);
     setScannerManualValue("");
     setQuery(value);
@@ -675,7 +684,7 @@ export function StaffTablet() {
       scannerLaunchPendingRef.current = false;
       setScannerStarting(false);
       setScannerStatus(null);
-      setScannerError("Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte suche den Gast manuell.");
+      setScannerError(tr("staff.error.cameraUnsupported"));
       return;
     }
 
@@ -691,15 +700,15 @@ export function StaffTablet() {
           const rawValue = result.getText();
           const recognized = extractCustomerPointsQrReference(rawValue) || extractCustomerToken(rawValue);
           if (!recognized) {
-            setScannerError("Dieser QR-Code ist kein gültiger Kunden-QR. Bitte versuche es erneut.");
-            setScannerStatus("Kunden-QR ruhig und vollständig in den Rahmen halten.");
+            setScannerError(tr("staff.error.qrInvalid"));
+            setScannerStatus(tr("staff.drawer.frameQr"));
             return;
           }
 
           scannerHandlingResultRef.current = true;
           scannerControls.stop();
           scannerControlsRef.current = null;
-          setScannerStatus("Kunden-QR erkannt.");
+          setScannerStatus(tr("staff.drawer.qrRecognized"));
           void handleScannerValue(rawValue);
         },
       );
@@ -709,7 +718,7 @@ export function StaffTablet() {
       }
       scannerControlsRef.current = controls;
       setScannerStarting(false);
-      setScannerStatus("QR-Code erfassen");
+      setScannerStatus(tr("staff.drawer.captureQr"));
       scannerLaunchPendingRef.current = false;
     } catch (error) {
       stopScanner();
@@ -734,7 +743,7 @@ export function StaffTablet() {
     setScannerManualSearchOpen(false);
     setScannerStarting(true);
     setScannerError(null);
-    setScannerStatus("QR-Code erfassen");
+    setScannerStatus(tr("staff.drawer.captureQr"));
     setMessage(null);
     await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     await activateQrScannerCamera();
@@ -756,7 +765,7 @@ export function StaffTablet() {
     setScannerManualSearchOpen(false);
     setScannerStarting(true);
     setScannerError(null);
-    setScannerStatus("QR-Code erfassen");
+    setScannerStatus(tr("staff.drawer.captureQr"));
     await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     await activateQrScannerCamera();
   }
@@ -846,8 +855,8 @@ export function StaffTablet() {
       setPinActionFeedback({
         kind: "error",
         pinError: true,
-        title: "Tages-PIN fehlt",
-        message: "Bitte gib die Tages-PIN ein.",
+        title: translateKey("staff.pin.fourDigitsTitle"),
+        message: translateKey("staff.pin.fourDigitsError"),
       });
       return;
     }
@@ -860,7 +869,7 @@ export function StaffTablet() {
       setPinActionFeedback({ kind: "success", ...success });
       setPinDraft("");
     } catch (error) {
-      setPinActionFeedback(classifyPointsActionError(error, action.customerName));
+      setPinActionFeedback(classifyPointsActionError(error, action.customerName, tr));
     } finally {
       setSaving(false);
     }
@@ -896,8 +905,8 @@ export function StaffTablet() {
     requestPin({
       title: payload.title,
       detail: selectedCustomer.name,
-      pinLabel: "Tages-PIN",
-      pinHelp: "Bitte prüfe die heutige Tages-PIN in der Mitarbeiteransicht.",
+      pinLabel: tr("staff.pin.label"),
+      pinHelp: tr("staff.pin.help"),
       customerName: selectedCustomer.name,
       currentPoints: selectedCustomer.points_balance,
       intendedPoints: payload.points || null,
@@ -920,10 +929,10 @@ export function StaffTablet() {
         setBillAmount(0);
         setActivityRefreshToken((current) => current + 1);
         return {
-          title: "Vorgang erfolgreich gespeichert",
+          title: tr("staff.success.saved"),
           message: result.points_added > 0
-            ? `${result.points_added} Punkte wurden ${selectedCustomer.name} gutgeschrieben.`
-            : `${result.stamps_added} Stempel wurden ${selectedCustomer.name} gutgeschrieben.`,
+            ? tr("staff.success.pointsCredited", { count: result.points_added, name: selectedCustomer.name })
+            : tr("staff.success.stampsCredited", { count: result.stamps_added, name: selectedCustomer.name }),
           awardedPoints: result.points_added || null,
           boostMultiplier: 1,
         };
@@ -941,11 +950,11 @@ export function StaffTablet() {
       setActivePointsTaskContext((current) => current
         ? withActivePointsTaskExpiry(current, preview.expires_at)
         : current);
-    } catch (error) {
+    } catch {
       setPointsPreview(null);
-      const nextError = error instanceof Error ? error.message : "Punkte konnten nicht berechnet werden.";
+      const nextError = "staff.error.preview";
       setCustomerPreviewError(nextError);
-      if (!scannerOpen) setMessage(nextError);
+      if (!scannerOpen) setMessage(tr(nextError));
     } finally { setSaving(false); }
   }
 
@@ -953,10 +962,10 @@ export function StaffTablet() {
     if (!restaurantId || !pointsQrReference || !pointsPreview) return;
     const idempotencyKey = crypto.randomUUID();
     requestPin({
-      title: "Punkte gutschreiben",
-      detail: `${pointsPreview.customer_label} · ${pointsPreview.expected_points} Punkte`,
-      pinLabel: "Tages-PIN",
-      pinHelp: "Bestätige den tatsächlich direkt im Restaurant bezahlten Betrag.",
+      title: tr("staff.drawer.pointsTitle"),
+      detail: `${pointsPreview.customer_label} · ${tr("staff.drawer.pointsValue", { count: pointsPreview.expected_points })}`,
+      pinLabel: tr("staff.pin.label"),
+      pinHelp: tr("staff.pin.amountHelp"),
       customerName: pointsPreview.customer_label,
       currentPoints: pointsPreview.points_balance,
       intendedPoints: pointsPreview.expected_points,
@@ -969,8 +978,8 @@ export function StaffTablet() {
         setPointsQrReference(null); setPointsPreview(null); setActivePointsTaskContext(null); setPointsTaskMinimized(false); setBillAmount(0);
         setActivityRefreshToken((current) => current + 1);
         return {
-          title: "Punkte erfolgreich gutgeschrieben",
-          message: `${result.points_added} Punkte wurden ${pointsPreview.customer_label} gutgeschrieben.`,
+          title: tr("staff.success.pointsTitle"),
+          message: tr("staff.success.pointsCredited", { count: result.points_added, name: pointsPreview.customer_label }),
           basePoints: result.base_points,
           boostMultiplier: result.boost_multiplier,
           awardedPoints: result.points_added,
@@ -1008,18 +1017,18 @@ export function StaffTablet() {
     if (pinActionFeedback?.kind === "blocked") {
       return (
         <>
-          <button className="button secondary" disabled={saving} onClick={() => inScannerDrawer ? void restartQrScanner() : clearSelectedCustomer()} type="button">Anderen Gast wählen</button>
-          <button className="button" disabled={saving} onClick={inScannerDrawer ? finishOperationalScanner : closePinAction} type="button">Schließen</button>
+          <button className="button secondary" disabled={saving} onClick={() => inScannerDrawer ? void restartQrScanner() : clearSelectedCustomer()} type="button">{tr("staff.drawer.chooseOther")}</button>
+          <button className="button" disabled={saving} onClick={inScannerDrawer ? finishOperationalScanner : closePinAction} type="button">{tr("staff.drawer.close")}</button>
         </>
       );
     }
     if (pinActionFeedback?.kind === "success") {
       return inScannerDrawer ? (
         <>
-          <button className="button secondary" onClick={finishOperationalScanner} type="button">Fertig</button>
-          <button className="button" onClick={() => void restartQrScanner()} type="button">Nächsten Gast scannen</button>
+          <button className="button secondary" onClick={finishOperationalScanner} type="button">{tr("staff.drawer.done")}</button>
+          <button className="button" onClick={() => void restartQrScanner()} type="button">{tr("staff.drawer.nextCustomer")}</button>
         </>
-      ) : <button className="button" onClick={finishPinAction} type="button">Fertig</button>;
+      ) : <button className="button" onClick={finishPinAction} type="button">{tr("staff.drawer.done")}</button>;
     }
     return (
       <>
@@ -1039,17 +1048,17 @@ export function StaffTablet() {
 
     return (
       <div className="staff-points-drawer">
-        <section className="staff-points-drawer-customer" aria-label="Ausgewählter Gast">
-          <span><BadgeCheck aria-hidden="true" size={17} />Gast erkannt</span>
+        <section className="staff-points-drawer-customer" aria-label={tr("staff.drawer.selectedCustomer")}>
+          <span><BadgeCheck aria-hidden="true" size={17} />{tr("staff.drawer.recognized")}</span>
           <h3>{pendingPinAction.customerName}</h3>
-          {pendingPinAction.currentPoints !== null ? <p>Aktuell <strong>{pendingPinAction.currentPoints} Punkte</strong></p> : null}
+          {pendingPinAction.currentPoints !== null ? <p>{tr("staff.drawer.currentPoints", { count: pendingPinAction.currentPoints })}</p> : null}
           {pendingPinAction.boostMultiplier > 1 ? (
             <p className="staff-points-drawer-boost">
-              <strong>{pendingPinAction.boostMultiplier}× Bonus aktiv</strong>
-              {pendingPinAction.boostExpiresAt ? <span>bis {formatBoostExpiry(pendingPinAction.boostExpiresAt)}</span> : null}
+              <strong>{tr("staff.drawer.boostActive", { multiplier: pendingPinAction.boostMultiplier })}</strong>
+              {pendingPinAction.boostExpiresAt ? <span>{tr("staff.drawer.until", { date: formatBoostExpiry(pendingPinAction.boostExpiresAt) })}</span> : null}
             </p>
           ) : null}
-          {pendingPinAction.intendedPoints !== null ? <p className="staff-points-drawer-intent">Geplant: <strong>{pendingPinAction.intendedPoints} Punkte</strong></p> : null}
+          {pendingPinAction.intendedPoints !== null ? <p className="staff-points-drawer-intent">{tr("staff.drawer.plannedPoints", { count: pendingPinAction.intendedPoints })}</p> : null}
         </section>
 
         {pinActionFeedback && !pinActionFeedback.pinError ? (
@@ -1065,9 +1074,9 @@ export function StaffTablet() {
               <p>{pinActionFeedback.message}</p>
               {pinActionFeedback.kind === "success" && pinActionFeedback.awardedPoints !== null && pinActionFeedback.awardedPoints !== undefined ? (
                 <dl>
-                  {pinActionFeedback.basePoints !== null && pinActionFeedback.basePoints !== undefined ? <div><dt>Basis</dt><dd>{pinActionFeedback.basePoints} Punkte</dd></div> : null}
-                  {pinActionFeedback.boostMultiplier && pinActionFeedback.boostMultiplier > 1 ? <div><dt>{pinActionFeedback.boostMultiplier}× Bonus</dt><dd>aktiv</dd></div> : null}
-                  <div><dt>Gutgeschrieben</dt><dd>{pinActionFeedback.awardedPoints} Punkte</dd></div>
+                  {pinActionFeedback.basePoints !== null && pinActionFeedback.basePoints !== undefined ? <div><dt>{tr("staff.drawer.base")}</dt><dd>{tr("staff.drawer.pointsValue", { count: pinActionFeedback.basePoints })}</dd></div> : null}
+                  {pinActionFeedback.boostMultiplier && pinActionFeedback.boostMultiplier > 1 ? <div><dt>{tr("staff.drawer.boostActive", { multiplier: pinActionFeedback.boostMultiplier })}</dt><dd>{tr("staff.drawer.active")}</dd></div> : null}
+                  <div><dt>{tr("staff.drawer.credited")}</dt><dd>{tr("staff.drawer.pointsValue", { count: pinActionFeedback.awardedPoints })}</dd></div>
                 </dl>
               ) : null}
             </div>
@@ -1096,7 +1105,7 @@ export function StaffTablet() {
                 id={inputId}
                 inputMode="numeric"
                 maxLength={4}
-                placeholder="Tages-PIN eingeben"
+                placeholder={tr("staff.drawer.pinPlaceholder")}
                 required
                 type="password"
                 value={pinDraft}
@@ -1128,16 +1137,16 @@ export function StaffTablet() {
         <LanguageSelector />
         <button
           aria-expanded={moreOpen}
-          aria-label="Mitarbeitermenü öffnen"
+          aria-label={tr("staff.header.menuOpen")}
           className="staff-premium-menu-button"
           onClick={() => setMoreOpen(true)}
           type="button"
         >
           <Menu aria-hidden="true" size={20} />
-          <span>Menü</span>
+          <span>{tr("staff.header.menu")}</span>
         </button>
         <div className="staff-premium-header-meta">
-          <span><ShieldCheck aria-hidden="true" size={16} />{staffPortalAccess?.access_mode === "operator" ? "Mitarbeiterbereich – Betreiberzugriff" : "Mitarbeiterbereich"}</span>
+          <span><ShieldCheck aria-hidden="true" size={16} />{staffPortalAccess?.access_mode === "operator" ? tr("staff.header.operatorArea") : tr("staff.header.area")}</span>
           <time dateTime={new Date().toISOString().slice(0, 10)}><CalendarDays aria-hidden="true" size={16} />{currentDateLabel}</time>
         </div>
       </header>
@@ -1185,7 +1194,7 @@ export function StaffTablet() {
                   <span className="staff-premium-pin-loading"><span aria-hidden="true" />Tages-PIN wird geladen …</span>
                 ) : null}
                 {!todayPinLoading && todayPinError ? (
-                  <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{todayPinError}</span>
+                  <span className="staff-premium-pin-error"><CircleAlert aria-hidden="true" size={20} />{tr(todayPinError)}</span>
                 ) : null}
                 {!todayPinLoading && !todayPinError && todayPin ? (
                   <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
@@ -1266,7 +1275,7 @@ export function StaffTablet() {
                 {customerPreviewError ? "Kundendaten nicht verfügbar" : "Kunden-QR erkannt"}
               </span>
               <h2>{customerPreviewError ? "Gast konnte nicht sicher geladen werden" : saving ? "Kundendaten werden geladen …" : "Gast wird sicher geprüft"}</h2>
-              <p className="muted">{customerPreviewError ?? "Name und Punktestand erscheinen mit der sicheren serverseitigen Punkte-Vorschau."}</p>
+              <p className="muted">{customerPreviewErrorMessage ?? "Name und Punktestand erscheinen mit der sicheren serverseitigen Punkte-Vorschau."}</p>
               {customerPreviewError ? <button className="button" onClick={() => { setCustomerPreviewError(null); setMessage(null); }} type="button">Erneut versuchen</button> : null}
               <button className="button secondary" onClick={clearSelectedCustomer} type="button">Anderen Gast wählen</button>
             </>
@@ -1319,7 +1328,7 @@ export function StaffTablet() {
                 disabled={!selectedCustomer || calculatedPoints <= 0 || saving}
                 onClick={() =>
                   queueLoyaltyAction({
-                    title: "Punkte buchen",
+                    title: tr("staff.action.bookPoints"),
                     points: calculatedPoints,
                     stamps: 0,
                     reason: `Rechnungsbetrag ${billAmount.toFixed(2)} EUR`,
@@ -1362,7 +1371,7 @@ export function StaffTablet() {
                 onClick={() => {
                   const selectedRule = stampRules.find((rule) => rule.id === selectedStampRuleId);
                   queueLoyaltyAction({
-                    title: "Stempel geben",
+                    title: tr("staff.action.giveStamp"),
                     points: 0,
                     stamps: selectedRule?.stamps ?? 1,
                     reason: selectedRule?.title ?? "1 Stempel",
@@ -1528,7 +1537,7 @@ export function StaffTablet() {
           type="button"
         >
           <MoreHorizontal aria-hidden="true" size={21} />
-          <span>Mehr</span>
+          <span>{tr("staff.more.title")}</span>
         </button>
       </nav>
 
@@ -1537,14 +1546,14 @@ export function StaffTablet() {
         fitVisualViewport={Boolean(pendingPinAction)}
         description={pendingPinAction
           ? pendingPinAction.detail
-          : "Scanne den persönlichen Bonus-QR des Gastes und bestätige die Punkte sicher im selben Ablauf."}
+          : tr("staff.drawer.scannerDescription")}
         dismissOnOverlay={hasActivePointsTask}
         footer={pendingPinAction ? renderPinActionFooter(true) : undefined}
         onClose={dismissScanner}
         open={scannerOpen}
         size="large"
         title={pendingPinAction?.title
-          ?? (pointsQrReference ? "Punkte gutschreiben" : scannerManualSearchOpen ? "Gast suchen" : "Kunden-QR scannen")}
+          ?? (pointsQrReference ? tr("staff.drawer.pointsTitle") : scannerManualSearchOpen ? tr("staff.drawer.searchTitle") : tr("staff.drawer.scannerTitle"))}
       >
         <div className="staff-operational-scanner">
           {pendingPinAction ? renderPinActionContent(true) : null}
@@ -1553,12 +1562,12 @@ export function StaffTablet() {
             <>
               <div className="staff-operational-camera">
                 <div className="scanner-video-frame">
-                  <video aria-label="Kamera für Kunden-QR" autoPlay className="scanner-video" muted playsInline ref={scannerVideoRef} />
-                  {scannerStarting ? <span className="scanner-overlay">Kamera wird gestartet …</span> : null}
+                  <video aria-label={tr("staff.drawer.cameraLabel")} autoPlay className="scanner-video" muted playsInline ref={scannerVideoRef} />
+                  {scannerStarting ? <span className="scanner-overlay">{tr("staff.drawer.cameraStarting")}</span> : null}
                 </div>
                 <div className="staff-operational-scanner-status" aria-live="polite" role="status">
                   <QrCode aria-hidden="true" size={20} />
-                  <div><strong>{scannerStatus ?? "QR-Code erfassen"}</strong><span>Kunden-QR vollständig in den Rahmen halten.</span></div>
+                  <div><strong>{scannerStatus ?? tr("staff.drawer.captureQr")}</strong><span>{tr("staff.drawer.frameQr")}</span></div>
                 </div>
                 {scannerError ? <div className="staff-operational-scanner-error" role="alert"><CircleAlert aria-hidden="true" size={20} /><span>{scannerError}</span></div> : null}
               </div>
@@ -1573,16 +1582,16 @@ export function StaffTablet() {
                 }}
                 type="button"
               >
-                <UserSearch aria-hidden="true" size={18} />QR nicht verfügbar? Gast suchen
+                <UserSearch aria-hidden="true" size={18} />{tr("staff.drawer.qrUnavailableSearch")}
               </button>
             </>
           ) : null}
 
           {!pendingPinAction && scannerManualSearchOpen ? (
             <div className="staff-operational-manual-search">
-              <button className="staff-operational-back" onClick={() => void restartQrScanner()} type="button"><QrCode aria-hidden="true" size={18} />Zurück zum Scanner</button>
+              <button className="staff-operational-back" onClick={() => void restartQrScanner()} type="button"><QrCode aria-hidden="true" size={18} />{tr("staff.drawer.backScanner")}</button>
               <div className="field">
-                <FormLabel htmlFor="scanner-customer-search" required>Schnellsuche</FormLabel>
+                <FormLabel htmlFor="scanner-customer-search" required>{tr("staff.drawer.quickSearch")}</FormLabel>
                 <input
                   aria-required="true"
                   autoFocus
@@ -1590,13 +1599,13 @@ export function StaffTablet() {
                   data-drawer-autofocus="true"
                   id="scanner-customer-search"
                   onChange={(event) => setScannerManualValue(event.target.value)}
-                  placeholder="Name, Telefon oder Gästecode"
+                  placeholder={tr("staff.drawer.searchPlaceholder")}
                   required
                   type="search"
                   value={scannerManualValue}
                 />
               </div>
-              <div className="staff-operational-customer-list" aria-label="Gefundene Gäste">
+              <div className="staff-operational-customer-list" aria-label={tr("staff.drawer.foundCustomers")}>
                 {scannerFilteredCustomers.map((customer) => (
                   <button
                     key={customer.id}
@@ -1610,47 +1619,47 @@ export function StaffTablet() {
                     <ChevronRight aria-hidden="true" size={18} />
                   </button>
                 ))}
-                {scannerManualValue.trim() && scannerFilteredCustomers.length === 0 ? <p className="muted">Kein Gast gefunden.</p> : null}
+                {scannerManualValue.trim() && scannerFilteredCustomers.length === 0 ? <p className="muted">{tr("staff.drawer.noCustomer")}</p> : null}
               </div>
             </div>
           ) : null}
 
           {!pendingPinAction && selectedCustomer ? (
             <div className="staff-operational-selected-customer">
-              <section className="staff-points-drawer-customer" aria-label="Ausgewählter Gast">
-                <span><BadgeCheck aria-hidden="true" size={17} />Gast erkannt</span>
+              <section className="staff-points-drawer-customer" aria-label={tr("staff.drawer.selectedCustomer")}>
+                <span><BadgeCheck aria-hidden="true" size={17} />{tr("staff.drawer.recognized")}</span>
                 <h3>{selectedCustomer.name}</h3>
-                <p>Aktuell <strong>{selectedCustomer.points_balance} Punkte</strong></p>
+                <p>{tr("staff.drawer.currentPoints", { count: selectedCustomer.points_balance })}</p>
               </section>
-              <button className="button" onClick={continueManualCustomerOnPage} type="button">Mit diesem Gast fortfahren</button>
-              <button className="button secondary" onClick={() => void restartQrScanner()} type="button">Anderen Gast wählen</button>
+              <button className="button" onClick={continueManualCustomerOnPage} type="button">{tr("staff.drawer.continueCustomer")}</button>
+              <button className="button secondary" onClick={() => void restartQrScanner()} type="button">{tr("staff.drawer.chooseOther")}</button>
             </div>
           ) : null}
 
           {!pendingPinAction && pointsQrReference ? (
             <div className="staff-operational-points-flow">
-              <div className="staff-operational-detected" aria-live="polite" role="status"><BadgeCheck aria-hidden="true" size={19} /><strong>Kunden-QR erkannt</strong></div>
-              <section className={`staff-points-drawer-customer${customerPreviewError ? " is-error" : ""}`} aria-label="Erkannter Gast">
+              <div className="staff-operational-detected" aria-live="polite" role="status"><BadgeCheck aria-hidden="true" size={19} /><strong>{tr("staff.drawer.qrRecognized")}</strong></div>
+              <section className={`staff-points-drawer-customer${customerPreviewError ? " is-error" : ""}`} aria-label={tr("staff.drawer.recognized")}>
                 {pointsPreview ? (
                   <>
-                    <span><BadgeCheck aria-hidden="true" size={17} />Gast sicher geprüft</span>
+                    <span><BadgeCheck aria-hidden="true" size={17} />{tr("staff.drawer.verifiedCustomer")}</span>
                     <h3>{pointsPreview.customer_label}</h3>
-                    <p>Aktuell <strong>{pointsPreview.points_balance} Punkte</strong></p>
+                    <p>{tr("staff.drawer.currentPoints", { count: pointsPreview.points_balance })}</p>
                     {pointsPreview.boost_multiplier > 1 ? (
-                      <p className="staff-points-drawer-boost"><strong>{pointsPreview.boost_multiplier}× Bonus aktiv</strong>{pointsPreview.boost_expires_at ? <span>bis {formatBoostExpiry(pointsPreview.boost_expires_at)}</span> : null}</p>
+                      <p className="staff-points-drawer-boost"><strong>{tr("staff.drawer.boostActive", { multiplier: pointsPreview.boost_multiplier })}</strong>{pointsPreview.boost_expires_at ? <span>{tr("staff.drawer.until", { date: formatBoostExpiry(pointsPreview.boost_expires_at) })}</span> : null}</p>
                     ) : null}
                   </>
                 ) : (
                   <>
-                    <span>{customerPreviewError ? <CircleAlert aria-hidden="true" size={17} /> : <ShieldCheck aria-hidden="true" size={17} />}{customerPreviewError ? "Prüfung fehlgeschlagen" : "Sichere Prüfung ausstehend"}</span>
-                    <h3>{customerPreviewError ? "Gast nicht verfügbar" : "Gast wird mit der Vorschau geprüft"}</h3>
-                    <p>{customerPreviewError ?? "Name, Punktestand und Bonusstatus werden serverseitig geladen."}</p>
+                    <span>{customerPreviewError ? <CircleAlert aria-hidden="true" size={17} /> : <ShieldCheck aria-hidden="true" size={17} />}{customerPreviewError ? tr("staff.drawer.checkFailed") : tr("staff.drawer.checkPending")}</span>
+                    <h3>{customerPreviewError ? tr("staff.drawer.customerUnavailable") : tr("staff.drawer.customerChecking")}</h3>
+                    <p>{customerPreviewErrorMessage ?? tr("staff.drawer.previewServer")}</p>
                   </>
                 )}
               </section>
 
               <section className="staff-operational-points-form" aria-labelledby="staff-scanner-points-title">
-                <div><span className="staff-premium-kicker">Punkte gutschreiben</span><h3 id="staff-scanner-points-title">Bezahlten Betrag erfassen</h3></div>
+                <div><span className="staff-premium-kicker">{tr("staff.drawer.creditKicker")}</span><h3 id="staff-scanner-points-title">{tr("staff.drawer.amountTitle")}</h3></div>
                 <p className="muted">{translateKey("staff.kassa.supportedPurchase")}</p>
                 <div className="field">
                   <FormLabel htmlFor="scanner-controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel>
@@ -1673,17 +1682,17 @@ export function StaffTablet() {
                   />
                 </div>
                 {!pointsPreview ? (
-                  <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">{saving ? "Vorschau wird geladen …" : customerPreviewError ? "Erneut versuchen" : "Punkte serverseitig berechnen"}</button>
+                  <button className="button" disabled={saving || billAmount <= 0} onClick={() => void handleRestaurantControlledPreview()} type="button">{saving ? tr("staff.drawer.previewLoading") : customerPreviewError ? translateKey("common.retry") : tr("staff.drawer.calculatePoints")}</button>
                 ) : (
                   <div className="staff-operational-points-preview">
                     <dl>
-                      <div><dt>Gast</dt><dd>{pointsPreview.customer_label}</dd></div>
-                      <div><dt>Basispunkte</dt><dd>{pointsPreview.base_points}</dd></div>
-                      <div><dt>Multiplikator</dt><dd>{pointsPreview.boost_multiplier}×</dd></div>
-                      <div><dt>Gutschrift</dt><dd>{pointsPreview.expected_points} Punkte</dd></div>
+                      <div><dt>{tr("staff.drawer.guest")}</dt><dd>{pointsPreview.customer_label}</dd></div>
+                      <div><dt>{tr("staff.drawer.basePoints")}</dt><dd>{tr("staff.drawer.pointsValue", { count: pointsPreview.base_points })}</dd></div>
+                      <div><dt>{tr("staff.drawer.multiplier")}</dt><dd>{pointsPreview.boost_multiplier}×</dd></div>
+                      <div><dt>{tr("staff.drawer.credit")}</dt><dd>{tr("staff.drawer.pointsValue", { count: pointsPreview.expected_points })}</dd></div>
                     </dl>
-                    {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte den bezahlten Betrag sorgfältig prüfen.</p> : null}
-                    <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
+                    {pointsPreview.high_amount_warning ? <p className="status-message">{tr("staff.drawer.highAmount")}</p> : null}
+                    <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">{tr("staff.drawer.confirmDailyPin")}</button>
                   </div>
                 )}
               </section>
@@ -1729,71 +1738,71 @@ export function StaffTablet() {
       </AppDrawer>
 
       <AppDrawer
-        description="Diese PIN wird für heutige Punktebuchungen benötigt."
+        description={tr("staff.pin.description")}
         footer={
           <button className="button staff-premium-drawer-button" onClick={() => setPinDetailOpen(false)} type="button">
-            Schließen
+            {tr("staff.drawer.close")}
           </button>
         }
         onClose={() => setPinDetailOpen(false)}
         open={pinDetailOpen}
-        title="Heutige Tages-PIN"
+        title={tr("staff.pin.title")}
       >
         <div className="staff-premium-pin-detail">
           <span className="staff-premium-pin-detail-icon"><KeyRound aria-hidden="true" size={23} /></span>
-          {todayPinLoading ? <p>Tages-PIN wird geladen …</p> : null}
+          {todayPinLoading ? <p>{tr("staff.pin.loading")}</p> : null}
           {!todayPinLoading && todayPinError ? (
             <div className="staff-premium-state staff-premium-state-error" role="alert">
               <CircleAlert aria-hidden="true" size={22} />
-              <div><strong>Tages-PIN nicht verfügbar</strong><p>{todayPinError}</p></div>
+              <div><strong>{tr("staff.pin.unavailable")}</strong><p>{tr(todayPinError)}</p></div>
             </div>
           ) : null}
           {!todayPinLoading && !todayPinError && todayPin ? (
-            <strong className="staff-premium-pin-code" aria-label={`Tages-PIN ${todayPin.pin_code.split("").join(" ")}`}>
+            <strong className="staff-premium-pin-code" aria-label={`${tr("staff.pin.label")} ${todayPin.pin_code.split("").join(" ")}`}>
               {todayPin.pin_code.split("").map((digit, index) => <span key={`${digit}-detail-${index}`}>{digit}</span>)}
             </strong>
           ) : null}
           <div className="staff-premium-pin-detail-copy">
-            <strong>Nur für Punktebuchungen</strong>
-            <p>Zeige Gästen diese PIN nur direkt beim Sammeln von Punkten.</p>
+            <strong>{tr("staff.pin.onlyBookings")}</strong>
+            <p>{tr("staff.pin.shareHelp")}</p>
           </div>
           <div className="staff-premium-pin-detail-valid">
             <Clock3 aria-hidden="true" size={18} />
-            <span><strong>Heute gültig</strong><small>Automatisch bis 23:59</small></span>
+            <span><strong>{tr("staff.pin.validToday")}</strong><small>{tr("staff.pin.automaticUntil")}</small></span>
           </div>
         </div>
       </AppDrawer>
 
       <AppDrawer
-        description="Schnelle Wege für den Service."
+        description={tr("staff.more.description")}
         onClose={() => setMoreOpen(false)}
         open={moreOpen}
-        title="Mehr"
+        title={tr("staff.more.title")}
       >
         <div className="staff-premium-more-menu">
-          <section aria-label="Service-Aufgaben">
+          <section aria-label={tr("staff.more.tasks")}>
             <button onClick={() => { setMoreOpen(false); void startQrScanner(); }} type="button">
-              <QrCode aria-hidden="true" size={21} /><span><strong>QR scannen</strong><small>Gast über Kamera öffnen</small></span><ChevronRight aria-hidden="true" size={18} />
+              <QrCode aria-hidden="true" size={21} /><span><strong>{tr("staff.more.scan")}</strong><small>{tr("staff.more.scanDescription")}</small></span><ChevronRight aria-hidden="true" size={18} />
             </button>
             <button onClick={() => openStaffView("search")} type="button">
-              <UserSearch aria-hidden="true" size={21} /><span><strong>Gast suchen</strong><small>Name oder Gästecode</small></span><ChevronRight aria-hidden="true" size={18} />
+              <UserSearch aria-hidden="true" size={21} /><span><strong>{tr("staff.more.search")}</strong><small>{tr("staff.more.searchDescription")}</small></span><ChevronRight aria-hidden="true" size={18} />
             </button>
             <button onClick={() => openStaffView("earn")} type="button">
-              <HandCoins aria-hidden="true" size={21} /><span><strong>Punkte geben</strong><small>Tages-PIN erforderlich</small></span><ChevronRight aria-hidden="true" size={18} />
+              <HandCoins aria-hidden="true" size={21} /><span><strong>{tr("staff.more.points")}</strong><small>{tr("staff.more.pointsDescription")}</small></span><ChevronRight aria-hidden="true" size={18} />
             </button>
           </section>
 
           <aside className="staff-premium-help-card">
             <HelpCircle aria-hidden="true" size={22} />
-            <div><strong>Hilfe im Service</strong><p><strong>{translateKey("staff.kassa.afterRedemption")}</strong> {translateKey("staff.kassa.recordInstruction")}</p><p>Bei Fragen zu einem Vorgang wende dich an die Restaurantleitung.</p></div>
+            <div><strong>{tr("staff.more.help")}</strong><p><strong>{translateKey("staff.kassa.afterRedemption")}</strong> {translateKey("staff.kassa.recordInstruction")}</p><p>{tr("staff.more.helpContact")}</p></div>
           </aside>
 
           <div className="staff-premium-session-card">
-            <span>{user?.email ?? "Angemeldeter Mitarbeiter"}</span>
+            <span>{user?.email ?? tr("staff.more.sessionFallback")}</span>
             {logoutError ? <p role="alert">{logoutError}</p> : null}
             <button disabled={loggingOut} onClick={() => void handleStaffLogout()} type="button">
               <LogOut aria-hidden="true" size={19} />
-              {loggingOut ? "Abmeldung läuft …" : "Abmelden"}
+              {loggingOut ? tr("staff.more.logoutPending") : tr("staff.more.logout")}
             </button>
           </div>
         </div>
@@ -1810,7 +1819,7 @@ export function StaffTablet() {
         onClose={closePinAction}
         open={Boolean(pendingPinAction) && !scannerOpen && !pointsTaskMinimized}
         size="compact"
-        title={pendingPinAction?.title ?? "Punkte bestätigen"}
+        title={pendingPinAction?.title ?? tr("staff.drawer.confirm")}
       >
         {renderPinActionContent()}
       </AppDrawer>
