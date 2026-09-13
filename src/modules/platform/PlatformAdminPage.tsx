@@ -220,9 +220,12 @@ export function PlatformAdminPage() {
   return (
     <main className="platform-admin-shell">
       <header className="platform-admin-header">
-        <div><span className="admin-brand-kicker">WUXUAI Admin</span><h1>WUXUAI Admin</h1><p>Restaurants, Testphasen und Plattformstatus verwalten.</p></div>
-        <div className="platform-admin-header-actions">
-          <LanguageSelector />
+        <div className="platform-admin-header-primary">
+          <div className="platform-admin-header-identity"><span className="admin-brand-kicker">WUXUAI Admin</span><h1>WUXUAI Admin</h1></div>
+          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
+        </div>
+        <p className="platform-admin-header-description">Restaurants, Testphasen und Plattformstatus verwalten.</p>
+        <div className="platform-admin-header-toolbar">
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
           <button className="button secondary" onClick={() => navigate("/admin/platform/health")} type="button"><HeartPulse size={18} />Operations &amp; Health Center</button>
           <button className="button secondary" onClick={() => navigate("/admin/platform/audit")} type="button"><Activity size={18} />Audit-Protokoll</button>

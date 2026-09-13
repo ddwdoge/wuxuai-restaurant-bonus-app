@@ -109,13 +109,15 @@ export function PlatformAuditPage() {
   return (
     <main className="platform-admin-shell platform-audit-shell">
       <header className="platform-admin-header">
-        <div>
-          <span className="admin-brand-kicker">WUXUAI Admin</span>
-          <h1>{t("platform.audit.title")}</h1>
-          <p>{t("platform.audit.description")}</p>
+        <div className="platform-admin-header-primary">
+          <div className="platform-admin-header-identity">
+            <span className="admin-brand-kicker">WUXUAI Admin</span>
+            <h1>{t("platform.audit.title")}</h1>
+          </div>
+          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
         </div>
-        <div className="platform-admin-header-actions">
-          <LanguageSelector />
+        <p className="platform-admin-header-description">{t("platform.audit.description")}</p>
+        <div className="platform-admin-header-toolbar">
           <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("platform.audit.restaurants")}</Link>
           <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />{t("platform.audit.refresh")}</button>
         </div>

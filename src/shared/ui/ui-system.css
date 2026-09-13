@@ -191,8 +191,8 @@ button, input, select, textarea { letter-spacing: 0; }
 
 @media (max-width: 767px) {
   .platform-admin-shell { padding: var(--wux-space-3); }
-  .platform-admin-header { align-items: stretch; flex-direction: column; padding: var(--wux-space-4); }
-  .platform-admin-header-actions > * { flex: 1 1 auto; }
+  .platform-admin-header { align-items: stretch; padding: var(--wux-space-4); }
+  .platform-admin-header-primary-actions > * { flex: 0 0 auto; }
   .platform-operational-grid { grid-template-columns: minmax(0, 1fr); }
   .platform-audit-filter-grid { grid-template-columns: minmax(0, 1fr); }
   .platform-data-table > div { grid-template-columns: minmax(0, 1fr); padding-block: var(--wux-space-3); }
@@ -204,5 +204,5 @@ button, input, select, textarea { letter-spacing: 0; }
   .platform-operational-grid article { padding: var(--wux-space-3); }
   .platform-operational-grid dl div { align-items: start; flex-direction: column; gap: 2px; }
   .platform-operational-grid dd { text-align: left; }
-  .platform-admin-header-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .platform-admin-header-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

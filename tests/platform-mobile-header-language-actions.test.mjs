@@ -12,6 +12,8 @@ const customerCss = read("src/modules/customer/customer-header-language.css");
 const centralCss = read("src/modules/customer/central-customer.css");
 const finderCss = read("src/modules/customer/partner-restaurant-finder.css");
 const offersCss = read("src/modules/customer/customer-offers-page.css");
+const platformCss = read("src/styles.css");
+const sharedUiCss = read("src/shared/ui/ui-system.css");
 
 test("Customer AppShell cannot create the former empty language row", () => {
   assert.doesNotMatch(ui, /customer-language-row/);
@@ -46,6 +48,25 @@ test("other role headers retain their existing shared selector inside action gro
   assert.match(read("src/modules/staff/StaffTablet.tsx"), /staff-premium-header[\s\S]*<LanguageSelector \/>/);
   assert.match(read("src/modules/admin/AdminLayout.tsx"), /owner-header-primary-actions[\s\S]*<LanguageSelector \/>/);
   for (const page of ["PlatformAdminPage", "PlatformAuditPage", "PlatformHealthCenterPage"]) {
-    assert.match(read(`src/modules/platform/${page}.tsx`), /platform-admin-header-actions[\s\S]*<LanguageSelector \/>/);
+    const source = read(`src/modules/platform/${page}.tsx`);
+    assert.match(source, /platform-admin-header-primary[\s\S]*platform-admin-header-primary-actions[\s\S]*<LanguageSelector \/>/);
+    assert.match(source, /platform-admin-header-toolbar/);
   }
+});
+
+test("Platform Admin keeps identity and language in one compact primary row", () => {
+  assert.match(platformCss, /\.platform-admin-header-primary\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(platformCss, /\.platform-admin-header-primary-actions\s*>\s*\.wux-language-selector\s*\{[\s\S]*flex: 0 0 auto/);
+  assert.match(platformCss, /@media \(max-width: 820px\)[\s\S]*\.platform-admin-header-primary\s*\{[\s\S]*min-height: 44px/);
+  assert.doesNotMatch(platformCss, /\.platform-admin-header-actions/);
+  assert.doesNotMatch(sharedUiCss, /\.platform-admin-header-actions/);
+});
+
+test("Platform Admin mobile toolbar shrinks without creating page overflow", () => {
+  const platformRules = [...platformCss.matchAll(/\.platform-[^{}]*\{[^}]*\}/g)].map(match => match[0]).join("\n");
+  assert.match(platformCss, /\.platform-admin-shell\s*\{[\s\S]*box-sizing: border-box[\s\S]*width: 100%/);
+  assert.match(platformCss, /\.platform-admin-header-toolbar\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(platformCss, /\.platform-admin-grid > \*[\s\S]*\.platform-section-title > \*[\s\S]*min-width: 0/);
+  assert.match(platformCss, /\.platform-operations-tabs\s*\{[\s\S]*max-width: 100%[\s\S]*overflow-x: auto/);
+  assert.doesNotMatch(platformRules, /zoom\s*:|transform:\s*scale\(/);
 });

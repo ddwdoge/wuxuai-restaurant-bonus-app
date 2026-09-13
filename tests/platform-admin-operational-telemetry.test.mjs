@@ -74,7 +74,7 @@ test("Dashboard lädt den eng begrenzten RPC und zeigt die drei freigegebenen Be
 });
 
 test("Audit-Aktionen besitzen mindestens 44 Pixel Touchfläche", () => {
-  assert.match(styles, /\.platform-audit-shell \.platform-admin-header-actions \.button,[\s\S]*\.platform-audit-shell \.platform-audit-toggle-row \.button[\s\S]*min-height: 45px/);
+  assert.match(styles, /\.platform-audit-shell \.platform-admin-header-toolbar \.button,[\s\S]*\.platform-audit-shell \.platform-audit-toggle-row \.button[\s\S]*min-height: 45px/);
 });
 
 test("responsive Telemetrie bleibt innerhalb der Platform-Admin-Seite", () => {

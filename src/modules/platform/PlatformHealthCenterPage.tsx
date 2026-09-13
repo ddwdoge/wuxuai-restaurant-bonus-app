@@ -116,9 +116,12 @@ export function PlatformHealthCenterPage() {
   return (
     <main className="platform-admin-shell platform-health-shell">
       <header className="platform-admin-header">
-        <div><span className="admin-brand-kicker">WUXUAI Admin</span><h1>{t("title")}</h1><p>{t("description")}</p></div>
-        <div className="platform-admin-header-actions">
-          <LanguageSelector />
+        <div className="platform-admin-header-primary">
+          <div className="platform-admin-header-identity"><span className="admin-brand-kicker">WUXUAI Admin</span><h1>{t("title")}</h1></div>
+          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
+        </div>
+        <p className="platform-admin-header-description">{t("description")}</p>
+        <div className="platform-admin-header-toolbar">
           <span className="pill">{platformRole ?? t("platformAdmin")}</span>
           <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("back")}</Link>
           <button className="button secondary" onClick={() => void load()} type="button"><RefreshCw size={18} />{t("refresh")}</button>

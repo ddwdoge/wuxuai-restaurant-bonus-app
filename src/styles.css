@@ -1077,22 +1077,34 @@ a {
 }
 
 .platform-admin-shell {
+  box-sizing: border-box;
   display: grid;
   gap: 20px;
   margin: 0 auto;
   max-width: 1440px;
   padding: 24px;
+  width: 100%;
 }
 
 .platform-admin-header {
-  align-items: flex-start;
   background: #ffffff;
   border: 1px solid #dde3ea;
   border-radius: 8px;
-  display: flex;
-  gap: 18px;
-  justify-content: space-between;
+  display: grid;
+  gap: 12px;
   padding: 22px;
+}
+
+.platform-admin-header-primary {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.platform-admin-header-identity {
+  min-width: 0;
 }
 
 .platform-admin-header h1 {
@@ -1102,12 +1114,14 @@ a {
   margin: 4px 0 8px;
 }
 
-.platform-admin-header p {
+.platform-admin-header-description {
   color: #607080;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
-.platform-admin-header-actions,
+.platform-admin-header-primary-actions,
+.platform-admin-header-toolbar,
 .platform-actions {
   align-items: center;
   display: flex;
@@ -1115,11 +1129,16 @@ a {
   gap: 10px;
 }
 
-.platform-admin-header-actions > .wux-language-selector {
+.platform-admin-header-primary-actions > .wux-language-selector {
   flex: 0 0 auto;
 }
 
-.platform-audit-shell .platform-admin-header-actions .button,
+.platform-admin-header-toolbar > *,
+.platform-admin-header-toolbar .button {
+  min-width: 0;
+}
+
+.platform-audit-shell .platform-admin-header-toolbar .button,
 .platform-audit-shell .platform-audit-toggle-row .button {
   min-height: 45px;
 }
@@ -1306,6 +1325,19 @@ a {
   display: grid;
   gap: 16px;
   grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1.38fr);
+  min-width: 0;
+}
+
+.platform-admin-grid > *,
+.platform-control-center > *,
+.platform-test-cleanup > *,
+.platform-section-title > * {
+  min-width: 0;
+}
+
+.platform-admin-shell code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .platform-health-shell {
@@ -1603,6 +1635,7 @@ a {
   display: grid;
   gap: 6px;
   grid-template-columns: repeat(6, minmax(0, 1fr));
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -6004,16 +6037,46 @@ a {
   }
 
   .platform-admin-header {
-    display: grid;
+    gap: 10px;
+    padding: 16px;
   }
 
-  .platform-admin-header-actions {
+  .platform-admin-header-primary {
+    min-height: 44px;
+  }
+
+  .platform-admin-header-identity .admin-brand-kicker {
+    display: none;
+  }
+
+  .platform-admin-header h1 {
+    font-size: clamp(22px, 7vw, 26px);
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .platform-admin-header-description {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .platform-admin-header-toolbar {
     align-items: stretch;
     display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .platform-admin-header-actions .button,
+  .platform-admin-header-toolbar > .pill {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .platform-admin-header-toolbar .button,
   .platform-actions .button {
+    height: auto;
+    padding-inline: 10px;
+    white-space: normal;
     width: 100%;
   }
 
