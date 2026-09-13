@@ -143,7 +143,7 @@ import {
   isValidCustomerFirstName,
 } from "./customerRegistration.mjs";
 import { customerPhoneValidation } from "./customerIdentity.mjs";
-import { customerPresentationText, customerRewardPresentation, type CustomerRewardPresentationInput } from "./customerRewardPresentation.mjs";
+import { customerPresentationText, customerRewardDescription, customerRewardPresentation, type CustomerRewardPresentationInput } from "./customerRewardPresentation.mjs";
 
 type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -2518,7 +2518,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         {selectedRewardState ? rewardStatusText(redeemOffer, selectedRewardState, language) : t("common.details")}
                       </StatusBadge>
                       <h2 data-i18n-skip="true">{present(redeemOffer).title}</h2>
-                      {redeemOffer.description ? <p>{redeemOffer.description}</p> : null}
+                      {redeemOffer.description ? <p data-i18n-skip="true">{customerRewardDescription(redeemOffer, language)}</p> : null}
                     </div>
                     <dl className="premium-reward-facts">
                       <div><dt>{ct("kindLabel")}</dt><dd>{ct(redeemOffer.gift_type === "birthday" ? "birthdayGift" : redeemOffer.is_starter_reward ? "welcomeGift" : "pointRedemption")}</dd></div>

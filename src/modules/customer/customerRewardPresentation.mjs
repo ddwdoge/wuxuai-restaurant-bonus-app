@@ -5,6 +5,15 @@ export function customerPresentationText(key, language, parameters = {}) {
   return template.replace(/\{(\w+)\}/g, (placeholder, name) => String(parameters[name] ?? placeholder));
 }
 
+// Founder-approved reserved presentation text, even if entered manually.
+// Only canonical birthday metadata + exact trimmed text qualify; stored data is never changed.
+export function customerRewardDescription(reward, language) {
+  const description = reward.description ?? "";
+  return reward.gift_type === "birthday" && description.trim() === "Willkommensgeschenk für neue Gäste."
+    ? customerPresentationText("birthdayIntro", language)
+    : description;
+}
+
 // Founder 2026-09-13: a reserved presentation title, NOT inferred provenance.
 // Category is authoritative. Never infer the type from title/product-group text.
 export function customerRewardPresentation(reward, language) {

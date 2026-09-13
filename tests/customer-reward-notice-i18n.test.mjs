@@ -50,8 +50,7 @@ test("notice is scoped to overview; Spanish correction and German original are e
   assert.match(expected.es, /condiciones de participación del restaurante/);
   assert.doesNotMatch(expected.es, /participation/);
 });
-test("birthday description remains stored copy and type label remains separate", () => {
-  assert.ok(source.includes('{redeemOffer.description ? <p>{redeemOffer.description}</p> : null}'));
+test("birthday description uses the approved presentation resolver and retains the separate type label", () => {
+  assert.ok(source.includes('{redeemOffer.description ? <p data-i18n-skip="true">{customerRewardDescription(redeemOffer, language)}</p> : null}'));
   assert.ok(source.includes('redeemOffer.gift_type === "birthday" ? "birthdayGift"'));
 });
-

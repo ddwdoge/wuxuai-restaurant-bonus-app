@@ -4,6 +4,7 @@ export type CustomerRewardPresentationInput = {
   product_group?: string | null;
 };
 export function customerPresentationText(key: string, language: string, parameters?: Record<string, string | number>): string;
+export function customerRewardDescription(reward: { gift_type?: string | null; description?: string | null }, language: string): string;
 export function customerRewardPresentation(reward: CustomerRewardPresentationInput, language: string): {
   customSurprise: boolean;
   title: string;
