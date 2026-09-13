@@ -63,6 +63,35 @@ function formatVisit(value: string | null | undefined, language: UiLanguage) {
   return customerPresentationText("finderLastVisit", language, { date });
 }
 
+function openingStatusPresentation(status: NonNullable<PartnerRestaurant["opening_status"]>, language: UiLanguage) {
+  const messageTimes = status.message.match(/\d{2}:\d{2}/g) ?? [];
+  const todayTimes = status.todayHours?.match(/\d{2}:\d{2}/g) ?? [];
+  const message = status.state === "unknown"
+    ? customerPresentationText("openingUnavailable", language)
+    : status.state === "opens_later" && messageTimes[0]
+      ? customerPresentationText("openingOpensAt", language, { time: messageTimes[0] })
+      : status.state === "lunch_break" && messageTimes[0]
+        ? customerPresentationText("openingLunchBreakUntil", language, { time: messageTimes[0] })
+        : status.state === "open" && messageTimes[0]
+          ? customerPresentationText("openingOpenUntil", language, { time: messageTimes[0] })
+          : status.state === "closed"
+            ? customerPresentationText("openingTodayClosed", language)
+            : status.message;
+  const todayHours = !status.todayHours
+    ? null
+    : todayTimes.length === 4
+      ? customerPresentationText("openingTodaySplit", language, {
+          open: todayTimes[0],
+          close: todayTimes[1],
+          secondOpen: todayTimes[2],
+          secondClose: todayTimes[3],
+        })
+      : todayTimes.length === 2
+        ? customerPresentationText("openingTodaySingle", language, { open: todayTimes[0], close: todayTimes[1] })
+        : customerPresentationText("openingTodayClosed", language);
+  return { message, todayHours };
+}
+
 function locationAddress(location: PartnerRestaurant) {
   return [location.address, `${location.postal_code} ${location.city}`.trim()].filter(Boolean).join(", ");
 }
@@ -90,6 +119,7 @@ function visitLabel(location: PartnerRestaurant, language: UiLanguage) {
 }
 
 function PartnerResultCard({ language, location, onSelect, selected }: { language: UiLanguage; location: PartnerRestaurant; onSelect: () => void; selected: boolean }) {
+  const opening = location.opening_status ? openingStatusPresentation(location.opening_status, language) : null;
   return (
     <button
       aria-pressed={selected}
@@ -104,7 +134,7 @@ function PartnerResultCard({ language, location, onSelect, selected }: { languag
         {formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}
         <span className="partner-result-statuses">
           <em>{visitLabel(location, language)}</em>
-          <em className={location.opening_status?.isOpen ? "open" : "closed"}>{location.opening_status?.message}</em>
+          <em className={location.opening_status?.isOpen ? "open" : "closed"}>{opening?.message}</em>
         </span>
         {location.offers[0] ? <span className="partner-offer-badge"><Newspaper aria-hidden="true" size={14} />{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : location.offers[0].offer_type === "WEEKLY_OFFER" ? "Wochenangebot" : "Neues Angebot"}</span> : null}
         <span>{location.membership ? `${customerPresentationText("points", language, { count: location.membership.points_balance })} · ${recommendation(location, language)}` : recommendation(location, language)}</span>
@@ -124,12 +154,16 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
   const currentOfferPrice = currentOffer
     ? restaurantOfferPricePresentation(currentOffer.current_price, currentOffer.previous_price)
     : null;
+  const opening = location.opening_status ? openingStatusPresentation(location.opening_status, language) : null;
 
   return (
     <article aria-label={text("detailAria", { name: location.name })} className="partner-detail-card">
       <button aria-label={text("detailClose")} className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
       <RestaurantHeroImage
+        coverAlt={text("detailCoverAlt", { name: location.name })}
+        coverUnavailableLabel={text("detailCoverUnavailable", { name: location.name })}
         coverImageUrl={location.cover_image_url}
+        logoAlt={text("detailLogoAlt", { name: location.name })}
         logoUrl={location.logo_url}
         name={location.name}
         presentation={{
@@ -143,7 +177,7 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
         <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? text("mapCurrentContext") : (membership?.visits_count ?? 0) > 0 ? text("finderVisited") : isMember ? text("detailMember") : text("detailNoMember")}</StatusBadge><h2 data-i18n-skip="true">{location.name}</h2><p data-i18n-skip="true">{locationAddress(location)}</p>{formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description" data-i18n-skip="true">{location.short_description}</p> : null}
-      {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{location.opening_status.message}{location.opening_status.todayHours && location.opening_status.message !== location.opening_status.todayHours ? ` · ${location.opening_status.todayHours}` : ""}</p> : null}
+      {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{opening?.message}{opening?.todayHours && opening.message !== opening.todayHours ? ` · ${opening.todayHours}` : ""}</p> : null}
       <div className="partner-detail-stats">
         <div><span>{text("detailPoints")}</span><strong>{membership ? membership.points_balance : "–"}</strong></div>
         <div><span>{text("detailVisits")}</span><strong>{membership ? membership.visits_count : "–"}</strong></div>

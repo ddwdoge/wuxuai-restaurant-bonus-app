@@ -70,6 +70,16 @@ const blockBKeys = [
   "detailJoinNote",
   "restaurantDetailDescription",
   "detailTitle",
+  "detailCoverAlt",
+  "detailCoverUnavailable",
+  "detailLogoAlt",
+  "openingTodayClosed",
+  "openingUnavailable",
+  "openingOpensAt",
+  "openingOpenUntil",
+  "openingLunchBreakUntil",
+  "openingTodaySingle",
+  "openingTodaySplit",
 ];
 
 test("Block-B-Inventur bleibt auf bestehende Customer-Routen und gemeinsame Drawer begrenzt", () => {
@@ -122,6 +132,11 @@ test("Discovery lokalisiert dynamische Zähler, Distanz und Zeit ohne Restaurant
     assert.match(finderMap, new RegExp(`\"${key}\"`));
   }
   assert.doesNotMatch(finderMap, /Noch nicht besucht|Partnerlokal|Aktuell geschlossen|Dein Standort|Mitwirkende/);
+  for (const key of ["detailCoverAlt", "detailCoverUnavailable", "detailLogoAlt", "openingTodayClosed", "openingUnavailable", "openingOpensAt", "openingOpenUntil", "openingLunchBreakUntil", "openingTodaySingle", "openingTodaySplit"]) {
+    assert.match(finder, new RegExp(`"${key}"`));
+  }
+  assert.match(finder, /function openingStatusPresentation/);
+  assert.doesNotMatch(finder, /\{location\.opening_status\.message\}/);
 });
 
 test("Restaurantdetail zeigt die primäre Aktion vor sekundären Angebotsdetails", () => {

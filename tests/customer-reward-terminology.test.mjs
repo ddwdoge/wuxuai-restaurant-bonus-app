@@ -54,7 +54,12 @@ for (const [language, [category, title]] of Object.entries(expected)) {
     for (const [key, value] of Object.entries(CUSTOMER_PRESENTATION_MESSAGES[language])) {
       assert.equal(translateStructural(key, language), value);
       assert.ok(value.trim());
-      const result = customerPresentationText(key.slice("customer.presentation.".length), language, { title: "Bistro", current: 1, total: 2, shown: 1, distance: "1.2", count: 3, name: "Test", date: "13.09.2026", used: 0, limit: 5, days: "Test day", from: "12:00", to: "14:00" });
+      const result = customerPresentationText(key.slice("customer.presentation.".length), language, {
+        title: "Bistro", current: 1, total: 2, shown: 1, distance: "1.2", count: 3,
+        name: "Test", date: "13.09.2026", used: 0, limit: 5, days: "Test day",
+        from: "12:00", to: "14:00", time: "12:00", open: "09:00", close: "14:00",
+        secondOpen: "17:00", secondClose: "22:00",
+      });
       assert.doesNotMatch(result, /customer\.presentation\.|\{\w+\}/);
     }
   });

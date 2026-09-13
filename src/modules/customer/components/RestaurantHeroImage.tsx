@@ -26,12 +26,18 @@ export function RestaurantLogoImage({
 }
 
 export function RestaurantHeroImage({
+  coverAlt,
+  coverUnavailableLabel,
   coverImageUrl,
+  logoAlt,
   logoUrl,
   name,
   presentation,
 }: {
+  coverAlt?: string;
+  coverUnavailableLabel?: string;
   coverImageUrl: string | null;
+  logoAlt?: string;
   logoUrl: string | null;
   name: string;
   presentation?: Partial<MediaPresentation> | null;
@@ -45,15 +51,15 @@ export function RestaurantHeroImage({
 
   return (
     <div
-      aria-label={state === "valid" ? undefined : `${name} Titelbild nicht verfügbar`}
+      aria-label={state === "valid" ? undefined : (coverUnavailableLabel ?? `${name} Titelbild nicht verfügbar`)}
       className="partner-detail-hero"
       data-image-state={state}
       role={state === "valid" ? undefined : "img"}
     >
       <SmartMediaFrame
-        alt={`${name} Titelbild`}
+        alt={coverAlt ?? `${name} Titelbild`}
         className="partner-detail-cover"
-        fallback={<div className="partner-detail-hero-fallback"><RestaurantLogoImage alt={`${name} Logo`} className="partner-detail-hero-logo" logoUrl={logoUrl} name={name} /></div>}
+        fallback={<div className="partner-detail-hero-fallback"><RestaurantLogoImage alt={logoAlt ?? `${name} Logo`} className="partner-detail-hero-logo" logoUrl={logoUrl} name={name} /></div>}
         imageUrl={state === "error" ? null : source}
         onImageError={() => setState("error")}
         onImageLoad={() => setState("valid")}

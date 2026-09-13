@@ -30,8 +30,11 @@ test("Hero entfernt fehlerhafte Bilder, zeigt einen Logo-Fallback und setzt sich
 });
 
 test("Valides Cover behält semantischen Alt-Text, während Lade- und Fehlerzustände unsichtbar bleiben", async () => {
-  const component = await readFile(componentUrl, "utf8");
-  assert.match(component, /alt=\{`\$\{name\} Titelbild`\}/);
+  const [component, page] = await Promise.all([readFile(componentUrl, "utf8"), readFile(pageUrl, "utf8")]);
+  assert.match(component, /alt=\{coverAlt \?\? `\$\{name\} Titelbild`\}/);
+  assert.match(component, /coverUnavailableLabel \?\? `\$\{name\} Titelbild nicht verfügbar`/);
+  assert.match(page, /coverAlt=\{text\("detailCoverAlt", \{ name: location\.name \}\)\}/);
+  assert.match(page, /coverUnavailableLabel=\{text\("detailCoverUnavailable", \{ name: location\.name \}\)\}/);
   assert.match(component, /className="partner-detail-cover"/);
   assert.match(component, /presentation=\{presentation\}/);
   assert.match(component, /role=\{state === "valid" \? undefined : "img"\}/);

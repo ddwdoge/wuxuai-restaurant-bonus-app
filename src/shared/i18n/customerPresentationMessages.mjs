@@ -148,7 +148,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "Angebot ansehen",
     "customer.presentation.detailJoinNote": "Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.",
     "customer.presentation.restaurantDetailDescription": "Punkte, Punkteeinlösungen und Informationen dieses Lokals.",
-    "customer.presentation.detailTitle": "Restaurantdetails"
+    "customer.presentation.detailTitle": "Restaurantdetails",
+    "customer.presentation.detailCoverAlt": "{name} Titelbild",
+    "customer.presentation.detailCoverUnavailable": "{name} Titelbild nicht verfügbar",
+    "customer.presentation.detailLogoAlt": "{name} Logo",
+    "customer.presentation.openingTodayClosed": "Heute geschlossen",
+    "customer.presentation.openingUnavailable": "Öffnungszeiten nicht verfügbar",
+    "customer.presentation.openingOpensAt": "Öffnet um {time}",
+    "customer.presentation.openingOpenUntil": "Jetzt geöffnet · Schließt um {time}",
+    "customer.presentation.openingLunchBreakUntil": "Momentan Mittagspause – wieder geöffnet ab {time}",
+    "customer.presentation.openingTodaySingle": "Heute {open}–{close} Uhr",
+    "customer.presentation.openingTodaySplit": "Heute {open}–{close} und {secondOpen}–{secondClose} Uhr"
   },
   "en": {
     "customer.presentation.offerTitle": "News & offers",
@@ -298,7 +308,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "View offer",
     "customer.presentation.detailJoinNote": "You can join this bonus program directly. A visit is recorded only after a real points credit.",
     "customer.presentation.restaurantDetailDescription": "Points, rewards and information for this venue.",
-    "customer.presentation.detailTitle": "Restaurant details"
+    "customer.presentation.detailTitle": "Restaurant details",
+    "customer.presentation.detailCoverAlt": "{name} cover image",
+    "customer.presentation.detailCoverUnavailable": "{name} cover image unavailable",
+    "customer.presentation.detailLogoAlt": "{name} logo",
+    "customer.presentation.openingTodayClosed": "Closed today",
+    "customer.presentation.openingUnavailable": "Opening hours unavailable",
+    "customer.presentation.openingOpensAt": "Opens at {time}",
+    "customer.presentation.openingOpenUntil": "Open now · Closes at {time}",
+    "customer.presentation.openingLunchBreakUntil": "Lunch break now – reopens at {time}",
+    "customer.presentation.openingTodaySingle": "Today {open}–{close}",
+    "customer.presentation.openingTodaySplit": "Today {open}–{close} and {secondOpen}–{secondClose}"
   },
   "fr": {
     "customer.presentation.offerTitle": "Actualités et offres",
@@ -448,7 +468,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "Voir l’offre",
     "customer.presentation.detailJoinNote": "Tu peux rejoindre directement ce programme bonus. Une visite n’est enregistrée qu’après un véritable crédit de points.",
     "customer.presentation.restaurantDetailDescription": "Points, récompenses et informations de cet établissement.",
-    "customer.presentation.detailTitle": "Détails du restaurant"
+    "customer.presentation.detailTitle": "Détails du restaurant",
+    "customer.presentation.detailCoverAlt": "Image de couverture de {name}",
+    "customer.presentation.detailCoverUnavailable": "Image de couverture indisponible pour {name}",
+    "customer.presentation.detailLogoAlt": "Logo de {name}",
+    "customer.presentation.openingTodayClosed": "Fermé aujourd’hui",
+    "customer.presentation.openingUnavailable": "Horaires indisponibles",
+    "customer.presentation.openingOpensAt": "Ouvre à {time}",
+    "customer.presentation.openingOpenUntil": "Ouvert maintenant · Ferme à {time}",
+    "customer.presentation.openingLunchBreakUntil": "Pause déjeuner en cours – réouverture à {time}",
+    "customer.presentation.openingTodaySingle": "Aujourd’hui {open}–{close}",
+    "customer.presentation.openingTodaySplit": "Aujourd’hui {open}–{close} et {secondOpen}–{secondClose}"
   },
   "it": {
     "customer.presentation.offerTitle": "Novità e offerte",
@@ -598,7 +628,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "Vedi offerta",
     "customer.presentation.detailJoinNote": "Puoi aderire direttamente a questo programma bonus. Una visita viene registrata solo dopo un vero accredito di punti.",
     "customer.presentation.restaurantDetailDescription": "Punti, premi e informazioni di questo locale.",
-    "customer.presentation.detailTitle": "Dettagli del ristorante"
+    "customer.presentation.detailTitle": "Dettagli del ristorante",
+    "customer.presentation.detailCoverAlt": "Immagine di copertina di {name}",
+    "customer.presentation.detailCoverUnavailable": "Immagine di copertina non disponibile per {name}",
+    "customer.presentation.detailLogoAlt": "Logo di {name}",
+    "customer.presentation.openingTodayClosed": "Chiuso oggi",
+    "customer.presentation.openingUnavailable": "Orari di apertura non disponibili",
+    "customer.presentation.openingOpensAt": "Apre alle {time}",
+    "customer.presentation.openingOpenUntil": "Aperto ora · Chiude alle {time}",
+    "customer.presentation.openingLunchBreakUntil": "Pausa pranzo in corso – riapre alle {time}",
+    "customer.presentation.openingTodaySingle": "Oggi {open}–{close}",
+    "customer.presentation.openingTodaySplit": "Oggi {open}–{close} e {secondOpen}–{secondClose}"
   },
   "es": {
     "customer.presentation.offerTitle": "Novedades y ofertas",
@@ -748,7 +788,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "Ver oferta",
     "customer.presentation.detailJoinNote": "Puedes unirte directamente a este programa bonus. Una visita solo se registra después de una acreditación real de puntos.",
     "customer.presentation.restaurantDetailDescription": "Puntos, recompensas e información de este local.",
-    "customer.presentation.detailTitle": "Detalles del restaurante"
+    "customer.presentation.detailTitle": "Detalles del restaurante",
+    "customer.presentation.detailCoverAlt": "Imagen de portada de {name}",
+    "customer.presentation.detailCoverUnavailable": "Imagen de portada no disponible para {name}",
+    "customer.presentation.detailLogoAlt": "Logotipo de {name}",
+    "customer.presentation.openingTodayClosed": "Cerrado hoy",
+    "customer.presentation.openingUnavailable": "Horario no disponible",
+    "customer.presentation.openingOpensAt": "Abre a las {time}",
+    "customer.presentation.openingOpenUntil": "Abierto ahora · Cierra a las {time}",
+    "customer.presentation.openingLunchBreakUntil": "Pausa para el almuerzo – reabre a las {time}",
+    "customer.presentation.openingTodaySingle": "Hoy {open}–{close}",
+    "customer.presentation.openingTodaySplit": "Hoy {open}–{close} y {secondOpen}–{secondClose}"
   },
   "zh": {
     "customer.presentation.offerTitle": "资讯与优惠",
@@ -898,7 +948,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "查看优惠",
     "customer.presentation.detailJoinNote": "你可以直接加入此奖励计划。只有在实际获得积分后，才会记录一次到访。",
     "customer.presentation.restaurantDetailDescription": "此门店的积分、奖励和信息。",
-    "customer.presentation.detailTitle": "餐厅详情"
+    "customer.presentation.detailTitle": "餐厅详情",
+    "customer.presentation.detailCoverAlt": "{name}封面图",
+    "customer.presentation.detailCoverUnavailable": "{name}封面图不可用",
+    "customer.presentation.detailLogoAlt": "{name}标志",
+    "customer.presentation.openingTodayClosed": "今日休息",
+    "customer.presentation.openingUnavailable": "暂无营业时间",
+    "customer.presentation.openingOpensAt": "{time}开始营业",
+    "customer.presentation.openingOpenUntil": "营业中 · {time}结束营业",
+    "customer.presentation.openingLunchBreakUntil": "午休中 – {time}恢复营业",
+    "customer.presentation.openingTodaySingle": "今日 {open}–{close}",
+    "customer.presentation.openingTodaySplit": "今日 {open}–{close}、{secondOpen}–{secondClose}"
   },
   "ko": {
     "customer.presentation.offerTitle": "소식과 혜택",
@@ -1048,6 +1108,16 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.detailOfferView": "혜택 보기",
     "customer.presentation.detailJoinNote": "이 보너스 프로그램에 바로 가입할 수 있습니다. 실제 포인트 적립 후에만 방문이 기록됩니다.",
     "customer.presentation.restaurantDetailDescription": "이 매장의 포인트, 보상 및 정보입니다.",
-    "customer.presentation.detailTitle": "매장 상세 정보"
+    "customer.presentation.detailTitle": "매장 상세 정보",
+    "customer.presentation.detailCoverAlt": "{name} 커버 이미지",
+    "customer.presentation.detailCoverUnavailable": "{name} 커버 이미지를 사용할 수 없음",
+    "customer.presentation.detailLogoAlt": "{name} 로고",
+    "customer.presentation.openingTodayClosed": "오늘 휴무",
+    "customer.presentation.openingUnavailable": "영업시간 정보 없음",
+    "customer.presentation.openingOpensAt": "{time}에 영업 시작",
+    "customer.presentation.openingOpenUntil": "영업 중 · {time}에 영업 종료",
+    "customer.presentation.openingLunchBreakUntil": "점심시간 – {time}에 영업 재개",
+    "customer.presentation.openingTodaySingle": "오늘 {open}–{close}",
+    "customer.presentation.openingTodaySplit": "오늘 {open}–{close}, {secondOpen}–{secondClose}"
   }
 };
