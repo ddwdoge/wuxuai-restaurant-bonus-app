@@ -21,7 +21,7 @@
 .customer-restaurant-switcher-discover { align-items: center; color: var(--premium-gold-dark); display: inline-flex; font-size: 13px; font-weight: 700; gap: 6px; justify-self: center; min-height: 44px; padding: 0 8px; }
 
 @media (max-width: 430px) {
-  .app-drawer-panel:has(.customer-restaurant-switcher) { height: min(76dvh, 680px); max-width: 100vw; min-width: 0; }
+  .app-drawer-panel:has(.customer-restaurant-switcher) { height: auto; max-height: min(76dvh, 680px); max-width: 100vw; min-width: 0; }
   .app-drawer-panel:has(.customer-restaurant-switcher) .app-drawer-body { min-width: 0; width: 100%; }
   .customer-restaurant-switcher-row { gap: 7px; padding-inline: 8px; }
   .customer-restaurant-switcher-copy strong { max-width: 42vw; }

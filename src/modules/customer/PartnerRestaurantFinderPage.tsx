@@ -32,7 +32,11 @@ import {
 import { loadPartnerRestaurants, type PartnerRestaurant } from "./partnerRestaurantService";
 import { LazyPartnerRestaurantMap } from "./LazyPartnerRestaurantMap";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
+import { formatLocaleDate, formatLocaleNumber } from "../../shared/i18n/formatters.mjs";
+import type { UiLanguage } from "../../shared/i18n/language.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { recordRestaurantOfferEvent, restaurantOfferPricePresentation } from "../offers/restaurantOfferService";
+import { customerPresentationText } from "./customerRewardPresentation.mjs";
 import "./partner-restaurant-finder.css";
 
 type FinderView = "map" | "list";
@@ -47,35 +51,45 @@ const partnerFilters: Array<{ key: PartnerFilter; label: string }> = [
   { key: "open", label: "Jetzt geöffnet" },
 ];
 
-function formatDistance(value: number | null) {
+function formatDistance(value: number | null, language: UiLanguage) {
   if (value === null) return null;
-  return value < 10 ? `${value.toLocaleString("de-AT", { maximumFractionDigits: 1 })} km entfernt` : `${Math.round(value)} km entfernt`;
+  const distance = formatLocaleNumber(value < 10 ? value : Math.round(value), language, { maximumFractionDigits: value < 10 ? 1 : 0 });
+  return customerPresentationText("finderDistance", language, { distance });
 }
 
-function formatVisit(value: string | null | undefined) {
-  if (!value) return "Noch kein Besuch gespeichert";
-  return `Zuletzt am ${new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value))}`;
+function formatVisit(value: string | null | undefined, language: UiLanguage) {
+  if (!value) return customerPresentationText("finderNoVisit", language);
+  const date = formatLocaleDate(value, language, { day: "2-digit", month: "2-digit", year: "numeric" });
+  return customerPresentationText("finderLastVisit", language, { date });
 }
 
 function locationAddress(location: PartnerRestaurant) {
   return [location.address, `${location.postal_code} ${location.city}`.trim()].filter(Boolean).join(", ");
 }
 
-function recommendation(location: PartnerRestaurant) {
+function recommendation(location: PartnerRestaurant, language: UiLanguage) {
   const membership = location.membership;
-  if (membership?.available_rewards.length) return "Jetzt einlösbar";
-  if (membership?.next_reward && isRewardNear(location)) return `Bald erreichbar: noch ${membership.next_reward.missing_points} Punkte bis ${membership.next_reward.title}`;
-  if (membership?.next_reward) return `Noch ${membership.next_reward.missing_points} Punkte bis ${membership.next_reward.title}`;
-  if (membership?.registered) return "Du bist hier Bonus-Mitglied";
-  return location.welcome_reward_available ? "Willkommensgeschenk verfügbar" : `${location.active_reward_count} Punkteeinlösungen`;
+  if (membership?.available_rewards.length) return customerPresentationText("nowRedeemable", language);
+  if (membership?.next_reward && isRewardNear(location)) return customerPresentationText("finderNearReward", language, {
+    count: membership.next_reward.missing_points,
+    title: membership.next_reward.title,
+  });
+  if (membership?.next_reward) return customerPresentationText("nextRewardPoints", language, {
+    count: membership.next_reward.missing_points,
+    title: membership.next_reward.title,
+  });
+  if (membership?.registered) return customerPresentationText("finderBonusMember", language);
+  return location.welcome_reward_available
+    ? customerPresentationText("finderWelcomeAvailable", language)
+    : customerPresentationText("finderRewardsAvailable", language, { count: location.active_reward_count });
 }
 
-function visitLabel(location: PartnerRestaurant) {
-  if ((location.membership?.visits_count ?? 0) > 0) return "Bereits besucht";
-  return "Noch nicht besucht";
+function visitLabel(location: PartnerRestaurant, language: UiLanguage) {
+  if ((location.membership?.visits_count ?? 0) > 0) return customerPresentationText("finderVisited", language);
+  return customerPresentationText("finderNotVisited", language);
 }
 
-function PartnerResultCard({ location, onSelect, selected }: { location: PartnerRestaurant; onSelect: () => void; selected: boolean }) {
+function PartnerResultCard({ language, location, onSelect, selected }: { language: UiLanguage; location: PartnerRestaurant; onSelect: () => void; selected: boolean }) {
   return (
     <button
       aria-pressed={selected}
@@ -85,22 +99,22 @@ function PartnerResultCard({ location, onSelect, selected }: { location: Partner
     >
       <RestaurantLogoImage alt="" className="partner-result-logo" logoUrl={location.logo_url} name={location.name} />
       <span className="partner-result-copy">
-        <strong>{location.name}</strong>
-        <small>{locationAddress(location)}</small>
-        {formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}
+        <strong data-i18n-skip="true">{location.name}</strong>
+        <small data-i18n-skip="true">{locationAddress(location)}</small>
+        {formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}
         <span className="partner-result-statuses">
-          <em>{visitLabel(location)}</em>
+          <em>{visitLabel(location, language)}</em>
           <em className={location.opening_status?.isOpen ? "open" : "closed"}>{location.opening_status?.message}</em>
         </span>
         {location.offers[0] ? <span className="partner-offer-badge"><Newspaper aria-hidden="true" size={14} />{location.offers[0].offer_type === "LUNCH_MENU" ? "Mittagsmenü" : location.offers[0].offer_type === "WEEKLY_OFFER" ? "Wochenangebot" : "Neues Angebot"}</span> : null}
-        <span>{location.membership ? `${location.membership.points_balance} Punkte · ${recommendation(location)}` : recommendation(location)}</span>
+        <span>{location.membership ? `${customerPresentationText("points", language, { count: location.membership.points_balance })} · ${recommendation(location, language)}` : recommendation(location, language)}</span>
       </span>
       <ChevronRight aria-hidden="true" size={19} />
     </button>
   );
 }
 
-function PartnerDetail({ current, location, onClose }: { current: boolean; location: PartnerRestaurant; onClose: () => void }) {
+function PartnerDetail({ current, language, location, onClose }: { current: boolean; language: UiLanguage; location: PartnerRestaurant; onClose: () => void }) {
   const membership = location.membership;
   const isMember = membership?.registered === true;
   const customerToken = readStoredCustomerToken(location.slug);
@@ -125,9 +139,9 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
       />
       <div className="partner-detail-heading">
         <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
-        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : isMember ? "Dein Bonus" : "Noch kein Bonus-Mitglied"}</StatusBadge><h2>{location.name}</h2><p>{locationAddress(location)}</p>{formatDistance(location.distance_km) ? <small>{formatDistance(location.distance_km)}</small> : null}</div>
+        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : isMember ? "Dein Bonus" : "Noch kein Bonus-Mitglied"}</StatusBadge><h2 data-i18n-skip="true">{location.name}</h2><p data-i18n-skip="true">{locationAddress(location)}</p>{formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}</div>
       </div>
-      {location.short_description ? <p className="partner-detail-description">{location.short_description}</p> : null}
+      {location.short_description ? <p className="partner-detail-description" data-i18n-skip="true">{location.short_description}</p> : null}
       {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{location.opening_status.message}{location.opening_status.todayHours && location.opening_status.message !== location.opening_status.todayHours ? ` · ${location.opening_status.todayHours}` : ""}</p> : null}
       <div className="partner-detail-stats">
         <div><span>Punkte</span><strong>{membership ? membership.points_balance : "–"}</strong></div>
@@ -136,24 +150,14 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
       </div>
       <div className="partner-recommendation">
         {membership?.available_rewards.length ? <Gift aria-hidden="true" size={21} /> : <Trophy aria-hidden="true" size={21} />}
-        <div><strong>{recommendation(location)}</strong><span>{formatVisit(membership?.last_visit_at)}</span></div>
+        <div><strong>{recommendation(location, language)}</strong><span>{formatVisit(membership?.last_visit_at, language)}</span></div>
       </div>
       {membership?.available_rewards.length ? (
         <div className="partner-available-rewards">
           <span>Für dich verfügbar</span>
-          {membership.available_rewards.slice(0, 3).map((reward) => <strong key={reward.id}>{reward.title}</strong>)}
+          {membership.available_rewards.slice(0, 3).map((reward) => <strong data-i18n-skip="true" key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
-      {currentOffer ? (
-        <div className="partner-current-offer">
-          <span>{currentOffer.offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
-          <strong>{currentOffer.title}</strong>
-          <p>{currentOffer.short_description}</p>
-          <small className="partner-current-offer-price">{currentOfferPrice?.discountLabel ? <b>{currentOfferPrice.discountLabel}</b> : null}{currentOfferPrice?.previousPrice ? <del>{currentOfferPrice.previousPrice}</del> : null}{currentOfferPrice?.currentPrice ? <strong>{currentOfferPrice.currentPrice}</strong> : null}<span>Gültig bis {new Date(currentOffer.valid_to).toLocaleDateString("de-AT")}</span></small>
-          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
-        </div>
-      ) : null}
-      {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}
       <div className="partner-detail-actions">
         <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>
           {isMember ? <><Store aria-hidden="true" size={18} /> Restaurant öffnen</> : <><UserPlus aria-hidden="true" size={18} /> Bonusprogramm beitreten</>}
@@ -162,11 +166,22 @@ function PartnerDetail({ current, location, onClose }: { current: boolean; locat
           <ExternalLink aria-hidden="true" size={18} /> Route starten
         </a>
       </div>
+      {currentOffer ? (
+        <div className="partner-current-offer">
+          <span>{currentOffer.offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
+          <strong data-i18n-skip="true">{currentOffer.title}</strong>
+          <p data-i18n-skip="true">{currentOffer.short_description}</p>
+          <small className="partner-current-offer-price">{currentOfferPrice?.discountLabel ? <b>{currentOfferPrice.discountLabel}</b> : null}{currentOfferPrice?.previousPrice ? <del>{currentOfferPrice.previousPrice}</del> : null}{currentOfferPrice?.currentPrice ? <strong>{currentOfferPrice.currentPrice}</strong> : null}<span>{customerPresentationText("validUntil", language)} {formatLocaleDate(currentOffer.valid_to, language)}</span></small>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
+        </div>
+      ) : null}
+      {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}
     </article>
   );
 }
 
 export function PartnerRestaurantFinderPage() {
+  const { language } = useI18n();
   const [searchParams] = useSearchParams();
   const currentSlug = searchParams.get("current");
   const [locations, setLocations] = useState<PartnerRestaurant[]>([]);
@@ -263,7 +278,7 @@ export function PartnerRestaurantFinderPage() {
             <button aria-pressed={view === "map"} onClick={() => setView("map")} type="button"><MapIcon aria-hidden="true" size={18} /> Karte</button>
             <button aria-pressed={view === "list"} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={18} /> Liste</button>
           </div>
-          <p aria-live="polite">{locationMessage ?? `${filteredLocations.length} von ${total} teilnehmenden Lokalen angezeigt`}</p>
+          <p aria-live="polite">{locationMessage ?? customerPresentationText("finderResults", language, { shown: filteredLocations.length, total })}</p>
         </section>
 
         <div aria-label="Lokale filtern" className="partner-filter-scroll" role="group">
@@ -304,7 +319,7 @@ export function PartnerRestaurantFinderPage() {
             <section className="partner-list-panel" aria-label="Liste der Partnerrestaurants">
               <div className="partner-results-list">
                 {filteredLocations.map((location) => (
-                  <PartnerResultCard key={location.branch_id} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
+                  <PartnerResultCard key={location.branch_id} language={language} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
                 ))}
               </div>
             </section>
@@ -322,7 +337,7 @@ export function PartnerRestaurantFinderPage() {
       >
         {selected ? (
           <div className="partner-detail-drawer-content">
-            <PartnerDetail current={selected.slug === currentSlug} location={selected} onClose={() => setSelectedId(null)} />
+            <PartnerDetail current={selected.slug === currentSlug} language={language} location={selected} onClose={() => setSelectedId(null)} />
           </div>
         ) : null}
       </AppDrawer>

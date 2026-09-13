@@ -4,13 +4,14 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [finder, access, accountService, migration, finderCss, customerCss] = await Promise.all([
+const [finder, access, accountService, migration, finderCss, customerCss, customerMessages] = await Promise.all([
   read("../src/modules/customer/PartnerRestaurantFinderPage.tsx"),
   read("../src/modules/customer/CustomerRestaurantAccess.tsx"),
   read("../src/modules/customer/customerAccountService.ts"),
   read("../supabase/migrations/20260804003000_central_customer_login_restaurant_context.sql"),
   read("../src/modules/customer/partner-restaurant-finder.css"),
   read("../src/modules/customer/customer-premium.css"),
+  read("../src/shared/i18n/customerPresentationMessages.mjs"),
 ]);
 
 const joinFunction = migration.slice(
@@ -26,8 +27,9 @@ test("Restaurantdetails unterscheiden Mitglied und Nichtmitglied mit genau einer
   assert.match(finder, /Route starten/);
 });
 
-test("Willkommensanreiz bleibt sichtbar und Beitritt erzeugt keinen Besuchstext", () => {
-  assert.match(finder, /Willkommensgeschenk verfügbar/);
+test("Willkommensanreiz bleibt lokalisiert sichtbar und Beitritt erzeugt keinen Besuchstext", () => {
+  assert.match(finder, /customerPresentationText\("finderWelcomeAvailable", language\)/);
+  assert.match(customerMessages, /"customer\.presentation\.finderWelcomeAvailable": "Willkommensgeschenk verfügbar"/);
   assert.match(finder, /Ein Besuch wird erst nach einer echten Punktebuchung gespeichert/);
   assert.match(finder, /visits_count \?\? 0\) > 0/);
 });

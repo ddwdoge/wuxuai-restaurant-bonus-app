@@ -580,7 +580,8 @@
 .premium-account-summary strong { max-width: 58%; overflow-wrap: anywhere; text-align: right; }
 .premium-personal-qr { justify-items: center; }
 .premium-personal-qr .premium-section-header { justify-self: stretch; }
-.premium-qr-frame { background: #fff; border: 1px solid var(--premium-border); border-radius: 18px; padding: 16px; }
+.premium-qr-frame { background: #fff; border: 1px solid var(--premium-border); border-radius: 18px; box-sizing: border-box; display: grid; justify-items: center; max-width: 100%; padding: 16px; }
+.premium-qr-frame > svg { display: block; height: auto; max-width: 100%; width: min(270px, 100%); }
 .premium-save-account .premium-button { width: 100%; }
 .app-drawer-panel:has(.premium-account-sheet-content) {
   --premium-error: #a94c4c;

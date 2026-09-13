@@ -619,8 +619,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const legalTerms = legalCenter?.documents.find((document) => document.document_type === "participation_terms");
   const pointsValidityMonths = Number(legalTerms?.content?.points_validity_months);
   const pointsValidityText = Number.isFinite(pointsValidityMonths) && pointsValidityMonths > 0
-    ? `Punkte sind nach den aktuellen Teilnahmebedingungen ${pointsValidityMonths} Monate gültig.`
-    : "Die Punktegültigkeit ist in den Teilnahmebedingungen des Restaurants beschrieben.";
+    ? ct("pointsValidityMonths", { count: pointsValidityMonths })
+    : ct("pointsValidityTerms");
   const bonusTiers = settings?.bonus_amount_tiers?.length ? settings.bonus_amount_tiers : defaultBonusAmountTiers;
   const sortedBonusTiers = [...bonusTiers].sort((left, right) => left.min - right.min);
   const selectedTier = sortedBonusTiers.find((tier) => tier.key === selectedTierKey) ?? null;
@@ -2293,7 +2293,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 <p className="premium-legal-notice">Punkte haben keinen Geldwert, sind nicht auszahlbar und gelten nur im Bonusprogramm dieses Restaurants. {pointsValidityText}</p>
 
                 <section className="premium-content-section" aria-labelledby="account-more-title">
-                  <SectionHeader subtitle="Schnell zu den wichtigsten Bereichen." title="Mehr" />
+                  <SectionHeader subtitle={ct("accountQuickIntro")} title="Mehr" />
                   <div className="premium-account-grid" id="account-more-title">
                     <button onClick={openMyRedemptions} type="button"><Gift aria-hidden="true" size={22} /><strong>Meine Belohnungen</strong><span>Deine Vorteile</span></button>
                     <Link className="premium-account-grid-link" to={`/customer/restaurants?current=${encodeURIComponent(restaurant.slug)}`}><MapPinned aria-hidden="true" size={22} /><strong>Restaurants entdecken</strong><span>WUXUAI Partner</span></Link>
@@ -2604,7 +2604,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       </> : null}
                     </> : <>
                       <p>Mit diesem QR kommst du jederzeit zurück zu deinem Bonuskonto.</p>
-                      <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={196} level="M" /></div>
+                      <div className="premium-qr-frame"><QRCodeSVG value={portalUrl} size={256} level="M" /></div>
                       <StatusBadge><QrCode aria-hidden="true" size={15} /> {customer.customer_code}</StatusBadge>
                     </>}
                     {settings?.points_collection_mode === "both" ? <a className="premium-button premium-button-secondary" href={`/w/${restaurantSlug}?token=${encodeURIComponent(activeToken ?? "")}`}>Stattdessen Restaurant-QR scannen</a> : null}
