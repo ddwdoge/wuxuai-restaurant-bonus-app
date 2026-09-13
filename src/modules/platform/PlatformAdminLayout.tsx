@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Activity, Building2, Globe2, HeartPulse, LayoutDashboard, Menu, PackageCheck, Settings2 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -37,11 +37,11 @@ function Navigation({ close }: { close?: () => void }) {
   return <nav aria-label={t.navigation} className="platform-admin-navigation">
     {items.map(({ key, path, icon: Icon }) => {
       const active = isActiveSection(pathname, key);
-      return <NavLink aria-current={active ? "page" : undefined} className={active ? "active" : undefined} end={key === "overview"} key={key} onClick={close} to={path}>
+      return <Link aria-current={active ? "page" : undefined} className={active ? "active" : undefined} key={key} onClick={close} to={path}>
         <Icon aria-hidden="true" size={19} />
         <span>{t[key]}</span>
         {active ? <strong aria-hidden="true">●</strong> : null}
-      </NavLink>;
+      </Link>;
     })}
   </nav>;
 }
