@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { resolveCarouselActiveIndex } from "./carouselActiveIndex.mjs";
 import { createImageCardPointerGuard } from "./imageCardPointerGuard.mjs";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { customerPresentationText } from "../customerRewardPresentation.mjs";
@@ -53,13 +54,15 @@ export function PremiumHorizontalCarousel({
   const updateActiveIndex = useCallback((viewport: HTMLDivElement) => {
     const itemElements = Array.from(viewport.querySelectorAll<HTMLElement>("[data-carousel-item]"));
     if (!itemElements.length) return;
-    const nearestIndex = itemElements.reduce((bestIndex, item, index) => (
-      Math.abs(item.getBoundingClientRect().left - viewport.getBoundingClientRect().left)
-        < Math.abs(itemElements[bestIndex].getBoundingClientRect().left - viewport.getBoundingClientRect().left)
-        ? index
-        : bestIndex
-    ), 0);
-    setActiveIndex(nearestIndex);
+    const viewportLeft = viewport.getBoundingClientRect().left;
+    const nextIndex = resolveCarouselActiveIndex({
+      clientWidth: viewport.clientWidth,
+      devicePixelRatio: window.devicePixelRatio,
+      itemStartDistances: itemElements.map((item) => item.getBoundingClientRect().left - viewportLeft),
+      scrollLeft: viewport.scrollLeft,
+      scrollWidth: viewport.scrollWidth,
+    });
+    setActiveIndex(nextIndex);
   }, []);
 
   const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
@@ -78,6 +81,15 @@ export function PremiumHorizontalCarousel({
     setActiveIndex(0);
     viewportRef.current?.scrollTo({ left: 0 });
   }, [items.length]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => updateActiveIndex(viewport));
+    observer.observe(viewport);
+    viewport.querySelectorAll<HTMLElement>("[data-carousel-item]").forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, [items.length, updateActiveIndex]);
 
   useEffect(() => () => {
     if (animationFrameRef.current != null) window.cancelAnimationFrame(animationFrameRef.current);
