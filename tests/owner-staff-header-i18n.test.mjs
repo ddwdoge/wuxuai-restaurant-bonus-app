@@ -8,6 +8,7 @@ const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8"
 const owner = read("src/modules/admin/AdminLayout.tsx");
 const ownerCss = read("src/modules/admin/admin-premium.css");
 const staff = read("src/modules/staff/StaffTablet.tsx");
+const staffCss = read("src/modules/staff/staff-premium.css");
 const appDrawer = read("src/shared/components/AppDrawer.tsx");
 
 const languages = ["de", "en", "fr", "it", "es", "zh", "ko"];
@@ -116,6 +117,12 @@ test("Staff date follows the active locale and updates with language", () => {
   assert.notEqual(labels.es, labels.de);
   assert.notEqual(labels.zh, labels.de);
   assert.notEqual(labels.ko, labels.de);
+});
+
+test("Staff language selector gives the actual interactive select a 44px touch target", () => {
+  assert.match(staffCss, /\.staff-premium-header > \.wux-language-selector select\s*\{[^}]*inset: -1px;[^}]*min-height: 44px;[^}]*min-width: 44px;[^}]*width: auto;/s);
+  assert.match(staffCss, /\.staff-premium-header\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\) auto auto;/s);
+  assert.doesNotMatch(staffCss, /\.staff-premium-header > \.wux-language-selector select\s*\{[^}]*position:\s*fixed/s);
 });
 
 test("Staff portal drawers use explicit active-language keys and preserve individual data", () => {

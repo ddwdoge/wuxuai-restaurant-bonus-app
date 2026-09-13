@@ -118,6 +118,13 @@
   justify-self: end;
 }
 
+.staff-premium-header > .wux-language-selector select {
+  inset: -1px;
+  min-height: 44px;
+  min-width: 44px;
+  width: auto;
+}
+
 .staff-premium-menu-button {
   grid-column: 3;
   grid-row: 1;
