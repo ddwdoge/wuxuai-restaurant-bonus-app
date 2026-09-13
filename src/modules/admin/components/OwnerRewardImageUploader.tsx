@@ -19,6 +19,7 @@ type OwnerRewardImageUploaderProps = {
   onEdit?: () => void;
   onFileSelected: (file: File) => void;
   onRemove?: () => void;
+  emptyLabel?: string;
 };
 
 export function OwnerRewardImageUploader({
@@ -36,6 +37,7 @@ export function OwnerRewardImageUploader({
   onEdit,
   onFileSelected,
   onRemove,
+  emptyLabel = "Foto hinzufügen",
 }: OwnerRewardImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function OwnerRewardImageUploader({
         )}
         <span className="owner-reward-image-overlay">
           {loading ? <LoaderCircle aria-hidden="true" className="owner-reward-image-spinner" size={21} /> : <Camera aria-hidden="true" size={20} />}
-          {loading ? "Foto wird hochgeladen" : displayUrl ? "Foto ändern" : "Foto hinzufügen"}
+          {loading ? "Foto wird hochgeladen" : displayUrl ? "Foto ändern" : emptyLabel}
         </span>
       </button>
       {displayUrl && onRemove && !loading ? (

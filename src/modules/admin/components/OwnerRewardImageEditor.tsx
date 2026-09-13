@@ -9,11 +9,12 @@ type OwnerRewardImageEditorProps = {
   disabled?: boolean;
   imageUrl: string;
   label: string;
+  changeLabel?: string;
   onCropChange: (crop: RewardImageCrop) => void;
   onFileSelected: (file: File) => void;
 };
 
-export function OwnerRewardImageEditor({ crop, disabled = false, imageUrl, label, onCropChange, onFileSelected }: OwnerRewardImageEditorProps) {
+export function OwnerRewardImageEditor({ crop, disabled = false, imageUrl, label, changeLabel = "Anderes Foto wählen", onCropChange, onFileSelected }: OwnerRewardImageEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,7 @@ export function OwnerRewardImageEditor({ crop, disabled = false, imageUrl, label
       <SmartMediaEditor disabled={disabled} imageUrl={imageUrl} label={label} onPresentationChange={onCropChange} presentation={crop} />
       <div className="owner-reward-image-editor-actions">
         <input accept="image/jpeg,image/png,image/webp" hidden onChange={handleFileChange} ref={inputRef} type="file" />
-        <button className="button secondary" disabled={disabled} onClick={() => inputRef.current?.click()} type="button"><ImagePlus size={18} />Anderes Foto wählen</button>
+        <button className="button secondary" disabled={disabled} onClick={() => inputRef.current?.click()} type="button"><ImagePlus size={18} />{changeLabel}</button>
       </div>
       {error ? <p aria-live="polite" className="owner-reward-image-editor-error">{error}</p> : null}
     </section>

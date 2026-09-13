@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import {
   RewardImageFrame,
@@ -144,6 +145,7 @@ function formatValidity(expiresAt: string | null) {
 }
 
 export function RewardsPage() {
+  const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
@@ -159,7 +161,6 @@ export function RewardsPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoCrop, setPhotoCrop] = useState<RewardImageCrop>(DEFAULT_REWARD_IMAGE_CROP);
-  const [photoCropEditing, setPhotoCropEditing] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [editingOffer, setEditingOffer] = useState<RewardOffer | null>(null);
   const [previewOffer, setPreviewOffer] = useState<RewardOffer | null>(null);
@@ -241,7 +242,6 @@ export function RewardsPage() {
     setPhotoPreview(null);
     setPhotoFile(null);
     setPhotoCrop(DEFAULT_REWARD_IMAGE_CROP);
-    setPhotoCropEditing(false);
     setPhotoError(null);
     setEditingOffer(null);
   }
@@ -269,7 +269,6 @@ export function RewardsPage() {
     setPhotoPreview(offer.image_url);
     setPhotoFile(null);
     setPhotoCrop(rewardImageCropFromRecord(offer));
-    setPhotoCropEditing(false);
     setPhotoError(null);
     setStep(2);
     setStatus(null);
@@ -286,7 +285,6 @@ export function RewardsPage() {
     setPhotoPreview(URL.createObjectURL(file));
     setPhotoFile(file);
     setPhotoCrop(DEFAULT_REWARD_IMAGE_CROP);
-    setPhotoCropEditing(true);
     setPhotoError(null);
     setStatus(null);
   }
@@ -481,20 +479,9 @@ export function RewardsPage() {
         <section className="premium-owner-editor-section">
           <div><p className="premium-owner-kicker">Bild</p><h3>Produktfoto hinzufügen</h3><p>Optional. Ohne Foto erscheint ein ruhiger Standardplatzhalter.</p></div>
           <div className="reward-photo-row">
-            <OwnerRewardImageUploader
-              categoryIcon={<SelectedIcon aria-hidden="true" size={46} />}
-              disabled={saving}
-              error={photoError}
-              crop={photoCrop}
-              imageUrl={editingOffer?.image_url}
-              label={rewardTitle}
-              loading={saving && Boolean(photoFile)}
-              onFileSelected={handlePhoto}
-              onEdit={() => setPhotoCropEditing(true)}
-              previewUrl={photoPreview}
-            />
-            {photoPreview && photoCropEditing ? (
+            {photoPreview ? (
               <OwnerRewardImageEditor
+                changeLabel={translateKey("owner.rewardImage.change")}
                 crop={photoCrop}
                 disabled={saving}
                 imageUrl={photoPreview}
@@ -502,7 +489,20 @@ export function RewardsPage() {
                 onCropChange={setPhotoCrop}
                 onFileSelected={handlePhoto}
               />
-            ) : null}
+            ) : (
+              <OwnerRewardImageUploader
+                ariaLabel="Produktfoto hinzufügen"
+                emptyLabel="Produktfoto hinzufügen"
+                categoryIcon={<SelectedIcon aria-hidden="true" size={46} />}
+                disabled={saving}
+                error={photoError}
+                crop={photoCrop}
+                label={rewardTitle}
+                loading={saving && Boolean(photoFile)}
+                onFileSelected={handlePhoto}
+              />
+            )}
+            {photoPreview && photoError ? <p aria-live="polite" className="owner-reward-image-editor-error">{photoError}</p> : null}
           </div>
         </section>
       ) : null}
