@@ -15,7 +15,7 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   margin: 0 auto;
   max-width: 1440px;
   width: 100%;
@@ -24,7 +24,9 @@
 .partner-finder-header > div { min-width: 0; }
 .partner-finder-header span { color: var(--premium-gold-dark); font-size: 12px; font-weight: 600; }
 .partner-finder-header h1 { font-family: var(--premium-display-font); font-size: 21px; font-weight: 600; line-height: 1.12; margin: 2px 0 0; overflow-wrap: anywhere; }
-.partner-finder-header > svg { color: var(--premium-gold-dark); justify-self: center; }
+.partner-finder-header-actions { align-items: center; display: flex; gap: 8px; min-width: 0; }
+.partner-finder-header-actions > svg { color: var(--premium-gold-dark); flex: 0 0 auto; }
+@media (max-width: 380px) { .partner-finder-header-actions > svg { display: none; } }
 .partner-finder-back { align-items: center; background: var(--premium-surface); border: 1px solid var(--premium-border); border-radius: 50%; color: var(--premium-text); display: flex; height: 44px; justify-content: center; width: 44px; }
 .partner-finder-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--premium-gold) 32%, transparent); outline-offset: 3px; }
 

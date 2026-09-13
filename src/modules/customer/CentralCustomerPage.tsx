@@ -26,6 +26,7 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
 import {
   AppShell,
+  CustomerLanguageAction,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -348,7 +349,10 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
       <div className="central-customer-page">
         <header className="central-customer-header">
           <div><span>Dein Gästeportal</span><h1>{heading}</h1><p>{view === "home" ? "Schön, dass du wieder da bist." : view === "locations" ? "Alle deine Bonusprogramme, sauber nach Lokal getrennt." : "Deine Daten und Einstellungen an einem Ort."}</p></div>
-          <Link className="premium-button premium-button-secondary" to="/customer/restaurants"><Store aria-hidden="true" size={18} /> Lokale entdecken</Link>
+          <div className="central-customer-header-actions">
+            <CustomerLanguageAction />
+            <Link aria-label="Lokale entdecken" className="premium-button premium-button-secondary central-discover-action" to="/customer/restaurants"><Store aria-hidden="true" size={18} /><span>Lokale entdecken</span></Link>
+          </div>
         </header>
 
         {loading ? <LoadingState description="Dein Gästeportal wird geladen." /> : null}

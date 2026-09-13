@@ -14,7 +14,7 @@ import {
 } from "./customerAuthFlow.mjs";
 import { activateAuthenticatedCustomerAccount, registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
 import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
-import { AppShell, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
+import { AppShell, CustomerLanguageAction, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
 import { useAuth } from "../auth/AuthProvider";
 import { WrongPortalNotice } from "../auth/WrongPortalNotice";
@@ -147,6 +147,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
       <AppShell className="central-auth-shell">
         <div className="central-auth-page">
           <PremiumCard className="central-auth-card central-auth-status">
+            <div className="central-card-header-actions"><CustomerLanguageAction /></div>
             <h1>Zugriff wird geprüft</h1>
             <p className="central-status-message error" role="alert">Deine vorhandenen Bereiche konnten gerade nicht sicher geprüft werden. Es wurde nichts angelegt.</p>
             <SecondaryButton onClick={retryAuthorization} type="button">Erneut prüfen</SecondaryButton>
@@ -180,6 +181,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
           <div className="central-icon-heading">
             {mode === "login" ? <LogIn aria-hidden="true" size={23} /> : <UserPlus aria-hidden="true" size={23} />}
             <div><span>WUXUAI Bonus</span><h1>{mode === "login" ? "Gästekonto öffnen" : activatingExistingAccount ? "Gästekonto aktivieren" : "Gästekonto erstellen"}</h1></div>
+            <CustomerLanguageAction />
           </div>
           <p>{mode === "login" ? "Melde dich an, um deine Lokale und restaurantbezogenen Punkte zu sehen." : activatingExistingAccount ? "Deine Anmeldung bleibt bestehen. Ergänze nur die Angaben für dein persönliches Gästekonto." : "Ein Konto für alle deine WUXUAI-Lokale. Punkte bleiben weiterhin je Restaurant getrennt."}</p>
           <form className="central-auth-form" onSubmit={submit}>

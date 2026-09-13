@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
-import { AppShell, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
+import { AppShell, CustomerLanguageAction, EmptyState, ErrorState, LoadingState, StatusBadge } from "./components/PremiumCustomerUi";
 import { CentralCustomerNavigation } from "./components/CentralCustomerNavigation";
 import { RestaurantHeroImage, RestaurantLogoImage } from "./components/RestaurantHeroImage";
 import { readStoredCustomerToken } from "./customerTokenStorage";
@@ -295,7 +295,7 @@ export function PartnerRestaurantFinderPage() {
         <header className="partner-finder-header">
           <Link aria-label="Zurück" className="partner-finder-back" to="/customer"><ArrowLeft aria-hidden="true" size={21} /></Link>
           <div><span>WUXUAI Bonus</span><h1>Lokale entdecken</h1></div>
-          <MapPin aria-hidden="true" size={24} />
+          <div className="partner-finder-header-actions"><CustomerLanguageAction /><MapPin aria-hidden="true" size={24} /></div>
         </header>
         <div className="partner-finder-intro">
           <p>Finde teilnehmende Lokale in deiner Nähe und sieh, wo du bereits Punkte gesammelt hast.</p>

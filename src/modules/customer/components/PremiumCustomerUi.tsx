@@ -37,10 +37,15 @@ export function AppShell({ children, className = "", fontFamily, languageInHeade
           : undefined,
       } as CSSProperties}
     >
-      {!languageInHeader ? <div className="customer-language-row"><LanguageSelector /></div> : null}
       {children}
     </main>
   );
+}
+
+export function CustomerLanguageAction({ className = "" }: { className?: string }) {
+  const { language } = useI18n();
+  const label = customerPresentationText("languageChangeCurrent", language);
+  return <LanguageSelector ariaLabel={label} className={`customer-standalone-language ${className}`.trim()} />;
 }
 
 export function PageContainer({ children, className = "" }: { children: ReactNode; className?: string }) {

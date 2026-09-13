@@ -78,11 +78,11 @@ for (const language of languages) {
   });
 }
 
-test("non-restaurant shells retain their existing language row; opt-in header supports no switch callback", () => {
+test("non-restaurant shells no longer create a separate language row; explicit header action supports no switch callback", () => {
   const { AppShell, CustomerHeader } = harness("de");
   const ordinary = renderToStaticMarkup(React.createElement(AppShell, {}, "Inhalt"));
-  assert.match(ordinary, /customer-language-row/);
-  assert.equal((ordinary.match(/<select\b/g) ?? []).length, 1);
+  assert.doesNotMatch(ordinary, /customer-language-row/);
+  assert.equal((ordinary.match(/<select\b/g) ?? []).length, 0);
   const header = renderToStaticMarkup(React.createElement(CustomerHeader, { languageSelector: true, name: "Restaurant", onInfo() {} }));
   assert.equal((header.match(/<select\b/g) ?? []).length, 1);
   assert.doesNotMatch(header, /premium-customer-restaurant-selector/);

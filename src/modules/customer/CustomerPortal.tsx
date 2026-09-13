@@ -96,6 +96,7 @@ import {
   BenefitTile,
   BottomNavigation,
   CustomerHeader,
+  CustomerLanguageAction,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -1442,6 +1443,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
     return (
       <AppShell>
         <PageContainer className={isBonusCollection ? "premium-collect-page premium-collect-loading-page" : undefined}>
+          <div className="central-card-header-actions"><CustomerLanguageAction /></div>
           {message ? (
             <ErrorState
               action={isUsableRestaurantSlug(restaurantSlug) ? (

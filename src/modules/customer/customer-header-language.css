@@ -39,6 +39,16 @@
 .customer-header-language .wux-language-selector-code { font-size: 13px; }
 .customer-header-language select { height: 44px; min-width: 44px; }
 
+.customer-standalone-language {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+.customer-standalone-language:focus-within {
+  outline: 3px solid var(--premium-primary-dark, #956820);
+  outline-offset: 2px;
+}
+
 .premium-customer-header.has-language-selector :is(.customer-header-language:focus-within, .premium-icon-button:focus-visible) {
   outline: 3px solid var(--premium-primary-dark);
   outline-offset: 2px;
@@ -50,4 +60,16 @@
   }
   .premium-customer-header.has-language-selector { padding-inline: 8px; }
   .premium-customer-header.has-language-selector .premium-customer-restaurant-selector { gap: 6px; }
+}
+
+@media (max-width: 380px) {
+  .customer-standalone-language {
+    gap: 0;
+    min-width: 44px;
+    padding-inline: 6px;
+  }
+
+  .customer-standalone-language > svg {
+    display: none;
+  }
 }

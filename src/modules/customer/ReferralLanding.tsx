@@ -20,6 +20,7 @@ import { joinCustomerReferral } from "./customerAccountService";
 import { referralInvitationTitle, safeReferralFirstName } from "./referralInviteFlow.mjs";
 import {
   AppShell,
+  CustomerLanguageAction,
   ErrorState,
   LoadingState,
   PageContainer,
@@ -99,6 +100,7 @@ export function ReferralLanding() {
     return (
       <AppShell>
         <PageContainer>
+          <div className="central-card-header-actions"><CustomerLanguageAction /></div>
           {message ? <ErrorState description={message} title="Einladung nicht verfügbar" /> : <LoadingState description="Einladung wird sicher geprüft." />}
         </PageContainer>
       </AppShell>
@@ -117,6 +119,7 @@ export function ReferralLanding() {
           <div className="referral-restaurant-brand">
             <RestaurantLogoStage alt={`Logo von ${data.restaurant.name}`} logoUrl={data.branding.logo_url} name={data.restaurant.name} primaryColor={data.branding.primary_color} size="header" />
             <div><span>Einladung von {data.restaurant.name}</span><h1>{invitationTitle}</h1></div>
+            <CustomerLanguageAction />
           </div>
 
           <div className="referral-benefit-summary">

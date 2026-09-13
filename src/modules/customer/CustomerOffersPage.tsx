@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
-import { AppShell, EmptyState, ErrorState, LoadingState } from "./components/PremiumCustomerUi";
+import { AppShell, CustomerLanguageAction, EmptyState, ErrorState, LoadingState } from "./components/PremiumCustomerUi";
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
 import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -60,6 +60,7 @@ export function CustomerOffersPage() {
         <header className="customer-offers-header">
           <Link aria-label="Zurück" to={`/customer/${encodeURIComponent(slug)}`}><ArrowLeft aria-hidden="true" size={20} /></Link>
           <div><span>Dein ausgewähltes Lokal</span><h1>Aktuelles & Angebote</h1><p>Neuigkeiten und Angebote dieses Restaurants.</p></div>
+          <div className="customer-offers-header-actions"><CustomerLanguageAction /></div>
         </header>
         {loading ? <LoadingState description="Aktuelles wird geladen." /> : error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => window.location.reload()} type="button">Erneut versuchen</button>} description={error} title="Aktuelles nicht verfügbar" /> : sortedOffers.length ? (
           <section aria-label="Aktuelle Restaurantbeiträge"><PremiumHorizontalCarousel label="Aktuelle Restaurantbeiträge">{sortedOffers.map((offer) => <RestaurantOfferCard imageFirst preserveTitle key={offer.id} offer={offer} onOpen={() => openOffer(offer)} showRestaurant />)}</PremiumHorizontalCarousel></section>

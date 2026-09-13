@@ -8,7 +8,7 @@ import {
   establishEmailConfirmationSession,
 } from "../auth/emailConfirmationService";
 import { readEmailConfirmationPayload } from "../auth/emailConfirmationFlow.mjs";
-import { AppShell, PremiumCard, PrimaryButton } from "./components/PremiumCustomerUi";
+import { AppShell, CustomerLanguageAction, PremiumCard, PrimaryButton } from "./components/PremiumCustomerUi";
 import { customerAuthReturnStorageKey } from "./CustomerAuthPage";
 import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import "./central-customer.css";
@@ -102,6 +102,7 @@ export function CustomerAuthCallbackPage() {
     <AppShell className="central-auth-shell">
       <div className="central-auth-page">
         <PremiumCard className="central-auth-card central-auth-status">
+          <div className="central-card-header-actions"><CustomerLanguageAction /></div>
           {confirmed ? <CheckCircle2 aria-hidden="true" size={30} /> : <MailCheck aria-hidden="true" size={30} />}
           <div>
             <span>E-Mail-Bestätigung</span>

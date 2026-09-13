@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, MailX, ShieldCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
-import { AppShell, ErrorState, LoadingState, PremiumCard } from "./components/PremiumCustomerUi";
+import { AppShell, CustomerLanguageAction, ErrorState, LoadingState, PremiumCard } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
 
 export function CustomerEmailActionPage({ action }: { action: "confirm" | "unsubscribe" }) {
@@ -31,6 +31,7 @@ export function CustomerEmailActionPage({ action }: { action: "confirm" | "unsub
   return (
     <AppShell className="central-auth-shell">
       <div className="central-customer-page central-email-action-page">
+        <div className="central-card-header-actions"><CustomerLanguageAction /></div>
         {state === "loading" ? <LoadingState description={action === "confirm" ? "Deine Einwilligung wird bestätigt." : "Deine Abmeldung wird gespeichert."} /> : null}
         {state === "error" ? <ErrorState description="Der Link ist ungültig oder nicht mehr gültig. Deine Punkte und Mitgliedschaften bleiben unverändert." title={action === "confirm" ? "Bestätigung nicht möglich" : "Abmeldung nicht möglich"} /> : null}
         {state === "success" ? (
