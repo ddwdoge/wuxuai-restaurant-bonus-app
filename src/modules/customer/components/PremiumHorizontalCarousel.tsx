@@ -10,6 +10,8 @@ import {
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createImageCardPointerGuard } from "./imageCardPointerGuard.mjs";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { customerPresentationText } from "../customerRewardPresentation.mjs";
 import "./premium-horizontal-carousel.css";
 
 type PremiumHorizontalCarouselProps = {
@@ -22,9 +24,12 @@ type PremiumHorizontalCarouselProps = {
 export function PremiumHorizontalCarousel({
   children,
   label,
-  nextLabel = "Nächste Belohnung",
-  previousLabel = "Vorherige Belohnung",
+  nextLabel: suppliedNextLabel,
+  previousLabel: suppliedPreviousLabel,
 }: PremiumHorizontalCarouselProps) {
+  const { language } = useI18n();
+  const nextLabel = suppliedNextLabel ?? customerPresentationText("nextReward", language);
+  const previousLabel = suppliedPreviousLabel ?? customerPresentationText("previousReward", language);
   const items = Children.toArray(children);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -94,7 +99,7 @@ export function PremiumHorizontalCarousel({
       >
         {items.map((item, index) => (
           <div
-            aria-label={`${index + 1} von ${items.length}`}
+            aria-label={customerPresentationText("position", language, { current: index + 1, total: items.length })}
             className="premium-horizontal-carousel-item"
             data-carousel-item
             key={(item as { key?: string | null }).key ?? index}

@@ -10,6 +10,8 @@ import { translateStructural } from "../../../shared/i18n/catalog.mjs";
 import { UiButton, UiCard, UiStatus } from "../../../shared/ui";
 import { InfoTrigger } from "../../../shared/components/InfoTrigger";
 import { LanguageSelector } from "../../../shared/i18n/LanguageSelector";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { customerPresentationText } from "../customerRewardPresentation.mjs";
 
 const t = (key: string) => translateStructural(key, "de");
 
@@ -63,10 +65,12 @@ type CustomerHeaderProps = RestaurantLogoProps & {
 };
 
 export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, presentation, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
+  const { language } = useI18n();
+  const t = (key: string) => customerPresentationText(key.replace("customer.", ""), language);
   return (
     <header className={`premium-customer-header${compact ? " compact" : ""}`}>
       {onSwitchRestaurant ? (
-        <button aria-label={t("customer.restaurantSwitch")} className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
+        <button data-i18n-skip="true" aria-label={t("customer.restaurantSwitch")} className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
           <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
           <span className="premium-customer-header-copy">
             {!compact ? <span>{subtitle}</span> : null}
@@ -94,15 +98,17 @@ type BottomNavigationProps = {
 };
 
 const navigationItems = [
-  { label: t("customer.home"), value: "home" as const, icon: Home },
-  { label: t("customer.redeem"), value: "redemptions" as const, icon: Gift },
-  { label: t("customer.collect"), value: "collect" as const, icon: ScanLine, primary: true },
-  { label: t("customer.account"), value: "account" as const, icon: UserRound },
+  { label: "customer.home", value: "home" as const, icon: Home },
+  { label: "customer.redeem", value: "redemptions" as const, icon: Gift },
+  { label: "customer.collect", value: "collect" as const, icon: ScanLine, primary: true },
+  { label: "customer.account", value: "account" as const, icon: UserRound },
 ];
 
 export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
+  const { language } = useI18n();
+  const t = (key: string) => customerPresentationText(key.replace("customer.", ""), language);
   return (
-    <nav aria-label={t("customer.navigation")} className="premium-bottom-navigation">
+    <nav data-i18n-skip="true" aria-label={t("customer.navigation")} className="premium-bottom-navigation">
       {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}
@@ -113,7 +119,7 @@ export function BottomNavigation({ activeView, onChange }: BottomNavigationProps
           type="button"
         >
           <span className="premium-navigation-icon"><Icon aria-hidden="true" size={primary ? 24 : 21} /></span>
-          <span>{label}</span>
+          <span>{t(label)}</span>
         </button>
       ))}
     </nav>
@@ -180,21 +186,22 @@ type PointsCardProps = {
 };
 
 export function PointsCard({ boostDetail, boostLabel, label, note, onInfo, progress, progressLabel = "Punktefortschritt", value }: PointsCardProps) {
+  const { language } = useI18n();
   return (
     <PremiumCard className="premium-points-card" variant="highlight">
       <div className="premium-points-heading">
         <span className="premium-points-title">
           <span>{label}</span>
           {onInfo ? (
-            <InfoTrigger className="premium-points-info" label="Informationen zu Punkten" onClick={onInfo} />
+            <InfoTrigger className="premium-points-info" label={customerPresentationText("pointsInfo", language)} onClick={onInfo} />
           ) : null}
         </span>
         {boostLabel ? <StatusBadge tone="warning">{boostLabel}</StatusBadge> : null}
       </div>
       <strong className="premium-points-value">{value}</strong>
       {boostDetail ? <small className="premium-points-boost-detail">{boostDetail}</small> : null}
-      {typeof progress === "number" ? <ProgressBar label={progressLabel} value={progress} /> : null}
-      <p>{note}</p>
+      {typeof progress === "number" ? <ProgressBar label={progressLabel === "Punktefortschritt" ? customerPresentationText("progress", language) : progressLabel} value={progress} /> : null}
+      <p data-i18n-skip="true">{note}</p>
     </PremiumCard>
   );
 }
@@ -224,9 +231,10 @@ export function BenefitTile({ disabled = false, icon, label, onClick, status }: 
 }
 
 export function RewardImage({ crop, imageFirst = false, imageUrl, title }: { crop?: Partial<RewardImageCrop> | null; imageFirst?: boolean; imageUrl?: string | null; title: string }) {
+  const { language } = useI18n();
   return (
-    <div className="premium-reward-image">
-      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} loading={imageFirst ? "lazy" : undefined} /> : <Gift aria-label={`Standardbild ${title}`} size={38} />}
+    <div className="premium-reward-image" data-i18n-skip="true">
+      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} loading={imageFirst ? "lazy" : undefined} /> : <Gift aria-label={customerPresentationText("placeholder", language, { title })} size={38} />}
     </div>
   );
 }
@@ -254,7 +262,9 @@ const rewardStateMeta: Record<RewardCardState, { icon: typeof LockKeyhole; label
   expired: { icon: Clock3, label: t("common.expired") },
 };
 
-export function RewardCard({ actionLabel = t("common.details"), category, imageCrop, imageFirst = false, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+export function RewardCard({ actionLabel: providedActionLabel, category, imageCrop, imageFirst = false, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+  const { language } = useI18n();
+  const actionLabel = providedActionLabel ?? customerPresentationText("details", language);
   const stateMeta = rewardStateMeta[state];
   const StateIcon = stateMeta.icon;
   const actionContent = imageFirst ? <><span>{actionLabel}</span><ChevronRight aria-hidden="true" className="customer-image-first-chevron" size={22} /></> : actionLabel;
@@ -264,21 +274,21 @@ export function RewardCard({ actionLabel = t("common.details"), category, imageC
       <div className="premium-reward-media">
         <RewardImage crop={imageCrop} imageFirst={imageFirst} imageUrl={imageUrl} title={title} />
         {state !== "available" ? (
-          <span className="premium-lock-badge" aria-label={stateMeta.label}>
+          <span data-i18n-skip="true" className="premium-lock-badge" aria-label={customerPresentationText(state, language)}>
             <StateIcon aria-hidden="true" size={18} />
           </span>
         ) : null}
       </div>
       <div className="premium-reward-copy">
         {category ? <span>{category}</span> : null}
-        <h3>{title}</h3>
-        <strong>{meta}</strong>
-        <p className={`premium-reward-status state-${state}`}><StateIcon aria-hidden="true" size={14} /> {status}</p>
+        <h3 data-i18n-skip="true">{title}</h3>
+        <strong data-i18n-skip="true">{meta}</strong>
+        <p data-i18n-skip="true" className={`premium-reward-status state-${state}`}><StateIcon aria-hidden="true" size={14} /> {status}</p>
       </div>
       {onOpen ? (
         state === "available"
-          ? <PrimaryButton aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</PrimaryButton>
-          : <SecondaryButton aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</SecondaryButton>
+          ? <PrimaryButton data-i18n-skip="true" aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</PrimaryButton>
+          : <SecondaryButton data-i18n-skip="true" aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</SecondaryButton>
       ) : null}
     </PremiumCard>
   );

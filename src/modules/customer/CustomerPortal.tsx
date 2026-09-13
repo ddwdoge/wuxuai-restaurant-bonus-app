@@ -142,6 +142,7 @@ import {
   isValidCustomerFirstName,
 } from "./customerRegistration.mjs";
 import { customerPhoneValidation } from "./customerIdentity.mjs";
+import { customerPresentationText, customerRewardPresentation, type CustomerRewardPresentationInput } from "./customerRewardPresentation.mjs";
 
 type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -187,20 +188,21 @@ function rewardState(
   return reward.status === "unlocked" ? "available" : "locked";
 }
 
-function rewardStatusText(reward: PublicCustomerOfferView, state: RewardCardState) {
-  if (state === "available") return reward.is_starter_reward ? "Geschenk einlösbar" : "Jetzt einlösbar";
-  if (state === "redeeming") return "Einlösung ist aktiv";
+function rewardStatusText(reward: PublicCustomerOfferView, state: RewardCardState, language: string) {
+  const text = (key: string, parameters?: Record<string, string | number>) => customerPresentationText(key, language, parameters);
+  if (state === "available") return text(reward.is_starter_reward ? "giftRedeemable" : "nowRedeemable");
+  if (state === "redeeming") return text("redemptionActive");
   if (state === "redeemed") return reward.redeemed_at
-    ? `Eingelöst am ${new Intl.DateTimeFormat("de-AT", {
+    ? text("redeemedAt", { date: new Intl.DateTimeFormat(language === "de" ? "de-AT" : language, {
       dateStyle: "medium",
       timeStyle: "short",
       timeZone: "Europe/Vienna",
-    }).format(new Date(reward.redeemed_at))}`
-    : "Bereits eingelöst";
-  if (state === "expired") return "Nicht mehr verfügbar";
-  if (reward.is_starter_reward) return "Noch nicht freigeschaltet";
-  if (reward.remaining_stamps > 0) return `Noch ${reward.remaining_stamps} Stempel`;
-  return `Noch ${reward.remaining_points} Punkte`;
+    }).format(new Date(reward.redeemed_at)) })
+    : text("alreadyRedeemed");
+  if (state === "expired") return text("unavailable");
+  if (reward.is_starter_reward) return text("notUnlocked");
+  if (reward.remaining_stamps > 0) return text("stampsRemaining", { count: reward.remaining_stamps });
+  return text("pointsRemaining", { count: reward.remaining_points });
 }
 
 function formatEuro(value: number) {
@@ -261,6 +263,8 @@ type CustomerPortalProps = {
 export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug }: CustomerPortalProps) {
   const { portalAccess, signOut } = useAuth();
   const { language, translateKey: t } = useI18n();
+  const ct = (key: string, parameters?: Record<string, string | number>) => customerPresentationText(key, language, parameters);
+  const present = (reward: CustomerRewardPresentationInput) => customerRewardPresentation(reward, language);
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
@@ -667,7 +671,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
           : "Freund erfolgreich eingeladen"
         : referralLifecycleState === "expired"
           ? "Dein letzter 2× Bonus ist abgelaufen"
-          : "Lade einen Freund ein";
+          : ct("inviteTitle");
   const referralLifecycleDescription = activeBoost
     ? activeBoostIsInvitedFriend
       ? `Du sammelst doppelte Punkte und erhältst 50 % der eingestellten Bonusdauer. Aktiv bis ${boostExpiryLabel}.`
@@ -1422,14 +1426,22 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const selectedRewardState = redeemOffer
     ? rewardState(redeemOffer, nowMs, activeRedemptionCode, activePointsPresentation)
     : null;
+  // Read-only presentation lookup by existing reward identity; never guess category from a title.
+  const displayRewardTitle = (title: string, rewardId?: string | null) => {
+    const context = rewardId ? rewards.find((reward) => reward.id === rewardId) : redeemOffer;
+    return present({ category: context?.category, title }).title;
+  };
+  const activeRewardTitle = activePointsPresentation
+    ? displayRewardTitle(activePointsPresentation.reward_title, activePointsPresentation.reward_id)
+    : activeRedemptionCode ? displayRewardTitle(activeRedemptionCode.title, activeRedemptionCode.rewardId) : null;
   const redemptionDrawerFooter = activeRedemptionCode || activePointsPresentation || redemptionOutcome ? (
-    <PrimaryButton onClick={closeRedemptionDrawer}>Schließen</PrimaryButton>
+    <PrimaryButton onClick={closeRedemptionDrawer}>{ct("close")}</PrimaryButton>
   ) : redeemOffer ? (
     <>
-      <SecondaryButton onClick={closeRedemptionDrawer}>Schließen</SecondaryButton>
+      <SecondaryButton onClick={closeRedemptionDrawer}>{ct("close")}</SecondaryButton>
       {selectedRewardState === "available" ? (
         <PrimaryButton disabled={redeemingReward} onClick={handleRedeemCustomerReward}>
-          {redeemingReward ? "Einlösung wird vorbereitet …" : "Jetzt einlösen"}
+          {redeemingReward ? ct("preparing") : ct("redeemNow")}
         </PrimaryButton>
       ) : null}
     </>
@@ -1653,20 +1665,20 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               <article className="welcome-reward-preview">
                 <div className="customer-reward-image">
                   {registration.welcome_reward.image_url ? (
-                    <RewardImageFrame alt={registration.welcome_reward.title} crop={rewardImageCropFromRecord(registration.welcome_reward)} imageUrl={registration.welcome_reward.image_url} />
+                    <RewardImageFrame alt={present(registration.welcome_reward).title} crop={rewardImageCropFromRecord(registration.welcome_reward)} imageUrl={registration.welcome_reward.image_url} />
                   ) : (
-                    standardRewardAsset(registration.welcome_reward.category, registration.welcome_reward.title)
+                    standardRewardAsset(registration.welcome_reward.category, present(registration.welcome_reward).title)
                   )}
                 </div>
                 <strong>Dein Willkommensgeschenk</strong>
-                <h3>{registration.welcome_reward.title}</h3>
+                <h3 data-i18n-skip="true">{present(registration.welcome_reward).title}</h3>
                 <p>Dein Willkommensgeschenk wurde für dich reserviert.</p>
                 <p className="muted">Es wird nach deiner ersten bezahlten Bestellung freigeschaltet.</p>
                 {welcomeGiftDetail(registration.welcome_reward) ? (
                   <p>{welcomeGiftDetail(registration.welcome_reward)}</p>
                 ) : null}
                 {registration.welcome_reward.category ? (
-                  <p className="muted">Kategorie: {registration.welcome_reward.category}</p>
+                  <p className="muted">{ct("categoryLabel")}: {present(registration.welcome_reward).category}</p>
                 ) : null}
                 {registration.welcome_reward.available_products?.length && !welcomeGiftDetail(registration.welcome_reward) ? (
                   <p className="muted">Produkte: {registration.welcome_reward.available_products.join(", ")}</p>
@@ -1900,14 +1912,14 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
           <>
             {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
               <button
-                aria-label={t("customer.showNamed").replace("{name}", activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? t("customer.liveRedemption"))}
+                aria-label={t("customer.showNamed").replace("{name}", activeRewardTitle ?? t("customer.liveRedemption"))}
                 className="premium-active-code"
                 onClick={() => setRedemptionDrawerOpen(true)}
                 type="button"
               >
                 <span className="premium-active-code-icon"><Sparkles aria-hidden="true" size={18} /></span>
                 <span className="premium-active-code-copy">
-                  <strong>{activePointsPresentation?.reward_title ?? activeRedemptionCode?.title}</strong>
+                  <strong data-i18n-skip="true">{activeRewardTitle}</strong>
                   <small>{activePointsPresentation ? "Bestätigung ausstehend" : "Live-Einlösung aktiv"} · {Math.floor((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) / 60)}:{String((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) % 60).padStart(2, "0")}</small>
                 </span>
                 <span className="premium-active-code-action">Anzeigen</span>
@@ -1918,7 +1930,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
                   <span>Meine Vorteile bei {restaurant.name}</span>
-                  <h1 id="customer-home-title">Hallo {customer.name.split(" ")[0]},</h1>
+                  <h1 data-i18n-skip="true" id="customer-home-title">{ct("greeting", { name: customer.name.split(" ")[0] })}</h1>
                   <p>schön, dass du wieder da bist. Hier siehst du deine Punkte und Vorteile.</p>
                 </div>
 
@@ -1928,11 +1940,11 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   label={pointsTitle}
                   note={nextPointRedemption
                     ? nextPointRedemption.remaining_points > 0
-                      ? `Noch ${nextPointRedemption.remaining_points} Punkte bis ${nextPointRedemption.title}.`
-                      : `${nextPointRedemption.title} ist jetzt einlösbar.`
+                      ? ct("nextRewardPoints", { count: nextPointRedemption.remaining_points, title: present(nextPointRedemption).title })
+                      : ct("namedRedeemable", { title: present(nextPointRedemption).title })
                     : settings.loyalty_mode === "stamp_based"
-                      ? "Diese Stempel zeigen deinen Fortschritt."
-                      : "Diese Punkte kannst du für Punkteeinlösungen verwenden."}
+                      ? ct("stampsNote")
+                      : ct("pointsNote")}
                   onInfo={() => setPointsInfoOpen(true)}
                   progress={nextPointRedemption ? nextRedemptionProgress : undefined}
                   value={pointsValue}
@@ -1990,26 +2002,26 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 ) : null}
 
                 <section className="premium-content-section" aria-label="Deine Vorteile">
-                  <SectionHeader subtitle="Alles Wichtige für deinen nächsten Besuch." title="Deine Vorteile" />
+                  <SectionHeader subtitle={ct("benefitsIntro")} title="Deine Vorteile" />
                   <div className="premium-benefit-grid">
                     <BenefitTile
                       icon={<Gift size={22} />}
                       label="Willkommensgeschenk"
                       status={hasWelcomeGift
-                        ? hasUnlockedWelcomeGift ? "Einlösbar" : "Reserviert"
-                        : "Nicht vorhanden"}
+                        ? hasUnlockedWelcomeGift ? ct("redeemable") : ct("reserved")
+                        : ct("absent")}
                     />
                     <BenefitTile
                       icon={<CakeSlice size={22} />}
                       label="Geburtstagsgeschenk"
                       status={hasBirthdayGift
-                        ? "Einlösbar"
-                        : retention?.birthday.eligible ? "Überraschung wartet" : "Nicht vorhanden"}
+                        ? ct("redeemable")
+                        : retention?.birthday.eligible ? ct("birthdayWait") : ct("absent")}
                     />
                     <BenefitTile
                       icon={<Flame size={22} />}
                       label="Bonus Boost"
-                      status={activeBoost ? `${activeBoost.multiplier}× aktiv` : "Nicht aktiv"}
+                      status={activeBoost ? `${activeBoost.multiplier}× aktiv` : ct("inactive")}
                     />
                     <BenefitTile
                       disabled={creatingReferral || !referralInviteEnabled}
@@ -2046,7 +2058,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 <section className="premium-content-section">
                   <SectionHeader
                     action={pointRedemptions.length > 2 ? <button className="premium-text-button" onClick={() => setActiveView("redemptions")} type="button">Alle ansehen</button> : null}
-                    subtitle="Deine nächsten Möglichkeiten auf einen Blick."
+                    subtitle={ct("nextIntro")}
                     title="Mit Punkten einlösbar"
                   />
                   {pointRedemptions.length ? (
@@ -2054,15 +2066,15 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       {pointRedemptions.map((reward) => (
                         <RewardCard
                           imageFirst
-                          category={reward.category ?? reward.product_group}
+                          category={present(reward).category}
                           imageUrl={reward.image_url}
                           imageCrop={rewardImageCropFromRecord(reward)}
                           key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
-                          meta={`${reward.required_points} Punkte`}
+                          meta={ct("points", { count: reward.required_points })}
                           onOpen={reward.status === "unlocked" ? () => openRewardRedemption(reward) : undefined}
                           state={rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation)}
-                          status={reward.status === "unlocked" ? "Jetzt einlösbar" : `Noch ${reward.remaining_points} Punkte`}
-                          title={reward.title}
+                          status={reward.status === "unlocked" ? ct("nowRedeemable") : ct("pointsRemaining", { count: reward.remaining_points })}
+                          title={present(reward).title}
                         />
                       ))}
                     </PremiumHorizontalCarousel>
@@ -2075,14 +2087,14 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   <section className="premium-content-section premium-gift-preview">
                     <SectionHeader
                       subtitle={activeGifts.length === 1
-                        ? "Dein persönlicher Vorteil für den nächsten Besuch."
-                        : `${activeGifts.length} persönliche Vorteile sind für dich bereit.`}
+                        ? ct("giftOne")
+                        : ct("giftCount", { count: activeGifts.length })}
                       title="Deine Geschenke"
                     />
                     <PremiumHorizontalCarousel
                       label="Deine Geschenke"
-                      nextLabel="Nächstes Geschenk"
-                      previousLabel="Vorheriges Geschenk"
+                      nextLabel={ct("nextGift")}
+                      previousLabel={ct("previousGift")}
                     >
                       {activeGifts.map((gift) => {
                         const state = rewardState(gift, nowMs, activeRedemptionCode, activePointsPresentation);
@@ -2090,18 +2102,18 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         const isWelcomeGift = gift.gift_type === "welcome";
                         return (
                           <RewardCard
-                            category={isBirthdayGift ? "Geburtstagsgeschenk" : isWelcomeGift ? "Willkommensgeschenk" : gift.category ?? "Geschenk"}
+                            category={present(gift).customSurprise ? present(gift).category : isBirthdayGift ? ct("birthdayGift") : isWelcomeGift ? ct("welcomeGift") : present(gift).category ?? "Geschenk"}
                             imageFirst
                             imageUrl={gift.image_url}
                             imageCrop={rewardImageCropFromRecord(gift)}
                             key={`${gift.source}-${gift.assignment_id ?? gift.id}`}
-                            meta={isBirthdayGift ? "Für deinen Geburtstag" : welcomeGiftDetail(gift) ?? "Für dich reserviert"}
+                            meta={isBirthdayGift ? ct("birthdayMeta") : welcomeGiftDetail(gift) ?? ct("reservedForYou")}
                             onOpen={isBirthdayGift || gift.status === "unlocked" ? () => openRewardRedemption(gift) : undefined}
                             state={state}
                             status={isWelcomeGift && gift.status !== "unlocked"
-                              ? "Nach der ersten Punktebuchung verfügbar"
-                              : rewardStatusText(gift, state)}
-                            title={gift.title}
+                              ? ct("afterPoints")
+                              : rewardStatusText(gift, state, language)}
+                            title={present(gift).title}
                           />
                         );
                       })}
@@ -2131,7 +2143,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <span>{boostRemainingLabel
                       ?? (referralLifecycleState === "expired" && referralInviteStatus?.active_until
                         ? `Abgelaufen am ${formatReferralBoostExpiry(referralInviteStatus.active_until)}`
-                        : `+${referralBoostDurationDays} Tage`)}</span>
+                        : ct("boostDays", { count: referralBoostDurationDays }))}</span>
                   </div>
                   {activeBoost ? (
                     <div className="boost-progress-track" aria-label="Bonus Boost Restzeit"><span style={{ width: `${boostProgress}%` }} /></div>
@@ -2143,7 +2155,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   ) : null}
                   {referralInviteStatus ? (
                     <div className="premium-legal-note-small" aria-live="polite">
-                      <p>Einladungen diesen Monat: {referralInviteStatus.used} von {referralInviteStatus.limit}</p>
+                      <p data-i18n-skip="true">{ct("inviteCount", { used: referralInviteStatus.used, limit: referralInviteStatus.limit })}</p>
                       <p>{referralInviteLimitReached
                         ? `${t("customer.monthlyInviteLimitReached")}${referralResetLabel ? ` ${t("customer.inviteAgainFrom").replace("{date}", referralResetLabel)}` : ""}`
                         : t(referralInviteStatus.remaining === 1 ? "customer.oneInviteRemaining" : "customer.invitesRemaining").replace("{count}", String(referralInviteStatus.remaining))}</p>
@@ -2163,7 +2175,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       <a href={referralLink}>Einladungslink öffnen</a>
                     </div>
                   ) : null}
-                  {retention ? <p className="premium-referral-count">{retention.referral.successful_referrals} erfolgreiche {retention.referral.successful_referrals === 1 ? "Empfehlung" : "Empfehlungen"}</p> : null}
+                  {retention ? <p data-i18n-skip="true" className="premium-referral-count">{ct(retention.referral.successful_referrals === 1 ? "referralOne" : "referralCount", { count: retention.referral.successful_referrals })}</p> : null}
                 </PremiumCard>
               </section>
             ) : null}
@@ -2213,17 +2225,17 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
                         return (
                           <RewardCard
-                            category={reward.category ?? reward.product_group}
+                            category={present(reward).category}
                             imageUrl={reward.image_url}
                             imageCrop={rewardImageCropFromRecord(reward)}
                             key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                             meta={reward.is_starter_reward
                               ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
-                              : `${reward.required_points} Punkte`}
+                              : ct("points", { count: reward.required_points })}
                             onOpen={() => openRewardRedemption(reward)}
                             state={state}
-                            status={rewardStatusText(reward, state)}
-                            title={reward.title}
+                            status={rewardStatusText(reward, state, language)}
+                            title={present(reward).title}
                           />
                         );
                       })}
@@ -2366,11 +2378,12 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 ? "Bitte jetzt vor dem Mitarbeiter bestätigen."
                 : activeRedemptionCode
                   ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
-                : "Alle Details zu deiner Auswahl."}
+                : ct("detailDescription")}
               footer={redemptionDrawerFooter}
+              closeLabel={ct("close")}
               onClose={closeRedemptionDrawer}
               open={redemptionDrawerOpen && Boolean(activePointsPresentation || activeRedemptionCode || redeemOffer || redemptionOutcome)}
-              title={redemptionOutcome?.title ?? activePointsPresentation?.reward_title ?? activeRedemptionCode?.title ?? redeemOffer?.title ?? "Punkteeinlösung"}
+              title={redemptionOutcome ? displayRewardTitle(redemptionOutcome.title) : activeRewardTitle ?? (redeemOffer ? present(redeemOffer).title : ct("pointRedemption"))}
             >
               <div className="premium-redemption-sheet-content">
                 {redemptionOutcome ? (
@@ -2388,7 +2401,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <h2>{redemptionOutcome.kind === "redeemed" ? "Erfolgreich eingelöst" : "Einlösung beendet"}</h2>
                     <p>{redemptionOutcome.kind === "redeemed"
                       ? redemptionOutcome.presentation
-                        ? `${redemptionOutcome.title} wurde serverseitig bestätigt.`
+                        ? `${displayRewardTitle(redemptionOutcome.title)} wurde serverseitig bestätigt.`
                         : redemptionOutcome.pointsSpent > 0
                         ? `${redemptionOutcome.pointsSpent} Punkte wurden eingelöst.`
                         : "Dein Geschenk wurde erfolgreich eingelöst."
@@ -2423,7 +2436,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     </header>
                     <div className="premium-presentation-image">
                       <RewardImageFrame
-                        alt={activePointsPresentation.reward_title}
+                        alt={activeRewardTitle ?? activePointsPresentation.reward_title}
                         crop={rewardImageCropFromRecord({
                           image_zoom: activePointsPresentation.image_zoom,
                           image_position_x: activePointsPresentation.image_position_x,
@@ -2434,7 +2447,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     </div>
                     <div className="premium-presentation-heading">
                       <span>{activePointsPresentation.restaurant_name}</span>
-                      <h2>{activePointsPresentation.reward_title}</h2>
+                      <h2 data-i18n-skip="true">{activeRewardTitle}</h2>
                       <p>{activePointsPresentation.gift_type
                         ? activePointsPresentation.gift_type === "birthday" ? "Deine Geburtstagsüberraschung" : "Dein Willkommensgeschenk"
                         : `${activePointsPresentation.points_spent.toLocaleString("de-AT")} Punkte werden erst nach dem Wischen abgezogen.`}</p>
@@ -2478,7 +2491,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     </StatusBadge>
                     <div className="premium-code-heading">
                       <span><Sparkles aria-hidden="true" size={22} /></span>
-                      <div><h2>{activeRedemptionCode.title}</h2><p>Zeige diesen Code jetzt dem Mitarbeiter.</p></div>
+                      <div><h2 data-i18n-skip="true">{activeRewardTitle}</h2><p>Zeige diesen Code jetzt dem Mitarbeiter.</p></div>
                     </div>
                     <strong aria-label={`Einlösecode ${activeRedemptionCode.code}`} className="redemption-code-value">
                       {activeRedemptionCode.code.replace(/^(\d{3})(\d{3})$/, "$1 $2")}
@@ -2495,22 +2508,22 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
                 {redeemOffer && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "detail" ? (
                   <article className="premium-reward-detail">
-                    <div className="premium-reward-detail-media"><RewardImage crop={rewardImageCropFromRecord(redeemOffer)} imageUrl={redeemOffer.image_url} title={redeemOffer.title} /></div>
+                    <div className="premium-reward-detail-media"><RewardImage crop={rewardImageCropFromRecord(redeemOffer)} imageUrl={redeemOffer.image_url} title={present(redeemOffer).title} /></div>
                     <div className="premium-reward-detail-heading">
                       <StatusBadge tone={selectedRewardState === "available" ? "success" : selectedRewardState === "expired" ? "error" : "neutral"}>
-                        {selectedRewardState ? rewardStatusText(redeemOffer, selectedRewardState) : "Details"}
+                        {selectedRewardState ? rewardStatusText(redeemOffer, selectedRewardState, language) : t("common.details")}
                       </StatusBadge>
-                      <h2>{redeemOffer.title}</h2>
+                      <h2 data-i18n-skip="true">{present(redeemOffer).title}</h2>
                       {redeemOffer.description ? <p>{redeemOffer.description}</p> : null}
                     </div>
                     <dl className="premium-reward-facts">
-                      <div><dt>Art</dt><dd>{redeemOffer.gift_type === "birthday" ? "Geburtstagsgeschenk" : redeemOffer.is_starter_reward ? "Willkommensgeschenk" : "Punkteeinlösung"}</dd></div>
-                      <div><dt>{redeemOffer.is_starter_reward ? "Wert" : "Benötigt"}</dt><dd>{redeemOffer.is_starter_reward ? welcomeGiftDetail(redeemOffer) ?? "Für dich" : `${redeemOffer.required_points} Punkte`}</dd></div>
-                      {redeemOffer.category || redeemOffer.product_group ? <div><dt>Kategorie</dt><dd>{redeemOffer.category ?? redeemOffer.product_group}</dd></div> : null}
-                      {redeemOffer.valid_until || redeemOffer.expires_at ? <div><dt>Gültig bis</dt><dd>{new Date(redeemOffer.valid_until ?? redeemOffer.expires_at ?? "").toLocaleDateString("de-AT")}</dd></div> : null}
+                      <div><dt>{ct("kindLabel")}</dt><dd>{ct(redeemOffer.gift_type === "birthday" ? "birthdayGift" : redeemOffer.is_starter_reward ? "welcomeGift" : "pointRedemption")}</dd></div>
+                      <div><dt>{ct(redeemOffer.is_starter_reward ? "valueLabel" : "neededLabel")}</dt><dd>{redeemOffer.is_starter_reward ? welcomeGiftDetail(redeemOffer) ?? ct("forYou") : ct("points", { count: redeemOffer.required_points })}</dd></div>
+                      {redeemOffer.category || redeemOffer.product_group ? <div><dt>{ct("categoryLabel")}</dt><dd>{present(redeemOffer).category}</dd></div> : null}
+                      {redeemOffer.valid_until || redeemOffer.expires_at ? <div><dt>{ct("validUntil")}</dt><dd>{new Date(redeemOffer.valid_until ?? redeemOffer.expires_at ?? "").toLocaleDateString(language === "de" ? "de-AT" : language)}</dd></div> : null}
                     </dl>
                     {selectedRewardState === "locked" ? (
-                      <div className="premium-reward-notice"><LockKeyhole aria-hidden="true" size={20} /><p>{rewardStatusText(redeemOffer, "locked")}</p></div>
+                      <div className="premium-reward-notice"><LockKeyhole aria-hidden="true" size={20} /><p>{rewardStatusText(redeemOffer, "locked", language)}</p></div>
                     ) : null}
                     {selectedRewardState === "redeeming" ? (
                       <div className="premium-reward-notice"><Clock3 aria-hidden="true" size={20} /><p>Für diese Einlösung ist bereits ein 15-Minuten-Fenster aktiv.</p></div>

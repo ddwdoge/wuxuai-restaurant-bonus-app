@@ -283,6 +283,35 @@ ausdruecklich ausgenommen. Die uebrigen Phase-6-Gates bleiben bestehen.
   Vorher-/Nachher-Evidenz bleiben Pflicht. Keine Business-/Security-/DB-
   Aenderung, kein Deployment und kein neuer Final Lock durch diesen Nachtrag.
 
+### 5.5 Customer Custom-Surprise-Terminologie – Founder 2026-09-13
+
+Reservierter **Presentation-Systemtitel**, keine behauptete Titelherkunft:
+Nur wenn die kanonische Kategorie nach Trim exakt `Eigene Überraschung` ist,
+wird der nach Trim exakt gleiche Titel in der Customer-Darstellung als
+Systemtitel behandelt, auch nach manueller Owner-Eingabe. Ein leerer Titel
+derselben Kategorie verwendet ebenfalls den Customer-Fallback.
+Keine Teilstring-/Case-/Aehnlichkeitsheuristik und keine Typableitung nur aus
+Titel oder Produktgruppe. Andere individuelle Titel bleiben bytegleich und
+werden nicht vom DOM-Uebersetzer umgeschrieben. Derselbe Titel in einer anderen
+oder unbekannten Kategorie bleibt unveraendert. Owner/Admin und gespeicherte
+Daten behalten die interne Bezeichnung.
+
+| Locale | Customer-Kategorie | Customer-Fallback-Titel |
+| --- | --- | --- |
+| DE | Überraschung des Hauses | Eine Überraschung für dich |
+| EN | A surprise from the restaurant | A surprise for you |
+| FR | Surprise de la maison | Une surprise pour toi |
+| IT | Sorpresa della casa | Una sorpresa per te |
+| ES | Sorpresa de la casa | Una sorpresa para ti |
+| ZH | 店家惊喜 | 给你的惊喜 |
+| KO | 매장에서 준비한 깜짝 선물 | 당신을 위한 깜짝 선물 |
+
+Kategorie und generischer Titel sind getrennt. Bestehende Customer-I18n- und
+ARIA-Leaks werden nur im freigegebenen Darstellungsumfang korrigiert.
+Keine neue Reward-/Eligibility-/Einloesungs-/Auth-/RLS-/DB-Logik, Migration
+oder Aenderung des Phase-6B-Layouts, Swipe-/Keyboard-Verhaltens und Hit-Area.
+Dieser Zielvertrag allein ist kein Implementierungs- oder Staging-Final-Lock.
+
 ## 6. Login Contract
 
 E-Mail und Passwort bleiben der kanonische Login-Weg. Telefonnummern duerfen

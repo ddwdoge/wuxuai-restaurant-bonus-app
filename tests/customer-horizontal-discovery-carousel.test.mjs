@@ -56,8 +56,8 @@ test("Startseiten-Punkteeinloesungen sind mobil kein Zwei-Karten-Raster mehr", (
 test("Pfeile bewegen exakt eine Karte und besitzen deutsche Labels", () => {
   assert.match(carousel, /scrollToIndex\(activeIndex - 1\)/);
   assert.match(carousel, /scrollToIndex\(activeIndex \+ 1\)/);
-  assert.match(carousel, /previousLabel = "Vorherige Belohnung"/);
-  assert.match(carousel, /nextLabel = "Nächste Belohnung"/);
+  assert.match(carousel, /previousLabel = suppliedPreviousLabel \?\? customerPresentationText\("previousReward", language\)/);
+  assert.match(carousel, /nextLabel = suppliedNextLabel \?\? customerPresentationText\("nextReward", language\)/);
   assert.match(carousel, /aria-label=\{previousLabel\}/);
   assert.match(carousel, /aria-label=\{nextLabel\}/);
   assert.match(carouselStyles, /flex: 0 0 44px/);

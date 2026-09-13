@@ -56,7 +56,7 @@ test("verbrauchte abgelaufene gestartete und inaktive Geschenke erscheinen nicht
 });
 
 test("mehrere Geschenke verwenden den bestehenden Swipe-Carousel mit echter Positionsanzeige", () => {
-  assert.match(giftSection, /<PremiumHorizontalCarousel[\s\S]*label="Deine Geschenke"[\s\S]*nextLabel="Nächstes Geschenk"[\s\S]*previousLabel="Vorheriges Geschenk"/);
+  assert.match(giftSection, /<PremiumHorizontalCarousel[\s\S]*label="Deine Geschenke"[\s\S]*nextLabel=\{ct\("nextGift"\)\}[\s\S]*previousLabel=\{ct\("previousGift"\)\}/);
   assert.match(carousel, /<strong>\{activeIndex \+ 1\}<\/strong> \/ \{items\.length\}/);
   assert.match(carousel, /const hasMultipleItems = items\.length > 1/);
   assert.doesNotMatch(carousel, /setInterval|autoPlay|autoplay/i);
@@ -65,12 +65,12 @@ test("mehrere Geschenke verwenden den bestehenden Swipe-Carousel mit echter Posi
 test("jede Karte behaelt ihren bestehenden Detail- und Einloesehandler", () => {
   assert.match(giftSection, /openRewardRedemption\(gift\)/);
   assert.match(giftSection, /rewardState\(gift, nowMs, activeRedemptionCode, activePointsPresentation\)/);
-  assert.match(giftSection, /rewardStatusText\(gift, state\)/);
+  assert.match(giftSection, /rewardStatusText\(gift, state, language\)/);
   assert.doesNotMatch(giftSection, /redeemCustomerReward|startCustomerPointsPresentation|setRewards/);
 });
 
 test("Startseite kommuniziert ein oder mehrere Geschenke ohne Singular-Annahme", () => {
   assert.match(giftSection, /title="Deine Geschenke"/);
   assert.match(giftSection, /activeGifts\.length === 1/);
-  assert.match(giftSection, /\$\{activeGifts\.length\} persönliche Vorteile/);
+  assert.match(giftSection, /ct\("giftCount", \{ count: activeGifts\.length \}\)/);
 });

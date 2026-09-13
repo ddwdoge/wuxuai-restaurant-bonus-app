@@ -23,7 +23,8 @@ test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
 });
 
 test("Kundennavigation hat exakt vier verständliche deutsche Hauptpunkte", () => {
-  for (const key of ["customer.home", "customer.redeem", "customer.collect", "customer.account"]) assert.match(components, new RegExp(`t\\("${key.replace(".", "\\.")}"\\)`));
+  for (const key of ["customer.home", "customer.redeem", "customer.collect", "customer.account"]) assert.ok(components.includes(`label: "${key}"`));
+  assert.match(components, /<span>\{t\(label\)\}<\/span>/);
   for (const label of ["Start", "Einlösen", "Sammeln", "Konto"]) assert.match(i18nCatalog, new RegExp(`: "${label}"`));
   assert.match(styles, /grid-template-columns: repeat\(4/);
 });
