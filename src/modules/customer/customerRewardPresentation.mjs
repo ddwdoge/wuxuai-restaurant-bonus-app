@@ -9,6 +9,10 @@ export function customerPresentationText(key, language, parameters = {}) {
 // Only canonical birthday metadata + exact trimmed text qualify; stored data is never changed.
 export function customerRewardDescription(reward, language) {
   const description = reward.description ?? "";
+  // Exact complete Owner-generated economics template, never a substring of
+  // individual prose. Display suppression only; Owner persistence stays intact.
+  if (reward.source === "reward" && reward.reward_type === "reward" && reward.is_starter_reward === false &&
+    /^Produktwert: €[\u00a0 ]\d[\d.\u00a0 ]*(?:,\d+)?\. Einlösequote: \d+(?:[.,]\d+)? %\. Geschätzte Konsumation: €[\u00a0 ]\d[\d.\u00a0 ]*(?:,\d+)?\.$/.test(description)) return "";
   return reward.gift_type === "birthday" && description.trim() === "Willkommensgeschenk für neue Gäste."
     ? customerPresentationText("birthdayIntro", language)
     : description;

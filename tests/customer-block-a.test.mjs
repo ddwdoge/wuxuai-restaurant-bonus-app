@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { translateStructural } from "../src/shared/i18n/catalog.mjs";
 import { customerPresentationText } from "../src/modules/customer/customerRewardPresentation.mjs";
+import { UI_LOCALE_TAGS, normalizeUiLanguage } from "../src/shared/i18n/language.mjs";
 import { createImageCardPointerGuard } from "../src/modules/customer/components/imageCardPointerGuard.mjs";
 
 const read = p => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
@@ -18,11 +19,13 @@ function components(language) {
     if (id.endsWith("/I18nProvider")) return { useI18n: () => ({ language, translateKey: k => translateStructural(k, language) }) };
     if (id.endsWith("/catalog.mjs")) return { translateStructural };
     if (id.endsWith("/customerRewardPresentation.mjs")) return { customerPresentationText };
+    if (id.endsWith("/language.mjs")) return { UI_LOCALE_TAGS, normalizeUiLanguage };
+    if (id.endsWith("/customerOfferPresentation")) return compile("src/modules/customer/customerOfferPresentation.ts");
     if (id.endsWith("/ui")) return { UiCard: ({ children, variant: _v, ...p }) => React.createElement("article",p,children), UiButton: ({ children, variant: _v, ...p }) => React.createElement("button",p,children) };
     if (id.endsWith("/RewardImageFrame")) return { RewardImageFrame: p => React.createElement("img", { src:p.imageUrl, alt:p.alt, loading:p.loading }) };
     if (id.endsWith("/SmartMediaFrame")) return { SmartMediaFrame: p => React.createElement("img", { src:p.imageUrl, alt:p.alt, loading:p.loading }) };
     if (id.endsWith("/mediaPresentation")) return { mediaPresentationFromRecord: () => ({}) };
-    if (id.endsWith("/restaurantOfferService")) return { restaurantOfferValidityPresentation: () => ({label:"Verfügbar",tone:"active"}), restaurantOfferPricePresentation: () => ({}), formatRestaurantOfferSchedule: () => "", formatRestaurantOfferPeriod: () => "", restaurantOfferTypeLabels:{NEWS:"Aktuelles"} };
+    if (id.endsWith("/restaurantOfferService")) return { restaurantOfferValidityPresentation: () => ({state:"CURRENT",label:"Verfügbar",tone:"active"}), restaurantOfferPricePresentation: () => ({}), formatRestaurantOfferSchedule: () => "", formatRestaurantOfferPeriod: () => "", restaurantOfferTypeLabels:{NEWS:"Aktuelles"} };
     if (/\/(AppDrawer|LanguageSelector|RestaurantLogoStage|InfoTrigger)$/.test(id)) return {};
     return require(id);
   }
@@ -42,7 +45,7 @@ for (const language of ["de","en","fr","it","es","zh","ko"]) {
   });
   test(`${language}: offer card and detail preserve individual titles without changing the default`,()=>{
     const {RestaurantOfferCard,RestaurantOfferDetail}=components(language);
-    const offer={id:"fixture-only",title:"Individuelles Menü",offer_type:"NEWS",button_label:"Ansehen",short_description:"Kurz",description:"Vollständige Beschreibung",image_url:null};
+    const offer={id:"fixture-only",title:"Individuelles Menü",offer_type:"NEWS",button_label:"Ansehen",short_description:"Kurz",description:"Vollständige Beschreibung",image_url:null,valid_from:"2026-09-01T00:00:00Z",valid_to:"2026-09-30T00:00:00Z"};
     const html=renderToStaticMarkup(React.createElement(RestaurantOfferCard,{offer,imageFirst:true,preserveTitle:true,onOpen(){}}));
     assert.equal((html.match(/<button\b/g)||[]).length,1); assert.match(html,/<h3 data-i18n-skip="true">Individuelles Menü/);
     assert.ok(html.includes(customerPresentationText("details",language)));

@@ -244,9 +244,12 @@ test("CustomerPortal zeigt alle aktuellen Beiträge im Carousel und verändert k
 
 test("Customer-Angebote zeigen Gültigkeitsstatus und kompakten Zeitplan", async () => {
   const [card, service] = await Promise.all([readFile(customerOfferCardUrl, "utf8"), readFile(serviceUrl, "utf8")]);
-  for (const copy of ["Jetzt gültig", "Heute nicht gültig", "Gültig ab", "Gültigkeit:"]) {
+  for (const copy of ["Jetzt gültig", "Heute nicht gültig", "Gültig ab"]) {
     assert.match(`${card}\n${service}`, new RegExp(copy));
   }
+  assert.match(card, /ct\("offerValidity"\)/);
+  const { customerPresentationText } = await import("../src/modules/customer/customerRewardPresentation.mjs");
+  assert.equal(customerPresentationText("offerValidity", "de"), "Gültigkeit");
   assert.match(card, /formatRestaurantOfferSchedule/);
   assert.match(card, /formatRestaurantOfferPeriod/);
   assert.match(card, /onImageError=\{\(\) => setFailed\(true\)\}/);

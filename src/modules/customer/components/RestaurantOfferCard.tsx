@@ -4,6 +4,7 @@ import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { mediaPresentationFromRecord } from "../../../shared/mediaPresentation";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { customerPresentationText } from "../customerRewardPresentation.mjs";
+import { customerOfferPresentation } from "../customerOfferPresentation";
 import {
   formatRestaurantOfferPeriod,
   formatRestaurantOfferSchedule,
@@ -15,12 +16,13 @@ import {
 import "./restaurant-offer-card.css";
 
 function OfferImage({ offer, detail = false, imageFirst = false }: { offer: RestaurantOffer; detail?: boolean; imageFirst?: boolean }) {
+  const { language } = useI18n();
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [offer.image_url]);
   if (!offer.image_url || failed) {
     return <div aria-hidden="true" className={detail ? "customer-offer-detail-fallback" : "customer-offer-card-fallback"}><ImageIcon size={detail ? 40 : 31} /></div>;
   }
-  return <SmartMediaFrame alt={`Bild zu ${offer.title}`} imageUrl={offer.image_url} loading={imageFirst ? "lazy" : undefined} onImageError={() => setFailed(true)} presentation={mediaPresentationFromRecord(offer)} />;
+  return <SmartMediaFrame alt={detail ? customerPresentationText("offerImage", language, { title: offer.title }) : `Bild zu ${offer.title}`} imageUrl={offer.image_url} loading={imageFirst ? "lazy" : undefined} onImageError={() => setFailed(true)} presentation={mediaPresentationFromRecord(offer)} />;
 }
 
 export function RestaurantOfferCard({
@@ -48,7 +50,7 @@ export function RestaurantOfferCard({
       <div className="customer-offer-card-body">
         {showRestaurant ? <span className="customer-offer-restaurant">{offer.restaurant_name}</span> : null}
         <h3 data-i18n-skip={preserveTitle ? "true" : undefined}>{offer.title}</h3>
-        <p>{offer.short_description}</p>
+        <p data-i18n-skip={preserveTitle ? "true" : undefined}>{offer.short_description}</p>
         <div className="customer-offer-card-validity-row">
           <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
           <span className="customer-offer-schedule">{formatRestaurantOfferSchedule(offer)}</span>
@@ -63,23 +65,26 @@ export function RestaurantOfferCard({
   );
 }
 
-export function RestaurantOfferDetail({ offer, preserveTitle = false }: { offer: RestaurantOffer; preserveTitle?: boolean }) {
+export function RestaurantOfferDetail({ offer }: { offer: RestaurantOffer; preserveTitle?: boolean }) {
+  const { language } = useI18n();
+  const ct = (key: string) => customerPresentationText(key, language);
   const validity = restaurantOfferValidityPresentation(offer);
+  const copy = customerOfferPresentation(offer, language, validity);
   const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
-    <article className="customer-offer-detail">
+    <article className="customer-offer-detail" data-i18n-skip="true">
       <div className="customer-offer-detail-media"><OfferImage detail offer={offer} /></div>
-      <span>{restaurantOfferTypeLabels[offer.offer_type]}</span>
+      <span>{copy.type}</span>
       {offer.restaurant_name ? <small>{offer.restaurant_name}</small> : null}
-      <h2 data-i18n-skip={preserveTitle ? "true" : undefined}>{offer.title}</h2>
-      <p>{offer.description || offer.short_description}</p>
-      <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
+      <h2 data-i18n-skip="true">{offer.title}</h2>
+      <p data-i18n-skip="true">{offer.description || offer.short_description}</p>
+      <span className={`customer-offer-validity ${validity.tone}`}>{copy.status}</span>
       <div className="customer-offer-detail-meta">
-        <span><strong>Gültigkeit:</strong> {formatRestaurantOfferPeriod(offer)}</span>
-        <span>{formatRestaurantOfferSchedule(offer)}</span>
+        <span><strong>{ct("offerValidity")}:</strong> {copy.period}</span>
+        <span>{copy.schedule}</span>
       </div>
       {price.currentPrice ? <div className="customer-offer-detail-price">{price.discountLabel ? <strong className="customer-offer-discount-badge">{price.discountLabel}</strong> : null}{price.previousPrice ? <del>{price.previousPrice}</del> : null}<strong className="customer-offer-current-price">{price.currentPrice}</strong></div> : null}
-      <p className="customer-offer-responsibility">Angaben zu Preis, Verfügbarkeit und Inhalt stammen vom Restaurant.</p>
+      <p className="customer-offer-responsibility">{ct("offerResponsibility")}</p>
     </article>
   );
 }

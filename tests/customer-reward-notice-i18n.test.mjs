@@ -43,8 +43,9 @@ for (const [language, text] of Object.entries(expected)) {
     assert.doesNotMatch(html, /aria-hidden|aria-label|aria-description/);
   });
 }
-test("notice is scoped to overview; Spanish correction and German original are exact", () => {
-  assert.equal((source.match(/ct\("rewardNotice"\)/g) ?? []).length, 1);
+test("notice is scoped to overview and points detail; Spanish correction and German original are exact", () => {
+  assert.equal((source.match(/ct\("rewardNotice"\)/g) ?? []).length, 2);
+  assert.ok(source.includes('{!redeemOffer.is_starter_reward ? <p className="premium-legal-notice" data-i18n-skip="true">{ct("rewardNotice")}</p> : null}'));
   const overview = source.slice(source.indexOf('{activeView === "redemptions" ? ('), source.indexOf('{activeView === "account" ? ('));
   assert.ok(overview.includes(notice));
   assert.match(expected.es, /condiciones de participación del restaurante/);

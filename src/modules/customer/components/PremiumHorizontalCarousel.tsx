@@ -100,8 +100,10 @@ export function PremiumHorizontalCarousel({
         {items.map((item, index) => (
           <div
             aria-label={customerPresentationText("position", language, { current: index + 1, total: items.length })}
+            aria-current={index === activeIndex ? "true" : undefined}
             className="premium-horizontal-carousel-item"
             data-carousel-item
+            data-carousel-active={index === activeIndex ? "true" : undefined}
             key={(item as { key?: string | null }).key ?? index}
             role="group"
           >

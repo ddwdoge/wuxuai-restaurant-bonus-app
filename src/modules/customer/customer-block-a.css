@@ -65,7 +65,26 @@
   width: 1px;
 }
 .customer-block-a .customer-image-first-action > .customer-image-first-chevron { bottom: 14px; display: block; position: absolute; right: 14px; }
-.customer-block-a :is(.premium-reward-card, .customer-offer-card):focus-within { outline: 3px solid var(--premium-primary-dark, #946b16); outline-offset: 2px; }
+/* Inside the card: images cannot cover the ring and overflow cannot clip it.
+   A double ring distinguishes keyboard focus; current position is also named
+   by aria-current and the existing live position indicator. No geometry change. */
+.customer-block-a :is(.premium-reward-card, .customer-offer-card)::after {
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+.customer-block-a [data-carousel-active="true"] > :is(.premium-reward-card, .customer-offer-card)::after {
+  box-shadow: inset 0 0 0 2px var(--premium-primary-dark, #946b16);
+}
+.customer-block-a :is(.premium-reward-card, .customer-offer-card):focus-within { outline: none; }
+.customer-block-a :is(.premium-reward-card, .customer-offer-card):focus-within::after {
+  box-shadow: inset 0 0 0 3px var(--premium-primary-dark, #946b16), inset 0 0 0 5px #fff, inset 0 0 0 6px var(--premium-primary-dark, #946b16);
+}
+.customer-block-a .customer-image-first-action:focus-visible { outline: none; }
+.customer-block-a .premium-horizontal-carousel-viewport:focus-visible { outline-offset: -3px; }
 .customer-block-a-detail :is(.premium-reward-detail-heading h2, .customer-offer-detail h2) { overflow-wrap: anywhere; }
 .customer-block-a-detail :is(.premium-reward-facts, .customer-offer-detail-meta) { min-width: 0; overflow-wrap: anywhere; }
 .app-drawer-panel.customer-block-a-detail:has(.premium-reward-detail) { height: auto; max-height: calc(90dvh - 16px); }

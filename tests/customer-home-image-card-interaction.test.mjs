@@ -87,7 +87,8 @@ test("non-Home cards and separate controls are not intercepted", () => {
 test("full-card sizing and visible focus are scoped to existing Home image buttons", () => {
   const css = read("src/modules/customer/customer-compact.css");
   assert.match(css, /\.customer-home-compact :is\(\.premium-reward-card, \.customer-offer-card\) \.customer-image-first-action \{[^}]*align-self: stretch;[^}]*height: 100%;[^}]*inset: 0;/);
-  assert.match(css, /:focus-within \{ outline: 3px solid/);
+  assert.match(css, /:focus-within::after \{\s+box-shadow: inset 0 0 0 3px/);
+  assert.match(css, /border-radius: inherit;[\s\S]*inset: 0;[\s\S]*pointer-events: none;/);
   const ui = read("src/modules/customer/components/PremiumCustomerUi.tsx");
   assert.match(ui, /aria-label=\{`\$\{title\}: \$\{actionLabel\}`\}/);
   assert.match(ui, /onClick=\{onOpen\}/);

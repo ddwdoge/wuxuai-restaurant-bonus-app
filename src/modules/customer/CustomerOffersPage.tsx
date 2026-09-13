@@ -5,6 +5,8 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { AppShell, EmptyState, ErrorState, LoadingState } from "./components/PremiumCustomerUi";
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
 import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { customerPresentationText } from "./customerRewardPresentation.mjs";
 import "./customer-block-a.css";
 import {
   loadPublicRestaurantOffers,
@@ -14,6 +16,8 @@ import {
 import "./customer-offers-page.css";
 
 export function CustomerOffersPage() {
+  const { language } = useI18n();
+  const ct = (key: string) => customerPresentationText(key, language);
   const [searchParams] = useSearchParams();
   const { slug = "" } = useParams();
   const requestedOfferId = searchParams.get("offer");
@@ -61,7 +65,7 @@ export function CustomerOffersPage() {
           <section aria-label="Aktuelle Restaurantbeiträge"><PremiumHorizontalCarousel label="Aktuelle Restaurantbeiträge">{sortedOffers.map((offer) => <RestaurantOfferCard imageFirst preserveTitle key={offer.id} offer={offer} onOpen={() => openOffer(offer)} showRestaurant />)}</PremiumHorizontalCarousel></section>
         ) : <EmptyState description="Sobald ein Partnerrestaurant etwas veröffentlicht, erscheint es hier." title="Noch nichts Neues" />}
       </div>
-      <AppDrawer className="customer-block-a-detail" description="Information des Restaurants" onClose={() => setSelected(null)} open={Boolean(selected)} size="standard" title="Aktuelles & Angebote">{selected ? <RestaurantOfferDetail preserveTitle offer={selected} /> : null}</AppDrawer>
+      <AppDrawer className="customer-block-a-detail" closeLabel={ct("close")} description={ct("offerDescription")} onClose={() => setSelected(null)} open={Boolean(selected)} size="standard" title={ct("offerTitle")}>{selected ? <RestaurantOfferDetail preserveTitle offer={selected} /> : null}</AppDrawer>
     </AppShell>
   );
 }

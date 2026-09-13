@@ -206,14 +206,6 @@ function rewardStatusText(reward: PublicCustomerOfferView, state: RewardCardStat
   return text("pointsRemaining", { count: reward.remaining_points });
 }
 
-function formatEuro(value: number) {
-  return new Intl.NumberFormat("de-AT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: value % 1 === 0 ? 0 : 2,
-  }).format(value);
-}
-
 function welcomeGiftDetail(reward: {
   product_price?: number | null;
   welcome_gift_mode?: "value_limit" | "fixed_product";
@@ -223,9 +215,6 @@ function welcomeGiftDetail(reward: {
 }) {
   if (reward.welcome_gift_mode === "fixed_product" && reward.fixed_product_name) {
     return reward.fixed_product_name;
-  }
-  if (reward.product_price) {
-    return `bis ${formatEuro(reward.product_price)}`;
   }
   if (reward.available_products?.length) {
     return reward.available_products.join(", ");
@@ -2233,7 +2222,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                             imageCrop={rewardImageCropFromRecord(reward)}
                             key={`${reward.source}-${reward.assignment_id ?? reward.id}`}
                             meta={reward.is_starter_reward
-                              ? welcomeGiftDetail(reward) ?? "Persönliches Geschenk"
+                              ? welcomeGiftDetail(reward) ?? ct("forYou")
                               : ct("points", { count: reward.required_points })}
                             onOpen={() => openRewardRedemption(reward)}
                             state={state}
@@ -2367,11 +2356,12 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             </AppDrawer>
 
             <AppDrawer
-              description="Information des Restaurants"
+              description={ct("offerDescription")}
+              closeLabel={ct("close")}
               onClose={() => setSelectedRestaurantOffer(null)}
               open={Boolean(selectedRestaurantOffer)}
               size="standard"
-              title="Aktuelles & Angebote"
+              title={ct("offerTitle")}
             >
               {selectedRestaurantOffer ? <RestaurantOfferDetail offer={selectedRestaurantOffer} /> : null}
             </AppDrawer>
@@ -2522,7 +2512,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     </div>
                     <dl className="premium-reward-facts">
                       <div><dt>{ct("kindLabel")}</dt><dd>{ct(redeemOffer.gift_type === "birthday" ? "birthdayGift" : redeemOffer.is_starter_reward ? "welcomeGift" : "pointRedemption")}</dd></div>
-                      <div><dt>{ct(redeemOffer.is_starter_reward ? "valueLabel" : "neededLabel")}</dt><dd>{redeemOffer.is_starter_reward ? welcomeGiftDetail(redeemOffer) ?? ct("forYou") : ct("points", { count: redeemOffer.required_points })}</dd></div>
+                      <div><dt>{ct("neededLabel")}</dt><dd>{redeemOffer.is_starter_reward ? ct("noPointsNeeded") : ct("points", { count: redeemOffer.required_points })}</dd></div>
+                      {!redeemOffer.is_starter_reward ? <div><dt>{ct("balanceLabel")}</dt><dd>{ct("points", { count: customer.points_balance })}</dd></div> : null}
+                      {redeemOffer.is_starter_reward && welcomeGiftDetail(redeemOffer) ? <div><dt>{ct("giftContents")}</dt><dd data-i18n-skip="true">{welcomeGiftDetail(redeemOffer)}</dd></div> : null}
                       {redeemOffer.category || redeemOffer.product_group ? <div><dt>{ct("categoryLabel")}</dt><dd>{present(redeemOffer).category}</dd></div> : null}
                       {redeemOffer.valid_until || redeemOffer.expires_at ? <div><dt>{ct("validUntil")}</dt><dd>{new Date(redeemOffer.valid_until ?? redeemOffer.expires_at ?? "").toLocaleDateString(language === "de" ? "de-AT" : language)}</dd></div> : null}
                     </dl>
@@ -2530,14 +2522,15 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       <div className="premium-reward-notice"><LockKeyhole aria-hidden="true" size={20} /><p>{rewardStatusText(redeemOffer, "locked", language)}</p></div>
                     ) : null}
                     {selectedRewardState === "redeeming" ? (
-                      <div className="premium-reward-notice"><Clock3 aria-hidden="true" size={20} /><p>Für diese Einlösung ist bereits ein 15-Minuten-Fenster aktiv.</p></div>
+                      <div className="premium-reward-notice"><Clock3 aria-hidden="true" size={20} /><p>{ct("activeWindowNotice")}</p></div>
                     ) : null}
                     {selectedRewardState === "expired" ? (
-                      <div className="premium-reward-notice error"><Clock3 aria-hidden="true" size={20} /><p>Diese Belohnung ist abgelaufen.</p></div>
+                      <div className="premium-reward-notice error"><Clock3 aria-hidden="true" size={20} /><p>{ct("expiredNotice")}</p></div>
                     ) : null}
                     {selectedRewardState === "redeemed" ? (
-                      <div className="premium-reward-notice success"><CheckCircle2 aria-hidden="true" size={20} /><p>Diese Belohnung wurde bereits eingelöst.</p></div>
+                      <div className="premium-reward-notice success"><CheckCircle2 aria-hidden="true" size={20} /><p>{ct("redeemedNotice")}</p></div>
                     ) : null}
+                    {!redeemOffer.is_starter_reward ? <p className="premium-legal-notice" data-i18n-skip="true">{ct("rewardNotice")}</p> : null}
                   </article>
                 ) : null}
 

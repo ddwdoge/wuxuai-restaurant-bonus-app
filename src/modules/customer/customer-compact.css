@@ -127,7 +127,7 @@
     position: absolute;
     right: 14px;
   }
-  .customer-home-compact :is(.premium-reward-card, .customer-offer-card):focus-within { outline: 3px solid var(--premium-primary-dark); outline-offset: 2px; }
+  .customer-home-compact :is(.premium-reward-card, .customer-offer-card):focus-within { outline: none; }
   .customer-home-compact .premium-horizontal-carousel-viewport { position: relative; }
 
   .customer-home-compact .premium-boost-card { padding: 16px; }
@@ -155,3 +155,21 @@
   overflow: visible;
   overflow-wrap: anywhere;
 }
+/* Founder follow-up: inset selection/focus only; Home geometry and gestures stay locked. */
+.customer-home-compact .premium-horizontal-carousel :is(.premium-reward-card, .customer-offer-card) { position: relative; }
+.customer-home-compact .premium-horizontal-carousel :is(.premium-reward-card, .customer-offer-card)::after {
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+.customer-home-compact [data-carousel-active="true"] > :is(.premium-reward-card, .customer-offer-card)::after {
+  box-shadow: inset 0 0 0 2px var(--premium-primary-dark, #946b16);
+}
+.customer-home-compact .premium-horizontal-carousel :is(.premium-reward-card, .customer-offer-card):focus-within::after {
+  box-shadow: inset 0 0 0 3px var(--premium-primary-dark, #946b16), inset 0 0 0 5px #fff, inset 0 0 0 6px var(--premium-primary-dark, #946b16);
+}
+.customer-home-compact .customer-image-first-action:focus-visible { outline: none; }
+.customer-home-compact .premium-horizontal-carousel-viewport:focus-visible { outline-offset: -3px; }
