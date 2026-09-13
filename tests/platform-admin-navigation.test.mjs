@@ -22,6 +22,7 @@ test("desktop sidebar and mobile Admin menu share one active navigation model", 
   for (const key of ["overview", "businesses", "plans", "countries", "health", "audit", "system"])
     assert.match(layout, new RegExp(`key: \"${key}\"`));
   assert.match(layout, /aria-current=\{active \? "page"/);
+  assert.match(layout, /end=\{key === "overview"\}/);
   assert.match(layout, /<AppDrawer[\s\S]*<Navigation close=/);
   assert.match(layout, /<LanguageSelector \/>[\s\S]*platform-admin-menu-trigger/);
   assert.doesNotMatch(layout, /\.rpc\(|fetch\(|supabase/);

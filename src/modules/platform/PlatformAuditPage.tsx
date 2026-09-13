@@ -112,7 +112,7 @@ export function PlatformAuditPage() {
   return (
     <PlatformAdminLayout
       className="platform-audit-shell"
-      description={t("platform.audit.description")}
+      description={navigationText.descriptions.audit}
       title={navigationText.audit}
       toolbar={
           <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />{t("platform.audit.refresh")}</button>

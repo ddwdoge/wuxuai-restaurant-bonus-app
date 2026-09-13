@@ -37,7 +37,7 @@ function Navigation({ close }: { close?: () => void }) {
   return <nav aria-label={t.navigation} className="platform-admin-navigation">
     {items.map(({ key, path, icon: Icon }) => {
       const active = isActiveSection(pathname, key);
-      return <NavLink aria-current={active ? "page" : undefined} className={active ? "active" : undefined} key={key} onClick={close} to={path}>
+      return <NavLink aria-current={active ? "page" : undefined} className={active ? "active" : undefined} end={key === "overview"} key={key} onClick={close} to={path}>
         <Icon aria-hidden="true" size={19} />
         <span>{t[key]}</span>
         {active ? <strong aria-hidden="true">●</strong> : null}
