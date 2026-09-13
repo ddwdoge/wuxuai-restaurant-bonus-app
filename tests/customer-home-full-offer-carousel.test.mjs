@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import ts from "typescript";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const portal = read("../src/modules/customer/CustomerPortal.tsx");
@@ -9,10 +10,20 @@ const carouselStyles = read("../src/modules/customer/components/premium-horizont
 const offerCard = read("../src/modules/customer/components/RestaurantOfferCard.tsx");
 const offerService = read("../src/modules/offers/restaurantOfferService.ts");
 
-const offerHomeSection = portal.slice(
-  portal.indexOf('{restaurantOffers.length ? ('),
-  portal.indexOf('<section className="premium-content-section" aria-label="Deine Vorteile">'),
-);
+// Locate the actual conditional, independent of its visual position on Home.
+// Keep the complete-catalog assertions below unchanged when sections move.
+const portalAst = ts.createSourceFile("CustomerPortal.tsx", portal, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+const offerSections = [];
+function findOfferSection(node) {
+  if (ts.isJsxExpression(node) && node.expression && ts.isConditionalExpression(node.expression)
+      && node.expression.condition.getText(portalAst) === "restaurantOffers.length") {
+    offerSections.push(node.getText(portalAst));
+  }
+  ts.forEachChild(node, findOfferSection);
+}
+findOfferSection(portalAst);
+assert.equal(offerSections.length, 1, "exactly one complete Home offer section");
+const offerHomeSection = offerSections[0];
 const offerLoadEffect = portal.slice(
   portal.indexOf('if (!isUsableRestaurantSlug(restaurantSlug)) {\n      setRestaurantOffers([]);', portal.indexOf('setRestaurantOffers(nextOffers)') - 1000),
   portal.indexOf('function openRestaurantOffer'),

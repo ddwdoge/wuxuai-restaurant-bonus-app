@@ -1,0 +1,155 @@
+/* Phase 6 reference: presentation only, restricted to restaurant Home.
+   Large image-first cards use the existing horizontal carousel. */
+@media (max-width: 767px) {
+  .customer-home-compact {
+    --premium-radius: 16px;
+    --customer-card-radius: 16px;
+    --customer-card-padding: 14px;
+    --customer-card-inline-inset: 28px;
+    --customer-card-mobile-width: 90%;
+    --customer-card-media-ratio: 3 / 2;
+    font-size: 15px;
+  }
+
+  .customer-home-compact .customer-page-container {
+    gap: 12px;
+    padding-top: 4px;
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  }
+
+  .customer-home-compact .premium-customer-header {
+    min-height: 60px;
+  }
+
+  .customer-home-compact .premium-customer-header-copy strong {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .customer-home-compact .premium-view-stack { gap: 12px; }
+  .customer-home-compact .premium-content-section { gap: 12px; margin-block: 4px; }
+  .customer-home-compact .premium-welcome-copy > span { font-size: 12px; line-height: 1.3; }
+  .customer-home-compact .premium-welcome-copy h1 { font-size: 28px; line-height: 1.1; margin: 0; }
+  .customer-home-compact .premium-welcome-copy p { font-size: 15px; line-height: 1.35; }
+  /* Introductory prose is secondary; all account and offer status stays visible. */
+  .customer-home-compact .premium-welcome-copy > p,
+  .customer-home-compact .customer-home-offers .premium-section-header p {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+  }
+
+  .customer-home-compact .premium-points-card {
+    align-items: center;
+    gap: 8px 12px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    padding: 16px;
+  }
+  .customer-home-compact .premium-points-heading { grid-column: 1; }
+  .customer-home-compact .premium-points-value {
+    font-size: 46px;
+    grid-column: 2;
+    grid-row: 1;
+    max-width: 140px;
+    text-align: end;
+  }
+  .customer-home-compact .premium-points-card > :is(.premium-progress, .premium-points-boost-detail, p) { grid-column: 1 / -1; }
+  .customer-home-compact .premium-points-card > p { font-size: 15px; line-height: 1.4; margin: 0; }
+
+  .customer-home-compact .premium-section-header h2 { font-size: 20px; }
+  .customer-home-compact .premium-section-header p { font-size: 15px; line-height: 1.4; margin-top: 4px; }
+  .customer-home-compact .premium-benefit-tile { border-radius: 16px; gap: 8px; min-height: 44px; padding: 14px; }
+  .customer-home-compact .premium-benefit-tile strong { font-size: 16px; }
+  .customer-home-compact .premium-benefit-icon { height: 32px; width: 32px; }
+
+  .customer-home-compact .premium-reward-card {
+    align-items: start;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 0 14px;
+    position: relative;
+  }
+  .customer-home-compact .premium-reward-media { aspect-ratio: 3 / 2; border-radius: 0; width: 100%; }
+  .customer-home-compact .premium-reward-copy { gap: 4px; padding: 0 44px 0 14px; }
+  .customer-home-compact .premium-reward-copy > span { color: var(--premium-text-secondary); font-size: 13px; }
+  .customer-home-compact .premium-reward-copy h3 { display: block; font-size: 17px; overflow: visible; overflow-wrap: anywhere; }
+  .customer-home-compact .premium-reward-copy p { font-size: 13px; }
+  .customer-home-compact .premium-lock-badge { height: 28px; right: 0; top: 0; width: 28px; }
+  .customer-home-compact .premium-reward-card > .premium-button { grid-column: 1 / -1; margin: 0 14px; width: calc(100% - 28px); }
+
+  .customer-home-compact .customer-offer-card { display: grid; grid-template-columns: minmax(0, 1fr); position: relative; }
+  .customer-home-compact .customer-offer-card-media { aspect-ratio: 3 / 2; min-height: 0; }
+  .customer-home-compact .customer-offer-card-media small { bottom: 8px; font-size: 12px; left: 12px; max-width: calc(100% - 24px); overflow-wrap: anywhere; padding: 4px 8px; }
+  .customer-home-compact .customer-offer-card-body { gap: 4px; padding: 14px 44px 14px 14px; }
+  .customer-home-compact .customer-offer-card-body :is(h3, p) { display: block; overflow: visible; }
+  .customer-home-compact .customer-offer-card-body h3 { font-size: 17px; }
+  /* Secondary prose remains in the unchanged detail drawer. */
+  .customer-home-compact .customer-offer-card-body > p { display: none; }
+  .customer-home-compact .customer-offer-card-validity-row { flex-wrap: wrap; }
+  .customer-home-compact :is(.customer-offer-validity, .customer-offer-schedule, .customer-offer-card-meta span, .customer-offer-price del, .customer-offer-discount-badge) { font-size: 12px; }
+  .customer-home-compact .customer-offer-card-meta { align-items: start; flex-direction: column; }
+  .customer-home-compact .customer-offer-price { justify-content: start; max-width: none; }
+  .customer-home-compact :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame { aspect-ratio: 3 / 2; height: 100%; }
+  /* Only the image's saved crop zoom; never scale a card, section or page. */
+  .customer-home-compact :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame > img {
+    object-fit: cover;
+    transform: scale(var(--smart-media-crop-zoom, 1));
+  }
+  /* The same detail button covers the card; its accessible action is retained. */
+  .customer-home-compact :is(.premium-reward-card, .customer-offer-card) .customer-image-first-action {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--premium-text-primary);
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    transform: none;
+    width: 100%;
+  }
+  .customer-home-compact .customer-image-first-action > span {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+  .customer-home-compact .customer-image-first-action > .customer-image-first-chevron {
+    bottom: 14px;
+    display: block;
+    position: absolute;
+    right: 14px;
+  }
+  .customer-home-compact :is(.premium-reward-card, .customer-offer-card):focus-within { outline: 3px solid var(--premium-primary-dark); outline-offset: 2px; }
+  .customer-home-compact .premium-horizontal-carousel-viewport { position: relative; }
+
+  .customer-home-compact .premium-boost-card { padding: 16px; }
+  .customer-home-compact .premium-button { min-height: 48px; padding-block: 8px; white-space: normal; }
+  .customer-home-compact .premium-text-button { min-height: 44px; min-width: 44px; }
+  .customer-home-compact .premium-bottom-navigation { padding-block: 0; }
+  .customer-home-compact .premium-bottom-navigation button { font-size: 12px; min-height: 64px; overflow-wrap: anywhere; padding-inline: 2px; }
+}
+
+@media (min-width: 768px) {
+  .customer-image-first-chevron { display: none; }
+}
+
+@media (max-width: 359px) {
+  .customer-home-compact .customer-page-container { padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right)); }
+  .customer-home-compact .premium-benefit-grid { grid-template-columns: minmax(0, 1fr); }
+  .customer-home-compact .premium-benefit-tile { grid-template-columns: 32px minmax(0, 1fr); }
+  .customer-home-compact .premium-benefit-icon { grid-row: 1 / 3; }
+  .customer-home-compact .premium-benefit-tile > span:last-child { grid-column: 2; }
+}
+
+/* Never clamp translated Home titles, including tablet and desktop. */
+.customer-home-compact .premium-horizontal-carousel-item :is(.premium-reward-copy h3, .customer-offer-card-body h3) {
+  display: block;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}

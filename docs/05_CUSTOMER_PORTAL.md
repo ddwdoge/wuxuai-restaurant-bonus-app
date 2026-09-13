@@ -1,5 +1,17 @@
 # 05_CUSTOMER_PORTAL.md
 
+## Phase 6 Image-first – neuer Zielvertrag 2026-09-12
+
+Verbindlicher mobiler Marketingkarten-Nachtrag:
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`, Abschnitt 5.4.
+Die aelteren 16:9-/83-Prozent- und pauschalen `contain`-Vorgaben unten
+sind fuer diesen Zielumfang SUPERSEDED. Image-first ist noch nicht umgesetzt
+oder physisch abgenommen. Katalogvollstaendigkeit, Geschenkprioritaet und
+Business-/Security-Locks bleiben bestehen. Founder-Klarstellung: horizontales
+Wischen links/rechts, Scroll Snap, Pfeile und Positionsanzeige bleiben erhalten;
+die Referenz betrifft nur den Kartenaufbau, keinen vertikalen Feed.
+Keine neue Catalog-Funktion in Phase 6.
+
 ## Current Lock 2026-08-24
 
 - Der Kundenbereich heißt **Meine Vorteile**.

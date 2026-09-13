@@ -14,6 +14,7 @@ type SmartMediaFrameProps = {
   className?: string;
   fallback?: ReactNode;
   imageUrl?: string | null;
+  loading?: "eager" | "lazy";
   onImageError?: () => void;
   onImageLoad?: (dimensions: MediaDimensions) => void;
   presentation?: Partial<MediaPresentation> | null;
@@ -25,6 +26,7 @@ export function SmartMediaFrame({
   className = "",
   fallback,
   imageUrl,
+  loading,
   onImageError,
   onImageLoad,
   presentation,
@@ -43,6 +45,7 @@ export function SmartMediaFrame({
     "--smart-media-position-x": `${normalized.positionX * 100}%`,
     "--smart-media-position-y": `${normalized.positionY * 100}%`,
     "--smart-media-render-scale": coverScale * normalized.zoom,
+    "--smart-media-crop-zoom": normalized.zoom,
   } as CSSProperties;
 
   return (
@@ -51,6 +54,8 @@ export function SmartMediaFrame({
         <img
           alt={alt}
           draggable={false}
+          decoding={loading ? "async" : undefined}
+          loading={loading}
           onError={() => {
             setFailed(true);
             onImageError?.();
@@ -69,4 +74,3 @@ export function SmartMediaFrame({
     </div>
   );
 }
-

@@ -5,6 +5,13 @@
 
 Status: **LOCK**
 
+**Phase-6-Zielergaenzung 2026-09-12:** Fuer mobile Marketingkarten gilt
+Abschnitt 5.4 in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` (Image-first).
+Die aeltere 16:9-/83-Prozent-Geometrie und das pauschale Cover-Verbot unten
+sind nur fuer diesen Zielumfang SUPERSEDED, nicht fuer Logos, QR, Druck oder
+andere Portale. Informationskarten bleiben kompakt, Sicherheitsablaeufe
+unveraendert. Neuer visueller Ist-/Final-Lock-Nachweis steht noch aus.
+
 ## Unified UI/UX System Phase 2
 
 Der portalweite Komponenten- und Tokenvertrag ist in

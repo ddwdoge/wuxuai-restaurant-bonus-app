@@ -1462,7 +1462,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   }
 
   return (
-    <AppShell fontFamily={branding.font_family} primaryColor={branding.primary_color}>
+    <AppShell className={customer && !isBonusCollection && activeView === "home" ? "customer-home-compact" : undefined} fontFamily={branding.font_family} primaryColor={branding.primary_color}>
       <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}${customer && !isBonusCollection && activeView === "redemptions" ? " premium-redemption-page" : ""}`}>
         <CustomerHeader
           compact
@@ -1971,7 +1971,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                 ) : null}
 
                 {restaurantOffers.length ? (
-                  <section className="premium-content-section" aria-label="Aktuelles und Angebote">
+                  <section className="premium-content-section customer-home-offers" aria-label="Aktuelles und Angebote">
                     <SectionHeader
                       action={restaurantOffers.length > 3 ? <Link className="premium-text-button" to={`/customer/${encodeURIComponent(restaurant.slug)}/offers`}>Alle ansehen</Link> : null}
                       subtitle="Neuigkeiten direkt von deinem Restaurant."
@@ -1983,7 +1983,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       previousLabel="Vorheriges Angebot"
                     >
                       {restaurantOffers.map((offer) => (
-                        <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />
+                        <RestaurantOfferCard imageFirst key={offer.id} offer={offer} onOpen={() => openRestaurantOffer(offer)} />
                       ))}
                     </PremiumHorizontalCarousel>
                   </section>
@@ -2053,6 +2053,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <PremiumHorizontalCarousel label="Mit Punkten einlösbar">
                       {pointRedemptions.map((reward) => (
                         <RewardCard
+                          imageFirst
                           category={reward.category ?? reward.product_group}
                           imageUrl={reward.image_url}
                           imageCrop={rewardImageCropFromRecord(reward)}
@@ -2090,6 +2091,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         return (
                           <RewardCard
                             category={isBirthdayGift ? "Geburtstagsgeschenk" : isWelcomeGift ? "Willkommensgeschenk" : gift.category ?? "Geschenk"}
+                            imageFirst
                             imageUrl={gift.image_url}
                             imageCrop={rewardImageCropFromRecord(gift)}
                             key={`${gift.source}-${gift.assignment_id ?? gift.id}`}

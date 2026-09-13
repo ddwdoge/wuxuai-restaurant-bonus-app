@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Image as ImageIcon } from "lucide-react";
+import { CalendarDays, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { mediaPresentationFromRecord } from "../../../shared/mediaPresentation";
 import {
@@ -12,30 +12,32 @@ import {
 } from "../../offers/restaurantOfferService";
 import "./restaurant-offer-card.css";
 
-function OfferImage({ offer, detail = false }: { offer: RestaurantOffer; detail?: boolean }) {
+function OfferImage({ offer, detail = false, imageFirst = false }: { offer: RestaurantOffer; detail?: boolean; imageFirst?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [offer.image_url]);
   if (!offer.image_url || failed) {
     return <div aria-hidden="true" className={detail ? "customer-offer-detail-fallback" : "customer-offer-card-fallback"}><ImageIcon size={detail ? 40 : 31} /></div>;
   }
-  return <SmartMediaFrame alt={`Bild zu ${offer.title}`} imageUrl={offer.image_url} onImageError={() => setFailed(true)} presentation={mediaPresentationFromRecord(offer)} />;
+  return <SmartMediaFrame alt={`Bild zu ${offer.title}`} imageUrl={offer.image_url} loading={imageFirst ? "lazy" : undefined} onImageError={() => setFailed(true)} presentation={mediaPresentationFromRecord(offer)} />;
 }
 
 export function RestaurantOfferCard({
   offer,
   onOpen,
   showRestaurant = false,
+  imageFirst = false,
 }: {
   offer: RestaurantOffer;
   onOpen: () => void;
   showRestaurant?: boolean;
+  imageFirst?: boolean;
 }) {
   const validity = restaurantOfferValidityPresentation(offer);
   const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
     <article className="customer-offer-card premium-compact-customer-card">
       <div className="customer-offer-card-media">
-        <OfferImage offer={offer} />
+        <OfferImage imageFirst={imageFirst} offer={offer} />
         <small>{restaurantOfferTypeLabels[offer.offer_type]}</small>
       </div>
       <div className="customer-offer-card-body">
@@ -50,7 +52,7 @@ export function RestaurantOfferCard({
           <span><CalendarDays aria-hidden="true" size={16} />{formatRestaurantOfferPeriod(offer)}</span>
           {price.currentPrice ? <div className="customer-offer-price">{price.discountLabel ? <strong className="customer-offer-discount-badge">{price.discountLabel}</strong> : null}{price.previousPrice ? <del>{price.previousPrice}</del> : null}<span className="customer-offer-current-price">{price.currentPrice}</span></div> : null}
         </div>
-        <button className="premium-button premium-button-secondary" onClick={onOpen} type="button">{offer.button_label}</button>
+        <button aria-label={imageFirst ? `${offer.title}: ${offer.button_label}` : undefined} className={`premium-button premium-button-secondary${imageFirst ? " customer-image-first-action" : ""}`} onClick={onOpen} type="button">{imageFirst ? <><span>{offer.button_label}</span><ChevronRight aria-hidden="true" className="customer-image-first-chevron" size={22} /></> : offer.button_label}</button>
       </div>
     </article>
   );

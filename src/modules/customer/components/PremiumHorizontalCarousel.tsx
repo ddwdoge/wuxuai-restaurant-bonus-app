@@ -37,7 +37,9 @@ export function PremiumHorizontalCarousel({
     const targetIndex = Math.min(Math.max(nextIndex, 0), itemElements.length - 1);
     const target = itemElements[targetIndex];
     if (!target) return;
-    viewport.scrollTo({ left: target.offsetLeft, behavior: "smooth" });
+    const left = target.getBoundingClientRect().left - viewport.getBoundingClientRect().left + viewport.scrollLeft - viewport.clientLeft;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    viewport.scrollTo({ left, behavior: reducedMotion ? "instant" : "smooth" });
     setActiveIndex(targetIndex);
   }, []);
 
@@ -45,8 +47,8 @@ export function PremiumHorizontalCarousel({
     const itemElements = Array.from(viewport.querySelectorAll<HTMLElement>("[data-carousel-item]"));
     if (!itemElements.length) return;
     const nearestIndex = itemElements.reduce((bestIndex, item, index) => (
-      Math.abs(item.offsetLeft - viewport.scrollLeft)
-        < Math.abs(itemElements[bestIndex].offsetLeft - viewport.scrollLeft)
+      Math.abs(item.getBoundingClientRect().left - viewport.getBoundingClientRect().left)
+        < Math.abs(itemElements[bestIndex].getBoundingClientRect().left - viewport.getBoundingClientRect().left)
         ? index
         : bestIndex
     ), 0);

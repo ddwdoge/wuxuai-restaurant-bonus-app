@@ -8,9 +8,10 @@ type RewardImageFrameProps = {
   crop?: Partial<RewardImageCrop> | null;
   fallback?: ReactNode;
   imageUrl?: string | null;
+  loading?: "eager" | "lazy";
   onImageLoad?: (dimensions: { height: number; width: number }) => void;
 };
 
-export function RewardImageFrame({ alt, className = "", crop, fallback, imageUrl, onImageLoad }: RewardImageFrameProps) {
-  return <SmartMediaFrame alt={alt} className={`reward-image-frame ${className}`.trim()} fallback={fallback} imageUrl={imageUrl} onImageLoad={onImageLoad} presentation={crop} />;
+export function RewardImageFrame({ alt, className = "", crop, fallback, imageUrl, loading, onImageLoad }: RewardImageFrameProps) {
+  return <SmartMediaFrame alt={alt} className={`reward-image-frame ${className}`.trim()} fallback={fallback} imageUrl={imageUrl} loading={loading} onImageLoad={onImageLoad} presentation={crop} />;
 }

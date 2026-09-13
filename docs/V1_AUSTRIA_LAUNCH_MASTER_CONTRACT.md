@@ -1,8 +1,14 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
 Status: **CURRENT FOUNDER-APPROVED MASTER CONTRACT**
-Stand: **2026-09-10**
+Stand: **2026-09-12**
 Markt: **Oesterreich / Restaurant V1**
+
+Founder-Entscheidung vom 2026-09-12: **FOUNDER PRODUCT ROADMAP LOCK**.
+Basic, Pro und Catalog werden vor dem Launch technisch fertiggestellt;
+kommerziell startet ausschliesslich Austria Basic. Catalog ist ein separat
+bezahltes Add-on, kein Bestandteil von Pro. Dieser Roadmap-Lock ist keine
+Behauptung eines technischen Final Locks oder einer Commercial-/Live-Freigabe.
 
 Dieses Dokument ist die kanonische Roadmap- und Scope-Quelle fuer den Austria-
 Launch. Es ersetzt keine technische Evidenz: Ein Founder-Zielvertrag ist erst
@@ -18,13 +24,20 @@ erhalten, werden aber als `SUPERSEDED` behandelt.
 WUXUAI Bonus V1 soll so schnell wie sicher und rechtlich belastbar moeglich in
 Oesterreich starten.
 
-Vor Production werden nur geschlossen:
+Vor Production werden geschlossen:
 
 - P0- und P1-Fehler,
 - notwendige Legal-Gates,
 - notwendige Billing-/Stripe-Gates,
 - notwendige Core-UX-Gates,
 - die abschliessende Golden-Path- und Release-Pruefung.
+- die jetzt ausdruecklich freigegebenen technischen Pro- und Catalog-Gates
+  aus Phase 7 und 8 sowie die gemeinsame Stripe-Testintegration aus Phase 9.
+
+**SUPERSEDED (2026-09-12):** Pro/Catalog sind nicht mehr pauschal optionale
+Post-V1-Implementierungen. Ihre technische Fertigstellung ist Launch-Voraussetzung;
+Kauf und Nutzung bleiben beim kommerziellen Erststart serverseitig gesperrt.
+Die bisherige Aussage, Catalog sei im Pro-Paket enthalten, ist ersetzt.
 
 Optionale groessere Feature-Erweiterungen duerfen den Austria-Launch nicht
 verzoegern. Eine Founder-Entscheidung aendert den Zielvertrag, aber nicht
@@ -170,6 +183,106 @@ Sichtbares Deutsch verwendet:
 `Kunde/Kunden` verwendet werden. Andere Sprachen verwenden natuerliche
 lokalisierte Rollenbegriffe und zeigen keine rohen technischen Enums.
 
+### 5.4 Phase 6 – Image-first Mobile Cards (Founder-Ergaenzung 2026-09-12)
+
+**VERBINDLICHER ZIELVERTRAG; NOCH KEIN IMPLEMENTIERUNGS-/VISUAL-PASS.**
+Gaeste sollen auf Mobile zuerst das Bild wahrnehmen, dann den Text lesen.
+Die Referenz `IMG_2794.PNG` gilt gemaess anschliessender ausdruecklicher
+Founder-Klarstellung ausschliesslich fuer die einzelne Kartenvorschau:
+grosses Bild oben und kurze Text-/Statusflaeche darunter. Die WUXUAI-Karten
+wechseln weiterhin horizontal nach links/rechts, nicht als vertikaler Stapel.
+Die Referenz ist weder WUXUAI-Asset noch Abnahmenachweis.
+Diese Ergaenzung ersetzt fuer die unten genannten Marketingkarten die
+frueheren Phase-6-Vorgaben zu zweispaltigen Vorteile-Kacheln und kleinen
+horizontalen Reward-/Offer-Karten. Informations- und Sicherheitskarten sind
+ausdruecklich ausgenommen. Die uebrigen Phase-6-Gates bleiben bestehen.
+
+**Geltungsbereich und Hierarchie**
+
+- Image-first: Angebote, Vorteile, Belohnungen, Willkommensgeschenk,
+  Geburtstagsgeschenk, Bonus Boost sowie Catalog-/Menuevorschauen.
+- Information-first, weiterhin kompakt: Punkteguthaben, Transaktionen,
+  Kontoeinstellungen und KPI-Karten.
+- QR und PIN: Sicherheit, Scanbarkeit und Bedienbarkeit zuerst; kein neuer
+  Ablauf und keine Bildinszenierung auf Kosten von Eingabe oder Bestaetigung.
+- Reihenfolge innerhalb der Marketingkarte: grosses Bild; kurzer emotionaler
+  Titel; Reward-/Punkte-/Gueltigkeitsstatus; Aktion oder Detailzugang.
+  Ausfuehrliche Beschreibung gehoert in die bestehende Detailansicht/den Drawer.
+- Im ersten mobilen Viewport muss ein attraktives relevantes Bild Prioritaet
+  erhalten. Wichtige Zustaende bleiben ohne Oeffnen von Details sichtbar.
+  Das erfindet weder dynamisches Ranking noch Eligibility oder neue Inhalte.
+
+**Mobile Kartenvertrag**
+
+- Eine grosse Kartenvorschau nahezu ueber die volle Inhaltsbreite;
+  weitere Karten horizontal nach links/rechts wischbar. Kein vertikaler
+  Gesamtstapel und kein zweispaltiges Marketingkarten-Raster.
+  Bildflaeche als visuelles Ziel etwa 65–75 Prozent der Karte.
+- Empfohlenes Bildformat `aspect-ratio: 3 / 2`, feste reservierte Bildflaeche
+  auch beim Laden und bei Fehlern; keine Verzerrung oder Layoutspruenge.
+- `object-fit: cover`; Owner sollen den Bildfokus steuern koennen. Bestehende
+  Fokus-/Crop-Daten und Editor-Wege wiederverwenden, nicht durch ein neues
+  Persistenzmodell oder eine Phase-6-Migration ersetzen. Motivausschnitt pruefen.
+- Titel unter dem Bild, maximal zwei Zeilen. DE/EN/FR/IT/ES/ZH/KO duerfen
+  weder ueberlappen noch abgeschnitten werden. Keine verdeckten Volltitel
+  durch Ellipsis, Line-Clamp, kleinere Pflichtschrift oder einen nur fuer
+  Screenreader verfuegbaren Ersatz als PASS ausgeben.
+- Beschreibung auf Home standardmaessig verborgen oder kurz; keine langen
+  Textbloecke. Vollstaendiger Inhalt im bestehenden Detail/Drawer erreichbar.
+- Status, erforderliche Punkte, Gueltigkeit und Hauptaktion bleiben sichtbar,
+  mit einer kompakten Zeile als Ziel. Keine erforderlichen Informationen
+  zugunsten des Bildanteils entfernen oder hinter den Detailzugang verlagern.
+- Die ganze Karte kann den bestehenden Detailzugang ausloesen, statt von einem
+  kleinen Button abzuhaengen. Semantischer Link/Button, Tastaturbedienung,
+  Fokus und mindestens 44 × 44 px bleiben Pflicht. Keine verschachtelten
+  interaktiven Elemente; Kartenklick ist niemals automatische Einloesung,
+  Punktebuchung, Einladung, Aktivierung oder Consent.
+- Ohne Bild: vorhandene hochwertige neutrale WUXUAI-Platzhaltergrafik verwenden;
+  kein Emoji-Ersatz und keine erfundenen Produktfotos. Fehlende geeignete
+  Assets sind ein expliziter offener Gate, keine behauptete vorhandene Ressource.
+- Komprimierte, fuer Mobile passend dimensionierte Bilder und Lazy Loading;
+  keine ungepruefte Auslieferung uebergrosser Originale. Tatsächlich geladene
+  Bildgroessen und Ladeverhalten messen; CSS-Verkleinerung reicht nicht.
+- WUXUAI® Bonus bleibt eigenstaendig: warmer Creme-Hintergrund, weisse Karten,
+  goldene Statusakzente, dunkler Text, konsistente Radien und leichte Schatten.
+  Von McDonald's ausschliesslich die Bild-vor-Text-Hierarchie als Referenz;
+  weder Branding noch Farben oder Navigation uebernehmen.
+- Kein CSS `zoom` und kein gesamthaftes `transform: scale()` fuer Seiten,
+  Bereiche oder Karten. Bestehende Bildausschnitt-Werkzeuge nicht als
+  technische Skalierung des UI missbrauchen.
+
+**Abgrenzung, ersetzte Regeln und offene Nachweise**
+
+- Fuer diese mobilen Marketingkarten sind die aelteren 16:9-/83-Prozent-
+  Geometrievorgaben und das pauschale `contain`/Cover-Verbot aus
+  `05_CUSTOMER_PORTAL.md` bzw. `15_DESIGN_SYSTEM.md` als Ziel SUPERSEDED.
+  Das ist keine Freigabe zum globalen Umbau von Owner-, Desktop-, Logo-,
+  QR- oder Druckdarstellungen.
+- Vollstaendiger Reward-/Gift-/Offer-Katalog, Geschenkprioritaet, gespeicherte
+  Crop-Daten, bestehende Swipe-/Detail-/Einloesesicherheit und Final Locks
+  bleiben geschuetzt. Bestehenden horizontalen Carousel-Baustein, nativen
+  Swipe, Scroll Snap, Einzelschritt-Pfeile und echte Positionsanzeige erhalten.
+  Alle Karten bleiben erreichbar; Swipe/Pfeile starten keine Einloesung.
+  Einzelkarte bleibt ohne kuenstliche Carousel-Steuerung vollbreit.
+  Die ausdrueckliche Founder-Klarstellung ersetzt die zwischenzeitliche
+  Interpretation der Referenz als vertikalen Marketing-Feed.
+- Zwei Titelzeilen, vollstaendige lange Uebersetzungen, kompakte Statuszeile,
+  Bildanteil und Mindest-Touchflaechen muessen gemeinsam physisch bestehen.
+  Falls sie in einer Pflichtgroesse nicht zusammenpassen: Konflikt dokumentieren
+  und Founder-Entscheidung einholen; keine eigenmaechtige Abschwaechung.
+- Punktekarte bei 390 px bis 232 px, Fortschritt/Status im ersten Viewport,
+  zwei beginnende Vorteile/Schnellzugriffe und Hoehenziel 2650 statt 3028 px
+  sind nicht durch diese Dokumentation bestanden oder still gestrichen.
+  Ein Konflikt mit grossen einspaltigen Bildern wird gemessen und offengelegt.
+  Vergleiche brauchen denselben Inhalt/Zustand; Datenabweichungen benennen.
+- Catalog bleibt ein eigenstaendiges, kommerziell gesperrtes Phase-8-Modul.
+  Diese visuelle Norm startet in Phase 6 keinen Catalog-Upload, Menuebereich,
+  Kaufweg, neuen API-Vertrag oder Entitlement-Bypass.
+- Alle sieben Sprachen, 320/360/375/390/430/768 plus Desktop, Drawer-Vertrag,
+  Keyboard/Safe Area, Barrierefreiheit, automatische Gates und gueltige
+  Vorher-/Nachher-Evidenz bleiben Pflicht. Keine Business-/Security-/DB-
+  Aenderung, kein Deployment und kein neuer Final Lock durch diesen Nachtrag.
+
 ## 6. Login Contract
 
 E-Mail und Passwort bleiben der kanonische Login-Weg. Telefonnummern duerfen
@@ -203,15 +316,27 @@ kleiner V1-Schritt geprueft werden.
 
 ## 9. Aktuelle Launch-Reihenfolge
 
-1. Austria Legal Preparation und Professional Review
-2. Customer Activation UX
-3. Password Visibility
-4. UI/UX Consistency Gate inklusive Compact Info, Language Switcher und deutscher Rollenterminologie
-5. Git-/Staging-Konsolidierung
-6. Stripe Staging und Billing
-7. Austria Legal Final nach Stripe
-8. Final Golden Path QA
-9. Production Release
+**SUPERSEDED (2026-09-12):** Die vorherige Nummerierung mit Stripe als Gate 6
+ist historisch. Verbindlich ist ab jetzt diese Reihenfolge; die bestehenden
+Country-, PRO-Phase-1-, Password-, Phase-4- und Phase-5-Final-Locks bleiben erhalten.
+
+| Phase | Verbindlicher Umfang | Abschlussgrenze |
+| --- | --- | --- |
+| 6 | Compact Mobile UI fuer Customer, Staff, Owner, Auth und Platform Admin; alle Drawer/Bottom Sheets | Mobile Final Lock; keinerlei Business-, Security-, QR-, PIN-, Rechte- oder Datenbankaenderung |
+| 7 | Pro Feature Completion: Unlimited Active Offers, Offer Notifications, Reward-Reached Notifications, Consent, Owner-Plananzeige, kompletter Platform-Pro-Schalter, Ablauf und sicherer Downgrade | Technisch fertig; Server Gate geschlossen, kein oeffentlicher Kauf |
+| 8 | Catalog Add-on: sichere Uploads, Quoten, Publikation, Customer-Anzeige, Deaktivierung mit Datenerhalt, eigene Platform-Steuerung | Technisch fertig; Server Gate geschlossen, kein oeffentlicher Kauf |
+| 9 | Stripe und einheitliche Add-on-Steuerung: Basic/Pro/Catalog Subscription Item im Test Mode, Webhooks und Entitlement-Synchronisierung | Keine eigenmaechtig erstellten oder freigegebenen Live-Preise; Stripe Live bleibt bis Legal, Betreiber und formaler Billing-Freigabe aus |
+| 10 | Austria Basic Launch Gate: AT, Basic 59 EUR/Monat plus USt.; Pro/Catalog-Kauf aus; DE/CH/FR/IT/ES Prepared and Blocked | Legal/Readiness, Golden Path und alle Release-Nachweise; Production und kommerzieller Start nur nach ausdruecklicher finaler Founder-Freigabe |
+
+Phase 6 umfasst insbesondere inhaltsgetriebene Drawer-Hoehen, keinen
+unproduktiven Leerraum, eindeutige primaere/sekundaere Aktionen,
+Keyboard-Anpassung, Safe Area, Scroll Lock, Focus Management und kontrolliertes
+Schliessen kritischer Dialoge. Der ausfuehrliche bereits freigegebene
+Phase-6B–6F-Mobile-/Drawer-Vertrag bleibt unverkuerzt verbindlich.
+
+Austria Legal Preparation/Professional Review bleibt erforderlich;
+die neue Phasenfolge erteilt keine Rechts-, Steuer- oder Zahlungsfreigabe.
+Ein spaeterer Phase-Auftrag startet nicht automatisch mit dieser Dokumentation.
 
 Nearby Discovery wird zuerst auditiert und nur bei kleinem, launchneutralem
 Umfang in V1 aufgenommen. Die monatliche Kundenentwicklung bleibt grundsaetzlich
@@ -245,7 +370,6 @@ Diese Themen blockieren den Austria-Restaurant-V1-Launch nicht:
 - AI Risk Scoring,
 - Shared Loyalty Network,
 - Shared Branch Points,
-- Pro-Katalog/Speisekarte,
 - Gift Cards,
 - POS,
 - Premium,
@@ -256,14 +380,23 @@ Diese Themen blockieren den Austria-Restaurant-V1-Launch nicht:
 Vorhandene vorbereitete Architektur darf bestehen bleiben. Daraus entsteht
 keine oeffentliche Freischaltung und kein Launch-Blocker.
 
+Ausnahme gemaess Founder-Entscheidung 2026-09-12: Catalog ist als eigenstaendiges
+Add-on technisch vor Launch fertigzustellen (Phase 8), nicht im Pro-Paket.
+Das bereits vorhandene Phase-5-Operations-&-Health-Center bleibt geschuetzt;
+diese Liste verlangt keinen zweiten Warning-Center-Neubau.
+Premium/Business, Gift Cards, POS/Kassa Integration, Shared Points / Shared
+Loyalty Network, Enterprise Integration, Onlinebestellung/-zahlung und eine
+komplexe Usage Credit Engine ohne reale Datengrundlage sind ausdruecklich
+aus diesem Durchlauf ausgeschlossen und duerfen Basic Austria nicht verzoegern.
+
 ## 12. i18n und Austria Launch
 
 Die vorhandene Architektur fuer `de`, `en`, `fr`, `it`, `es`, `zh` und `ko`
-bleibt erhalten. Der Austria-Launch verlangt eine vollstaendig belastbare
-deutsche Oberflaeche und einen V1-tauglichen, nicht ueberlagernden
-Sprachschalter. Eine noch offene Vollpruefung aller sechs weiteren Sprachen ist
-kein Austria-Launch-Blocker, sofern unfertige Sprachen nicht als fertig
-ausgegeben werden und keine deutsche Golden-Path-Funktion beeintraechtigt wird.
+bleibt erhalten. **SUPERSEDED (2026-09-12):** Die fruehere Ausnahme, dass eine
+offene Vollpruefung der sechs nichtdeutschen Sprachen den Launch nicht blockiert,
+gilt fuer die neue Phase-6–10-Abnahme nicht mehr. Alle sieben Sprachen muessen
+im betroffenen Umfang bestehen. Deutsch bleibt Austria-Launch-Sprache;
+der Sprachschalter darf keinen Inhalt oder Bedienweg ueberlagern.
 
 Rechtsraum und UI-Sprache bleiben getrennt. Rechtstexte werden niemals allein
 aus der UI-Sprache gewaehlt.
@@ -280,8 +413,149 @@ Die Empfehlung aendert keine Sicherheits-, Freigabe- oder Testanforderung.
 
 ## 14. Status- und Nachweisregel
 
-Dieses Dokument ist ab 2026-09-10 die Roadmap-Quelle fuer den Austria-Launch.
+Dieses Dokument ist seit 2026-09-10, aktualisiert am 2026-09-12, die
+Roadmap-Quelle fuer den Austria-Launch.
 Es erteilt weder eine Production-Freigabe noch bestaetigt es unerledigte Gates.
 Der naechste Status-Audit muss ausschliesslich diesen Master fuer Scope,
 Reihenfolge und Post-V1-Zuordnung verwenden und den technischen Ist-Stand
 separat nachweisen.
+
+## 15. Basic, Pro und eigenstaendige Add-ons – Founder-Zielvertrag
+
+Die Anwendung bleibt `app.bonus.wuxuaisbi.com`. Der erste kommerzielle Release
+erlaubt ausschliesslich AT-Registrierungen. DE, CH, FR, IT und ES bleiben
+technisch vorbereitet und oeffentlich gesperrt; Oeffnung pro Land erst nach
+dessen eigener Legal-/Readiness-Abnahme. UI-Sprache ist keine Laenderfreigabe.
+
+| Produkt | Preisziel | Kommerzieller Erststart | Funktionsziel |
+| --- | --- | --- | --- |
+| Basic | 59 EUR/Monat plus USt. | Austria offen, erst nach Phase 10 und Founder-Freigabe | Punkte, Einloesungen, Geschenke, Staff-Flows, Owner-Verwaltung, maximal 5 Active Offers |
+| Pro | 99 EUR/Monat plus USt. | Technisch fertig, Kauf und Nutzung serverseitig gesperrt | Basic plus unbegrenzte Active Offers, Offer Notifications, Reward-Reached Notifications und zugehoerige Marketing-/Plansteuerung |
+| Catalog Add-on | Vorlaeufig 5 EUR/Monat/Standort; Endpreis nach Nutzungsdaten | Technisch fertig, Kauf und Nutzung serverseitig gesperrt | PDF-/JPG-/JPEG-/PNG-Speisekarte hochladen, publizieren und fuer Kunden anzeigen |
+| Premium/Business | Spaeter festzulegen; Planungsreferenz 199 EUR/Monat | Nicht entwickeln oder verkaufen | Spaetere Kombination aus Pro und mehreren reifen Add-ons |
+
+Grundlegende UX-, Sicherheits- und Performanceverbesserungen bleiben in
+bestehenden Paketen enthalten. Nur Module mit eigenstaendigem Wert oder
+zusaetzlichen Kosten werden Add-ons; nicht jede neue Funktion ist ein Add-on.
+Kuenftige Bundles beseitigen die separate Kaufbarkeit reifer Add-ons nicht.
+
+### 15.1 Basic
+
+- Maximal fuenf gleichzeitig aktive Angebote.
+- Offer Notifications und Reward-Reached Notifications deaktiviert.
+- Catalog deaktiviert, ausser nach einer zukuenftig freigegebenen separaten
+  Catalog-Berechtigung; Pro allein autorisiert Catalog niemals.
+- Kundenanzahl als konfigurierbare Messung, Warnung und Upgrade-Hinweis
+  vorbereiten. Kein ploetzlicher Stopp normaler Punktebuchung oder Einloesung
+  beim Erreichen eines Schwellenwerts.
+- 3.000 Kunden sind, falls beibehalten, ausschliesslich ein Soft Limit fuer
+  Upgrade-Hinweise. Finaler Schwellenwert erst nach Erstmarkt-Daten; kein neues
+  hartes Transaktionslimit und keine Aenderung vorhandener Missbrauchsschutzlimits.
+
+### 15.2 Pro
+
+- Unbegrenzte Active Offers sowie beide genannten Notification-Arten.
+- Kunden-Consent und Abmeldung bleiben fuer Notifications verpflichtend.
+- Owner sehen aktuellen effektiven Plan, Funktionen, Beginn und Ablauf klar.
+- Platform Admin schaltet die vollstaendige Pro-Entitlement-Gruppe mit einem
+  eindeutigen Schalter ein oder aus. Bestehende Bestaetigungs-/Auditpflichten
+  duerfen nicht zugunsten einer unkontrollierten Ein-Klick-Mutation entfallen.
+- Aktivierung erfasst Beginn, Ende, Grund, Akteur und Audit Log.
+- Ablauf oder Downgrade stellt Basic-Grenzen wieder her. Keine Loeschung von
+  Angeboten, Kunden, Statistiken oder anderen Geschaeftsdaten; nur Pro-Faehigkeiten
+  werden deaktiviert. Catalog bleibt davon als eigenstaendiges Add-on getrennt.
+- Keine neuen unbenannten Marketingmodule aus der Formulierung
+  `hoehere Marketingfaehigkeit` ableiten.
+
+## 16. Catalog Add-on – eigenstaendiger V1-Zielumfang
+
+- PDF, JPG, JPEG und PNG; maximal 10 MB pro Datei.
+- Vorlaeufig 50 MB Gesamtspeicher pro Standort, als konfigurierbares Entitlement.
+- Private Object Storage; Datenbank speichert nur Metadaten und Referenzen.
+- Serverseitige Validierung von Dateigroesse, MIME-Typ und tatsaechlichem
+  Dateiheader; Dateiendung oder Frontendpruefung reicht nicht.
+- Owner koennen hochladen, ersetzen, Vorschau ansehen, publizieren und
+  Publikation zuruecknehmen. Customer lesen nur publizierte Inhalte mit
+  wirksamer Catalog-Berechtigung.
+- Nach Add-on-Ende bleiben Originaldateien und Metadaten erhalten, aber
+  oeffentliche Anzeige und neue Uploads sind gesperrt. Reaktivierung ermoeglicht
+  Wiederherstellung ohne Neuregistrierung.
+- Kein Onlinebestellen, Onlinebezahlen oder POS-/Kassa-Anschluss.
+- Gleiches WUXUAI-Konto und gleicher Stripe Customer; Catalog wird ein eigener
+  Subscription Item in der bestehenden Stripe Subscription.
+- Platform Admin kann Catalog unabhaengig von Pro aktivieren, deaktivieren
+  oder befristen, jeweils mit Grund und Audit. Pro-Schalter und Catalog-Schalter
+  muessen vollstaendig getrennt sein.
+
+## 17. Einheitliche serverseitige Entitlement-Architektur – Ziel
+
+```text
+Effective Access =
+Plan Entitlements
++ Active Stripe Add-ons
++ Valid Platform Admin Overrides
+```
+
+- Plans: `basic`, `pro`, `premium` reserviert; Add-ons: `catalog` und spaetere
+  eigenstaendige Module. Premium-Reservierung ist kein Implementierungsauftrag.
+- Konfigurierbare Feature Keys und Limits. Preise, Multiplikatoren und Quoten
+  nicht in verteilter Businesslogik hardcoden; bestehende zentrale Vertraege
+  bleiben bis zu ihrer separat geprueften Erweiterung erhalten.
+- Stripe-Customer-, Subscription- und Subscription-Item-Zuordnungen.
+- Webhook-Signaturpruefung, Idempotenz, Replay-Schutz und Statussynchronisierung.
+- Aktivierung, Verlaengerung, Zahlungsfehler, Kuendigung, Ablauf und Wiederherstellung.
+- Platform Overrides mit Beginn, Ende, Grund, Akteur, Ziel-Organization/Location
+  und Audit. Owner lesen nur den effektiven Plan-/Add-on-Zustand; sie duerfen
+  Subscription-Daten nicht direkt veraendern.
+- Frontend-Verbergen ersetzt keine Autorisierung. Umgehungsrequests muessen
+  serverseitig abgewiesen werden; RLS, Tenantgrenzen und bestehende Security
+  bleiben wirksam.
+- Die Zusammenfuehrung von Entitlements ist keine Umgehung des kommerziellen
+  Launch Gates: Erststart bleibt Basic-only, Pro und Catalog bleiben oeffentlich
+  weder kaufbar noch nutzbar. Administrative technische Tests sind keine
+  kommerzielle Freigabe.
+
+## 18. Erste drei Monate nach Launch
+
+1. Etwa drei Monate reale Restaurantnutzung, Speicher-, Notification-, Angebots-
+   und Supportkosten auswerten.
+2. Finale Pro-Kapazitaet und kundenbezogene Upgrade-Regeln festlegen.
+3. Catalog-Endpreis anhand dieser Daten bestimmen: 5 EUR, 9 EUR oder anderer
+   Betrag; die 5-EUR-Planung ist kein bereits angelegter Live-Preis.
+4. Pro und Catalog nach bewusster Entscheidung ueber Stripe und Platform-
+   Konfiguration freigeben, ohne neue Konten oder Neuentwicklung des Kern-
+   Paketsystems. Kein automatisches Freischalten nach Kalenderablauf.
+5. Naechste Add-ons anhand echten Bedarfs waehlen; bei 3–5 reifen Add-ons
+   Premium-/Business-Bundles entwerfen und Einzelkauf erhalten.
+
+Dieser Beobachtungszeitraum ist nicht mit der bestehenden individuellen
+Drei-Kalendermonats-Testphase zu verwechseln und aendert keine laufenden Trials.
+
+## 19. Pflichtabnahme je Phase 6–10
+
+- Country, PRO Phase 1, Global Password Visibility, Phase 4 UI/UX Consistency
+  und Phase 5 Operations & Health Center: bestehende Final Locks erhalten.
+- Country Gate: AT Active; DE/CH/FR/IT/ES Prepared and Blocked. Technische
+  Country-Aktivierung ist keine automatische Production-/Commercial-Freigabe.
+- DE/EN/FR/IT/ES/ZH/KO und 320/360/375/390/430/768 px plus Desktop bestehen.
+- Business-/Security-Vertraege, RLS und Cross-Tenant-Isolation erhalten;
+  Phase 6 aendert ausdruecklich keine dieser Logiken.
+- Typecheck, Lint, fokussierte Tests, Full Tests, Build, Secret Scan und
+  `git diff --check` bestehen. Physische Evidenz nicht durch statische Tests ersetzen.
+- Falls eine spaetere Phase Migrationen benoetigt: nur Forward Migration,
+  zuerst lokal validieren, Staging-Anwendung erst nach Freigabe; Production
+  niemals automatisch aendern. Phase 6 bleibt migrationsfrei.
+- Taskeigene Hintergrundprozesse kontrolliert beenden; 0 unnoetige Prozesse
+  behalten. Keine fremden Prozesse beenden.
+
+## 20. Zielzustand versus heutiger Nachweis
+
+Ziel: Basic, Pro und Catalog technisch bereit; kommerziell ausschliesslich
+Austria Basic; spaetere Freigabe der beiden Upgrades nach realen Daten ueber
+Konfiguration statt Neuregistrierung oder Neubau des Kernsystems.
+
+Dieser Dokumentationsschritt aktualisiert keinen Runtime-Preis, keine
+Entitlement-Zeile, keinen Stripe Product/Price/Customer/Subscription Item,
+keine Country Policy und kein Deployment. Der gesicherte Phase-1–5-Stand und
+der noch nicht physisch abgenommene Phase-6-Entwurf bleiben bestehen.
+Die technische Vollstaendigkeit der Phasen 7–10 ist damit **NICHT NACHGEWIESEN**.

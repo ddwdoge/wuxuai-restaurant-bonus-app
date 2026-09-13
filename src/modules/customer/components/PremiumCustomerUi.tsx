@@ -1,10 +1,11 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CheckCircle2, ChevronDown, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
+import "../customer-compact.css";
 import { translateStructural } from "../../../shared/i18n/catalog.mjs";
 import { UiButton, UiCard, UiStatus } from "../../../shared/ui";
 import { InfoTrigger } from "../../../shared/components/InfoTrigger";
@@ -222,10 +223,10 @@ export function BenefitTile({ disabled = false, icon, label, onClick, status }: 
   );
 }
 
-export function RewardImage({ crop, imageUrl, title }: { crop?: Partial<RewardImageCrop> | null; imageUrl?: string | null; title: string }) {
+export function RewardImage({ crop, imageFirst = false, imageUrl, title }: { crop?: Partial<RewardImageCrop> | null; imageFirst?: boolean; imageUrl?: string | null; title: string }) {
   return (
     <div className="premium-reward-image">
-      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} /> : <Gift aria-label={`Standardbild ${title}`} size={38} />}
+      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} loading={imageFirst ? "lazy" : undefined} /> : <Gift aria-label={`Standardbild ${title}`} size={38} />}
     </div>
   );
 }
@@ -233,6 +234,7 @@ export function RewardImage({ crop, imageUrl, title }: { crop?: Partial<RewardIm
 export type RewardCardState = "available" | "locked" | "redeeming" | "redeemed" | "expired";
 
 type RewardCardProps = {
+  imageFirst?: boolean;
   actionLabel?: string;
   category?: string | null;
   imageUrl?: string | null;
@@ -252,14 +254,15 @@ const rewardStateMeta: Record<RewardCardState, { icon: typeof LockKeyhole; label
   expired: { icon: Clock3, label: t("common.expired") },
 };
 
-export function RewardCard({ actionLabel = t("common.details"), category, imageCrop, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
+export function RewardCard({ actionLabel = t("common.details"), category, imageCrop, imageFirst = false, imageUrl, meta, onOpen, state, status, title }: RewardCardProps) {
   const stateMeta = rewardStateMeta[state];
   const StateIcon = stateMeta.icon;
+  const actionContent = imageFirst ? <><span>{actionLabel}</span><ChevronRight aria-hidden="true" className="customer-image-first-chevron" size={22} /></> : actionLabel;
 
   return (
     <PremiumCard className={`premium-compact-customer-card premium-reward-card state-${state}`}>
       <div className="premium-reward-media">
-        <RewardImage crop={imageCrop} imageUrl={imageUrl} title={title} />
+        <RewardImage crop={imageCrop} imageFirst={imageFirst} imageUrl={imageUrl} title={title} />
         {state !== "available" ? (
           <span className="premium-lock-badge" aria-label={stateMeta.label}>
             <StateIcon aria-hidden="true" size={18} />
@@ -274,8 +277,8 @@ export function RewardCard({ actionLabel = t("common.details"), category, imageC
       </div>
       {onOpen ? (
         state === "available"
-          ? <PrimaryButton aria-label={`${title}: ${actionLabel}`} onClick={onOpen}>{actionLabel}</PrimaryButton>
-          : <SecondaryButton aria-label={`${title}: ${actionLabel}`} onClick={onOpen}>{actionLabel}</SecondaryButton>
+          ? <PrimaryButton aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</PrimaryButton>
+          : <SecondaryButton aria-label={`${title}: ${actionLabel}`} className={imageFirst ? "customer-image-first-action" : undefined} onClick={onOpen}>{actionContent}</SecondaryButton>
       ) : null}
     </PremiumCard>
   );
