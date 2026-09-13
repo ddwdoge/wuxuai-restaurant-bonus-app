@@ -109,7 +109,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count} Punkteeinlösungen",
     "customer.presentation.finderNearReward": "Bald erreichbar: noch {count} Punkte bis {title}",
     "customer.presentation.finderVisited": "Bereits besucht",
-    "customer.presentation.finderNotVisited": "Noch nicht besucht"
+    "customer.presentation.finderNotVisited": "Noch nicht besucht",
+    "customer.presentation.switcherDescription": "Wähle eines deiner Restaurants.",
+    "customer.presentation.switcherSwitching": "Restaurant wird gewechselt…",
+    "customer.presentation.switcherLoading": "Deine Restaurants werden geladen.",
+    "customer.presentation.switcherLoadError": "Deine Restaurants konnten gerade nicht geladen werden.",
+    "customer.presentation.retry": "Erneut versuchen",
+    "customer.presentation.switcherRestaurantsHeading": "Deine Restaurants",
+    "customer.presentation.switcherSearchLabel": "Deine Restaurants durchsuchen",
+    "customer.presentation.switcherSearchPlaceholder": "Restaurant filtern",
+    "customer.presentation.switcherEmpty": "Keine weiteren Restaurants in dieser Auswahl.",
+    "customer.presentation.switcherSwitchError": "Restaurant konnte nicht gewechselt werden.",
+    "customer.presentation.switcherDiscover": "Neues Restaurant entdecken"
   },
   "en": {
     "customer.presentation.offerTitle": "News & offers",
@@ -220,7 +231,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count} points rewards",
     "customer.presentation.finderNearReward": "Almost there: {count} more points until {title}",
     "customer.presentation.finderVisited": "Visited",
-    "customer.presentation.finderNotVisited": "Not visited yet"
+    "customer.presentation.finderNotVisited": "Not visited yet",
+    "customer.presentation.switcherDescription": "Choose one of your restaurants.",
+    "customer.presentation.switcherSwitching": "Switching restaurant…",
+    "customer.presentation.switcherLoading": "Loading your restaurants.",
+    "customer.presentation.switcherLoadError": "Your restaurants could not be loaded right now.",
+    "customer.presentation.retry": "Try again",
+    "customer.presentation.switcherRestaurantsHeading": "Your restaurants",
+    "customer.presentation.switcherSearchLabel": "Search your restaurants",
+    "customer.presentation.switcherSearchPlaceholder": "Filter restaurants",
+    "customer.presentation.switcherEmpty": "No other restaurants in this selection.",
+    "customer.presentation.switcherSwitchError": "The restaurant could not be switched.",
+    "customer.presentation.switcherDiscover": "Discover a new restaurant"
   },
   "fr": {
     "customer.presentation.offerTitle": "Actualités et offres",
@@ -331,7 +353,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count} récompenses en points",
     "customer.presentation.finderNearReward": "Bientôt disponible : encore {count} points pour {title}",
     "customer.presentation.finderVisited": "Déjà visité",
-    "customer.presentation.finderNotVisited": "Pas encore visité"
+    "customer.presentation.finderNotVisited": "Pas encore visité",
+    "customer.presentation.switcherDescription": "Choisis l’un de tes restaurants.",
+    "customer.presentation.switcherSwitching": "Changement de restaurant…",
+    "customer.presentation.switcherLoading": "Chargement de tes restaurants.",
+    "customer.presentation.switcherLoadError": "Tes restaurants ne peuvent pas être chargés pour le moment.",
+    "customer.presentation.retry": "Réessayer",
+    "customer.presentation.switcherRestaurantsHeading": "Tes restaurants",
+    "customer.presentation.switcherSearchLabel": "Rechercher dans tes restaurants",
+    "customer.presentation.switcherSearchPlaceholder": "Filtrer les restaurants",
+    "customer.presentation.switcherEmpty": "Aucun autre restaurant dans cette sélection.",
+    "customer.presentation.switcherSwitchError": "Impossible de changer de restaurant.",
+    "customer.presentation.switcherDiscover": "Découvrir un nouveau restaurant"
   },
   "it": {
     "customer.presentation.offerTitle": "Novità e offerte",
@@ -442,7 +475,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count} premi riscattabili con i punti",
     "customer.presentation.finderNearReward": "Quasi disponibile: mancano {count} punti per {title}",
     "customer.presentation.finderVisited": "Già visitato",
-    "customer.presentation.finderNotVisited": "Non ancora visitato"
+    "customer.presentation.finderNotVisited": "Non ancora visitato",
+    "customer.presentation.switcherDescription": "Scegli uno dei tuoi ristoranti.",
+    "customer.presentation.switcherSwitching": "Cambio del ristorante…",
+    "customer.presentation.switcherLoading": "Caricamento dei tuoi ristoranti.",
+    "customer.presentation.switcherLoadError": "Al momento non è possibile caricare i tuoi ristoranti.",
+    "customer.presentation.retry": "Riprova",
+    "customer.presentation.switcherRestaurantsHeading": "I tuoi ristoranti",
+    "customer.presentation.switcherSearchLabel": "Cerca nei tuoi ristoranti",
+    "customer.presentation.switcherSearchPlaceholder": "Filtra ristoranti",
+    "customer.presentation.switcherEmpty": "Nessun altro ristorante in questa selezione.",
+    "customer.presentation.switcherSwitchError": "Non è stato possibile cambiare ristorante.",
+    "customer.presentation.switcherDiscover": "Scopri un nuovo ristorante"
   },
   "es": {
     "customer.presentation.offerTitle": "Novedades y ofertas",
@@ -553,7 +597,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count} recompensas por puntos",
     "customer.presentation.finderNearReward": "Casi disponible: faltan {count} puntos para {title}",
     "customer.presentation.finderVisited": "Ya visitado",
-    "customer.presentation.finderNotVisited": "Aún no visitado"
+    "customer.presentation.finderNotVisited": "Aún no visitado",
+    "customer.presentation.switcherDescription": "Elige uno de tus restaurantes.",
+    "customer.presentation.switcherSwitching": "Cambiando de restaurante…",
+    "customer.presentation.switcherLoading": "Cargando tus restaurantes.",
+    "customer.presentation.switcherLoadError": "No se pueden cargar tus restaurantes en este momento.",
+    "customer.presentation.retry": "Intentar de nuevo",
+    "customer.presentation.switcherRestaurantsHeading": "Tus restaurantes",
+    "customer.presentation.switcherSearchLabel": "Buscar en tus restaurantes",
+    "customer.presentation.switcherSearchPlaceholder": "Filtrar restaurantes",
+    "customer.presentation.switcherEmpty": "No hay más restaurantes en esta selección.",
+    "customer.presentation.switcherSwitchError": "No se pudo cambiar de restaurante.",
+    "customer.presentation.switcherDiscover": "Descubrir un nuevo restaurante"
   },
   "zh": {
     "customer.presentation.offerTitle": "资讯与优惠",
@@ -664,7 +719,18 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "{count}项积分奖励",
     "customer.presentation.finderNearReward": "即将达到：再积{count}积分即可兑换{title}",
     "customer.presentation.finderVisited": "到访过",
-    "customer.presentation.finderNotVisited": "尚未到访"
+    "customer.presentation.finderNotVisited": "尚未到访",
+    "customer.presentation.switcherDescription": "请选择你的餐厅。",
+    "customer.presentation.switcherSwitching": "正在切换餐厅…",
+    "customer.presentation.switcherLoading": "正在加载你的餐厅。",
+    "customer.presentation.switcherLoadError": "目前无法加载你的餐厅。",
+    "customer.presentation.retry": "重试",
+    "customer.presentation.switcherRestaurantsHeading": "你的餐厅",
+    "customer.presentation.switcherSearchLabel": "搜索你的餐厅",
+    "customer.presentation.switcherSearchPlaceholder": "筛选餐厅",
+    "customer.presentation.switcherEmpty": "此列表中没有其他餐厅。",
+    "customer.presentation.switcherSwitchError": "无法切换餐厅。",
+    "customer.presentation.switcherDiscover": "发现新餐厅"
   },
   "ko": {
     "customer.presentation.offerTitle": "소식과 혜택",
@@ -775,6 +841,17 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.finderRewardsAvailable": "포인트 보상 {count}개",
     "customer.presentation.finderNearReward": "곧 받을 수 있어요: {title}까지 {count}포인트 남음",
     "customer.presentation.finderVisited": "방문함",
-    "customer.presentation.finderNotVisited": "아직 방문하지 않음"
+    "customer.presentation.finderNotVisited": "아직 방문하지 않음",
+    "customer.presentation.switcherDescription": "이용할 매장을 선택하세요.",
+    "customer.presentation.switcherSwitching": "매장을 전환하는 중…",
+    "customer.presentation.switcherLoading": "매장 목록을 불러오는 중입니다.",
+    "customer.presentation.switcherLoadError": "현재 매장 목록을 불러올 수 없습니다.",
+    "customer.presentation.retry": "다시 시도",
+    "customer.presentation.switcherRestaurantsHeading": "내 매장",
+    "customer.presentation.switcherSearchLabel": "내 매장 검색",
+    "customer.presentation.switcherSearchPlaceholder": "매장 필터",
+    "customer.presentation.switcherEmpty": "이 목록에 다른 매장이 없습니다.",
+    "customer.presentation.switcherSwitchError": "매장을 전환할 수 없습니다.",
+    "customer.presentation.switcherDiscover": "새 매장 찾기"
   }
 };

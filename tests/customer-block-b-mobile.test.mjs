@@ -30,6 +30,17 @@ const blockBKeys = [
   "finderNearReward",
   "finderVisited",
   "finderNotVisited",
+  "switcherDescription",
+  "switcherSwitching",
+  "switcherLoading",
+  "switcherLoadError",
+  "retry",
+  "switcherRestaurantsHeading",
+  "switcherSearchLabel",
+  "switcherSearchPlaceholder",
+  "switcherEmpty",
+  "switcherSwitchError",
+  "switcherDiscover",
 ];
 
 test("Block-B-Inventur bleibt auf bestehende Customer-Routen und gemeinsame Drawer begrenzt", () => {
@@ -89,6 +100,16 @@ test("Restaurantwechsel-Drawer ist inhaltsgetrieben und behält sichere Scrollgr
   assert.match(switcherCss, /customer-restaurant-switcher-list[^}]*max-height: min\(46dvh, 430px\)[^}]*overflow-y: auto/);
   assert.match(switcherCss, /customer-restaurant-switcher-row[^}]*min-height: 64px/);
   assert.match(switcher, /openCustomerAccountMembership\(membership\)/);
+  for (const key of [
+    "close",
+    "restaurantSwitch",
+    "switcherDescription",
+    "switcherLoading",
+    "switcherLoadError",
+    "switcherEmpty",
+    "switcherDiscover",
+  ]) assert.match(switcher, new RegExp(`ct\\("${key}"\\)`));
+  assert.doesNotMatch(switcher, />\s*(?:Restaurant wechseln|Wähle eines deiner Restaurants|Deine Restaurants|Erneut versuchen|Neues Restaurant entdecken)\s*</);
 });
 
 test("Persönlicher QR bleibt responsiv im scanbaren 240–280-px-Vertrag", () => {

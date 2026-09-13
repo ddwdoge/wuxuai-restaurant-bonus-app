@@ -80,8 +80,8 @@ test("Slug-Wechsel zeigt erst nach serverseitigem Open den neuen Portalinhalt", 
   assert.match(access, /setPortalRestaurantSlug\(activeSlug\)/);
   assert.match(access, /if \(portalRestaurantSlug\) return <CustomerPortal/);
   assert.match(access, /restaurantSlug=\{portalRestaurantSlug\}/);
-  assert.match(switcher, /Restaurant wird gewechselt…/);
-  assert.match(switcher, /Restaurant konnte nicht gewechselt werden\./);
+  assert.match(switcher, /ct\("switcherSwitching"\)/);
+  assert.match(switcher, /ct\("switcherSwitchError"\)/);
 });
 
 test("QR und manueller Wechsel enden im selben kanonischen Restaurantzugang", () => {
