@@ -104,6 +104,8 @@
     border: 0;
     box-shadow: none;
     color: var(--premium-text-primary);
+    align-self: stretch;
+    height: 100%;
     inset: 0;
     margin: 0;
     padding: 0;

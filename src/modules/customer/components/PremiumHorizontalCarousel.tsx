@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { createImageCardPointerGuard } from "./imageCardPointerGuard.mjs";
 import "./premium-horizontal-carousel.css";
 
 type PremiumHorizontalCarouselProps = {
@@ -28,6 +29,7 @@ export function PremiumHorizontalCarousel({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [imageCardPointerGuard] = useState(createImageCardPointerGuard);
   const hasMultipleItems = items.length > 1;
 
   const scrollToIndex = useCallback((nextIndex: number) => {
@@ -83,6 +85,7 @@ export function PremiumHorizontalCarousel({
       <div
         aria-label={label}
         className="premium-horizontal-carousel-viewport"
+        {...imageCardPointerGuard}
         onKeyDown={handleKeyDown}
         onScroll={handleScroll}
         ref={viewportRef}
