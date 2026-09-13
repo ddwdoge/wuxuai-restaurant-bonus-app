@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { mediaPresentationFromRecord } from "../../../shared/mediaPresentation";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { customerPresentationText } from "../customerRewardPresentation.mjs";
 import {
   formatRestaurantOfferPeriod,
   formatRestaurantOfferSchedule,
@@ -26,12 +28,15 @@ export function RestaurantOfferCard({
   onOpen,
   showRestaurant = false,
   imageFirst = false,
+  preserveTitle = false,
 }: {
   offer: RestaurantOffer;
   onOpen: () => void;
   showRestaurant?: boolean;
   imageFirst?: boolean;
+  preserveTitle?: boolean;
 }) {
+  const { language } = useI18n();
   const validity = restaurantOfferValidityPresentation(offer);
   const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
@@ -42,7 +47,7 @@ export function RestaurantOfferCard({
       </div>
       <div className="customer-offer-card-body">
         {showRestaurant ? <span className="customer-offer-restaurant">{offer.restaurant_name}</span> : null}
-        <h3>{offer.title}</h3>
+        <h3 data-i18n-skip={preserveTitle ? "true" : undefined}>{offer.title}</h3>
         <p>{offer.short_description}</p>
         <div className="customer-offer-card-validity-row">
           <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
@@ -52,13 +57,13 @@ export function RestaurantOfferCard({
           <span><CalendarDays aria-hidden="true" size={16} />{formatRestaurantOfferPeriod(offer)}</span>
           {price.currentPrice ? <div className="customer-offer-price">{price.discountLabel ? <strong className="customer-offer-discount-badge">{price.discountLabel}</strong> : null}{price.previousPrice ? <del>{price.previousPrice}</del> : null}<span className="customer-offer-current-price">{price.currentPrice}</span></div> : null}
         </div>
-        <button aria-label={imageFirst ? `${offer.title}: ${offer.button_label}` : undefined} className={`premium-button premium-button-secondary${imageFirst ? " customer-image-first-action" : ""}`} onClick={onOpen} type="button">{imageFirst ? <><span>{offer.button_label}</span><ChevronRight aria-hidden="true" className="customer-image-first-chevron" size={22} /></> : offer.button_label}</button>
+        <button data-i18n-skip={preserveTitle ? "true" : undefined} aria-label={imageFirst ? `${offer.title}: ${preserveTitle ? customerPresentationText("details", language) : offer.button_label}` : undefined} className={`premium-button premium-button-secondary${imageFirst ? " customer-image-first-action" : ""}`} onClick={onOpen} type="button">{imageFirst ? <><span>{preserveTitle ? customerPresentationText("details", language) : offer.button_label}</span><ChevronRight aria-hidden="true" className="customer-image-first-chevron" size={22} /></> : offer.button_label}</button>
       </div>
     </article>
   );
 }
 
-export function RestaurantOfferDetail({ offer }: { offer: RestaurantOffer }) {
+export function RestaurantOfferDetail({ offer, preserveTitle = false }: { offer: RestaurantOffer; preserveTitle?: boolean }) {
   const validity = restaurantOfferValidityPresentation(offer);
   const price = restaurantOfferPricePresentation(offer.current_price, offer.previous_price);
   return (
@@ -66,7 +71,7 @@ export function RestaurantOfferDetail({ offer }: { offer: RestaurantOffer }) {
       <div className="customer-offer-detail-media"><OfferImage detail offer={offer} /></div>
       <span>{restaurantOfferTypeLabels[offer.offer_type]}</span>
       {offer.restaurant_name ? <small>{offer.restaurant_name}</small> : null}
-      <h2>{offer.title}</h2>
+      <h2 data-i18n-skip={preserveTitle ? "true" : undefined}>{offer.title}</h2>
       <p>{offer.description || offer.short_description}</p>
       <span className={`customer-offer-validity ${validity.tone}`}>{validity.label}</span>
       <div className="customer-offer-detail-meta">

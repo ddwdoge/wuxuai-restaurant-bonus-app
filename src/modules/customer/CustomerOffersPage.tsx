@@ -4,6 +4,8 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { AppShell, EmptyState, ErrorState, LoadingState } from "./components/PremiumCustomerUi";
 import { RestaurantOfferCard, RestaurantOfferDetail } from "./components/RestaurantOfferCard";
+import { PremiumHorizontalCarousel } from "./components/PremiumHorizontalCarousel";
+import "./customer-block-a.css";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -50,16 +52,16 @@ export function CustomerOffersPage() {
 
   return (
     <AppShell>
-      <div className="customer-offers-page customer-offers-shell">
+      <div className="customer-offers-page customer-offers-shell customer-block-a">
         <header className="customer-offers-header">
           <Link aria-label="Zurück" to={`/customer/${encodeURIComponent(slug)}`}><ArrowLeft aria-hidden="true" size={20} /></Link>
           <div><span>Dein ausgewähltes Lokal</span><h1>Aktuelles & Angebote</h1><p>Neuigkeiten und Angebote dieses Restaurants.</p></div>
         </header>
         {loading ? <LoadingState description="Aktuelles wird geladen." /> : error ? <ErrorState action={<button className="premium-button premium-button-secondary" onClick={() => window.location.reload()} type="button">Erneut versuchen</button>} description={error} title="Aktuelles nicht verfügbar" /> : sortedOffers.length ? (
-          <section aria-label="Aktuelle Restaurantbeiträge" className="customer-offer-grid">{sortedOffers.map((offer) => <RestaurantOfferCard key={offer.id} offer={offer} onOpen={() => openOffer(offer)} showRestaurant />)}</section>
+          <section aria-label="Aktuelle Restaurantbeiträge"><PremiumHorizontalCarousel label="Aktuelle Restaurantbeiträge">{sortedOffers.map((offer) => <RestaurantOfferCard imageFirst preserveTitle key={offer.id} offer={offer} onOpen={() => openOffer(offer)} showRestaurant />)}</PremiumHorizontalCarousel></section>
         ) : <EmptyState description="Sobald ein Partnerrestaurant etwas veröffentlicht, erscheint es hier." title="Noch nichts Neues" />}
       </div>
-      <AppDrawer description="Information des Restaurants" onClose={() => setSelected(null)} open={Boolean(selected)} size="standard" title="Aktuelles & Angebote">{selected ? <RestaurantOfferDetail offer={selected} /> : null}</AppDrawer>
+      <AppDrawer className="customer-block-a-detail" description="Information des Restaurants" onClose={() => setSelected(null)} open={Boolean(selected)} size="standard" title="Aktuelles & Angebote">{selected ? <RestaurantOfferDetail preserveTitle offer={selected} /> : null}</AppDrawer>
     </AppShell>
   );
 }

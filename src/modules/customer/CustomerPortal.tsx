@@ -27,6 +27,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import "./customer-block-a.css";
 import { Link, useSearchParams } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
 import { AppDrawer } from "../../shared/components/AppDrawer";
@@ -2182,7 +2183,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             ) : null}
 
             {activeView === "redemptions" ? (
-              <section className="premium-view-stack premium-redemption-content" aria-labelledby="redemptions-title">
+              <section className="premium-view-stack premium-redemption-content customer-block-a" aria-labelledby="redemptions-title">
                 <div className="premium-page-heading">
                   <span><Gift aria-hidden="true" size={20} /></span>
                   <div><h1 id="redemptions-title">Einlösen</h1><p>Wähle deinen nächsten Vorteil.</p></div>
@@ -2226,6 +2227,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         const state = rewardState(reward, nowMs, activeRedemptionCode, activePointsPresentation);
                         return (
                           <RewardCard
+                            imageFirst
                             category={present(reward).category}
                             imageUrl={reward.image_url}
                             imageCrop={rewardImageCropFromRecord(reward)}
@@ -2375,6 +2377,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             </AppDrawer>
 
             <AppDrawer
+              className={activeView === "redemptions" ? "customer-block-a-detail" : undefined}
               description={activePointsPresentation
                 ? "Bitte jetzt vor dem Mitarbeiter bestätigen."
                 : activeRedemptionCode

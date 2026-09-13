@@ -9,7 +9,7 @@ const [portal, styles] = await Promise.all([
 
 test("Einloesen verwendet den kanonischen Customer-Seitencontainer", () => {
   assert.match(portal, /activeView === "redemptions" \? " premium-redemption-page"/);
-  assert.match(portal, /className="premium-view-stack premium-redemption-content"/);
+  assert.match(portal, /className="premium-view-stack premium-redemption-content customer-block-a"/);
   assert.match(styles, /\.customer-page-container[\s\S]{0,260}max-width: 460px/);
   assert.match(styles, /@media \(min-width: 768px\)[\s\S]{0,120}\.customer-page-container \{ max-width: 720px/);
 });

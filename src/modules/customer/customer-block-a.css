@@ -1,0 +1,79 @@
+/* Block A only: existing cards/carousel, no Home, Boost, header or flow changes. */
+.customer-block-a {
+  --customer-card-mobile-width: 90%;
+  --customer-card-media-ratio: 3 / 2;
+  --customer-card-radius: 16px;
+  --customer-card-padding: 14px;
+  min-width: 0;
+}
+.customer-block-a .premium-horizontal-carousel-viewport { position: relative; }
+.customer-block-a .premium-horizontal-carousel :is(.premium-reward-card, .customer-offer-card) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  gap: 8px;
+  padding: 0 0 14px;
+  position: relative;
+}
+.customer-block-a .premium-horizontal-carousel :is(.premium-reward-media, .customer-offer-card-media) {
+  aspect-ratio: 3 / 2;
+  border-radius: 0;
+  min-height: 0;
+  width: 100%;
+}
+.customer-block-a :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame {
+  aspect-ratio: 3 / 2;
+  height: 100%;
+}
+.customer-block-a :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame > img { object-fit: cover; }
+.customer-block-a .premium-horizontal-carousel :is(.premium-reward-copy, .customer-offer-card-body) { gap: 4px; padding: 0 44px 0 14px; min-width: 0; }
+.customer-block-a .premium-horizontal-carousel-item :is(.premium-reward-copy h3, .customer-offer-card-body h3) {
+  display: block;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+.customer-block-a .customer-offer-card-body > p { display: none; }
+.customer-block-a :is(.premium-reward-copy > span, .premium-reward-copy p) { font-size: 13px; }
+.customer-block-a .customer-offer-card-validity-row { flex-wrap: wrap; }
+.customer-block-a .customer-offer-card-meta { align-items: start; flex-direction: column; }
+.customer-block-a .customer-offer-price { justify-content: start; max-width: none; }
+.customer-block-a :is(.customer-offer-validity, .customer-offer-schedule, .customer-offer-card-meta span, .customer-offer-price del, .customer-offer-discount-badge) { font-size: 12px; }
+.customer-block-a .customer-offer-card-media small { font-size: 12px; max-width: calc(100% - 24px); overflow-wrap: anywhere; }
+.customer-block-a .premium-horizontal-carousel :is(.premium-reward-card, .customer-offer-card) .customer-image-first-action {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--premium-text-primary, #252018);
+  align-self: stretch;
+  height: 100%;
+  min-height: 44px;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  transform: none;
+  width: 100%;
+}
+.customer-block-a .customer-image-first-action > span {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.customer-block-a .customer-image-first-action > .customer-image-first-chevron { bottom: 14px; display: block; position: absolute; right: 14px; }
+.customer-block-a :is(.premium-reward-card, .customer-offer-card):focus-within { outline: 3px solid var(--premium-primary-dark, #946b16); outline-offset: 2px; }
+.customer-block-a-detail :is(.premium-reward-detail-heading h2, .customer-offer-detail h2) { overflow-wrap: anywhere; }
+.customer-block-a-detail :is(.premium-reward-facts, .customer-offer-detail-meta) { min-width: 0; overflow-wrap: anywhere; }
+.app-drawer-panel.customer-block-a-detail:has(.premium-reward-detail) { height: auto; max-height: calc(90dvh - 16px); }
+@media (max-width: 767px) {
+  .customer-offers-page.customer-block-a { padding: 16px max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .customer-block-a .customer-offers-header > div { min-width: 0; }
+  .customer-block-a .customer-offers-header h1 { font-size: 26px; overflow-wrap: anywhere; }
+}
+@media (max-width: 359px) {
+  .customer-offers-page.customer-block-a { padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right)); }
+}

@@ -1,4 +1,4 @@
-// Only distinguish a Home image-card tap from a pan. Opening stays on the
+// Only distinguish an opted-in image-card tap from a pan. Opening stays on the
 // existing native button's click handler; never open on pointerup/touchend.
 export function createImageCardPointerGuard() {
   let gesture = null;
@@ -11,7 +11,8 @@ export function createImageCardPointerGuard() {
 
   return {
     onPointerDownCapture(event) {
-      if (!event.currentTarget.closest(".customer-home-compact")) return;
+      if (!event.currentTarget.closest(".customer-home-compact")
+        && !event.currentTarget.closest(".customer-block-a")) return;
       if (!event.isPrimary && gesture) {
         gesture.cancelled = true;
         return;
