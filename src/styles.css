@@ -2097,7 +2097,9 @@ a {
 
 .platform-test-cleanup {
   border-top: 1px solid #e9e2d7;
+  overflow-wrap: anywhere;
   padding-top: 14px;
+  word-break: break-word;
 }
 
 .platform-test-cleanup-controls > label {
@@ -2242,7 +2244,10 @@ a {
   color: #655f55;
   font-size: 12px;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 9px 10px;
+  word-break: break-word;
 }
 
 .platform-qr-contract {

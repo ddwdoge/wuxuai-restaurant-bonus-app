@@ -68,5 +68,7 @@ test("Platform Admin mobile toolbar shrinks without creating page overflow", () 
   assert.match(platformCss, /\.platform-admin-header-toolbar\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(platformCss, /\.platform-admin-grid > \*[\s\S]*\.platform-section-title > \*[\s\S]*min-width: 0/);
   assert.match(platformCss, /\.platform-operations-tabs\s*\{[\s\S]*max-width: 100%[\s\S]*overflow-x: auto/);
+  assert.match(platformCss, /\.platform-test-cleanup\s*\{[\s\S]*overflow-wrap: anywhere[\s\S]*word-break: break-word/);
+  assert.match(platformCss, /\.platform-contract-note\s*\{[\s\S]*min-width: 0[\s\S]*overflow-wrap: anywhere[\s\S]*word-break: break-word/);
   assert.doesNotMatch(platformRules, /zoom\s*:|transform:\s*scale\(/);
 });
