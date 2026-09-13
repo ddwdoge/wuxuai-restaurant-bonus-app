@@ -6,6 +6,7 @@ import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
 import type { RewardImageCrop } from "../../../shared/rewardImageCrop";
 import "../customer-premium.css";
 import "../customer-compact.css";
+import "../customer-header-language.css";
 import { translateStructural } from "../../../shared/i18n/catalog.mjs";
 import { UiButton, UiCard, UiStatus } from "../../../shared/ui";
 import { InfoTrigger } from "../../../shared/components/InfoTrigger";
@@ -21,13 +22,14 @@ type CustomerAppShellProps = {
   children: ReactNode;
   className?: string;
   fontFamily?: string | null;
+  languageInHeader?: boolean;
   primaryColor?: string | null;
 };
 
-export function AppShell({ children, className = "", fontFamily, primaryColor }: CustomerAppShellProps) {
+export function AppShell({ children, className = "", fontFamily, languageInHeader = false, primaryColor }: CustomerAppShellProps) {
   return (
     <main
-      className={`customer-premium-shell ${className}`.trim()}
+      className={`customer-premium-shell ${languageInHeader ? "customer-language-in-header " : ""}${className}`.trim()}
       style={{
         "--customer-brand": primaryColor ?? "#b88a3b",
         fontFamily: fontFamily
@@ -35,7 +37,7 @@ export function AppShell({ children, className = "", fontFamily, primaryColor }:
           : undefined,
       } as CSSProperties}
     >
-      <div className="customer-language-row"><LanguageSelector /></div>
+      {!languageInHeader ? <div className="customer-language-row"><LanguageSelector /></div> : null}
       {children}
     </main>
   );
@@ -61,14 +63,15 @@ type CustomerHeaderProps = RestaurantLogoProps & {
   customerName?: string | null;
   onInfo: () => void;
   onSwitchRestaurant?: () => void;
+  languageSelector?: boolean;
   subtitle?: string;
 };
 
-export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitchRestaurant, presentation, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
+export function CustomerHeader({ compact = false, languageSelector = false, logoUrl, name, onInfo, onSwitchRestaurant, presentation, primaryColor, subtitle = "Meine Vorteile" }: CustomerHeaderProps) {
   const { language } = useI18n();
   const t = (key: string) => customerPresentationText(key.replace("customer.", ""), language);
   return (
-    <header className={`premium-customer-header${compact ? " compact" : ""}`}>
+    <header className={`premium-customer-header${compact ? " compact" : ""}${languageSelector ? " has-language-selector" : ""}`}>
       {onSwitchRestaurant ? (
         <button data-i18n-skip="true" aria-label={t("customer.restaurantSwitch")} className="premium-customer-restaurant-selector" onClick={onSwitchRestaurant} type="button">
           <RestaurantLogo logoUrl={logoUrl} name={name} presentation={presentation} primaryColor={primaryColor} />
@@ -87,6 +90,7 @@ export function CustomerHeader({ compact = false, logoUrl, name, onInfo, onSwitc
           </span>
         </>
       )}
+      {languageSelector ? <LanguageSelector ariaLabel={t("customer.languageChangeCurrent")} className="customer-header-language" /> : null}
       <InfoTrigger className="premium-icon-button" label={t("customer.helpOpen")} onClick={onInfo} />
     </header>
   );

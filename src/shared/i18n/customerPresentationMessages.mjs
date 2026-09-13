@@ -1,6 +1,7 @@
 // Customer-only presentation copy. Owner/Admin dictionaries remain unchanged.
 export const CUSTOMER_PRESENTATION_MESSAGES = {
   "de": {
+    "customer.presentation.languageChangeCurrent": "Sprache ändern, aktuell Deutsch",
     "customer.presentation.details": "Details ansehen",
     "customer.presentation.close": "Ansicht schließen",
     "customer.presentation.navigation": "Meine Vorteile Navigation",
@@ -71,6 +72,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Einlösung wird vorbereitet …"
   },
   "en": {
+    "customer.presentation.languageChangeCurrent": "Change language, currently English",
     "customer.presentation.details": "View details",
     "customer.presentation.close": "Close view",
     "customer.presentation.navigation": "My benefits navigation",
@@ -141,6 +143,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparing redemption…"
   },
   "fr": {
+    "customer.presentation.languageChangeCurrent": "Changer de langue, langue actuelle : français",
     "customer.presentation.details": "Voir les détails",
     "customer.presentation.close": "Fermer la vue",
     "customer.presentation.navigation": "Navigation de mes avantages",
@@ -211,6 +214,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Préparation de l’échange…"
   },
   "it": {
+    "customer.presentation.languageChangeCurrent": "Cambia lingua, lingua attuale: italiano",
     "customer.presentation.details": "Vedi dettagli",
     "customer.presentation.close": "Chiudi vista",
     "customer.presentation.navigation": "Navigazione dei miei vantaggi",
@@ -281,6 +285,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparazione del riscatto…"
   },
   "es": {
+    "customer.presentation.languageChangeCurrent": "Cambiar idioma, idioma actual: español",
     "customer.presentation.details": "Ver detalles",
     "customer.presentation.close": "Cerrar vista",
     "customer.presentation.navigation": "Navegación de mis ventajas",
@@ -351,6 +356,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparando el canje…"
   },
   "zh": {
+    "customer.presentation.languageChangeCurrent": "更改语言，当前为简体中文",
     "customer.presentation.details": "查看详情",
     "customer.presentation.close": "关闭视图",
     "customer.presentation.navigation": "我的优惠导航",
@@ -421,6 +427,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "正在准备兑换…"
   },
   "ko": {
+    "customer.presentation.languageChangeCurrent": "언어 변경, 현재 언어: 한국어",
     "customer.presentation.details": "자세히 보기",
     "customer.presentation.close": "화면 닫기",
     "customer.presentation.navigation": "내 혜택 탐색",

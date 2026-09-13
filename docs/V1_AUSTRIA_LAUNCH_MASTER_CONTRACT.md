@@ -312,6 +312,29 @@ Keine neue Reward-/Eligibility-/Einloesungs-/Auth-/RLS-/DB-Logik, Migration
 oder Aenderung des Phase-6B-Layouts, Swipe-/Keyboard-Verhaltens und Hit-Area.
 Dieser Zielvertrag allein ist kein Implementierungs- oder Staging-Final-Lock.
 
+### 5.6 Customer-Sprachwahl im Restaurantkopf – Founder 2026-09-13
+
+Phase 6C darf die separate Sprachzeile im restaurantbezogenen Customer-Portal
+durch genau einen vorhandenen Sprachwaehler im gemeinsamen Restaurantkopf
+ersetzen. Reihenfolge: Restaurantauswahl, aktive Sprache, Info. Sprache als
+DE/EN/FR/IT/ES/ZH/KO ohne Flaggen; Sprache und Info jeweils mindestens 44 × 44 px,
+sichtbarer Fokus, lokalisierter ARIA-Name inklusive aktueller Sprache.
+Native vorhandene Auswahl und Speicherung bleiben unveraendert; kein zweiter
+Sprachdialog, keine neue Persistenz und keine Aenderung von Info/Restaurantwechsel.
+
+Explizite begrenzte Ausnahme zum Phase-6B-Home-Layout-Lock: Die Sprachzeile darf
+entfallen, der Restaurantname darf im Kopf kontrolliert mit Ellipse enden;
+min-width: 0 und feste Touchflaechen verhindern Ueberlappung bei 320 px.
+Carousel, Gesten, Bildkarten, Titelvertrag und Business-/Security-Vertraege
+bleiben unangetastet. Dieselbe Kopfkomponente darf auf Desktop verwendet
+werden, sofern der Regressionstest besteht. Screens ohne Restaurantkopf
+behalten vorerst ihren bestehenden Sprachwaehler.
+
+320/360/390/430/768 und sieben Sprachen physisch pruefen, realen Hoehengewinn
+messen statt 50–60 px vorweg als PASS zu behaupten. Lokale gruenen Gates,
+exakter Checkpoint und Staging-Abnahme erforderlich; kein Production-Deployment
+und kein Gesamt-Phase-6C-Final-Lock allein durch diesen Teilfix.
+
 ## 6. Login Contract
 
 E-Mail und Passwort bleiben der kanonische Login-Weg. Telefonnummern duerfen

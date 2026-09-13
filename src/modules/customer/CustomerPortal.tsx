@@ -1474,10 +1474,11 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   }
 
   return (
-    <AppShell className={customer && !isBonusCollection && activeView === "home" ? "customer-home-compact" : undefined} fontFamily={branding.font_family} primaryColor={branding.primary_color}>
+    <AppShell className={customer && !isBonusCollection && activeView === "home" ? "customer-home-compact" : undefined} fontFamily={branding.font_family} languageInHeader primaryColor={branding.primary_color}>
       <PageContainer className={`customer-portal-page${isBonusCollection ? " premium-collect-page" : ""}${guestStep === "register" || guestStep === "persist" ? " customer-registration-page" : ""}${customer && !isBonusCollection && activeView === "redemptions" ? " premium-redemption-page" : ""}`}>
         <CustomerHeader
           compact
+          languageSelector
           logoUrl={branding.logo_url}
           name={restaurant.name}
           onInfo={() => setInfoOpen(true)}
