@@ -2214,7 +2214,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     ? `${redemptionCatalog.length} ${t(redemptionCatalog.length === 1 ? "customer.reward.one" : "customer.reward.many")} ${t("customer.inRestaurant")}`
                     : `${myRedemptions.length} ${t(myRedemptions.length === 1 ? "customer.personalBenefit.one" : "customer.personalBenefit.many")}`}</p>
                 </div>
-                <p className="premium-legal-notice">Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.</p>
+                <p className="premium-legal-notice" data-i18n-skip="true">{ct("rewardNotice")}</p>
                 <div
                   aria-labelledby={rewardFilter === "all" ? "reward-tab-all" : "reward-tab-mine"}
                   className="premium-redemption-rewards"

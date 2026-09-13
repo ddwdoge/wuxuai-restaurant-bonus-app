@@ -1,6 +1,7 @@
 // Customer-only presentation copy. Owner/Admin dictionaries remain unchanged.
 export const CUSTOMER_PRESENTATION_MESSAGES = {
   "de": {
+    "customer.presentation.rewardNotice": "Diese Punkteeinlösungen werden vom Restaurant angeboten. Verfügbarkeit und Einlösung richten sich nach den Teilnahmebedingungen des Restaurants.",
     "customer.presentation.languageChangeCurrent": "Sprache ändern, aktuell Deutsch",
     "customer.presentation.details": "Details ansehen",
     "customer.presentation.close": "Ansicht schließen",
@@ -72,6 +73,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Einlösung wird vorbereitet …"
   },
   "en": {
+    "customer.presentation.rewardNotice": "These points rewards are offered by the restaurant. Availability and redemption are subject to the restaurant’s participation terms.",
     "customer.presentation.languageChangeCurrent": "Change language, currently English",
     "customer.presentation.details": "View details",
     "customer.presentation.close": "Close view",
@@ -143,6 +145,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparing redemption…"
   },
   "fr": {
+    "customer.presentation.rewardNotice": "Ces récompenses en points sont proposées par le restaurant. Leur disponibilité et leur utilisation sont soumises aux conditions de participation du restaurant.",
     "customer.presentation.languageChangeCurrent": "Changer de langue, langue actuelle : français",
     "customer.presentation.details": "Voir les détails",
     "customer.presentation.close": "Fermer la vue",
@@ -214,6 +217,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Préparation de l’échange…"
   },
   "it": {
+    "customer.presentation.rewardNotice": "Questi premi riscattabili con i punti sono offerti dal ristorante. La disponibilità e il riscatto sono soggetti alle condizioni di partecipazione del ristorante.",
     "customer.presentation.languageChangeCurrent": "Cambia lingua, lingua attuale: italiano",
     "customer.presentation.details": "Vedi dettagli",
     "customer.presentation.close": "Chiudi vista",
@@ -285,6 +289,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparazione del riscatto…"
   },
   "es": {
+    "customer.presentation.rewardNotice": "Estas recompensas por puntos son ofrecidas por el restaurante. La disponibilidad y el canje están sujetos a las condiciones de participación del restaurante.",
     "customer.presentation.languageChangeCurrent": "Cambiar idioma, idioma actual: español",
     "customer.presentation.details": "Ver detalles",
     "customer.presentation.close": "Cerrar vista",
@@ -356,6 +361,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "Preparando el canje…"
   },
   "zh": {
+    "customer.presentation.rewardNotice": "这些积分奖励由餐厅提供。是否可用及兑换规则以餐厅的参与条款为准。",
     "customer.presentation.languageChangeCurrent": "更改语言，当前为简体中文",
     "customer.presentation.details": "查看详情",
     "customer.presentation.close": "关闭视图",
@@ -427,6 +433,7 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.preparing": "正在准备兑换…"
   },
   "ko": {
+    "customer.presentation.rewardNotice": "이 포인트 보상은 매장에서 제공합니다. 이용 가능 여부와 사용 조건은 매장의 참여 약관을 따릅니다.",
     "customer.presentation.languageChangeCurrent": "언어 변경, 현재 언어: 한국어",
     "customer.presentation.details": "자세히 보기",
     "customer.presentation.close": "화면 닫기",
