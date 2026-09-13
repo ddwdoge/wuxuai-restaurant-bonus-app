@@ -8,6 +8,7 @@ const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8"
 const owner = read("src/modules/admin/AdminLayout.tsx");
 const ownerCss = read("src/modules/admin/admin-premium.css");
 const staff = read("src/modules/staff/StaffTablet.tsx");
+const appDrawer = read("src/shared/components/AppDrawer.tsx");
 
 const languages = ["de", "en", "fr", "it", "es", "zh", "ko"];
 const ownerKeys = [
@@ -47,6 +48,23 @@ const staffKeys = [
   "staff.error.cameraDenied", "staff.error.cameraMissing", "staff.error.cameraBusy",
   "staff.error.scannerOpen", "staff.error.cameraUnsupported", "staff.error.qrInvalid",
 ];
+
+const expectedCloseLabels = {
+  de: "Ansicht schließen",
+  en: "Close view",
+  fr: "Fermer la vue",
+  it: "Chiudi vista",
+  es: "Cerrar vista",
+  zh: "关闭视图",
+  ko: "화면 닫기",
+};
+
+test("Shared drawer close accessible name follows all seven active languages", () => {
+  assert.match(appDrawer, /aria-label=\{closeLabel \?\? t\("common\.close"\)\}/);
+  for (const language of languages) {
+    assert.equal(translateStructural("common.close", language), expectedCloseLabels[language]);
+  }
+});
 
 test("Owner and Staff header/drawer catalogs are complete in all seven languages", () => {
   for (const language of languages) {

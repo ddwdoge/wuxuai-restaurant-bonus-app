@@ -458,6 +458,7 @@ const STRUCTURAL_MESSAGES = Object.freeze({
     "legal.contentUnavailable": "RECHTLICHER INHALT NICHT VERFÜGBAR"
   },
   "fr": {
+    "common.close": "Fermer la vue",
     "customer.activation.title": "Terminer la configuration de l’application",
     "customer.activation.description": "Il reste {count} étapes de configuration.",
     "customer.activation.descriptionOne": "Il reste une étape de configuration.",
@@ -587,6 +588,7 @@ const STRUCTURAL_MESSAGES = Object.freeze({
     "customer.current": "Actuel"
   },
   "it": {
+    "common.close": "Chiudi vista",
     "customer.activation.title": "Completa la configurazione dell’app",
     "customer.activation.description": "Restano {count} passaggi di configurazione.",
     "customer.activation.descriptionOne": "Resta un passaggio di configurazione.",
@@ -716,6 +718,7 @@ const STRUCTURAL_MESSAGES = Object.freeze({
     "customer.current": "Attuale"
   },
   "es": {
+    "common.close": "Cerrar vista",
     "customer.activation.title": "Completar la configuración de la aplicación",
     "customer.activation.description": "Quedan {count} pasos de configuración.",
     "customer.activation.descriptionOne": "Queda un paso de configuración.",
@@ -845,6 +848,7 @@ const STRUCTURAL_MESSAGES = Object.freeze({
     "customer.current": "Actual"
   },
   "zh": {
+    "common.close": "关闭视图",
     "customer.activation.title": "完成应用设置",
     "customer.activation.description": "还有 {count} 个设置步骤未完成。",
     "customer.activation.descriptionOne": "还有 1 个设置步骤未完成。",
@@ -974,6 +978,7 @@ const STRUCTURAL_MESSAGES = Object.freeze({
     "customer.current": "当前"
   },
   "ko": {
+    "common.close": "화면 닫기",
     "customer.activation.title": "앱 설정 완료",
     "customer.activation.description": "설정 단계가 {count}개 남았습니다.",
     "customer.activation.descriptionOne": "설정 단계가 1개 남았습니다.",
