@@ -5,9 +5,10 @@ import { CUSTOMER_PRESENTATION_MESSAGES } from "../src/shared/i18n/customerPrese
 import { customerPresentationText } from "../src/modules/customer/customerRewardPresentation.mjs";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
-const [portal, finder, finderCss, switcher, switcherCss, customerCss, qrConfig] = await Promise.all([
+const [portal, finder, finderMap, finderCss, switcher, switcherCss, customerCss, qrConfig] = await Promise.all([
   read("../src/modules/customer/CustomerPortal.tsx"),
   read("../src/modules/customer/PartnerRestaurantFinderPage.tsx"),
+  read("../src/modules/customer/PartnerRestaurantMap.tsx"),
   read("../src/modules/customer/partner-restaurant-finder.css"),
   read("../src/modules/customer/components/CustomerRestaurantSwitcher.tsx"),
   read("../src/modules/customer/components/customer-restaurant-switcher.css"),
@@ -41,6 +42,34 @@ const blockBKeys = [
   "switcherEmpty",
   "switcherSwitchError",
   "switcherDiscover",
+  "mapZoomIn",
+  "mapZoomOut",
+  "mapClosed",
+  "mapReward",
+  "mapNearReward",
+  "mapPointsAvailable",
+  "mapRegistered",
+  "mapPartner",
+  "mapCurrentContext",
+  "mapUserLocation",
+  "mapContributors",
+  "mapLoadError",
+  "detailAria",
+  "detailClose",
+  "detailMember",
+  "detailNoMember",
+  "detailPoints",
+  "detailVisits",
+  "detailRewards",
+  "detailAvailable",
+  "detailOpen",
+  "detailJoin",
+  "detailDirections",
+  "detailCurrentOffer",
+  "detailOfferView",
+  "detailJoinNote",
+  "restaurantDetailDescription",
+  "detailTitle",
 ];
 
 test("Block-B-Inventur bleibt auf bestehende Customer-Routen und gemeinsame Drawer begrenzt", () => {
@@ -85,6 +114,14 @@ test("Discovery lokalisiert dynamische Zähler, Distanz und Zeit ohne Restaurant
   for (const field of ["location.name", "locationAddress\(location\)", "location.short_description", "reward.title", "currentOffer.title", "currentOffer.short_description"]) {
     assert.match(finder, new RegExp(`data-i18n-skip=\"true\"[^>]*>\\{${field.replace(/[()]/g, "\\$&")}`));
   }
+  for (const key of ["detailAria", "detailClose", "detailPoints", "detailVisits", "detailRewards", "detailOpen", "detailJoin", "detailDirections", "detailOfferView", "detailJoinNote", "restaurantDetailDescription", "detailTitle"]) {
+    assert.match(finder, new RegExp(`(?:text|customerPresentationText)\\(\"${key}\"`));
+  }
+  assert.doesNotMatch(finder, /aria-label=\"Restaurantdetails schließen\"|>Restaurant öffnen<|>Bonusprogramm beitreten<|>Route starten<|>Angebot ansehen</);
+  for (const key of ["mapZoomIn", "mapZoomOut", "mapClosed", "mapReward", "mapNearReward", "mapPointsAvailable", "mapRegistered", "mapPartner", "mapCurrentContext", "mapUserLocation", "mapContributors", "mapLoadError"]) {
+    assert.match(finderMap, new RegExp(`\"${key}\"`));
+  }
+  assert.doesNotMatch(finderMap, /Noch nicht besucht|Partnerlokal|Aktuell geschlossen|Dein Standort|Mitwirkende/);
 });
 
 test("Restaurantdetail zeigt die primäre Aktion vor sekundären Angebotsdetails", () => {

@@ -303,7 +303,7 @@ test("Owner UI trennt Veröffentlichung, Kundensichtbarkeit und aktuelle Gültig
 test("Finder zeigt einen kompakten Hinweis und sichere Aktionen", async () => {
   const finder = await readFile(finderUrl, "utf8");
   assert.match(finder, /partner-offer-badge/);
-  assert.match(finder, /Angebot ansehen/);
+  assert.match(finder, /text\("detailOfferView"\)/);
   assert.match(finder, /OFFER_ROUTE_CLICKED/);
   assert.match(finder, /OFFER_BONUS_OPENED/);
   assert.doesNotMatch(finder, /saveStoredCustomerToken|collectBonusPoints|registerRestaurantGuest/);

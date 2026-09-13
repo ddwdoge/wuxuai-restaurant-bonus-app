@@ -140,9 +140,9 @@ test("Kundenseite verwendet V1-Titel, sechs Filter und sichere Aktionen", async 
   for (const label of ["Lokale entdecken", "In meiner Nähe", "Bereits besucht", "Meine Punkte", "Belohnung bald erreichbar", "Jetzt geöffnet", "Alle Partner"]) {
     assert.match(page, new RegExp(label));
   }
-  assert.match(page, /Restaurant öffnen/);
-  assert.match(page, /Bonusprogramm beitreten/);
-  assert.match(page, /Route starten/);
+  assert.match(page, /text\("detailOpen"\)/);
+  assert.match(page, /text\("detailJoin"\)/);
+  assert.match(page, /text\("detailDirections"\)/);
   assert.match(page, /Wähle ein Lokal und tritt dem Bonusprogramm direkt bei/);
   assert.doesNotMatch(page, /result\.locations\[0\]\?\.branch_id/);
 });
@@ -153,8 +153,8 @@ test("Standortkarte lädt OSM-Kacheln direkt per HTTPS und besitzt einen kontrol
   assert.doesNotMatch(map, /http:\/\//);
   assert.match(map, /tileload:/);
   assert.match(map, /tileerror:/);
-  assert.match(map, /Karte konnte nicht geladen werden\./);
-  assert.match(map, /Erneut versuchen/);
+  assert.match(map, /text\("mapLoadError"\)/);
+  assert.match(map, /text\("retry"\)/);
 });
 
 test("Standortkarte synchronisiert Lazy- und Resize-Layouts ohne Dauerschleife", async () => {

@@ -16,7 +16,7 @@ const [finderPage, finderCss, mapCss, drawer, globalCss, centralCss] = await Pro
 test("Restaurantdetails verwenden mobil und am Desktop denselben Body-Portal-Drawer", () => {
   assert.match(finderPage, /import \{ AppDrawer \} from "\.\.\/\.\.\/shared\/components\/AppDrawer"/);
   assert.match(finderPage, /const detailOpenInDrawer = Boolean\(selected\)/);
-  assert.match(finderPage, /<AppDrawer[\s\S]*open=\{detailOpenInDrawer\}[\s\S]*title="Restaurantdetails"/);
+  assert.match(finderPage, /<AppDrawer[\s\S]*open=\{detailOpenInDrawer\}[\s\S]*title=\{customerPresentationText\("detailTitle", language\)\}/);
   assert.doesNotMatch(finderPage, /selected && !detailOpenInDrawer/);
   assert.match(drawer, /createPortal\([\s\S]*document\.body/);
 });
@@ -53,9 +53,9 @@ test("langer Detailinhalt und CTAs bleiben im scrollbaren Drawer zugänglich", (
   }
   assert.match(finderCss, /partner-detail-actions \.premium-button[^}]*min-height: 48px/);
   assert.match(finderCss, /app-drawer-panel:has\(\.partner-detail-drawer-content\)[\s\S]{0,900}--premium-primary: var\(--premium-gold\)/);
-  assert.match(finderPage, /Restaurant öffnen/);
-  assert.match(finderPage, /Bonusprogramm beitreten/);
-  assert.match(finderPage, /> Route starten/);
+  assert.match(finderPage, /text\("detailOpen"\)/);
+  assert.match(finderPage, /text\("detailJoin"\)/);
+  assert.match(finderPage, /text\("detailDirections"\)/);
 });
 
 test("Fokus, Escape und Scroll-Lock werden beim Schließen vollständig bereinigt", () => {

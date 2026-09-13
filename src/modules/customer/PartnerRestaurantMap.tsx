@@ -8,6 +8,8 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "./partner-restaurant-map.css";
 import type { PartnerRestaurant } from "./partnerRestaurantService";
 import { markerStatus } from "./partnerRestaurantFinder.mjs";
+import { customerPresentationText } from "./customerRewardPresentation.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export type PartnerRestaurantMapProps = {
   currentSlug?: string | null;
@@ -22,6 +24,7 @@ export const OPENSTREETMAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y
 
 function MapSizeSync() {
   const map = useMap();
+  const { language } = useI18n();
 
   useEffect(() => {
     const container = map.getContainer();
@@ -47,28 +50,43 @@ function MapSizeSync() {
     };
   }, [map]);
 
+  useEffect(() => {
+    const container = map.getContainer();
+    const zoomIn = container.querySelector<HTMLElement>(".leaflet-control-zoom-in");
+    const zoomOut = container.querySelector<HTMLElement>(".leaflet-control-zoom-out");
+    const applyLabel = (element: HTMLElement | null, key: string) => {
+      if (!element) return;
+      const label = customerPresentationText(key, language);
+      element.setAttribute("aria-label", label);
+      element.setAttribute("title", label);
+    };
+    applyLabel(zoomIn, "mapZoomIn");
+    applyLabel(zoomOut, "mapZoomOut");
+  }, [language, map]);
+
   return null;
 }
 
-function markerIcon(location: PartnerRestaurant, selected: boolean, current: boolean) {
+function markerIcon(location: PartnerRestaurant, selected: boolean, current: boolean, language: string) {
+  const text = (key: string) => customerPresentationText(key, language);
   const status = markerStatus(location);
   const statusLabel = status === "closed"
-    ? "Aktuell geschlossen"
+    ? text("mapClosed")
     : status === "reward"
-    ? "Punkteeinlösung verfügbar"
+    ? text("mapReward")
     : status === "near"
-      ? "Nächste Punkteeinlösung fast erreicht"
+      ? text("mapNearReward")
     : status === "member"
-      ? "Punkte vorhanden"
+      ? text("mapPointsAvailable")
       : status === "registered"
-        ? "Registriert"
-        : "Partnerlokal";
-  const visitedLabel = (location.membership?.visits_count ?? 0) > 0 ? "Bereits besucht. " : "Noch nicht besucht. ";
+        ? text("mapRegistered")
+        : text("mapPartner");
+  const visitedLabel = (location.membership?.visits_count ?? 0) > 0 ? `${text("finderVisited")}. ` : `${text("finderNotVisited")}. `;
   const markerSymbol = status === "closed" ? "–" : status === "reward" ? "!" : status === "near" ? "+" : status === "member" ? "P" : status === "registered" ? "✓" : "·";
 
   return L.divIcon({
     className: "partner-map-marker-shell",
-    html: `<span class="partner-map-marker ${status}${(location.membership?.visits_count ?? 0) > 0 ? " visited" : ""}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? "Aktueller Restaurantkontext. " : ""}${visitedLabel}${statusLabel}"><span aria-hidden="true">${markerSymbol}</span></span>`,
+    html: `<span class="partner-map-marker ${status}${(location.membership?.visits_count ?? 0) > 0 ? " visited" : ""}${selected ? " selected" : ""}${current ? " current" : ""}" aria-label="${current ? `${text("mapCurrentContext")}. ` : ""}${visitedLabel}${statusLabel}"><span aria-hidden="true">${markerSymbol}</span></span>`,
     iconAnchor: [20, 40],
     iconSize: [40, 40],
   });
@@ -76,6 +94,7 @@ function markerIcon(location: PartnerRestaurant, selected: boolean, current: boo
 
 function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLocation }: PartnerRestaurantMapProps) {
   const map = useMap();
+  const { language } = useI18n();
 
   useEffect(() => {
     const cluster = L.markerClusterGroup({
@@ -86,7 +105,7 @@ function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLoca
 
     locations.forEach((location) => {
       const marker = L.marker([location.latitude, location.longitude], {
-        icon: markerIcon(location, selectedId === location.branch_id, currentSlug === location.slug),
+        icon: markerIcon(location, selectedId === location.branch_id, currentSlug === location.slug, language),
         keyboard: true,
         title: location.name,
       });
@@ -102,14 +121,14 @@ function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLoca
         fillOpacity: 1,
         radius: 7,
         weight: 4,
-      }).bindTooltip("Dein Standort"));
+      }).bindTooltip(customerPresentationText("mapUserLocation", language)));
     }
 
     map.addLayer(cluster);
     return () => {
       map.removeLayer(cluster);
     };
-  }, [currentSlug, locations, map, onSelect, selectedId, userLocation]);
+  }, [currentSlug, language, locations, map, onSelect, selectedId, userLocation]);
 
   useEffect(() => {
     if (locations.length === 0) return;
@@ -121,6 +140,8 @@ function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLoca
 }
 
 export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...props }: PartnerRestaurantMapProps) {
+  const { language } = useI18n();
+  const text = (key: string) => customerPresentationText(key, language);
   const [tileAttempt, setTileAttempt] = useState(0);
   const [tileState, setTileState] = useState<"loading" | "loaded" | "failed">("loading");
   const tileLoadedRef = useRef(false);
@@ -148,7 +169,7 @@ export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...prop
         zoomControl
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
+          attribution={`&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ${text("mapContributors")}`}
           eventHandlers={{
             tileload: () => {
               tileLoadedRef.current = true;
@@ -166,8 +187,8 @@ export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...prop
       </MapContainer>
       {tileState === "failed" ? (
         <div className="partner-map-tile-error" role="alert">
-          <strong>Karte konnte nicht geladen werden.</strong>
-          <button className="button secondary" onClick={retryTiles} type="button">Erneut versuchen</button>
+          <strong>{text("mapLoadError")}</strong>
+          <button className="button secondary" onClick={retryTiles} type="button">{text("retry")}</button>
         </div>
       ) : null}
     </div>

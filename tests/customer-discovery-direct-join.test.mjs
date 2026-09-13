@@ -21,16 +21,16 @@ const joinFunction = migration.slice(
 
 test("Restaurantdetails unterscheiden Mitglied und Nichtmitglied mit genau einer primären Aktion", () => {
   assert.match(finder, /const isMember = membership\?\.registered === true/);
-  assert.match(finder, /Noch kein Bonus-Mitglied/);
-  assert.match(finder, /isMember \?[\s\S]*Restaurant öffnen[\s\S]*Bonusprogramm beitreten/);
+  assert.match(finder, /text\("detailNoMember"\)/);
+  assert.match(finder, /isMember \?[\s\S]*text\("detailOpen"\)[\s\S]*text\("detailJoin"\)/);
   assert.match(finder, /to=\{portalUrl\}/);
-  assert.match(finder, /Route starten/);
+  assert.match(finder, /text\("detailDirections"\)/);
 });
 
 test("Willkommensanreiz bleibt lokalisiert sichtbar und Beitritt erzeugt keinen Besuchstext", () => {
   assert.match(finder, /customerPresentationText\("finderWelcomeAvailable", language\)/);
   assert.match(customerMessages, /"customer\.presentation\.finderWelcomeAvailable": "Willkommensgeschenk verfügbar"/);
-  assert.match(finder, /Ein Besuch wird erst nach einer echten Punktebuchung gespeichert/);
+  assert.match(finder, /text\("detailJoinNote"\)/);
   assert.match(finder, /visits_count \?\? 0\) > 0/);
 });
 

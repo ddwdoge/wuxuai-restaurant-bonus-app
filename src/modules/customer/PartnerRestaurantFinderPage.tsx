@@ -115,6 +115,7 @@ function PartnerResultCard({ language, location, onSelect, selected }: { languag
 }
 
 function PartnerDetail({ current, language, location, onClose }: { current: boolean; language: UiLanguage; location: PartnerRestaurant; onClose: () => void }) {
+  const text = (key: string, parameters?: Record<string, string | number>) => customerPresentationText(key, language, parameters);
   const membership = location.membership;
   const isMember = membership?.registered === true;
   const customerToken = readStoredCustomerToken(location.slug);
@@ -125,8 +126,8 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
     : null;
 
   return (
-    <article aria-label={`Details zu ${location.name}`} className="partner-detail-card">
-      <button aria-label="Restaurantdetails schließen" className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
+    <article aria-label={text("detailAria", { name: location.name })} className="partner-detail-card">
+      <button aria-label={text("detailClose")} className="partner-detail-close" onClick={onClose} type="button"><X aria-hidden="true" size={19} /></button>
       <RestaurantHeroImage
         coverImageUrl={location.cover_image_url}
         logoUrl={location.logo_url}
@@ -139,14 +140,14 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
       />
       <div className="partner-detail-heading">
         <RestaurantLogoImage alt={`${location.name} Logo`} className="partner-detail-logo" logoUrl={location.logo_url} name={location.name} />
-        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? "Aktueller Kontext" : (membership?.visits_count ?? 0) > 0 ? "Bereits besucht" : isMember ? "Dein Bonus" : "Noch kein Bonus-Mitglied"}</StatusBadge><h2 data-i18n-skip="true">{location.name}</h2><p data-i18n-skip="true">{locationAddress(location)}</p>{formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}</div>
+        <div><StatusBadge tone={current || isMember ? "warning" : "neutral"}>{current ? text("mapCurrentContext") : (membership?.visits_count ?? 0) > 0 ? text("finderVisited") : isMember ? text("detailMember") : text("detailNoMember")}</StatusBadge><h2 data-i18n-skip="true">{location.name}</h2><p data-i18n-skip="true">{locationAddress(location)}</p>{formatDistance(location.distance_km, language) ? <small>{formatDistance(location.distance_km, language)}</small> : null}</div>
       </div>
       {location.short_description ? <p className="partner-detail-description" data-i18n-skip="true">{location.short_description}</p> : null}
       {location.opening_status ? <p className={`partner-detail-hours ${location.opening_status.isOpen ? "open" : "closed"}`}>{location.opening_status.message}{location.opening_status.todayHours && location.opening_status.message !== location.opening_status.todayHours ? ` · ${location.opening_status.todayHours}` : ""}</p> : null}
       <div className="partner-detail-stats">
-        <div><span>Punkte</span><strong>{membership ? membership.points_balance : "–"}</strong></div>
-        <div><span>Besuche</span><strong>{membership ? membership.visits_count : "–"}</strong></div>
-        <div><span>Punkteeinlösungen</span><strong>{location.active_reward_count}</strong></div>
+        <div><span>{text("detailPoints")}</span><strong>{membership ? membership.points_balance : "–"}</strong></div>
+        <div><span>{text("detailVisits")}</span><strong>{membership ? membership.visits_count : "–"}</strong></div>
+        <div><span>{text("detailRewards")}</span><strong>{location.active_reward_count}</strong></div>
       </div>
       <div className="partner-recommendation">
         {membership?.available_rewards.length ? <Gift aria-hidden="true" size={21} /> : <Trophy aria-hidden="true" size={21} />}
@@ -154,28 +155,28 @@ function PartnerDetail({ current, language, location, onClose }: { current: bool
       </div>
       {membership?.available_rewards.length ? (
         <div className="partner-available-rewards">
-          <span>Für dich verfügbar</span>
+          <span>{text("detailAvailable")}</span>
           {membership.available_rewards.slice(0, 3).map((reward) => <strong data-i18n-skip="true" key={reward.id}>{reward.title}</strong>)}
         </div>
       ) : null}
       <div className="partner-detail-actions">
         <Link className="premium-button premium-button-primary" onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_BONUS_OPENED"); }} to={portalUrl}>
-          {isMember ? <><Store aria-hidden="true" size={18} /> Restaurant öffnen</> : <><UserPlus aria-hidden="true" size={18} /> Bonusprogramm beitreten</>}
+          {isMember ? <><Store aria-hidden="true" size={18} /> {text("detailOpen")}</> : <><UserPlus aria-hidden="true" size={18} /> {text("detailJoin")}</>}
         </Link>
         <a className="premium-button premium-button-secondary" href={googleMapsUrl(location, "directions")} onClick={() => { if (location.offers[0]) void recordRestaurantOfferEvent(location.offers[0].id, "OFFER_ROUTE_CLICKED"); }} rel="noreferrer" target="_blank">
-          <ExternalLink aria-hidden="true" size={18} /> Route starten
+          <ExternalLink aria-hidden="true" size={18} /> {text("detailDirections")}
         </a>
       </div>
       {currentOffer ? (
         <div className="partner-current-offer">
-          <span>{currentOffer.offer_type === "LUNCH_MENU" ? "Mittagsmenü" : "Aktuelles Angebot"}</span>
+          <span>{currentOffer.offer_type === "LUNCH_MENU" ? text("offerType.LUNCH_MENU") : text("detailCurrentOffer")}</span>
           <strong data-i18n-skip="true">{currentOffer.title}</strong>
           <p data-i18n-skip="true">{currentOffer.short_description}</p>
           <small className="partner-current-offer-price">{currentOfferPrice?.discountLabel ? <b>{currentOfferPrice.discountLabel}</b> : null}{currentOfferPrice?.previousPrice ? <del>{currentOfferPrice.previousPrice}</del> : null}{currentOfferPrice?.currentPrice ? <strong>{currentOfferPrice.currentPrice}</strong> : null}<span>{customerPresentationText("validUntil", language)} {formatLocaleDate(currentOffer.valid_to, language)}</span></small>
-          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>Angebot ansehen</Link>
+          <Link className="premium-button premium-button-secondary" onClick={() => void recordRestaurantOfferEvent(currentOffer.id, "OFFER_CTA_CLICKED")} to={`/customer/${encodeURIComponent(location.slug)}/offers`}>{text("detailOfferView")}</Link>
         </div>
       ) : null}
-      {!isMember ? <p className="partner-detail-note">Du kannst diesem Bonusprogramm direkt beitreten. Ein Besuch wird erst nach einer echten Punktebuchung gespeichert.</p> : null}
+      {!isMember ? <p className="partner-detail-note">{text("detailJoinNote")}</p> : null}
     </article>
   );
 }
@@ -328,12 +329,13 @@ export function PartnerRestaurantFinderPage() {
       </main>
       <CentralCustomerNavigation />
       <AppDrawer
-        description="Punkte, Punkteeinlösungen und Informationen dieses Lokals."
+        closeLabel={customerPresentationText("close", language)}
+        description={customerPresentationText("restaurantDetailDescription", language)}
         className="partner-detail-responsive-drawer"
         onClose={() => setSelectedId(null)}
         open={detailOpenInDrawer}
         size="large"
-        title="Restaurantdetails"
+        title={customerPresentationText("detailTitle", language)}
       >
         {selected ? (
           <div className="partner-detail-drawer-content">
