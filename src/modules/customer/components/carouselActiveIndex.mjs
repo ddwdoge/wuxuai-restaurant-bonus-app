@@ -11,10 +11,15 @@ export function resolveCarouselActiveIndex({
   clientWidth,
   devicePixelRatio = 1,
   itemStartDistances,
+  preferredIndex = null,
   scrollLeft,
   scrollWidth,
 }) {
   if (!itemStartDistances.length) return -1;
+
+  if (Number.isInteger(preferredIndex) && preferredIndex >= 0 && preferredIndex < itemStartDistances.length) {
+    return preferredIndex;
+  }
 
   const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
   const boundedScrollLeft = Math.min(Math.max(scrollLeft, 0), maxScrollLeft);

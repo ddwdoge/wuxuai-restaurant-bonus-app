@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { resolveCarouselActiveIndex } from "./carouselActiveIndex.mjs";
+import { carouselScrollEndTolerance, resolveCarouselActiveIndex } from "./carouselActiveIndex.mjs";
 import { createImageCardPointerGuard } from "./imageCardPointerGuard.mjs";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { customerPresentationText } from "../customerRewardPresentation.mjs";
@@ -34,9 +34,35 @@ export function PremiumHorizontalCarousel({
   const items = Children.toArray(children);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const programmaticScrollRef = useRef<{ index: number; scrollLeft: number } | null>(null);
+  const programmaticScrollFrameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageCardPointerGuard] = useState(createImageCardPointerGuard);
   const hasMultipleItems = items.length > 1;
+
+  const updateActiveIndex = useCallback((viewport: HTMLDivElement) => {
+    const itemElements = Array.from(viewport.querySelectorAll<HTMLElement>("[data-carousel-item]"));
+    if (!itemElements.length) return;
+    const viewportLeft = viewport.getBoundingClientRect().left;
+    const programmaticScroll = programmaticScrollRef.current;
+    const nextIndex = resolveCarouselActiveIndex({
+      clientWidth: viewport.clientWidth,
+      devicePixelRatio: window.devicePixelRatio,
+      itemStartDistances: itemElements.map((item) => item.getBoundingClientRect().left - viewportLeft),
+      preferredIndex: programmaticScroll?.index,
+      scrollLeft: viewport.scrollLeft,
+      scrollWidth: viewport.scrollWidth,
+    });
+    if (programmaticScroll && Math.abs(viewport.scrollLeft - programmaticScroll.scrollLeft)
+      <= carouselScrollEndTolerance(window.devicePixelRatio)) {
+      programmaticScrollRef.current = null;
+      if (programmaticScrollFrameRef.current != null) {
+        window.cancelAnimationFrame(programmaticScrollFrameRef.current);
+        programmaticScrollFrameRef.current = null;
+      }
+    }
+    setActiveIndex(nextIndex);
+  }, []);
 
   const scrollToIndex = useCallback((nextIndex: number) => {
     const viewport = viewportRef.current;
@@ -45,25 +71,38 @@ export function PremiumHorizontalCarousel({
     const targetIndex = Math.min(Math.max(nextIndex, 0), itemElements.length - 1);
     const target = itemElements[targetIndex];
     if (!target) return;
-    const left = target.getBoundingClientRect().left - viewport.getBoundingClientRect().left + viewport.scrollLeft - viewport.clientLeft;
+    const requestedLeft = target.getBoundingClientRect().left - viewport.getBoundingClientRect().left
+      + viewport.scrollLeft - viewport.clientLeft;
+    const targetLeft = Math.min(Math.max(requestedLeft, 0), viewport.scrollWidth - viewport.clientWidth);
+    const tolerance = carouselScrollEndTolerance(window.devicePixelRatio);
+    if (programmaticScrollFrameRef.current != null) window.cancelAnimationFrame(programmaticScrollFrameRef.current);
+    programmaticScrollRef.current = Math.abs(viewport.scrollLeft - targetLeft) <= tolerance
+      ? null
+      : { index: targetIndex, scrollLeft: targetLeft };
+    if (programmaticScrollRef.current) {
+      let lastScrollLeft = viewport.scrollLeft;
+      let hasMoved = false;
+      let stableFrames = 0;
+      const finishWhenStable = () => {
+        if (!programmaticScrollRef.current) return;
+        const movement = Math.abs(viewport.scrollLeft - lastScrollLeft);
+        if (movement > tolerance / 2) hasMoved = true;
+        stableFrames = hasMoved && movement <= tolerance / 2 ? stableFrames + 1 : 0;
+        lastScrollLeft = viewport.scrollLeft;
+        if (stableFrames >= 3) {
+          programmaticScrollRef.current = null;
+          programmaticScrollFrameRef.current = null;
+          updateActiveIndex(viewport);
+          return;
+        }
+        programmaticScrollFrameRef.current = window.requestAnimationFrame(finishWhenStable);
+      };
+      programmaticScrollFrameRef.current = window.requestAnimationFrame(finishWhenStable);
+    }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    viewport.scrollTo({ left, behavior: reducedMotion ? "instant" : "smooth" });
+    viewport.scrollTo({ left: targetLeft, behavior: reducedMotion ? "instant" : "smooth" });
     setActiveIndex(targetIndex);
-  }, []);
-
-  const updateActiveIndex = useCallback((viewport: HTMLDivElement) => {
-    const itemElements = Array.from(viewport.querySelectorAll<HTMLElement>("[data-carousel-item]"));
-    if (!itemElements.length) return;
-    const viewportLeft = viewport.getBoundingClientRect().left;
-    const nextIndex = resolveCarouselActiveIndex({
-      clientWidth: viewport.clientWidth,
-      devicePixelRatio: window.devicePixelRatio,
-      itemStartDistances: itemElements.map((item) => item.getBoundingClientRect().left - viewportLeft),
-      scrollLeft: viewport.scrollLeft,
-      scrollWidth: viewport.scrollWidth,
-    });
-    setActiveIndex(nextIndex);
-  }, []);
+  }, [updateActiveIndex]);
 
   const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
     const viewport = event.currentTarget;
@@ -93,6 +132,7 @@ export function PremiumHorizontalCarousel({
 
   useEffect(() => () => {
     if (animationFrameRef.current != null) window.cancelAnimationFrame(animationFrameRef.current);
+    if (programmaticScrollFrameRef.current != null) window.cancelAnimationFrame(programmaticScrollFrameRef.current);
   }, []);
 
   if (!items.length) return null;

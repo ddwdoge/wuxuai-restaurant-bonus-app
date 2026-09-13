@@ -49,6 +49,18 @@ test("first and intermediate positions still use the nearest card", () => {
   assert.equal(resolve({ itemStartDistances: [-300, -20, 260], scrollLeft: 300 }), 1);
 });
 
+test("an explicit desktop arrow target stays on the middle card at the shared scroll end", () => {
+  const desktopEnd = {
+    clientWidth: 672,
+    itemStartDistances: [-281.5, 40.6953125, 362.890625],
+    scrollLeft: 281.5,
+    scrollWidth: 955,
+  };
+  assert.equal(resolve(desktopEnd), 2);
+  assert.equal(resolve({ ...desktopEnd, preferredIndex: 1 }), 1);
+  assert.equal(resolve({ ...desktopEnd, preferredIndex: 2 }), 2);
+});
+
 test("empty and non-scrollable carousels resolve deterministically", () => {
   assert.equal(resolve({ itemStartDistances: [] }), -1);
   assert.equal(resolve({ clientWidth: 400, itemStartDistances: [0], scrollLeft: 0, scrollWidth: 400 }), 0);
@@ -87,6 +99,10 @@ test("geometry, snap, peek and existing interaction handlers stay unchanged", ()
   assert.match(component, /onKeyDown=\{handleKeyDown\}/);
   assert.match(component, /onScroll=\{handleScroll\}/);
   assert.match(component, /onClick=\{\(\) => scrollToIndex\(activeIndex \+ 1\)\}/);
+  assert.match(component, /programmaticScrollRef/);
+  assert.match(component, /preferredIndex: programmaticScroll\?\.index/);
+  assert.match(component, /requestAnimationFrame\(finishWhenStable\)/);
+  assert.doesNotMatch(component, /setInterval|setTimeout/);
   assert.match(blockCss, /box-shadow: inset 0 0 0 2px/);
   assert.match(blockCss, /focus-within::after/);
   assert.doesNotMatch(component, /fetch\(|\.rpc\(|supabase/);
