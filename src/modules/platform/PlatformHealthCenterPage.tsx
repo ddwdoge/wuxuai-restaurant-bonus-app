@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2, Clock3,
+  AlertCircle, AlertTriangle, CheckCircle2, Clock3,
   ExternalLink, Info, RefreshCw, Search, ShieldAlert, Stethoscope,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UiState } from "../../shared/ui/UiState";
-import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -17,6 +16,7 @@ import {
 import {
   filterHealthFindings, isHealthSnapshotStale, normalizeHealthFilters,
 } from "./platformHealthCenterView.mjs";
+import { PlatformAdminLayout } from "./PlatformAdminLayout";
 
 const severityIcons = {
   P0: ShieldAlert,
@@ -114,20 +114,16 @@ export function PlatformHealthCenterPage() {
   ] : [];
 
   return (
-    <main className="platform-admin-shell platform-health-shell">
-      <header className="platform-admin-header">
-        <div className="platform-admin-header-primary">
-          <div className="platform-admin-header-identity"><span className="admin-brand-kicker">WUXUAI Admin</span><h1>{t("title")}</h1></div>
-          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
-        </div>
-        <p className="platform-admin-header-description">{t("description")}</p>
-        <div className="platform-admin-header-toolbar">
+    <PlatformAdminLayout
+      className="platform-health-shell"
+      description={t("description")}
+      title={t("title")}
+      toolbar={<>
           <span className="pill">{platformRole ?? t("platformAdmin")}</span>
-          <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("back")}</Link>
           <button className="button secondary" onClick={() => void load()} type="button"><RefreshCw size={18} />{t("refresh")}</button>
           <button className="button secondary" onClick={signOut} type="button">{t("signOut")}</button>
-        </div>
-      </header>
+      </>}
+    >
 
       {loading ? <UiState description={t("loadingDescription")} kind="loading" title={t("loading")} /> : null}
       {error ? <UiState action={<button className="button secondary" onClick={() => void load()} type="button">{t("retry")}</button>} description={error} kind="error" title={t("unavailable")} /> : null}
@@ -178,7 +174,7 @@ export function PlatformHealthCenterPage() {
           </aside>
         </section>
       </> : null}
-    </main>
+    </PlatformAdminLayout>
   );
 }
 

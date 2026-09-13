@@ -61,7 +61,7 @@ test("Lifecycle und Vertrag bleiben getrennt und bestätigte Vertragsaktionen la
   assert.match(controlCenter, /Abo aktivieren\?/);
   assert.match(controlCenter, /Abo pausieren\?/);
   assert.match(controlCenter, /Testphase verlängern\?/);
-  assert.match(page, /await loadData\(selectedRestaurant\.id\)/);
+  assert.match(page, /await loadRestaurantData\(selectedRestaurant\.id\)/);
   assert.match(page, /await loadDetail\(selectedRestaurant\.id\)/);
 });
 

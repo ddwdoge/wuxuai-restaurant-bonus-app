@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertCircle, Building2, CheckCircle2, Clock, HeartPulse, Lock, RefreshCw, Search } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, Building2, CheckCircle2, Clock, Lock, RefreshCw, Search } from "lucide-react";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   loadPlatformRestaurantControlCenter,
   loadPlatformRestaurants,
@@ -18,8 +18,10 @@ import { PlatformRestaurantControlCenter as RestaurantControlCenter } from "./Pl
 import { PlatformOperationalTelemetry as OperationalTelemetry } from "./PlatformOperationalTelemetry";
 import { useAuth } from "../auth/AuthProvider";
 import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
-import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { PlatformCountryLaunchPanel } from "./PlatformCountryLaunchPanel";
+import { PlatformAdminLayout } from "./PlatformAdminLayout";
+import { platformAdminNavigationMessages, type PlatformAdminSection } from "./platformAdminNavigationI18n";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
@@ -64,6 +66,12 @@ const roleLabels: Record<string, string> = {
 
 type FilterKey = "all" | "active" | "paused" | "suspended" | "trial" | "expiring" | "new" | "setup";
 
+const filterKeys: FilterKey[] = ["all", "active", "paused", "suspended", "trial", "expiring", "new", "setup"];
+
+function filterFromUrl(value: string | null): FilterKey {
+  return filterKeys.includes(value as FilterKey) ? value as FilterKey : "all";
+}
+
 function isToday(value: string | null | undefined) {
   if (!value) return false;
   return new Date(value).toDateString() === new Date().toDateString();
@@ -96,8 +104,20 @@ function computeSummary(restaurants: PlatformRestaurant[], summary: PlatformSumm
 
 export function PlatformAdminPage() {
   const { platformRole, signOut } = useAuth();
-  const { restaurantId } = useParams();
+  const { language } = useI18n();
+  const routeParams = useParams();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section: PlatformAdminSection = pathname.includes("/countries") ? "countries"
+    : pathname.includes("/plans") ? "plans"
+      : pathname.includes("/system") ? "system"
+        : pathname.includes("/businesses") || pathname.includes("/restaurants") || pathname === "/platform-admin/restaurants" ? "businesses"
+          : "overview";
+  const showRestaurantWorkspace = section === "businesses" || section === "plans" || section === "system";
+  const wildcardSegments = (routeParams["*"] ?? "").split("/").filter(Boolean);
+  const restaurantId = routeParams.restaurantId ?? (showRestaurantWorkspace ? wildcardSegments[1] : undefined);
+  const navigationText = platformAdminNavigationMessages(language);
   const [summary, setSummary] = useState<PlatformSummary>(emptySummary);
   const [restaurants, setRestaurants] = useState<PlatformRestaurant[]>([]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(restaurantId ?? null);
@@ -105,8 +125,8 @@ export function PlatformAdminPage() {
   const [telemetry, setTelemetry] = useState<PlatformOperationalTelemetry | null>(null);
   const [telemetryLoading, setTelemetryLoading] = useState(true);
   const [telemetryError, setTelemetryError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("query") ?? "");
+  const [filter, setFilter] = useState<FilterKey>(() => filterFromUrl(searchParams.get("status")));
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -115,7 +135,7 @@ export function PlatformAdminPage() {
   const [detailError, setDetailError] = useState("");
   const canWrite = canWritePlatformAdmin(platformRole);
 
-  async function loadData(preferredId = selectedRestaurantId) {
+  const loadOverviewData = useCallback(async () => {
     setLoading(true);
     setTelemetryLoading(true);
     setErrorMessage("");
@@ -131,6 +151,21 @@ export function PlatformAdminPage() {
     try {
       const data = await loadPlatformRestaurants();
       setSummary(computeSummary(data.restaurants, data.summary));
+    } catch (error) {
+      console.error("WUXUAI Admin Daten konnten nicht geladen werden.", error);
+      setErrorMessage("Admin-Daten konnten gerade nicht geladen werden.");
+      setSummary(emptySummary);
+    } finally {
+      setLoading(false);
+      await telemetryRequest;
+    }
+  }, []);
+
+  const loadRestaurantData = useCallback(async (preferredId: string | null) => {
+    setLoading(true);
+    setErrorMessage("");
+    try {
+      const data = await loadPlatformRestaurants();
       setRestaurants(data.restaurants);
       const nextSelectedId = preferredId && data.restaurants.some((restaurant) => restaurant.id === preferredId) ? preferredId : data.restaurants[0]?.id ?? null;
       setSelectedRestaurantId(nextSelectedId);
@@ -138,15 +173,13 @@ export function PlatformAdminPage() {
       console.error("WUXUAI Admin Daten konnten nicht geladen werden.", error);
       setErrorMessage("Admin-Daten konnten gerade nicht geladen werden.");
       setRestaurants([]);
-      setSummary(emptySummary);
       setSelectedRestaurantId(null);
     } finally {
       setLoading(false);
-      await telemetryRequest;
     }
-  }
+  }, []);
 
-  async function loadDetail(id: string) {
+  const loadDetail = useCallback(async (id: string) => {
     setDetailLoading(true);
     setDetail(null);
     setDetailError("");
@@ -158,17 +191,41 @@ export function PlatformAdminPage() {
     } finally {
       setDetailLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { void loadData(restaurantId ?? null); }, [restaurantId]);
   useEffect(() => {
-    if (!selectedRestaurantId) {
+    setMessage("");
+    setErrorMessage("");
+    if (section === "overview") {
+      setRestaurants([]);
+      setSelectedRestaurantId(null);
+      void loadOverviewData();
+      return;
+    }
+    if (showRestaurantWorkspace) {
+      setTelemetry(null);
+      setTelemetryError("");
+      setTelemetryLoading(false);
+      void loadRestaurantData(restaurantId ?? null);
+      return;
+    }
+    setRestaurants([]);
+    setSelectedRestaurantId(null);
+    setLoading(false);
+    setTelemetryLoading(false);
+  }, [loadOverviewData, loadRestaurantData, restaurantId, section, showRestaurantWorkspace]);
+  useEffect(() => {
+    setFilter(filterFromUrl(searchParams.get("status")));
+    setSearchTerm(searchParams.get("query") ?? "");
+  }, [searchParams]);
+  useEffect(() => {
+    if (!showRestaurantWorkspace || !selectedRestaurantId) {
       setDetail(null);
       setDetailError("");
       return;
     }
     void loadDetail(selectedRestaurantId);
-  }, [selectedRestaurantId]);
+  }, [loadDetail, selectedRestaurantId, showRestaurantWorkspace]);
 
   const selectedRestaurant = useMemo(() => restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null, [restaurants, selectedRestaurantId]);
   const filteredRestaurants = useMemo(() => {
@@ -182,7 +239,18 @@ export function PlatformAdminPage() {
 
   function selectRestaurant(id: string) {
     setSelectedRestaurantId(id);
-    navigate(`/admin/platform/restaurants/${id}`, { replace: false });
+    const base = section === "plans" ? "/admin/platform/plans" : section === "system" ? "/admin/platform/system" : "/admin/platform/businesses";
+    const query = searchParams.toString();
+    navigate(`${base}/${id}${query ? `?${query}` : ""}`, { replace: false });
+  }
+
+  function updateRestaurantFilters(nextFilter: FilterKey = filter, nextSearch = searchTerm) {
+    const next = new URLSearchParams(searchParams);
+    if (nextFilter === "all") next.delete("status"); else next.set("status", nextFilter);
+    if (nextSearch.trim()) next.set("query", nextSearch); else next.delete("query");
+    setFilter(nextFilter);
+    setSearchTerm(nextSearch);
+    setSearchParams(next, { replace: true });
   }
 
   async function runSubscriptionAction(actionLabel: string, payload: { restaurantId: string; confirmation: string; idempotencyKey: string; subscriptionStatus?: SubscriptionStatus | null; paymentStatus?: PaymentStatus | null; restaurantStatus?: RestaurantStatus | null; trialExtensionDays?: number | null; reason?: string | null }) {
@@ -193,7 +261,7 @@ export function PlatformAdminPage() {
     try {
       await updatePlatformRestaurantSubscription(payload);
       setMessage(`${actionLabel} wurde gespeichert.`);
-      await loadData(selectedRestaurant.id);
+      await loadRestaurantData(selectedRestaurant.id);
       await loadDetail(selectedRestaurant.id);
     } catch (error) {
       console.error("Admin-Aktion konnte nicht gespeichert werden.", error);
@@ -217,39 +285,36 @@ export function PlatformAdminPage() {
     { key: "suspended", label: "Gesperrt" }, { key: "trial", label: "Testphase" }, { key: "setup", label: "Setup offen" },
   ];
 
+  const detailView = section === "plans" ? "plans" : section === "system" ? "system" : "businesses";
   return (
-    <main className="platform-admin-shell">
-      <header className="platform-admin-header">
-        <div className="platform-admin-header-primary">
-          <div className="platform-admin-header-identity"><span className="admin-brand-kicker">WUXUAI Admin</span><h1>WUXUAI Admin</h1></div>
-          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
-        </div>
-        <p className="platform-admin-header-description">Restaurants, Testphasen und Plattformstatus verwalten.</p>
-        <div className="platform-admin-header-toolbar">
+    <PlatformAdminLayout
+      description={navigationText.descriptions[section]}
+      title={section === "overview" ? "WUXUAI Admin" : navigationText[section]}
+      toolbar={<>
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
-          <button className="button secondary" onClick={() => navigate("/admin/platform/health")} type="button"><HeartPulse size={18} />Operations &amp; Health Center</button>
-          <button className="button secondary" onClick={() => navigate("/admin/platform/audit")} type="button"><Activity size={18} />Audit-Protokoll</button>
-          <button className="button secondary" onClick={() => void loadData(selectedRestaurantId)} type="button"><RefreshCw size={18} />Aktualisieren</button>
-          <button className="button secondary" onClick={signOut} type="button">Abmelden</button>
-        </div>
-      </header>
+          {section === "overview" ? <button className="button secondary" onClick={() => void loadOverviewData()} type="button"><RefreshCw size={18} />{navigationText.refresh}</button> : null}
+          {showRestaurantWorkspace ? <button className="button secondary" onClick={() => void loadRestaurantData(selectedRestaurantId)} type="button"><RefreshCw size={18} />{navigationText.refresh}</button> : null}
+          <button className="button secondary" onClick={signOut} type="button">{navigationText.signOut}</button>
+      </>}
+    >
 
       {message ? <p className="status-message" role="status">{message}</p> : null}
       {errorMessage ? <p className="status-message error" role="alert">{errorMessage}</p> : null}
 
-      <section className="platform-kpi-grid" aria-label="WUXUAI Admin Übersicht">
-        {summaryCards.map((card) => { const Icon = card.icon; return <button aria-pressed={filter === card.filter} className={`card platform-kpi-card${filter === card.filter ? " active" : ""}`} key={card.label} onClick={() => { setFilter(card.filter); document.getElementById("platform-restaurant-list")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} type="button"><Icon size={22} /><strong>{card.value}</strong><span>{card.label}</span></button>; })}
+      {section === "overview" ? <><section className="platform-kpi-grid" aria-label="WUXUAI Admin Übersicht">
+        {summaryCards.map((card) => { const Icon = card.icon; return <button aria-pressed={filter === card.filter} className={`card platform-kpi-card${filter === card.filter ? " active" : ""}`} key={card.label} onClick={() => navigate(`/admin/platform/businesses${card.filter === "all" ? "" : `?status=${card.filter}`}`)} type="button"><Icon size={22} /><strong>{card.value}</strong><span>{card.label}</span></button>; })}
       </section>
 
       <OperationalTelemetry data={telemetry} error={telemetryError} loading={telemetryLoading} />
-      <PlatformCountryLaunchPanel role={platformRole} />
+      </> : null}
+      {section === "countries" ? <PlatformCountryLaunchPanel role={platformRole} /> : null}
 
-      <section className="platform-admin-grid">
+      {showRestaurantWorkspace ? <section className="platform-admin-grid">
         <div className="card platform-restaurant-list-card" id="platform-restaurant-list">
           <div className="section-heading"><h2>Restaurantliste</h2><p className="muted">Nur interne Plattformrollen sehen diese Daten.</p></div>
           <div className="platform-toolbar">
-            <label className="platform-search" htmlFor="platform-restaurant-search"><Search size={18} /><input id="platform-restaurant-search" onChange={(event) => setSearchTerm(event.target.value)} placeholder="Restaurant suchen" type="search" value={searchTerm} /></label>
-            <div className="platform-filter-row" aria-label="Restaurantfilter">{filterOptions.map((option) => <button className={`chip-button${filter === option.key ? " active" : ""}`} key={option.key} onClick={() => setFilter(option.key)} type="button">{option.label}</button>)}</div>
+            <label className="platform-search" htmlFor="platform-restaurant-search"><Search size={18} /><input id="platform-restaurant-search" onChange={(event) => updateRestaurantFilters(filter, event.target.value)} placeholder="Restaurant suchen" type="search" value={searchTerm} /></label>
+            <div className="platform-filter-row" aria-label="Restaurantfilter">{filterOptions.map((option) => <button className={`chip-button${filter === option.key ? " active" : ""}`} key={option.key} onClick={() => updateRestaurantFilters(option.key)} type="button">{option.label}</button>)}</div>
           </div>
           {loading ? <p className="muted">Restaurants werden geladen …</p> : null}
           {!loading && filteredRestaurants.length === 0 ? <div className="empty-state-card"><Building2 size={32} /><h3>Keine Restaurants gefunden</h3><p>Ändere Suche oder Filter, um weitere Restaurants zu sehen.</p></div> : null}
@@ -257,9 +322,9 @@ export function PlatformAdminPage() {
         </div>
 
         <div className="platform-control-column">
-          {selectedRestaurant ? <RestaurantControlCenter canWrite={canWrite} data={detail} error={detailError} loading={detailLoading} onAction={runSubscriptionAction} onRetry={() => void loadDetail(selectedRestaurant.id)} restaurant={selectedRestaurant} saving={savingId === selectedRestaurant.id} /> : <div className="empty-state-card"><Building2 size={32} /><h3>Kein Restaurant ausgewählt</h3><p>Wähle ein Restaurant aus der Liste, um Details zu sehen.</p></div>}
+          {selectedRestaurant ? <RestaurantControlCenter canWrite={canWrite} data={detail} error={detailError} loading={detailLoading} onAction={runSubscriptionAction} onRetry={() => void loadDetail(selectedRestaurant.id)} restaurant={selectedRestaurant} saving={savingId === selectedRestaurant.id} view={detailView} /> : <div className="empty-state-card"><Building2 size={32} /><h3>Kein Restaurant ausgewählt</h3><p>Wähle ein Restaurant aus der Liste, um Details zu sehen.</p></div>}
         </div>
-      </section>
-    </main>
+      </section> : null}
+    </PlatformAdminLayout>
   );
 }

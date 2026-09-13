@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Filter, RefreshCw, Search, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Filter, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { loadPlatformAuditEvents, loadPlatformRestaurants, type PlatformAuditEvent, type PlatformRestaurant } from "./platformAdminService";
 import { translateStructural } from "../../shared/i18n/catalog.mjs";
-import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
+import { useI18n } from "../../shared/i18n/I18nProvider";
+import { PlatformAdminLayout } from "./PlatformAdminLayout";
+import { platformAdminNavigationMessages } from "./platformAdminNavigationI18n";
 
 const t = (key: string) => translateStructural(key, "de");
 
@@ -55,6 +56,8 @@ function safeMetadataRows(metadata: Record<string, unknown>) {
 }
 
 export function PlatformAuditPage() {
+  const { language } = useI18n();
+  const navigationText = platformAdminNavigationMessages(language);
   const [events, setEvents] = useState<PlatformAuditEvent[]>([]);
   const [restaurants, setRestaurants] = useState<PlatformRestaurant[]>([]);
   const [selected, setSelected] = useState<PlatformAuditEvent | null>(null);
@@ -107,21 +110,14 @@ export function PlatformAuditPage() {
   const sourceOptions = useMemo(() => Array.from(new Set(events.map((event) => event.source).filter(Boolean) as string[])).sort(), [events]);
 
   return (
-    <main className="platform-admin-shell platform-audit-shell">
-      <header className="platform-admin-header">
-        <div className="platform-admin-header-primary">
-          <div className="platform-admin-header-identity">
-            <span className="admin-brand-kicker">WUXUAI Admin</span>
-            <h1>{t("platform.audit.title")}</h1>
-          </div>
-          <div className="platform-admin-header-primary-actions"><LanguageSelector /></div>
-        </div>
-        <p className="platform-admin-header-description">{t("platform.audit.description")}</p>
-        <div className="platform-admin-header-toolbar">
-          <Link className="button secondary" to="/admin/platform"><ArrowLeft size={18} />{t("platform.audit.restaurants")}</Link>
+    <PlatformAdminLayout
+      className="platform-audit-shell"
+      description={t("platform.audit.description")}
+      title={navigationText.audit}
+      toolbar={
           <button className="button secondary" onClick={loadAudit} type="button"><RefreshCw size={18} />{t("platform.audit.refresh")}</button>
-        </div>
-      </header>
+      }
+    >
 
       <section className="card platform-audit-filters" aria-label="Audit filtern">
         <div className="section-heading"><h2><Filter size={20} /> {t("platform.audit.filters")}</h2><p className="muted">{t("platform.audit.upTo200")}</p></div>
@@ -152,6 +148,6 @@ export function PlatformAuditPage() {
       <AppDrawer description="Technische Kennungen und bereinigte Metadaten dieses Ereignisses." onClose={() => setSelected(null)} open={Boolean(selected)} title={selected ? eventLabels[selected.event_type] ?? selected.event_type : "Audit-Details"}>
         {selected ? <div className="platform-audit-detail"><dl><div><dt>Zeit</dt><dd>{formatDateTime(selected.created_at)}</dd></div><div><dt>Restaurant</dt><dd>{selected.restaurant_name}</dd></div><div><dt>Status</dt><dd>{statusLabels[selected.status]}</dd></div><div><dt>Quelle</dt><dd>{selected.source ?? "System"}</dd></div><div><dt>Akteur</dt><dd>{actorLabels[selected.actor_type] ?? selected.actor_type}</dd></div><div><dt>Entität</dt><dd>{selected.entity_type ?? "Nicht gesetzt"}</dd></div><div><dt>Testereignis</dt><dd>{selected.is_test_event ? "Ja" : "Nein"}</dd></div>{selected.test_session_id ? <div><dt>Test-Sitzung</dt><dd>{selected.test_session_id}</dd></div> : null}{selected.request_id ? <div><dt>Anfrage-ID</dt><dd>{selected.request_id}</dd></div> : null}{selected.error_code ? <div><dt>Fehlercode</dt><dd>{selected.error_code}</dd></div> : null}{selected.error_message ? <div><dt>Fehler</dt><dd>{selected.error_message}</dd></div> : null}</dl><section><h3>Sichere Details</h3>{safeMetadataRows(selected.metadata).length ? <dl>{safeMetadataRows(selected.metadata).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd></div>)}</dl> : <p className="muted">Keine zusätzlichen Details.</p>}</section></div> : null}
       </AppDrawer>
-    </main>
+    </PlatformAdminLayout>
   );
 }

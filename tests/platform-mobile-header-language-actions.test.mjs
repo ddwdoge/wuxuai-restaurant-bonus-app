@@ -47,11 +47,11 @@ test("other role headers retain their existing shared selector inside action gro
   assert.match(read("src/modules/public/PublicPageComponents.tsx"), /public-premium-hero-row[\s\S]*<LanguageSelector \/>/);
   assert.match(read("src/modules/staff/StaffTablet.tsx"), /staff-premium-header[\s\S]*<LanguageSelector \/>/);
   assert.match(read("src/modules/admin/AdminLayout.tsx"), /owner-header-primary-actions[\s\S]*<LanguageSelector \/>/);
-  for (const page of ["PlatformAdminPage", "PlatformAuditPage", "PlatformHealthCenterPage"]) {
-    const source = read(`src/modules/platform/${page}.tsx`);
-    assert.match(source, /platform-admin-header-primary[\s\S]*platform-admin-header-primary-actions[\s\S]*<LanguageSelector \/>/);
-    assert.match(source, /platform-admin-header-toolbar/);
-  }
+  const platformLayout = read("src/modules/platform/PlatformAdminLayout.tsx");
+  assert.match(platformLayout, /platform-admin-header-primary[\s\S]*platform-admin-header-primary-actions[\s\S]*<LanguageSelector \/>/);
+  assert.match(platformLayout, /platform-admin-header-toolbar/);
+  for (const page of ["PlatformAdminPage", "PlatformAuditPage", "PlatformHealthCenterPage"])
+    assert.match(read(`src/modules/platform/${page}.tsx`), /<PlatformAdminLayout/);
 });
 
 test("Platform Admin keeps identity and language in one compact primary row", () => {

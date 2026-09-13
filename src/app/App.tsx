@@ -264,7 +264,7 @@ export function App() {
         <Route path="legal" element={withFallback(<OwnerLegalErrorBoundary><OwnerLegalSettingsPage /></OwnerLegalErrorBoundary>, <AdminLoading />)} />
       </Route>
       <Route
-        path="/admin/platform"
+        path="/admin/platform/*"
         element={
           <ProtectedRoute
             allowedRoles={[...PLATFORM_ADMIN_ROLES]}

@@ -60,6 +60,7 @@ type PlatformRestaurantControlCenterProps = {
   onRetry: () => void;
   restaurant: PlatformRestaurant;
   saving: boolean;
+  view: "businesses" | "plans" | "system";
 };
 
 const subscriptionLabels: Record<SubscriptionStatus, string> = {
@@ -131,6 +132,7 @@ export function PlatformRestaurantControlCenter({
   onRetry,
   restaurant,
   saving,
+  view,
 }: PlatformRestaurantControlCenterProps) {
   const { translateKey } = useI18n();
   const [pendingAction, updatePendingAction] = useState<(PendingAction & { restaurantId: string; idempotencyKey: string }) | null>(null);
@@ -204,13 +206,13 @@ export function PlatformRestaurantControlCenter({
         </div>
       </header>
 
-      <div className={`platform-overall-health ${overallHealth.tone}`}>
+      {view === "businesses" ? <div className={`platform-overall-health ${overallHealth.tone}`}>
         <ShieldCheck aria-hidden="true" size={21} />
         <span>Systemzustand</span>
         <strong>{overallHealth.label}</strong>
-      </div>
+      </div> : null}
 
-      <section className="platform-control-section">
+      {view === "businesses" ? <section className="platform-control-section">
         <div className="section-heading"><h3>Nutzung</h3><p className="muted">Aktuelle restaurantbezogene Kennzahlen.</p></div>
         <div className="platform-metric-grid" aria-label="Nutzungskennzahlen">
           <MetricCard label="Gäste gesamt" value={formatPlatformMetric(usage.customers_total)} />
@@ -221,10 +223,10 @@ export function PlatformRestaurantControlCenter({
           <MetricCard label="Einlösungen · 30 Tage" value={formatPlatformMetric(redemption.redemptions_30d)} />
           <MetricCard label="Letzte Aktivität" value={formatDateTime(account.last_activity_at)} />
         </div>
-      </section>
+      </section> : null}
 
       <div className="platform-control-columns">
-        <section className="platform-control-section">
+        {view === "businesses" ? <section className="platform-control-section">
           <div className="section-heading"><h3>Konto & Vertrag</h3><p className="muted">Restaurant-Testphase und Plattformzugang sind getrennte Sachverhalte.</p></div>
           <dl className="platform-detail-list">
             <DetailRow label="Restaurantstatus" value={currentRestaurantStatus} />
@@ -237,9 +239,9 @@ export function PlatformRestaurantControlCenter({
             <DetailRow label="Erstellt am" value={formatDate(account.created_at)} />
             <DetailRow label="Letzte Aktivität" value={formatDateTime(account.last_activity_at)} />
           </dl>
-        </section>
+        </section> : null}
 
-        <section className="platform-control-section">
+        {view === "plans" ? <section className="platform-control-section">
           <div className="section-heading"><h3>Abrechnung</h3><p className="muted">Stripe ist in V1 noch nicht aktiviert.</p></div>
           <dl className="platform-detail-list">
             <DetailRow label="Zahlungsanbieter" value="Noch nicht verbunden" />
@@ -248,10 +250,10 @@ export function PlatformRestaurantControlCenter({
             <DetailRow label="Tarif" value={subscriptionValue?.plan_key ?? "–"} />
           </dl>
           <button className="button secondary" disabled title={capabilities.manual_payment.reason} type="button">Manuelle Zahlung · Noch nicht verfügbar</button>
-        </section>
+        </section> : null}
       </div>
 
-      <div className="platform-control-columns">
+      {view === "businesses" ? <div className="platform-control-columns">
         <section className="platform-control-section">
           <div className="platform-section-title"><div><h3>Freunde einladen & 2× Bonus</h3><p className="muted">Aktueller V1-Vertrag: Einladender 100 %, Freund 50 %, maximal 2×.</p></div><HealthBadge status={referral.health} /></div>
           {referral.status === "available" ? (
@@ -281,9 +283,9 @@ export function PlatformRestaurantControlCenter({
             <DetailRow label="Fehler · 24 Stunden" value={redemption.failures_24h} />
           </dl>
         </section>
-      </div>
+      </div> : null}
 
-      <section className="platform-control-section">
+      {view === "businesses" ? <section className="platform-control-section">
         <div className="section-heading"><h3>Systemgesundheit</h3><p className="muted">Nur verfügbare serverseitige Telemetrie wird bewertet.</p></div>
         <div className="platform-health-grid">
           <article><div><Users size={20} /><h4>Kundenregistrierung</h4></div><HealthBadge status={health.registration.status} /><span>Letzter Erfolg: {formatDateTime(health.registration.last_success)}</span><span>Fehler · 24 h: {health.registration.failures_24h}</span></article>
@@ -292,9 +294,9 @@ export function PlatformRestaurantControlCenter({
           <article><div><QrCode size={20} /><h4>Mitarbeiter</h4></div><HealthBadge status={health.staff.status} /><span>Mitarbeiter: {formatPlatformMetric(health.staff.staff_count)}</span><span>Kunden-QR-Scan: {metricBoolean(health.staff.qr_flow_available)}</span><span>Tages-PIN verfügbar: {metricBoolean(health.staff.daily_pin_available)}</span></article>
           <article><div><Clock size={20} /><h4>Cron / Automatisierungen</h4></div><HealthBadge status={health.cron.status} /><span>Keine Telemetrie verfügbar</span></article>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="platform-control-section">
+      {view === "businesses" ? <section className="platform-control-section">
         <div className="section-heading"><h3>Portale & QR</h3><p className="muted">Links öffnen reguläre geschützte Flows. Es findet keine Identitätsübernahme statt.</p></div>
         <div className="platform-link-grid" aria-label="Restaurant Links">
           <a className="button secondary" href={`${portalOrigin}/admin`} rel="noreferrer" target="_blank"><ExternalLink size={18} />Restaurant-Dashboard · Anmeldung erforderlich</a>
@@ -303,26 +305,26 @@ export function PlatformRestaurantControlCenter({
           <a className="button secondary" href={`${portalOrigin}/admin/qr`} rel="noreferrer" target="_blank"><ExternalLink size={18} />QR Center · Anmeldung erforderlich</a>
         </div>
         <div className="platform-qr-contract"><span><CheckCircle2 size={17} />Neuer Gäste-QR aktiv</span><span><CheckCircle2 size={17} />Mitarbeiter-QR aktiv</span><span><AlertTriangle size={17} />Kassa-Aufsteller in V1 nicht aktiv</span></div>
-      </section>
+      </section> : null}
 
-      <div className="platform-control-columns">
-        <section className="platform-control-section">
+      {view === "plans" || view === "system" ? <div className="platform-control-columns">
+        {view === "plans" ? <section className="platform-control-section">
           <div className="section-heading"><h3>Vertrag verwalten</h3><p className="muted">Restaurantbetrieb und Veröffentlichung werden getrennt im Bereich Support & Verwaltung gesteuert.</p></div>
           {canWrite ? <div className="platform-actions"><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo aktivieren?", actionLabel: "Abo aktiviert", description: "Der SaaS-Vertragsstatus wird auf Aktiv gesetzt.", impact: "Es wird keine Stripe-Zahlung ausgelöst und kein Zahlungsstatus gesetzt.", payload: { subscriptionStatus: "active", reason: "Abo im WUXUAI Admin aktiviert" }})} type="button">Abo aktivieren</button><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo pausieren?", actionLabel: "Abo pausiert", description: "Der SaaS-Vertragsstatus wird pausiert.", impact: "Restaurantdaten und Betriebsstatus bleiben erhalten.", payload: { subscriptionStatus: "paused", reason: "Abo im WUXUAI Admin pausiert" }})} type="button">Abo pausieren</button><button className="button secondary" disabled={saving || subscription.status !== "available"} onClick={() => setPendingAction({ title: "Testphase verlängern?", actionLabel: "Testphase verlängert", description: `Aktuelles Ende: ${formatDate(subscriptionValue?.trial_ends_at)}. Verlängerung: 14 Tage.`, impact: "Die bestehende Testphase wird über den freigegebenen Vertrag verlängert.", payload: { trialExtensionDays: 14, reason: "Testphase manuell um 14 Tage verlängert" }})} type="button">Testphase um 14 Tage verlängern</button></div> : <p className="muted">Nur Ansicht. Deine Plattformrolle darf keine Änderungen speichern.</p>}
-        </section>
+        </section> : null}
 
-        <section className="platform-control-section">
+        {view === "system" ? <section className="platform-control-section">
           <div className="section-heading"><h3>Bonusnetzwerk</h3><p className="muted">V2 · noch nicht aktiviert</p></div>
           <div className="platform-network-state"><Network size={24} /><strong>Nicht verbunden</strong><p>Standorte können später nach Zustimmung der beteiligten Betreiber zu einem gemeinsamen Bonusnetzwerk verbunden werden.</p><button className="button secondary" disabled type="button">In V1 nicht verfügbar</button></div>
-        </section>
-      </div>
+        </section> : null}
+      </div> : null}
 
-      <section className="platform-control-section">
+      {view === "system" ? <section className="platform-control-section">
         <div className="platform-section-title"><div><h3>Letzte Aktivitäten</h3><p className="muted">Unveränderbarer, bereinigter Audit-Auszug.</p></div><Activity size={21} /></div>
         {audit.length ? <div className="platform-audit-list">{audit.map((entry) => <article key={entry.id}><strong>{entry.event_label}</strong><span>{formatDateTime(entry.timestamp)}</span><small>{entry.actor_label} · {entry.status === "success" ? "Erfolgreich" : entry.status === "blocked" ? "Blockiert" : "Fehlgeschlagen"}</small></article>)}</div> : <p className="muted">Noch keine Aktivitäten verfügbar.</p>}
-      </section>
+      </section> : null}
 
-      <details className="platform-technical-details">
+      {view === "system" ? <details className="platform-technical-details">
         <summary>Technische Details</summary>
         <dl className="platform-detail-list">
           <DetailRow label="Restaurant-ID" value={account.restaurant_id} />
@@ -333,12 +335,12 @@ export function PlatformRestaurantControlCenter({
           <DetailRow label="Stand erzeugt" value={formatDateTime(data.generated_at)} />
           <DetailRow label="Zeitzone" value={data.timezone} />
         </dl>
-      </details>
+      </details> : null}
 
-      <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} />
-      <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} />
-      <PlatformLegalI18nPanel restaurantId={account.restaurant_id} />
-      <PlatformKassaCompliancePanel canWrite={canWrite} restaurantId={account.restaurant_id} />
+      {view === "system" ? <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
+      {view === "plans" ? <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
+      {view === "system" ? <PlatformLegalI18nPanel restaurantId={account.restaurant_id} /> : null}
+      {view === "system" ? <PlatformKassaCompliancePanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
 
       <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving || confirmation !== "CONFIRMED" || reason.trim().length < 10} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
         <p>{pendingAction?.impact}</p>

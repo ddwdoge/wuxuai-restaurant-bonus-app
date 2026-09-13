@@ -44,8 +44,7 @@ test("language selection is present in every major role shell", () => {
     "src/modules/admin/AdminLayout.tsx",
     "src/modules/customer/components/PremiumCustomerUi.tsx",
     "src/modules/staff/StaffTablet.tsx",
-    "src/modules/platform/PlatformAdminPage.tsx",
-    "src/modules/platform/PlatformAuditPage.tsx",
+    "src/modules/platform/PlatformAdminLayout.tsx",
   ]) assert.match(read(path), /<LanguageSelector/);
 });
 

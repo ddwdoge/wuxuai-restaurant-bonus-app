@@ -46,7 +46,7 @@ test("nur dokumentierte interne Rollen gehören zur Plattformmatrix", () => {
 
 test("Plattformrouten verwenden ausschließlich den zentralen Plattform-Scope", () => {
   assert.match(app, /path="\/platform-admin"[\s\S]*allowedRoles=\{\[\.\.\.PLATFORM_ADMIN_ROLES\]\}[\s\S]*roleScope="platform"/);
-  assert.match(app, /path="\/admin\/platform"[\s\S]*allowedRoles=\{\[\.\.\.PLATFORM_ADMIN_ROLES\]\}[\s\S]*roleScope="platform"/);
+  assert.match(app, /path="\/admin\/platform\/\*"[\s\S]*allowedRoles=\{\[\.\.\.PLATFORM_ADMIN_ROLES\]\}[\s\S]*roleScope="platform"/);
   assert.doesNotMatch(app, /path="\/platform-admin"[\s\S]{0,500}allowedRoles=\{\["owner"/);
 });
 

@@ -1138,6 +1138,77 @@ a {
   min-width: 0;
 }
 
+.platform-admin-workspace {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(196px, 220px) minmax(0, 1fr);
+  min-width: 0;
+}
+
+.platform-admin-content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.platform-admin-sidebar {
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid #dde3ea;
+  border-radius: 12px;
+  padding: 8px;
+  position: sticky;
+  top: 16px;
+}
+
+.platform-admin-navigation {
+  display: grid;
+  gap: 4px;
+}
+
+.platform-admin-navigation a {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #465463;
+  display: grid;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 46px;
+  padding: 9px 10px;
+  text-decoration: none;
+}
+
+.platform-admin-navigation a:hover,
+.platform-admin-navigation a:focus-visible {
+  background: #f4f7f7;
+  border-color: #a7b8b8;
+}
+
+.platform-admin-navigation a.active {
+  background: #eef7f5;
+  border-color: #0f766e;
+  box-shadow: inset 3px 0 0 #0f766e;
+  color: #12443f;
+}
+
+.platform-admin-navigation a strong {
+  font-size: 10px;
+}
+
+.platform-admin-menu-trigger {
+  display: none;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.platform-admin-menu-drawer .platform-admin-navigation a {
+  min-height: 48px;
+}
+
 .platform-audit-shell .platform-admin-header-toolbar .button,
 .platform-audit-shell .platform-audit-toggle-row .button {
   min-height: 45px;
@@ -5916,6 +5987,18 @@ a {
 }
 
 @media (max-width: 1023px) {
+  .platform-admin-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .platform-admin-sidebar {
+    display: none;
+  }
+
+  .platform-admin-menu-trigger {
+    display: inline-flex;
+  }
+
   .setup-shell {
     padding: 24px;
   }
@@ -6048,6 +6131,10 @@ a {
 
   .platform-admin-header-primary {
     min-height: 44px;
+  }
+
+  .platform-admin-header-primary-actions {
+    flex-wrap: nowrap;
   }
 
   .platform-admin-header-identity .admin-brand-kicker {
@@ -6403,6 +6490,20 @@ a {
 .customer-phone-error { color: #9f2f29; font-size: 13px; margin: 0; }
 
 @media (max-width: 430px) {
+  .platform-admin-menu-trigger {
+    padding-inline: 10px;
+  }
+
+  .platform-admin-menu-label {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
   .platform-admin-shell {
     padding: 12px;
   }
