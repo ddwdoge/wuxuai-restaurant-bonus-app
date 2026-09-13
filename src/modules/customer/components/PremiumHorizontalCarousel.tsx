@@ -34,7 +34,14 @@ export function PremiumHorizontalCarousel({
   const items = Children.toArray(children);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const programmaticScrollRef = useRef<{ index: number; scrollLeft: number } | null>(null);
+  const programmaticScrollRef = useRef<{
+    arrived: boolean;
+    clientWidth: number;
+    index: number;
+    itemWidth: number;
+    scrollLeft: number;
+    scrollWidth: number;
+  } | null>(null);
   const programmaticScrollFrameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageCardPointerGuard] = useState(createImageCardPointerGuard);
@@ -44,7 +51,13 @@ export function PremiumHorizontalCarousel({
     const itemElements = Array.from(viewport.querySelectorAll<HTMLElement>("[data-carousel-item]"));
     if (!itemElements.length) return;
     const viewportLeft = viewport.getBoundingClientRect().left;
-    const programmaticScroll = programmaticScrollRef.current;
+    let programmaticScroll = programmaticScrollRef.current;
+    const tolerance = carouselScrollEndTolerance(window.devicePixelRatio);
+    if (programmaticScroll?.arrived
+      && Math.abs(viewport.scrollLeft - programmaticScroll.scrollLeft) > tolerance) {
+      programmaticScrollRef.current = null;
+      programmaticScroll = null;
+    }
     const nextIndex = resolveCarouselActiveIndex({
       clientWidth: viewport.clientWidth,
       devicePixelRatio: window.devicePixelRatio,
@@ -53,9 +66,9 @@ export function PremiumHorizontalCarousel({
       scrollLeft: viewport.scrollLeft,
       scrollWidth: viewport.scrollWidth,
     });
-    if (programmaticScroll && Math.abs(viewport.scrollLeft - programmaticScroll.scrollLeft)
-      <= carouselScrollEndTolerance(window.devicePixelRatio)) {
-      programmaticScrollRef.current = null;
+    if (programmaticScroll && !programmaticScroll.arrived
+      && Math.abs(viewport.scrollLeft - programmaticScroll.scrollLeft) <= tolerance) {
+      programmaticScroll.arrived = true;
       if (programmaticScrollFrameRef.current != null) {
         window.cancelAnimationFrame(programmaticScrollFrameRef.current);
         programmaticScrollFrameRef.current = null;
@@ -76,15 +89,21 @@ export function PremiumHorizontalCarousel({
     const targetLeft = Math.min(Math.max(requestedLeft, 0), viewport.scrollWidth - viewport.clientWidth);
     const tolerance = carouselScrollEndTolerance(window.devicePixelRatio);
     if (programmaticScrollFrameRef.current != null) window.cancelAnimationFrame(programmaticScrollFrameRef.current);
-    programmaticScrollRef.current = Math.abs(viewport.scrollLeft - targetLeft) <= tolerance
-      ? null
-      : { index: targetIndex, scrollLeft: targetLeft };
-    if (programmaticScrollRef.current) {
+    const alreadyAtTarget = Math.abs(viewport.scrollLeft - targetLeft) <= tolerance;
+    programmaticScrollRef.current = {
+      arrived: alreadyAtTarget,
+      clientWidth: viewport.clientWidth,
+      index: targetIndex,
+      itemWidth: target.getBoundingClientRect().width,
+      scrollLeft: targetLeft,
+      scrollWidth: viewport.scrollWidth,
+    };
+    if (!alreadyAtTarget) {
       let lastScrollLeft = viewport.scrollLeft;
       let hasMoved = false;
       let stableFrames = 0;
       const finishWhenStable = () => {
-        if (!programmaticScrollRef.current) return;
+        if (!programmaticScrollRef.current || programmaticScrollRef.current.arrived) return;
         const movement = Math.abs(viewport.scrollLeft - lastScrollLeft);
         if (movement > tolerance / 2) hasMoved = true;
         stableFrames = hasMoved && movement <= tolerance / 2 ? stableFrames + 1 : 0;
@@ -124,7 +143,18 @@ export function PremiumHorizontalCarousel({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return undefined;
-    const observer = new ResizeObserver(() => updateActiveIndex(viewport));
+    const observer = new ResizeObserver(() => {
+      const programmaticScroll = programmaticScrollRef.current;
+      const firstItem = viewport.querySelector<HTMLElement>("[data-carousel-item]");
+      const itemWidth = firstItem?.getBoundingClientRect().width ?? 0;
+      const tolerance = carouselScrollEndTolerance(window.devicePixelRatio);
+      if (programmaticScroll && (programmaticScroll.clientWidth !== viewport.clientWidth
+        || programmaticScroll.scrollWidth !== viewport.scrollWidth
+        || Math.abs(programmaticScroll.itemWidth - itemWidth) > tolerance)) {
+        programmaticScrollRef.current = null;
+      }
+      updateActiveIndex(viewport);
+    });
     observer.observe(viewport);
     viewport.querySelectorAll<HTMLElement>("[data-carousel-item]").forEach((item) => observer.observe(item));
     return () => observer.disconnect();

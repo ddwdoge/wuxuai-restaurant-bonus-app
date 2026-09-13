@@ -84,7 +84,8 @@ test("430 to 768 and 768 to 430 layout metrics are recalculated", () => {
   assert.equal(at430End, 2);
   assert.equal(at768End, 2);
   assert.equal(at430Intermediate, 1);
-  assert.match(component, /new ResizeObserver\(\(\) => updateActiveIndex\(viewport\)\)/);
+  assert.match(component, /new ResizeObserver\(\(\) => \{/);
+  assert.match(component, /updateActiveIndex\(viewport\);\s+\}\);/);
   assert.match(component, /observer\.observe\(viewport\)/);
   assert.match(component, /querySelectorAll<HTMLElement>\("\[data-carousel-item\]"\)\.forEach\(\(item\) => observer\.observe\(item\)\)/);
   assert.match(component, /observer\.disconnect\(\)/);
@@ -101,6 +102,10 @@ test("geometry, snap, peek and existing interaction handlers stay unchanged", ()
   assert.match(component, /onClick=\{\(\) => scrollToIndex\(activeIndex \+ 1\)\}/);
   assert.match(component, /programmaticScrollRef/);
   assert.match(component, /preferredIndex: programmaticScroll\?\.index/);
+  assert.match(component, /programmaticScroll\?\.arrived/);
+  assert.match(component, /programmaticScroll\.clientWidth !== viewport\.clientWidth/);
+  assert.match(component, /programmaticScroll\.scrollWidth !== viewport\.scrollWidth/);
+  assert.match(component, /programmaticScroll\.itemWidth - itemWidth/);
   assert.match(component, /requestAnimationFrame\(finishWhenStable\)/);
   assert.doesNotMatch(component, /setInterval|setTimeout/);
   assert.match(blockCss, /box-shadow: inset 0 0 0 2px/);
