@@ -4735,6 +4735,13 @@ a {
   .app-drawer-panel.owner-mobile-drawer[data-mobile-keyboard-open="true"] > .app-drawer-footer {
     display: none;
   }
+
+  .app-drawer-panel.owner-mobile-drawer > .app-drawer-header .app-drawer-close {
+    height: 46px;
+    min-height: 46px;
+    min-width: 46px;
+    width: 46px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

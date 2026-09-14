@@ -238,3 +238,12 @@ test("mobile Owner keyboard state removes the footer from layout and accessibili
   assert.match(rule, /display:\s*none/);
   assert.doesNotMatch(rule, /visibility:\s*hidden|opacity:\s*0/);
 });
+
+test("mobile Owner close action remains above 44 CSS pixels after DPR rounding", () => {
+  const globalCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const rule = globalCss.match(/\.app-drawer-panel\.owner-mobile-drawer\s*>\s*\.app-drawer-header\s+\.app-drawer-close\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(rule, /height:\s*46px/);
+  assert.match(rule, /min-height:\s*46px/);
+  assert.match(rule, /min-width:\s*46px/);
+  assert.match(rule, /width:\s*46px/);
+});
