@@ -41,6 +41,7 @@ test("Owner-Sheet ist inhaltsgetrieben: nur Body scrollt, Aktionen und Safe Area
   const rules = new Map();
   root.walkRules(rule => {
     if (!rule.selector.includes("owner-mobile-drawer")) return;
+    if (rule.selector.includes("restaurant-offer-remove-photo")) return;
     assert.equal(rule.parent.type, "atrule");
     assert.equal(rule.parent.params, "(max-width: 767px)");
     rules.set(rule.selector, Object.fromEntries(rule.nodes.filter(n => n.type === "decl").map(n => [n.prop, n.value])));

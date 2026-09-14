@@ -14,6 +14,7 @@ const migrationUrl = new URL("../supabase/migrations/20260804001000_restaurant_o
 const auditFixMigrationUrl = new URL("../supabase/migrations/20260819001000_fix_offers_audit_actor_type.sql", import.meta.url);
 const visibilityMigrationUrl = new URL("../supabase/migrations/20260826001000_customer_offer_visibility_validity_split.sql", import.meta.url);
 const ownerPageUrl = new URL("../src/modules/admin/pages/RestaurantOffersPage.tsx", import.meta.url);
+const ownerCssUrl = new URL("../src/modules/admin/admin-premium.css", import.meta.url);
 const serviceUrl = new URL("../src/modules/offers/restaurantOfferService.ts", import.meta.url);
 const customerOfferCardUrl = new URL("../src/modules/customer/components/RestaurantOfferCard.tsx", import.meta.url);
 const customerOfferCssUrl = new URL("../src/modules/customer/components/restaurant-offer-card.css", import.meta.url);
@@ -320,6 +321,19 @@ test("Formular und Karten bleiben mobil, tastaturbedienbar und ohne feste Breite
   assert.match(css, /min-height: 44px/);
   assert.match(css, /@media \(max-width: 699px\)/);
   assert.doesNotMatch(css, /(?:^|[;{])\s*width:\s*[5-9]\d\dpx/m);
+});
+
+test("D15 und D16 geben den echten interaktiven Drawer-Buttons robuste Touchziele", async () => {
+  const [page, ownerCss] = await Promise.all([
+    readFile(ownerPageUrl, "utf8"),
+    readFile(ownerCssUrl, "utf8"),
+  ]);
+  assert.match(page, /className="button secondary restaurant-offer-remove-photo"/);
+  assert.match(page, /restaurant-offer-customer-preview[\s\S]*<button className="button" type="button">\{previewOffer\.button_label\}<\/button>/);
+  assert.match(
+    ownerCss,
+    /\.app-drawer-panel\.owner-mobile-drawer \.restaurant-offer-remove-photo,\s*\.app-drawer-panel\.owner-mobile-drawer \.restaurant-offer-customer-preview \.button\s*\{[^}]*min-height:\s*46px;[^}]*min-width:\s*44px;/s,
+  );
 });
 
 test("Migration enthält keine Service-Role, Reward-Schreiblogik oder öffentliche DML-Grants", async () => {

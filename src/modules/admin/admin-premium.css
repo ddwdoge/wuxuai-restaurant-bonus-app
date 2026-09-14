@@ -2064,6 +2064,12 @@
 }
 
 /* Opt-in Owner drawers only: keep existing content, focus and dismissal contracts. */
+.app-drawer-panel.owner-mobile-drawer .restaurant-offer-remove-photo,
+.app-drawer-panel.owner-mobile-drawer .restaurant-offer-customer-preview .button {
+  min-height: 46px;
+  min-width: 44px;
+}
+
 @media (max-width: 767px) {
   .premium-owner-content .premium-owner-kicker,
   .premium-owner-content .premium-owner-reward-category,
