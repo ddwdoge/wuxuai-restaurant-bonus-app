@@ -7,6 +7,7 @@ import {
   resolveOwnerLegalReadiness,
   validateLegalPublication,
 } from "../src/modules/legal/ownerLegalReadiness.mjs";
+import { translateStructural } from "../src/shared/i18n/catalog.mjs";
 
 const ownerPage = await readFile(new URL("../src/modules/legal/OwnerLegalSettingsPage.tsx", import.meta.url), "utf8");
 const onboarding = await readFile(new URL("../src/modules/admin/pages/RestaurantOnboarding.tsx", import.meta.url), "utf8");
@@ -88,6 +89,40 @@ test("Owner-Seite nutzt einen zentralen Resolver und keine alte Veröffentlichun
   assert.match(ownerPage, /Dokumente noch nicht veröffentlicht/);
   assert.doesNotMatch(ownerPage, /vorbereitete Dokumenthülle/);
   assert.doesNotMatch(ownerPage, /Bitte prüfe Vorschau und Gültigkeitsdatum/);
+});
+
+test("Legal-Readiness-Systemtexte und ihre ARIA-Zeile verwenden in allen sieben Sprachen dieselben strukturellen Übersetzungen", () => {
+  const expected = {
+    de: ["Bereit für Kundenregistrierung", "Dokumente", "Veröffentlichung", "Freigegeben"],
+    en: ["Ready for customer registration", "Documents", "Publication", "Approved"],
+    fr: ["Prêt pour l’inscription des clients", "Documents", "Publication", "Approuvé"],
+    it: ["Pronto per la registrazione dei clienti", "Documenti", "Pubblicazione", "Approvato"],
+    es: ["Listo para el registro de clientes", "Documentos", "Publicación", "Aprobado"],
+    zh: ["客户注册已准备就绪", "文档", "发布", "已批准"],
+    ko: ["고객 등록 준비 완료", "문서", "게시", "승인됨"],
+  };
+  const keys = ["legal.registrationReady", "legal.documents", "legal.publication", "legal.approved"];
+  for (const [language, translations] of Object.entries(expected)) {
+    assert.deepEqual(keys.map((key) => translateStructural(key, language)), translations, language);
+  }
+  assert.match(ownerPage, /registration\?\.label\?\.trim\(\) === "Bereit für Kundenregistrierung"/);
+  assert.match(ownerPage, /item\.id === "documents"[\s\S]*translateKey\("legal\.documents"\)/);
+  assert.match(ownerPage, /item\.id === "publication"[\s\S]*translateKey\("legal\.publication"\)/);
+  assert.match(ownerPage, /item\.id === "registration" && item\.value\.trim\(\) === "Freigegeben"[\s\S]*translateKey\("legal\.approved"\)/);
+  assert.match(ownerPage, /aria-label=\{`\$\{label\}: \$\{value\}`\}/);
+});
+
+test("Legal-I18n-Fix lässt Serverzustand, gespeicherte Legal-Inhalte und Publikationslogik unverändert", () => {
+  const state = resolveOwnerLegalReadiness(registration({
+    status: "green",
+    label: "Bereit für Kundenregistrierung",
+    registration_allowed: true,
+    active_required_documents: 2,
+  }));
+  assert.equal(state.statuses.find((item) => item.id === "documents")?.label, "Dokumente");
+  assert.equal(state.statuses.find((item) => item.id === "publication")?.label, "Veröffentlichung");
+  assert.equal(value(state, "registration"), "Freigegeben");
+  assert.doesNotMatch(ownerPage, /data-i18n-skip|innerHTML|replaceAll/);
 });
 
 test("Willkommensgeschenke sind auf Mobilgeräten einspaltig und unverändert mehrfach auswählbar", () => {

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useTenant } from "../tenant/TenantProvider";
 import { getLegalDocumentContent, getPointsValidityState, ownerLegalLoadErrorMessage } from "./legalDocumentState.mjs";
 import { safeLegalRpcError, viennaCalendarDate } from "./legalPublicationDate.mjs";
@@ -102,6 +103,7 @@ function formatDate(value?: string | null) {
 }
 
 export function OwnerLegalSettingsPage() {
+  const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const [setup, setSetup] = useState<RestaurantLegalSetup | null>(null);
@@ -179,6 +181,9 @@ export function OwnerLegalSettingsPage() {
     .concat(profile.registered_address_source !== originalProfile.registered_address_source ? ["Geschäftsanschrift"] : []);
   const hasDrafts = setup?.documents.some((item) => Boolean(item.draft_version_id)) ?? false;
   const readiness = resolveOwnerLegalReadiness(registration, { hasDrafts, publicationConfirmed });
+  const registrationHeading = registration?.label?.trim() === "Bereit für Kundenregistrierung"
+    ? translateKey("legal.registrationReady")
+    : registration?.label ?? "Kundenregistrierung blockiert";
 
   async function handlePrepare(event: FormEvent) {
     event.preventDefault();
@@ -295,7 +300,7 @@ export function OwnerLegalSettingsPage() {
         <div>
           {registration?.status === "green" ? <CheckCircle2 aria-hidden="true" size={26} /> : registration?.status === "yellow" ? <Clock3 aria-hidden="true" size={26} /> : <AlertCircle aria-hidden="true" size={26} />}
           <div>
-            <h2>{registration?.label ?? "Kundenregistrierung blockiert"}</h2>
+            <h2>{registrationHeading}</h2>
             <p>{registration?.reason ?? "Der serverseitige Legal-Status ist noch nicht verfügbar."}</p>
             <small>Letzte Aktualisierung: {formatDateTime(registration?.last_updated_at)}</small>
           </div>
@@ -311,12 +316,22 @@ export function OwnerLegalSettingsPage() {
           <li className={readiness.documentsPublished && !hasDrafts ? "complete" : "open"}><span>3</span><div><strong>Veröffentlichen</strong><small>{readiness.documentsPublished && !hasDrafts ? "Erledigt" : "Offen"}</small></div></li>
         </ol>
         <div className="owner-legal-checklist">
-          {readiness.statuses.map((item) => (
-            <p className={item.state} key={item.id}>
-              {item.state === "complete" ? <CheckCircle2 aria-hidden="true" size={18} /> : item.state === "warning" ? <Clock3 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />}
-              <span>{item.label}</span><strong>{item.value}</strong>
-            </p>
-          ))}
+          {readiness.statuses.map((item) => {
+            const label = item.id === "documents"
+              ? translateKey("legal.documents")
+              : item.id === "publication"
+                ? translateKey("legal.publication")
+                : item.label;
+            const value = item.id === "registration" && item.value.trim() === "Freigegeben"
+              ? translateKey("legal.approved")
+              : item.value;
+            return (
+              <p aria-label={`${label}: ${value}`} className={item.state} key={item.id}>
+                {item.state === "complete" ? <CheckCircle2 aria-hidden="true" size={18} /> : item.state === "warning" ? <Clock3 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />}
+                <span>{label}</span><strong>{value}</strong>
+              </p>
+            );
+          })}
         </div>
         <div className="owner-legal-readiness-action">
           {readiness.action.kind === "company" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
