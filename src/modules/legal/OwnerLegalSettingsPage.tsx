@@ -64,6 +64,25 @@ const optionalProfileFields = [
 
 const allProfileFields = [...requiredProfileFields, ...optionalProfileFields] as const;
 
+const legalReadinessLabelKeys: Record<string, string> = {
+  company: "legal.readiness.companyData",
+  documents: "legal.documents",
+  publication: "legal.publication",
+  registration: "legal.readiness.customerRegistration",
+  program: "legal.readiness.bonusProgram",
+};
+
+const legalReadinessValueKeys: Record<string, string> = {
+  "Erledigt": "legal.readiness.completed",
+  "Offen": "legal.readiness.open",
+  "Prüfung erforderlich": "legal.readiness.reviewRequired",
+  "Bereit zur Veröffentlichung": "legal.readiness.readyToPublish",
+  "Freigegeben": "legal.approved",
+  "Blockiert": "legal.readiness.blocked",
+  "Aktiv": "legal.readiness.active",
+  "Nicht aktiv": "legal.readiness.inactive",
+};
+
 function profileFieldLabel(key: string, fallback: string, country: string | null | undefined) {
   if (key === "commercial_register_number") return companyRegistrationLabel(country);
   if (key === "vat_id") return vatIdLabel(country);
@@ -317,14 +336,10 @@ export function OwnerLegalSettingsPage() {
         </ol>
         <div className="owner-legal-checklist">
           {readiness.statuses.map((item) => {
-            const label = item.id === "documents"
-              ? translateKey("legal.documents")
-              : item.id === "publication"
-                ? translateKey("legal.publication")
-                : item.label;
-            const value = item.id === "registration" && item.value.trim() === "Freigegeben"
-              ? translateKey("legal.approved")
-              : item.value;
+            const labelKey = legalReadinessLabelKeys[item.id];
+            const valueKey = legalReadinessValueKeys[item.value.trim()];
+            const label = labelKey ? translateKey(labelKey) : item.label;
+            const value = valueKey ? translateKey(valueKey) : item.value;
             return (
               <p aria-label={`${label}: ${value}`} className={item.state} key={item.id}>
                 {item.state === "complete" ? <CheckCircle2 aria-hidden="true" size={18} /> : item.state === "warning" ? <Clock3 aria-hidden="true" size={18} /> : <AlertCircle aria-hidden="true" size={18} />}

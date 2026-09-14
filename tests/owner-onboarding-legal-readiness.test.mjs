@@ -93,23 +93,66 @@ test("Owner-Seite nutzt einen zentralen Resolver und keine alte Veröffentlichun
 
 test("Legal-Readiness-Systemtexte und ihre ARIA-Zeile verwenden in allen sieben Sprachen dieselben strukturellen Übersetzungen", () => {
   const expected = {
-    de: ["Bereit für Kundenregistrierung", "Dokumente", "Veröffentlichung", "Freigegeben"],
-    en: ["Ready for customer registration", "Documents", "Publication", "Approved"],
-    fr: ["Prêt pour l’inscription des clients", "Documents", "Publication", "Approuvé"],
-    it: ["Pronto per la registrazione dei clienti", "Documenti", "Pubblicazione", "Approvato"],
-    es: ["Listo para el registro de clientes", "Documentos", "Publicación", "Aprobado"],
-    zh: ["客户注册已准备就绪", "文档", "发布", "已批准"],
-    ko: ["고객 등록 준비 완료", "문서", "게시", "승인됨"],
+    de: ["Bereit für Kundenregistrierung", "Dokumente", "Veröffentlichung", "Freigegeben", "Unternehmensdaten", "Kundenregistrierung", "Bonusprogramm", "Erledigt", "Offen", "Prüfung erforderlich", "Bereit zur Veröffentlichung", "Blockiert", "Aktiv", "Nicht aktiv"],
+    en: ["Ready for customer registration", "Documents", "Publication", "Approved", "Company data", "Customer registration", "Bonus program", "Completed", "Open", "Review required", "Ready to publish", "Blocked", "Active", "Inactive"],
+    fr: ["Prêt pour l’inscription des clients", "Documents", "Publication", "Approuvé", "Données de l’entreprise", "Inscription des clients", "Programme de bonus", "Terminé", "Ouvert", "Vérification requise", "Prêt pour la publication", "Bloqué", "Actif", "Inactif"],
+    it: ["Pronto per la registrazione dei clienti", "Documenti", "Pubblicazione", "Approvato", "Dati aziendali", "Registrazione dei clienti", "Programma bonus", "Completato", "Aperto", "Verifica necessaria", "Pronto per la pubblicazione", "Bloccato", "Attivo", "Non attivo"],
+    es: ["Listo para el registro de clientes", "Documentos", "Publicación", "Aprobado", "Datos de la empresa", "Registro de clientes", "Programa de bonificación", "Completado", "Abierto", "Revisión necesaria", "Listo para publicar", "Bloqueado", "Activo", "Inactivo"],
+    zh: ["客户注册已准备就绪", "文档", "发布", "已批准", "企业信息", "客户注册", "奖励计划", "已完成", "待处理", "需要审核", "可以发布", "已阻止", "已启用", "未启用"],
+    ko: ["고객 등록 준비 완료", "문서", "게시", "승인됨", "사업자 정보", "고객 등록", "보너스 프로그램", "완료", "미완료", "검토 필요", "게시 준비 완료", "차단됨", "활성", "비활성"],
   };
-  const keys = ["legal.registrationReady", "legal.documents", "legal.publication", "legal.approved"];
+  const keys = [
+    "legal.registrationReady",
+    "legal.documents",
+    "legal.publication",
+    "legal.approved",
+    "legal.readiness.companyData",
+    "legal.readiness.customerRegistration",
+    "legal.readiness.bonusProgram",
+    "legal.readiness.completed",
+    "legal.readiness.open",
+    "legal.readiness.reviewRequired",
+    "legal.readiness.readyToPublish",
+    "legal.readiness.blocked",
+    "legal.readiness.active",
+    "legal.readiness.inactive",
+  ];
   for (const [language, translations] of Object.entries(expected)) {
     assert.deepEqual(keys.map((key) => translateStructural(key, language)), translations, language);
   }
   assert.match(ownerPage, /registration\?\.label\?\.trim\(\) === "Bereit für Kundenregistrierung"/);
-  assert.match(ownerPage, /item\.id === "documents"[\s\S]*translateKey\("legal\.documents"\)/);
-  assert.match(ownerPage, /item\.id === "publication"[\s\S]*translateKey\("legal\.publication"\)/);
-  assert.match(ownerPage, /item\.id === "registration" && item\.value\.trim\(\) === "Freigegeben"[\s\S]*translateKey\("legal\.approved"\)/);
+  assert.match(ownerPage, /legalReadinessLabelKeys\[item\.id\]/);
+  assert.match(ownerPage, /legalReadinessValueKeys\[item\.value\.trim\(\)\]/);
+  assert.match(ownerPage, /labelKey \? translateKey\(labelKey\) : item\.label/);
+  assert.match(ownerPage, /valueKey \? translateKey\(valueKey\) : item\.value/);
   assert.match(ownerPage, /aria-label=\{`\$\{label\}: \$\{value\}`\}/);
+});
+
+test("Legal-Readiness-ARIA lokalisiert jede bekannte Label-/Statuskombination und bewahrt unbekannte Serverwerte", () => {
+  for (const [id, key] of [
+    ["company", "legal.readiness.companyData"],
+    ["documents", "legal.documents"],
+    ["publication", "legal.publication"],
+    ["registration", "legal.readiness.customerRegistration"],
+    ["program", "legal.readiness.bonusProgram"],
+  ]) {
+    assert.match(ownerPage, new RegExp(`${id}:\\s*"${key.replaceAll(".", "\\.")}"`));
+  }
+  for (const [source, key] of [
+    ["Erledigt", "legal.readiness.completed"],
+    ["Offen", "legal.readiness.open"],
+    ["Prüfung erforderlich", "legal.readiness.reviewRequired"],
+    ["Bereit zur Veröffentlichung", "legal.readiness.readyToPublish"],
+    ["Freigegeben", "legal.approved"],
+    ["Blockiert", "legal.readiness.blocked"],
+    ["Aktiv", "legal.readiness.active"],
+    ["Nicht aktiv", "legal.readiness.inactive"],
+  ]) {
+    assert.match(ownerPage, new RegExp(`"${source}":\\s*"${key.replaceAll(".", "\\.")}"`));
+  }
+  assert.match(ownerPage, /: item\.label/);
+  assert.match(ownerPage, /: item\.value/);
+  assert.doesNotMatch(ownerPage, /innerHTML|replaceAll\(item\.|data-i18n-skip/);
 });
 
 test("Legal-I18n-Fix lässt Serverzustand, gespeicherte Legal-Inhalte und Publikationslogik unverändert", () => {
