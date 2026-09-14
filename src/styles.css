@@ -4731,6 +4731,10 @@ a {
   .app-drawer-footer .button {
     width: 100%;
   }
+
+  .app-drawer-panel.owner-mobile-drawer[data-mobile-keyboard-open="true"] > .app-drawer-footer {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
