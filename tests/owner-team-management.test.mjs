@@ -140,6 +140,9 @@ test("Staff und Betreiber erhalten serverseitig aufgelöste, geschützte Routen"
 
 test("Teamverwaltung bleibt bei 390 px ohne starre Breite bedienbar", () => {
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.staff-team-row \{ grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(styles, /\.staff-team-actions \.button \{ min-height: 44px/);
+  assert.match(styles, /\.staff-team-header-actions \.button,\s*\.staff-team-actions \.button \{ min-height: 46px/);
+  assert.match(styles, /\.staff-team-actions \.icon-button \{[^}]*height: 46px;[^}]*min-height: 46px;[^}]*min-width: 46px;[^}]*width: 46px;/s);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.staff-team-actions \{[^}]*grid-template-columns: minmax\(0, 1fr\) 46px;/s);
+  assert.match(styles, /\.staff-team-header-actions,\s*\.staff-team-actions \{[^}]*gap: 10px;/s);
   assert.match(styles, /overflow-wrap: anywhere/);
 });

@@ -4372,7 +4372,14 @@ a {
 .staff-team-meta dt { font-weight: 700; }
 .staff-team-meta dd { color: #1d2433; margin: 2px 0 0; overflow-wrap: anywhere; }
 .staff-team-actions { justify-content: flex-end; }
-.staff-team-actions .button { min-height: 44px; }
+.staff-team-header-actions .button,
+.staff-team-actions .button { min-height: 46px; }
+.staff-team-actions .icon-button {
+  height: 46px;
+  min-height: 46px;
+  min-width: 46px;
+  width: 46px;
+}
 .staff-team-empty { min-height: 150px; }
 .staff-invite-form { display: grid; gap: 16px; }
 
@@ -4393,7 +4400,7 @@ a {
   .staff-team-meta,
   .staff-team-actions { grid-column: auto; }
   .staff-team-meta { grid-template-columns: minmax(0, 1fr); }
-  .staff-team-actions { align-items: stretch; display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
+  .staff-team-actions { align-items: stretch; display: grid; grid-template-columns: minmax(0, 1fr) 46px; }
   .staff-team-actions .button { justify-content: center; }
 }
 
