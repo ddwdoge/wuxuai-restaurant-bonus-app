@@ -61,7 +61,8 @@ test("Angebote speichern und rendern denselben 16:9-Ausschnitt", () => {
 test("Angebote zeigen beim Bearbeiten nur eine direkte Bildfläche", () => {
   assert.match(offersPage, /photoPreview \|\| form\.imageUrl \? \([\s\S]*OwnerRewardImageEditor[\s\S]*\) : \([\s\S]*OwnerRewardImageUploader/);
   assert.match(offersPage, /Anderes Foto wählen|OwnerRewardImageEditor/);
-  assert.match(offersPage, /Foto entfernen/);
+  assert.match(offersPage, /const removePhotoLabel = translateKey\("owner\.auto_d2fe0400ed5b"\)/);
+  assert.match(offersPage, /aria-label=\{removePhotoLabel\}[\s\S]*\{removePhotoLabel\}/);
   assert.doesNotMatch(offersPage, /<OwnerRewardImageUploader[\s\S]{0,1200}<OwnerRewardImageEditor/);
 });
 

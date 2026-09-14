@@ -884,11 +884,11 @@ a {
 .branding-logo-safe-area.is-interacting img { transition: none; }
 .branding-logo-safe-area-label { background: #fbfaf7; bottom: 5px; color: #4f8c61; font-size: 11px; font-weight: 700; left: 50%; padding: 0 6px; position: absolute; transform: translateX(-50%); }
 .branding-logo-zoom-controls { align-items: center; background: rgb(255 255 255 / 94%); border: 1px solid #e7ddcd; border-radius: 8px; bottom: 7px; box-shadow: 0 5px 18px rgb(39 30 18 / 10%); cursor: default; display: flex; gap: 5px; padding: 3px; position: absolute; right: 7px; z-index: 2; }
-.branding-logo-zoom-controls button { align-items: center; background: #f8f5ef; border: 0; border-radius: 6px; display: inline-flex; height: 40px; justify-content: center; width: 40px; }
+.branding-logo-zoom-controls button { align-items: center; background: #f8f5ef; border: 0; border-radius: 6px; display: inline-flex; height: 46px; justify-content: center; min-height: 46px; min-width: 46px; width: 46px; }
 .branding-logo-zoom-controls output { color: #8a641e; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 800; min-width: 76px; text-align: center; }
 .branding-logo-help-mobile { display: none; }
 .branding-logo-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.branding-logo-editor-actions .button { min-height: 42px; }
+.branding-logo-editor-actions .button { min-height: 46px; min-width: 44px; }
 .branding-logo-contexts { border-top: 1px solid #e7ddcd; display: grid; gap: 5px; padding-top: 7px; }
 .branding-logo-contexts h3, .branding-logo-contexts p { margin: 0; }
 .branding-logo-contexts > div:first-child { align-items: baseline; display: flex; gap: 12px; justify-content: space-between; }
@@ -912,6 +912,7 @@ a {
 .branding-context-print > div { display: grid; gap: 4px; min-width: 0; }
 .branding-context-print .restaurant-logo-stage { height: 94px; max-width: 210px; width: 210px; }
 .branding-logo-save { min-width: 230px; }
+.app-drawer-workspace.branding-logo-drawer .app-drawer-close { height: 46px; min-height: 46px; min-width: 46px; width: 46px; }
 
 @media (max-width: 600px) {
   .app-drawer-workspace.branding-logo-drawer { height: auto; }

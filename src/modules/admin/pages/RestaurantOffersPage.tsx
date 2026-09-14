@@ -160,6 +160,7 @@ function OfferPreviewPrice({ offer }: { offer: RestaurantOffer }) {
 
 export function RestaurantOffersPage() {
   const { language, translateKey } = useI18n();
+  const removePhotoLabel = translateKey("owner.auto_d2fe0400ed5b");
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
@@ -486,12 +487,13 @@ export function RestaurantOffersPage() {
                 onFileSelected={selectPhoto}
               />
               <button
+                aria-label={removePhotoLabel}
                 className="button secondary restaurant-offer-remove-photo"
                 disabled={saving}
                 onClick={() => { resetPhoto(); setForm((current) => ({ ...current, imageUrl: null, imageCrop: DEFAULT_REWARD_IMAGE_CROP })); }}
                 type="button"
               >
-                <Trash2 aria-hidden="true" size={18} />Foto entfernen
+                <Trash2 aria-hidden="true" size={18} />{removePhotoLabel}
               </button>
             </div>
           ) : (

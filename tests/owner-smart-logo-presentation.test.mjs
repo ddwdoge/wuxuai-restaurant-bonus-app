@@ -135,6 +135,19 @@ test("Owner-Editor unterstützt direkte Manipulation und fünf reale Vorschaukon
   assert.match(settings, /logo_scale: initialPresentation\.scale/);
 });
 
+test("D17 gibt jedem tatsächlich interaktiven Branding-Editor-Element ein robustes Touchziel", async () => {
+  const styles = await read("src/styles.css");
+  assert.match(
+    styles,
+    /\.branding-logo-zoom-controls button \{[^}]*height: 46px;[^}]*min-height: 46px;[^}]*min-width: 46px;[^}]*width: 46px;/,
+  );
+  assert.match(styles, /\.branding-logo-editor-actions \.button \{ min-height: 46px; min-width: 44px; \}/);
+  assert.match(
+    styles,
+    /\.app-drawer-workspace\.branding-logo-drawer \.app-drawer-close \{ height: 46px; min-height: 46px; min-width: 46px; width: 46px; \}/,
+  );
+});
+
 test("Aktive Restaurant-Brandingflächen verwenden die gemeinsame LogoStage", async () => {
   const paths = [
     "src/modules/admin/AdminLayout.tsx",

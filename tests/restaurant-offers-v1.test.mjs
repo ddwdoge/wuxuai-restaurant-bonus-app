@@ -9,6 +9,7 @@ import {
   sortPublicOffers,
   validateRestaurantOfferDraft,
 } from "../src/modules/offers/restaurantOffers.mjs";
+import { GENERATED_MESSAGES } from "../src/shared/i18n/messages.generated.mjs";
 
 const migrationUrl = new URL("../supabase/migrations/20260804001000_restaurant_offers_v1.sql", import.meta.url);
 const auditFixMigrationUrl = new URL("../supabase/migrations/20260819001000_fix_offers_audit_actor_type.sql", import.meta.url);
@@ -333,6 +334,26 @@ test("D15 und D16 geben den echten interaktiven Drawer-Buttons robuste Touchziel
   assert.match(
     ownerCss,
     /\.app-drawer-panel\.owner-mobile-drawer \.restaurant-offer-remove-photo,\s*\.app-drawer-panel\.owner-mobile-drawer \.restaurant-offer-customer-preview \.button\s*\{[^}]*min-height:\s*46px;[^}]*min-width:\s*44px;/s,
+  );
+});
+
+test("D15 verwendet für sichtbaren Text und Accessible Name denselben etablierten Sieben-Sprachen-Key", async () => {
+  const page = await readFile(ownerPageUrl, "utf8");
+  const key = "owner.auto_d2fe0400ed5b";
+  assert.match(page, /const removePhotoLabel = translateKey\("owner\.auto_d2fe0400ed5b"\)/);
+  assert.match(page, /aria-label=\{removePhotoLabel\}/);
+  assert.match(page, /<Trash2 aria-hidden="true" size=\{18\} \/>\{removePhotoLabel\}/);
+  assert.deepEqual(
+    Object.fromEntries(["de", "en", "fr", "it", "es", "zh", "ko"].map((locale) => [locale, GENERATED_MESSAGES[locale][key]])),
+    {
+      de: "Foto entfernen",
+      en: "Remove photo",
+      fr: "Supprimer la photo",
+      it: "Rimuovi foto",
+      es: "Quitar foto",
+      zh: "删除照片",
+      ko: "사진 제거",
+    },
   );
 });
 
