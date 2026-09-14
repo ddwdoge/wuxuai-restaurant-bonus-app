@@ -4493,6 +4493,15 @@ a {
   z-index: 90;
 }
 
+.app-drawer-overlay.app-drawer-visual-viewport {
+  bottom: auto;
+  height: var(--drawer-viewport-height, 100dvh);
+  left: var(--drawer-viewport-left, 0px);
+  right: auto;
+  top: var(--drawer-viewport-top, 0px);
+  width: var(--drawer-viewport-width, 100vw);
+}
+
 .app-drawer-panel {
   animation: app-drawer-panel-in var(--wux-motion) var(--wux-ease);
   background: var(--wux-surface-elevated);

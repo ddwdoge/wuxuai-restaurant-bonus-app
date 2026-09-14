@@ -56,18 +56,57 @@ export function AppDrawer({
     if (!open || !fitVisualViewport || !window.visualViewport) return;
     const viewport = window.visualViewport;
     const overlay = overlayRef.current;
+    let animationFrame = 0;
+    let settleTimer = 0;
+
     // Mobile keyboards can shrink/pan the visual viewport without changing dvh.
-    const updateViewport = () => {
+    // iOS Safari can emit the first closing resize with stale geometry, so the
+    // same values are sampled again on the next stable render and once after
+    // the native keyboard animation has settled.
+    const applyViewport = () => {
+      const documentWidth = document.documentElement.clientWidth || window.innerWidth;
+      const layoutWidth = Math.min(window.innerWidth, documentWidth);
+      const viewportWidth = Math.abs(viewport.scale - 1) < 0.01
+        ? layoutWidth
+        : Math.min(viewport.width, layoutWidth);
       overlay?.style.setProperty("--drawer-viewport-height", `${viewport.height}px`);
+      overlay?.style.setProperty("--drawer-viewport-width", `${viewportWidth}px`);
+      overlay?.style.setProperty("--drawer-viewport-left", `${viewport.offsetLeft}px`);
       overlay?.style.setProperty("--drawer-viewport-top", `${viewport.offsetTop}px`);
     };
+
+    const updateViewport = () => {
+      applyViewport();
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(settleTimer);
+      animationFrame = window.requestAnimationFrame(() => {
+        applyViewport();
+        animationFrame = window.requestAnimationFrame(() => {
+          applyViewport();
+          animationFrame = 0;
+        });
+      });
+      settleTimer = window.setTimeout(() => {
+        applyViewport();
+        settleTimer = 0;
+      }, 320);
+    };
+
     updateViewport();
     viewport.addEventListener("resize", updateViewport);
     viewport.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    window.addEventListener("orientationchange", updateViewport);
     return () => {
       viewport.removeEventListener("resize", updateViewport);
       viewport.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+      window.removeEventListener("orientationchange", updateViewport);
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(settleTimer);
       overlay?.style.removeProperty("--drawer-viewport-height");
+      overlay?.style.removeProperty("--drawer-viewport-width");
+      overlay?.style.removeProperty("--drawer-viewport-left");
       overlay?.style.removeProperty("--drawer-viewport-top");
     };
   }, [open, fitVisualViewport]);

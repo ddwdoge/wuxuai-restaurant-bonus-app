@@ -55,30 +55,98 @@ const viewportEffect = drawer.match(/useEffect\(\(\) => \{\n    if \(!open \|\| 
 function mountViewport({ open = true, fit = true, viewport } = {}) {
   const values = new Map();
   let cleanup;
+  const windowListeners = new Map();
+  const frames = new Map();
+  const timers = new Map();
+  let sequence = 0;
+  const windowMock = {
+    innerWidth: 390,
+    visualViewport: viewport,
+    addEventListener: (name, fn) => windowListeners.set(name, fn),
+    removeEventListener: (name, fn) => { assert.equal(windowListeners.get(name), fn); windowListeners.delete(name); },
+    requestAnimationFrame: fn => { const id = ++sequence; frames.set(id, fn); return id; },
+    cancelAnimationFrame: id => frames.delete(id),
+    setTimeout: fn => { const id = ++sequence; timers.set(id, fn); return id; },
+    clearTimeout: id => timers.delete(id),
+  };
+  const documentMock = { documentElement: { clientWidth: 390 } };
   const style = { setProperty: (key, value) => values.set(key, value), removeProperty: (key) => values.delete(key) };
-  new Function("useEffect", "open", "fitVisualViewport", "window", "overlayRef", viewportEffect)(
-    (effect) => { cleanup = effect(); }, open, fit, { visualViewport: viewport }, { current: { style } },
+  new Function("useEffect", "open", "fitVisualViewport", "window", "document", "overlayRef", viewportEffect)(
+    (effect) => { cleanup = effect(); }, open, fit, windowMock, documentMock, { current: { style } },
   );
-  return { values, cleanup };
+  const flushFrames = () => {
+    while (frames.size) {
+      const pending = [...frames.values()];
+      frames.clear();
+      pending.forEach(fn => fn());
+    }
+  };
+  const flushTimers = () => {
+    const pending = [...timers.values()];
+    timers.clear();
+    pending.forEach(fn => fn());
+  };
+  return { values, cleanup, documentMock, flushFrames, flushTimers, viewport, windowListeners, windowMock };
 }
 
-test("visual viewport tracks keyboard resize and Safari pan, removes listeners on close", () => {
+test("visual viewport tracks keyboard resize, width and Safari pan, then removes every listener", () => {
   const listeners = new Map();
-  const viewport = { height: 800, offsetTop: 0,
+  const viewport = { height: 800, offsetLeft: 0, offsetTop: 0, scale: 1, width: 390,
     addEventListener: (name, fn) => listeners.set(name, fn),
     removeEventListener: (name, fn) => { assert.equal(listeners.get(name), fn); listeners.delete(name); },
   };
-  const { values, cleanup } = mountViewport({ viewport });
+  const result = mountViewport({ viewport });
+  const { values, cleanup } = result;
   assert.equal(values.get("--drawer-viewport-height"), "800px");
+  assert.equal(values.get("--drawer-viewport-width"), "390px");
+  assert.equal(values.get("--drawer-viewport-left"), "0px");
   viewport.height = 320;
   listeners.get("resize")();
   assert.equal(values.get("--drawer-viewport-height"), "320px");
+  viewport.offsetLeft = 7;
   viewport.offsetTop = 145;
   listeners.get("scroll")();
+  assert.equal(values.get("--drawer-viewport-left"), "7px");
   assert.equal(values.get("--drawer-viewport-top"), "145px");
+  assert.deepEqual([...result.windowListeners.keys()].sort(), ["orientationchange", "resize"]);
   cleanup();
   assert.equal(listeners.size, 0);
+  assert.equal(result.windowListeners.size, 0);
   assert.equal(values.size, 0);
+});
+
+test("keyboard close and orientation changes settle stale Safari geometry without user movement", () => {
+  const listeners = new Map();
+  const viewport = { height: 360, offsetLeft: 0, offsetTop: 246, scale: 1, width: 320,
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name) => listeners.delete(name),
+  };
+  const result = mountViewport({ viewport });
+  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
+
+  // Safari may emit the first close event before visualViewport has its final
+  // values. The scheduled stable render must pick up the restored geometry.
+  listeners.get("resize")();
+  viewport.height = 844;
+  viewport.width = 390;
+  viewport.offsetTop = 0;
+  result.windowMock.innerWidth = 390;
+  result.documentMock.documentElement.clientWidth = 390;
+  result.flushFrames();
+  result.flushTimers();
+  assert.equal(result.values.get("--drawer-viewport-height"), "844px");
+  assert.equal(result.values.get("--drawer-viewport-width"), "390px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "0px");
+
+  result.windowMock.innerWidth = 844;
+  result.documentMock.documentElement.clientWidth = 844;
+  viewport.height = 390;
+  viewport.width = 844;
+  result.windowListeners.get("orientationchange")();
+  result.flushFrames();
+  assert.equal(result.values.get("--drawer-viewport-height"), "390px");
+  assert.equal(result.values.get("--drawer-viewport-width"), "844px");
+  result.cleanup();
 });
 
 test("viewport adaptation is opt-in and safely falls back when unsupported", () => {
@@ -88,4 +156,14 @@ test("viewport adaptation is opt-in and safely falls back when unsupported", () 
     assert.equal(result.cleanup, undefined);
   }
   assert.match(drawer, /fitVisualViewport = false/);
+});
+
+test("shared visual-viewport overlay consumes width, height and offsets without scaling", () => {
+  const globalCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const rule = globalCss.match(/\.app-drawer-overlay\.app-drawer-visual-viewport\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(rule, /height:\s*var\(--drawer-viewport-height/);
+  assert.match(rule, /width:\s*var\(--drawer-viewport-width/);
+  assert.match(rule, /left:\s*var\(--drawer-viewport-left/);
+  assert.match(rule, /top:\s*var\(--drawer-viewport-top/);
+  assert.doesNotMatch(rule, /zoom\s*:|scale\(/);
 });
