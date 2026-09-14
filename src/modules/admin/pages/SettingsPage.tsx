@@ -70,6 +70,7 @@ import {
 } from "../ownerLocationGeocodingService";
 import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -553,6 +554,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 }
 
 export function SettingsPage() {
+  const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
   const { section } = useParams();
@@ -560,6 +562,9 @@ export function SettingsPage() {
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const pendingCoverUploadPathRef = useRef<string | null>(null);
   const geocodingRequestRef = useRef(0);
+  const mapActionRef = useRef<HTMLButtonElement | null>(null);
+  const mapGuidanceRef = useRef<HTMLParagraphElement | null>(null);
+  const [mapConfirmationGuidance, setMapConfirmationGuidance] = useState(false);
   const [details, setDetails] = useState<RestaurantDetails | null>(null);
   const [restaurantForm, setRestaurantForm] = useState({ name: "", ownerPhone: "" });
   const [openingHours, setOpeningHours] = useState<Record<Weekday, OpeningDay>>(() => normalizeOpeningHours(null));
@@ -599,6 +604,7 @@ export function SettingsPage() {
     let cancelled = false;
 
     async function loadSettings() {
+      setMapConfirmationGuidance(false);
       if (tenantLoading) return;
       if (!activeRestaurant?.id) {
         setDetails(null);
@@ -825,7 +831,13 @@ export function SettingsPage() {
       return;
     }
     if (!coordinatesValid || verifiedLocationKey !== ownerLocationAddressKey(partnerLocation)) {
-      setErrorMessage("Bitte zeige die aktuelle Adresse zuerst auf der Karte an.");
+      setErrorMessage(null);
+      setStatus(null);
+      setMapConfirmationGuidance(true);
+      requestAnimationFrame(() => {
+        if (mapActionRef.current?.disabled) mapGuidanceRef.current?.focus();
+        else mapActionRef.current?.focus();
+      });
       return;
     }
     if (partnerLocation.isDiscoverable && (!publicDetailsComplete || details.status !== "active")) {
@@ -865,6 +877,7 @@ export function SettingsPage() {
   }
 
   function updatePartnerAddress(field: "address" | "postalCode" | "city" | "country", value: string) {
+    setMapConfirmationGuidance(false);
     geocodingRequestRef.current += 1;
     setPartnerLocation((current) => current ? { ...current, [field]: value, latitude: "", longitude: "" } : current);
     setVerifiedLocationKey(null);
@@ -874,6 +887,7 @@ export function SettingsPage() {
   }
 
   function applyGeocodingCandidate(candidate: OwnerLocationCandidate) {
+    setMapConfirmationGuidance(false);
     const nextLocation = partnerLocation ? {
       ...partnerLocation,
       address: candidate.address,
@@ -1405,7 +1419,8 @@ export function SettingsPage() {
                 <div className="field"><FormLabel htmlFor="location-country" required>Land</FormLabel><CountrySelect id="location-country" locale={details.language ?? "de"} onChange={(countryCode) => updatePartnerAddress("country", countryCode)} required value={partnerLocation.country} /></div>
               </div>
               <div className="settings-location-geocoding">
-                <button className="button secondary settings-location-geocode-button" disabled={geocodingStatus === "searching"} onClick={findPartnerLocation} type="button">
+                {mapConfirmationGuidance ? <p className="status-message error settings-location-guidance" id="location-map-guidance" ref={mapGuidanceRef} role="alert" tabIndex={-1}>{translateKey("owner.location.confirmMapFirst")}</p> : null}
+                <button aria-describedby={mapConfirmationGuidance ? "location-map-guidance" : undefined} className="button secondary settings-location-geocode-button" disabled={geocodingStatus === "searching"} onClick={findPartnerLocation} ref={mapActionRef} type="button">
                   {geocodingStatus === "searching" ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <MapPinned aria-hidden="true" size={18} />}
                   {geocodingStatus === "searching" ? "Adresse wird gesucht …" : ["not_found", "error", "rate_limited"].includes(geocodingStatus) ? "Erneut suchen" : "Adresse auf Karte anzeigen"}
                 </button>

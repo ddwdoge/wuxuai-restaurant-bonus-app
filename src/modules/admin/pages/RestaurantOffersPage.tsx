@@ -465,7 +465,7 @@ export function RestaurantOffersPage() {
         <section className="restaurant-offers-empty"><Newspaper aria-hidden="true" size={34} /><h2>Noch keine Angebote</h2><p>Erstelle deinen ersten Informationsbeitrag für deine Gäste.</p><button className="button" onClick={startCreate} type="button">Neues Angebot erstellen</button></section>
       )}
 
-      <AppDrawer
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport
         description="Erstelle oder bearbeite einen Informationsbeitrag."
         footer={<><button className="button secondary" disabled={saving} onClick={closeForm} type="button">Abbrechen</button><button className="button" disabled={saving} onClick={() => void saveForm()} type="button">{saving ? "Wird gespeichert …" : "Entwurf speichern"}</button></>}
         onClose={closeForm}
@@ -526,7 +526,7 @@ export function RestaurantOffersPage() {
         </form>
       </AppDrawer>
 
-      <AppDrawer description="So sehen Gäste den Beitrag." onClose={() => setPreviewOffer(null)} open={Boolean(previewOffer)} size="standard" title="Vorschau">
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport description="So sehen Gäste den Beitrag." onClose={() => setPreviewOffer(null)} open={Boolean(previewOffer)} size="standard" title="Vorschau">
         {previewOffer ? <article className="restaurant-offer-customer-preview">{previewOffer.image_url ? <SmartMediaFrame alt={`Bild zu ${previewOffer.title}`} imageUrl={previewOffer.image_url} presentation={rewardImageCropFromRecord(previewOffer)} /> : <span><ImageIcon aria-hidden="true" size={34} /></span>}<div><small>{restaurantOfferTypeLabels[previewOffer.offer_type]}</small><h2>{previewOffer.title}</h2><p>{previewOffer.short_description}</p><OfferPreviewPrice offer={previewOffer} /><button className="button" type="button">{previewOffer.button_label}</button></div></article> : null}
       </AppDrawer>
     </div>

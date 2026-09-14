@@ -160,7 +160,7 @@ export function AdminDashboard() {
 
   const staffPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const dashboardKpis = [
-    { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers) },
+    { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers), to: "/admin/customers" },
     { icon: UserPlus, label: "Neue Kunden heute", value: String(rewardKpis.newMembersToday) },
     { icon: UserPlus, label: "Neue Kunden diese Woche", value: String(rewardKpis.newMembersThisWeek) },
     { icon: Activity, label: "Heute aktiv", value: String(rewardKpis.activeTodayCount) },
@@ -292,11 +292,17 @@ export function AdminDashboard() {
           <section className="dashboard-kpi-grid" aria-label="Heute im Bonusprogramm">
             {dashboardKpis.map((kpi) => {
               const Icon = kpi.icon;
+              const content = <>
+                <span className="dashboard-kpi-icon" aria-hidden="true"><Icon size={22} /></span>
+                <strong>{kpi.value}</strong>
+                <p>{kpi.label}</p>
+              </>;
+              if (kpi.to) {
+                return <Link className="card dashboard-kpi-card dashboard-kpi-link" key={kpi.label} to={kpi.to}>{content}</Link>;
+              }
               return (
                 <article className="card dashboard-kpi-card" key={kpi.label}>
-                  <span className="dashboard-kpi-icon" aria-hidden="true"><Icon size={22} /></span>
-                  <strong>{kpi.value}</strong>
-                  <p>{kpi.label}</p>
+                  {content}
                 </article>
               );
             })}
@@ -344,7 +350,7 @@ export function AdminDashboard() {
         </div>
       </section>
 
-      <AppDrawer
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport
         description="Dieser Hinweis dient ausschließlich der Prüfung und verändert weder Punkte noch Kontozugänge."
         footer={<button className="button" onClick={() => setSelectedPointAnomaly(null)} type="button">Schließen</button>}
         onClose={() => setSelectedPointAnomaly(null)}

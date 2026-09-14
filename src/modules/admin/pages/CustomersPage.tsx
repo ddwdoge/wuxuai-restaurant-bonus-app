@@ -282,7 +282,7 @@ export function CustomersPage() {
         ) : null}
       </section>
 
-      <AppDrawer
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport
         description="Nur Inhaber und ausdrücklich berechtigte Restaurant-Administratoren dürfen Identitätsdaten korrigieren."
         dismissOnOverlay={!supportSaving}
         footer={supportDetail ? (

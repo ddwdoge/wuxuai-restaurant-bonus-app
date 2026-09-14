@@ -2164,7 +2164,7 @@ export function RestaurantOnboarding() {
         </form>
       </section>
 
-      <AppDrawer
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport
         description={`Schritt ${step + 1}: ${steps[step]}`}
         footer={<button className="button" onClick={closeHowItWorks} type="button">Verstanden</button>}
         onClose={closeHowItWorks}

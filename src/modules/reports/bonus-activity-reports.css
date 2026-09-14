@@ -284,6 +284,8 @@
 .bonus-report-table-wrap td { padding: 12px 10px; border-bottom: 1px solid #eee8df; text-align: left; vertical-align: middle; font-size: .8rem; }
 .bonus-report-table-wrap th { color: #756b5f; background: #fbf8f2; font-size: .72rem; font-weight: 700; }
 .bonus-report-table-wrap tbody tr:last-child td { border-bottom: 0; }
+.bonus-report-cell-label { display: none; }
+.bonus-report-cell-value { min-width: 0; overflow-wrap: anywhere; }
 .bonus-activity-status.redeemed { background: #e8f5eb; color: #286039; }
 .bonus-table-action { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 8px; background: #f6eee5; color: #7c5149; }
 .bonus-table-action:focus-visible { outline: 3px solid rgb(191 143 54 / 35%); outline-offset: 2px; }
@@ -321,6 +323,26 @@
   .bonus-reference-summary { align-items: flex-start; flex-direction: column; }
   .bonus-report-breakdowns { grid-template-columns: 1fr; }
   .bonus-annual-overview > div { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* One set of report rows and actions, with labelled cards on mobile. */
+@media screen and (max-width: 767px) {
+  .bonus-reports-page .bonus-legal-boundary span,
+  .bonus-reports-page .bonus-activity-number,
+  .bonus-reports-page .bonus-activity-status,
+  .bonus-reports-page .bonus-activity-card dt,
+  .bonus-reports-page .snapshot-pill,
+  .bonus-reports-page .bonus-annual-overview small { font-size: 12px; overflow-wrap: anywhere; }
+  .bonus-reports-page .button { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+  .bonus-report-table-wrap { contain: inline-size; position: relative; border: 0; overflow: visible; background: transparent; }
+  .bonus-report-table-wrap table { display: block; min-width: 0; }
+  .bonus-report-table-wrap thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  .bonus-report-table-wrap tbody { display: grid; gap: 12px; }
+  .bonus-report-table-wrap tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid #e9e1d6; border-radius: 16px; background: #fff; }
+  .bonus-report-table-wrap td { display: block; min-width: 0; padding: 0; border: 0; }
+  .bonus-report-cell-label { display: block; color: #756b5f; font-size: 12px; line-height: 1.4; margin-bottom: 4px; overflow-wrap: anywhere; }
+  .bonus-report-table-wrap td:last-child { grid-column: 1 / -1; }
+  .bonus-report-cell-value .button { min-height: 48px; width: 100%; white-space: normal; }
 }
 
 @media print {

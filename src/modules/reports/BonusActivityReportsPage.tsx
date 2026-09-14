@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Ban, CalendarDays, Download, FileClock, Gift, Printer, RefreshCw, ShieldAlert, Users } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -18,6 +18,10 @@ import {
 } from "./bonusActivityService";
 import "./bonus-activity-reports.css";
 import { loadKassaReconciliation, recordKassaRedemption, reviewKassaRedemption, type KassaReconciliation } from "../kassa/kassaComplianceService";
+
+function ReportCell({ label, children }: { label: string; children: ReactNode }) {
+  return <td role="cell"><span aria-hidden="true" className="bonus-report-cell-label">{label}</span><div className="bonus-report-cell-value">{children}</div></td>;
+}
 
 const periodOptions: Array<{ value: RedemptionReportPeriod; label: string }> = [
   { value: "today", label: "Heute" },
@@ -185,19 +189,33 @@ export function BonusActivityReportsPage() {
         <section className="card kassa-reconciliation" aria-label={translateKey("owner.kassa.reconcileTitle")}>
           <header><div><h2>{translateKey("owner.kassa.reconcileTitle")}</h2><p>{translateKey("owner.kassa.reconcileDescription")}</p></div><button className="button secondary" onClick={() => void refreshKassa()} type="button"><RefreshCw size={17} /> {translateKey("platform.audit.refresh")}</button></header>
           {kassaError ? <p role="alert">{kassaError}</p> : null}
-          {kassa?.rows.length ? <div className="bonus-report-table-wrap"><table><thead><tr><th>Zeit</th><th>Belohnung</th><th>Status</th><th>Aktion</th></tr></thead><tbody>{kassa.rows.map((row) => <tr key={row.id}><td>{formatReportTime(row.redeemed_at, kassa.timezone)}</td><td>{row.reward_name ?? row.reward_type}</td><td>{translateKey(row.status === "OPEN" ? "owner.kassa.statusOpen" : row.status === "RECORDED" ? "owner.kassa.statusRecorded" : "owner.kassa.statusReviewed")}</td><td>{row.status === "OPEN" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, false)} type="button">{translateKey("owner.kassa.recordAction")}</button> : row.status === "RECORDED" && restaurantRole === "owner" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, true)} type="button">{translateKey("owner.kassa.reviewAction")}</button> : "–"}</td></tr>)}</tbody></table></div> : <p>{translateKey("owner.kassa.empty")}</p>}
+          {kassa?.rows.length ? <div className="bonus-report-table-wrap"><table role="table"><thead role="rowgroup"><tr role="row"><th scope="col">Zeit</th><th scope="col">Belohnung</th><th scope="col">Status</th><th scope="col">Aktion</th></tr></thead><tbody role="rowgroup">{kassa.rows.map((row) => <tr key={row.id} role="row">
+            <ReportCell label="Zeit">{formatReportTime(row.redeemed_at, kassa.timezone)}</ReportCell>
+            <ReportCell label="Belohnung">{row.reward_name ?? row.reward_type}</ReportCell>
+            <ReportCell label="Status">{translateKey(row.status === "OPEN" ? "owner.kassa.statusOpen" : row.status === "RECORDED" ? "owner.kassa.statusRecorded" : "owner.kassa.statusReviewed")}</ReportCell>
+            <ReportCell label="Aktion">{row.status === "OPEN" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, false)} type="button">{translateKey("owner.kassa.recordAction")}</button> : row.status === "RECORDED" && restaurantRole === "owner" ? <button className="button secondary" disabled={kassaBusy === row.id} onClick={() => void transitionKassa(row.id, true)} type="button">{translateKey("owner.kassa.reviewAction")}</button> : "–"}</ReportCell>
+          </tr>)}</tbody></table></div> : <p>{translateKey("owner.kassa.empty")}</p>}
           <details><summary>{translateKey("owner.kassa.helpTitle")}</summary><p>{translateKey("owner.kassa.helpBody")}</p></details>
         </section>
 
         <section className="bonus-report-journal" aria-label="Einlösungsprotokoll">
           <header><div><h2>Einlösungsprotokoll</h2><p>Zeiten werden nach {report.timezone} angezeigt.</p></div><span>{report.rows.length} Einträge</span></header>
-          {report.rows.length ? <div className="bonus-report-table-wrap"><table><thead><tr><th>Datum</th><th>Zeit</th><th>Belohnung</th><th>Typ</th><th>Punkte</th><th>Referenzwert</th><th>Status</th><th><span className="sr-only">Aktion</span></th></tr></thead><tbody>{report.rows.map((row) => <tr key={row.id}><td>{formatReportDate(row.redeemed_at, report.timezone)}</td><td>{formatReportTime(row.redeemed_at, report.timezone)}</td><td>{row.reward_name ?? "Historischer Wert nicht vorhanden"}</td><td>{redemptionSourceLabel(row.reward_source)}</td><td>{row.points_spent || "–"}</td><td>{formatReferenceValue(row.reference_value_cents, row.reference_currency)}</td><td><span className={`bonus-activity-status ${row.status}`}>{row.status === "redeemed" ? "Eingelöst" : "Storniert"}</span></td><td>{row.status === "redeemed" ? <button aria-label={`${row.reward_name ?? "Einlösung"} stornieren`} className="bonus-table-action" onClick={() => setCancelTarget(row)} type="button"><Ban aria-hidden="true" size={17} /></button> : null}</td></tr>)}</tbody></table></div> : <div className="card bonus-report-empty"><FileClock size={28} /><h3>Keine Einlösungen</h3><p>Für den gewählten Zeitraum wurden keine finalisierten Einlösungen gefunden.</p></div>}
+          {report.rows.length ? <div className="bonus-report-table-wrap"><table role="table"><thead role="rowgroup"><tr role="row"><th scope="col">Datum</th><th scope="col">Zeit</th><th scope="col">Belohnung</th><th scope="col">Typ</th><th scope="col">Punkte</th><th scope="col">Referenzwert</th><th scope="col">Status</th><th scope="col"><span className="sr-only">Aktion</span></th></tr></thead><tbody role="rowgroup">{report.rows.map((row) => <tr key={row.id} role="row">
+            <ReportCell label="Datum">{formatReportDate(row.redeemed_at, report.timezone)}</ReportCell>
+            <ReportCell label="Zeit">{formatReportTime(row.redeemed_at, report.timezone)}</ReportCell>
+            <ReportCell label="Belohnung">{row.reward_name ?? "Historischer Wert nicht vorhanden"}</ReportCell>
+            <ReportCell label="Typ">{redemptionSourceLabel(row.reward_source)}</ReportCell>
+            <ReportCell label="Punkte">{row.points_spent || "–"}</ReportCell>
+            <ReportCell label="Referenzwert">{formatReferenceValue(row.reference_value_cents, row.reference_currency)}</ReportCell>
+            <ReportCell label="Status"><span className={`bonus-activity-status ${row.status}`}>{row.status === "redeemed" ? "Eingelöst" : "Storniert"}</span></ReportCell>
+            <ReportCell label="Aktion">{row.status === "redeemed" ? <button aria-label={`${row.reward_name ?? "Einlösung"} stornieren`} className="bonus-table-action" onClick={() => setCancelTarget(row)} type="button"><Ban aria-hidden="true" size={17} /></button> : null}</ReportCell>
+          </tr>)}</tbody></table></div> : <div className="card bonus-report-empty"><FileClock size={28} /><h3>Keine Einlösungen</h3><p>Für den gewählten Zeitraum wurden keine finalisierten Einlösungen gefunden.</p></div>}
         </section>
 
         <section className="bonus-report-quality card"><p><span>Testdaten ausgeschlossen</span><strong>Ja – standardmäßig ausgeschlossen</strong></p><p><span>Ausgeschlossene Testvorgänge</span><strong>{report.excluded_test_count}</strong></p><p><span>Stornierte Vorgänge enthalten</span><strong>{report.cancelled_included ? "Ja" : "Nein"}</strong></p><p><span>Vollständige Snapshots</span><strong>{report.summary.complete_snapshots}</strong></p><p><span>Unvollständige historische Datensätze</span><strong>{report.summary.incomplete_legacy_records}</strong></p></section>
       </> : null}
 
-      <AppDrawer description="Bei Punkte-Präsentationen werden belastete Punkte serverseitig zurückgebucht; historische Codevorgänge bleiben ein reines Protokollstorno. Es entsteht keine Kassen- oder Steuerbuchung." footer={<><button className="button secondary" disabled={cancelling} onClick={() => setCancelTarget(null)} type="button">Abbrechen</button><button className="button" disabled={cancelling || cancelReason.trim().length < 10} onClick={() => void confirmCancellation()} type="button">{cancelling ? "Storno läuft …" : "Protokoll stornieren"}</button></>} onClose={() => setCancelTarget(null)} open={Boolean(cancelTarget)} title="Einlösung stornieren">
+      <AppDrawer className="owner-mobile-drawer" fitVisualViewport description="Bei Punkte-Präsentationen werden belastete Punkte serverseitig zurückgebucht; historische Codevorgänge bleiben ein reines Protokollstorno. Es entsteht keine Kassen- oder Steuerbuchung." footer={<><button className="button secondary" disabled={cancelling} onClick={() => setCancelTarget(null)} type="button">Abbrechen</button><button className="button" disabled={cancelling || cancelReason.trim().length < 10} onClick={() => void confirmCancellation()} type="button">{cancelling ? "Storno läuft …" : "Protokoll stornieren"}</button></>} onClose={() => setCancelTarget(null)} open={Boolean(cancelTarget)} title="Einlösung stornieren">
         <label className="field"><span>Begründung *</span><textarea aria-required="true" minLength={10} onChange={(event) => setCancelReason(event.target.value)} placeholder="Mindestens 10 Zeichen" rows={4} value={cancelReason} /></label>
       </AppDrawer>
     </div>
