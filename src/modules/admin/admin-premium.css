@@ -479,6 +479,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  height: 100%;
   max-width: 100%;
   min-width: 0;
   min-height: 76px;
@@ -490,6 +491,11 @@
   border-color: rgba(149, 104, 32, 0.34);
   box-shadow: 0 12px 28px rgba(45, 38, 25, 0.08);
   transform: translateY(-1px);
+}
+
+.premium-owner-shell .dashboard-quick-card:focus-visible {
+  outline: 3px solid rgba(149, 104, 32, 0.5);
+  outline-offset: -4px;
 }
 
 .dashboard-quick-icon,
@@ -932,6 +938,7 @@
   }
 
   .premium-owner-shell .premium-dashboard section[aria-labelledby="quick-access-title"] .dashboard-quick-card {
+    align-content: start;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
   }

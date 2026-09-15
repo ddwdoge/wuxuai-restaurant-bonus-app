@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, ArrowRight, CakeSlice, Gift, MapPinned, Newspaper, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, CakeSlice, Gift, MapPinned, Newspaper, Plus, QrCode, RefreshCw, Smartphone, Sparkles, Star, UserPlus, Users } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { loadRewardKpis, type RewardKpis } from "../../rewards/rewardService";
@@ -14,10 +14,10 @@ import {
   type DashboardSetupStatus,
 } from "../dashboardNoticeService";
 import { resolveOwnerDashboardRecommendation } from "../ownerDashboardRecommendation.mjs";
-import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { loadOwnerPointAnomalyWarnings, type OwnerPointAnomalyWarning } from "../pointAnomalyService";
 import { pointAnomalyNoticeKey } from "../pointAnomalyPolicy.mjs";
 import { isAuthoritativePublicationReady, isQrSetupReady } from "../ownerDashboardSetupStatus.mjs";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 import {
   ownerSmartSetupLaunchState,
   readOwnerSmartSetupSuccessState,
@@ -53,6 +53,7 @@ function formatAnomalyTimestamp(value: string) {
 export function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { translateKey } = useI18n();
   const { user } = useAuth();
   const { activeRestaurant } = useTenant();
   const [rewardKpis, setRewardKpis] = useState<RewardKpis>(emptyKpis);
@@ -158,7 +159,6 @@ export function AdminDashboard() {
     return () => { cancelled = true; };
   }, [activeRestaurant?.id, activeRestaurant?.name, activeRestaurant?.slug, reloadKey]);
 
-  const staffPath = activeRestaurant ? buildStaffLoginPath(activeRestaurant.slug) : "/admin";
   const dashboardKpis = [
     { icon: Users, label: "Kunden gesamt", value: String(rewardKpis.activeCustomers), to: "/admin/customers" },
     { icon: UserPlus, label: "Neue Kunden heute", value: String(rewardKpis.newMembersToday) },
@@ -168,10 +168,12 @@ export function AdminDashboard() {
     { icon: Star, label: "Vergebene Bonuspunkte heute", value: String(rewardKpis.pointsIssuedToday) },
   ];
   const quickLinks = [
-    { label: "QR Center", to: "/admin/qr", icon: QrCode },
-    { label: "Punkteeinlösung", to: "/admin/rewards", icon: Gift },
-    { label: "Gäste", to: "/admin/customers", icon: Users },
-    { label: "Mitarbeiter", to: staffPath, icon: Smartphone },
+    { labelKey: "owner.quick.createOffer.title", actionKey: "owner.quick.createOffer.action", to: "/admin/offers?create=1", icon: Plus },
+    { labelKey: "owner.quick.guests.title", actionKey: "owner.quick.guests.action", to: "/admin/customers", icon: Users },
+    { labelKey: "owner.quick.activity.title", actionKey: "owner.quick.activity.action", to: "/admin/reports", icon: Activity },
+    { labelKey: "owner.quick.qr.title", actionKey: "owner.quick.qr.action", to: "/admin/qr", icon: QrCode },
+    { labelKey: "owner.quick.rewards.title", actionKey: "owner.quick.rewards.action", to: "/admin/rewards", icon: Gift },
+    { labelKey: "owner.quick.staff.title", actionKey: "owner.quick.staff.action", to: "/admin/staff", icon: Smartphone },
   ];
   const dashboardIsEmpty = dashboardKpis.every((kpi) => kpi.value === "0");
   const legalRegistration = legalSetup?.readiness.registration;
@@ -327,11 +329,11 @@ export function AdminDashboard() {
         {quickLinks.map((item) => {
           const Icon = item.icon;
           return (
-            <Link className="card dashboard-quick-card" key={item.label} to={item.to}>
-              <span className="dashboard-quick-icon"><Icon size={22} /></span>
+            <Link className="card dashboard-quick-card" key={item.labelKey} to={item.to}>
+              <span aria-hidden="true" className="dashboard-quick-icon"><Icon size={22} /></span>
               <span>
-                <strong>{item.label}</strong>
-                <small>Öffnen</small>
+                <strong>{translateKey(item.labelKey)}</strong>
+                <small>{translateKey(item.actionKey)}</small>
               </span>
               <ArrowRight aria-hidden="true" className="dashboard-quick-arrow" size={18} />
             </Link>

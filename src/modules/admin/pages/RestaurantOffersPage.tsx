@@ -14,6 +14,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
@@ -160,6 +161,8 @@ function OfferPreviewPrice({ offer }: { offer: RestaurantOffer }) {
 
 export function RestaurantOffersPage() {
   const { language, translateKey } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const routeCreateRequested = searchParams.get("create") === "1";
   const removePhotoLabel = translateKey("owner.auto_d2fe0400ed5b");
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
@@ -180,6 +183,7 @@ export function RestaurantOffersPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const firstInvalidRef = useRef<HTMLInputElement>(null);
+  const routeCreateHandledRef = useRef(false);
 
   const reload = useCallback(async () => {
     if (!restaurantId) return;
@@ -219,17 +223,34 @@ export function RestaurantOffersPage() {
   }), [filter, offers]);
   const activeOfferCount = offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
 
-  function resetPhoto() {
+  const resetPhoto = useCallback(() => {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoFile(null);
     setPhotoPreview(null);
-  }
+  }, [photoPreview]);
 
-  function startCreate() {
+  const startCreate = useCallback(() => {
     resetPhoto();
     setForm(newOfferForm(branches[0]?.id ?? activeRestaurant?.primary_branch_id ?? ""));
     setFormError(null);
     setFormOpen(true);
+  }, [activeRestaurant?.primary_branch_id, branches, resetPhoto]);
+
+  useEffect(() => {
+    if (!routeCreateRequested) {
+      routeCreateHandledRef.current = false;
+      return;
+    }
+    if (routeCreateHandledRef.current) return;
+    routeCreateHandledRef.current = true;
+    startCreate();
+  }, [routeCreateRequested, startCreate]);
+
+  function clearCreateRoute() {
+    if (!routeCreateRequested) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("create");
+    setSearchParams(next, { replace: true });
   }
 
   function startEdit(offer: RestaurantOffer) {
@@ -244,6 +265,7 @@ export function RestaurantOffersPage() {
     resetPhoto();
     setFormOpen(false);
     setFormError(null);
+    clearCreateRoute();
   }
 
   function selectPhoto(file: File) {
@@ -320,6 +342,7 @@ export function RestaurantOffersPage() {
       setStatusMessage(form.id ? "Angebot aktualisiert." : "Entwurf gespeichert.");
       resetPhoto();
       setFormOpen(false);
+      clearCreateRoute();
       await reload();
     } catch (nextError) {
       if (uploadedPath) await removeOwnerRewardImageUpload(uploadedPath);

@@ -302,8 +302,10 @@ Diagramme - leere Teamkarten - Debug-Daten - Entwicklerbegriffe
 Der Button **„Neue Aktion starten"** bleibt entfernt.
 
 Grund: Generische Aktionen und Kampagnen existieren nicht in V1. Der klar
-benannte Arbeitsbereich `Aktuelles & Angebote` besitzt ausschließlich auf seiner
-eigenen Seite die Hauptaktion `Neues Angebot erstellen`.
+benannte Arbeitsbereich `Aktuelles & Angebote` besitzt die Hauptaktion
+`Neues Angebot erstellen`. Der Dashboard-Schnellzugriff `Neues Angebot` darf
+direkt dasselbe bestehende Erstellformular öffnen, löst durch die Navigation
+aber weder Speicherung noch Veröffentlichung aus.
 
 Das Dashboard besitzt keinen künstlichen Hauptbutton, wenn dieser nicht
 klar zum aktuellen Produktziel gehört.
@@ -312,12 +314,20 @@ klar zum aktuellen Produktziel gehört.
 
 Das Dashboard darf Schnellzugriffe anzeigen:
 
--   QR Center
--   Punkteeinlösung
--   Gäste
--   Mitarbeiter
+-   Neues Angebot – `Angebot erstellen`
+-   Gäste – `Gäste ansehen`
+-   Aktivitäten – `Aktivitäten prüfen`
+-   QR-Center – `QR-Center öffnen`
+-   Prämien – `Prämien verwalten`
+-   Mitarbeiter – `Team verwalten`
 
-Diese Karten sind Navigation, keine KPI.
+Diese Karten sind Navigation, keine KPI. Sie verwenden in dieser Reihenfolge
+die bestehenden Bereiche für Angebotserstellung, Gäste, Berichte/Aktivitäten,
+QR-Center, Punkteeinlösungen und Teamverwaltung. Ihre Navigation führt keine
+Schreibaktion aus. Einmalige Grundeinstellungen wie Betriebsdaten, Standort,
+Öffnungszeiten, Branding, Bonusprogramm, Geschenkregeln, Legal, Kassa,
+Plan/Funktionen, Benachrichtigungen und Onboarding bleiben im bestehenden Menü
+beziehungsweise in `Einstellungen` und werden hier nicht dupliziert.
 
 ### 5.6 Heute für dich
 
