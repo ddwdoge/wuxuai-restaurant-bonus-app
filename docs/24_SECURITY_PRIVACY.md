@@ -1,6 +1,18 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## Phase 7B.1 Commercial Release Lock - LOCAL ONLY
+
+Die Release-Policy ist privat, RLS-geschuetzt und fuer `public`, `anon`,
+`authenticated` sowie `service_role` ohne Tabellenrechte. Ihr interner
+`SECURITY DEFINER`-Resolver besitzt einen festen `search_path` und kein
+direktes Runtime-EXECUTE-Recht. Business-Country stammt ausschliesslich aus
+der serverseitig gebundenen Primary-Branch-Beziehung; URL, Locale, Clientdaten,
+Subscription, Trial, Stripe und Platform-Rolle sind keine Release-Autoritaet.
+Fehler und fehlende Policies sperren PRO. Lokale Fresh-/Upgrade-, Rollen-,
+Cross-Tenant-, Direkt-RPC- und Parallelitaetstests sind bestanden; Staging
+bleibt unangewendet und ungeprueft.
+
 ## V1 Final Security Contract 2026-08-31
 
 - Eine E-Mail entspricht genau einer Supabase-Auth-Identitaet. Customer-,
@@ -1294,3 +1306,16 @@ Endstatus: **LOCK**
   Authentifizierungsgeheimnis.
 - Sperren und Archivieren wirken fail-closed auf die zentrale
   `is_restaurant_member`-Prüfung. Normale Tenant-RLS bleibt aktiv.
+## Phase 7B.1A – Commercial Pro Sicherheitsvertrag (lokal)
+
+Pro-Laenderfreigaben, echte Pilotzugaenge und interne TEST_ONLY-Zugaenge
+verwenden kein gemeinsames Zusatzpasswort. High-Risk-Mutationen verlangen eine
+frische, zum aktuellen Benutzer und zur aktuellen Session passende
+Authentifizierung. Owner, Staff, Customer, anon, rollenlose authenticated
+Sessions, billing/support Rollen und direkte Browser-DML koennen Policy oder
+Berechtigungen nicht aendern. Jede erfolgreiche Mutation erzeugt einen
+append-only Audit-Datensatz mit Akteur, Rolle, Land, Betrieb/Organisation,
+Grund, Request-ID und Vorher-/Nachher-Zustand. Fehlende oder ungueltige
+Policy/Zuordnung, abgelaufene oder widerrufene Berechtigungen und
+Cross-Tenant-Abweichungen fallen auf Basic zurueck. Stand: nur isoliert lokal
+geprueft; kein Staging-/Production-Nachweis.

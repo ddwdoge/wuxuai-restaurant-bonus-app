@@ -1,6 +1,18 @@
 
 # 23_API_RPC_REGELN.md
 
+## Phase 7B.1 Commercial Release Lock - LOCAL ONLY
+
+Der kanonische Entitlement-Resolver wendet den privaten Commercial-Release-
+Lock nach Subscription-, Trial-, Admin- und Feature-Provenienz als zwingende
+serverseitige Obergrenze an. Bei `AT + PRO = LOCKED`, fehlender oder ungueltiger
+Policy ist das wirksame Ergebnis Basic; Unlimited und beide PRO-Notification-
+Flags sind aus. `set_platform_restaurant_plan_override` prueft den Lock vor
+Mutation und vor Idempotency-Replay. Es gibt keinen Release-Policy-Mutator fuer
+Platform Admin oder andere Runtime-Rollen. Direkte neue Pro-Erhoehungen werden
+zusaetzlich durch DB-Trigger gesperrt. Termination und Reduktion bleiben
+moeglich. Migration lokal erstellt, nicht auf Staging angewendet.
+
 ## Platform Admin Foundation
 
 Plattformrollen werden ausschliesslich serverseitig ueber
@@ -1096,3 +1108,14 @@ Die älteren öffentlichen RPCs `redeem_customer_reward`, `create_redemption_cod
   auditierbar. `anon` besitzt kein Execute-Recht.
 - Die Edge Function `owner-staff-invite` ist der einzige Auth-Admin-Transport;
   die Service Role bleibt serverseitig.
+## Phase 7B.1A – High-Risk Commercial Pro RPCs (lokal)
+
+`set_platform_commercial_pro_country_release` und
+`set_platform_commercial_pro_access` sind die einzigen neuen Mutatoren. Beide
+sind `SECURITY DEFINER`, pruefen serverseitig `platform_owner` oder
+`platform_admin`, Tenant/Land, eindeutige Bestaetigung, Begruendung, globale
+Request-Idempotenz und eine aktuelle Session mit hoechstens zehn Minuten alter
+Authentifizierung. Advisory-/Row-Locks serialisieren parallele Requests.
+Public/anon besitzen kein EXECUTE; authenticated erhaelt nur den RPC-Aufruf
+und keine Tabellen-DML. Der interne Resolver und die Recent-Auth-Hilfe bleiben
+ohne Runtime-EXECUTE-Grant. Stand: lokal implementiert, Staging nicht angewendet.

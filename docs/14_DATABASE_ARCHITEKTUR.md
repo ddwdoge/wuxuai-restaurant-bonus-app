@@ -1,6 +1,19 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-09-15 - Phase 7B.1 Commercial Release Lock lokal implementiert
+
+Die additive, noch nicht auf Staging angewendete Migration
+`20260915001000_pro_commercial_release_lock.sql` fuehrt eine private
+laender-/plangebundene Release-Policy ein. `AT + PRO` startet `LOCKED`; bei
+fehlender oder ungueltiger Policy liefert der kanonische Resolver Basic.
+Gespeicherte PRO-Subscriptions und Overrides bleiben erhalten, koennen aber
+keine wirksamen PRO-Rechte, Unlimited-Angebote oder PRO-Benachrichtigungen
+erzeugen. Neue Pro-Erhoehungen werden durch Subscription-/Override-Trigger
+blockiert. Die Policy besitzt RLS und keine Browser-, Service-Role- oder
+Platform-Admin-Schreibautoritaet. Punkte-, Einloesungs-, Kunden-, Catalog- und
+Stripe-Tabellen bleiben unveraendert. Status: **LOCAL ONLY / STAGING OFFEN**.
+
 ## 2026-09-05 - Staging-PRO-Plan- und Berechtigungsvertrag
 
 `commercial_plan_catalog` definiert die zentralen Plaene BASIC, PRO und das nur
@@ -1464,3 +1477,15 @@ auf beide neuen Tabellen ist entzogen; Statuswechsel erfolgen tenantgebunden,
 idempotent und auditiert über benannte RPCs. Die versionierte Bestätigung
 `kassa-separation-de-v1` wird append-only mit Serverzeit, Akteur, UI-Sprache und
 rechtlicher Jurisdiktion gespeichert.
+## Phase 7B.1A – Commercial Pro Release und Pilot (lokal)
+
+Die unangewendete Forward-Migration
+`20260915001000_pro_commercial_release_lock.sql` trennt die private
+Laenderpolicy von zeitgebundenen Betriebsberechtigungen. Pro wird effektiv
+nur aus `(country release AND paid/trial/real pilot) OR TEST_ONLY` aufgeloest.
+Policy, Pilot-/TEST_ONLY-Grants und append-only Audit besitzen RLS und keine
+Browser-DML-Grants. Echte Piloten gelten nur im freigegebenen Betriebsland;
+TEST_ONLY verlangt die exakte aktive serverseitige Tenant-Markierung. Ablauf
+und Widerruf loeschen keine Subscription-, Kunden-, Punkte-, Ledger- oder
+historischen Pro-Daten. Die Migration ist nur lokal getestet und nicht auf
+Staging oder Production angewendet.

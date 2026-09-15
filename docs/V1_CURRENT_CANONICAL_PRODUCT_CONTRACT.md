@@ -15,6 +15,14 @@ kanonisch in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Dieses Dokument bleibt
 die technische Produktvertrags- und Evidenzquelle. Bei abweichendem Status gilt:
 neuer Zielvertrag bedeutet nicht automatisch implementierten Ist-Stand.
 
+**Founder-Roadmap 2026-09-12:** Der Austria-Launch-Master (Abschnitte 9 und
+15–20) verlangt technische Fertigstellung von Basic, Pro und einem von Pro
+getrennten Catalog Add-on, aber kommerziell zunaechst nur Austria Basic.
+Phase 6 Mobile bleibt vor Phase 7 Pro, Phase 8 Catalog, Phase 9 Stripe Test Mode
+und Phase 10 Launch. Das ist ein Zielvertrag, kein neuer Ist- oder Final-Lock-
+Nachweis. Die folgenden bestehenden Fach-/Security-Locks werden nicht
+umgeschrieben; noch fehlende Pro-/Catalog-/Stripe-Faehigkeiten bleiben offen.
+
 ## Owner, Onboarding und Legal Company Data - FINAL LOCK
 
 - Das aktuelle Owner-Onboarding und seine kontextbezogene Hilfe sind physisch
@@ -566,7 +574,8 @@ dass die Gates des Austria Launch Master Contract bereits geschlossen sind.
 - Ready for Founder Main Merge: `YES`.
 - Production: `LOCKED` bis zur ausdruecklichen Founder-Release-Freigabe.
 - Stripe war in diesem technischen Snapshot `DEFERRED`. Fuer die aktuelle
-  Launch-Reihenfolge ist Stripe Staging/Billing Gate 6; Stripe Live bleibt
+  Launch-Reihenfolge ist Stripe Staging/Billing seit 2026-09-12 Phase 9;
+  die fruehere Nummerierung Gate 6 ist SUPERSEDED. Stripe Live bleibt
   separat freigabepflichtig.
 
 ## Commercial Contract - APPROVED
@@ -607,3 +616,273 @@ dass die Gates des Austria Launch Master Contract bereits geschlossen sind.
   nur deutschsprachige V1 wird durch den Austria Launch Master Contract ersetzt.
   Deutsch bleibt verpflichtende Launch-Sprache; die bestehende Architektur fuer
   `de`, `en`, `fr`, `it`, `es`, `zh` und `ko` bleibt erhalten.
+
+## FOUNDER PHASE 7 PLAN – NOT IMPLEMENTED
+
+```text
+PHASE 7A AUDIT: COMPLETE
+PHASE 7 IMPLEMENTATION: NOT AUTHORIZED
+STATUS: NOT READY
+```
+
+Dieser Abschnitt dokumentiert den verbindlichen Zielvertrag fuer Phase 7. Er
+ist kein Ist-Nachweis, keine Freischaltung und kein neuer Final Lock. Phase 7B
+darf erst nach einer gesonderten Founder-Freigabe beginnen.
+
+- Oesterreich startet ausschliesslich mit Basic. Pro wird technisch
+  fertiggestellt, bleibt aber kommerziell und serverseitig gesperrt.
+- Pro darf weder durch Datum, Trial-Ablauf, Dreimonatsfrist, Subscription-Status
+  noch durch eine normale Admin-Aktion automatisch oder vorzeitig verfuegbar
+  werden. Eine spaetere Freigabe braucht eine ausdrueckliche
+  Founder-Entscheidung und einen unabhaengigen serverseitigen Release-Lock.
+- Catalog ist kein Bestandteil von Pro. Catalog folgt separat in Phase 8 als
+  Add-on.
+- Stripe-Live-Produkte, -Preise, Subscription Items, Webhooks und Customer
+  Portal bleiben in Phase 7 unveraendert.
+- Normales Punktesammeln, Einloesen und Kundenzahlen duerfen nicht durch harte
+  Usage-Limits gestoppt werden. Spaetere Kosten- und Mehrwertgrenzen muessen
+  ueber konfigurierbare Entitlements und messbare Usage-Signale erfolgen.
+- Es gibt keine allgemeine, fest im Code verdrahtete Regel `Pro = 5x`.
+- Phase 6 und alle vorherigen Final Locks bleiben unveraendert.
+
+Phase-7A-Istbefund: Das vorhandene Modell kennt Basic/Pro, zentrale
+Entitlements, serverseitige Feature-Gates, zeitlich begrenzte Admin-Overrides
+und Subscription-Lifecycle. Es besitzt jedoch keinen unabhaengigen
+Founder-/Commercial-Release-Lock. Ein gueltiger PRO-Admin-Override oder ein
+gueltiger PRO-Subscription-/Trial-Zustand kann Pro derzeit serverseitig wirksam
+machen. Deshalb bleiben die verbindlichen Ergebnisse:
+
+```text
+SERVER-SIDE PRO GATE: FAIL
+PRO COMMERCIAL LOCK: FAIL
+AUSTRIA BASIC-ONLY LAUNCH PRESERVED: FAIL
+```
+
+Verbindliche Reihenfolge nach einer gesonderten Founder-Freigabe:
+
+1. **Phase 7B – Commercial Lock und Resolver-Vertrag:** unabhaengigen,
+   fail-closed Founder-Release-Lock definieren; Resolver, Admin-RPCs,
+   Subscription-Lifecycle und Bypass-Vertraege darauf ausrichten.
+2. **Phase 7C – Pro-Feature-Vollstaendigkeit:** unbegrenzte aktive Angebote,
+   Angebots- und Reward-Benachrichtigungen sowie Consent- und Plananzeigen
+   gegen denselben serverseitigen Vertrag schliessen.
+3. **Phase 7D – Usage und Sicherheitsnachweis:** konfigurierbare Messung fuer
+   spaetere Kosten-/Mehrwertgrenzen ergaenzen, ohne Punkte, Einloesungen oder
+   Kundenzahlen hart zu stoppen; Rollen-, Direkt-URL-, RPC/API-, RLS- und
+   Cross-Tenant-Matrix pruefen.
+4. **Phase 7E – Staging-Abnahme:** alle automatischen Gates, ausschliesslich
+   Staging-Deployment, physische Rollen-/Direkt-URL-/Sieben-Sprachen-Pruefung,
+   Build-/Commit-/Version-Paritaet und finalen Evidenzexport abschliessen.
+
+### Phase 7B Commercial Release Lock – DESIGN COMPLETE / NOT IMPLEMENTED
+
+```text
+COMMERCIAL RELEASE LOCK DESIGN: COMPLETE
+MIGRATION REQUIRED: YES
+MIGRATION APPLIED: NO
+PRO ACTIVATION POSSIBLE: NO CHANGE YET
+AUSTRIA BASIC-ONLY GUARANTEE: NOT YET IMPLEMENTED
+STATUS: PHASE 7B DESIGN COMPLETE / IMPLEMENTATION NOT AUTHORIZED
+```
+
+Der freigegebene Designvertrag setzt einen zentralen, serverseitigen und
+laendergebundenen Commercial-Release-Lock vor jede wirksame Pro-Berechtigung.
+Fuer Oesterreich startet die Policy explizit gesperrt. Eine fehlende,
+mehrdeutige oder ungueltige Policy wird wie `LOCKED` behandelt.
+
+Der Lock muss bei der spaeteren Implementierung sowohl den effektiven Plan als
+auch alle Pro-Einzelmerkmale begrenzen. Im gesperrten Zustand gilt unabhaengig
+von Subscription, Trial, Past-due-/Kuendigungsperiode, Admin-Plan-Override und
+Feature-Override:
+
+- effektiver Plan hoechstens Basic;
+- maximal der Basic-Grenzwert fuer aktive Angebote, niemals `unbegrenzt`;
+- Angebots- und Reward-Benachrichtigungen aus;
+- Basic-Kernfunktionen, Punkte, Einloesungen und Kundenzahlen unveraendert.
+
+Die spaetere additive Migration darf vorhandene Subscription- und Override-
+Daten nicht umschreiben oder loeschen. Gespeicherte Pro-Zustaende bleiben als
+Historie erhalten, werden aber vom Resolver serverseitig auf Basic begrenzt.
+Neue oder erweiternde Pro-Schreibvorgaenge muessen bei gesperrter Policy auch
+fuer Platform-Rollen abgewiesen werden; das kontrollierte Beenden oder
+Reduzieren vorhandener Overrides bleibt erlaubt.
+
+Die Release-Policy erhaelt keinen Browser- oder Platform-Admin-Mutator. Eine
+spaetere Freigabe erfolgt ausschliesslich durch eine gesondert gepruefte,
+Founder-autorisierte Migration mit Entscheidungsreferenz. `publicly_available`,
+UI-Zustand, URL, Locale, Subscription und Stripe sind keine Release-Autoritaet.
+
+Vorgesehene additive Migration, noch nicht erstellt:
+`20260915001000_pro_commercial_release_lock.sql`. Sie umfasst eine private
+laender-/plangebundene Release-Policy mit initial `AT + PRO = LOCKED`, einen
+fail-closed internen Policy-Resolver, die Neudefinition des kanonischen
+Entitlement-Resolvers, Schreib-Guards fuer PRO-erweiternde Subscription- und
+Override-Aenderungen, die Sperre des Aktivierungs-RPC bei geschlossenem Lock,
+minimale Grants/RLS und die zugehoerigen Rollen-, Cross-Tenant- und Bypass-
+Vertraege. Migration, Tests und Produktcode sind in diesem Design-Gate nicht
+implementiert oder angewendet.
+
+### Phase 7B.1 Commercial Release Lock – LOCAL IMPLEMENTED / STAGING NOT APPLIED
+
+Dieser Abschnitt superseded ausschliesslich die vorstehende Aussage, die
+Migration sei noch nicht erstellt. Der Designvertrag bleibt unveraendert.
+
+- Die additive Forward-Migration
+  `20260915001000_pro_commercial_release_lock.sql` ist lokal erstellt.
+- `AT + PRO` wird in einer privaten, RLS-geschuetzten Release-Policy initial
+  als `LOCKED` angelegt. Es existiert kein Browser-, Service-Role- oder
+  Platform-Admin-Mutator fuer diese Policy.
+- Fehlende, ungueltige oder nicht eindeutig aus dem Primary-Branch-Tenant
+  aufloesbare Policy faellt geschlossen auf Basic zurueck.
+- Der kanonische Resolver begrenzt gespeicherte PRO-Subscriptions, Trials,
+  Admin-Overrides und Feature-Overrides effektiv auf Basic. Gespeicherte
+  Subscription- und Override-Zeilen werden nicht umgeschrieben oder geloescht.
+- Unlimited, Angebotsbenachrichtigungen und Reward-Benachrichtigungen bleiben
+  bei geschlossenem Lock serverseitig gesperrt. Punkte, Einloesungen,
+  Kundenzahlen und alle Basic-Funktionen bleiben ausserhalb des Locks.
+- Subscription- und Override-Trigger blockieren neue Pro-Erhoehungen. Der
+  Pro-Aktivierungs-RPC prueft den Lock vor Mutation und vor Idempotency-Replay;
+  auch Platform-Rollen koennen ihn nicht umgehen. Reduktion und Terminierung
+  vorhandener Overrides bleiben erlaubt.
+- Fresh-, Upgrade-, RLS-, Cross-Tenant-, Rollen-, Direkt-RPC-,
+  Subscription-, Trial-, Admin-/Feature-Override- und Parallelitaetstests sind
+  gegen zwei isolierte lokale PostgreSQL-Testdatenbanken bestanden.
+- Die Migration ist nicht auf Staging oder Production angewendet. Es gab kein
+  Deployment, keine Pro-Freischaltung und keine realen Datenveraenderungen.
+
+```text
+COMMERCIAL RELEASE LOCK IMPLEMENTED: PASS
+FAIL-CLOSED: PASS
+AT + PRO DEFAULT: LOCKED
+SUBSCRIPTION BYPASS: BLOCKED
+TRIAL BYPASS: BLOCKED
+ADMIN OVERRIDE BYPASS: BLOCKED
+FEATURE OVERRIDE BYPASS: BLOCKED
+RPC/API BYPASS: BLOCKED
+PLATFORM ADMIN MUTATOR: NONE
+SAVED PRO STATE PRESERVED: PASS
+EFFECTIVE PLAN WHILE LOCKED: BASIC
+UNLIMITED BEHAVIOR LOCKED: PASS
+PRO NOTIFICATIONS LOCKED: PASS
+BASIC FLOWS PRESERVED: PASS
+MIGRATION CREATED: YES
+LOCAL MIGRATION TEST: PASS
+MIGRATION APPLIED TO STAGING: NO
+STAGING DEPLOYMENT: NO
+PRODUCTION CHANGED: NO
+STATUS: PHASE 7B.1 LOCAL IMPLEMENTATION COMPLETE / NOT READY FOR STAGING
+```
+
+## Founder Phase 7 Pro Product, Pricing, Release and Pilot Contract
+
+Status: **FOUNDER CONTRACT LOCK / PHASE 7B.1A LOCAL RECONCILIATION**
+
+Dieser Vertrag ersetzt fuer Phase 7 insbesondere den frueheren Pro-Zielpreis
+von 99 EUR, pauschale Unlimited-Zusagen, das vollstaendige Verbot eines
+Platform-Admin-Laendermutators und die Beschraenkung kostenloser Pro-Zugaenge
+auf TEST_ONLY-Betriebe.
+
+### Preise und Pakete
+
+- Basic: 59 EUR netto pro Monat zuzueglich gesetzlicher Umsatzsteuer.
+- Pro: 149 EUR netto pro Monat zuzueglich gesetzlicher Umsatzsteuer.
+- Catalog ist weder in Basic noch in Pro enthalten und folgt als separates
+  Add-on mit eigenem Stripe Subscription Item, demselben Konto und derselben
+  Subscription. Eine erneute Kundenregistrierung ist nicht erforderlich.
+- Premium/Business bleibt ein spaeteres eigenstaendiges Paket ohne festgelegten
+  Preis oder Umfang.
+- Stripe-Produkte, -Preise und -Subscription-Items bleiben bis zu einer
+  gesonderten Founder-Freigabe unveraendert.
+
+Basic bleibt ein vollstaendiges nutzbares Bonusprogramm. Normale Kundenzahlen,
+Punktebuchungen, Besuche und Einloesungen werden nicht durch harte monatliche
+Usage-Limits blockiert und Basic wird nicht absichtlich unbrauchbar gemacht.
+Der kommerzielle Erstverkauf in Oesterreich startet ausschliesslich mit Basic.
+
+Pro ist das Wachstums- und Marketingpaket fuer Reichweite, Angebote,
+Rueckgewinnung, Bonus Boost und Empfehlungen, Marketingautomatisierung,
+Marketing-/Kundenanalyse, Wochen-/Monats-/Jahresdiagramme sowie messbare
+Aufrufe, Klicks und Einloesungen. Es gibt keine allgemeine Unlimited-Zusage
+und keine fest kodierte Regel `PRO = 5x`. Spaetere Kapazitaeten werden pro
+Feature konfigurierbar und erst anhand realer Nutzung festgelegt. Die
+Bereinigung der bestehenden Unlimited-Darstellung und der weitere
+Pro-Feature-Ausbau gehoeren nicht zu Phase 7B.1A.
+
+### Drei getrennte Freigabeebenen
+
+1. Technischer Pro-Status: Funktionen duerfen technisch existieren, ohne
+   kommerziell freigegeben zu sein.
+2. Laenderfreigabe: Jedes Land besitzt eine eigene Pro-Policy. Standard ist
+   `LOCKED`; eine Aenderung eines Landes veraendert kein anderes Land.
+3. Betriebsberechtigung: Ein konkreter Betrieb benoetigt zusaetzlich eine
+   gueltige bezahlte Pro-Subscription, einen regulaeren Pro-Trial, einen echten
+   kostenlosen Pro-Pilotzugang oder einen internen TEST_ONLY-Zugang.
+
+Die verbindliche effektive Regel lautet:
+
+```text
+effective_pro =
+(
+  valid_country_release
+  AND
+  (
+    valid_paid_pro_subscription
+    OR valid_pro_trial
+    OR valid_real_business_pilot
+  )
+)
+OR valid_internal_test_only_override
+```
+
+Eine fehlende, ungueltige oder abgelaufene Policy beziehungsweise
+Betriebsberechtigung ergibt Basic. Subscription, Trial, Stripe, alter Admin-/
+Feature-Override, URL, Locale und Frontend-Zustand koennen den Laender-Lock
+nicht umgehen. Eine Laenderfreigabe allein aktualisiert keinen Basic-Betrieb
+automatisch auf Pro.
+
+### Geschuetzte Platform-Admin-Aktionen
+
+- Pro darf pro Land ausschliesslich ueber einen `SECURITY DEFINER`-RPC
+  freigegeben oder erneut gesperrt werden. Fuer AT lautet die eindeutige
+  Freigabebestaetigung `PRO AT FREIGEBEN`; die Sperrung verwendet
+  `PRO AT SPERREN`.
+- Der Server prueft erneut `platform_owner` oder `platform_admin`, eine
+  aktuelle Session und eine hoechstens zehn Minuten alte Authentifizierung.
+  Es wird kein gemeinsames oder separates Pro-Passwort gespeichert.
+- Begruendung und Request-ID sind Pflicht. Advisory Lock, Row Lock und globale
+  Idempotenz verhindern parallele Doppelmutationen.
+- Public und anon besitzen kein EXECUTE-Recht. Authenticated erhaelt nur den
+  RPC-Aufruf; die serverseitige Rollenpruefung bleibt autoritativ. Direkte
+  Browser-DML auf Policy, Berechtigungen oder Audit ist entzogen.
+- Jede Freigabe und Sperrung speichert Akteur, Rolle, Zeitpunkt, Land, Plan,
+  Grund sowie Vorher-/Nachher-Zustand in einem unveraenderbaren Audit.
+
+### Echter Pilot und interne TEST_ONLY-Ausnahme
+
+- Ein echter Pilot ist betriebs- und organisationsgebunden, kostenlos,
+  zeitlich begrenzt, begruendet, bestaetigt, widerrufbar und auditiert. Er
+  erzeugt keine Rechnung, keine Stripe-Subscription, keine automatische
+  Verlaengerung und keine automatische kostenpflichtige Umwandlung. Er gilt
+  nur bei freigegebenem Betriebsland.
+- Nach Ablauf oder Widerruf faellt der effektive Plan auf Basic. Kunden,
+  Punkte, Besuche, Ledger, historische Pro-Daten und die Berechtigungshistorie
+  bleiben erhalten.
+- Ein interner TEST_ONLY-Zugang ist ein eigener zeitlich begrenzter Vertrag.
+  Er darf vor Laenderfreigabe nur gelten, wenn Restaurant, Organisation,
+  Owner und Name mit einer aktiven serverseitigen TEST_ONLY-Markierung exakt
+  uebereinstimmen. Ein echter Pilot darf keine TEST_ONLY-Markierung tragen.
+
+```text
+FOUNDER PRO PRICING LOCK: 59 EUR BASIC / 149 EUR PRO
+COUNTRY RELEASE MODEL: APPROVED
+PLATFORM ADMIN COUNTRY MUTATOR: LOCALLY IMPLEMENTED
+REAL BUSINESS PILOT ACCESS: LOCALLY IMPLEMENTED
+TEST_ONLY PRE-RELEASE ACCESS: LOCALLY IMPLEMENTED
+CATALOG INCLUDED IN PRO: NO
+MIGRATION CREATED: YES
+MIGRATION APPLIED: NO
+STRIPE CHANGED: NO
+PRO RELEASED IN AUSTRIA: NO
+PRODUCTION CHANGED: NO
+STATUS: PHASE 7B.1A LOCAL CONTRACT RECONCILIATION / NOT READY FOR STAGING
+```

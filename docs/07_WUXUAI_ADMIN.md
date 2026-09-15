@@ -2,6 +2,19 @@
 
 # WUXUAI Bonus V1 -- WUXUAI Admin Portal
 
+## Founder Phase 7B.1A – aktueller Pro-Steuerungsvertrag
+
+Die fruehere Aussage, es gebe keinen Platform-Admin-Commercial-Mutator, ist
+SUPERSEDED. Lokal vorbereitet sind ausschliesslich geschuetzte
+`SECURITY DEFINER`-RPCs fuer getrennte Laenderfreigaben sowie zeitbegrenzte,
+widerrufbare reale Piloten und TEST_ONLY-Zugaenge. Sie verlangen autoritative
+Platform-Rolle, aktuelle Authentifizierung, starke Bestaetigung, Begruendung,
+Idempotenz und append-only Audit. Direkte Browser-DML und ein gemeinsames
+Pro-Passwort bleiben verboten. Der allgemeine Unlimited-Vertrag und der alte
+Pro-Preis unten sind historisch; aktuell gelten keine Unlimited-Zusage und der
+Founder-Zielpreis 149 EUR netto. Keine dieser lokalen Aussagen ist bereits auf
+Staging angewendet oder kommerziell freigeschaltet.
+
 Status: **LOCK**
 
 ## Staging-Vorbereitung 2026-09-05 - PRO-Paket und Berechtigungen
