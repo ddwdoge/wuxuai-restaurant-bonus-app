@@ -18,7 +18,7 @@ const ownerKeys = [
   "owner.profile.owner", "owner.profile.admin", "owner.profile.manager", "owner.profile.staff",
   "owner.profile.customer", "owner.profile.customerPortal", "owner.profile.staffPortal",
   "owner.profile.platformPortal", "owner.logout", "owner.logoutPending", "owner.logoutError",
-  "owner.setup.required", "owner.dashboardTitle", "owner.navigation", "owner.menu", "owner.workspace",
+  "owner.setup.required", "owner.dashboardTitle", "owner.navigation", "owner.menu", "owner.tenantSwitcher.label", "owner.workspace",
   "owner.dashboard", "owner.rewards", "owner.welcomeGifts", "owner.offers", "owner.customers",
   "owner.qrCenter", "owner.staff", "owner.reports", "owner.settings",
 ];
@@ -102,6 +102,20 @@ test("Owner menu uses active-language keys while tenant switching and routes sta
   assert.match(owner, /<TenantSwitcher \/>/);
   assert.match(owner, /to: "\/admin\/rewards"/);
   assert.match(owner, /activeRestaurant\?\.name/);
+});
+
+test("Owner header and tenant switcher use business terminology in all seven languages", () => {
+  const tenantSwitcher = read("src/modules/tenant/TenantSwitcher.tsx");
+  assert.match(tenantSwitcher, /t\("owner\.tenantSwitcher\.label"\)/);
+  assert.doesNotMatch(tenantSwitcher, />\s*Restaurant\s*</);
+  for (const language of languages) {
+    for (const key of ["owner.header.area", "owner.header.loading", "owner.header.menuOpen", "owner.header.menuDescription", "owner.profile.account", "owner.setup.required", "owner.dashboardTitle", "owner.navigation", "owner.menu", "owner.tenantSwitcher.label"]) {
+      assert.notEqual(translateStructural(key, language), key, `${language}: ${key}`);
+    }
+  }
+  for (const key of ["owner.header.area", "owner.header.loading", "owner.header.menuOpen", "owner.header.menuDescription", "owner.profile.account", "owner.setup.required", "owner.dashboardTitle", "owner.navigation", "owner.menu", "owner.tenantSwitcher.label"]) {
+    assert.doesNotMatch(translateStructural(key, "de"), /Restaurant/i, key);
+  }
 });
 
 test("Staff date follows the active locale and updates with language", () => {
