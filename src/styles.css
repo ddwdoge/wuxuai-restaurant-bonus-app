@@ -4496,10 +4496,10 @@ a {
 .app-drawer-overlay.app-drawer-visual-viewport {
   bottom: auto;
   height: var(--drawer-viewport-height, 100dvh);
-  left: var(--drawer-viewport-left, 0px);
-  right: auto;
+  left: 0;
+  right: 0;
   top: var(--drawer-viewport-top, 0px);
-  width: var(--drawer-viewport-width, 100vw);
+  width: auto;
 }
 
 .app-drawer-panel {
@@ -4730,10 +4730,6 @@ a {
 
   .app-drawer-footer .button {
     width: 100%;
-  }
-
-  .app-drawer-panel.owner-mobile-drawer[data-mobile-keyboard-open="true"] > .app-drawer-footer {
-    display: none;
   }
 
   .app-drawer-panel.owner-mobile-drawer > .app-drawer-header .app-drawer-close {

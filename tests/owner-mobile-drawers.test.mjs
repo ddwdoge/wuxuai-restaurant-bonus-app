@@ -36,7 +36,7 @@ test("gesperrter Header und Logo-Editor erhalten keine neuen Drawer-Styles", () 
   }
 });
 
-test("Owner-Sheet ist inhaltsgetrieben: nur Body scrollt, Aktionen und Safe Area bleiben im Layout", () => {
+test("Owner-Sheet behält Formular und Footer dauerhaft im selben mobilen Scroll-Container", () => {
   const root = postcss.parse(read("src/modules/admin/admin-premium.css"));
   const rules = new Map();
   root.walkRules(rule => {
@@ -51,12 +51,16 @@ test("Owner-Sheet ist inhaltsgetrieben: nur Body scrollt, Aktionen und Safe Area
   assert.equal(panel.height, "auto");
   assert.equal(panel["min-height"], "0");
   assert.match(panel["max-height"], /--drawer-viewport-height/);
+  assert.equal(panel["overflow-x"], "hidden");
+  assert.equal(panel["overflow-y"], "auto");
+  assert.equal(panel["overscroll-behavior"], "contain");
   const body = rules.get(".owner-mobile-drawer > .app-drawer-body");
-  assert.equal(body.flex, "0 1 auto");
-  assert.equal(body["overflow-y"], "auto");
-  assert.equal(body["overscroll-behavior"], "contain");
+  assert.equal(body.flex, "0 0 auto");
+  assert.equal(body["overflow-y"], "visible");
   const footer = rules.get(".owner-mobile-drawer > .app-drawer-footer");
   assert.equal(footer.flex, "0 0 auto");
   assert.match(footer.padding, /env\(safe-area-inset-bottom\)/);
+  assert.equal(footer.position, undefined);
+  assert.equal(footer.display, undefined);
   assert.equal(rules.get(".owner-mobile-drawer > .app-drawer-footer .button")["min-height"], "48px");
 });

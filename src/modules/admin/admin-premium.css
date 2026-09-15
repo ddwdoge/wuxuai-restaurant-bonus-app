@@ -2092,20 +2092,29 @@
     min-height: 0;
     max-height: calc(var(--drawer-viewport-height, 100dvh) - env(safe-area-inset-top) - 8px);
     border-radius: 24px 24px 0 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: calc(64px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-bottom));
   }
 
   .owner-mobile-drawer > .app-drawer-handle { align-self: center; flex: 0 0 4px; }
-  .owner-mobile-drawer > .app-drawer-header { flex: 0 0 auto; min-width: 0; }
+  .owner-mobile-drawer > .app-drawer-header {
+    background: var(--wux-surface-elevated);
+    flex: 0 0 auto;
+    min-width: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
   .owner-mobile-drawer > .app-drawer-header h2,
   .owner-mobile-drawer > .app-drawer-header p { overflow-wrap: anywhere; }
   .owner-mobile-drawer > .app-drawer-body {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     min-width: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow-y: visible;
     padding: 16px;
-    scroll-padding-block: 16px;
     overflow-wrap: anywhere;
   }
   .owner-mobile-drawer > .app-drawer-footer {

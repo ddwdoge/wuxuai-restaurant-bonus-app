@@ -52,9 +52,8 @@ test("PIN errors, focus trap and focus restoration stay accessible", () => {
 });
 
 const viewportEffect = drawer.match(/useEffect\(\(\) => \{\n    if \(!open \|\| !fitVisualViewport[\s\S]*?\n  \}, \[open, fitVisualViewport\]\);/)[0];
-function mountViewport({ activeElement = null, open = true, fit = true, ownerDrawer = true, viewport } = {}) {
+function mountViewport({ open = true, fit = true, viewport } = {}) {
   const values = new Map();
-  const panelAttributes = new Map();
   let cleanup;
   const windowListeners = new Map();
   const frames = new Map();
@@ -70,20 +69,12 @@ function mountViewport({ activeElement = null, open = true, fit = true, ownerDra
     setTimeout: fn => { const id = ++sequence; timers.set(id, fn); return id; },
     clearTimeout: id => timers.delete(id),
   };
-  const panel = {
-    classList: { contains: name => ownerDrawer && name === "owner-mobile-drawer" },
-    contains: element => element === documentMock.activeElement,
-    hasAttribute: name => panelAttributes.has(name),
-    removeAttribute: name => panelAttributes.delete(name),
-    setAttribute: (name, value) => panelAttributes.set(name, value),
-  };
   const documentMock = {
-    activeElement,
     documentElement: { clientHeight: 844, clientWidth: 390 },
   };
   const style = { setProperty: (key, value) => values.set(key, value), removeProperty: (key) => values.delete(key) };
-  new Function("useEffect", "open", "fitVisualViewport", "window", "document", "overlayRef", "panelRef", viewportEffect)(
-    (effect) => { cleanup = effect(); }, open, fit, windowMock, documentMock, { current: { style } }, { current: panel },
+  new Function("useEffect", "open", "fitVisualViewport", "window", "document", "overlayRef", viewportEffect)(
+    (effect) => { cleanup = effect(); }, open, fit, windowMock, documentMock, { current: { style } },
   );
   const flushFrames = () => {
     while (frames.size) {
@@ -97,10 +88,10 @@ function mountViewport({ activeElement = null, open = true, fit = true, ownerDra
     timers.clear();
     pending.forEach(fn => fn());
   };
-  return { values, cleanup, documentMock, flushFrames, flushTimers, panelAttributes, viewport, windowListeners, windowMock };
+  return { values, cleanup, documentMock, flushFrames, flushTimers, viewport, windowListeners, windowMock };
 }
 
-test("visual viewport tracks keyboard resize, width and Safari pan, then removes every listener", () => {
+test("visual viewport tracks only vertical keyboard geometry and removes every listener", () => {
   const listeners = new Map();
   const viewport = { height: 800, offsetLeft: 0, offsetTop: 0, scale: 1, width: 390,
     addEventListener: (name, fn) => listeners.set(name, fn),
@@ -109,15 +100,13 @@ test("visual viewport tracks keyboard resize, width and Safari pan, then removes
   const result = mountViewport({ viewport });
   const { values, cleanup } = result;
   assert.equal(values.get("--drawer-viewport-height"), "800px");
-  assert.equal(values.get("--drawer-viewport-width"), "390px");
-  assert.equal(values.get("--drawer-viewport-left"), "0px");
+  assert.equal(values.has("--drawer-viewport-width"), false);
+  assert.equal(values.has("--drawer-viewport-left"), false);
   viewport.height = 320;
   listeners.get("resize")();
   assert.equal(values.get("--drawer-viewport-height"), "320px");
-  viewport.offsetLeft = 7;
   viewport.offsetTop = 145;
   listeners.get("scroll")();
-  assert.equal(values.get("--drawer-viewport-left"), "7px");
   assert.equal(values.get("--drawer-viewport-top"), "145px");
   assert.deepEqual([...result.windowListeners.keys()].sort(), ["orientationchange", "resize"]);
   cleanup();
@@ -146,8 +135,9 @@ test("keyboard close and orientation changes settle stale Safari geometry withou
   result.flushFrames();
   result.flushTimers();
   assert.equal(result.values.get("--drawer-viewport-height"), "844px");
-  assert.equal(result.values.get("--drawer-viewport-width"), "390px");
   assert.equal(result.values.get("--drawer-viewport-top"), "0px");
+  assert.equal(result.values.has("--drawer-viewport-width"), false);
+  assert.equal(result.values.has("--drawer-viewport-left"), false);
 
   result.windowMock.innerWidth = 844;
   result.documentMock.documentElement.clientWidth = 844;
@@ -157,60 +147,12 @@ test("keyboard close and orientation changes settle stale Safari geometry withou
   result.windowListeners.get("orientationchange")();
   result.flushFrames();
   assert.equal(result.values.get("--drawer-viewport-height"), "390px");
-  assert.equal(result.values.get("--drawer-viewport-width"), "844px");
   result.cleanup();
 });
 
-test("mobile Owner text drawer hides its footer only for a real visual keyboard and restores it after close", () => {
-  const listeners = new Map();
-  const input = { tagName: "INPUT", type: "text", value: "unsaved title" };
-  const viewport = { height: 844, offsetLeft: 0, offsetTop: 0, scale: 1, width: 390,
-    addEventListener: (name, fn) => listeners.set(name, fn),
-    removeEventListener: (name) => listeners.delete(name),
-  };
-  const result = mountViewport({ activeElement: input, viewport });
-  assert.equal(result.panelAttributes.has("data-mobile-keyboard-open"), false);
-
-  viewport.height = 430;
-  listeners.get("resize")();
-  assert.equal(result.panelAttributes.get("data-mobile-keyboard-open"), "true");
-  assert.equal(input.value, "unsaved title");
-
-  viewport.height = 844;
-  listeners.get("resize")();
-  result.flushFrames();
-  result.flushTimers();
-  assert.equal(result.panelAttributes.has("data-mobile-keyboard-open"), false);
-  assert.equal(input.value, "unsaved title");
-
-  result.cleanup();
-  assert.equal(result.panelAttributes.has("data-mobile-keyboard-open"), false);
-});
-
-test("hardware keyboard, desktop and non-Owner drawers keep their footer available", () => {
-  const input = { tagName: "TEXTAREA", value: "draft" };
-  const createViewport = () => ({ height: 844, offsetLeft: 0, offsetTop: 0, scale: 1, width: 390,
-    addEventListener() {}, removeEventListener() {},
-  });
-  const hardware = mountViewport({ activeElement: input, viewport: createViewport() });
-  assert.equal(hardware.panelAttributes.has("data-mobile-keyboard-open"), false);
-  hardware.cleanup();
-
-  const otherDrawer = mountViewport({ activeElement: input, ownerDrawer: false, viewport: createViewport() });
-  otherDrawer.viewport.height = 430;
-  otherDrawer.windowListeners.get("resize")();
-  assert.equal(otherDrawer.panelAttributes.has("data-mobile-keyboard-open"), false);
-  otherDrawer.cleanup();
-
-  const desktopViewport = createViewport();
-  desktopViewport.width = 768;
-  desktopViewport.height = 520;
-  const desktop = mountViewport({ activeElement: input, viewport: desktopViewport });
-  desktop.windowMock.innerWidth = 768;
-  desktop.documentMock.documentElement.clientWidth = 768;
-  desktop.windowListeners.get("resize")();
-  assert.equal(desktop.panelAttributes.has("data-mobile-keyboard-open"), false);
-  desktop.cleanup();
+test("keyboard viewport changes never control drawer width, structure or footer visibility", () => {
+  assert.doesNotMatch(drawer, /drawer-viewport-(?:width|left)|data-mobile-keyboard-open/);
+  assert.match(drawer, /\{footer \? <footer className="app-drawer-footer">\{footer\}<\/footer> : null\}/);
 });
 
 test("viewport adaptation is opt-in and safely falls back when unsupported", () => {
@@ -222,21 +164,16 @@ test("viewport adaptation is opt-in and safely falls back when unsupported", () 
   assert.match(drawer, /fitVisualViewport = false/);
 });
 
-test("shared visual-viewport overlay consumes width, height and offsets without scaling", () => {
+test("shared visual-viewport overlay consumes only vertical geometry without scaling", () => {
   const globalCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   const rule = globalCss.match(/\.app-drawer-overlay\.app-drawer-visual-viewport\s*\{[^}]+\}/)?.[0] ?? "";
   assert.match(rule, /height:\s*var\(--drawer-viewport-height/);
-  assert.match(rule, /width:\s*var\(--drawer-viewport-width/);
-  assert.match(rule, /left:\s*var\(--drawer-viewport-left/);
+  assert.match(rule, /left:\s*0/);
+  assert.match(rule, /right:\s*0/);
+  assert.match(rule, /width:\s*auto/);
   assert.match(rule, /top:\s*var\(--drawer-viewport-top/);
-  assert.doesNotMatch(rule, /zoom\s*:|scale\(/);
-});
-
-test("mobile Owner keyboard state removes the footer from layout and accessibility tree without reserving space", () => {
-  const globalCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
-  const rule = globalCss.match(/\.app-drawer-panel\.owner-mobile-drawer\[data-mobile-keyboard-open=[^\]]+\]\s*>\s*\.app-drawer-footer\s*\{[^}]+\}/)?.[0] ?? "";
-  assert.match(rule, /display:\s*none/);
-  assert.doesNotMatch(rule, /visibility:\s*hidden|opacity:\s*0/);
+  assert.doesNotMatch(rule, /drawer-viewport-(?:width|left)|zoom\s*:|scale\(/);
+  assert.doesNotMatch(globalCss, /data-mobile-keyboard-open/);
 });
 
 test("mobile Owner close action remains above 44 CSS pixels after DPR rounding", () => {

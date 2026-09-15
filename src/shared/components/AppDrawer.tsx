@@ -56,68 +56,17 @@ export function AppDrawer({
     if (!open || !fitVisualViewport || !window.visualViewport) return;
     const viewport = window.visualViewport;
     const overlay = overlayRef.current;
-    const panel = panelRef.current;
     let animationFrame = 0;
     let settleTimer = 0;
-    let referenceWidth = Math.min(
-      window.innerWidth,
-      document.documentElement.clientWidth || window.innerWidth,
-    );
-    let referenceHeight = Math.max(
-      window.innerHeight || 0,
-      document.documentElement.clientHeight || 0,
-      viewport.height + Math.max(0, viewport.offsetTop),
-    );
 
     // Mobile keyboards can shrink/pan the visual viewport without changing dvh.
     // iOS Safari can emit the first closing resize with stale geometry, so the
-    // same values are sampled again on the next stable render and once after
-    // the native keyboard animation has settled.
+    // vertical values are sampled again on the next stable render and once
+    // after the native keyboard animation has settled. Horizontal geometry and
+    // component visibility intentionally remain tied to the layout viewport.
     const applyViewport = () => {
-      const documentWidth = document.documentElement.clientWidth || window.innerWidth;
-      const layoutWidth = Math.min(window.innerWidth, documentWidth);
-      const currentLayoutHeight = Math.max(
-        window.innerHeight || 0,
-        document.documentElement.clientHeight || 0,
-        viewport.height + Math.max(0, viewport.offsetTop),
-      );
-      if (Math.abs(layoutWidth - referenceWidth) > 48) {
-        referenceWidth = layoutWidth;
-        referenceHeight = currentLayoutHeight;
-      } else {
-        referenceHeight = Math.max(referenceHeight, currentLayoutHeight);
-      }
-      const viewportWidth = Math.abs(viewport.scale - 1) < 0.01
-        ? layoutWidth
-        : Math.min(viewport.width, layoutWidth);
       overlay?.style.setProperty("--drawer-viewport-height", `${viewport.height}px`);
-      overlay?.style.setProperty("--drawer-viewport-width", `${viewportWidth}px`);
-      overlay?.style.setProperty("--drawer-viewport-left", `${viewport.offsetLeft}px`);
       overlay?.style.setProperty("--drawer-viewport-top", `${viewport.offsetTop}px`);
-
-      const activeElement = document.activeElement;
-      const activeTag = activeElement?.tagName?.toUpperCase();
-      const excludedInputTypes = ["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"];
-      const activeInputType = activeElement?.getAttribute?.("type")?.toLowerCase() ?? "text";
-      const isTextEntry = activeTag === "TEXTAREA"
-        || Boolean(activeElement && "isContentEditable" in activeElement && activeElement.isContentEditable)
-        || (activeTag === "INPUT" && !excludedInputTypes.includes(activeInputType));
-      const keyboardThreshold = Math.max(120, referenceHeight * 0.18);
-      const hasRealKeyboardReduction = referenceHeight - viewport.height >= keyboardThreshold;
-      const mobileOwnerKeyboardOpen = Boolean(
-        panel?.classList.contains("owner-mobile-drawer")
-        && layoutWidth <= 767
-        && Math.abs(viewport.scale - 1) < 0.01
-        && activeElement
-        && panel.contains(activeElement)
-        && isTextEntry
-        && hasRealKeyboardReduction,
-      );
-      if (mobileOwnerKeyboardOpen) {
-        panel?.setAttribute("data-mobile-keyboard-open", "true");
-      } else {
-        panel?.removeAttribute("data-mobile-keyboard-open");
-      }
     };
 
     const updateViewport = () => {
@@ -150,10 +99,7 @@ export function AppDrawer({
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(settleTimer);
       overlay?.style.removeProperty("--drawer-viewport-height");
-      overlay?.style.removeProperty("--drawer-viewport-width");
-      overlay?.style.removeProperty("--drawer-viewport-left");
       overlay?.style.removeProperty("--drawer-viewport-top");
-      panel?.removeAttribute("data-mobile-keyboard-open");
     };
   }, [open, fitVisualViewport]);
 
