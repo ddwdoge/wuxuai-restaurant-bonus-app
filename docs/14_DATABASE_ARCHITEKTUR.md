@@ -1,6 +1,18 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-09-15 – Phase 7B.2 Backend-Staging-Gate
+
+`20260915001000_pro_commercial_release_lock.sql` ist ausschliesslich auf
+Staging `bwhvfjuwixgwduoeqaya` angewendet. Die Remote-Historie ist synchron,
+der Repeat-Dry-Run leer und der DB-Lint fehlerfrei. Sechs PRO-Laenderpolicies
+sind `LOCKED`; `AT + PRO` ist gesperrt, Releases, Zugangs-Grants und neue
+Commercial-Auditeintraege stehen bei null. Ein vorhandener gespeicherter
+PRO-Subscription-Zustand bleibt erhalten, waehrend der Resolver null effektive
+PRO-Betriebe liefert. RLS, Tabellen-ACLs, Audit- und Elevation-Trigger sind
+aktiv. Keine Mutatorfunktion wurde auf Staging ausgefuehrt; Production blieb
+unveraendert.
+
 ## 2026-09-15 - Phase 7B.1 Commercial Release Lock lokal implementiert
 
 Die additive, noch nicht auf Staging angewendete Migration

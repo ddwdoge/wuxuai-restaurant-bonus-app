@@ -1,6 +1,18 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## Phase 7B.2 Commercial Pro – Staging-Sicherheitsnachweis
+
+Auf Staging sind RLS und die vollstaendig entzogenen Tabellenrechte fuer
+`anon`, `authenticated` und `service_role` bestaetigt. Der interne Resolver
+besitzt kein Runtime-EXECUTE-Recht. Anon-, rollenlose Auth-, direkte URL-/RPC-
+und Service-Role-Bypaesse wurden read-only abgewiesen. Subscription- und
+Override-Guards sowie der unveraenderbare Audit-Trigger sind vorhanden.
+Sechs Policies sind `LOCKED`, darunter AT; null Policies sind freigegeben,
+null Zugangs-Grants bestehen und null Betriebe erhalten effektiv PRO. Es wurde
+kein Commercial-Mutator auf Staging ausgefuehrt und keine reale Businesszeile
+veraendert.
+
 ## Phase 7B.1 Commercial Release Lock - LOCAL ONLY
 
 Die Release-Policy ist privat, RLS-geschuetzt und fuer `public`, `anon`,

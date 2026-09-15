@@ -886,3 +886,37 @@ PRO RELEASED IN AUSTRIA: NO
 PRODUCTION CHANGED: NO
 STATUS: PHASE 7B.1A LOCAL CONTRACT RECONCILIATION / NOT READY FOR STAGING
 ```
+
+### Phase 7B.2 Commercial Release Lock – BACKEND STAGING GATE PASS
+
+Die additive Migration `20260915001000_pro_commercial_release_lock.sql` ist
+auf dem verknuepften Staging-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Die
+lokale und die Remote-Migrationshistorie stimmen ueberein; der anschliessende
+Dry-Run ist leer und der DB-Lint meldet keine Fehler.
+
+Alle sechs vorbereiteten PRO-Laenderpolicies stehen auf `LOCKED`, insbesondere
+`AT + PRO`. Es gibt keine freigegebene Policy, keinen Pilot-/TEST_ONLY-Grant
+und keinen Commercial-PRO-Auditeintrag. Ein gespeicherter PRO-Subscription-
+Zustand bleibt erhalten, ergibt bei geschlossenem Laender-Lock aber Basic;
+Staging hat keinen effektiv aufgeloesten PRO-Betrieb.
+
+RLS, Tabellen-ACLs, interne Resolver-Grants, Subscription-/Override-Guards,
+append-only Audit, Recent Authentication und die exakten Platform-Admin-Rollen
+sind auf Staging geprueft. Anon, rollenlose authentifizierte Aufrufe, direkte
+URL-/RPC-Aufrufe und service-role-Aufrufe des internen Resolvers bleiben
+gesperrt. Kein Laender-, Pilot- oder TEST_ONLY-Mutator wurde auf Staging
+ausgefuehrt. Stripe, Produktcode, App-Deployment und Production blieben
+unveraendert.
+
+```text
+PHASE 7B.2 BACKEND STAGING GATE: PASS
+AT + PRO: LOCKED
+RELEASED PRO COUNTRIES: 0
+ACTIVE PILOT/TEST_ONLY GRANTS: 0
+EFFECTIVE PRO BUSINESSES: 0
+MIGRATION APPLIED TO STAGING: YES
+STAGING MUTATORS EXECUTED: NO
+STRIPE CHANGED: NO
+PRODUCTION CHANGED: NO
+STATUS: STAGING BACKEND LOCK / PHASE 7C NOT STARTED
+```

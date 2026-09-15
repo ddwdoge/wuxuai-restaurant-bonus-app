@@ -2,6 +2,16 @@
 
 # WUXUAI Bonus V1 -- WUXUAI Admin Portal
 
+## Phase 7B.2 – Commercial Pro Backend auf Staging gesperrt
+
+Die geschuetzten Laender- und Zugangs-RPCs sind auf Staging vorhanden, wurden
+im Staging-Gate aber nicht ausgefuehrt. Alle sechs Laenderpolicies einschliesslich
+AT stehen auf `LOCKED`; Grants und Commercial-PRO-Audit sind leer. Nur
+`authenticated` darf die Mutator-RPCs aufrufen, waehrend die serverseitige
+Platform-Rollen- und Recent-Auth-Pruefung autoritativ bleibt. Direkte
+Tabellen-DML ist fuer Browser- und Service-Rollen entzogen. Eine
+Platform-Admin-UI wurde nicht implementiert.
+
 ## Founder Phase 7B.1A – aktueller Pro-Steuerungsvertrag
 
 Die fruehere Aussage, es gebe keinen Platform-Admin-Commercial-Mutator, ist

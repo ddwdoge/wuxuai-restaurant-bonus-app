@@ -1,6 +1,17 @@
 
 # 23_API_RPC_REGELN.md
 
+## Phase 7B.2 Commercial Release Lock – STAGING BACKEND LOCK
+
+Migration und RPC-Vertrag sind auf Staging vorhanden. `anon` kann weder
+Policy noch Status-RPC lesen; rollenlose authentifizierte Aufrufe des
+Platform-Status und direkte Restaurant-Entitlement-Aufrufe werden abgewiesen.
+`service_role` besitzt kein EXECUTE auf dem internen Release-Resolver.
+Authenticated besitzt nur den RPC-Einstieg; Platform-Rolle, Recent Auth,
+Tenant, Land, Bestaetigung und Idempotenz werden weiterhin serverseitig
+geprueft. Im Gate wurde kein Laender-, Pilot- oder TEST_ONLY-Mutator
+ausgefuehrt. AT und alle weiteren Policies bleiben `LOCKED`.
+
 ## Phase 7B.1 Commercial Release Lock - LOCAL ONLY
 
 Der kanonische Entitlement-Resolver wendet den privaten Commercial-Release-
