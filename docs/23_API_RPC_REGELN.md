@@ -1,6 +1,18 @@
 
 # 23_API_RPC_REGELN.md
 
+## Phase 7B.3A Pro Control Center Read-RPCs – LOCAL ONLY
+
+Die neue additive Migration stellt `get_platform_pro_country_status`,
+`get_platform_pro_entitlements`, `search_platform_pro_real_businesses`,
+`get_platform_pro_test_only_businesses` und
+`get_platform_pro_commercial_audit` bereit. Jede RPC prueft serverseitig exakt
+`platform_owner` oder `platform_admin`, verwendet einen festen `search_path`,
+ist `STABLE`, begrenzt Listen auf hoechstens 100 Eintraege und besitzt nur fuer
+`authenticated` EXECUTE. Reale Betriebe werden durch einen exakten aktiven
+Registry-Marker von TEST_ONLY getrennt; Namen sind keine Testheuristik.
+Die RPCs sind lokal getestet und noch nicht auf Staging verfuegbar.
+
 ## Phase 7B.2 Commercial Release Lock – STAGING BACKEND LOCK
 
 Migration und RPC-Vertrag sind auf Staging vorhanden. `anon` kann weder

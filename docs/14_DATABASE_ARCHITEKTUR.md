@@ -1,6 +1,17 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-09-15 – Phase 7B.3A Control-Center-Reads lokal
+
+`20260915002000_pro_commercial_control_center_reads.sql` fuegt ausschliesslich
+fuenf stabile, paginierte Platform-Admin-Read-RPCs hinzu. Das Modell liest
+Policy, Subscription-Lifecycle, historische Grants, exakte TEST_ONLY-Marker
+und `commercial_pro_access_audit`; es erzeugt weder Tabellen- noch Audit-Writes.
+Alle bestehenden Tabellen, Resolver, Mutatoren und die angewendete Migration
+`20260915001000_pro_commercial_release_lock.sql` bleiben unveraendert. Die neue
+Migration wurde Fresh/Upgrade/Repeat nur in einer isolierten lokalen
+PostgreSQL-17-Datenbank geprueft und nicht auf Staging angewendet.
+
 ## 2026-09-15 – Phase 7B.2 Backend-Staging-Gate
 
 `20260915001000_pro_commercial_release_lock.sql` ist ausschliesslich auf

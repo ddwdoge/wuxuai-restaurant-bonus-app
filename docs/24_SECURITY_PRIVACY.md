@@ -1,6 +1,17 @@
 
 # 24_SECURITY_PRIVACY.md
 
+## Phase 7B.3A Pro Control Center Reads – LOCAL ONLY
+
+Die fuenf neuen Read-RPCs geben nur betriebliche Steuerungsdaten aus:
+Organization-/Betriebsnamen, Standortzusammenfassung, Land, Plan-/Grantstatus,
+Zeitfenster und Commercial-Audit-Provenienz. Auth-E-Mail, Telefon, Tokens,
+Passwort-/PIN-Hashes und Stripe-IDs werden nicht ausgegeben. `public`, `anon`,
+`service_role` und nicht berechtigte Produktrollen besitzen kein EXECUTE;
+direkte Tabellenrechte bleiben entzogen. Lokale Vorher-/Nachher-Snapshots
+bestaetigen, dass die Reads weder Policy, Grants noch Audit veraendern.
+Staging und Production wurden nicht kontaktiert oder veraendert.
+
 ## Phase 7B.2 Commercial Pro – Staging-Sicherheitsnachweis
 
 Auf Staging sind RLS und die vollstaendig entzogenen Tabellenrechte fuer

@@ -23,6 +23,19 @@ und Phase 10 Launch. Das ist ein Zielvertrag, kein neuer Ist- oder Final-Lock-
 Nachweis. Die folgenden bestehenden Fach-/Security-Locks werden nicht
 umgeschrieben; noch fehlende Pro-/Catalog-/Stripe-Faehigkeiten bleiben offen.
 
+## Phase 7B.3A – Pro Control Center Read Contract (LOCAL ONLY)
+
+Die additive Migration `20260915002000_pro_commercial_control_center_reads.sql`
+bereitet ausschliesslich das geschuetzte Read-Modell fuer das spaetere
+Platform-Admin Pro Control Center vor. Fuenf getrennte RPCs liefern
+Laenderstatus, paginierte Berechtigungen, reale Betriebe, exakt markierte
+TEST_ONLY-Betriebe und die unveraenderbare Commercial-Audit-Historie. Nur
+`platform_owner` und `platform_admin` werden serverseitig zugelassen.
+Die Reads schreiben keine Daten, geben keine Auth-/Stripe-Secrets aus und
+veraendern weder Commercial Lock noch gespeicherte Subscriptions. AT + PRO
+bleibt `LOCKED`. Die Migration ist lokal getestet und nicht auf Staging
+angewendet; eine Control-Center-UI ist weiterhin nicht implementiert.
+
 ## Owner, Onboarding und Legal Company Data - FINAL LOCK
 
 - Das aktuelle Owner-Onboarding und seine kontextbezogene Hilfe sind physisch
