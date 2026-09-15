@@ -19,6 +19,7 @@ import { PlatformOperationalTelemetry as OperationalTelemetry } from "./Platform
 import { useAuth } from "../auth/AuthProvider";
 import { canWritePlatformAdmin } from "./platformAdminAuthorization.mjs";
 import { PlatformCountryLaunchPanel } from "./PlatformCountryLaunchPanel";
+import { PlatformProControlCenter } from "./PlatformProControlCenter";
 import { PlatformAdminLayout } from "./PlatformAdminLayout";
 import { platformAdminNavigationMessages, type PlatformAdminSection } from "./platformAdminNavigationI18n";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -109,7 +110,7 @@ export function PlatformAdminPage() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const section: PlatformAdminSection = pathname.includes("/countries") ? "countries"
+  const section: PlatformAdminSection = pathname.includes("/pro") ? "pro" : pathname.includes("/countries") ? "countries"
     : pathname.includes("/plans") ? "plans"
       : pathname.includes("/system") ? "system"
         : pathname.includes("/businesses") || pathname.includes("/restaurants") || pathname === "/platform-admin/restaurants" ? "businesses"
@@ -308,6 +309,7 @@ export function PlatformAdminPage() {
       <OperationalTelemetry data={telemetry} error={telemetryError} loading={telemetryLoading} />
       </> : null}
       {section === "countries" ? <PlatformCountryLaunchPanel role={platformRole} /> : null}
+      {section === "pro" ? <PlatformProControlCenter /> : null}
 
       {showRestaurantWorkspace ? <section className="platform-admin-grid">
         <div className="card platform-restaurant-list-card" id="platform-restaurant-list">

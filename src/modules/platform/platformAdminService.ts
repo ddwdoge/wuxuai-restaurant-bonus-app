@@ -792,3 +792,79 @@ export async function loadPlatformAuditEvents(filters: PlatformAuditFilters = {}
   if (error) throw error;
   return (data ?? []) as PlatformAuditEvent[];
 }
+
+export type ProCountryStatus = {
+  country_code: string; release_state: "LOCKED" | "RELEASED"; effective_from: string | null;
+  last_changed_at: string | null; last_actor_id: string | null; last_actor_role: string | null;
+  last_reason: string | null; active_paid_count: number; active_trial_count: number;
+  active_pilot_count: number; active_test_only_count: number; active_entitlement_count: number;
+};
+export type ProGrantState = "active" | "expired" | "revoked" | "scheduled";
+export type ProEntitlement = {
+  grant_id: string; organization_id: string; organization_name: string; restaurant_id: string;
+  business_name: string; country_code: string; grant_type: "paid" | "trial" | "pilot" | "test_only";
+  grant_state: ProGrantState; starts_at: string | null; expires_at: string | null;
+  created_by: string | null; reason: string | null; revoked_by: string | null;
+  revoked_at: string | null; revoke_reason: string | null; effective_plan: string;
+  locations: Array<{ name: string; city: string | null; postal_code: string | null; country_code: string }>;
+};
+export type ProBusiness = {
+  organization_id: string; organization_name: string; restaurant_id: string; business_name: string;
+  country_code: string; stored_plan?: string | null; effective_plan: string;
+  subscription_status?: string | null; payment_status?: string | null;
+  country_release_state?: string | null; locations: ProEntitlement["locations"];
+  pilot?: { grant_id?: string; starts_at?: string; expires_at?: string; state?: string };
+  grant?: { grant_id?: string; starts_at?: string; expires_at?: string; state?: string };
+};
+export type ProCommercialAudit = {
+  id: string; action: string; country_code: string | null; organization_name: string | null;
+  business_name: string | null; grant_id: string | null; actor_role: string; created_at: string;
+  reason: string; idempotency_reference: string; result: string;
+};
+type Paged<T> = { items: T[]; total: number; limit: number; offset: number };
+
+async function proRpc<T>(name: string, input: Record<string, unknown>): Promise<T> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc(name, input);
+  if (error) throw error;
+  return data as T;
+}
+
+export async function loadProCountryStatus(country: string | null = null) {
+  return proRpc<{ items: ProCountryStatus[]; count: number }>("get_platform_pro_country_status", { input_country: country });
+}
+export async function loadProEntitlements(input: { country?: string; grantType?: string; state?: string; search?: string; limit?: number; offset?: number } = {}) {
+  return proRpc<Paged<ProEntitlement>>("get_platform_pro_entitlements", {
+    input_country: input.country || null, input_grant_type: input.grantType || null,
+    input_state: input.state || null, input_search: input.search || null,
+    input_limit: input.limit ?? 50, input_offset: input.offset ?? 0,
+  });
+}
+export async function searchProRealBusinesses(search = "", country = "") {
+  return proRpc<Paged<ProBusiness>>("search_platform_pro_real_businesses", {
+    input_search: search || null, input_country: country || null, input_limit: 50, input_offset: 0,
+  });
+}
+export async function loadProTestOnlyBusinesses(search = "", country = "") {
+  return proRpc<Paged<ProBusiness>>("get_platform_pro_test_only_businesses", {
+    input_search: search || null, input_country: country || null, input_limit: 50, input_offset: 0,
+  });
+}
+export async function loadProCommercialAudit(country = "") {
+  return proRpc<Paged<ProCommercialAudit>>("get_platform_pro_commercial_audit", {
+    input_country: country || null, input_action: null, input_restaurant_id: null, input_limit: 50, input_offset: 0,
+  });
+}
+export async function setProCountryRelease(input: { country: string; release: boolean; reason: string; confirmation: string; requestId: string }) {
+  return proRpc<Record<string, unknown>>("set_platform_commercial_pro_country_release", {
+    input_country: input.country, input_release: input.release, input_reason: input.reason,
+    input_confirmation: input.confirmation, input_request_id: input.requestId,
+  });
+}
+export async function setProAccess(input: { restaurantId: string; accessKind: "REAL_BUSINESS_PILOT" | "INTERNAL_TEST_ONLY"; action: "GRANT" | "EXTEND" | "REVOKE"; startsAt: string | null; expiresAt: string | null; reason: string; confirmation: string; requestId: string }) {
+  return proRpc<Record<string, unknown>>("set_platform_commercial_pro_access", {
+    input_restaurant_id: input.restaurantId, input_access_kind: input.accessKind,
+    input_action: input.action, input_starts_at: input.startsAt, input_expires_at: input.expiresAt,
+    input_reason: input.reason, input_confirmation: input.confirmation, input_request_id: input.requestId,
+  });
+}

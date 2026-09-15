@@ -34,11 +34,11 @@ test("Phase 6 classifies every actual Route entry without inventing fifty screen
   assert.match(read("src/modules/admin/pages/BrandingPage.tsx"), /<Navigate replace to="\/admin\/settings\/aussehen"/);
 });
 
-test("Drawer inventory covers forty instances, two shared wrappers and the approved Platform Admin menu", () => {
+test("Drawer inventory covers forty instances, two shared wrappers and the approved Platform Admin menus", () => {
   const names = new Set(["AppDrawer", "UiDialog", "PremiumDrawer", "ConfirmationDialog"]);
   const count = sourceFiles("src").filter((path) => path.endsWith(".tsx"))
     .flatMap(openingElements).filter((name) => names.has(name)).length;
-  assert.equal(count, 43);
+  assert.equal(count, 44);
   const rows = [...report.matchAll(/^\| D(\d+) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 40 }, (_, index) => index + 1));
 });

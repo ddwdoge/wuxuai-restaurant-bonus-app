@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Activity, Building2, Globe2, HeartPulse, LayoutDashboard, Menu, PackageCheck, Settings2 } from "lucide-react";
+import { Activity, Building2, Globe2, HeartPulse, KeyRound, LayoutDashboard, Menu, PackageCheck, Settings2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
@@ -18,6 +18,7 @@ const items: Array<{ key: PlatformAdminSection; path: string; icon: typeof Layou
   { key: "overview", path: "/admin/platform", icon: LayoutDashboard },
   { key: "businesses", path: "/admin/platform/businesses", icon: Building2 },
   { key: "plans", path: "/admin/platform/plans", icon: PackageCheck },
+  { key: "pro", path: "/admin/platform/pro", icon: KeyRound },
   { key: "countries", path: "/admin/platform/countries", icon: Globe2 },
   { key: "health", path: "/admin/platform/health", icon: HeartPulse },
   { key: "audit", path: "/admin/platform/audit", icon: Activity },
