@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import ts from "typescript";
 
 const staff = readFileSync(new URL("../src/modules/staff/StaffTablet.tsx", import.meta.url), "utf8");
 const drawer = readFileSync(new URL("../src/shared/components/AppDrawer.tsx", import.meta.url), "utf8");
@@ -52,10 +53,14 @@ test("PIN errors, focus trap and focus restoration stay accessible", () => {
 });
 
 const viewportEffect = drawer.match(/useEffect\(\(\) => \{\n    if \(!open \|\| !fitVisualViewport[\s\S]*?\n  \}, \[open, fitVisualViewport\]\);/)[0];
-function mountViewport({ open = true, fit = true, viewport } = {}) {
+const executableViewportEffect = ts.transpileModule(viewportEffect, {
+  compilerOptions: { target: ts.ScriptTarget.ES2022 },
+}).outputText;
+function mountViewport({ open = true, fit = true, ownerDrawer = true, viewport } = {}) {
   const values = new Map();
   let cleanup;
   const windowListeners = new Map();
+  const documentListeners = new Map();
   const frames = new Map();
   const timers = new Map();
   let sequence = 0;
@@ -66,15 +71,25 @@ function mountViewport({ open = true, fit = true, viewport } = {}) {
     removeEventListener: (name, fn) => { assert.equal(windowListeners.get(name), fn); windowListeners.delete(name); },
     requestAnimationFrame: fn => { const id = ++sequence; frames.set(id, fn); return id; },
     cancelAnimationFrame: id => frames.delete(id),
-    setTimeout: fn => { const id = ++sequence; timers.set(id, fn); return id; },
+    setTimeout: (fn, delay) => { const id = ++sequence; timers.set(id, { delay, fn }); return id; },
     clearTimeout: id => timers.delete(id),
   };
+  const panel = {
+    classList: { contains: name => ownerDrawer && name === "owner-mobile-drawer" },
+    contains: element => element?.withinPanel === true,
+  };
   const documentMock = {
+    activeElement: null,
+    addEventListener: (name, fn) => documentListeners.set(name, fn),
+    removeEventListener: (name, fn) => { assert.equal(documentListeners.get(name), fn); documentListeners.delete(name); },
     documentElement: { clientHeight: 844, clientWidth: 390 },
   };
   const style = { setProperty: (key, value) => values.set(key, value), removeProperty: (key) => values.delete(key) };
-  new Function("useEffect", "open", "fitVisualViewport", "window", "document", "overlayRef", viewportEffect)(
-    (effect) => { cleanup = effect(); }, open, fit, windowMock, documentMock, { current: { style } },
+  class HTMLElementMock {}
+  class HTMLInputElementMock extends HTMLElementMock { constructor(type = "text") { super(); this.type = type; this.withinPanel = true; } }
+  class HTMLTextAreaElementMock extends HTMLElementMock { constructor() { super(); this.withinPanel = true; } }
+  new Function("useEffect", "open", "fitVisualViewport", "window", "document", "overlayRef", "panelRef", "HTMLElement", "HTMLInputElement", "HTMLTextAreaElement", executableViewportEffect)(
+    (effect) => { cleanup = effect(); }, open, fit, windowMock, documentMock, { current: { style } }, { current: panel }, HTMLElementMock, HTMLInputElementMock, HTMLTextAreaElementMock,
   );
   const flushFrames = () => {
     while (frames.size) {
@@ -84,11 +99,29 @@ function mountViewport({ open = true, fit = true, viewport } = {}) {
     }
   };
   const flushTimers = () => {
-    const pending = [...timers.values()];
+    const pending = [...timers.values()].sort((a, b) => a.delay - b.delay);
     timers.clear();
-    pending.forEach(fn => fn());
+    pending.forEach(({ fn }) => fn());
   };
-  return { values, cleanup, documentMock, flushFrames, flushTimers, viewport, windowListeners, windowMock };
+  const flushTimerAt = delay => {
+    const pending = [...timers.entries()].filter(([, timer]) => timer.delay === delay);
+    pending.forEach(([id]) => timers.delete(id));
+    pending.forEach(([, timer]) => timer.fn());
+  };
+  return {
+    HTMLInputElementMock,
+    values,
+    cleanup,
+    documentListeners,
+    documentMock,
+    flushFrames,
+    flushTimerAt,
+    flushTimers,
+    timers,
+    viewport,
+    windowListeners,
+    windowMock,
+  };
 }
 
 test("visual viewport tracks only vertical keyboard geometry and removes every listener", () => {
@@ -109,9 +142,11 @@ test("visual viewport tracks only vertical keyboard geometry and removes every l
   listeners.get("scroll")();
   assert.equal(values.get("--drawer-viewport-top"), "145px");
   assert.deepEqual([...result.windowListeners.keys()].sort(), ["orientationchange", "resize"]);
+  assert.deepEqual([...result.documentListeners.keys()].sort(), ["focusin", "focusout"]);
   cleanup();
   assert.equal(listeners.size, 0);
   assert.equal(result.windowListeners.size, 0);
+  assert.equal(result.documentListeners.size, 0);
   assert.equal(values.size, 0);
 });
 
@@ -148,6 +183,85 @@ test("keyboard close and orientation changes settle stale Safari geometry withou
   result.flushFrames();
   assert.equal(result.values.get("--drawer-viewport-height"), "390px");
   result.cleanup();
+});
+
+test("keyboard close recovers delayed or missing Safari geometry without pointer or scroll", () => {
+  const listeners = new Map();
+  const viewport = { height: 360, offsetLeft: 0, offsetTop: 246, scale: 1, width: 390,
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name) => listeners.delete(name),
+  };
+  const result = mountViewport({ viewport });
+  const input = new result.HTMLInputElementMock();
+  input.isContentEditable = false;
+  result.documentMock.activeElement = input;
+  result.documentListeners.get("focusin")({ target: input });
+  listeners.get("resize")();
+  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "246px");
+
+  result.documentMock.activeElement = null;
+  result.documentListeners.get("focusout")({ target: input });
+  result.flushFrames();
+  result.flushTimerAt(100);
+  result.flushTimerAt(250);
+  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
+
+  // Safari supplied no terminal resize/scroll event. The bounded final sample
+  // recovers the layout viewport only after focus has left the text field.
+  result.flushTimerAt(500);
+  assert.equal(result.values.get("--drawer-viewport-height"), "844px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "0px");
+  assert.equal(result.timers.size, 0);
+  result.cleanup();
+});
+
+test("focus transfer between text fields never treats an open keyboard as closed", () => {
+  const viewport = { height: 360, offsetLeft: 0, offsetTop: 246, scale: 1, width: 390,
+    addEventListener() {}, removeEventListener() {},
+  };
+  const result = mountViewport({ viewport });
+  const first = new result.HTMLInputElementMock();
+  const second = new result.HTMLInputElementMock();
+  first.isContentEditable = false;
+  second.isContentEditable = false;
+  result.documentMock.activeElement = null;
+  result.documentListeners.get("focusout")({ target: first });
+  result.documentMock.activeElement = second;
+  result.documentListeners.get("focusin")({ target: second });
+  result.flushFrames();
+  result.flushTimers();
+  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "246px");
+  result.cleanup();
+});
+
+test("stale-layout fallback is limited to the Phase 6E Owner drawer contract", () => {
+  const viewport = { height: 360, offsetLeft: 0, offsetTop: 246, scale: 1, width: 390,
+    addEventListener() {}, removeEventListener() {},
+  };
+  const result = mountViewport({ ownerDrawer: false, viewport });
+  const input = new result.HTMLInputElementMock();
+  input.isContentEditable = false;
+  result.documentMock.activeElement = null;
+  result.documentListeners.get("focusout")({ target: input });
+  result.flushFrames();
+  result.flushTimers();
+  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "246px");
+  result.cleanup();
+});
+
+test("cleanup cancels every bounded keyboard recovery sample", () => {
+  const viewport = { height: 360, offsetLeft: 0, offsetTop: 0, scale: 1, width: 390,
+    addEventListener() {}, removeEventListener() {},
+  };
+  const result = mountViewport({ viewport });
+  assert.equal(result.timers.size, 3);
+  result.cleanup();
+  assert.equal(result.timers.size, 0);
+  assert.equal(result.documentListeners.size, 0);
+  assert.equal(result.windowListeners.size, 0);
 });
 
 test("keyboard viewport changes never control drawer width, structure or footer visibility", () => {

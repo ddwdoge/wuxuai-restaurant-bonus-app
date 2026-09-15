@@ -56,23 +56,66 @@ export function AppDrawer({
     if (!open || !fitVisualViewport || !window.visualViewport) return;
     const viewport = window.visualViewport;
     const overlay = overlayRef.current;
+    const panel = panelRef.current;
     let animationFrame = 0;
-    let settleTimer = 0;
+    const settleTimers = new Set<number>();
+    let recoveringAfterTextFocusExit = false;
+
+    const isTextEntry = (element: EventTarget | null): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false;
+      if (element.isContentEditable) return true;
+      if (element instanceof HTMLTextAreaElement) return true;
+      if (!(element instanceof HTMLInputElement)) return false;
+      return !["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"].includes(
+        element.type.toLowerCase(),
+      );
+    };
+
+    const clearSettleTimers = () => {
+      settleTimers.forEach((timer) => window.clearTimeout(timer));
+      settleTimers.clear();
+    };
 
     // Mobile keyboards can shrink/pan the visual viewport without changing dvh.
-    // iOS Safari can emit the first closing resize with stale geometry, so the
-    // vertical values are sampled again on the next stable render and once
-    // after the native keyboard animation has settled. Horizontal geometry and
-    // component visibility intentionally remain tied to the layout viewport.
-    const applyViewport = () => {
-      overlay?.style.setProperty("--drawer-viewport-height", `${viewport.height}px`);
-      overlay?.style.setProperty("--drawer-viewport-top", `${viewport.offsetTop}px`);
+    // iOS Safari can finish dismissing the keyboard without a final usable
+    // resize event. Keep the horizontal geometry CSS-owned and re-sample only
+    // the vertical values for a bounded 500 ms after a text field loses focus.
+    const applyViewport = (allowRecoveredLayoutFallback = false) => {
+      const layoutHeight = Math.max(
+        window.innerHeight || 0,
+        document.documentElement.clientHeight || 0,
+      );
+      const keyboardReductionThreshold = Math.max(120, layoutHeight * 0.18);
+      const activeElement = document.activeElement;
+      const hasTextFocusInPanel = Boolean(
+        activeElement
+        && panel?.contains(activeElement)
+        && isTextEntry(activeElement),
+      );
+      const hasStaleKeyboardReduction = layoutHeight - viewport.height >= keyboardReductionThreshold;
+      const useRecoveredLayout = Boolean(
+        allowRecoveredLayoutFallback
+        && recoveringAfterTextFocusExit
+        && panel?.classList.contains("owner-mobile-drawer")
+        && !hasTextFocusInPanel
+        && hasStaleKeyboardReduction,
+      );
+      const viewportHeight = useRecoveredLayout ? layoutHeight : viewport.height;
+      const maximumViewportTop = Math.max(0, layoutHeight - viewportHeight);
+      const viewportTop = useRecoveredLayout
+        ? 0
+        : Math.min(Math.max(0, viewport.offsetTop), maximumViewportTop);
+
+      overlay?.style.setProperty("--drawer-viewport-height", `${viewportHeight}px`);
+      overlay?.style.setProperty("--drawer-viewport-top", `${viewportTop}px`);
+
+      if (!hasStaleKeyboardReduction) recoveringAfterTextFocusExit = false;
     };
 
     const updateViewport = () => {
       applyViewport();
       window.cancelAnimationFrame(animationFrame);
-      window.clearTimeout(settleTimer);
+      clearSettleTimers();
       animationFrame = window.requestAnimationFrame(() => {
         applyViewport();
         animationFrame = window.requestAnimationFrame(() => {
@@ -80,10 +123,25 @@ export function AppDrawer({
           animationFrame = 0;
         });
       });
-      settleTimer = window.setTimeout(() => {
-        applyViewport();
-        settleTimer = 0;
-      }, 320);
+      [100, 250, 500].forEach((delay) => {
+        const timer = window.setTimeout(() => {
+          settleTimers.delete(timer);
+          applyViewport(delay === 500);
+        }, delay);
+        settleTimers.add(timer);
+      });
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (isTextEntry(event.target) && panel?.contains(event.target)) {
+        recoveringAfterTextFocusExit = false;
+      }
+    };
+
+    const handleFocusOut = (event: FocusEvent) => {
+      if (!isTextEntry(event.target) || !panel?.contains(event.target)) return;
+      recoveringAfterTextFocusExit = true;
+      updateViewport();
     };
 
     updateViewport();
@@ -91,13 +149,17 @@ export function AppDrawer({
     viewport.addEventListener("scroll", updateViewport);
     window.addEventListener("resize", updateViewport);
     window.addEventListener("orientationchange", updateViewport);
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
     return () => {
       viewport.removeEventListener("resize", updateViewport);
       viewport.removeEventListener("scroll", updateViewport);
       window.removeEventListener("resize", updateViewport);
       window.removeEventListener("orientationchange", updateViewport);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
       window.cancelAnimationFrame(animationFrame);
-      window.clearTimeout(settleTimer);
+      clearSettleTimers();
       overlay?.style.removeProperty("--drawer-viewport-height");
       overlay?.style.removeProperty("--drawer-viewport-top");
     };
