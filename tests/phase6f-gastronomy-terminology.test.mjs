@@ -125,9 +125,9 @@ test("public and auth consumers use structural keys without changing routes or a
 
 test("explicit phase 6F terminology overrides take precedence over generated legacy copy", () => {
   const provider = read("src/shared/i18n/I18nProvider.tsx");
-  assert.match(provider, /const structural = translateStructural\(key, language\)/);
+  assert.match(provider, /isTranslationKey\(key\) \? translateStructural\(key, language\) : key/);
   assert.match(provider, /structural !== key/);
-  assert.match(provider, /const structural = translateStructural\(dynamic\.key, language\)/);
+  assert.match(provider, /isTranslationKey\(dynamic\.key\) \? translateStructural\(dynamic\.key, language\) : dynamic\.key/);
 });
 
 test("technical restaurant identifiers and application routes remain unchanged", () => {

@@ -1,6 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { GENERATED_DYNAMIC_SOURCES, GENERATED_MESSAGES, GENERATED_SOURCE_TO_KEY } from "./messages.generated.mjs";
-import { translateStructural } from "./catalog.mjs";
+import { isTranslationKey, translateStructural } from "./catalog.mjs";
 import {
   browserUiLanguage,
   readExplicitUiLanguage,
@@ -86,13 +86,13 @@ function translateDocument(root: ParentNode, language: UiLanguage) {
     const aliasedSource = language === "de" ? undefined : translationSourceAliases[normalizedSource];
     const key = directKey ?? (aliasedSource ? GENERATED_SOURCE_TO_KEY[aliasedSource] as string | undefined : undefined);
     if (key) {
-      const structural = translateStructural(key, language);
+      const structural = isTranslationKey(key) ? translateStructural(key, language) : key;
       return structural !== key ? structural : messages[key] ?? source;
     }
     for (const dynamic of dynamicSources) {
       const match = normalizedSource.match(dynamic.pattern);
       if (!match) continue;
-      const structural = translateStructural(dynamic.key, language);
+      const structural = isTranslationKey(dynamic.key) ? translateStructural(dynamic.key, language) : dynamic.key;
       let translated = structural !== dynamic.key ? structural : messages[dynamic.key] ?? source;
       dynamic.placeholders.forEach((placeholder, index) => {
         translated = translated.replace(placeholder, match[index + 1] ?? "");
