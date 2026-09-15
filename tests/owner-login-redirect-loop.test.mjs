@@ -29,15 +29,15 @@ test("temporärer Rollenfehler behält die Sitzung und bietet Retry", () => {
   const errorState = protectedRoute.slice(errorStateStart, deniedStateStart);
 
   assert.match(authProvider, /restaurantAuthorizationError/);
-  assert.match(errorState, /Restaurantzugang konnte nicht geladen werden/);
-  assert.match(errorState, /Deine Anmeldung bleibt bestehen/);
+  assert.match(errorState, /t\("errors\.businessAccess"\)/);
+  assert.match(errorState, /t\("errors\.businessAccessRetry"\)/);
   assert.match(errorState, /onClick=\{retryAuthorization\}/);
   assert.doesNotMatch(errorState, /Navigate/);
 });
 
 test("fehlende Membership wird nicht als Auth-Fehler oder Ownerrolle behandelt", () => {
-  assert.match(protectedRoute, /Kein Restaurantzugang eingerichtet/);
-  assert.match(protectedRoute, /Für dieses Konto ist aktuell kein Restaurant hinterlegt/);
+  assert.match(protectedRoute, /t\("errors\.noBusinessAccess"\)/);
+  assert.match(protectedRoute, /t\("errors\.noBusinessAssigned"\)/);
   assert.doesNotMatch(protectedRoute, /Navigate to="\/" replace/);
 });
 

@@ -114,7 +114,7 @@ export function RegisterPage() {
           throw caught;
         }
         const completed = await completePendingOwnerRegistration(email);
-        if (!completed) throw new Error("Die Restaurant-Registrierung konnte nicht fortgesetzt werden. Bitte beginne erneut.");
+        if (!completed) throw new Error(t("auth.ownerRegistration.resumeError"));
         retryAuthorization();
         window.location.assign("/admin/onboarding");
         return;
@@ -134,7 +134,7 @@ export function RegisterPage() {
         setConfirmPassword("");
         setConfirmPasswordTouched(false);
         setSubmitAttempted(false);
-        setMessage("Bestehendes WUXUAI®-Bonus-Konto erkannt. Gib oben dein bestehendes Passwort ein und aktiviere anschließend den Restaurantbereich.");
+        setMessage(t("auth.ownerArea.activatePrompt"));
         return;
       }
 
@@ -158,7 +158,7 @@ export function RegisterPage() {
 
   if (authLoading || (user && portalAccess.owner_access)) {
     return (
-      <PublicPageShell description="Dein Restaurantbereich wird vorbereitet." eyebrow="WUXUAI Bonus" title="Inhaberbereich wird geöffnet …">
+      <PublicPageShell description={t("auth.ownerArea.preparing")} eyebrow="WUXUAI Bonus" title={t("auth.ownerArea.opening")}>
         <PublicContentCard><p className="public-premium-alert" role="status">Bitte einen Moment warten.</p></PublicContentCard>
       </PublicPageShell>
     );
@@ -193,7 +193,7 @@ export function RegisterPage() {
               {existingIdentityFlow ? (
                 <>
                   <p className="public-premium-alert public-premium-alert-success owner-existing-account-notice" role="status" aria-live="polite">
-                    Konto erkannt – gib jetzt dein bestehendes Passwort ein, um den Restaurantbereich zu aktivieren.
+                    {t("auth.ownerArea.activatePrompt")}
                   </p>
                   <div className="owner-existing-password-stage">
                     <div className="owner-existing-password-stage-title">
@@ -234,7 +234,7 @@ export function RegisterPage() {
               ) : null}
             </>
           )}
-          <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label="Restaurantname" onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
+          <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label={t("auth.businessName")} onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
           <label htmlFor="registration-country">{t("platform.country.label")} *</label>
           <LaunchCountrySelect id="registration-country" value={country} onChange={setCountry} disabled={loading} />
           <PublicFormField
@@ -252,8 +252,8 @@ export function RegisterPage() {
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
           {error && !existingIdentityFlow ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
-          <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel="Restaurant wird gestartet …" type="submit">
-            {activatingExistingAccount || existingIdentityFlow ? "Restaurantbereich aktivieren" : commercialValue("auth.register.cta")}
+          <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel={t("auth.businessStarting")} type="submit">
+            {activatingExistingAccount || existingIdentityFlow ? t("auth.ownerArea.activate") : commercialValue("auth.register.cta")}
           </PublicPrimaryButton>
           <p className="public-premium-trust-note">{t("auth.register.noPaymentMethod")}</p>
           <div className="public-premium-secondary-actions">

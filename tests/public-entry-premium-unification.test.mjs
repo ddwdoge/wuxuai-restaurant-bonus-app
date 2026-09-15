@@ -63,5 +63,5 @@ test("Fehler- und Ladezustände werden verständlich angekündigt", () => {
   assert.match(register, /role="status" aria-live="polite"/);
   assert.match(components, /aria-busy=\{loading\}/);
   assert.match(login, /Anmeldung läuft …/);
-  assert.match(register, /Restaurant wird gestartet …/);
+  assert.match(register, /t\("auth\.businessStarting"\)/);
 });

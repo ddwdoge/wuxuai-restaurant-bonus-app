@@ -11,10 +11,12 @@ import {
 import { clearPendingOwnerRegistration, readPendingOwnerEmail } from "./registerOwnerService";
 import { resendOwnerConfirmation } from "./ownerAuthService";
 import { useAuth } from "./AuthProvider";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function ConfirmEmailPage() {
+  const { translateKey: t } = useI18n();
   const { loading: authLoading, portalAccess, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,12 +60,12 @@ export function ConfirmEmailPage() {
     return (
       <PublicPageShell
         description="Deine E-Mail-Adresse ist bestätigt. Eine weitere Bestätigungs-E-Mail ist nicht erforderlich."
-        eyebrow="Sicherer Restaurantzugang"
+        eyebrow={t("auth.secureBusinessAccess")}
         title="E-Mail-Adresse bereits bestätigt"
       >
         <PublicContentCard>
           <p className="public-premium-alert public-premium-alert-success" role="status">E-Mail-Adresse bereits bestätigt. Bitte fahre mit deinem bestehenden Konto fort.</p>
-          <Link className="public-premium-secondary-link" to={portalAccess.owner_access ? "/admin" : "/register"}>{portalAccess.owner_access ? "Inhaberbereich öffnen" : "Restaurantbereich aktivieren"}</Link>
+          <Link className="public-premium-secondary-link" to={portalAccess.owner_access ? "/admin" : "/register"}>{portalAccess.owner_access ? "Inhaberbereich öffnen" : t("auth.ownerArea.activate")}</Link>
         </PublicContentCard>
       </PublicPageShell>
     );
@@ -72,7 +74,7 @@ export function ConfirmEmailPage() {
   return (
     <PublicPageShell
       description="Wir haben dir einen Bestätigungslink gesendet. Öffne die E-Mail und klicke auf den Link, um dein Konto zu aktivieren."
-      eyebrow="Sicherer Restaurantzugang"
+      eyebrow={t("auth.secureBusinessAccess")}
       title="Bestätige deine E-Mail-Adresse"
     >
       <PublicContentCard>

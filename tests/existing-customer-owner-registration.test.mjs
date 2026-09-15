@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { classifyOwnerSignUpResult } from "../src/modules/auth/ownerAuthFlow.mjs";
+import { translateStructural } from "../src/shared/i18n/catalog.mjs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const registerPage = read("../src/modules/auth/RegisterPage.tsx");
@@ -25,8 +26,11 @@ test("Signup-Ergebnis unterscheidet neue und verschleierte bestehende Identitaet
 test("bestehende E-Mail wechselt neutral in die hervorgehobene Passwort-Anmeldung", () => {
   assert.match(registerService, /signUpResult === "existing_or_obfuscated"/);
   assert.match(registerService, /requiresAuthentication: true/);
-  assert.match(registerPage, /Bestehendes WUXUAI®-Bonus-Konto erkannt\. Gib oben dein bestehendes Passwort ein und aktiviere anschließend den Restaurantbereich\./);
-  assert.match(registerPage, /Konto erkannt – gib jetzt dein bestehendes Passwort ein, um den Restaurantbereich zu aktivieren\./);
+  assert.match(registerPage, /t\("auth\.ownerArea\.activatePrompt"\)/);
+  assert.equal(
+    translateStructural("auth.ownerArea.activatePrompt", "de"),
+    "Konto erkannt – gib jetzt dein bestehendes Passwort ein, um den Betriebsbereich zu aktivieren.",
+  );
   assert.match(registerPage, /className="owner-existing-password-stage"/);
   assert.match(registerPage, /<LockKeyhole aria-hidden="true" size=\{18\}/);
   assert.match(registerPage, /autoComplete="current-password"/);
@@ -45,7 +49,8 @@ test("bestehende Identitaet wird authentifiziert und danach als Owner fortgesetz
   assert.match(registerPage, /if \(existingIdentityFlow\)[\s\S]*await signIn\(email, password\)/);
   assert.match(registerPage, /await completePendingOwnerRegistration\(email\)/);
   assert.match(registerPage, /window\.location\.assign\("\/admin\/onboarding"\)/);
-  assert.match(registerPage, /Restaurantbereich aktivieren/);
+  assert.match(registerPage, /t\("auth\.ownerArea\.activate"\)/);
+  assert.equal(translateStructural("auth.ownerArea.activate", "de"), "Betriebsbereich aktivieren");
   assert.doesNotMatch(registerPage, /admin\.createUser|auth\.admin|createUser\(/);
 });
 

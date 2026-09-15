@@ -3,8 +3,10 @@ import { useParams } from "react-router-dom";
 import { normalizeStaffRestaurantSlug } from "./staffLoginFlow.mjs";
 import { resolveMyStaffRestaurantAccess, type StaffRestaurantAccess } from "./staffLoginService";
 import { StaffPortalAccessContext } from "./staffPortalAccessContext";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export function StaffRestaurantRouteGate({ children }: { children: React.ReactNode }) {
+  const { translateKey: t } = useI18n();
   const { slug: routeSlug } = useParams();
   const slug = normalizeStaffRestaurantSlug(routeSlug);
   const [state, setState] = useState<"loading" | "allowed" | "denied" | "error">("loading");
@@ -40,7 +42,7 @@ export function StaffRestaurantRouteGate({ children }: { children: React.ReactNo
     return <main className="auth-shell" role="alert"><h1>Zugang konnte nicht geprüft werden</h1><p>Deine Anmeldung bleibt bestehen.</p><button onClick={() => setRevision((current) => current + 1)} type="button">Erneut versuchen</button></main>;
   }
   if (state === "denied") {
-    return <main className="auth-shell" role="alert"><h1>Kein Mitarbeiterzugang</h1><p>Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.</p></main>;
+    return <main className="auth-shell" role="alert"><h1>Kein Mitarbeiterzugang</h1><p>{t("auth.staffAccess.noScopedAccess")}</p></main>;
   }
   return <StaffPortalAccessContext.Provider value={access}>{children}</StaffPortalAccessContext.Provider>;
 }

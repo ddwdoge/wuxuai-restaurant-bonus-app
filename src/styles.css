@@ -4669,6 +4669,29 @@ a {
     align-items: flex-end;
   }
 
+  .app-drawer-overlay.app-drawer-visual-viewport .app-drawer-panel {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(var(--drawer-viewport-height, 100dvh) - env(safe-area-inset-top) - 8px);
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: calc(64px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .app-drawer-overlay.app-drawer-visual-viewport .app-drawer-panel > .app-drawer-header,
+  .app-drawer-overlay.app-drawer-visual-viewport .app-drawer-panel > .app-drawer-footer {
+    flex: 0 0 auto;
+  }
+
+  .app-drawer-overlay.app-drawer-visual-viewport .app-drawer-panel > .app-drawer-body {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow-y: visible;
+  }
+
   .app-drawer-overlay-workspace {
     padding: 0;
   }

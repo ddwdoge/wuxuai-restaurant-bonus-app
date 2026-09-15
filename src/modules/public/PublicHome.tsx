@@ -30,9 +30,10 @@ export function PublicHome() {
 }
 
 export function GuestBonusInfoPage() {
+  const { translateKey: t } = useI18n();
   return (
     <PublicPageShell
-      description="Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen."
+      description={t("public.guest.description")}
       eyebrow="WUXUAI Bonus"
       title="Bonus für Gäste"
     >
@@ -42,8 +43,8 @@ export function GuestBonusInfoPage() {
           <h2>So kommst du zu deinem Bonuskonto</h2>
         </div>
         <ol className="public-premium-steps">
-          <li>QR-Code im Restaurant scannen</li>
-          <li>Das richtige Restaurant wird automatisch erkannt</li>
+          <li>{t("public.guest.scan")}</li>
+          <li>{t("public.guest.detected")}</li>
           <li>Bonus sammeln und Punkteeinlösungen nutzen</li>
         </ol>
         <p className="public-premium-notice">Bereits Mitglied? Öffne deinen persönlichen Bonus-Link erneut.</p>

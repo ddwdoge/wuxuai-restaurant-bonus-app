@@ -236,7 +236,7 @@ test("focus transfer between text fields never treats an open keyboard as closed
   result.cleanup();
 });
 
-test("stale-layout fallback is limited to the Phase 6E Owner drawer contract", () => {
+test("stale-layout fallback follows the Phase 6F platform-wide drawer contract", () => {
   const viewport = { height: 360, offsetLeft: 0, offsetTop: 246, scale: 1, width: 390,
     addEventListener() {}, removeEventListener() {},
   };
@@ -247,8 +247,8 @@ test("stale-layout fallback is limited to the Phase 6E Owner drawer contract", (
   result.documentListeners.get("focusout")({ target: input });
   result.flushFrames();
   result.flushTimers();
-  assert.equal(result.values.get("--drawer-viewport-height"), "360px");
-  assert.equal(result.values.get("--drawer-viewport-top"), "246px");
+  assert.equal(result.values.get("--drawer-viewport-height"), "844px");
+  assert.equal(result.values.get("--drawer-viewport-top"), "0px");
   result.cleanup();
 });
 
@@ -269,13 +269,13 @@ test("keyboard viewport changes never control drawer width, structure or footer 
   assert.match(drawer, /\{footer \? <footer className="app-drawer-footer">\{footer\}<\/footer> : null\}/);
 });
 
-test("viewport adaptation is opt-in and safely falls back when unsupported", () => {
+test("viewport adaptation is platform-wide and safely falls back when unsupported", () => {
   for (const options of [{ open: false }, { fit: false }, {}]) {
     const result = mountViewport(options);
     assert.equal(result.values.size, 0);
     assert.equal(result.cleanup, undefined);
   }
-  assert.match(drawer, /fitVisualViewport = false/);
+  assert.match(drawer, /fitVisualViewport = true/);
 });
 
 test("shared visual-viewport overlay consumes only vertical geometry without scaling", () => {

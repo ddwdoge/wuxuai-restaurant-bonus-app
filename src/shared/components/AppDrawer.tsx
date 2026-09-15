@@ -35,7 +35,7 @@ export function AppDrawer({
   dismissOnEscape = true,
   dismissOnOverlay = true,
   footer,
-  fitVisualViewport = false,
+  fitVisualViewport = true,
   onClose,
   open,
   size = "standard",
@@ -96,7 +96,6 @@ export function AppDrawer({
       const useRecoveredLayout = Boolean(
         allowRecoveredLayoutFallback
         && recoveringAfterTextFocusExit
-        && panel?.classList.contains("owner-mobile-drawer")
         && !hasTextFocusInPanel
         && hasStaleKeyboardReduction,
       );

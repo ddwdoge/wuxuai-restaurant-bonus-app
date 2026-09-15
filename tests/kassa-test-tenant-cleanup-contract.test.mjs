@@ -115,8 +115,8 @@ test("Platform Admin UI uses only the server-side marked-tenant cleanup contract
   assert.match(panel, /CONFIRMED:\$\{restaurantName\}:\$\{restaurantId\}/);
   assert.match(panel, /reason\.trim\(\)\.length < 20/);
   assert.match(panel, /preflight\.eligible/);
-  assert.match(panel, /Als TEST-ONLY markieren/);
-  assert.match(panel, /Test-Tenant vollständig bereinigen/);
+  assert.match(panel, /t\("platform\.testTenant\.mark"\)/);
+  assert.match(panel, /t\("platform\.testTenant\.cleanup"\)/);
   assert.doesNotMatch(panel, /service_role|truncate|delete from/i);
 });
 
@@ -125,7 +125,7 @@ test("isolated customer uses the existing canonical Platform Admin test marker",
   assert.match(service, /input_is_test_customer: true/);
   assert.match(operationsPanel, /markPlatformCustomerTestMode/);
   assert.match(operationsPanel, /kassa-v3-20260908/);
-  assert.match(operationsPanel, /Als Testgast markieren/);
+  assert.match(operationsPanel, /t\("platform\.testTenant\.markCustomer"\)/);
   assert.doesNotMatch(operationsPanel, /\.from\(["']customers/);
 });
 
@@ -181,7 +181,7 @@ test("Platform Admin exposes only the protected foreign test-customer cleanup RP
   assert.match(service, /get_platform_foreign_test_customer_cleanup_preflight/);
   assert.match(service, /cleanup_platform_foreign_test_customer_relation/);
   assert.match(panel, /platform-foreign-test-customer-cleanup/);
-  assert.match(panel, /Nur fremde Test-Zuordnung entfernen/);
+  assert.match(panel, /t\("platform\.testTenant\.removeForeign"\)/);
   assert.match(panel, /foreignCustomerConfirmation/);
   assert.doesNotMatch(panel, /service_role|delete from|truncate/i);
 });

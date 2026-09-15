@@ -85,11 +85,15 @@ function translateDocument(root: ParentNode, language: UiLanguage) {
     const directKey = GENERATED_SOURCE_TO_KEY[normalizedSource] as string | undefined;
     const aliasedSource = language === "de" ? undefined : translationSourceAliases[normalizedSource];
     const key = directKey ?? (aliasedSource ? GENERATED_SOURCE_TO_KEY[aliasedSource] as string | undefined : undefined);
-    if (key) return messages[key] ?? source;
+    if (key) {
+      const structural = translateStructural(key, language);
+      return structural !== key ? structural : messages[key] ?? source;
+    }
     for (const dynamic of dynamicSources) {
       const match = normalizedSource.match(dynamic.pattern);
       if (!match) continue;
-      let translated = messages[dynamic.key] ?? source;
+      const structural = translateStructural(dynamic.key, language);
+      let translated = structural !== dynamic.key ? structural : messages[dynamic.key] ?? source;
       dynamic.placeholders.forEach((placeholder, index) => {
         translated = translated.replace(placeholder, match[index + 1] ?? "");
       });
@@ -158,8 +162,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLanguageState(next);
     },
     translateKey(key) {
-      return (GENERATED_MESSAGES[language] as Record<string, string>)[key]
-        ?? translateStructural(key, language);
+      const structural = translateStructural(key, language);
+      return structural !== key
+        ? structural
+        : (GENERATED_MESSAGES[language] as Record<string, string>)[key] ?? key;
     },
   }), [language]);
 

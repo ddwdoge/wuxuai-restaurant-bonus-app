@@ -27,7 +27,7 @@ test("Restaurant A wird beim Scan von Restaurant B vollständig als aktiver Kont
 
 test("ein gespeicherter Kundenzugang erzeugt ohne QR-Pfad keinen Restaurantkontext", () => {
   assert.equal(readCustomerScanContext("/customer"), null);
-  assert.match(publicEntrySource, /Scanne den QR-Code im Restaurant, um dein Bonusprogramm zu öffnen\./);
+  assert.match(publicEntrySource, /t\("public\.guest\.scan"\)/);
   assert.doesNotMatch(tokenStorageSource, /lastRestaurant|activeRestaurant|currentRestaurant/);
 });
 

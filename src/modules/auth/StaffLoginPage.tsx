@@ -15,8 +15,10 @@ import { loadPublicStaffLoginContext, resolveMyStaffRestaurantAccess } from "./s
 import { WrongPortalNotice } from "./WrongPortalNotice";
 import { PortalLoginNavigation } from "./PortalLoginNavigation";
 import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export function StaffLoginPage() {
+  const { translateKey: t } = useI18n();
   const { loading: authLoading, portalAccess, signIn, signOut, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ export function StaffLoginPage() {
         navigate("/staff", { replace: true });
       } else {
         setAccessDenied(true);
-        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich.");
+        setError(t("auth.staffAccess.noAccess"));
       }
       return () => { cancelled = true; };
     }
@@ -79,7 +81,7 @@ export function StaffLoginPage() {
           return;
         }
         setAccessDenied(true);
-        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
+        setError(t("auth.staffAccess.noScopedAccess"));
       })
       .catch((caught) => {
         if (!cancelled) setError(caught instanceof Error ? caught.message : "Der Mitarbeiterzugang konnte gerade nicht geprüft werden.");
@@ -88,7 +90,7 @@ export function StaffLoginPage() {
         if (!cancelled) setSubmitting(false);
       });
     return () => { cancelled = true; };
-  }, [authLoading, contextLoading, navigate, portalAccess.staff_access, restaurantSlug, user]);
+  }, [authLoading, contextLoading, navigate, portalAccess.staff_access, restaurantSlug, t, user]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -105,7 +107,7 @@ export function StaffLoginPage() {
       const access = await resolveMyStaffRestaurantAccess(restaurantSlug);
       if (!access.success || access.restaurant_slug !== restaurantSlug) {
         setAccessDenied(true);
-        setError("Dieses Konto besitzt keinen aktiven Zugang zum Mitarbeiterbereich dieses Restaurants.");
+        setError(t("auth.staffAccess.noScopedAccess"));
         return;
       }
       navigate(`/staff/${restaurantSlug}`, { replace: true });
@@ -137,7 +139,7 @@ export function StaffLoginPage() {
   if (user && accessDenied) {
     return (
       <WrongPortalNotice
-        description="Dieses Konto hat keinen Mitarbeiterzugang zu diesem Restaurant."
+        description={t("auth.staffAccess.noScopedAccess")}
         portal="staff"
         staffSlug={restaurantSlug}
       />
@@ -154,7 +156,7 @@ export function StaffLoginPage() {
         <div className="public-premium-status-icon" aria-hidden="true"><ShieldCheck size={28} /></div>
         {user ? (
           <div className="public-premium-form">
-            <p className="public-premium-alert" role="status">Dein Mitarbeiterzugang wird für dieses Restaurant geprüft.</p>
+            <p className="public-premium-alert" role="status">{t("auth.staffAccess.scopedCheck")}</p>
             {error ? <p className="public-premium-alert public-premium-alert-error" role="alert">{error}</p> : null}
             {error ? <button className="public-premium-primary-button" disabled={submitting} onClick={() => void switchAccount()} type="button">Anderes Konto verwenden</button> : null}
           </div>

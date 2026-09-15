@@ -5,6 +5,7 @@ import { isOwnerEmailConfirmed } from "./ownerAuthFlow.mjs";
 import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.mjs";
 import type { PortalKind } from "./portalAccessUx.mjs";
 import { WrongPortalNotice } from "./WrongPortalNotice";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type ProtectedRouteProps = {
   allowedRoles: UserRole[];
@@ -15,6 +16,7 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ allowedRoles, children, portalKind, roleScope = "restaurant", requireConfirmedEmail = false }: ProtectedRouteProps) {
+  const { translateKey: t } = useI18n();
   const {
     loading,
     platformRole,
@@ -55,8 +57,8 @@ export function ProtectedRoute({ allowedRoles, children, portalKind, roleScope =
   if (roleScope === "restaurant" && restaurantAuthorizationError) {
     return (
       <main className="auth-shell" role="alert">
-        <h1>Restaurantzugang konnte nicht geladen werden</h1>
-        <p>Deine Anmeldung bleibt bestehen. Bitte prüfe den Restaurantzugang erneut.</p>
+        <h1>{t("errors.businessAccess")}</h1>
+        <p>{t("errors.businessAccessRetry")}</p>
         <button onClick={retryAuthorization} type="button">Erneut versuchen</button>
       </main>
     );
@@ -86,8 +88,8 @@ export function ProtectedRoute({ allowedRoles, children, portalKind, roleScope =
     }
     return (
       <main className="auth-shell" role="alert">
-        <h1>Kein Restaurantzugang eingerichtet</h1>
-        <p>Für dieses Konto ist aktuell kein Restaurant hinterlegt. Deine Anmeldung bleibt bestehen.</p>
+        <h1>{t("errors.noBusinessAccess")}</h1>
+        <p>{t("errors.noBusinessAssigned")}</p>
         <button onClick={retryAuthorization} type="button">Erneut prüfen</button>
       </main>
     );

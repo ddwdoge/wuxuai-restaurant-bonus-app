@@ -4,6 +4,8 @@ import { COUNTRY_LAUNCH_MESSAGES } from "./countryLaunchMessages.mjs";
 import { PLATFORM_HEALTH_MESSAGES } from "./platformHealthMessages.mjs";
 import { CUSTOMER_PRESENTATION_MESSAGES } from "./customerPresentationMessages.mjs";
 import { OWNER_STAFF_HEADER_MESSAGES } from "./ownerStaffHeaderMessages.mjs";
+import { GASTRONOMY_TERMINOLOGY_MESSAGES } from "./gastronomyTerminologyMessages.mjs";
+import { PLATFORM_TEST_TENANT_MESSAGES } from "./platformTestTenantMessages.mjs";
 
 export const I18N_NAMESPACES = Object.freeze([
   "common",
@@ -1383,5 +1385,5 @@ export function isTranslationKey(value) {
 export function translateStructural(key, language) {
   if (!isTranslationKey(key)) throw new Error("INVALID_TRANSLATION_KEY");
   const locale = normalizeUiLanguage(language);
-  return CUSTOMER_PRESENTATION_MESSAGES[locale]?.[key] ?? OWNER_STAFF_HEADER_MESSAGES[locale]?.[key] ?? PLATFORM_HEALTH_MESSAGES[locale]?.[key] ?? COUNTRY_LAUNCH_MESSAGES[locale]?.[key] ?? PLAN_OVERRIDE_MESSAGES[locale]?.[key] ?? STRUCTURAL_MESSAGES[locale]?.[key] ?? STRUCTURAL_MESSAGES.en[key] ?? key;
+  return PLATFORM_TEST_TENANT_MESSAGES[locale]?.[key] ?? GASTRONOMY_TERMINOLOGY_MESSAGES[locale]?.[key] ?? CUSTOMER_PRESENTATION_MESSAGES[locale]?.[key] ?? OWNER_STAFF_HEADER_MESSAGES[locale]?.[key] ?? PLATFORM_HEALTH_MESSAGES[locale]?.[key] ?? COUNTRY_LAUNCH_MESSAGES[locale]?.[key] ?? PLAN_OVERRIDE_MESSAGES[locale]?.[key] ?? STRUCTURAL_MESSAGES[locale]?.[key] ?? STRUCTURAL_MESSAGES.en[key] ?? key;
 }

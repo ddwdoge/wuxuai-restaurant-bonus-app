@@ -15,8 +15,10 @@ import { Link } from "react-router-dom";
 import { WrongPortalNotice } from "./WrongPortalNotice";
 import { PortalLoginNavigation } from "./PortalLoginNavigation";
 import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export function LoginPage() {
+  const { translateKey: t } = useI18n();
   const { loading: authLoading, portalAccess, signIn, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,9 +61,9 @@ export function LoginPage() {
 
   return (
     <PublicPageShell
-      description="Willkommen zurück. Verwalte dein Bonusprogramm, deine Gäste und deine Punkteeinlösungen."
+      description={t("auth.ownerLogin.description")}
       eyebrow="WUXUAI Bonus"
-      title="Restaurant Login"
+      title={t("auth.ownerLogin.title")}
     >
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
