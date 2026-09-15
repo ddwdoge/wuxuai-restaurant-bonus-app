@@ -611,3 +611,38 @@ Entitlement-Zeile, keinen Stripe Product/Price/Customer/Subscription Item,
 keine Country Policy und kein Deployment. Der gesicherte Phase-1–5-Stand und
 der noch nicht physisch abgenommene Phase-6-Entwurf bleiben bestehen.
 Die technische Vollstaendigkeit der Phasen 7–10 ist damit **NICHT NACHGEWIESEN**.
+
+## 21. Phase 7B.4C – lokaler Test-Tenant-Vertrag, 2026-09-15
+
+Status: **LOCAL CODE LOCK / NOT READY FOR STAGING**.
+Dieser Nachtrag betrifft ausschliesslich die lokale Migration 03000.
+Frühere Final Locks und angewendete Migrationen bleiben unverändert.
+
+- Der Cleanup-Read behält `eligible`, `restaurant_name` und die vollständige
+  flache numerische `inventory` sowie alle bisherigen Isolationsprüfungen.
+- Der additive `marking_preflight` prüft den Zustand vor der Erstmarkierung.
+  Nur dort ist eine fehlende Markierung erwartbar. Cleanup verlangt weiterhin
+  eine vorhandene Markierung. Andere Sicherheits-, Daten-, Storage-, Audit-
+  oder Receipt-Sperren werden nicht ausgenommen.
+- Platform Admin, Recent Auth höchstens zehn Minuten, Ziel-/Operationssperre
+  und Request-Replay-Prüfung gehen dem Preflight voraus. Registry, Audit und
+  Receipt werden atomar gespeichert. Persistierte Receipts blockieren spätere
+  Cleanup-Preflights, nicht ihren eigenen noch ungeschriebenen Erstrequest.
+- Receipts verwenden `target_restaurant_ref` statt `restaurant_id`, behalten
+  UUID-Snapshots und sind von generischer Cleanup-Erkennung ausgenommen.
+- Jeder zugeordnete `branch_subscriptions`-Eintrag blockiert, auch Trial oder
+  unbekannter Zustand. Nicht prüfbares Schema blockiert ebenfalls. Ein leerer
+  kanonischer lokaler Billingzustand kann bestehen; dies attestiert keine
+  unbekannten externen Stripe-Rechnungen.
+- Platform-/Commercial-Audit-Historie bleibt erhalten und blockierend.
+  Keine Datenbereinigung oder automatische Testkunden-Markierung.
+
+Nachweis: `reports/2026-09-15_PHASE_7B_4C_LOCAL_COMPLETION_REPORT.md`.
+Fresh/Upgrade/Repeat und Parallelität wurden in synthetischen lokalen
+PostgreSQL-Abhängigkeitsschemas geprüft, nicht durch Replay sämtlicher
+historischer Migrationen oder gegen Staging. Full Tests: 1849/1849 PASS.
+
+Kein Commit, Push, Staging-Zugriff, Deployment, Pro-Grant oder Stripe-/
+Production-Schreibvorgang. Eine spätere Staging-Anwendung und Anpassung des
+bisherigen vierargumentigen Markierungs-UI-Aufrufs brauchen separate Freigabe;
+das alte unsichere RPC-Overload bleibt gesperrt.
