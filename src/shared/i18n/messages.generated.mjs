@@ -16604,7 +16604,7 @@ export const GENERATED_MESSAGES = Object.freeze({
     "auth.auto_9825a39b1630": "다른 계정으로 로그인",
     "auth.auto_9a29918defd0": "등록은 유효하다. 다시 액세스 확인하시기 바랍니다.",
     "auth.auto_9b72bb2e4eb4": "등록은 유효하지만 다른 보호 구역에 속합니다.",
-    "auth.auto_a329a32263a4": "이름 *",
+    "auth.auto_a329a32263a4": "로그인",
     "auth.auto_a36c101570cc": "비밀번호",
     "auth.auto_a76bb10c375a": "Employee 액세스가 확인되었습니다 ...",
     "auth.auto_ae0921116970": "직원에 대한 개인 비밀번호 설정.",

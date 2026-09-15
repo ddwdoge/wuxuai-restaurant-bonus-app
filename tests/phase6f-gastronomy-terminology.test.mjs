@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { translateStructural } from "../src/shared/i18n/catalog.mjs";
+import { GENERATED_MESSAGES, GENERATED_SOURCE_TO_KEY } from "../src/shared/i18n/messages.generated.mjs";
 import { SUPPORTED_UI_LANGUAGES } from "../src/shared/i18n/language.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -128,6 +129,27 @@ test("explicit phase 6F terminology overrides take precedence over generated leg
   assert.match(provider, /isTranslationKey\(key\) \? translateStructural\(key, language\) : key/);
   assert.match(provider, /structural !== key/);
   assert.match(provider, /isTranslationKey\(dynamic\.key\) \? translateStructural\(dynamic\.key, language\) : dynamic\.key/);
+});
+
+test("Korean business login renders the approved sign-in label", () => {
+  const login = read("src/modules/auth/LoginPage.tsx");
+  const key = "auth.auto_a329a32263a4";
+
+  assert.match(login, />\s*Anmelden\s*</);
+  assert.equal(GENERATED_SOURCE_TO_KEY.Anmelden, key);
+  assert.equal(GENERATED_MESSAGES.ko[key], "로그인");
+  assert.notEqual(GENERATED_MESSAGES.ko[key], "이름 *");
+  assert.deepEqual(
+    Object.fromEntries(["de", "en", "fr", "it", "es", "zh"].map((language) => [language, GENERATED_MESSAGES[language][key]])),
+    {
+      de: "Anmelden",
+      en: "Sign in",
+      fr: "Connectez-vous",
+      it: "Accedi",
+      es: "Iniciar sesión",
+      zh: "登录",
+    },
+  );
 });
 
 test("technical restaurant identifiers and application routes remain unchanged", () => {
