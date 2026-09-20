@@ -1,0 +1,25 @@
+WUXUAI BONUS – PHASE 7B.4E PRUEF-ZIP INVENTAR
+Datum: 2026-09-21
+Branch: codex/v1-release-integration
+Deployment-Quellcommit: d5e63160c2e32442474bba73e0003eaf5473a18d
+
+Enthaltene Dateien und SHA-256:
+
+65ce08661406aae5b1eea865084906db4fd7bedcc0c535b9359085a1be38e79d  docs/reports/2026-09-21_PHASE_7B_4E_STAGING_MIGRATION_READ_ONLY_GATE_REPORT.md
+5ff37ab21bab8b3727587d9370dbd581c391d9260f661b7ca0ca860d6f00db91  supabase/migrations/20260915003000_test_tenant_contract_hardening.sql
+7ab8f90efb422e0b9c18601af04c987b098a35d907186549c898ed0af8f5ae3c  tests/test-tenant-contract-hardening.test.mjs
+94232f1e11a414211b4865b6f006aaac7c579e58a6d2619b64756aee665a5b5b  src/modules/platform/PlatformKassaCompliancePanel.tsx
+ecb42ac9b555952ce03757cf37c91db6ee220048207c673d7b6b41b6b215003e  src/modules/platform/platformAdminService.ts
+ef723421360694739645524dfa2720e767cd5883a69f16ba4e452773708322dc  src/shared/i18n/platformTestTenantMessages.mjs
+c853d1709c19d42c96eb6bb0d8669e4c813f7cb7ab8ba0237233478da4ac5652  docs/reports/2026-09-20_PHASE_7B_4D_LOCAL_CONTRACT_MATRIX_REPORT.md
+
+Dieses Inventar ist das achte ZIP-Mitglied. Sein eigener Hash wird extern mit
+dem finalen ZIP-Hash berichtet, um eine selbstreferenzielle Prüfsumme zu
+vermeiden.
+
+Explizit ausgeschlossen:
+- node_modules
+- .env und .env.*
+- dist und build
+- historische ZIP-Artefakte
+- generierte Zugangsdaten und Secrets
