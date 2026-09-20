@@ -4,78 +4,78 @@ Datum: 2026-09-20
 
 Branch: `codex/v1-image-render-contract-fix`
 
-Implementierungscommit: `6fce122f2b0ca16c107a10792665e96cf862fa97`
+Implementierungscommits:
+
+- `6fce122f2b0ca16c107a10792665e96cf862fa97` – gemeinsamer Renderer und stabile 16:9-Geometrie
+- `29051a612f88ed2eba615c213ecad2845c76c9e7` – presentationsspezifischer Contain-Modus
+- `8edb371` – vollständiger Bildinhalt ohne Cover- oder Crop-Zoom-Skalierung
 
 Staging Worker: `wuxuai-restaurant-bonus-app-staging`
 
-Staging Version: `b4c4c476-57f4-4ad8-86da-f334e7e1d2d7`
+Staging Version: `fb824057-620b-447e-b6ea-49dbb16b9eec`
 
 ## Ursache
 
 Das aktive Customer-Präsentationsfenster für Punkte- und Geschenkeinlösungen
-verwendete `RewardImageFrame` direkt. Die CSS-Sonderregel
-`.premium-presentation-image .reward-image-frame { height: 100%; width: 100%; }`
-war eine nachweisbare Abweichung vom gemeinsamen Customer-Gift-Vertrag über
-`RewardImage`. Sie wurde eng beseitigt. Der anschließende reale Safari-Test
-beweist jedoch, dass diese Abweichung nicht die alleinige Ursache des
-abgeschnittenen unteren Bildinhalts „Linsensuppe“ war.
+wich zunächst durch einen direkt eingebetteten `RewardImageFrame` und eine
+prozentuale Kindhöhe vom gemeinsamen Gift-Renderer ab. Nach Beseitigung dieser
+Abweichung blieb Bildinhalt dennoch abgeschnitten: `SmartMediaFrame` verwendete
+trotz `object-fit: contain` anschließend die Transform-Skalierung
+`coverScale * normalized.zoom`.
 
-Die verbleibende Ursache liegt im gemeinsamen `SmartMediaFrame`-Vertrag:
-Das Bild verwendet zwar `object-fit: contain`, wird danach aber mit
-`coverScale * normalized.zoom` transformiert. Bei einem nicht-16:9-Quellbild
-füllt diese vollständige Render-Skalierung den 16:9-Rahmen und schneidet
-zwangsläufig Bildinhalt oben beziehungsweise unten ab. Im Staging-Screenshot
-nach dem Deployment ist der Suppenteller sichtbar, der untere Schriftzug
-„Linsensuppe“ fehlt aber vollständig.
-
-URL, Fokus X/Y, gespeicherter Zoom und vollständiger
-`--smart-media-render-scale` werden unverändert aus demselben
-Präsentationsdatensatz an `SmartMediaFrame` weitergegeben. Es existieren in
-diesem Pfad keine verbleibenden mobilen 3:2-, CSS-`cover`- oder
-`--smart-media-crop-zoom`-Overrides. Eine Verkürzung auf den gespeicherten Zoom
-würde jedoch dem ausdrücklich verlangten vollständigen Render-Scale und der
-Owner-/Customer-Parität widersprechen. Deshalb wurde gemäß Stopbedingung keine
-weitere Bildlogik erfunden.
+Der erste presentationsspezifische Versuch entfernte nur `coverScale`, ließ
+aber den gespeicherten Crop-Zoom aktiv. Der reale Safari-Test zeigte, dass ein
+Zoom größer als 1 weiterhin den unteren Bildinhalt abschneidet. Für die
+freigegebene fachliche Anforderung „vollständiger Bildinhalt“ muss deshalb in
+dieser Präsentation die gesamte Transform-Skalierung neutral sein. Der finale
+Contain-Modus setzt `--smart-media-render-scale` ausschließlich dort auf `1`.
+Die Bildquelle und Fokusmetadaten bleiben unverändert gebunden; im
+Präsentationsmodus werden weder Cover-Basismaßstab noch Crop-Zoom angewendet.
 
 ## Read-only Bildflächeninventar
 
-| Zustand | Renderer vor dem Fix | Bildvertrag / Ergebnis |
+| Zustand | Renderer | Finaler Bildvertrag |
 | --- | --- | --- |
-| Geburtstagsgeschenk, aktive Einlösung | `activePointsPresentation` → direkter `RewardImageFrame` | Betroffene Sonderbindung; `gift_type = birthday` |
-| Willkommensgeschenk, aktive Einlösung | derselbe `activePointsPresentation`-Renderer | Betroffene Sonderbindung; `gift_type = welcome` |
-| Normale persönliche Geschenkeinlösung | derselbe serverseitige Gift-Präsentationspfad | Kein separater Bildrenderer vorhanden; Geschenktypen bleiben fachlich unverändert |
-| Punkteeinlösung, aktive Einlösung | derselbe `activePointsPresentation`-Renderer | Betroffene Sonderbindung; ohne `gift_type` |
-| „Bestätigung ausstehend“ | `premium-presentation-window` | Gemeinsame aktive 15-Minuten-Präsentation aller obigen Typen |
-| Detail vor dem Start | `RewardImage` → `RewardImageFrame` → `SmartMediaFrame` | Bereits kanonischer 16:9-Vertrag; unverändert |
-| Erfolgs-/Fehlerausgang | `premium-redemption-outcome` | Enthält aktuell kein Bild. Es wurde keine neue Bildfläche erfunden. |
-| Historischer Einlösecode | `premium-redemption-code` | Enthält kein Bild; Legacy-Kompatibilität unverändert |
+| Geburtstagsgeschenk, aktive Einlösung | `activePointsPresentation` → `RewardImage` → `RewardImageFrame` → `SmartMediaFrame` | 16:9, `contain`, Render-Scale 1 |
+| Willkommensgeschenk, aktive Einlösung | derselbe Präsentationsrenderer | 16:9, `contain`, Render-Scale 1 |
+| Normale persönliche Geschenkeinlösung | derselbe serverseitige Gift-Präsentationspfad | 16:9, `contain`, Render-Scale 1 |
+| Punkteeinlösung, aktive Einlösung | derselbe Präsentationsrenderer | 16:9, `contain`, Render-Scale 1 |
+| „Bestätigung ausstehend“ | `premium-presentation-window` | stabile, inhaltsunabhängige 16:9-Medienfläche |
+| Detail vor dem Start | bestehender `RewardImage`-Vertrag | unverändert; Standardmodus bleibt `cover` |
+| Erfolgs-/Fehlerausgang | `premium-redemption-outcome` | aktuell ohne Bild; keine neue Bildfläche erzeugt |
+| Historischer Einlösecode | `premium-redemption-code` | ohne Bild; unverändert |
 
 ## Geänderte Dateien
 
+- `src/shared/components/SmartMediaFrame.tsx`
+- `src/shared/components/RewardImageFrame.tsx`
+- `src/modules/customer/components/PremiumCustomerUi.tsx`
 - `src/modules/customer/CustomerPortal.tsx`
 - `src/modules/customer/customer-premium.css`
 - `tests/customer-redemption-presentation-image-contract.test.mjs`
 
 ## Was wurde geändert
 
-- Die aktive Customer-Präsentation verwendet nun denselben `RewardImage`-
-  Gift-Wrapper wie Customer-Karten und Detailansicht.
-- Bild-URL sowie `image_position_x`, `image_position_y` und `image_zoom` werden
-  unverändert aus `activePointsPresentation` übernommen.
-- Der äußere Rahmen ist die alleinige Geometrieautorität mit `aspect-ratio:
-  16 / 9`, `position: relative`, `min-height: 0` und `overflow: hidden`.
-- Gift-Wrapper und `RewardImageFrame` füllen den Rahmen absolut über alle vier
-  Insets. Die alte prozentuale Kindhöhe wurde entfernt.
-- `SmartMediaFrame` behält `object-fit: contain`, Fokusposition, gespeicherten
-  Zoom und die vollständige Render-Skalierung.
+- Die aktive Customer-Präsentation verwendet den gemeinsamen `RewardImage`-
+  Gift-Wrapper.
+- Der äußere Rahmen ist alleinige Geometrieautorität mit `aspect-ratio: 16 / 9`,
+  `position: relative`, `min-height: 0` und `overflow: hidden`.
+- Gift-Wrapper und innerer Renderer füllen den Rahmen absolut; die frühere
+  prozentuale Kindhöhe wurde entfernt.
+- `SmartMediaFrame` erhielt einen optionalen `renderScaleMode`. Der bestehende
+  Standard bleibt `cover`, sodass andere Bildverbraucher unverändert bleiben.
+- Ausschließlich die aktive Einlöse-/Geschenkpräsentation verwendet
+  `renderScaleMode="contain"`; dort ist der Transform-Scale exakt `1`.
+- Das Bild bleibt proportional, unverzerrt und vollständig sichtbar. Freie
+  Randflächen sind ausdrücklich zulässig.
 
 ## Was wurde nicht geändert
 
+- Bild-URL sowie gespeicherte Fokus- und Crop-Metadaten
+- Single-Image-Editor, Upload-, Entfernen- oder Speicherlogik
 - Countdown, Serverzeit und 15-Minuten-Fenster
 - Swipe-Bestätigung, Critical-Dismiss-Schutz und Staff-Bestätigung
 - Punkte-, Geschenk- und Präsentationsstatus
-- Upload-, Entfernen-, Speicher- oder Crop-Metadatenlogik
-- Single-Image-Editor
 - RPCs, Datenbank, Migrationen, RLS oder Security
 - Business-, Billing-, Country-, PRO- oder Entitlement-Logik
 - bestehende oder aktive Präsentationsdatensätze
@@ -83,8 +83,8 @@ weitere Bildlogik erfunden.
 
 ## Prüfungen
 
-- Focused Contract/Regression Tests: **52/52 PASS**
-- Full Tests: **1866/1866 PASS**
+- Finaler Focused Contract/Regression-Lauf: **31/31 PASS**
+- Full Tests: **1867/1867 PASS**
 - Typecheck: **PASS**
 - Lint: **PASS**, 0 Fehler; 8 bereits vorhandene, scopefremde Warnungen
 - Build: **PASS**, Vite 6.4.3, 2128 Module
@@ -95,49 +95,44 @@ weitere Bildlogik erfunden.
 ## Staging Ergebnis
 
 - Deployment ausschließlich auf `wuxuai-restaurant-bonus-app-staging`: **PASS**
-- Version: `b4c4c476-57f4-4ad8-86da-f334e7e1d2d7`
-- Custom Domain HTTP: **200**
-- Hauptasset: `/assets/index-Cqpv4Al7.js`
+- Version: `fb824057-620b-447e-b6ea-49dbb16b9eec`
+- Hauptasset: `/assets/index-CdteXqqm.js`
 - SHA-256 Hauptasset:
-  `47a6a83b03576bb2e11e57196c4dc40bcb9c6c2d2cdeac7a4e76889905d6cf4a`
-- Customer CSS: `/assets/PremiumCustomerUi-f7p-RjGX.css`
-- Ausgelieferter Vertrag: 16:9 **PASS**, relative Elterngeometrie **PASS**,
-  absolut entkoppeltes Kind **PASS**, keine prozentuale Präsentations-Kindhöhe
-  **PASS**
+  `5506ee2cbba2c3dbd575f003c826121391cc0901f3bce1b693b03a48e2567b3a`
+- Lokales und ausgeliefertes Hauptasset: **bytegleich**
+- Production: **unverändert**
+- Datenbank/Migrationen: **unverändert / nicht angewendet**
 
-## QA und offene Risiken
+## Physischer Safari-Test
 
-Nach dem Deployment wurde die vorhandene Safari-Customer-Sitzung read-only
-geprüft. Der bereits aktive kompakte Hinweis „Eine Überraschung für dich
-anzeigen“ öffnete dieselbe bestehende Geburtstagspräsentation; es wurde keine
-neue Einlösung gestartet. Der Status blieb „Bestätigung ausstehend“, der
-Swipe-Regler blieb bei 0 und der Drawer wurde ohne Bestätigung geschlossen.
+Die bestehende angemeldete Customer-Sitzung wurde nach dem Deployment neu
+geladen. Es wurde ausschließlich die bereits aktive Präsentation über
+„Gratis Getränk anzeigen“ geöffnet. Es wurde keine neue Einlösung gestartet,
+nicht gewischt und nichts bestätigt oder gespeichert.
 
-Physisches Ergebnis: **FAIL**. Der 16:9-Rahmen ist geometrisch stabil und der
-Suppenteller vollständig sichtbar. Der zum Bild gehörende untere Schriftzug
-„Linsensuppe“, der im Ausgangsscreenshot nur angeschnitten war, fehlt nach dem
-Deployment vollständig. Die Akzeptanz „kein Abschneiden des Bildinhalts“ ist
-damit nicht erfüllt.
+Ergebnis: **PASS**. Der 16:9-Rahmen blieb stabil. Das hochformatige Bild wurde
+vollständig und proportional innerhalb des Rahmens angezeigt; freie
+Seitenflächen blieben sichtbar. Der wichtige Text „Bier“ am unteren Bildrand
+war vollständig sichtbar und nicht abgeschnitten. Der Status blieb
+„Bestätigung ausstehend“, der Swipe-Regler blieb bei `0`. Anschließend wurde
+die Ansicht über „Ansicht schließen“ geschlossen.
 
-Vor einer weiteren Produktänderung ist eine Founder-Entscheidung nötig:
-
-1. Vollständigen Bildinhalt garantieren und dafür in dieser Präsentation auf
-   den `coverScale`-Anteil verzichten; oder
-2. den gemeinsamen vollständigen Render-Scale und den gespeicherten Ausschnitt
-   priorisieren, womit nicht-16:9-Quellbilder weiterhin beschnitten werden.
-
-Production, Datenbank und Migrationen blieben unverändert.
+Der konkrete frühere Datensatz mit „Linsensuppe“ war nach Ablauf der früheren
+Präsentation nicht mehr als bestehende aktive Präsentation verfügbar und wurde
+gemäß QA-Sperre nicht erneut eingelöst. Die technisch identische aktive
+Willkommensgeschenk-Präsentation belegt den finalen gemeinsamen Renderer mit
+einem ebenfalls texttragenden Hochformatbild.
 
 ## Abschluss
 
-- Aufgabe: 16:9-Vertrag für Customer-Geschenk- und Einlösungspräsentationen
+- Aufgabe: Vollständiger Bildinhalt in Customer-Einlöse-/Geschenkpräsentationen
 - Build: Ja
 - Migration: Keine
-- Flow-Test: Ja – vorhandene Safari-Customer-Geburtstagspräsentation FAIL
+- Flow-Test: Ja – bestehende Safari-Customer-Präsentation PASS
 - RLS/Security: Unverändert; keine Datenbankänderung
 - Alte Logik geprüft: Ja
-- Offene Risiken: fachliche Entscheidung zwischen vollständigem Bildinhalt und vollständigem Cover-Render-Scale
-- Status: NOT READY
+- Offene Risiken: Der abgelaufene konkrete „Linsensuppe“-Datensatz wurde nicht erneut eingelöst; gemeinsamer aktiver Renderer mit vergleichbarem Hochformat-/Textbild physisch bestanden
+- Status: LOCK
 
 TASK-OWNED BACKGROUND PROCESSES STARTED: 0
 
