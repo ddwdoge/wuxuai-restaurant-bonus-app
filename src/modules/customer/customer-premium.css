@@ -715,8 +715,9 @@
 .premium-presentation-window > *:not(.premium-presentation-shine) { position: relative; z-index: 1; }
 .premium-presentation-window > header { align-items: center; display: flex; justify-content: space-between; }
 .premium-presentation-security-mark { align-items: center; animation: premium-security-mark 3s ease-in-out infinite; background: #1f1d19; border-radius: 50%; color: #e5bd69; display: inline-flex; height: 50px; justify-content: center; width: 50px; }
-.premium-presentation-image { aspect-ratio: 16 / 9; background: #f3eee4; border-radius: 14px; overflow: hidden; }
-.premium-presentation-image .reward-image-frame { height: 100%; width: 100%; }
+.premium-presentation-image { aspect-ratio: 16 / 9; background: #f3eee4; border-radius: 14px; min-height: 0; overflow: hidden; position: relative; }
+.premium-presentation-image > .premium-reward-image,
+.premium-presentation-image .reward-image-frame { height: auto; inset: 0; position: absolute; width: auto; }
 .premium-presentation-heading { display: grid; gap: 4px; text-align: center; }
 .premium-presentation-heading span, .premium-presentation-heading p { color: #6f685e; margin: 0; }
 .premium-presentation-heading h2 { color: #211f1b; font-family: Georgia, "Times New Roman", serif; font-size: clamp(27px, 8vw, 38px); line-height: 1.08; margin: 0; }

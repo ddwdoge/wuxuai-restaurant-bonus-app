@@ -2431,14 +2431,14 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                       <StatusBadge tone="warning">Bestätigung ausstehend</StatusBadge>
                     </header>
                     <div className="premium-presentation-image">
-                      <RewardImageFrame
-                        alt={activeRewardTitle ?? activePointsPresentation.reward_title}
+                      <RewardImage
                         crop={rewardImageCropFromRecord({
                           image_zoom: activePointsPresentation.image_zoom,
                           image_position_x: activePointsPresentation.image_position_x,
                           image_position_y: activePointsPresentation.image_position_y,
                         })}
                         imageUrl={activePointsPresentation.reward_image_url}
+                        title={activeRewardTitle ?? activePointsPresentation.reward_title}
                       />
                     </div>
                     <div className="premium-presentation-heading">
