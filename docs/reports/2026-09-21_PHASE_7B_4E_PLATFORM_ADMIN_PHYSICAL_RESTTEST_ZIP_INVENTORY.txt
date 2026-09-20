@@ -1,0 +1,24 @@
+WUXUAI BONUS – PHASE 7B.4E PHYSICAL RESTTEST PRUEF-ZIP
+Datum: 2026-09-21
+Branch: codex/v1-release-integration
+Ausgangs-HEAD: 1a14c571b45e3088b6a85729b3effd725c923db9
+
+ZIP-Mitglieder und SHA-256:
+
+5bfbad02d072b1954ac1bf3ecb8577c4461e2033ae451b8400c8759099a2fb54  docs/reports/2026-09-21_PHASE_7B_4E_PLATFORM_ADMIN_PHYSICAL_RESTTEST_REPORT.md
+65ce08661406aae5b1eea865084906db4fd7bedcc0c535b9359085a1be38e79d  docs/reports/2026-09-21_PHASE_7B_4E_STAGING_MIGRATION_READ_ONLY_GATE_REPORT.md
+fd420478a9a738e23d7103a5963748d186ddf0008230836b5b8a33bdee1cbc4e  src/modules/platform/PlatformProControlCenter.tsx
+8868ffdba9cdb116e3495190a8e34ccef465d6e6acc534b24253b63f1798ab76  src/modules/platform/proControlCenterI18n.ts
+07992a207f09604b30e90bcce82153e3cb1d08700af16a0bc1e95e26d8697fc6  tests/platform-pro-control-center-ui.test.mjs
+1999aa08c2218c7f6dbf0a063da202b110a65d0e33afb678e0f037ec9a1a032e  tests/pro-commercial-control-center-reads.test.mjs
+816369d51c871fa49d236a78d5893c077363bfbf1566fc15c589f9ffe12a05f2  supabase/migrations/20260915002000_pro_commercial_control_center_reads.sql
+
+Das Inventar ist das achte ZIP-Mitglied. Sein eigener Hash und der ZIP-Hash
+werden extern berichtet, um eine selbstreferenzielle Prüfsumme zu vermeiden.
+
+Explizit ausgeschlossen:
+- node_modules
+- .env und .env.*
+- dist und build
+- historische ZIP-Artefakte
+- Zugangsdaten, Tokens und Secrets
