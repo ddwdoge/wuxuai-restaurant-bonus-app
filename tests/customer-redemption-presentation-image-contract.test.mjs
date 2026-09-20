@@ -22,6 +22,7 @@ test("Geburtstags-, Willkommens- und Punkteeinlösungen verwenden denselben Gift
   assert.match(presentation, /image_zoom: activePointsPresentation\.image_zoom/);
   assert.match(presentation, /image_position_x: activePointsPresentation\.image_position_x/);
   assert.match(presentation, /image_position_y: activePointsPresentation\.image_position_y/);
+  assert.match(presentation, /renderScaleMode="contain"/);
   assert.match(premiumUi, /<RewardImageFrame alt=\{title\} crop=\{crop\} imageUrl=\{imageUrl\}/);
 });
 
@@ -45,6 +46,13 @@ test("Bildquelle, Fokus, Zoom und vollständige Render-Skalierung bleiben unver�
   assert.match(smartMedia, /--smart-media-render-scale": coverScale \* normalized\.zoom/);
   assert.match(smartMediaCss, /object-fit: contain/);
   assert.match(smartMediaCss, /transform: scale\(var\(--smart-media-render-scale, 1\)\)/);
+});
+
+test("nur die Einlösepräsentation entfernt den Cover-Basismaßstab", () => {
+  assert.match(smartMedia, /renderScaleMode = "cover"/);
+  assert.match(smartMedia, /if \(renderScaleMode === "contain"\)/);
+  assert.match(smartMedia, /style\["--smart-media-render-scale"\] = normalized\.zoom/);
+  assert.equal((customerPortal.match(/renderScaleMode="contain"/g) ?? []).length, 1);
 });
 
 test("Bestätigung, Countdown und Einlösungslogik bleiben Teil des unveränderten Fensters", () => {

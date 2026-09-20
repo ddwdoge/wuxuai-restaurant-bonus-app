@@ -239,11 +239,11 @@ export function BenefitTile({ disabled = false, icon, label, onClick, status }: 
   );
 }
 
-export function RewardImage({ crop, imageFirst = false, imageUrl, title }: { crop?: Partial<RewardImageCrop> | null; imageFirst?: boolean; imageUrl?: string | null; title: string }) {
+export function RewardImage({ crop, imageFirst = false, imageUrl, renderScaleMode, title }: { crop?: Partial<RewardImageCrop> | null; imageFirst?: boolean; imageUrl?: string | null; renderScaleMode?: "contain" | "cover"; title: string }) {
   const { language } = useI18n();
   return (
     <div className="premium-reward-image" data-i18n-skip="true">
-      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} loading={imageFirst ? "lazy" : undefined} /> : <Gift aria-label={customerPresentationText("placeholder", language, { title })} size={38} />}
+      {imageUrl ? <RewardImageFrame alt={title} crop={crop} imageUrl={imageUrl} loading={imageFirst ? "lazy" : undefined} renderScaleMode={renderScaleMode} /> : <Gift aria-label={customerPresentationText("placeholder", language, { title })} size={38} />}
     </div>
   );
 }

@@ -18,6 +18,15 @@ type SmartMediaFrameProps = {
   onImageError?: () => void;
   onImageLoad?: (dimensions: MediaDimensions) => void;
   presentation?: Partial<MediaPresentation> | null;
+  renderScaleMode?: "contain" | "cover";
+};
+
+type SmartMediaStyle = CSSProperties & {
+  "--smart-media-aspect-ratio": number;
+  "--smart-media-crop-zoom": number;
+  "--smart-media-position-x": string;
+  "--smart-media-position-y": string;
+  "--smart-media-render-scale": number;
 };
 
 export function SmartMediaFrame({
@@ -30,6 +39,7 @@ export function SmartMediaFrame({
   onImageError,
   onImageLoad,
   presentation,
+  renderScaleMode = "cover",
 }: SmartMediaFrameProps) {
   const [coverScale, setCoverScale] = useState(1);
   const [failed, setFailed] = useState(false);
@@ -40,13 +50,17 @@ export function SmartMediaFrame({
     setCoverScale(1);
   }, [imageUrl]);
 
-  const style = {
+  const style: SmartMediaStyle = {
     "--smart-media-aspect-ratio": aspectRatio,
     "--smart-media-position-x": `${normalized.positionX * 100}%`,
     "--smart-media-position-y": `${normalized.positionY * 100}%`,
     "--smart-media-render-scale": coverScale * normalized.zoom,
     "--smart-media-crop-zoom": normalized.zoom,
-  } as CSSProperties;
+  };
+
+  if (renderScaleMode === "contain") {
+    style["--smart-media-render-scale"] = normalized.zoom;
+  }
 
   return (
     <div className={`smart-media-frame ${className}`.trim()} style={style}>
