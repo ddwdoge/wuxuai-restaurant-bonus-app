@@ -12,6 +12,7 @@ const de: ProMessages = {
   grants: "Grant-Verlauf", audit: "Commercial-Audit", noGrants: "Keine Berechtigungen für diesen Filter.", noAudit: "Noch keine Commercial-Audit-Einträge.",
   all: "Alle", active: "Aktiv", scheduled: "Geplant", expired: "Abgelaufen", revoked: "Widerrufen",
   countryDrawer: "Länderfreigabe verwalten", pilotDrawer: "Pilotzugang verwalten", testDrawer: "TEST_ONLY-Zugang verwalten",
+  lockedPreviewTitle: "Nur Vorschau · LOCKED", lockedPilotPreview: "Pilotzugänge sind erst möglich, nachdem PRO für dieses Land freigegeben wurde. Diese Ansicht dient nur zur Vorschau.", selectedBusiness: "Ausgewählter Betrieb", country: "Land", status: "Status",
   impact: "Auswirkungsvorschau", releaseImpact: "Eine Länderfreigabe allein aktiviert keinen Basic-Betrieb. Erst eine gültige Paid-, Trial- oder Pilotberechtigung kann Pro wirksam machen.",
   lockImpact: "Pro wird für dieses Land serverseitig gesperrt. Gespeicherte Zustände und Daten bleiben erhalten.",
   pilotImpact: "Der zeitlich begrenzte Zugang erzeugt keine Zahlung und keine automatische Verlängerung.",
@@ -31,8 +32,17 @@ const localized: Record<string, Partial<ProMessages>> = {
   ko: { title:"Pro 승인",description:"국가 출시, 파일럿 접근 및 감사 기록을 안전하게 관리합니다.",loading:"Pro 승인을 불러오는 중…",loadError:"Pro 승인을 불러올 수 없습니다.",retry:"다시 시도",countries:"국가 상태",locked:"Pro 잠김",released:"Pro 출시됨",change:"상태 관리",lastChange:"최근 변경",actor:"작업자",reason:"사유",noReason:"기록된 변경이 없습니다",entitlements:"승인",paid:"유료",trial:"체험",pilot:"파일럿",testOnly:"TEST_ONLY",test_only:"TEST_ONLY",realBusinesses:"실제 파일럿 사업장",businessSearch:"사업장 검색",noBusinesses:"일치하는 실제 사업장이 없습니다.",createPilot:"파일럿 접근 준비",storedPlan:"저장된 요금제",effectivePlan:"적용 요금제",locations:"지점",testOnlyTitle:"내부 TEST_ONLY 사업장",noTestOnly:"서버에서 정확히 표시된 TEST_ONLY 사업장이 없습니다.",grants:"승인 기록",audit:"상업 감사",noGrants:"이 필터에 해당하는 승인이 없습니다.",noAudit:"상업 감사 기록이 없습니다.",all:"전체",active:"활성",scheduled:"예정",expired:"만료",revoked:"철회",countryDrawer:"국가 출시 관리",pilotDrawer:"파일럿 접근 관리",testDrawer:"TEST_ONLY 접근 관리",impact:"영향 미리보기",releaseImpact:"국가 출시만으로 Basic 사업장이 업그레이드되지 않습니다. 유효한 유료, 체험 또는 파일럿 권한도 필요합니다.",lockImpact:"이 국가의 Pro는 서버에서 잠깁니다. 저장된 상태와 데이터는 유지됩니다.",pilotImpact:"기간 제한 접근은 결제나 자동 갱신을 만들지 않습니다.",recentAuth:"이 고위험 작업은 최근 10분 이내의 서버 인증이 필요합니다.",confirmation:"정확한 확인 문구",enterReason:"10자 이상의 내부 사유",cancel:"취소",submit:"확인된 작업 실행",duration:"기간",days30:"30일",days60:"60일",days90:"90일",start:"시작",end:"만료",validation:"사유와 정확한 확인 문구가 필요합니다.",conflict:"상태가 변경되어 데이터를 다시 불러왔습니다.",recentError:"다시 로그인한 후 작업을 반복하세요.",saveError:"서버가 작업을 거부했습니다. Pro는 잠긴 상태입니다.",refresh:"새로고침",extend:"연장",revoke:"철회",grant:"접근 준비",result:"결과",empty:"항목 없음" },
 };
 
+const lockedPreviewLocalized: Record<string, Partial<ProMessages>> = {
+  en: { lockedPreviewTitle:"Preview only · LOCKED", lockedPilotPreview:"Pilot access is only possible after PRO has been released for this country. This view is a preview only.", selectedBusiness:"Selected business", country:"Country", status:"Status" },
+  fr: { lockedPreviewTitle:"Aperçu uniquement · LOCKED", lockedPilotPreview:"L’accès pilote n’est possible qu’après l’activation de PRO pour ce pays. Cette vue sert uniquement d’aperçu.", selectedBusiness:"Établissement sélectionné", country:"Pays", status:"Statut" },
+  it: { lockedPreviewTitle:"Solo anteprima · LOCKED", lockedPilotPreview:"L’accesso pilota è possibile solo dopo l’abilitazione di PRO per questo paese. Questa vista è solo un’anteprima.", selectedBusiness:"Attività selezionata", country:"Paese", status:"Stato" },
+  es: { lockedPreviewTitle:"Solo vista previa · LOCKED", lockedPilotPreview:"El acceso piloto solo es posible después de habilitar PRO para este país. Esta vista es solo una vista previa.", selectedBusiness:"Negocio seleccionado", country:"País", status:"Estado" },
+  zh: { lockedPreviewTitle:"仅预览 · LOCKED", lockedPilotPreview:"只有在该国家/地区发布 PRO 后才能启用试点访问。此视图仅用于预览。", selectedBusiness:"所选商户", country:"国家/地区", status:"状态" },
+  ko: { lockedPreviewTitle:"미리보기 전용 · LOCKED", lockedPilotPreview:"이 국가에서 PRO가 출시된 후에만 파일럿 접근이 가능합니다. 이 화면은 미리보기 전용입니다.", selectedBusiness:"선택한 사업장", country:"국가", status:"상태" },
+};
+
 export function proControlCenterMessages(language: string): ProMessages {
-  return Object.assign({}, de, localized[language] ?? {}) as ProMessages;
+  return Object.assign({}, de, localized[language] ?? {}, lockedPreviewLocalized[language] ?? {}) as ProMessages;
 }
 
 export const proControlCenterLanguages = localized;

@@ -295,7 +295,7 @@ export function PlatformAdminPage() {
           <span className="pill">{platformRole ? roleLabels[platformRole] ?? "Plattform Admin" : "Plattform Admin"}</span>
           {section === "overview" ? <button className="button secondary" onClick={() => void loadOverviewData()} type="button"><RefreshCw size={18} />{navigationText.refresh}</button> : null}
           {showRestaurantWorkspace ? <button className="button secondary" onClick={() => void loadRestaurantData(selectedRestaurantId)} type="button"><RefreshCw size={18} />{navigationText.refresh}</button> : null}
-          <button className="button secondary" onClick={signOut} type="button">{navigationText.signOut}</button>
+          <button className="button secondary platform-admin-sign-out" onClick={signOut} type="button">{navigationText.signOut}</button>
       </>}
     >
 

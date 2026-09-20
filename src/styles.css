@@ -1139,6 +1139,11 @@ a {
   min-width: 0;
 }
 
+.platform-admin-header-toolbar .platform-admin-sign-out {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .platform-admin-workspace {
   align-items: start;
   display: grid;
@@ -1254,7 +1259,12 @@ a {
 .pro-action-form fieldset { border: 0; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
 .pro-action-form legend { font-weight: 700; margin-bottom: 8px; width: 100%; }
 .pro-impact, .pro-recent-auth { align-items: flex-start; background: #fff8e8; border: 1px solid #e5c86d; border-radius: 10px; display: flex; gap: 10px; padding: 12px; }
+.pro-impact.locked-preview { background: #fff4f1; border-color: #b33a2f; color: #6f241d; }
 .pro-impact p, .pro-recent-auth p { margin: 3px 0 0; }
+.pro-locked-preview-meta { border: 1px solid #d8e0e3; border-radius: 10px; display: grid; gap: 8px; margin: 0; padding: 12px; }
+.pro-locked-preview-meta div { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+.pro-locked-preview-meta dt { color: #66727d; }
+.pro-locked-preview-meta dd { font-weight: 700; margin: 0; overflow-wrap: anywhere; text-align: right; }
 .pro-confirmation { background: #f1f4f5; border-radius: 8px; display: block; overflow-wrap: anywhere; padding: 11px; }
 .pro-control-center button, .pro-action-form input, .pro-action-form textarea { min-height: 44px; }
 
