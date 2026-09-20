@@ -7,11 +7,14 @@
   jetzt denselben praesentationalen `RewardCard`- und `RewardImageFrame`-Pfad
   wie die echte Customer-Karte, jedoch ohne Tracking-, Oeffnen-, Einloese- oder
   Schreibaktion.
+- Die Medienflaeche der Owner-Liste verwendet im bestehenden Upload-Button
+  denselben praesentationalen `RewardImage`-Pfad; Button-, Editor- und
+  Speicherverhalten bleiben unveraendert.
 - Bild-URL, Fokusposition, gespeicherter Zoom, Basis-Skalierung, vollstaendige
   Render-Skalierung, `object-fit` und Transform bleiben unveraendert.
-- Owner-Liste, Schritt-4-Editor, Schritt-5-Safari-Reflow-Fix, Upload,
-  Speicherung, Business-, Security-, Entitlement- und Datenbanklogik bleiben
-  unveraendert.
+- Kartenlayout und -breite der Owner-Liste, Schritt-4-Editor,
+  Schritt-5-Safari-Reflow-Fix, Upload, Speicherung, Business-, Security-,
+  Entitlement- und Datenbanklogik bleiben unveraendert.
 
 ## 2026-09-20 - Owner-Schritt-5-Safari-Reflow stabilisiert
 

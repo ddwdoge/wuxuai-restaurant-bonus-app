@@ -15,6 +15,7 @@ type OwnerRewardImageUploaderProps = {
   ariaLabel?: string;
   compact?: boolean;
   crop?: Partial<RewardImageCrop> | null;
+  media?: ReactNode;
   showMessage?: boolean;
   onEdit?: () => void;
   onFileSelected: (file: File) => void;
@@ -33,6 +34,7 @@ export function OwnerRewardImageUploader({
   ariaLabel,
   compact = false,
   crop,
+  media,
   showMessage = true,
   onEdit,
   onFileSelected,
@@ -80,7 +82,7 @@ export function OwnerRewardImageUploader({
         type="button"
       >
         {displayUrl ? (
-          <RewardImageFrame alt={`Foto ${label}`} crop={crop} imageUrl={displayUrl} />
+          media ?? <RewardImageFrame alt={`Foto ${label}`} crop={crop} imageUrl={displayUrl} />
         ) : (
           <span className="owner-reward-image-placeholder">
             {categoryIcon}

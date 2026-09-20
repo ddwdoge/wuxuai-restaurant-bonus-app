@@ -48,7 +48,7 @@ import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
 import { RedemptionRateSelect } from "../components/RedemptionRateSelect";
 import { removeOwnerRewardImageUpload, uploadOwnerRewardImage } from "../services/ownerRewardImageService";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
-import { RewardCard } from "../../customer/components/PremiumCustomerUi";
+import { RewardCard, RewardImage } from "../../customer/components/PremiumCustomerUi";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type RewardCalculationSettings = {
@@ -574,6 +574,7 @@ export function RewardsPage() {
                     crop={rewardImageCropFromRecord(offer)}
                     imageUrl={offer.image_url}
                     label={offer.title}
+                    media={offer.image_url ? <RewardImage crop={rewardImageCropFromRecord(offer)} imageFirst imageUrl={offer.image_url} title={offer.title} /> : undefined}
                     onFileSelected={(file) => selectQuickPhoto(offer, file)}
                     onEdit={() => editQuickPhoto(offer)}
                     showMessage={false}

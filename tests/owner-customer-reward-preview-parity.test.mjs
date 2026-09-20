@@ -4,16 +4,24 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const rewardsPage = read("src/modules/admin/pages/RewardsPage.tsx");
+const ownerUploader = read("src/modules/admin/components/OwnerRewardImageUploader.tsx");
 const adminCss = read("src/modules/admin/admin-premium.css");
 const customerUi = read("src/modules/customer/components/PremiumCustomerUi.tsx");
 const smartMedia = read("src/shared/components/SmartMediaFrame.tsx");
 const smartMediaCss = read("src/shared/components/smart-media.css");
 
 test("Owner-Drawer verwendet denselben praesentationalen RewardCard-Renderer wie Customer", () => {
-  assert.match(rewardsPage, /import \{ RewardCard \} from "\.\.\/\.\.\/customer\/components\/PremiumCustomerUi"/);
+  assert.match(rewardsPage, /import \{ RewardCard, RewardImage \} from "\.\.\/\.\.\/customer\/components\/PremiumCustomerUi"/);
   assert.match(rewardsPage, /<RewardCard[^>]*imageCrop=\{rewardImageCropFromRecord\(previewOffer\)\}[^>]*imageFirst[^>]*imageUrl=\{previewOffer\.image_url\}/);
   assert.match(customerUi, /export function RewardCard/);
   assert.match(customerUi, /<RewardImage crop=\{imageCrop\}[^>]*imageUrl=\{imageUrl\}/);
+});
+
+test("Owner-Liste verwendet denselben Customer-RewardImage-Pfad ohne Uploadvertrag zu aendern", () => {
+  assert.match(rewardsPage, /media=\{offer\.image_url \? <RewardImage crop=\{rewardImageCropFromRecord\(offer\)\} imageFirst imageUrl=\{offer\.image_url\} title=\{offer\.title\} \/> : undefined\}/);
+  assert.match(ownerUploader, /media\?: ReactNode/);
+  assert.match(ownerUploader, /media \?\? <RewardImageFrame/);
+  assert.match(ownerUploader, /onClick=\{openFilePicker\}/);
 });
 
 test("Owner-Vorschau bleibt rein praesentational und ohne Customer-Aktion", () => {
