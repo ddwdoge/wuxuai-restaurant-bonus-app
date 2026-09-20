@@ -87,8 +87,13 @@ for(const kind of ["tap","pan","scroll","cancel","keyboard"]) test(`Block A exis
 });
 test("CSS scope cannot change Home or operational QR/PIN; full hit area and non-clamped titles",()=>{
   const css=read("src/modules/customer/customer-block-a.css");
+  const mediaCss=read("src/shared/components/smart-media.css");
   assert.doesNotMatch(css,/\.customer-home-compact|\.premium-boost|\.premium-customer-header|QRCode|daily.?pin|\bzoom\s*:/i);
-  assert.match(css,/aspect-ratio: 3 \/ 2/); assert.match(css,/height: 100%;[\s\S]*inset: 0/);
+  assert.doesNotMatch(css,/3\s*\/\s*2|object-fit\s*:\s*cover|--smart-media-crop-zoom/);
+  assert.match(mediaCss,/aspect-ratio: var\(--smart-media-aspect-ratio, 1\.77778\)/);
+  assert.match(mediaCss,/object-fit: contain/);
+  assert.match(mediaCss,/transform: scale\(var\(--smart-media-render-scale, 1\)\)/);
+  assert.match(css,/height: 100%;[\s\S]*inset: 0/);
   assert.match(css,/display: block;\s+overflow: visible;\s+overflow-wrap: anywhere/);
   assert.match(css,/:has\(\.premium-reward-detail\) \{ height: auto;/);
 });

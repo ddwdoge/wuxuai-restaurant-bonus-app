@@ -6,6 +6,7 @@ import ts from "typescript";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const css = read("src/modules/customer/customer-compact.css");
+const mediaCss = read("src/shared/components/smart-media.css");
 const portal = read("src/modules/customer/CustomerPortal.tsx");
 const report = read("docs/reports/2026-09-12_PHASE_6_MOBILE_COMPACT_UI_REPORT.md");
 function openingElements(path) {
@@ -48,8 +49,11 @@ test("Compact reference is scoped to authenticated restaurant Home and mobile me
   assert.match(css, /@media \(max-width: 767px\)/);
   assert.match(css, /@media \(max-width: 359px\)/);
   assert.doesNotMatch(css, /\bzoom\s*:|visibility\s*:\s*hidden|!important/);
-  assert.deepEqual([...css.matchAll(/transform\s*:\s*([^;]+);/g)].map((match) => match[1]), ["scale(var(--smart-media-crop-zoom, 1))", "none"]);
-  assert.match(css, /\.smart-media-frame > img \{\s*object-fit: cover;/);
+  assert.deepEqual([...css.matchAll(/transform\s*:\s*([^;]+);/g)].map((match) => match[1]), ["none"]);
+  assert.doesNotMatch(css, /3\s*\/\s*2|object-fit\s*:\s*cover|--smart-media-crop-zoom/);
+  assert.match(mediaCss, /aspect-ratio: var\(--smart-media-aspect-ratio, 1\.77778\)/);
+  assert.match(mediaCss, /object-fit: contain/);
+  assert.match(mediaCss, /transform: scale\(var\(--smart-media-render-scale, 1\)\)/);
 });
 
 test("Image-first reference preserves benefit actions while placing offers ahead of status tiles", () => {

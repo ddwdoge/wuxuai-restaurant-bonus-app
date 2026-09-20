@@ -5,12 +5,13 @@
 
 Status: **LOCK**
 
-**Phase-6-Zielergaenzung 2026-09-12:** Fuer mobile Marketingkarten gilt
-Abschnitt 5.4 in `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md` (Image-first).
-Die aeltere 16:9-/83-Prozent-Geometrie und das pauschale Cover-Verbot unten
-sind nur fuer diesen Zielumfang SUPERSEDED, nicht fuer Logos, QR, Druck oder
-andere Portale. Informationskarten bleiben kompakt, Sicherheitsablaeufe
-unveraendert. Neuer visueller Ist-/Final-Lock-Nachweis steht noch aus.
+**Founder-Nachtrag 2026-09-20:** Fuer bildtragende Marketingkarten gilt
+portaluebergreifend derselbe 16:9-Medienvertrag aus Abschnitt 5.4 in
+`docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`: `object-fit: contain`, identische
+Bild-URL und Fokusposition sowie gespeicherter Zoom mit vollstaendiger
+Render-Skalierung. Die mobile `3:2`-/`cover`-Sonderdarstellung ist aufgehoben.
+Kartenbreite, Image-first-Hierarchie, Logos, QR, Druck, Drawer, Keyboard und
+Sicherheitsablaeufe bleiben unveraendert.
 
 ## Unified UI/UX System Phase 2
 

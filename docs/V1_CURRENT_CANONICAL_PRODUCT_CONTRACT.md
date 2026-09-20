@@ -494,6 +494,11 @@ angewendet; eine Control-Center-UI ist weiterhin nicht implementiert.
 
 - Kein kritischer `100dvh`-Lock, vollstaendiges vertikales Scrollen und Safe
   Areas bleiben erhalten.
+- Punkteeinloesungen, bildtragende Willkommensgeschenke und Angebote verwenden
+  in Owner- und Customer-Flächen denselben stabilen 16:9-Medienvertrag mit
+  `object-fit: contain`, identischer Bild-URL und Fokusposition sowie
+  gespeichertem Zoom mit vollständiger Render-Skalierung. Mobile `3:2`-,
+  `cover`- und verkürzte Crop-Zoom-Overrides sind nicht Teil des Vertrags.
 - Filterchips bleiben horizontal erreichbar, Logos verwenden `object-fit:
   contain`.
 - Der Punktehinweis ist auf der Customer-Startseite ueber einen fokussierten

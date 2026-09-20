@@ -1,16 +1,16 @@
 # 05_CUSTOMER_PORTAL.md
 
-## Phase 6 Image-first – neuer Zielvertrag 2026-09-12
+## Gemeinsamer Bildvertrag – Founder-Nachtrag 2026-09-20
 
-Verbindlicher mobiler Marketingkarten-Nachtrag:
+Verbindlicher Marketingkarten-Vertrag:
 `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`, Abschnitt 5.4.
-Die aelteren 16:9-/83-Prozent- und pauschalen `contain`-Vorgaben unten
-sind fuer diesen Zielumfang SUPERSEDED. Image-first ist noch nicht umgesetzt
-oder physisch abgenommen. Katalogvollstaendigkeit, Geschenkprioritaet und
-Business-/Security-Locks bleiben bestehen. Founder-Klarstellung: horizontales
-Wischen links/rechts, Scroll Snap, Pfeile und Positionsanzeige bleiben erhalten;
-die Referenz betrifft nur den Kartenaufbau, keinen vertikalen Feed.
-Keine neue Catalog-Funktion in Phase 6.
+Owner und Customer verwenden fuer Punkteeinloesungen, bildtragende
+Willkommensgeschenke und Angebote dieselbe stabile 16:9-Medienflaeche mit
+`object-fit: contain`, derselben Bild-URL, Fokusposition, gespeichertem Zoom
+und vollstaendiger Render-Skalierung. Die fruehere mobile `3:2`-/`cover`-
+Sonderdarstellung ist aufgehoben. Horizontales Wischen, Scroll Snap, Pfeile,
+Positionsanzeige, Katalogvollstaendigkeit, Geschenkprioritaet sowie Business-
+und Security-Locks bleiben unveraendert. Keine neue Catalog-Funktion.
 
 ## Current Lock 2026-08-24
 

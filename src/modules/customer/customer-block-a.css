@@ -1,7 +1,6 @@
 /* Block A only: existing cards/carousel, no Home, Boost, header or flow changes. */
 .customer-block-a {
   --customer-card-mobile-width: 90%;
-  --customer-card-media-ratio: 3 / 2;
   --customer-card-radius: 16px;
   --customer-card-padding: 14px;
   min-width: 0;
@@ -17,16 +16,10 @@
   position: relative;
 }
 .customer-block-a .premium-horizontal-carousel :is(.premium-reward-media, .customer-offer-card-media) {
-  aspect-ratio: 3 / 2;
   border-radius: 0;
   min-height: 0;
   width: 100%;
 }
-.customer-block-a :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame {
-  aspect-ratio: 3 / 2;
-  height: 100%;
-}
-.customer-block-a :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame > img { object-fit: cover; }
 .customer-block-a .premium-horizontal-carousel :is(.premium-reward-copy, .customer-offer-card-body) { gap: 4px; padding: 0 44px 0 14px; min-width: 0; }
 .customer-block-a .premium-horizontal-carousel-item :is(.premium-reward-copy h3, .customer-offer-card-body h3) {
   display: block;

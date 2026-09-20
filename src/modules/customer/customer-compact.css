@@ -7,7 +7,6 @@
     --customer-card-padding: 14px;
     --customer-card-inline-inset: 28px;
     --customer-card-mobile-width: 90%;
-    --customer-card-media-ratio: 3 / 2;
     font-size: 15px;
   }
 
@@ -72,7 +71,7 @@
     padding: 0 0 14px;
     position: relative;
   }
-  .customer-home-compact .premium-reward-media { aspect-ratio: 3 / 2; border-radius: 0; width: 100%; }
+  .customer-home-compact .premium-reward-media { border-radius: 0; width: 100%; }
   .customer-home-compact .premium-reward-copy { gap: 4px; padding: 0 44px 0 14px; }
   .customer-home-compact .premium-reward-copy > span { color: var(--premium-text-secondary); font-size: 13px; }
   .customer-home-compact .premium-reward-copy h3 { display: block; font-size: 17px; overflow: visible; overflow-wrap: anywhere; }
@@ -81,7 +80,7 @@
   .customer-home-compact .premium-reward-card > .premium-button { grid-column: 1 / -1; margin: 0 14px; width: calc(100% - 28px); }
 
   .customer-home-compact .customer-offer-card { display: grid; grid-template-columns: minmax(0, 1fr); position: relative; }
-  .customer-home-compact .customer-offer-card-media { aspect-ratio: 3 / 2; min-height: 0; }
+  .customer-home-compact .customer-offer-card-media { min-height: 0; }
   .customer-home-compact .customer-offer-card-media small { bottom: 8px; font-size: 12px; left: 12px; max-width: calc(100% - 24px); overflow-wrap: anywhere; padding: 4px 8px; }
   .customer-home-compact .customer-offer-card-body { gap: 4px; padding: 14px 44px 14px 14px; }
   .customer-home-compact .customer-offer-card-body :is(h3, p) { display: block; overflow: visible; }
@@ -92,12 +91,6 @@
   .customer-home-compact :is(.customer-offer-validity, .customer-offer-schedule, .customer-offer-card-meta span, .customer-offer-price del, .customer-offer-discount-badge) { font-size: 12px; }
   .customer-home-compact .customer-offer-card-meta { align-items: start; flex-direction: column; }
   .customer-home-compact .customer-offer-price { justify-content: start; max-width: none; }
-  .customer-home-compact :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame { aspect-ratio: 3 / 2; height: 100%; }
-  /* Only the image's saved crop zoom; never scale a card, section or page. */
-  .customer-home-compact :is(.premium-reward-media, .customer-offer-card-media) .smart-media-frame > img {
-    object-fit: cover;
-    transform: scale(var(--smart-media-crop-zoom, 1));
-  }
   /* The same detail button covers the card; its accessible action is retained. */
   .customer-home-compact :is(.premium-reward-card, .customer-offer-card) .customer-image-first-action {
     background: transparent;

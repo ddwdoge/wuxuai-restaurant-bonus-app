@@ -1,6 +1,17 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-20 - Gemeinsamer 16:9-Bildrenderer-Vertrag freigegeben
+
+- Founder hebt die mobile `3:2`-/`cover`-Sonderdarstellung fuer
+  Punkteeinloesungen, bildtragende Willkommensgeschenke und Angebote auf.
+- Owner und Customer verwenden denselben vorhandenen 16:9-Renderer mit
+  `object-fit: contain`, identischer URL und Fokusposition sowie gespeichertem
+  Zoom mit vollstaendiger Render-Skalierung.
+- Karten duerfen mit Text wachsen; die Medienflaeche bleibt geometrisch stabil.
+- Single-Image-Editor, Crop-Metadaten, Upload, Speicherung, Drawer, Keyboard,
+  Business, Security, Entitlements und Datenbank bleiben unveraendert.
+
 ## 2026-09-12 - Platform Admin Health Center auf Staging finalisiert
 
 - Die einzeln freigegebene Migration

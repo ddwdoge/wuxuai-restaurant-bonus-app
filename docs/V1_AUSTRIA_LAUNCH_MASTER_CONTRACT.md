@@ -185,6 +185,19 @@ lokalisierte Rollenbegriffe und zeigen keine rohen technischen Enums.
 
 ### 5.4 Phase 6 – Image-first Mobile Cards (Founder-Ergaenzung 2026-09-12)
 
+**FOUNDER-NACHTRAG 2026-09-20 – VERBINDLICHER GEMEINSAMER BILDVERTRAG:**
+Die zwischenzeitliche mobile Sonderdarstellung mit `3:2`, `object-fit: cover`
+und einer nur auf den gespeicherten Zoom verkürzten Transform-Berechnung ist
+aufgehoben. Owner-Liste, Owner-Editor/Vorschau und Customer-Karten verwenden
+für Punkteeinlösungen, bildtragende Willkommensgeschenke und Angebote denselben
+vorhandenen Medienvertrag: `aspect-ratio: 16 / 9`, `object-fit: contain`,
+identische Bild-URL und Fokusposition sowie gespeicherter Zoom multipliziert
+mit der vollständigen Render-Skalierung. Text darf die Karte in der Höhe
+wachsen lassen; die reservierte Medienfläche bleibt davon unabhängig stabil.
+Der Single-Image-Editor, gespeicherte Crop-Daten, Upload-/Speicherlogik,
+Drawer-/Keyboard-, Business-, Security- und Entitlement-Verträge bleiben
+unverändert.
+
 **VERBINDLICHER ZIELVERTRAG; NOCH KEIN IMPLEMENTIERUNGS-/VISUAL-PASS.**
 Gaeste sollen auf Mobile zuerst das Bild wahrnehmen, dann den Text lesen.
 Die Referenz `IMG_2794.PNG` gilt gemaess anschliessender ausdruecklicher
@@ -218,9 +231,9 @@ ausdruecklich ausgenommen. Die uebrigen Phase-6-Gates bleiben bestehen.
   weitere Karten horizontal nach links/rechts wischbar. Kein vertikaler
   Gesamtstapel und kein zweispaltiges Marketingkarten-Raster.
   Bildflaeche als visuelles Ziel etwa 65–75 Prozent der Karte.
-- Empfohlenes Bildformat `aspect-ratio: 3 / 2`, feste reservierte Bildflaeche
+- Verbindliches Bildformat `aspect-ratio: 16 / 9`, feste reservierte Bildflaeche
   auch beim Laden und bei Fehlern; keine Verzerrung oder Layoutspruenge.
-- `object-fit: cover`; Owner sollen den Bildfokus steuern koennen. Bestehende
+- `object-fit: contain`; Owner sollen den Bildfokus steuern koennen. Bestehende
   Fokus-/Crop-Daten und Editor-Wege wiederverwenden, nicht durch ein neues
   Persistenzmodell oder eine Phase-6-Migration ersetzen. Motivausschnitt pruefen.
 - Titel unter dem Bild, maximal zwei Zeilen. DE/EN/FR/IT/ES/ZH/KO duerfen
@@ -253,11 +266,10 @@ ausdruecklich ausgenommen. Die uebrigen Phase-6-Gates bleiben bestehen.
 
 **Abgrenzung, ersetzte Regeln und offene Nachweise**
 
-- Fuer diese mobilen Marketingkarten sind die aelteren 16:9-/83-Prozent-
-  Geometrievorgaben und das pauschale `contain`/Cover-Verbot aus
-  `05_CUSTOMER_PORTAL.md` bzw. `15_DESIGN_SYSTEM.md` als Ziel SUPERSEDED.
-  Das ist keine Freigabe zum globalen Umbau von Owner-, Desktop-, Logo-,
-  QR- oder Druckdarstellungen.
+- Der Founder-Nachtrag vom 20.09.2026 ersetzt ausschliesslich die mobile
+  `3:2`-/`cover`-Sonderdarstellung. Die Kartenbreite, Image-first-Hierarchie,
+  Carousel-Navigation und alle Owner-, Desktop-, Logo-, QR- und
+  Druckdarstellungen bleiben unveraendert.
 - Vollstaendiger Reward-/Gift-/Offer-Katalog, Geschenkprioritaet, gespeicherte
   Crop-Daten, bestehende Swipe-/Detail-/Einloesesicherheit und Final Locks
   bleiben geschuetzt. Bestehenden horizontalen Carousel-Baustein, nativen
