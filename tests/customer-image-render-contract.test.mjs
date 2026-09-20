@@ -60,7 +60,7 @@ test("Punkteeinlösungen, Willkommensgeschenke und Angebote teilen den Medienker
 });
 
 test("Textwachstum kann die reservierte Mediengeometrie nicht überschreiben", () => {
-  const viewports = [320, 375, 390, 430, 767, 768, 1024, 1440];
+  const viewports = [320, 360, 375, 390, 415, 430, 767, 768, 1024, 1440];
   for (const viewport of viewports) {
     const availableWidth = viewport <= 767 ? viewport * 0.9 : viewport;
     const mediaHeight = availableWidth * 9 / 16;

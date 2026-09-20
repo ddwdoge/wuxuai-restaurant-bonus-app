@@ -22,7 +22,6 @@ test("Geburtstags-, Willkommens- und Punkteeinlösungen verwenden denselben Gift
   assert.match(presentation, /image_zoom: activePointsPresentation\.image_zoom/);
   assert.match(presentation, /image_position_x: activePointsPresentation\.image_position_x/);
   assert.match(presentation, /image_position_y: activePointsPresentation\.image_position_y/);
-  assert.match(presentation, /renderScaleMode="contain"/);
   assert.match(premiumUi, /<RewardImageFrame alt=\{title\} crop=\{crop\} imageUrl=\{imageUrl\}/);
 });
 
@@ -48,11 +47,22 @@ test("Bildquelle, Fokus, Zoom und vollständige Render-Skalierung bleiben unver�
   assert.match(smartMediaCss, /transform: scale\(var\(--smart-media-render-scale, 1\)\)/);
 });
 
-test("nur die Einlösepräsentation entfernt Cover-Basismaßstab und Crop-Zoom", () => {
-  assert.match(smartMedia, /renderScaleMode = "cover"/);
-  assert.match(smartMedia, /if \(renderScaleMode === "contain"\)/);
-  assert.match(smartMedia, /style\["--smart-media-render-scale"\] = 1/);
-  assert.equal((customerPortal.match(/renderScaleMode="contain"/g) ?? []).length, 1);
+test("die Einlösepräsentation verwendet keinen eigenen Skalierungsvertrag", () => {
+  assert.doesNotMatch(smartMedia, /renderScaleMode|--smart-media-render-scale"\] = 1/);
+  assert.doesNotMatch(premiumUi, /renderScaleMode/);
+  assert.doesNotMatch(presentation, /renderScaleMode|contain|cover/);
+  assert.match(presentation, /<RewardImage[\s\S]*?crop=\{rewardImageCropFromRecord\([\s\S]*?image_zoom: activePointsPresentation\.image_zoom,[\s\S]*?image_position_x: activePointsPresentation\.image_position_x,[\s\S]*?image_position_y: activePointsPresentation\.image_position_y,[\s\S]*?imageUrl=\{activePointsPresentation\.reward_image_url\}/);
+});
+
+test("wiederholtes Anzeigen und Schließen bleibt schreibfrei", () => {
+  const reopen = customerPortal.match(/className="premium-active-code"[\s\S]*?<\/button>/)?.[0] ?? "";
+  const closeStart = customerPortal.indexOf("function closeRedemptionDrawer()");
+  const closeEnd = customerPortal.indexOf("async function handleRedeemCustomerReward", closeStart);
+  const close = customerPortal.slice(closeStart, closeEnd);
+
+  assert.match(reopen, /setRedemptionDrawerOpen\(true\)/);
+  assert.match(close, /setRedemptionDrawerOpen\(false\)/);
+  assert.doesNotMatch(`${reopen}\n${close}`, /startCustomer|confirmCustomer|save|insert|update|upload|remove/i);
 });
 
 test("Bestätigung, Countdown und Einlösungslogik bleiben Teil des unveränderten Fensters", () => {

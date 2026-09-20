@@ -2438,7 +2438,6 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                           image_position_y: activePointsPresentation.image_position_y,
                         })}
                         imageUrl={activePointsPresentation.reward_image_url}
-                        renderScaleMode="contain"
                         title={activeRewardTitle ?? activePointsPresentation.reward_title}
                       />
                     </div>
