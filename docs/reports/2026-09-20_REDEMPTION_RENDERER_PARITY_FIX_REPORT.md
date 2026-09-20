@@ -104,8 +104,12 @@ beobachtet.
 
 ## REAL IPHONE
 
-**OFFEN.** Ein echter iPhone-Safari-Test war in dieser Sitzung nicht direkt
-verfügbar. Gemäß Founder-Regel ist deshalb kein FINAL LOCK zulässig.
+**PASS – Founder physical confirmation.** Der Founder hat den echten
+iPhone-Safari-Test als bestanden bestätigt: Bildausschnitt, Fokus, Zoom und
+Position waren identisch, der 16:9-Rahmen blieb stabil und es war keine
+Berührung zur nachträglichen Größenkorrektur erforderlich. Diese Aussage ist
+Founder-supplied physical iPhone evidence; Codex hat den physischen Test nicht
+selbst durchgeführt.
 
 ## SWIPE VALUE
 
@@ -121,6 +125,17 @@ Update-, Upload- oder Remove-Funktion auf.
 
 Nein. Keine neue Einlösung, keine Bestätigung, kein Upload, kein Entfernen,
 keine Crop-Änderung und keine Speicherung.
+
+## Founder Final Evidence
+
+```text
+REAL IPHONE SAFARI: PASS – Founder physical confirmation
+OWNER PREVIEW ↔ REDEMPTION PARITY: PASS
+SWIPE VALUE: 0
+CONFIRMATION EXECUTED: NO
+DATA WRITES: NO
+IMAGE RENDER CONTRACT: FINAL LOCK
+```
 
 ## Tests und Gates
 
@@ -161,7 +176,7 @@ keine Crop-Änderung und keine Speicherung.
 
 ## Abschließender Status
 
-**CODE LOCK / ECHTER IPHONE-RESTGATE OFFEN**
+**IMAGE RENDER CONTRACT: FINAL LOCK**
 
 TASK-OWNED BACKGROUND PROCESSES STARTED: 0
 
