@@ -1834,6 +1834,20 @@
 .premium-customer-reward-preview p { color: #706d65; font-size: 13px; line-height: 1.4; margin: 0; }
 .premium-customer-reward-preview.large { grid-template-columns: 1fr; }
 .premium-customer-reward-preview.large > div { aspect-ratio: 16 / 9; min-height: 0; }
+.premium-owner-editor .premium-customer-reward-preview.large > div {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.premium-owner-editor .premium-customer-reward-preview.large > div > .reward-image-frame {
+  aspect-ratio: auto;
+  height: auto;
+  inset: 0;
+  position: absolute;
+  width: auto;
+}
 .premium-customer-reward-preview.welcome section > span { color: #246346; }
 
 .premium-owner-preview-shell {

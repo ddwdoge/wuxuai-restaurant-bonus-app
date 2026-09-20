@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-20 - Owner-Schritt-5-Safari-Reflow stabilisiert
+
+- Die Medienflaeche der Owner-Vorschau `Letzte Angaben pruefen` bleibt alleinige
+  16:9-Geometrieautoritaet und koppelt ihre Hoehe nicht mehr prozentual an den
+  eingebetteten `RewardImageFrame` zurueck.
+- Der innere Renderer fuellt den relativen Medienrahmen absolut ueber `inset: 0`;
+  Bild-URL, Fokusposition, gespeicherter Zoom und vollstaendige Render-Skalierung
+  bleiben unveraendert.
+- Keine JavaScript-Hoehenmessung, kein `ResizeObserver`, keine Aenderung an
+  Editor-, Upload-, Save-, Drawer-, Keyboard-, Business-, Security-,
+  Entitlement- oder Datenbanklogik.
+
 ## 2026-09-20 - Gemeinsamer 16:9-Bildrenderer-Vertrag freigegeben
 
 - Founder hebt die mobile `3:2`-/`cover`-Sonderdarstellung fuer
