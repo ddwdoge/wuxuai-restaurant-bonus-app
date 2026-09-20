@@ -100,6 +100,18 @@ test("existing UI and cleanup still consume the preserved JSON contract", () => 
   assert.match(cleanup,/preflight_value->'inventory'/);
 });
 
+test("platform UI binds the five-argument marker RPC to a stable request and fresh preflight", () => {
+  const panel=readFileSync(new URL('../src/modules/platform/PlatformKassaCompliancePanel.tsx',import.meta.url),'utf8');
+  const service=readFileSync(new URL('../src/modules/platform/platformAdminService.ts',import.meta.url),'utf8');
+  assert.match(service,/markPlatformTestTenant\(input:[\s\S]*idempotencyKey: string/);
+  assert.match(service,/input_idempotency_key: input\.idempotencyKey/);
+  assert.match(panel,/useRef<\{ fingerprint: string; idempotencyKey: string \} \| null>/);
+  assert.match(panel,/await loadPlatformTestTenantCleanupPreflight\(restaurantId\)[\s\S]*marking_preflight\?\.eligible/);
+  assert.match(panel,/markRequestRef\.current\?\.fingerprint !== fingerprint[\s\S]*crypto\.randomUUID\(\)/);
+  assert.match(panel,/idempotencyKey: markRequestRef\.current\.idempotencyKey/);
+  assert.equal((panel.match(/markPlatformTestTenant\(/g) ?? []).length,1);
+});
+
 test("read and mutation entry points use the narrow platform role contract", () => {
   assert.equal((migration.match(/current_platform_role\(\) in \('platform_owner', 'platform_admin'\)/g) ?? []).length,2);
   assert.doesNotMatch(preflight,/\b(?:insert into|update public|delete from)\b/i);
@@ -119,4 +131,13 @@ test("marking never mutates tenant business, Pro, country, storage, membership o
   assert.match(body,/insert into public\.platform_test_tenant_registry/);
   assert.match(body,/insert into public\.platform_test_tenant_cleanup_audit/);
   assert.match(body,/insert into public\.platform_test_tenant_mark_requests/);
+});
+
+test("local integration harness is explicitly bound to the isolated Supabase project", () => {
+  const harness = readFileSync(new URL("./test-tenant-contract-hardening.local.mjs", import.meta.url), "utf8");
+  const compatibility = readFileSync(new URL("./test-tenant-receipt-cleanup-compatibility.sql", import.meta.url), "utf8");
+  assert.match(harness, /loadVerifiedLocalSupabaseTestTarget/);
+  assert.match(harness, /set test\.local_supabase_project='wuxuai-phase7b4d-local'/);
+  assert.match(compatibility, /current_setting\('test\.local_supabase_project', true\).*wuxuai-phase7b4d-local/s);
+  assert.doesNotMatch(compatibility, /inet_server_addr\(\).*127\.0\.0\.1/s);
 });

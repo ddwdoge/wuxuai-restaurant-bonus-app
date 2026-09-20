@@ -1,7 +1,7 @@
 const en = {
   title: "Isolated test tenant", description: "Only the server-side TEST_ONLY contract may fully clean up test data.",
   preflightPassed: "Preflight passed. The tenant is eligible for controlled cleanup.", preflightBlocked: "Preflight blocked",
-  reason: "Reason", reasonPlaceholder: "Internal reason for test marking and later cleanup", strongConfirmation: "Strong confirmation", required: "Required",
+  reason: "Reason", reasonPlaceholder: "Internal reason for test marking and later cleanup", strongConfirmation: "Strong confirmation", required: "Required", recentAuthRequired: "This action requires a platform sign-in within the last 10 minutes.",
   mark: "Mark as TEST_ONLY", cleanup: "Fully clean up test tenant", authorizedOnly: "Only authorized Platform Admins may mark or clean up test tenants.", cleaned: "The isolated test tenant was fully cleaned up.",
   foreignTitle: "Foreign test association", foreignDescription: "Removes only this customer’s accidental association with the marked test tenant.",
   narrowPreflightPassed: "Scoped preflight passed.", narrowPreflightBlocked: "Scoped preflight blocked",
@@ -15,7 +15,7 @@ const en = {
 const de = {
   title: "Isolierter Test-Mandant", description: "Nur der serverseitige TEST_ONLY-Vertrag darf Testdaten vollständig bereinigen.",
   preflightPassed: "Vorprüfung bestanden. Der Mandant ist für die kontrollierte Bereinigung geeignet.", preflightBlocked: "Vorprüfung blockiert",
-  reason: "Begründung", reasonPlaceholder: "Interner Grund für Testmarkierung und spätere Bereinigung", strongConfirmation: "Starke Bestätigung", required: "Erforderlich",
+  reason: "Begründung", reasonPlaceholder: "Interner Grund für Testmarkierung und spätere Bereinigung", strongConfirmation: "Starke Bestätigung", required: "Erforderlich", recentAuthRequired: "Diese Aktion erfordert eine Plattform-Anmeldung innerhalb der letzten 10 Minuten.",
   mark: "Als TEST_ONLY markieren", cleanup: "Test-Mandant vollständig bereinigen", authorizedOnly: "Nur berechtigte Platform Admins dürfen Test-Mandanten markieren oder bereinigen.", cleaned: "Der isolierte Test-Mandant wurde vollständig bereinigt.",
   foreignTitle: "Fremde Test-Zuordnung", foreignDescription: "Entfernt ausschließlich die versehentliche Beziehung dieses Kunden zum markierten Test-Mandanten.",
   narrowPreflightPassed: "Enge Vorprüfung bestanden.", narrowPreflightBlocked: "Enge Vorprüfung blockiert",
@@ -29,7 +29,7 @@ const de = {
 const fr = {
   title: "Tenant de test isolé", description: "Seul le contrat TEST_ONLY côté serveur peut supprimer entièrement les données de test.",
   preflightPassed: "Précontrôle réussi. Le tenant peut faire l’objet d’un nettoyage contrôlé.", preflightBlocked: "Précontrôle bloqué",
-  reason: "Motif", reasonPlaceholder: "Motif interne du marquage de test et du nettoyage ultérieur", strongConfirmation: "Confirmation renforcée", required: "Requis",
+  reason: "Motif", reasonPlaceholder: "Motif interne du marquage de test et du nettoyage ultérieur", strongConfirmation: "Confirmation renforcée", required: "Requis", recentAuthRequired: "Cette action nécessite une connexion à la plateforme au cours des 10 dernières minutes.",
   mark: "Marquer comme TEST_ONLY", cleanup: "Nettoyer entièrement le tenant de test", authorizedOnly: "Seuls les Platform Admins autorisés peuvent marquer ou nettoyer les tenants de test.", cleaned: "Le tenant de test isolé a été entièrement nettoyé.",
   foreignTitle: "Association de test externe", foreignDescription: "Supprime uniquement l’association accidentelle de ce client avec le tenant de test marqué.",
   narrowPreflightPassed: "Précontrôle ciblé réussi.", narrowPreflightBlocked: "Précontrôle ciblé bloqué",
@@ -43,7 +43,7 @@ const fr = {
 const it = {
   title: "Tenant di test isolato", description: "Solo il contratto TEST_ONLY lato server può eliminare completamente i dati di test.",
   preflightPassed: "Verifica preliminare superata. Il tenant è idoneo alla pulizia controllata.", preflightBlocked: "Verifica preliminare bloccata",
-  reason: "Motivo", reasonPlaceholder: "Motivo interno per il contrassegno di test e la successiva pulizia", strongConfirmation: "Conferma forte", required: "Obbligatorio",
+  reason: "Motivo", reasonPlaceholder: "Motivo interno per il contrassegno di test e la successiva pulizia", strongConfirmation: "Conferma forte", required: "Obbligatorio", recentAuthRequired: "Questa azione richiede un accesso alla piattaforma negli ultimi 10 minuti.",
   mark: "Contrassegna come TEST_ONLY", cleanup: "Pulisci completamente il tenant di test", authorizedOnly: "Solo i Platform Admin autorizzati possono contrassegnare o pulire tenant di test.", cleaned: "Il tenant di test isolato è stato pulito completamente.",
   foreignTitle: "Associazione di test esterna", foreignDescription: "Rimuove esclusivamente l’associazione accidentale di questo cliente con il tenant di test contrassegnato.",
   narrowPreflightPassed: "Verifica mirata superata.", narrowPreflightBlocked: "Verifica mirata bloccata",
@@ -57,7 +57,7 @@ const it = {
 const es = {
   title: "Tenant de prueba aislado", description: "Solo el contrato TEST_ONLY del servidor puede eliminar por completo los datos de prueba.",
   preflightPassed: "Comprobación previa superada. El tenant es apto para la limpieza controlada.", preflightBlocked: "Comprobación previa bloqueada",
-  reason: "Motivo", reasonPlaceholder: "Motivo interno del marcado de prueba y la limpieza posterior", strongConfirmation: "Confirmación reforzada", required: "Obligatorio",
+  reason: "Motivo", reasonPlaceholder: "Motivo interno del marcado de prueba y la limpieza posterior", strongConfirmation: "Confirmación reforzada", required: "Obligatorio", recentAuthRequired: "Esta acción requiere un inicio de sesión en la plataforma durante los últimos 10 minutos.",
   mark: "Marcar como TEST_ONLY", cleanup: "Limpiar por completo el tenant de prueba", authorizedOnly: "Solo los Platform Admins autorizados pueden marcar o limpiar tenants de prueba.", cleaned: "El tenant de prueba aislado se ha limpiado por completo.",
   foreignTitle: "Asociación de prueba externa", foreignDescription: "Elimina únicamente la asociación accidental de este cliente con el tenant de prueba marcado.",
   narrowPreflightPassed: "Comprobación específica superada.", narrowPreflightBlocked: "Comprobación específica bloqueada",
@@ -71,7 +71,7 @@ const es = {
 const zh = {
   title: "隔离测试租户", description: "只有服务器端 TEST_ONLY 合约可以完整清理测试数据。",
   preflightPassed: "预检查通过。该租户适合受控清理。", preflightBlocked: "预检查已阻止",
-  reason: "原因", reasonPlaceholder: "测试标记及后续清理的内部原因", strongConfirmation: "强化确认", required: "必填",
+  reason: "原因", reasonPlaceholder: "测试标记及后续清理的内部原因", strongConfirmation: "强化确认", required: "必填", recentAuthRequired: "此操作要求在最近 10 分钟内登录平台。",
   mark: "标记为 TEST_ONLY", cleanup: "完整清理测试租户", authorizedOnly: "只有获授权的 Platform Admin 才能标记或清理测试租户。", cleaned: "隔离测试租户已完整清理。",
   foreignTitle: "外部测试关联", foreignDescription: "仅移除此顾客与已标记测试租户之间的误关联。",
   narrowPreflightPassed: "范围预检查通过。", narrowPreflightBlocked: "范围预检查已阻止",
@@ -85,7 +85,7 @@ const zh = {
 const ko = {
   title: "격리된 테스트 테넌트", description: "서버의 TEST_ONLY 계약만 테스트 데이터를 완전히 정리할 수 있습니다.",
   preflightPassed: "사전 점검을 통과했습니다. 이 테넌트는 통제된 정리 대상입니다.", preflightBlocked: "사전 점검 차단됨",
-  reason: "사유", reasonPlaceholder: "테스트 표시 및 이후 정리를 위한 내부 사유", strongConfirmation: "강력 확인", required: "필수",
+  reason: "사유", reasonPlaceholder: "테스트 표시 및 이후 정리를 위한 내부 사유", strongConfirmation: "강력 확인", required: "필수", recentAuthRequired: "이 작업을 수행하려면 최근 10분 이내에 플랫폼에 로그인해야 합니다.",
   mark: "TEST_ONLY로 표시", cleanup: "테스트 테넌트 완전 정리", authorizedOnly: "권한이 있는 Platform Admin만 테스트 테넌트를 표시하거나 정리할 수 있습니다.", cleaned: "격리된 테스트 테넌트가 완전히 정리되었습니다.",
   foreignTitle: "외부 테스트 연결", foreignDescription: "이 고객과 표시된 테스트 테넌트 사이의 잘못된 연결만 제거합니다.",
   narrowPreflightPassed: "범위 사전 점검을 통과했습니다.", narrowPreflightBlocked: "범위 사전 점검 차단됨",

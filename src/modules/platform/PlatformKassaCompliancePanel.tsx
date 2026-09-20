@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import {
@@ -52,6 +52,7 @@ export function PlatformKassaCompliancePanel({ canWrite, restaurantId }: { canWr
   const [actionError, setActionError] = useState("");
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState(false);
+  const markRequestRef = useRef<{ fingerprint: string; idempotencyKey: string } | null>(null);
   const load = () => {
     setError(false);
     setActionError("");
@@ -88,11 +89,25 @@ export function PlatformKassaCompliancePanel({ canWrite, restaurantId }: { canWr
     setSaving(true);
     setActionError("");
     try {
+      const latestPreflight = await loadPlatformTestTenantCleanupPreflight(restaurantId);
+      setPreflight(latestPreflight);
+      const latestConfirmation = latestPreflight.restaurant_name
+        ? `CONFIRMED:${latestPreflight.restaurant_name}:${restaurantId}`
+        : "";
+      if (!latestPreflight.marking_preflight?.eligible || confirmation !== latestConfirmation) {
+        throw new Error("TEST_TENANT_PREFLIGHT_BLOCKED");
+      }
+      const testSessionId = `test-tenant-${restaurantId}`;
+      const fingerprint = JSON.stringify({ confirmation, reason, restaurantId, testSessionId });
+      if (markRequestRef.current?.fingerprint !== fingerprint) {
+        markRequestRef.current = { fingerprint, idempotencyKey: crypto.randomUUID() };
+      }
       const result = await markPlatformTestTenant({
         confirmation,
+        idempotencyKey: markRequestRef.current.idempotencyKey,
         reason,
         restaurantId,
-        testSessionId: `test-tenant-${restaurantId}`,
+        testSessionId,
       });
       setPreflight(result);
     } catch {
@@ -155,6 +170,7 @@ export function PlatformKassaCompliancePanel({ canWrite, restaurantId }: { canWr
             <label>{t("platform.testTenant.reason")}<textarea onChange={(event) => setReason(event.target.value)} placeholder={t("platform.testTenant.reasonPlaceholder")} value={reason} /></label>
             <label>{t("platform.testTenant.strongConfirmation")}<input onChange={(event) => setConfirmation(event.target.value)} placeholder={strongConfirmation} value={confirmation} /></label>
             <p className="muted">{t("platform.testTenant.required")}: <code>{strongConfirmation}</code></p>
+            <p className="muted">{t("platform.testTenant.recentAuthRequired")}</p>
             {markerMissing ? <button className="button secondary" disabled={saving || reason.trim().length < 10 || confirmation !== strongConfirmation} onClick={() => void markTestTenant()} type="button">{t("platform.testTenant.mark")}</button> : null}
             <button className="button danger" data-testid="cleanup-test-tenant" disabled={saving || !preflight.eligible || reason.trim().length < 20 || confirmation !== strongConfirmation} onClick={() => void cleanupTestTenant()} type="button"><Trash2 size={17} />{t("platform.testTenant.cleanup")}</button>
           </div> : <p className="muted">{t("platform.testTenant.authorizedOnly")}</p>}

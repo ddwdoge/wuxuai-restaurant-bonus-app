@@ -11,7 +11,7 @@ declare
   before_row jsonb;
 begin
   if current_database() not like 'wuxuai_7b4c_%'
-    or inet_server_addr() is distinct from '127.0.0.1'::inet then
+    or current_setting('test.local_supabase_project', true) is distinct from 'wuxuai-phase7b4d-local' then
     raise exception 'ISOLATED_LOCAL_FIXTURE_DATABASE_REQUIRED';
   end if;
   if exists (select 1 from information_schema.columns

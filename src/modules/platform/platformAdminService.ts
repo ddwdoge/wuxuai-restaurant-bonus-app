@@ -533,6 +533,7 @@ export type PlatformTestTenantCleanupPreflight = {
   deleted?: boolean;
   eligible: boolean;
   inventory?: Record<string, number>;
+  marking_preflight?: { blockers: string[]; eligible: boolean };
   restaurant_id?: string;
   restaurant_name?: string;
   test_session_id?: string | null;
@@ -551,6 +552,7 @@ export async function loadPlatformTestTenantCleanupPreflight(
 
 export async function markPlatformTestTenant(input: {
   confirmation: string;
+  idempotencyKey: string;
   reason: string;
   restaurantId: string;
   testSessionId: string;
@@ -558,6 +560,7 @@ export async function markPlatformTestTenant(input: {
   if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
   const { data, error } = await supabase.rpc("mark_platform_test_tenant", {
     input_confirmation: input.confirmation,
+    input_idempotency_key: input.idempotencyKey,
     input_reason: input.reason,
     input_restaurant_id: input.restaurantId,
     input_test_session_id: input.testSessionId,

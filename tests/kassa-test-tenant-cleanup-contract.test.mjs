@@ -130,7 +130,7 @@ test("isolated customer uses the existing canonical Platform Admin test marker",
 });
 
 test("tenant marking uses a stable tenant-specific session without reusing retained cleanup evidence", () => {
-  assert.match(panel, /testSessionId: `test-tenant-\$\{restaurantId\}`/);
+  assert.match(panel, /const testSessionId = `test-tenant-\$\{restaurantId\}`/);
   assert.doesNotMatch(panel, /testSessionId: ["']kassa-v3-20260908["']/);
   const sessionFor = (id) => `test-tenant-${id}`;
   const first = sessionFor("11111111-1111-4111-8111-111111111111");

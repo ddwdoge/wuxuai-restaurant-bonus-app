@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { execFileSync, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { loadVerifiedLocalSupabaseTestTarget } from './helpers/local-supabase-test-guard.mjs';
 const run=promisify(execFile);
 const root=new URL('../',import.meta.url);
 const read=p=>readFileSync(new URL(p,root),'utf8');
-const port=process.env.WUXUAI_7B4C_LOCAL_PORT;
-const db=process.env.WUXUAI_7B4C_LOCAL_DB;
-assert.match(port??'',/^55\d{3}$/);
-assert.match(db??'',/^wuxuai_7b4c_[a-z_]+$/);
+const target=loadVerifiedLocalSupabaseTestTarget({rootUrl:root});
+const {database:db,host,port,username}=target;
 const psql='/opt/homebrew/opt/postgresql@17/bin/psql';
-const args=['-X','-h','127.0.0.1','-p',port,'-U','postgres','-d',db,'-v','ON_ERROR_STOP=1','-Atq'];
-const sql=s=>execFileSync(psql,args,{input:s,encoding:'utf8',timeout:30000,stdio:['pipe','pipe','pipe']}).trim();
-assert.equal(sql("select host(inet_server_addr())||'|'||current_database()"),`127.0.0.1|${db}`);
+const args=['-X','-h',host,'-p',port,'-U',username,'-d',db,'-v','ON_ERROR_STOP=1','-Atq'];
+const childEnv={...process.env,PGPASSWORD:target.password};
+const sql=s=>execFileSync(psql,args,{env:childEnv,input:s,encoding:'utf8',timeout:30000,stdio:['pipe','pipe','pipe']}).trim();
+assert.equal(sql("select current_database()||'|'||current_setting('server_version')"),`${db}|17.6`);
 assert.equal(sql("select count(*) from pg_tables where schemaname='public'"),'0','fresh task-only database required');
 const migration=read('supabase/migrations/20260915003000_test_tenant_contract_hardening.sql');
 const old=read('supabase/migrations/20260907001000_kassa_test_tenant_cleanup_contract.sql');
@@ -141,7 +141,7 @@ denied(mark(5),auth(),/SYNTHETIC_RECEIPT_FAILURE/);
 assert.equal(sql(`select count(*) from platform_test_tenant_registry where restaurant_id='${id(5)}'`),'0');
 assert.equal(sql(`select count(*) from platform_test_tenant_cleanup_audit where restaurant_id='${id(5)}'`),'0');pass('late failure atomic rollback');
 const asyncSQL=async s=>{
-  try{return await run(psql,[...args,'-c',s],{timeout:30000,maxBuffer:1024*1024});}
+  try{return await run(psql,[...args,'-c',s],{env:childEnv,timeout:30000,maxBuffer:1024*1024});}
   catch(e){throw Object.assign(new Error(e.stderr??'local psql failure'),{stderr:e.stderr});}
 };
 const same=await Promise.all(Array.from({length:12},()=>asyncSQL(auth()+mark(3))));
@@ -157,5 +157,5 @@ await Promise.all([asyncSQL(migration),asyncSQL(migration)]);
 assert.equal(sql('select jsonb_agg(t order by idempotency_key) from platform_test_tenant_mark_requests t'),preserved);pass('parallel repeat migration preserves receipts');
 assert.equal(sql("select release_state from commercial_plan_release_policy where country_code='AT' and plan_key='PRO'"),'LOCKED');
 assert.equal(sql('select count(*) from commercial_pro_access_grants'),'0');pass('AT locked no pro grants');
-sql(read('tests/test-tenant-receipt-cleanup-compatibility.sql'));
+sql(`set test.local_supabase_project='wuxuai-phase7b4d-local';\n${read('tests/test-tenant-receipt-cleanup-compatibility.sql')}`);
 console.log(`LOCAL SQL MATRIX PASS: ${assertions} groups; ${db}; scoped synthetic dependency schema, not full historical replay`);

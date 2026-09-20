@@ -44,9 +44,9 @@ test("Platform test-tenant panel renders system labels through the established i
   assert.doesNotMatch(source, />Nur fremde Test-Zuordnung entfernen</);
 });
 
-test("Test-tenant copy change does not alter write handlers or server contracts", () => {
+test("Test-tenant panel keeps writes service-bound and request-idempotent", () => {
   const source = read("src/modules/platform/PlatformKassaCompliancePanel.tsx");
-  assert.match(source, /markPlatformTestTenant\(\{[\s\S]*?confirmation,[\s\S]*?reason,[\s\S]*?restaurantId,[\s\S]*?testSessionId:/);
+  assert.match(source, /markPlatformTestTenant\(\{[\s\S]*?confirmation,[\s\S]*?idempotencyKey:[\s\S]*?reason,[\s\S]*?restaurantId,[\s\S]*?testSessionId,/);
   assert.match(source, /cleanupPlatformTestTenant\(\{ confirmation, reason, restaurantId \}\)/);
   assert.match(source, /cleanupPlatformForeignTestCustomerRelation\(\{/);
   assert.doesNotMatch(source, /\.from\(|supabase|service_role|disable row level security/i);
