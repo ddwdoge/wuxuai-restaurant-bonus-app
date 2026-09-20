@@ -15,17 +15,27 @@ Staging Version: `b4c4c476-57f4-4ad8-86da-f334e7e1d2d7`
 Das aktive Customer-Präsentationsfenster für Punkte- und Geschenkeinlösungen
 verwendete `RewardImageFrame` direkt. Die CSS-Sonderregel
 `.premium-presentation-image .reward-image-frame { height: 100%; width: 100%; }`
-ließ den inneren 16:9-Renderer über eine prozentuale Kindhöhe an der Geometrie
-des äußeren Rahmens teilnehmen. Diese alte Sonderbindung wich vom gemeinsamen
-Customer-Gift-Vertrag über `RewardImage` ab und verursachte im dokumentierten
-Geburtstagsgeschenk-Screenshot den abgeschnittenen unteren Bildinhalt
-„Linsensuppe“.
+war eine nachweisbare Abweichung vom gemeinsamen Customer-Gift-Vertrag über
+`RewardImage`. Sie wurde eng beseitigt. Der anschließende reale Safari-Test
+beweist jedoch, dass diese Abweichung nicht die alleinige Ursache des
+abgeschnittenen unteren Bildinhalts „Linsensuppe“ war.
 
-Die Bilddaten waren nicht die Ursache: URL, Fokus X/Y, gespeicherter Zoom und
-vollständiger `--smart-media-render-scale` wurden bereits aus demselben
-Präsentationsdatensatz an `SmartMediaFrame` weitergegeben. Ebenso existierten
-in diesem Pfad keine verbleibenden mobilen 3:2-, `cover`- oder
-`--smart-media-crop-zoom`-Overrides.
+Die verbleibende Ursache liegt im gemeinsamen `SmartMediaFrame`-Vertrag:
+Das Bild verwendet zwar `object-fit: contain`, wird danach aber mit
+`coverScale * normalized.zoom` transformiert. Bei einem nicht-16:9-Quellbild
+füllt diese vollständige Render-Skalierung den 16:9-Rahmen und schneidet
+zwangsläufig Bildinhalt oben beziehungsweise unten ab. Im Staging-Screenshot
+nach dem Deployment ist der Suppenteller sichtbar, der untere Schriftzug
+„Linsensuppe“ fehlt aber vollständig.
+
+URL, Fokus X/Y, gespeicherter Zoom und vollständiger
+`--smart-media-render-scale` werden unverändert aus demselben
+Präsentationsdatensatz an `SmartMediaFrame` weitergegeben. Es existieren in
+diesem Pfad keine verbleibenden mobilen 3:2-, CSS-`cover`- oder
+`--smart-media-crop-zoom`-Overrides. Eine Verkürzung auf den gespeicherten Zoom
+würde jedoch dem ausdrücklich verlangten vollständigen Render-Scale und der
+Owner-/Customer-Parität widersprechen. Deshalb wurde gemäß Stopbedingung keine
+weitere Bildlogik erfunden.
 
 ## Read-only Bildflächeninventar
 
@@ -97,13 +107,24 @@ in diesem Pfad keine verbleibenden mobilen 3:2-, `cover`- oder
 
 ## QA und offene Risiken
 
-Die verfügbaren Safari- und Chrome-Sitzungen waren als Owner angemeldet. Es war
-keine aktive Customer-Sitzung beziehungsweise bereits offene
-15-Minuten-Präsentation verfügbar. Gemäß Auftrag wurde keine neue echte
-Einlösung gestartet oder bestätigt. Daher ist die reale Darstellung des
-Geburtstagsgeschenks „Linsensuppe“ auf dem echten iPhone noch physisch zu
-bestätigen. Die bestehende Präsentation darf nur erneut geöffnet werden, falls
-sie serverseitig noch aktiv ist, oder kontrolliert ablaufen.
+Nach dem Deployment wurde die vorhandene Safari-Customer-Sitzung read-only
+geprüft. Der bereits aktive kompakte Hinweis „Eine Überraschung für dich
+anzeigen“ öffnete dieselbe bestehende Geburtstagspräsentation; es wurde keine
+neue Einlösung gestartet. Der Status blieb „Bestätigung ausstehend“, der
+Swipe-Regler blieb bei 0 und der Drawer wurde ohne Bestätigung geschlossen.
+
+Physisches Ergebnis: **FAIL**. Der 16:9-Rahmen ist geometrisch stabil und der
+Suppenteller vollständig sichtbar. Der zum Bild gehörende untere Schriftzug
+„Linsensuppe“, der im Ausgangsscreenshot nur angeschnitten war, fehlt nach dem
+Deployment vollständig. Die Akzeptanz „kein Abschneiden des Bildinhalts“ ist
+damit nicht erfüllt.
+
+Vor einer weiteren Produktänderung ist eine Founder-Entscheidung nötig:
+
+1. Vollständigen Bildinhalt garantieren und dafür in dieser Präsentation auf
+   den `coverScale`-Anteil verzichten; oder
+2. den gemeinsamen vollständigen Render-Scale und den gespeicherten Ausschnitt
+   priorisieren, womit nicht-16:9-Quellbilder weiterhin beschnitten werden.
 
 Production, Datenbank und Migrationen blieben unverändert.
 
@@ -112,11 +133,11 @@ Production, Datenbank und Migrationen blieben unverändert.
 - Aufgabe: 16:9-Vertrag für Customer-Geschenk- und Einlösungspräsentationen
 - Build: Ja
 - Migration: Keine
-- Flow-Test: Teilweise – ausgelieferter Staging-Vertrag PASS; echte Customer-/iPhone-Präsentation offen
+- Flow-Test: Ja – vorhandene Safari-Customer-Geburtstagspräsentation FAIL
 - RLS/Security: Unverändert; keine Datenbankänderung
 - Alte Logik geprüft: Ja
-- Offene Risiken: physischer Customer-/iPhone-Retest einer bereits vorhandenen Präsentation
-- Status: CODE LOCK
+- Offene Risiken: fachliche Entscheidung zwischen vollständigem Bildinhalt und vollständigem Cover-Render-Scale
+- Status: NOT READY
 
 TASK-OWNED BACKGROUND PROCESSES STARTED: 0
 
