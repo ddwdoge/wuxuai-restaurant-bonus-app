@@ -59,7 +59,7 @@ export function SmartMediaFrame({
   };
 
   if (renderScaleMode === "contain") {
-    style["--smart-media-render-scale"] = normalized.zoom;
+    style["--smart-media-render-scale"] = 1;
   }
 
   return (

@@ -48,10 +48,10 @@ test("Bildquelle, Fokus, Zoom und vollständige Render-Skalierung bleiben unver�
   assert.match(smartMediaCss, /transform: scale\(var\(--smart-media-render-scale, 1\)\)/);
 });
 
-test("nur die Einlösepräsentation entfernt den Cover-Basismaßstab", () => {
+test("nur die Einlösepräsentation entfernt Cover-Basismaßstab und Crop-Zoom", () => {
   assert.match(smartMedia, /renderScaleMode = "cover"/);
   assert.match(smartMedia, /if \(renderScaleMode === "contain"\)/);
-  assert.match(smartMedia, /style\["--smart-media-render-scale"\] = normalized\.zoom/);
+  assert.match(smartMedia, /style\["--smart-media-render-scale"\] = 1/);
   assert.equal((customerPortal.match(/renderScaleMode="contain"/g) ?? []).length, 1);
 });
 
