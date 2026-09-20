@@ -46,8 +46,8 @@ test("Punkteeinlösungen, Willkommensgeschenke und Angebote teilen den Medienker
   assert.match(offerCard, /imageUrl=\{offer\.image_url\}/);
   assert.match(offerCard, /presentation=\{mediaPresentationFromRecord\(offer\)\}/);
 
-  assert.match(rewardsPage, /<RewardImageFrame/);
-  assert.match(rewardsPage, /crop=\{rewardImageCropFromRecord\(previewOffer\)\}/);
+  assert.match(rewardsPage, /<RewardCard/);
+  assert.match(rewardsPage, /imageCrop=\{rewardImageCropFromRecord\(previewOffer\)\}/);
   assert.match(rewardsPage, /imageUrl=\{previewOffer\.image_url\}/);
 
   assert.match(giftsPage, /<RewardImageFrame/);

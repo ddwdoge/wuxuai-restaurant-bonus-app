@@ -1,6 +1,18 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-20 - Owner-/Customer-Vorschau an gemeinsamen Reward-Renderer gebunden
+
+- Die read-only Owner-Vorschau fuer gespeicherte Punkteeinloesungen verwendet
+  jetzt denselben praesentationalen `RewardCard`- und `RewardImageFrame`-Pfad
+  wie die echte Customer-Karte, jedoch ohne Tracking-, Oeffnen-, Einloese- oder
+  Schreibaktion.
+- Bild-URL, Fokusposition, gespeicherter Zoom, Basis-Skalierung, vollstaendige
+  Render-Skalierung, `object-fit` und Transform bleiben unveraendert.
+- Owner-Liste, Schritt-4-Editor, Schritt-5-Safari-Reflow-Fix, Upload,
+  Speicherung, Business-, Security-, Entitlement- und Datenbanklogik bleiben
+  unveraendert.
+
 ## 2026-09-20 - Owner-Schritt-5-Safari-Reflow stabilisiert
 
 - Die Medienflaeche der Owner-Vorschau `Letzte Angaben pruefen` bleibt alleinige
