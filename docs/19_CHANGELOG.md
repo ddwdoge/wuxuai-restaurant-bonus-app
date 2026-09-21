@@ -4038,3 +4038,21 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Fresh-, Upgrade-, Repeat-, Security-, Multirow- und 96-fache
   Parallelitaetstests sind lokal gruen. Keine Staging-Migration, kein
   Deployment, kein Commit und kein Push.
+
+## 2026-09-21 - Phase 7C.3B Angebots-Capacity Staging-Backend-Gate
+
+- Der lokal gepruefte Phase-7C.3-Stand wurde eng auf
+  `codex/v1-release-integration` committed und zum gleichnamigen Remote-Branch
+  gepusht.
+- Ausschliesslich Migration `20260921002000_offer_capacity_enforcement.sql`
+  wurde auf das verifizierte Staging-Projekt `bwhvfjuwixgwduoeqaya`
+  angewendet; die Historie steht danach synchron bei 154/154.
+- Read-only bestaetigt sind der zentrale BASIC-/PRO-/Add-on-Vertrag, die aktive
+  Triggerbindung an `restaurant_offers`, RLS, ACLs, fixe `search_path`-Werte,
+  Tenant-Serialisierung und der stabile Fehlercode.
+- Vorher-/Nachher-Fingerprints fuer Angebote, Restaurants, Kunden,
+  Subscription-, Grant-, Country- und Capacity-Bestaende sind identisch.
+  AT + PRO bleibt LOCKED; es entstanden keine Grants, Add-on-Einheiten oder
+  Angebotsmutationen.
+- Kein App-Deployment, kein Stripe- oder Production-Zugriff. Customer-
+  Capacity, Warnsystem und Billing bleiben getrennte Folgephasen.

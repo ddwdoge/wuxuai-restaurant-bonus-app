@@ -1058,7 +1058,7 @@ Teil der Phase-7C.2-Daten- und Read-Schicht.
 
 ## Phase 7C.3 Angebots-Capacity-Enforcement
 
-Status: **LOCAL CODE LOCK / STAGING NICHT ANGEWENDET**
+Status: **PHASE 7C.3B STAGING BACKEND LOCK**
 
 Der verbindliche Angebotsvertrag wird durch die additive Migration
 `20260921002000_offer_capacity_enforcement.sql` serverseitig durchgesetzt.
@@ -1092,6 +1092,14 @@ Checkout-Pfad.
 Lokal bestaetigt sind Fresh-Replay, Upgrade 153 auf 154,
 Wiederholungsanwendung, 5/10/15/20-Slot-Matrix, Multirow-Rollback,
 Cross-Tenant-Schutz sowie 96 parallele Veroeffentlichungsversuche mit exakt
-5/10/15/20 Erfolgen. Migration 154 ist nicht auf Staging oder Production
-angewendet. Customer-Capacity-Enforcement, Stripe, Warnungen und Kaufpfade sind
-nicht Teil von Phase 7C.3.
+5/10/15/20 Erfolgen. Migration 154 ist auf dem eindeutig verifizierten
+Staging-Projekt `bwhvfjuwixgwduoeqaya` exakt einmal angewendet; die
+Migrationshistorie steht synchron bei 154/154 und der Repeat-Dry-Run ist leer.
+
+Das physische read-only Staging-Gate bestaetigt die aktive BEFORE-INSERT-/
+UPDATE-Triggerbindung, RLS, Rollen-ACLs, fixe `search_path`-Werte, den zentralen
+Resolver und unveraenderte Business-Fingerprints. Es wurden keine Angebote,
+Grants, Add-on-Einheiten, Country Policies oder Subscriptiondaten veraendert.
+AT + PRO bleibt LOCKED. Es gab kein App-Deployment und keinen Stripe- oder
+Production-Zugriff. Customer-Capacity-Enforcement, Warnungen, Kaufpfade und
+Billing sind nicht Teil von Phase 7C.3B.
