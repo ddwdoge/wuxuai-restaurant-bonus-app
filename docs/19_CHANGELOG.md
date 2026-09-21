@@ -4072,3 +4072,21 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Parallelitaetstests sind lokal gruen. Keine Staging-Migration, kein Commit,
   Push oder Deployment und keine reale Daten-, Grant-, Country- oder
   Billingaenderung.
+
+## 2026-09-21 - Phase 7C.4B Customer-Capacity Staging-Backend-Gate
+
+- Der lokal gepruefte Customer-Capacity-Vertrag wurde eng auf
+  `codex/v1-release-integration` committed und zum gleichnamigen Remote-Branch
+  gepusht.
+- Ausschliesslich Migration `20260921003000_customer_capacity_enforcement.sql`
+  wurde auf das verifizierte Staging-Projekt `bwhvfjuwixgwduoeqaya`
+  angewendet; die Historie steht danach synchron bei 155/155 und der
+  Repeat-Dry-Run ist leer.
+- Read-only bestaetigt sind der account-basierte Identitaetsfallback, das
+  halboffene 365-Tage-Fenster, BASIC 3.000, PRO 15.000, Add-on +5.000, beide
+  aktiven Ledgertrigger, RLS, ACLs, fixe `search_path`-Werte und
+  Tenant-Serialisierung.
+- Alle Vorher-/Nachher-Fingerprints der Customer-, Membership-, Punkte-,
+  Redemption-, Subscription-, Grant-, Add-on-, Country- und Auditbestaende
+  sind identisch. Es gab keine QA-Aktivitaet und keine Businessdatenmutation.
+- AT + PRO bleibt LOCKED. Kein App-Deployment, Stripe- oder Production-Zugriff.

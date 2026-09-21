@@ -1106,7 +1106,7 @@ Billing sind nicht Teil von Phase 7C.3B.
 
 ## Phase 7C.4 Customer-Capacity-Enforcement
 
-Status: **PHASE 7C.4 LOCAL CODE LOCK**
+Status: **PHASE 7C.4B CUSTOMER CAPACITY STAGING BACKEND LOCK**
 
 Die additive Migration `20260921003000_customer_capacity_enforcement.sql`
 setzt den in Phase 7C.2 beschlossenen Kundenvertrag lokal serverseitig durch.
@@ -1143,8 +1143,19 @@ synthetischen Fuenfergrenze waren exakt fuenf erfolgreich; 24 parallele
 Aktivitaeten derselben letzten Identitaet waren alle erfolgreich und zaehlten
 zusammen nur einmal. Alle synthetischen Daten wurden entfernt.
 
-Migration 155 ist nicht committed, nicht gepusht und nicht auf Staging
-angewendet. Es gab kein Deployment, keinen Stripe- oder Production-Zugriff,
-keinen Grant, keine TEST_ONLY-Markierung und keine Country-Freigabe. AT + PRO
-bleibt LOCKED. Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte
-Folgephasen.
+Migration 155 wurde mit Implementierungscommit
+`013b843265a8269a62e55a23d5bc44025e36b8b5` eng auf den kanonischen
+Integrationsbranch gepusht und exakt einmal auf das verifizierte
+Staging-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Die Remote-Historie steht
+synchron bei 155/155; der Repeat-Dry-Run ist leer und der Remote-DB-Lint
+fehlerfrei.
+
+Das anschliessende read-only Staging-Gate bestaetigte beide aktiven
+Ledgertrigger, RLS, Rollen-ACLs, feste `search_path`-Werte, den zentralen
+Resolver und unveraenderte Business-Fingerprints. 16 Restaurants besitzen
+zusammen neun aktive Kundenidentitaeten, maximal acht pro Restaurant; kein
+Restaurant ist over-limit. Es wurden keine Kundenaktivitaeten,
+Registrierungen, Memberships, Punktebuchungen, Einloesungen, Grants,
+Add-on-Einheiten oder Capacity-Blockereignisse erzeugt. AT + PRO bleibt
+LOCKED. Es gab kein App-Deployment und keinen Stripe- oder Production-Zugriff.
+Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte Folgephasen.
