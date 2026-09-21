@@ -20,18 +20,45 @@ export type RestaurantOfferType = (typeof restaurantOfferTypes)[number];
 export type RestaurantOfferStatus = "DRAFT" | "PUBLISHED" | "DISABLED" | "ARCHIVED";
 export type RestaurantOfferEvent = "OFFER_VIEWED" | "OFFER_CTA_CLICKED" | "OFFER_ROUTE_CLICKED" | "OFFER_BONUS_OPENED";
 
-export type OwnerOfferEntitlements = {
-  plan_key: "BASIC" | "PRO" | "PREMIUM";
-  effective_from?: string | null;
-  effective_until?: string | null;
-  active_offer_count: number;
-  effective: {
-    offer_limit: number | null;
-    offer_limit_unlimited: boolean;
-    offer_notifications: boolean;
-    reward_notifications: boolean;
+export type OwnerOfferCapacity = {
+  contract_version: "restaurant_capacity_v1";
+  plan: {
+    plan_key: "BASIC" | "PRO";
+    monthly_price_minor: number;
+    currency: "EUR";
+    tax_treatment: "EX_VAT";
   };
+  offers: {
+    base_limit: number;
+    addon_units: number;
+    addon_capacity_per_unit: 5;
+    effective_limit: number;
+    usage: number;
+    remaining: number;
+    status: "AVAILABLE" | "AT_LIMIT" | "OVER_LIMIT";
+  };
+  unlimited: false;
+  write_enforcement_active: boolean;
 };
+
+export type OwnerOfferPlanWindow = {
+  effective_from: string | null;
+  effective_until: string | null;
+};
+
+export class RestaurantOfferCapacityError extends Error {
+  readonly code = "OFFER_CAPACITY_REACHED";
+
+  constructor() {
+    super("OFFER_CAPACITY_REACHED");
+    this.name = "RestaurantOfferCapacityError";
+  }
+}
+
+export function isRestaurantOfferCapacityError(error: unknown): error is RestaurantOfferCapacityError {
+  return error instanceof RestaurantOfferCapacityError
+    || (error instanceof Error && error.message === "OFFER_CAPACITY_REACHED");
+}
 
 export type RestaurantOffer = {
   id: string;
@@ -177,11 +204,8 @@ function requireClient() {
 
 function offerError(error: { message?: string } | null) {
   const message = error?.message ?? "";
-  if (message.includes("OFFER_ACTIVE_LIMIT_REACHED")) {
-    const limit = message.match(/OFFER_ACTIVE_LIMIT_REACHED:(\d+)/)?.[1];
-    return new Error(limit
-      ? `Du hast dein Limit von ${limit} aktiven Angeboten erreicht. Deaktiviere zuerst ein Angebot.`
-      : "Du hast dein Limit für aktive Angebote erreicht. Deaktiviere zuerst ein Angebot.");
+  if (message.includes("OFFER_CAPACITY_REACHED") || message.includes("OFFER_ACTIVE_LIMIT_REACHED")) {
+    return new RestaurantOfferCapacityError();
   }
   if (message.includes("OFFER_ACCESS_DENIED")) return new Error("Du darfst Angebote für dieses Restaurant nicht verwalten.");
   if (message.includes("OFFER_BRANCH")) return new Error("Bitte wähle den Standort dieses Restaurants aus.");
@@ -191,12 +215,24 @@ function offerError(error: { message?: string } | null) {
   return new Error("Das Angebot konnte gerade nicht gespeichert werden. Bitte versuche es erneut.");
 }
 
-export async function loadOwnerOfferEntitlements(restaurantId: string): Promise<OwnerOfferEntitlements> {
+export async function loadOwnerOfferCapacity(restaurantId: string): Promise<OwnerOfferCapacity> {
+  const { data, error } = await requireClient().rpc("get_restaurant_capacity", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw new Error("Paket und Angebotskapazität konnten nicht geladen werden.");
+  return data as OwnerOfferCapacity;
+}
+
+export async function loadOwnerOfferPlanWindow(restaurantId: string): Promise<OwnerOfferPlanWindow> {
   const { data, error } = await requireClient().rpc("get_restaurant_entitlements", {
     input_restaurant_id: restaurantId,
   });
-  if (error) throw new Error("Paket und Angebotslimit konnten nicht geladen werden.");
-  return data as OwnerOfferEntitlements;
+  if (error) throw new Error("Paketzeitraum konnte nicht geladen werden.");
+  const entitlement = data as { effective_from?: unknown; effective_until?: unknown } | null;
+  return {
+    effective_from: typeof entitlement?.effective_from === "string" ? entitlement.effective_from : null,
+    effective_until: typeof entitlement?.effective_until === "string" ? entitlement.effective_until : null,
+  };
 }
 
 function offerLoadError() {

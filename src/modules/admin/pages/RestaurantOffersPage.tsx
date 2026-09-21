@@ -34,10 +34,12 @@ import {
   deleteRestaurantOfferDraft,
   duplicateRestaurantOffer,
   formatRestaurantOfferSchedule,
+  isRestaurantOfferCapacityError,
   loadRestaurantOfferBranches,
   loadRestaurantOfferEmailSummary,
   loadRestaurantOffers,
-  loadOwnerOfferEntitlements,
+  loadOwnerOfferCapacity,
+  loadOwnerOfferPlanWindow,
   restaurantOfferCustomerVisibility,
   restaurantOfferDisplayStatus,
   restaurantOfferPricePresentation,
@@ -49,8 +51,10 @@ import {
   type RestaurantOfferBranch,
   type RestaurantOfferEmailSummary,
   type RestaurantOfferType,
-  type OwnerOfferEntitlements,
+  type OwnerOfferCapacity,
+  type OwnerOfferPlanWindow,
 } from "../../offers/restaurantOfferService";
+import { offerCapacityReachedMessage } from "../../offers/offerCapacityMessages.mjs";
 import "./restaurant-offers.css";
 
 type Filter = "all" | "published" | "draft" | "inactive";
@@ -170,7 +174,8 @@ export function RestaurantOffersPage() {
   const [offers, setOffers] = useState<RestaurantOffer[]>([]);
   const [branches, setBranches] = useState<RestaurantOfferBranch[]>([]);
   const [emailSummary, setEmailSummary] = useState<RestaurantOfferEmailSummary | null>(null);
-  const [entitlements, setEntitlements] = useState<OwnerOfferEntitlements | null>(null);
+  const [capacity, setCapacity] = useState<OwnerOfferCapacity | null>(null);
+  const [planWindow, setPlanWindow] = useState<OwnerOfferPlanWindow | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,21 +195,24 @@ export function RestaurantOffersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextOffers, nextBranches, nextEmailSummary, nextEntitlements] = await Promise.all([
+      const [nextOffers, nextBranches, nextEmailSummary, nextCapacity, nextPlanWindow] = await Promise.all([
         loadRestaurantOffers(restaurantId),
         loadRestaurantOfferBranches(restaurantId),
         loadRestaurantOfferEmailSummary(restaurantId).catch(() => null),
-        loadOwnerOfferEntitlements(restaurantId).catch(() => null),
+        loadOwnerOfferCapacity(restaurantId).catch(() => null),
+        loadOwnerOfferPlanWindow(restaurantId).catch(() => null),
       ]);
       setOffers(nextOffers);
       setBranches(nextBranches);
       setEmailSummary(nextEmailSummary);
-      setEntitlements(nextEntitlements);
+      setCapacity(nextCapacity);
+      setPlanWindow(nextPlanWindow);
     } catch (nextError) {
       setOffers([]);
       setBranches([]);
       setEmailSummary(null);
-      setEntitlements(null);
+      setCapacity(null);
+      setPlanWindow(null);
       setError(nextError instanceof Error ? nextError.message : "Angebote konnten nicht geladen werden.");
     } finally {
       setLoading(false);
@@ -221,7 +229,14 @@ export function RestaurantOffersPage() {
     if (filter === "inactive") return ["Deaktiviert", "Abgelaufen", "Archiviert"].includes(displayStatus);
     return true;
   }), [filter, offers]);
-  const activeOfferCount = offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
+  const activeOfferCount = capacity?.offers.usage
+    ?? offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
+
+  function presentOfferError(nextError: unknown, fallback: string) {
+    return isRestaurantOfferCapacityError(nextError)
+      ? offerCapacityReachedMessage(language)
+      : nextError instanceof Error ? nextError.message : fallback;
+  }
 
   const resetPhoto = useCallback(() => {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -346,7 +361,7 @@ export function RestaurantOffersPage() {
       await reload();
     } catch (nextError) {
       if (uploadedPath) await removeOwnerRewardImageUpload(uploadedPath);
-      setFormError(nextError instanceof Error ? nextError.message : "Das Angebot konnte nicht gespeichert werden.");
+      setFormError(presentOfferError(nextError, "Das Angebot konnte nicht gespeichert werden."));
     } finally {
       setSaving(false);
     }
@@ -361,7 +376,7 @@ export function RestaurantOffersPage() {
       await reload();
       if (action === "PUBLISH") smartSetup.complete("offer_published");
     } catch (nextError) {
-      setStatusMessage(nextError instanceof Error ? nextError.message : "Die Aktion konnte nicht abgeschlossen werden.");
+      setStatusMessage(presentOfferError(nextError, "Die Aktion konnte nicht abgeschlossen werden."));
     }
   }
 
@@ -372,7 +387,7 @@ export function RestaurantOffersPage() {
       setStatusMessage("Kopie als Entwurf erstellt.");
       await reload();
     } catch (nextError) {
-      setStatusMessage(nextError instanceof Error ? nextError.message : "Das Angebot konnte nicht dupliziert werden.");
+      setStatusMessage(presentOfferError(nextError, "Das Angebot konnte nicht dupliziert werden."));
     }
   }
 
@@ -383,7 +398,7 @@ export function RestaurantOffersPage() {
       setStatusMessage("Entwurf gelöscht.");
       await reload();
     } catch (nextError) {
-      setStatusMessage(nextError instanceof Error ? nextError.message : "Der Entwurf konnte nicht gelöscht werden.");
+      setStatusMessage(presentOfferError(nextError, "Der Entwurf konnte nicht gelöscht werden."));
     }
   }
 
@@ -396,9 +411,9 @@ export function RestaurantOffersPage() {
         <button className="button premium-owner-primary-action" onClick={startCreate} type="button"><Plus aria-hidden="true" size={19} />Neues Angebot erstellen</button>
       </header>
 
-      {entitlements ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotslimit"><div><span>Aktuelles Paket</span><strong>{entitlements.plan_key === "BASIC" ? "Basic" : entitlements.plan_key === "PRO" ? "Pro" : "Premium"}</strong></div><div><span>Aktive Angebote</span><strong>{entitlements.effective.offer_limit_unlimited ? <>{entitlements.active_offer_count} · <span>Unbegrenzt</span></> : `${entitlements.active_offer_count} / ${entitlements.effective.offer_limit}`}</strong></div><p>Plan und Funktionen werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
-      {entitlements?.effective_from || entitlements?.effective_until ? <dl className="platform-detail-list" data-i18n-skip="true">
-        {([['start', entitlements.effective_from], ['end', entitlements.effective_until]] as const).map(([key, value]) => value && Number.isFinite(Date.parse(value)) ? <div key={key}><dt>{translateKey(`platform.planOverride.${key}`)}</dt><dd>{formatLocaleDate(value, language, { dateStyle: "medium", timeStyle: "short" })}</dd></div> : null)}
+      {capacity ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotskapazität"><div><span>Aktuelles Paket</span><strong>{capacity.plan.plan_key === "BASIC" ? "Basic" : "Pro"}</strong></div><div><span>Aktive und geplante Angebote</span><strong>{`${capacity.offers.usage} / ${capacity.offers.effective_limit}`}</strong></div><p>Plan und Kapazität werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
+      {planWindow?.effective_from || planWindow?.effective_until ? <dl className="platform-detail-list" data-i18n-skip="true">
+        {([['start', planWindow.effective_from], ['end', planWindow.effective_until]] as const).map(([key, value]) => value && Number.isFinite(Date.parse(value)) ? <div key={key}><dt>{translateKey(`platform.planOverride.${key}`)}</dt><dd>{formatLocaleDate(value, language, { dateStyle: "medium", timeStyle: "short" })}</dd></div> : null)}
       </dl> : null}
 
       <section className="restaurant-offers-legal-note">
@@ -433,11 +448,7 @@ export function RestaurantOffersPage() {
           ))}
         </div>
         <span>
-          {entitlements?.effective.offer_limit_unlimited ? (
-            <><span>Aktive Angebote</span>:{" "}<strong><span>Unbegrenzt</span></strong></>
-          ) : (
-            <><strong>{entitlements ? `${activeOfferCount} / ${entitlements.effective.offer_limit}` : activeOfferCount}</strong>{" "}<span>Aktive Angebote</span></>
-          )}
+          <><strong>{capacity ? `${activeOfferCount} / ${capacity.offers.effective_limit}` : activeOfferCount}</strong>{" "}<span>Aktive und geplante Angebote</span></>
         </span>
       </div>
 

@@ -4024,3 +4024,17 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
 - Separaten, auditierten Nachbearbeitungsstatus für abgeschlossene Einlösungen ergänzt.
 - Owner-Tagesabgleich, Staff-Hinweis und Platform-Admin-Diagnose ergänzt.
 - Keine POS-, RKSV-, Steuer-, Beleg- oder Umsatzintegration eingeführt.
+
+## 2026-09-21 - Phase 7C.3 lokales Angebots-Capacity-Enforcement
+
+- Additive Migration 154 ersetzt die alte Offer-Limit-Autoritaet durch den
+  zentralen, endlichen Capacity-Resolver aus Phase 7C.2.
+- Publish, Planung, Reaktivierung und Wiederherstellung in den aktiven
+  veroeffentlichten Zustand werden tenantserialisiert und parallelitaetssicher
+  geprueft; Entwuerfe und kapazitaetsreduzierende Aenderungen bleiben erlaubt.
+- Der Owner-Angebotsbereich zeigt zentrale Nutzung und Kapazitaet ohne
+  Unlimited- oder alte Override-Autoritaet. `OFFER_CAPACITY_REACHED` wird in
+  sieben UI-Sprachen verstaendlich dargestellt, ohne Kaufpfad zu simulieren.
+- Fresh-, Upgrade-, Repeat-, Security-, Multirow- und 96-fache
+  Parallelitaetstests sind lokal gruen. Keine Staging-Migration, kein
+  Deployment, kein Commit und kein Push.

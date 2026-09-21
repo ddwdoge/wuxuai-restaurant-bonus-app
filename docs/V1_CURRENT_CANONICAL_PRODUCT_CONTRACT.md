@@ -1055,3 +1055,43 @@ Legal-Gate bestaetigt.
 Customer Tiers, neue Analytics-Diagramme, Stripe Checkout/Webhooks,
 Legal-Country-Packs, Capacity Owner UI sowie Warnungsoberflaechen sind nicht
 Teil der Phase-7C.2-Daten- und Read-Schicht.
+
+## Phase 7C.3 Angebots-Capacity-Enforcement
+
+Status: **LOCAL CODE LOCK / STAGING NICHT ANGEWENDET**
+
+Der verbindliche Angebotsvertrag wird durch die additive Migration
+`20260921002000_offer_capacity_enforcement.sql` serverseitig durchgesetzt.
+Ein Angebot belegt genau dann Kapazitaet, wenn es `PUBLISHED`, aktiv und nach
+Serverzeit noch nicht abgelaufen ist. `valid_from` schraenkt die Zaehlung nicht
+ein: zukuenftig geplante, bereits veroeffentlichte Angebote reservieren ihren
+Slot sofort. Entwuerfe, deaktivierte, archivierte und abgelaufene Angebote
+belegen keinen Slot.
+
+Nur der Uebergang aus einem nicht zaehlenden Zustand in den zaehlenden Zustand
+benoetigt freie Kapazitaet. Bereits zaehlende Angebote duerfen auch im
+Over-Limit-Zustand bearbeitet werden. Deaktivierung, Archivierung, Ablauf und
+Loeschung eines Entwurfs bleiben kapazitaetsreduzierend beziehungsweise
+kapazitaetsneutral erlaubt. Reaktivierung, Wiederveroeffentlichung und das
+Verlaengern eines abgelaufenen veroeffentlichten Angebots benoetigen einen
+freien Slot.
+
+`resolve_restaurant_capacity_internal` ist die einzige Limitautoritaet. Der
+Schreibtrigger serialisiert slotverbrauchende Uebergaenge tenantbezogen in der
+Transaktion. Der stabile Fehlercode lautet `OFFER_CAPACITY_REACHED`; Details
+enthalten nur sichere Capacity-Werte. Mandantenwechsel eines Angebots ist
+gesperrt. Browserrollen besitzen weiterhin keine direkte Offer-DML-Autoritaet.
+
+Die Owner-Angebotsseite liest Nutzung und effektives Limit ausschliesslich aus
+`get_restaurant_capacity`. Der alte Unlimited-/Override-Wert wird dort nicht
+mehr als Capacity-Autoritaet verwendet. Serverseitige Plan-Geltungsdaten
+bleiben separat read-only sichtbar. Die Fehlermeldung ist fuer
+DE/EN/FR/IT/ES/ZH/KO fest definiert; es gibt noch keinen Kauf- oder
+Checkout-Pfad.
+
+Lokal bestaetigt sind Fresh-Replay, Upgrade 153 auf 154,
+Wiederholungsanwendung, 5/10/15/20-Slot-Matrix, Multirow-Rollback,
+Cross-Tenant-Schutz sowie 96 parallele Veroeffentlichungsversuche mit exakt
+5/10/15/20 Erfolgen. Migration 154 ist nicht auf Staging oder Production
+angewendet. Customer-Capacity-Enforcement, Stripe, Warnungen und Kaufpfade sind
+nicht Teil von Phase 7C.3.

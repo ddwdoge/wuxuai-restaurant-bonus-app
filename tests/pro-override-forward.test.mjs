@@ -52,8 +52,8 @@ test('termination has a separate confirmation dialog and plan timing refreshes f
   assert.doesNotMatch(ui, /PLAN_CHANGED|ENTITLEMENT_OVERRIDE_CLEARED/);
 });
 test('Owner sees server-resolved plan dates but no activation or termination controls', () => {
-  assert.match(owner, /entitlements\.effective_from/);
-  assert.match(owner, /entitlements\.effective_until/);
+  assert.match(owner, /planWindow\.effective_from/);
+  assert.match(owner, /planWindow\.effective_until/);
   assert.match(owner, /formatLocaleDate/);
   assert.doesNotMatch(owner, /submitPlatformPlanOverride|set_platform_restaurant_plan_override|end_platform_restaurant_plan_override/);
 });

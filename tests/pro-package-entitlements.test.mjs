@@ -76,21 +76,19 @@ test("Platform Admin and Owner views expose effective values without self-upgrad
   assert.match(platformService, /set_platform_restaurant_plan_override/);
   assert.doesNotMatch(platformService, /update_platform_restaurant_entitlements/);
   assert.match(offerPage, /Aktuelles Paket/);
-  assert.match(offerPage, /Plan und Funktionen werden ausschließlich durch WUXUAI verwaltet/);
+  assert.match(offerPage, /Plan und Kapazität werden ausschließlich durch WUXUAI verwaltet/);
   assert.doesNotMatch(offerPage, /Paket wechseln|Upgrade kaufen|Plan ändern/);
-  assert.match(offerService, /get_restaurant_entitlements/);
+  assert.match(offerService, /get_restaurant_capacity/);
 });
 
-test("Owner offer counter renders Basic five, overrides one through seven and Pro unlimited", () => {
+test("Owner offer counter renders the central finite capacity contract", () => {
   assert.match(migration, /'BASIC', 59, true, 5, false, false, false, false/);
   assert.match(migration, /'PRO', 99, false, null, true, true, false, false/);
   assert.match(migration, /offer_limit integer check \(offer_limit between 1 and 7\)/);
-  assert.match(offerPage, /const activeOfferCount = offers\.filter/);
-  assert.match(offerPage, /entitlements\.effective\.offer_limit_unlimited/);
-  assert.match(offerPage, /`\$\{activeOfferCount\} \/ \$\{entitlements\.effective\.offer_limit\}`/);
-  assert.match(offerPage, /<span>Aktive Angebote<\/span>/);
-  assert.match(offerPage, /<span>Unbegrenzt<\/span>/);
-  assert.doesNotMatch(offerPage, /· unbegrenzt/);
+  assert.match(offerPage, /capacity\?\.offers\.usage/);
+  assert.match(offerPage, /`\$\{activeOfferCount\} \/ \$\{capacity\.offers\.effective_limit\}`/);
+  assert.match(offerPage, /<span>Aktive und geplante Angebote<\/span>/);
+  assert.doesNotMatch(offerPage, /offer_limit_unlimited|Unbegrenzt/);
   assert.doesNotMatch(offerPage, /von 5 veröffentlicht und sichtbar/);
   assert.doesNotMatch(offerPage, /plan_key === "BASIC"[^\n]*activeOfferCount/);
 });
