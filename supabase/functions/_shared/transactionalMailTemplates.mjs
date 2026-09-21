@@ -58,6 +58,16 @@ const COPY = {
   },
 };
 
+const CAPACITY_COPY = {
+  de: { subject: "Kapazitätswarnung | WUXUAI® Bonus", headline: "Deine Kapazität braucht Aufmerksamkeit", offer: "Angebote", customer: "aktive Kunden", level: (v) => `Warnstufe: ${v}`, usage: (u, l) => `${u} von ${l} verwendet`, remaining: (v) => `Noch ${v} verfügbar`, forecast: (v) => `Prognose in 7 Tagen: ${v}`, noAuto: "Es wird nichts automatisch gebucht, abgebucht oder am Tarif geändert.", cta: "Tarif & Kapazität öffnen", accountNote: "Diese Servicenachricht betrifft die Kapazität deines Betriebs." },
+  en: { subject: "Capacity warning | WUXUAI® Bonus", headline: "Your capacity needs attention", offer: "offers", customer: "active customers", level: (v) => `Warning level: ${v}`, usage: (u, l) => `${u} of ${l} used`, remaining: (v) => `${v} remaining`, forecast: (v) => `Forecast in 7 days: ${v}`, noAuto: "Nothing is purchased, charged, or changed automatically.", cta: "Open plan & capacity", accountNote: "This service message concerns your business capacity." },
+  fr: { subject: "Alerte de capacité | WUXUAI® Bonus", headline: "Votre capacité nécessite votre attention", offer: "offres", customer: "clients actifs", level: (v) => `Niveau d’alerte : ${v}`, usage: (u, l) => `${u} sur ${l} utilisés`, remaining: (v) => `Encore ${v} disponibles`, forecast: (v) => `Prévision dans 7 jours : ${v}`, noAuto: "Aucun achat, débit ou changement de forfait n’est effectué automatiquement.", cta: "Ouvrir forfait et capacité", accountNote: "Ce message de service concerne la capacité de votre établissement." },
+  it: { subject: "Avviso capacità | WUXUAI® Bonus", headline: "La tua capacità richiede attenzione", offer: "offerte", customer: "clienti attivi", level: (v) => `Livello di avviso: ${v}`, usage: (u, l) => `${u} di ${l} utilizzati`, remaining: (v) => `Ancora ${v} disponibili`, forecast: (v) => `Previsione tra 7 giorni: ${v}`, noAuto: "Non vengono effettuati automaticamente acquisti, addebiti o cambi di piano.", cta: "Apri piano e capacità", accountNote: "Questo messaggio di servizio riguarda la capacità della tua attività." },
+  es: { subject: "Aviso de capacidad | WUXUAI® Bonus", headline: "Tu capacidad requiere atención", offer: "ofertas", customer: "clientes activos", level: (v) => `Nivel de aviso: ${v}`, usage: (u, l) => `${u} de ${l} utilizados`, remaining: (v) => `Quedan ${v}`, forecast: (v) => `Previsión en 7 días: ${v}`, noAuto: "No se realiza automáticamente ninguna compra, cargo ni cambio de plan.", cta: "Abrir plan y capacidad", accountNote: "Este mensaje de servicio se refiere a la capacidad de tu negocio." },
+  zh: { subject: "容量提醒 | WUXUAI® Bonus", headline: "您的容量需要关注", offer: "优惠", customer: "活跃客户", level: (v) => `提醒级别：${v}`, usage: (u, l) => `已使用 ${u}/${l}`, remaining: (v) => `剩余 ${v}`, forecast: (v) => `7 天后预测：${v}`, noAuto: "系统不会自动购买、扣费或更改套餐。", cta: "打开套餐与容量", accountNote: "这是一封关于您商户容量的服务邮件。" },
+  ko: { subject: "용량 알림 | WUXUAI® Bonus", headline: "용량 확인이 필요합니다", offer: "혜택", customer: "활성 고객", level: (v) => `알림 단계: ${v}`, usage: (u, l) => `${l}개 중 ${u}개 사용`, remaining: (v) => `${v}개 남음`, forecast: (v) => `7일 후 예상: ${v}`, noAuto: "구매, 결제 또는 요금제 변경은 자동으로 진행되지 않습니다.", cta: "요금제 및 용량 열기", accountNote: "이 서비스 메일은 사업장 용량에 관한 안내입니다." },
+};
+
 function cleanText(value, fallback, maxLength = 120) {
   const normalized = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
   return (normalized || fallback).slice(0, maxLength);
@@ -99,6 +109,52 @@ export function customerPortalMailUrl(baseUrl, restaurantSlug) {
   const url = new URL("/customer/login", base);
   url.searchParams.set("returnTo", returnPath);
   return url.toString();
+}
+
+export function ownerCapacityMailUrl(baseUrl) {
+  const base = new URL(baseUrl);
+  const hostname = base.hostname.toLowerCase();
+  if (base.protocol !== "https:" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+    throw new Error("APP_BASE_URL_INVALID");
+  }
+  return new URL("/admin/settings/tarif-kapazitaet", base).toString();
+}
+
+export function renderOwnerCapacityWarningMail({ restaurantName, payload, appBaseUrl, language }) {
+  const resolvedLanguage = resolveTransactionalMailLanguage({
+    preferredLanguage: language ?? payload?.language,
+  });
+  const copy = CAPACITY_COPY[resolvedLanguage];
+  const restaurant = cleanText(restaurantName, resolvedLanguage === "de" ? "deinem Betrieb" : "your business");
+  const capacityType = payload?.capacity_type === "customer" ? copy.customer : copy.offer;
+  const warningLevel = ["80", "90", "100", "OVER_LIMIT"].includes(payload?.warning_level)
+    ? payload.warning_level
+    : "80";
+  const usage = Number.isInteger(payload?.usage) && payload.usage >= 0 ? payload.usage : 0;
+  const limit = Number.isInteger(payload?.effective_limit) && payload.effective_limit > 0 ? payload.effective_limit : 1;
+  const remaining = Number.isInteger(payload?.remaining) && payload.remaining >= 0 ? payload.remaining : 0;
+  const projected = Number.isInteger(payload?.projected_usage_7d) && payload.projected_usage_7d >= 0
+    ? payload.projected_usage_7d
+    : null;
+  const actionUrl = ownerCapacityMailUrl(appBaseUrl);
+  const lines = [
+    restaurant,
+    capacityType,
+    copy.level(warningLevel),
+    copy.usage(usage, limit),
+    copy.remaining(remaining),
+    projected === null ? null : copy.forecast(projected),
+    copy.noAuto,
+  ].filter(Boolean);
+  const text = `${copy.headline}\n\n${lines.join("\n")}\n\n${copy.cta}: ${actionUrl}\n\n${copy.accountNote}\n${COMMON[resolvedLanguage].support}\n\nWUXUAI® Bonus`;
+  const detailHtml = lines.map((line) => `<p style="margin:0 0 10px;line-height:1.6">${escapeHtml(String(line))}</p>`).join("");
+  return {
+    subject: copy.subject,
+    text,
+    html: `<!doctype html><html lang="${resolvedLanguage}"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(copy.headline)}</h1>${detailHtml}<a href="${escapeHtml(actionUrl)}" style="display:inline-block;min-height:44px;box-sizing:border-box;padding:13px 18px;border-radius:8px;background:#8d681f;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(copy.cta)}</a></div><div style="padding:18px 8px 0;text-align:center;color:#71695f;font-size:12px;line-height:1.6"><p style="margin:0">${escapeHtml(copy.accountNote)}</p><p style="margin:4px 0 0"><a href="mailto:${SUPPORT_EMAIL}" style="color:#71695f">${escapeHtml(COMMON[resolvedLanguage].support)}</a></p></div></div></body></html>`,
+    actionUrl,
+    language: resolvedLanguage,
+  };
 }
 
 export function renderTransactionalMail({ templateKey, restaurantName, restaurantSlug, payload, appBaseUrl, language, firstName }) {

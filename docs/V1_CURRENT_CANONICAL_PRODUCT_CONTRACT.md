@@ -1159,3 +1159,76 @@ Registrierungen, Memberships, Punktebuchungen, Einloesungen, Grants,
 Add-on-Einheiten oder Capacity-Blockereignisse erzeugt. AT + PRO bleibt
 LOCKED. Es gab kein App-Deployment und keinen Stripe- oder Production-Zugriff.
 Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte Folgephasen.
+
+## Phase 7C.5 Owner Capacity UI und Warning Dispatcher
+
+Status: **PHASE 7C.5B LOCAL CODE LOCK**
+
+Die Owner-Route `/admin/settings/tarif-kapazitaet` zeigt Tarif, Land und
+Commercial-Lock sowie Angebots- und Kundenkapazitaet aus genau einem
+autorisierten Server-Snapshot. Basislimit, aktive Add-on-Einheiten,
+Add-on-Kapazitaet, effektives Limit, Nutzung, Restkapazitaet und
+`as_of` stammen aus `get_restaurant_capacity`; die UI berechnet oder
+hardcodiert keine Produktlimits oder Preise. Der bestehende interne Resolver
+bleibt die einzige Capacity-Autoritaet.
+
+Migration `20260921004000_owner_capacity_read_contract.sql` erweitert nur den
+bereits vorhandenen read-only Owner-Vertrag um die serverseitigen Zustaende
+`AVAILABLE`, `WARNING_80`, `WARNING_90`, `AT_LIMIT` und `OVER_LIMIT`, die
+autoritativen Add-on-Katalogwerte sowie Commercial-Release-Metadaten. Sie
+erstellt weder Tabellen noch Trigger, Dispatcher, Billing- oder
+Produktdaten-Schreibpfade. Owner und Platform Admin bleiben autorisiert;
+Staff, Customer und Anonymous erhalten keinen Aufrufzugang.
+
+Die Aktion „Kapazitaet erhoehen“ ist bis zur Stripe-Freigabe eine reine
+Informationsansicht. Oeffnen, X, Escape und Abbrechen schreiben nichts und
+simulieren weder Kauf noch Tarifwechsel. Bestehende Daten bleiben im
+At-Limit- und Over-Limit-Zustand sichtbar; die serverseitige Blockierung wird
+nicht im Client nachgebaut.
+
+### Verbindlicher Founder-Warnvertrag
+
+Capacity-Warnungen gelten getrennt fuer `offer` und `customer`. Die Stufen
+sind 80 Prozent, 90 Prozent, 100 Prozent und `OVER_LIMIT`. Limits und Nutzung
+stammen ausschliesslich aus `resolve_restaurant_capacity_internal`; der
+Dispatcher berechnet keine Produktlimits selbst.
+
+Eine Sieben-Tage-Prognose ist nur mit 28 lueckenlosen, vollstaendigen
+taeglichen Nutzungssnapshots zulaessig. Es gilt:
+
+```text
+daily_net_growth = (current_usage - usage_28_complete_days_ago) / 28
+projected_usage_7d = current_usage + max(0, daily_net_growth * 7)
+```
+
+Der prognostizierte Wert wird fuer den Schwellenvergleich konservativ auf die
+naechste ganze Einheit aufgerundet. Bei weniger als 28 Tagen, einer Luecke,
+ungueltiger Datenbasis oder ungueltigem Resolverzustand wird keine
+Ersatzprognose erzeugt.
+
+Die Evaluation erfolgt nach einer erfolgreichen kapazitaetsrelevanten
+Serveraktion und taeglich um 08:00 Uhr in der Restaurant-Zeitzone. Eine
+fehlende oder ungueltige Zeitzone faellt auf `Europe/Vienna` zurueck. Das
+Oeffnen der Owner-Seite bleibt read-only.
+
+Der logische Deduplizierungsschluessel besteht aus `restaurant_id`,
+`capacity_type`, `warning_level` und `warning_episode_id`. App und E-Mail
+werden als getrennte Zustellzustaende gefuehrt. Eine Prognose und das spaetere
+tatsaechliche Erreichen derselben Stufe verwenden dieselbe Episode. Eine
+hoehere Stufe darf sofort eine neue Episode ausloesen.
+
+80 Prozent, 90 Prozent und Prognosewarnungen werden einmal je Warnperiode
+zugestellt. 100 Prozent und `OVER_LIMIT` werden sofort und danach hoechstens
+alle sieben Tage erinnert; es gibt keine taegliche E-Mail-Wiederholung.
+E-Mails werden zwischen 22:00 und 07:00 lokaler Zeit zurueckgehalten und ab
+08:00 versandt. Empfaenger sind ausschliesslich aktive, verifizierte Owner.
+
+Eine Warnstufe wird erneut scharf, wenn die Nutzung sieben vollstaendige Tage
+unter der Stufe bleibt oder eine Tarif-/Add-on-Erhoehung das wirksame Limit
+erhoeht und die Nutzung dadurch unter die Stufe faellt. Ein Owner-Acknowledge
+beendet nur die sichtbare App-Benachrichtigung und loest kein Rearm aus.
+
+Der Dispatcher loescht oder veraendert keine Angebote, Kunden, Punkte oder
+Ledger-Eintraege. Er bucht kein Add-on, aendert keinen Tarif, aktiviert keinen
+Grant und fuehrt keine Abbuchung aus. Enforcement bleibt ausschliesslich bei
+den bestehenden serverseitigen Capacity-Vertraegen.

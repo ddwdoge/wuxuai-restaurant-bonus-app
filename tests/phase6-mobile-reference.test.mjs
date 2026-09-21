@@ -25,8 +25,8 @@ function sourceFiles(dir) {
   ));
 }
 
-test("Phase 6 classifies every actual Route entry without inventing fifty screens", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 50);
+test("Phase 6 preserves its historical route inventory alongside the approved capacity route", () => {
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 51);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 50 }, (_, index) => index + 1));
   assert.equal(rows.filter((row) => row[2] === "V").length, 42);
@@ -35,11 +35,11 @@ test("Phase 6 classifies every actual Route entry without inventing fifty screen
   assert.match(read("src/modules/admin/pages/BrandingPage.tsx"), /<Navigate replace to="\/admin\/settings\/aussehen"/);
 });
 
-test("Drawer inventory covers forty instances, two shared wrappers and the approved Platform Admin menus", () => {
+test("Drawer inventory includes the read-only capacity information drawer", () => {
   const names = new Set(["AppDrawer", "UiDialog", "PremiumDrawer", "ConfirmationDialog"]);
   const count = sourceFiles("src").filter((path) => path.endsWith(".tsx"))
     .flatMap(openingElements).filter((name) => names.has(name)).length;
-  assert.equal(count, 44);
+  assert.equal(count, 45);
   const rows = [...report.matchAll(/^\| D(\d+) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 40 }, (_, index) => index + 1));
 });

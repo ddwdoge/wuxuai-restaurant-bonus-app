@@ -55,6 +55,9 @@ const StaffPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("../modules/admin/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
 );
+const OwnerCapacityPage = lazy(() =>
+  import("../modules/admin/pages/OwnerCapacityPage").then((module) => ({ default: module.OwnerCapacityPage })),
+);
 const OwnerSetupOverviewPage = lazy(() =>
   import("../modules/admin/pages/OwnerSetupOverviewPage").then((module) => ({ default: module.OwnerSetupOverviewPage })),
 );
@@ -249,6 +252,7 @@ export function App() {
         <Route index element={withFallback(<AdminDashboard />, <AdminLoading />)} />
         <Route path="onboarding" element={withFallback(<RestaurantOnboarding />, <AdminLoading />)} />
         <Route path="settings" element={withFallback(<SettingsPage />, <AdminLoading />)} />
+        <Route path="settings/tarif-kapazitaet" element={withFallback(<OwnerCapacityPage />, <AdminLoading />)} />
         <Route path="settings/setup" element={withFallback(<OwnerSetupOverviewPage />, <AdminLoading />)} />
         <Route path="settings/program-end" element={withFallback(<ProgramTerminationPage />, <AdminLoading />)} />
         <Route path="settings/:section" element={withFallback(<SettingsPage />, <AdminLoading />)} />

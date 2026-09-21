@@ -16,6 +16,7 @@ import {
   Clock,
   CreditCard,
   Gift,
+  Gauge,
   ImageUp,
   Info,
   KeyRound,
@@ -1680,6 +1681,13 @@ export function SettingsPage() {
           label="Einrichtung prüfen"
           title="Setup & Einrichtung"
           to="/admin/settings/setup"
+        />
+        <SettingsLinkCard
+          description="Sieh Tarif, Angebots- und Kundenkapazität sowie aktive Add-ons auf einen Blick."
+          icon={Gauge}
+          label="Tarif & Kapazität ansehen"
+          title="Tarif & Kapazität"
+          to="/admin/settings/tarif-kapazitaet"
         />
         <SettingsLinkCard
           description="Sieh Testphase, Abo-Status und Zahlungsstatus."

@@ -2,11 +2,13 @@ import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import nodemailer from "npm:nodemailer@6.9.16";
 import { configuredAppOrigin } from "../_shared/appOrigin.mjs";
 import {
+  renderOwnerCapacityWarningMail,
   renderTransactionalMail,
   resolveTransactionalMailLanguage,
 } from "../_shared/transactionalMailTemplates.mjs";
 
 type ReservedDelivery = {
+  queue_kind: "customer" | "capacity";
   delivery_id: string;
   event_type: string;
   email: string;
@@ -146,7 +148,7 @@ Deno.serve(async (request) => {
     tls: { minVersion: "TLSv1.2" },
   });
 
-  const { data, error: reserveError } = await supabase.rpc("reserve_customer_transactional_emails", {
+  const { data: customerData, error: reserveError } = await supabase.rpc("reserve_customer_transactional_emails", {
     input_limit: limit,
   });
   if (reserveError) {
@@ -154,21 +156,49 @@ Deno.serve(async (request) => {
     return json({ error: "queue_reservation_failed" }, 500);
   }
 
-  const deliveries = (data ?? []) as ReservedDelivery[];
+  const customerDeliveries = (customerData ?? []).map((delivery: Omit<ReservedDelivery, "queue_kind">) => ({
+    ...delivery,
+    queue_kind: "customer" as const,
+  }));
+  const remainingLimit = limit - customerDeliveries.length;
+  let capacityDeliveries: ReservedDelivery[] = [];
+  if (remainingLimit > 0) {
+    const { data: capacityData, error: capacityReserveError } = await supabase.rpc("reserve_capacity_warning_emails", {
+      input_limit: remainingLimit,
+    });
+    if (capacityReserveError) {
+      logDelivery("error", "capacity_warning_mail_reserve_failed", undefined, safeErrorCode(capacityReserveError));
+    } else {
+      capacityDeliveries = (capacityData ?? []).map((delivery: Omit<ReservedDelivery, "queue_kind">) => ({
+        ...delivery,
+        queue_kind: "capacity" as const,
+      }));
+    }
+  }
+  const deliveries = [...customerDeliveries, ...capacityDeliveries].slice(0, limit) as ReservedDelivery[];
   let sent = 0;
   let failed = 0;
   for (const delivery of deliveries) {
     try {
-      const recipient = await resolveRecipientContext(supabase, delivery.email);
-      const mail = renderTransactionalMail({
-        templateKey: delivery.event_type,
-        restaurantName: delivery.restaurant_name,
-        restaurantSlug: delivery.restaurant_slug,
-        payload: delivery.payload ?? {},
-        appBaseUrl,
-        language: recipient.language,
-        firstName: recipient.firstName,
-      });
+      const recipient = delivery.queue_kind === "customer"
+        ? await resolveRecipientContext(supabase, delivery.email)
+        : { firstName: null, language: String(delivery.payload?.language ?? "de") };
+      const mail = delivery.queue_kind === "capacity"
+        ? renderOwnerCapacityWarningMail({
+          restaurantName: delivery.restaurant_name,
+          payload: delivery.payload ?? {},
+          appBaseUrl,
+          language: recipient.language,
+        })
+        : renderTransactionalMail({
+          templateKey: delivery.event_type,
+          restaurantName: delivery.restaurant_name,
+          restaurantSlug: delivery.restaurant_slug,
+          payload: delivery.payload ?? {},
+          appBaseUrl,
+          language: recipient.language,
+          firstName: recipient.firstName,
+        });
       const messageIdDomain = smtpFromEmail.split("@")[1] || "wuxuaisbi.com";
       const result = await transporter.sendMail({
         from: { name: smtpFromName, address: smtpFromEmail },
@@ -178,7 +208,10 @@ Deno.serve(async (request) => {
         html: mail.html,
         messageId: `<wuxuai-${delivery.delivery_id}@${messageIdDomain}>`,
       });
-      const { error: completionError } = await supabase.rpc("complete_customer_transactional_email", {
+      const completionRpc = delivery.queue_kind === "capacity"
+        ? "complete_capacity_warning_email"
+        : "complete_customer_transactional_email";
+      const { error: completionError } = await supabase.rpc(completionRpc, {
         input_delivery_id: delivery.delivery_id,
         input_success: true,
         input_provider_message_id: result.messageId,
@@ -189,7 +222,10 @@ Deno.serve(async (request) => {
       logDelivery("info", "transactional_mail_sent", delivery);
     } catch (sendError) {
       const errorCode = safeErrorCode(sendError);
-      const { error: completionError } = await supabase.rpc("complete_customer_transactional_email", {
+      const completionRpc = delivery.queue_kind === "capacity"
+        ? "complete_capacity_warning_email"
+        : "complete_customer_transactional_email";
+      const { error: completionError } = await supabase.rpc(completionRpc, {
         input_delivery_id: delivery.delivery_id,
         input_success: false,
         input_provider_message_id: null,

@@ -708,6 +708,82 @@ a {
   max-width: 760px;
 }
 
+.owner-capacity-header .button { min-height: 44px; }
+.owner-capacity-summary,
+.owner-capacity-grid,
+.owner-capacity-actions { max-width: 1040px; }
+.owner-capacity-summary { margin-bottom: 16px; }
+.owner-capacity-plan-card { align-items: start; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr); }
+.owner-capacity-plan-card > div { display: grid; gap: 6px; }
+.owner-capacity-plan-card > div > span,
+.owner-capacity-plan-card dt { color: var(--muted); font-size: 13px; font-weight: 700; }
+.owner-capacity-plan-card > div > strong { font-size: clamp(28px, 5vw, 42px); line-height: 1; }
+.owner-capacity-plan-card > div > small { font-size: 15px; }
+.owner-capacity-plan-card dl { display: grid; gap: 8px; margin: 0; }
+.owner-capacity-plan-card dl div { align-items: baseline; border-bottom: 1px solid var(--border); display: flex; gap: 12px; justify-content: space-between; min-height: 44px; padding: 10px 0; }
+.owner-capacity-plan-card dd { font-weight: 700; margin: 0; text-align: right; }
+.owner-capacity-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.owner-capacity-metric { align-content: start; display: grid; gap: 16px; min-width: 0; }
+.owner-capacity-metric > header { align-items: start; display: flex; gap: 12px; }
+.owner-capacity-metric h2 { font-size: 20px; margin: 0 0 6px; }
+.owner-capacity-status { border-radius: 999px; display: inline-flex; font-size: 12px; font-weight: 800; padding: 5px 9px; }
+.owner-capacity-status.success { background: #e8f5e9; color: #207245; }
+.owner-capacity-status.attention { background: #fff7e6; color: #8a5a00; }
+.owner-capacity-status.warning { background: #ffedd5; color: #9a3412; }
+.owner-capacity-status.danger { background: #fee2e2; color: #991b1b; }
+.owner-capacity-usage { font-size: clamp(20px, 3vw, 27px); overflow-wrap: anywhere; }
+.owner-capacity-progress { background: #e7e5e4; border-radius: 999px; height: 12px; overflow: hidden; width: 100%; }
+.owner-capacity-progress > span { background: var(--tenant-primary, #0f766e); border-radius: inherit; display: block; height: 100%; max-width: 100%; transition: width 180ms ease; }
+.owner-capacity-warning .owner-capacity-progress > span,
+.owner-capacity-attention .owner-capacity-progress > span { background: #c17800; }
+.owner-capacity-danger .owner-capacity-progress > span { background: #b42318; }
+.owner-capacity-metric dl { display: grid; gap: 8px; margin: 0; }
+.owner-capacity-metric dl div { align-items: start; background: #f8fafc; border-radius: 10px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr) auto; min-height: 48px; padding: 10px 12px; }
+.owner-capacity-metric dt { color: var(--muted); line-height: 1.4; }
+.owner-capacity-metric dd { font-weight: 800; margin: 0; text-align: right; }
+.owner-capacity-remaining { align-items: center; display: flex; gap: 8px; margin: 0; }
+.owner-capacity-window { margin: 0; }
+.owner-capacity-as-of { color: var(--muted); font-size: 13px; margin: 12px 0 18px; max-width: 1040px; text-align: right; }
+.owner-capacity-warning-contract { align-items: start; display: grid; gap: 14px; grid-template-columns: auto minmax(0, 1fr); max-width: 1040px; }
+.owner-capacity-warning-contract h2 { font-size: 18px; margin: 0; }
+.owner-capacity-warning-contract p { color: var(--muted); margin: 6px 0 0; }
+.owner-capacity-warning-list { display: grid; gap: 10px; margin-top: 16px; }
+.owner-capacity-warning-notice { align-items: center; background: #fff7e6; border: 1px solid #e7bd65; border-radius: 12px; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) auto; padding: 14px; }
+.owner-capacity-warning-notice > div { display: grid; gap: 4px; min-width: 0; }
+.owner-capacity-warning-notice strong { overflow-wrap: anywhere; }
+.owner-capacity-warning-notice span { color: #8a5a00; font-size: 13px; font-weight: 700; }
+.owner-capacity-warning-notice p { color: var(--text); margin: 0; overflow-wrap: anywhere; }
+.owner-capacity-warning-notice .button { min-height: 44px; }
+.owner-capacity-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.owner-capacity-actions .button { min-height: 48px; }
+.owner-capacity-loading,
+.owner-capacity-error { align-items: center; display: grid; gap: 14px; justify-items: start; max-width: 760px; }
+.owner-capacity-addon-list { display: grid; gap: 12px; }
+.owner-capacity-addon { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.owner-capacity-addon h3,
+.owner-capacity-addon p { margin: 0; }
+.owner-capacity-addon p { margin-top: 6px; }
+.owner-capacity-addon-list .status-message { align-items: start; display: flex; gap: 8px; }
+
+@media (max-width: 767px) {
+  .owner-capacity-plan-card,
+  .owner-capacity-grid { grid-template-columns: 1fr; }
+  .owner-capacity-header { align-items: stretch; }
+  .owner-capacity-header .button,
+  .owner-capacity-actions .button { width: 100%; }
+  .owner-capacity-actions { justify-content: stretch; }
+}
+
+@media (max-width: 430px) {
+  .owner-capacity-plan-card,
+  .owner-capacity-metric { padding: 14px; }
+  .owner-capacity-metric dl div { grid-template-columns: 1fr; }
+  .owner-capacity-metric dd { text-align: left; }
+  .owner-capacity-as-of { text-align: left; }
+  .owner-capacity-warning-notice { grid-template-columns: 1fr; }
+  .owner-capacity-warning-notice .button { width: 100%; }
+}
+
 .settings-location-description { min-height: 110px; padding-block: 12px; resize: vertical; }
 .country-select { min-width: 0; position: relative; width: 100%; z-index: 2; }
 .country-select.is-open { z-index: 12; }

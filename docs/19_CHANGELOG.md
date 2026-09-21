@@ -4090,3 +4090,42 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Redemption-, Subscription-, Grant-, Add-on-, Country- und Auditbestaende
   sind identisch. Es gab keine QA-Aktivitaet und keine Businessdatenmutation.
 - AT + PRO bleibt LOCKED. Kein App-Deployment, Stripe- oder Production-Zugriff.
+
+## 2026-09-21 - Phase 7C.5 lokale Owner-Capacity-UI
+
+- Neue Owner-Seite „Tarif & Kapazitaet“ mit autoritativem Server-Snapshot fuer
+  Tarif, Angebots- und Kundenkapazitaet, Add-ons, Restkapazitaet sowie
+  Warning-, At-Limit- und Over-Limit-Zustaende.
+- Additive Migration 156 erweitert ausschliesslich den bestehenden
+  autorisierten Capacity-Read um Status-, Katalog- und Commercial-Lock-Werte;
+  bestehende Migrationen 153–155 bleiben unveraendert.
+- „Kapazitaet erhoehen“ ist eine schreibfreie Informationsansicht. Kein
+  Checkout, kein Grant, keine Subscription- oder Entitlement-Aenderung.
+- DE/EN/FR/IT/ES/ZH/KO sowie 320–1440 px wurden in Chromium und WebKit lokal
+  geprueft; Oeffnen und alle Drawer-Schliesswege verursachen keine Writes.
+- Warning-Dispatcher, App-Nachricht und E-Mail bleiben deaktiviert, bis
+  Deduplizierungsschluessel, Wiederholungsintervall, Cooldown und
+  Entwarnungs-/Rearm-Regel durch den Founder festgelegt sind.
+- Keine Staging-Aenderung, kein Stripe- oder Production-Zugriff, kein Commit
+  und kein Push.
+
+## 2026-09-21 - Phase 7C.5B lokaler Capacity-Warning-Dispatcher
+
+- Der bestaetigte Founder-Vertrag fuer `offer` und `customer` ist mit den
+  Stufen 80/90/100/OVER_LIMIT, exakter 28-Tage-Datenbasis, Sieben-Tage-
+  Prognose, Quiet Hours, Deduplizierung, Reminder und Rearm kanonisch
+  dokumentiert.
+- Additive Migration 157 erstellt private Tages-Snapshots, Warnperioden,
+  Zustellstatus und PII-armes append-only Audit. Evaluator und Scheduler
+  verwenden ausschliesslich den bestehenden Capacity-Resolver.
+- App-Acknowledge ist owner- und tenantgebunden. E-Mail-Warnungen verwenden
+  den vorhandenen Transactional-Mail-Worker, nur verifizierte aktive Owner und
+  getrennte idempotente Lease-/Retry-Zustaende; lokal wurde keine E-Mail
+  versendet.
+- 24-fache Parallelitaetspruefungen fuer Evaluation, Zustellung, Acknowledge,
+  Rearm und konkurrierende Eskalation sind duplikatfrei. Fresh, Upgrade
+  156→157, Repeat 1/2, SQL-, Rollen-, RLS- und DB-Lint-Gates sind lokal gruen.
+- Owner-UI und Warnkarte sind in Chromium und WebKit fuer sieben Sprachen und
+  320–1440 CSS-px gruen. Kein automatischer Kauf, Tarifwechsel, Grant,
+  Entitlement- oder Businessdaten-Write; kein Staging-, Stripe- oder
+  Production-Zugriff, kein Commit und kein Push.
