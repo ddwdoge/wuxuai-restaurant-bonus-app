@@ -4150,3 +4150,20 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   und wird auf der Owner-Route korrekt abgewiesen; Chrome ist Platform Admin.
   Kein Login- oder Rollenwechsel wurde vorgenommen. Daher noch kein
   Phase-7C.5C-Staging-Lock und kein FINAL LOCK.
+
+## 2026-09-21 - Phase 7C.5C physischer Owner-Restgate
+
+- Der Founder stellte eine legitime Owner-Sitzung in Safari her. Die
+  Staging-Route `/admin/settings/tarif-kapazitaet` zeigte BASIC, AT weiterhin
+  nicht freigegeben, 4/5 Angebote, 0/3.000 aktive Kunden, keine Add-ons und
+  den rollierenden 365-Tage-Zeitraum korrekt an.
+- Der Informations-Drawer zeigte ausschliesslich die freigegebenen Add-on-
+  Informationen ohne Checkout oder Zahlungsabfrage. Schliessen, X und Escape
+  funktionierten ohne Write.
+- DE/EN/FR/IT/ES/ZH/KO wurden physisch auf Staging geprueft; keine leere Seite
+  und keine Translation Keys. Deutsch wurde wiederhergestellt.
+- Nachher blieben Episodes, Snapshots, States, Deliveries und Warning-Audit
+  bei 0; Transactional Mail unveraendert 19/19 PENDING; Grants und Add-on-
+  Entitlements jeweils 0.
+- Phase 7C.5C erreicht damit `CAPACITY UI/WARNING STAGING LOCK`. Reale externe
+  E-Mail-Zustellung und Production besitzen ausdruecklich keinen FINAL LOCK.

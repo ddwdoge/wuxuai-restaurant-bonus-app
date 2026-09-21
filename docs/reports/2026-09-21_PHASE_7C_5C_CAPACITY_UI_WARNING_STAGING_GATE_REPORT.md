@@ -7,7 +7,7 @@ Branch: `codex/v1-release-integration`
 Base-HEAD: `7d57e73634a8052587e580b0ba82e11b86ccd72e`
 
 Implementierungscommit: `8d01d4ee7775c2c03f636ed110ae3f0990299392`
-Status: **NOT READY – LEGITIME OWNER-SITZUNG FUER PHYSISCHEN RESTGATE ERFORDERLICH**
+Status: **PHASE 7C.5C CAPACITY UI/WARNING STAGING LOCK**
 
 ## Ergebnis
 
@@ -17,12 +17,13 @@ Implementierungscommit ist ausschliesslich auf dem Staging-Worker ausgerollt,
 und alle Vorher-/Nachher-Fingerprints sind identisch. Es gab keine externe
 E-Mail, keine App-Warnung und keine Businessdatenmutation.
 
-Der verlangte physische Owner-Smoke konnte nicht ausgefuehrt werden: Safari
-ist legitim als Customer angemeldet und zeigt auf
-`/admin/settings/tarif-kapazitaet` korrekt „Falscher Anmeldebereich“ sowie
-„Dieses Konto hat keinen Restaurantbetreiber-Zugang“. Chrome ist legitim als
-Platform Admin angemeldet. Es wurde kein Login, Rollenwechsel oder
-Impersonationspfad versucht. Damit bleibt der physische Owner-Restgate offen.
+Der physische Owner-Smoke wurde anschliessend mit einer vom Founder manuell
+hergestellten legitimen Owner-Sitzung in Safari bestanden. Route, Tarif,
+Capacity-Werte, Warn-Leerzustand, Informations-Drawer, alle drei Schliesswege
+und sieben Sprachen wurden auf dem aktiven Staging-Build geprueft. Die
+anschliessenden Datenbankzaehler bestaetigen, dass weder Page View noch Drawer
+oder Sprachwechsel eine Warnung, Zustellung, Berechtigung oder Add-on-Einheit
+erzeugt haben.
 
 ## Baseline, Commit und lokale Gates
 
@@ -118,13 +119,25 @@ Der autoritative Capacity-Resolver lieferte vor dem Gate den Fingerprint
 
 ## Physischer Restgate
 
-- Safari/WebKit: Customer-Sitzung aktiv; Owner-Direktroute korrekt blockiert.
-- Chromium: Platform-Admin-Sitzung aktiv; keine Owner-Sitzung vorhanden.
-- Owner-Route, Capacity-Werte, Info-Drawer, Page-View-Writefreiheit,
-  DE/EN/FR/IT/ES/ZH/KO und 320–1440 px auf dem ausgelieferten Staging-Stand:
-  **nicht physisch abgenommen**.
-- Die lokale sieben-Sprachen-/Responsive-Matrix bleibt PASS, ersetzt aber den
-  verlangten physischen Staging-Owner-Smoke nicht.
+- Safari/WebKit Owner-Sitzung: PASS.
+- Route `/admin/settings/tarif-kapazitaet`: PASS.
+- BASIC, AT, PRO noch nicht freigegeben und keine Zahlung erforderlich: PASS.
+- Angebote: 4/5, 0 Add-on-Einheiten, Gesamtlimit 5, Rest 1: PASS.
+- Aktive Kunden: 0/3.000, 0 Add-on-Einheiten, Gesamtlimit 3.000,
+  Rest 3.000 und rollierende 365 Tage: PASS.
+- Warn-Leerzustand und Hinweis, dass der Page View keine Warnung erzeugt:
+  PASS.
+- Informations-Drawer zeigt nur +5 Angebote fuer 19 EUR netto/Monat und
+  +5.000 Kunden fuer 29 EUR netto/Monat; kein Checkout, keine Zahlungsabfrage
+  und keine vorgetaeuschte Buchung: PASS.
+- Schliessen, X und Escape: PASS.
+- DE/EN/FR/IT/ES/ZH/KO physisch auf Staging: PASS; keine leere Seite und keine
+  sichtbaren Translation Keys. Deutsch wurde abschliessend wiederhergestellt.
+- Physischer Safari-Desktop-Smoke: PASS. Die bereits bestandene lokale
+  Chromium-/WebKit-Matrix deckt 320/375/390/430/767/768/1024/1440 CSS-px ab.
+- Nachher-Zaehlung: Episodes, Snapshots, States, Deliveries und Warning-Audit
+  jeweils 0; Transactional Mail unveraendert 19/19 PENDING; Grants 0;
+  Add-on-Entitlements 0.
 
 ## Abschlussmatrix
 
@@ -132,8 +145,8 @@ Der autoritative Capacity-Resolver lieferte vor dem Gate den Fingerprint
 BRANCH: codex/v1-release-integration
 BASE HEAD: 7d57e73634a8052587e580b0ba82e11b86ccd72e
 IMPLEMENTATION COMMIT: 8d01d4ee7775c2c03f636ed110ae3f0990299392
-EVIDENCE COMMIT: THIS EVIDENCE COMMIT; EXACT HASH IN FINAL HANDOFF
-REMOTE HEAD: 8d01d4ee7775c2c03f636ed110ae3f0990299392
+EVIDENCE COMMIT: FINAL RESTGATE EVIDENCE COMMIT; EXACT HASH IN FINAL HANDOFF
+REMOTE HEAD: FINAL RESTGATE EVIDENCE COMMIT; EXACT HASH IN FINAL HANDOFF
 REMOTE PARITY: 0/0
 
 STAGING PROJECT: bwhvfjuwixgwduoeqaya
@@ -154,20 +167,20 @@ SCHEDULER RUNS DURING QA: 0 DUE RESTAURANTS
 SYSTEM ROWS CREATED: 0 WARNING ROWS; EXPECTED MIGRATION/CRON METADATA ONLY
 UNEXPECTED WRITES: 0
 
-OWNER CAPACITY ROUTE: DEPLOYED; PHYSICAL OWNER SESSION MISSING
-CURRENT PLAN: NOT PHYSICALLY VERIFIED ON STAGING UI
-OFFER INCLUDED/ADD-ON/TOTAL: SERVER CONTRACT PASS; UI RESTGATE OPEN
-CUSTOMER INCLUDED/ADD-ON/TOTAL: SERVER CONTRACT PASS; UI RESTGATE OPEN
-REMAINING CAPACITY: SERVER CONTRACT PASS; UI RESTGATE OPEN
-AT-LIMIT UX: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
-OVER-LIMIT UX: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
-INCREASE CAPACITY DRAWER: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
+OWNER CAPACITY ROUTE: PHYSICAL STAGING PASS
+CURRENT PLAN: BASIC / EUR 59 NET PER MONTH
+OFFER INCLUDED/ADD-ON/TOTAL: 5 / 0 / 5
+CUSTOMER INCLUDED/ADD-ON/TOTAL: 3000 / 0 / 3000
+REMAINING CAPACITY: OFFERS 1 / CUSTOMERS 3000
+AT-LIMIT UX: LOCAL MATRIX PASS
+OVER-LIMIT UX: LOCAL MATRIX PASS
+INCREASE CAPACITY DRAWER: PHYSICAL STAGING PASS / INFORMATION ONLY
 AUTO PURCHASE: NO
 AUTO PLAN CHANGE: NO
-PAGE VIEW WRITES: CONTRACT PASS; PHYSICAL OWNER RESTGATE OPEN
-CANCEL/X/ESCAPE WRITES: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
+PAGE VIEW WRITES: 0 / PHYSICAL STAGING PASS
+CANCEL/X/ESCAPE WRITES: 0 / PHYSICAL STAGING PASS
 
-OWNER ACCESS: SERVER CONTRACT PASS; PHYSICAL SESSION MISSING
+OWNER ACCESS: PHYSICAL STAGING PASS
 STAFF ACCESS: BLOCKED / PASS
 CUSTOMER ACCESS: BLOCKED PHYSICALLY / PASS
 ANONYMOUS ACCESS: BLOCKED / PASS
@@ -176,12 +189,12 @@ PII EXPOSURE: NONE IN OWNER CAPACITY READ
 COUNTRY GATE: UNCHANGED
 AT + PRO: LOCKED
 
-DE/EN/FR/IT/ES/ZH/KO: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
-RESPONSIVE MATRIX: LOCAL PASS; STAGING PHYSICAL RESTGATE OPEN
+DE/EN/FR/IT/ES/ZH/KO: PHYSICAL STAGING PASS
+RESPONSIVE MATRIX: LOCAL CHROMIUM/WEBKIT 320-1440 PASS; PHYSICAL SAFARI DESKTOP PASS
 TOUCH TARGETS: LOCAL PASS
 HORIZONTAL OVERFLOW: LOCAL PASS
-SAFARI/WEBKIT: CUSTOMER ACCESS BLOCK PASS; OWNER RESTGATE OPEN
-CHROMIUM: PLATFORM ADMIN SESSION ONLY; OWNER RESTGATE OPEN
+SAFARI/WEBKIT: PHYSICAL OWNER STAGING PASS
+CHROMIUM: LOCAL RESPONSIVE MATRIX PASS
 
 BEFORE/AFTER BUSINESS FINGERPRINTS: IDENTICAL / PASS
 REAL CUSTOMER ACTIVITIES: 0
@@ -223,15 +236,14 @@ UNRELATED PROCESSES CHANGED: NO
 FOREIGN CONTAINERS CHANGED: NO
 ```
 
-## Unveraendert und offener Schritt
+## Unveraendert und Zielstatus
 
 AT + PRO bleibt LOCKED. Country Policies, Grants, Add-ons,
 Plans/Subscriptions und alle Businessdaten sind unveraendert. Es gab keine
 echte oder synthetische Capacity-Manipulation, keine externe E-Mail, keine
 App-Warnung und keinen Production- oder Stripe-Zugriff.
 
-Eine legitime Owner-Sitzung muss manuell hergestellt werden. Danach ist nur
-noch der read-only physische Owner-Smoke auf dem bereits ausgelieferten
-Staging-Stand auszufuehren. Bis dahin lautet der Status:
+Der technische und physische Staging-Gate ist damit geschlossen. Dies ist
+kein FINAL LOCK fuer reale externe E-Mail-Zustellung und kein Production Lock.
 
-**NOT READY – LEGITIME OWNER-SITZUNG FUER PHYSISCHEN RESTGATE ERFORDERLICH**
+**PHASE 7C.5C CAPACITY UI/WARNING STAGING LOCK**

@@ -1162,7 +1162,7 @@ Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte Folgephasen.
 
 ## Phase 7C.5 Owner Capacity UI und Warning Dispatcher
 
-Status: **PHASE 7C.5C STAGING TECHNICAL GATE PASS / PHYSICAL OWNER RESTGATE OPEN**
+Status: **PHASE 7C.5C CAPACITY UI/WARNING STAGING LOCK**
 
 Die Owner-Route `/admin/settings/tarif-kapazitaet` zeigt Tarif, Land und
 Commercial-Lock sowie Angebots- und Kundenkapazitaet aus genau einem
@@ -1255,9 +1255,13 @@ ist ausschliesslich auf den Staging-Worker ausgerollt. Deployment-ID:
 `assets/index-CKU1QE4b.js`. Lokales und ausgeliefertes HTML sowie Hauptasset
 sind bytegleich.
 
-Der physische Owner-Resttest ist noch offen. Die vorhandene Safari-Sitzung ist
-eine Customer-Sitzung und wird auf der Owner-Route mit „Falscher
-Anmeldebereich“ abgewiesen; die vorhandene Chrome-Sitzung ist Platform Admin.
-Ohne legitime Owner-Sitzung werden weder Anmeldung noch Rollen gewechselt.
-Deshalb ist dies kein Phase-7C.5C-Staging-Lock und kein FINAL LOCK. AT + PRO,
-Production und Stripe bleiben unveraendert beziehungsweise LOCKED.
+Der physische Owner-Resttest wurde mit einer legitimen, vom Founder manuell
+hergestellten Safari-Owner-Sitzung bestanden. BASIC, AT weiterhin nicht
+freigegeben, 4/5 Angebote, 0/3.000 aktive Kunden, keine Add-ons, der
+365-Tage-Zeitraum und der Warn-Leerzustand wurden auf Staging angezeigt. Der
+reine Informations-Drawer wurde ueber Schliessen, X und Escape beendet;
+DE/EN/FR/IT/ES/ZH/KO wurden physisch geprueft und Deutsch wiederhergestellt.
+Nachher blieben alle Warning-Systemtabellen leer, Mail 19/19 PENDING, Grants
+0 und Add-on-Entitlements 0. Damit gilt Phase 7C.5C als Staging Lock, jedoch
+nicht als FINAL LOCK fuer reale externe E-Mail-Zustellung oder Production.
+AT + PRO, Production und Stripe bleiben unveraendert beziehungsweise LOCKED.
