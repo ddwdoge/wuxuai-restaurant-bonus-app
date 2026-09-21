@@ -4129,3 +4129,24 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   320–1440 CSS-px gruen. Kein automatischer Kauf, Tarifwechsel, Grant,
   Entitlement- oder Businessdaten-Write; kein Staging-, Stripe- oder
   Production-Zugriff, kein Commit und kein Push.
+
+## 2026-09-21 - Phase 7C.5C technisches Staging-Gate
+
+- Phase 7C.5/7C.5B wurde als Commit
+  `8d01d4ee7775c2c03f636ed110ae3f0990299392` eng auf
+  `codex/v1-release-integration` committed und gepusht.
+- Ausschliesslich Migration 156 und 157 wurden auf das verifizierte
+  Staging-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Die Historie steht bei
+  157/157; Repeat-Dry-Run und DB-Lint sind gruen.
+- Der Staging-Mailtransport ist mangels aller erforderlichen SMTP- und
+  Scheduler-Secrets technisch fail-closed. Es wurde keine externe E-Mail
+  versendet und es entstanden keine App-Warnings oder Warning-Systemzeilen.
+- Vorher-/Nachher-Fingerprints aller geprueften Business-, Commercial-,
+  Notification- und Mailrelationen sind identisch.
+- Der exakte Commit wurde ausschliesslich auf den Staging-Worker ausgerollt;
+  Deployment-ID `f44d9d91-98d3-4b22-a3b5-f998fe8cfe0e`, aktives Asset
+  `assets/index-CKU1QE4b.js`, lokale/remote Asset-Paritaet PASS.
+- Der physische Owner-Smoke bleibt offen: Safari ist als Customer angemeldet
+  und wird auf der Owner-Route korrekt abgewiesen; Chrome ist Platform Admin.
+  Kein Login- oder Rollenwechsel wurde vorgenommen. Daher noch kein
+  Phase-7C.5C-Staging-Lock und kein FINAL LOCK.

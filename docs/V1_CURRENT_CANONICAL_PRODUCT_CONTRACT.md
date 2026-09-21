@@ -1162,7 +1162,7 @@ Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte Folgephasen.
 
 ## Phase 7C.5 Owner Capacity UI und Warning Dispatcher
 
-Status: **PHASE 7C.5B LOCAL CODE LOCK**
+Status: **PHASE 7C.5C STAGING TECHNICAL GATE PASS / PHYSICAL OWNER RESTGATE OPEN**
 
 Die Owner-Route `/admin/settings/tarif-kapazitaet` zeigt Tarif, Land und
 Commercial-Lock sowie Angebots- und Kundenkapazitaet aus genau einem
@@ -1232,3 +1232,32 @@ Der Dispatcher loescht oder veraendert keine Angebote, Kunden, Punkte oder
 Ledger-Eintraege. Er bucht kein Add-on, aendert keinen Tarif, aktiviert keinen
 Grant und fuehrt keine Abbuchung aus. Enforcement bleibt ausschliesslich bei
 den bestehenden serverseitigen Capacity-Vertraegen.
+
+### Phase 7C.5C Staging-Gate
+
+Die additiven Migrationen `20260921004000_owner_capacity_read_contract.sql`
+und `20260921005000_capacity_warning_dispatch.sql` sind auf dem verifizierten
+Staging-Projekt `bwhvfjuwixgwduoeqaya` angewendet. Die Remote-Historie steht
+bei 157/157; Repeat-Dry-Run, DB-Lint, RLS, ACLs, feste `search_path`-Werte,
+Trigger- und Cron-Bindung sind geprueft.
+
+Der Staging-Mailtransport ist technisch fail-closed: Die fuer den bestehenden
+Transactional-Mail-Dispatcher erforderlichen SMTP- und Scheduler-Secrets sind
+nicht konfiguriert. Es existiert kein Test-Sink und es wurde keine externe
+E-Mail versendet. Migration und anschliessende read-only Pruefungen erzeugten
+keine Snapshot-, Warning-, Delivery- oder Auditzeile. Vorher-/Nachher-
+Fingerprints der Business-, Commercial-, Notification- und Mailbestaende sind
+identisch.
+
+Der App-Stand aus Commit `8d01d4ee7775c2c03f636ed110ae3f0990299392`
+ist ausschliesslich auf den Staging-Worker ausgerollt. Deployment-ID:
+`f44d9d91-98d3-4b22-a3b5-f998fe8cfe0e`; aktives Hauptasset:
+`assets/index-CKU1QE4b.js`. Lokales und ausgeliefertes HTML sowie Hauptasset
+sind bytegleich.
+
+Der physische Owner-Resttest ist noch offen. Die vorhandene Safari-Sitzung ist
+eine Customer-Sitzung und wird auf der Owner-Route mit „Falscher
+Anmeldebereich“ abgewiesen; die vorhandene Chrome-Sitzung ist Platform Admin.
+Ohne legitime Owner-Sitzung werden weder Anmeldung noch Rollen gewechselt.
+Deshalb ist dies kein Phase-7C.5C-Staging-Lock und kein FINAL LOCK. AT + PRO,
+Production und Stripe bleiben unveraendert beziehungsweise LOCKED.
