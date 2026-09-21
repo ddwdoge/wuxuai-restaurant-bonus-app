@@ -1103,3 +1103,48 @@ Grants, Add-on-Einheiten, Country Policies oder Subscriptiondaten veraendert.
 AT + PRO bleibt LOCKED. Es gab kein App-Deployment und keinen Stripe- oder
 Production-Zugriff. Customer-Capacity-Enforcement, Warnungen, Kaufpfade und
 Billing sind nicht Teil von Phase 7C.3B.
+
+## Phase 7C.4 Customer-Capacity-Enforcement
+
+Status: **PHASE 7C.4 LOCAL CODE LOCK**
+
+Die additive Migration `20260921003000_customer_capacity_enforcement.sql`
+setzt den in Phase 7C.2 beschlossenen Kundenvertrag lokal serverseitig durch.
+Ein Kundenkonto zaehlt pro Restaurant genau einmal, wenn im halboffenen
+Serverzeitfenster `[as_of - 365 Tage, as_of)` mindestens eine erfolgreiche,
+nicht aufgehobene positive Punktegutschrift aus einem kanonischen Restaurant-
+oder Customer-Pfad oder eine aktive, nicht stornierte und nicht synthetische
+abgeschlossene Einloesung vorliegt. Die zentrale Identitaetsmenge verwendet
+`customer_account_memberships.account_id` und faellt ohne Account-Zuordnung
+auf `customer_id` zurueck.
+
+Registrierung, Membership, Login und Ansichten verbrauchen keinen Slot. Bei
+erreichtem Limit wird ausschliesslich die erste qualifizierende Aktivitaet
+einer noch nicht aktiven Identitaet mit `CUSTOMER_CAPACITY_REACHED`
+abgewiesen. Bereits aktive Kunden duerfen auch im Over-Limit-Zustand weiter
+sammeln und einloesen. Es werden keine Kunden-, Membership-, Punkte- oder
+Einloesungsdaten geloescht oder deaktiviert.
+
+Die autoritativen Ledger `points_transactions` und
+`redemption_activity_journal` besitzen transaktionale Trigger. Ein
+tenantbezogener Advisory Lock serialisiert konkurrierende Erstaktivierungen;
+Limit und Nutzung stammen allein aus `resolve_restaurant_capacity_internal`.
+Interne Helper und Triggerfunktionen sind fuer `anon`, `authenticated` und
+`service_role` nicht direkt ausfuehrbar. Der Owner-Read-Vertrag meldet beide
+aktiven Enforcement-Dimensionen ohne Kundenidentitaeten oder andere PII.
+
+Lokal bestaetigt sind Fresh-Replay bis 155, historischer Replay bis 154,
+Upgrade 154 auf 155, zweimalige Wiederanwendung, BASIC 3.000/3.001, BASIC mit
+Add-on 8.000/8.001, PRO 15.000/15.001 und PRO mit zwei Add-ons
+25.000/25.001. Die halboffenen Zeitgrenzen, Plan-/Add-on-Wechsel,
+Payment-Failure, Country Gate, TEST_ONLY, Tenant-Isolation, Rollen- und
+Direkt-DML-Vertraege sind gruen. Bei 96 parallelen Erstaktivierungen auf einer
+synthetischen Fuenfergrenze waren exakt fuenf erfolgreich; 24 parallele
+Aktivitaeten derselben letzten Identitaet waren alle erfolgreich und zaehlten
+zusammen nur einmal. Alle synthetischen Daten wurden entfernt.
+
+Migration 155 ist nicht committed, nicht gepusht und nicht auf Staging
+angewendet. Es gab kein Deployment, keinen Stripe- oder Production-Zugriff,
+keinen Grant, keine TEST_ONLY-Markierung und keine Country-Freigabe. AT + PRO
+bleibt LOCKED. Owner-UI, Warnungen, Kaufpfade und Billing bleiben getrennte
+Folgephasen.

@@ -4056,3 +4056,19 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Angebotsmutationen.
 - Kein App-Deployment, kein Stripe- oder Production-Zugriff. Customer-
   Capacity, Warnsystem und Billing bleiben getrennte Folgephasen.
+
+## 2026-09-21 - Phase 7C.4 lokales Customer-Capacity-Enforcement
+
+- Additive Migration 155 bindet die erste kapazitaetsrelevante
+  Kundenaktivitaet transaktional an den zentralen endlichen Capacity-Resolver.
+- Punkte- und Einloesungsledger verwenden dieselbe eindeutige
+  Restaurant-Identitaetsmenge und das halboffene rollierende 365-Tage-Fenster;
+  wiederholte Aktivitaeten desselben Kunden werden nur einmal gezaehlt.
+- Registrierung und Login bleiben erlaubt. Nur die erste qualifizierende
+  Aktivitaet einer neuen Identitaet wird am Limit blockiert; bestehende aktive
+  Kunden bleiben auch bei Over-Limit funktionsfaehig und keine Daten werden
+  geloescht.
+- Fresh-, Upgrade-, zweifache Repeat-, Security-, Grenzwert- und
+  Parallelitaetstests sind lokal gruen. Keine Staging-Migration, kein Commit,
+  Push oder Deployment und keine reale Daten-, Grant-, Country- oder
+  Billingaenderung.
