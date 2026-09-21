@@ -938,3 +938,120 @@ STRIPE CHANGED: NO
 PRODUCTION CHANGED: NO
 STATUS: STAGING BACKEND LOCK / PHASE 7C NOT STARTED
 ```
+
+## Founder Phase 7C Basic-/Pro-/Capacity-Vertrag
+
+Status: **FOUNDER CONTRACT LOCK / PHASE 7C.2 LOCAL IMPLEMENTATION AUTHORIZED**
+
+Dieser Abschnitt ersetzt fuer den Capacity-Umfang alle aelteren Unlimited-,
+99-EUR- und abweichenden Usage-Annahmen. Historische Migrationen und Daten
+bleiben unveraendert als Evidenz erhalten. Der neue Vertrag ist zunaechst ein
+lokaler Ziel- und Implementierungsvertrag und keine Staging-, Stripe-, Country-
+oder Production-Freigabe.
+
+### Pakete, Preise und Add-ons
+
+- BASIC: 59 EUR netto pro Monat, 5 kapazitaetsrelevante Angebote und 3.000
+  aktive eindeutige Kundenkonten im rollierenden 365-Tage-Zeitraum.
+- PRO: 149 EUR netto pro Monat, 15 kapazitaetsrelevante Angebote und 15.000
+  aktive eindeutige Kundenkonten im rollierenden 365-Tage-Zeitraum.
+- PRO ist niemals unlimited. Catalog ist nicht automatisch in PRO enthalten;
+  bestehende allgemeine Reports werden nicht automatisch PRO-only.
+- Offer Capacity Add-on: 19 EUR netto pro Monat und Einheit; jede Einheit
+  erhoeht die Angebotskapazitaet um 5.
+- Customer Capacity Add-on: 29 EUR netto pro Monat und Einheit; jede Einheit
+  erhoeht die Kundenkapazitaet um 5.000.
+- Preise werden versioniert in Minor Units mit expliziter Waehrung und
+  Steuerbehandlung gespeichert. Es werden in Phase 7C.2 keine Stripe Price IDs
+  erzeugt. Reale historische 99-EUR-Vertraege duerfen nicht still geaendert
+  werden.
+
+### Aktives Kundenkonto
+
+Ein Customer Account zaehlt fuer einen Restaurant-Tenant genau einmal, wenn im
+serverzeitgebundenen halboffenen Fenster `[as_of - 365 Tage, as_of)` mindestens
+eine gueltige, serverseitig bestaetigte qualifizierende Aktivitaet besteht:
+
+- eine erfolgreiche, nicht aufgehobene Punktegutschrift; oder
+- eine abgeschlossene, nicht aufgehobene Punkte-, Reward-, Welcome-, Birthday-
+  oder sonstige Geschenkeinloesung.
+
+Nicht qualifizierend sind Registrierung, Membership, Login, Seitenaufruf,
+blosse QR-Anzeige, abgelehnte, stornierte oder vollstaendig aufgehobene
+Buchungen sowie nicht isolierte synthetische Testaktionen. Mehrere Aktivitaeten
+desselben Kunden zaehlen einmal. Tenant, Customer und Zeitpunkt werden nur aus
+kanonischen Serverdaten aufgeloest; Clientzeit ist keine Autoritaet.
+
+Bei erreichtem Kundenlimit bleiben Registrierung und Anmeldung moeglich.
+Bestehende aktive Kunden duerfen weiter sammeln und einloesen. Nur die erste
+qualifizierende Aktivitaet eines bisher nicht kapazitaetsrelevanten Kunden wird
+serverseitig unmittelbar vor der Buchung blockiert, wenn sie das Limit
+ueberschreiten wuerde. Es gibt keine Daten-, Punkte- oder Membership-Loeschung
+und keine automatische Kundendeaktivierung. Parallele Erstaktivierungen muessen
+tenantbezogen serialisiert werden.
+
+### Angebotszaehlung
+
+Kapazitaetsrelevant sind aktive veroeffentlichte sowie veroeffentlichte,
+zukuenftig geplante Angebote. Entwuerfe, deaktivierte, archivierte und
+abgelaufene Angebote zaehlen nicht. Ein geplantes veroeffentlichtes Angebot
+reserviert Kapazitaet bereits beim Planen beziehungsweise Veroeffentlichen.
+Publish, Planung, Reaktivierung und jeder Statuswechsel in einen
+kapazitaetsrelevanten Zustand werden spaeter serverseitig und
+parallelitaetssicher geprueft. Phase 7C.2 stellt nur die zentrale Read-Schicht
+bereit; produktives Enforcement folgt in 7C.3.
+
+### Zentrale Berechnung und Over-Limit
+
+```text
+effective_offer_limit = base_offer_limit + offer_addon_units * 5
+effective_customer_limit = base_customer_limit + customer_addon_units * 5000
+```
+
+Add-on-Einheiten zaehlen nur bei gueltigem aktivem Entitlement. `NULL`,
+Infinity, hohe Ersatzwerte und Sonderzweige bedeuten niemals unlimited. Bei
+Downgrade, Add-on-Ende, Payment Failure oder Chargeback bleiben Daten,
+Angebote, Kundenkonten und Punkte erhalten. Nutzung oberhalb des reduzierten
+Limits ist `OVER_LIMIT`; weitere kapazitaetssteigernde Aktionen bleiben bis
+zur Nutzungsreduktion oder Kapazitaetserhoehung gesperrt.
+
+Kuendigung zum Periodenende behaelt Kapazitaet bis zum bezahlten Endzeitpunkt.
+`past_due` besitzt sieben Kalendertage Grace Period. Danach ist das Add-on
+unwirksam. Chargeback macht die betroffene Add-on-Kapazitaet sofort unwirksam
+und verlangt manuelle Pruefung. Eine spaetere erfolgreiche Zahlung darf
+Kapazitaet idempotent reaktivieren; doppelte, verspaetete und out-of-order
+Providerereignisse duerfen keinen falschen Zustand erzeugen. Stripe selbst ist
+nicht Teil von Phase 7C.2.
+
+### Warnungen
+
+Verbindliche Schwellen sind 80, 90 und 100 Prozent. Eine ausdruecklich
+gekennzeichnete Sieben-Tage-Prognose ist erst nach mindestens 28 vollstaendigen
+Tagen auswertbarer Nutzung zulaessig. Grundlage ist der Durchschnitt neuer
+qualifizierender Kunden der letzten 28 vollstaendigen Tage unter
+deterministischer Beruecksichtigung bekannter Herausfaelle aus dem rollierenden
+365-Tage-Fenster. Ohne ausreichende Daten gibt es keine Prognose. Spaetere
+In-App- und E-Mail-Warnungen muessen tenantisoliert, dedupliziert,
+rate-limitiert, auditiert und siebensprachig sein; die Rechtsgrundlage wird im
+Legal-Gate bestaetigt.
+
+### Authority, Altlasten und Release
+
+- `NULL = unlimited` verliert jede effektive Capacity-Autoritaet. Es gibt
+  keinen Unlimited-Bestandsschutz; bestehende Uebernutzung wird Over-Limit.
+- Historische Override-Zeilen bleiben Auditnachweis, erhalten aber keine
+  eigenstaendige effektive Plan- oder Capacity-Autoritaet. Der freie alte
+  Platform-Plan-Override-Mutator wird nicht mehr neu genutzt und spaeter
+  stillgelegt.
+- Zulaessige PRO-Autoritaet bleibt: gueltige Subscription bei freigegebenem
+  Land, zeitlich begrenzter Real-Business-Pilot bei freigegebenem Land oder
+  exakter TEST_ONLY-Vertrag. Der Commercial Release Lock bleibt zwingend.
+- Trial, alter Admin-/Feature-Override, URL, Locale und UI-State umgehen den
+  Country Lock nicht. Pilot und TEST_ONLY sind ebenfalls niemals unlimited.
+- BASIC und PRO werden gemeinsam fertiggestellt; Stripe folgt nach dem
+  Capacity-Modell. AT und alle anderen Laender bleiben bis zu ihren separaten
+  Legal-, Billing-, Country- und Production-Gates LOCKED.
+
+Customer Tiers, neue Analytics-Diagramme, Stripe Checkout/Webhooks,
+Legal-Country-Packs, Capacity Owner UI sowie Warnungsoberflaechen sind nicht
+Teil der Phase-7C.2-Daten- und Read-Schicht.

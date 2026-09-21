@@ -1,6 +1,20 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-21 - Phase 7C.2 zentrale Capacity-Read-Schicht lokal abgeschlossen
+
+- Der verbindliche Founder-Vertrag definiert BASIC mit 5/3.000, PRO mit
+  15/15.000 sowie endliche, versionierte Offer- und Customer-Add-ons.
+- Die additive Migration `20260921001000_central_capacity_entitlements.sql`
+  fuegt versionierte Plan-/Add-on-Regeln, append-only Add-on-Entitlements und
+  einen zentralen read-only Capacity-Resolver hinzu.
+- Der Resolver zaehlt geplante veroeffentlichte Angebote und eindeutige aktive
+  Kundenkonten aus nicht aufgehobenen Punktegutschriften beziehungsweise
+  abgeschlossenen Einloesungen im rollierenden 365-Tage-Fenster.
+- Country Lock, Commercial Resolver, bestehende Migrationen, App-Schreibflows,
+  Staging, Stripe und Production bleiben unveraendert. Produktives Enforcement
+  folgt erst in Phase 7C.3/7C.4.
+
 ## 2026-09-20 - Owner-/Customer-Vorschau an gemeinsamen Reward-Renderer gebunden
 
 - Die read-only Owner-Vorschau fuer gespeicherte Punkteeinloesungen verwendet
