@@ -8,7 +8,7 @@ import {
 } from "../_shared/transactionalMailTemplates.mjs";
 
 type ReservedDelivery = {
-  queue_kind: "customer" | "capacity";
+  queue_kind: "customer" | "capacity" | "synthetic_capacity";
   delivery_id: string;
   event_type: string;
   email: string;
@@ -16,6 +16,10 @@ type ReservedDelivery = {
   restaurant_slug: string;
   payload: Record<string, unknown> | null;
   attempt_count: number;
+  sender_email?: string;
+  reply_to_email?: string;
+  request_id?: string;
+  correlation_id?: string;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -28,6 +32,20 @@ const smtpUsername = Deno.env.get("SMTP_USERNAME") ?? "";
 const smtpPassword = Deno.env.get("SMTP_PASSWORD") ?? "";
 const smtpFromEmail = Deno.env.get("SMTP_FROM_EMAIL") ?? "";
 const smtpFromName = Deno.env.get("SMTP_FROM_NAME") ?? "WUXUAI® Bonus";
+const smtpReplyTo = Deno.env.get("SMTP_REPLY_TO") ?? "";
+const transportMode = Deno.env.get("TRANSACTIONAL_MAIL_MODE") ?? "general";
+const stagingTestRecipient = Deno.env.get("STAGING_TEST_RECIPIENT") ?? "";
+const STAGING_TEST_SENDER = "notifications@wuxuaibonus.com";
+const STAGING_TEST_REPLY_TO = "support@wuxuaibonus.com";
+
+type SyntheticTestRequest = {
+  mode: "synthetic_capacity_test";
+  request_id: string;
+  correlation_id: string;
+  environment: "staging";
+  synthetic_test: true;
+  recipient: string;
+};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -72,6 +90,26 @@ function safeFirstName(value: unknown) {
   if (typeof value !== "string") return null;
   const normalized = value.trim().replace(/\s+/g, " ").slice(0, 80);
   return normalized || null;
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function parseSyntheticTestRequest(value: unknown): SyntheticTestRequest | null {
+  const body = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  if (body.mode !== "synthetic_capacity_test" || body.environment !== "staging" || body.synthetic_test !== true) return null;
+  if (!isUuid(body.request_id) || !isUuid(body.correlation_id)) return null;
+  if (typeof body.recipient !== "string" || body.recipient.trim().toLowerCase() !== stagingTestRecipient) return null;
+  return {
+    mode: "synthetic_capacity_test",
+    request_id: body.request_id,
+    correlation_id: body.correlation_id,
+    environment: "staging",
+    synthetic_test: true,
+    recipient: body.recipient.trim().toLowerCase(),
+  };
 }
 
 async function resolveRecipientContext(
@@ -119,19 +157,35 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   const configured = supabaseUrl && serviceRoleKey && schedulerSecret && appBaseUrl
     && smtpHost && Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65_535
-    && smtpUsername && smtpPassword && smtpFromEmail;
+    && smtpUsername && smtpPassword && smtpFromEmail && smtpReplyTo;
   if (!configured) return json({ error: "transactional_mail_not_configured" }, 503);
   if (!await secureEqual(request.headers.get("x-wuxuai-scheduler-secret") ?? "", schedulerSecret)) {
     return json({ error: "not_authorized" }, 401);
   }
 
-  let requestedLimit = 25;
+  let parsedBody: unknown = {};
   try {
-    const body = await request.json() as { limit?: unknown };
-    if (Number.isInteger(body.limit)) requestedLimit = Number(body.limit);
+    parsedBody = await request.json();
   } catch {
     // An empty scheduler request is valid.
   }
+  const syntheticRequest = parseSyntheticTestRequest(parsedBody);
+  if (transportMode === "staging_synthetic_only" && !syntheticRequest) {
+    return json({ error: "staging_synthetic_contract_required" }, 403);
+  }
+  if (syntheticRequest && transportMode !== "staging_synthetic_only") {
+    return json({ error: "synthetic_test_mode_not_enabled" }, 403);
+  }
+  if (transportMode === "staging_synthetic_only") {
+    if (stagingTestRecipient !== "office@wuxuaisbi.com"
+      || smtpFromEmail.toLowerCase() !== STAGING_TEST_SENDER
+      || smtpReplyTo.toLowerCase() !== STAGING_TEST_REPLY_TO) {
+      return json({ error: "staging_mail_contract_not_configured" }, 503);
+    }
+  }
+  const requestedLimit = Number.isInteger((parsedBody as { limit?: unknown }).limit)
+    ? Number((parsedBody as { limit?: unknown }).limit)
+    : 25;
   const limit = Math.min(Math.max(requestedLimit, 1), 50);
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -148,9 +202,30 @@ Deno.serve(async (request) => {
     tls: { minVersion: "TLSv1.2" },
   });
 
-  const { data: customerData, error: reserveError } = await supabase.rpc("reserve_customer_transactional_emails", {
-    input_limit: limit,
-  });
+  if (syntheticRequest) {
+    const { error: enqueueError } = await supabase.rpc("enqueue_capacity_warning_synthetic_email_test", {
+      input_request_id: syntheticRequest.request_id,
+      input_correlation_id: syntheticRequest.correlation_id,
+      input_environment: syntheticRequest.environment,
+      input_synthetic_test: syntheticRequest.synthetic_test,
+      input_recipient_email: syntheticRequest.recipient,
+      input_sender_email: smtpFromEmail,
+      input_reply_to_email: smtpReplyTo,
+    });
+    if (enqueueError) return json({ error: "synthetic_test_enqueue_failed" }, 409);
+    const { data, error } = await supabase.rpc("reserve_capacity_warning_synthetic_email_test", {
+      input_request_id: syntheticRequest.request_id,
+      input_correlation_id: syntheticRequest.correlation_id,
+    });
+    if (error) return json({ error: "synthetic_test_reservation_failed" }, 500);
+    const deliveries = (data ?? []).map((delivery: Omit<ReservedDelivery, "queue_kind">) => ({
+      ...delivery,
+      queue_kind: "synthetic_capacity" as const,
+    }));
+    return await deliver(supabase, transporter, deliveries);
+  }
+
+  const { data: customerData, error: reserveError } = await supabase.rpc("reserve_customer_transactional_emails", { input_limit: limit });
   if (reserveError) {
     logDelivery("error", "transactional_mail_reserve_failed", undefined, safeErrorCode(reserveError));
     return json({ error: "queue_reservation_failed" }, 500);
@@ -176,6 +251,14 @@ Deno.serve(async (request) => {
     }
   }
   const deliveries = [...customerDeliveries, ...capacityDeliveries].slice(0, limit) as ReservedDelivery[];
+  return await deliver(supabase, transporter, deliveries);
+});
+
+async function deliver(
+  supabase: ReturnType<typeof createClient>,
+  transporter: ReturnType<typeof nodemailer.createTransport>,
+  deliveries: ReservedDelivery[],
+) {
   let sent = 0;
   let failed = 0;
   for (const delivery of deliveries) {
@@ -183,7 +266,7 @@ Deno.serve(async (request) => {
       const recipient = delivery.queue_kind === "customer"
         ? await resolveRecipientContext(supabase, delivery.email)
         : { firstName: null, language: String(delivery.payload?.language ?? "de") };
-      const mail = delivery.queue_kind === "capacity"
+      const mail = delivery.queue_kind === "capacity" || delivery.queue_kind === "synthetic_capacity"
         ? renderOwnerCapacityWarningMail({
           restaurantName: delivery.restaurant_name,
           payload: delivery.payload ?? {},
@@ -199,42 +282,59 @@ Deno.serve(async (request) => {
           language: recipient.language,
           firstName: recipient.firstName,
         });
-      const messageIdDomain = smtpFromEmail.split("@")[1] || "wuxuaisbi.com";
+      const fromEmail = delivery.sender_email ?? smtpFromEmail;
+      const replyToEmail = delivery.reply_to_email ?? smtpReplyTo;
+      const messageIdDomain = fromEmail.split("@")[1] || "wuxuaisbi.com";
       const result = await transporter.sendMail({
-        from: { name: smtpFromName, address: smtpFromEmail },
+        from: { name: smtpFromName, address: fromEmail },
+        replyTo: replyToEmail,
         to: delivery.email,
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
         messageId: `<wuxuai-${delivery.delivery_id}@${messageIdDomain}>`,
       });
-      const completionRpc = delivery.queue_kind === "capacity"
+      const completionRpc = delivery.queue_kind === "synthetic_capacity"
+        ? "complete_capacity_warning_synthetic_email_test"
+        : delivery.queue_kind === "capacity"
         ? "complete_capacity_warning_email"
         : "complete_customer_transactional_email";
-      const { error: completionError } = await supabase.rpc(completionRpc, {
-        input_delivery_id: delivery.delivery_id,
-        input_success: true,
-        input_provider_message_id: result.messageId,
-        input_error_code: null,
-      });
+      const completionPayload = delivery.queue_kind === "synthetic_capacity"
+        ? {
+          input_delivery_id: delivery.delivery_id,
+          input_request_id: delivery.request_id,
+          input_correlation_id: delivery.correlation_id,
+          input_success: true,
+          input_provider_message_id: result.messageId,
+          input_error_code: null,
+        }
+        : { input_delivery_id: delivery.delivery_id, input_success: true, input_provider_message_id: result.messageId, input_error_code: null };
+      const { error: completionError } = await supabase.rpc(completionRpc, completionPayload);
       if (completionError) throw Object.assign(new Error("DELIVERY_COMPLETION_FAILED"), { code: "DELIVERY_COMPLETION_FAILED" });
       sent += 1;
       logDelivery("info", "transactional_mail_sent", delivery);
     } catch (sendError) {
       const errorCode = safeErrorCode(sendError);
-      const completionRpc = delivery.queue_kind === "capacity"
+      const completionRpc = delivery.queue_kind === "synthetic_capacity"
+        ? "complete_capacity_warning_synthetic_email_test"
+        : delivery.queue_kind === "capacity"
         ? "complete_capacity_warning_email"
         : "complete_customer_transactional_email";
-      const { error: completionError } = await supabase.rpc(completionRpc, {
-        input_delivery_id: delivery.delivery_id,
-        input_success: false,
-        input_provider_message_id: null,
-        input_error_code: errorCode,
-      });
+      const completionPayload = delivery.queue_kind === "synthetic_capacity"
+        ? {
+          input_delivery_id: delivery.delivery_id,
+          input_request_id: delivery.request_id,
+          input_correlation_id: delivery.correlation_id,
+          input_success: false,
+          input_provider_message_id: null,
+          input_error_code: errorCode,
+        }
+        : { input_delivery_id: delivery.delivery_id, input_success: false, input_provider_message_id: null, input_error_code: errorCode };
+      const { error: completionError } = await supabase.rpc(completionRpc, completionPayload);
       failed += 1;
       logDelivery("error", completionError ? "transactional_mail_failure_state_failed" : "transactional_mail_failed", delivery, errorCode);
     }
   }
 
-  return json({ processed: deliveries.length, sent, failed });
-});
+  return json({ processed: deliveries.length, sent, failed, provider_accepted: sent === 1 && failed === 0 });
+}
