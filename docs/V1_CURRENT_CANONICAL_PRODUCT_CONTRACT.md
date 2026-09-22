@@ -29,8 +29,9 @@ historische Locks und bestehende Datensätze werden dadurch nicht umgedeutet.
 
 Nachweise: Fresh 163, Upgrade/Repeat, Rollen-/RLS-/Parallelitätsmatrix,
 1.947/1.947 Tests, Typecheck/Lint/Build und 202 lokale Browserprüfungen bestanden.
-Migrationen 001–162 bytegleich. Kein Commit oder Push; spätere Staging- und
-Provideraktivierung benötigen eigene Freigabe. Abschlussbericht:
+Migrationen 001–162 bytegleich. Der geprüfte Umfang ist mit
+`063eb401a8d0fd389a2c47fbd3f49e2a3f40a9ca` eng committed; spätere Staging-
+und Provideraktivierung benötigen eigene Freigabe. Abschlussbericht:
 `docs/reports/2026-09-22_PHASE_7C_6B2_PENDING_ACTIVATION_REPORT.md`.
 
 Status: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**

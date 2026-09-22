@@ -2,7 +2,11 @@
 
 Datum: 2026-09-22.
 Status: **PHASE 7C.6B2 PENDING ACTIVATION AND LIVE-GATE LOCAL CODE LOCK**.
-Kein Staging-/Production-/FINAL LOCK. Kein Commit oder Push.
+Kein Staging-/Production-/FINAL LOCK. Der geprüfte Umfang wurde in Phase
+7C.6B2A mit Implementierungscommit
+`063eb401a8d0fd389a2c47fbd3f49e2a3f40a9ca` eng committed; Commit-/Push-Parität
+und der nachfolgende Evidenzcommit werden im Abschluss von Phase 7C.6B2A
+ausgewiesen.
 
 ## Basis und Ursache
 
@@ -182,7 +186,9 @@ reproduziert. Keine scope-fremde Warnungsbereinigung.
   durch echten E-Mail-Versand oder externen Edge-Aufruf.
 - Die breite Testmatrix ist ein lokaler Code-Lock, keine Produktionsfreigabe.
   Ein späterer Staging-/Provider-/KYB-End-to-End-Gate bleibt erforderlich.
-- Lokale Änderungen bleiben absichtlich uncommitted.
+- Der freigegebene Umfang ist im Implementierungscommit
+  `063eb401a8d0fd389a2c47fbd3f49e2a3f40a9ca` enthalten. Die vorbestehende
+  Datei `supabase/.temp/cli-latest` blieb ausdrücklich unstaged und uncommitted.
 
 ## Cleanup und Evidenz
 
