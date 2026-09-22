@@ -3,6 +3,7 @@ import nodemailer from "npm:nodemailer@6.9.16";
 import { configuredAppOrigin } from "../_shared/appOrigin.mjs";
 import {
   renderOwnerCapacityWarningMail,
+  renderSyntheticCapacityTestMail,
   renderTransactionalMail,
   resolveTransactionalMailLanguage,
 } from "../_shared/transactionalMailTemplates.mjs";
@@ -20,6 +21,8 @@ type ReservedDelivery = {
   reply_to_email?: string;
   request_id?: string;
   correlation_id?: string;
+  environment?: "staging";
+  synthetic_test?: true;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -40,6 +43,7 @@ const STAGING_TEST_REPLY_TO = "support@wuxuaibonus.com";
 
 type SyntheticTestRequest = {
   mode: "synthetic_capacity_test";
+  message_type: "synthetic_capacity";
   request_id: string;
   correlation_id: string;
   environment: "staging";
@@ -99,11 +103,13 @@ function isUuid(value: unknown): value is string {
 
 function parseSyntheticTestRequest(value: unknown): SyntheticTestRequest | null {
   const body = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  if (body.mode !== "synthetic_capacity_test" || body.environment !== "staging" || body.synthetic_test !== true) return null;
+  if (body.mode !== "synthetic_capacity_test" || body.message_type !== "synthetic_capacity"
+    || body.environment !== "staging" || body.synthetic_test !== true) return null;
   if (!isUuid(body.request_id) || !isUuid(body.correlation_id)) return null;
   if (typeof body.recipient !== "string" || body.recipient.trim().toLowerCase() !== stagingTestRecipient) return null;
   return {
     mode: "synthetic_capacity_test",
+    message_type: "synthetic_capacity",
     request_id: body.request_id,
     correlation_id: body.correlation_id,
     environment: "staging",
@@ -221,6 +227,8 @@ Deno.serve(async (request) => {
     const deliveries = (data ?? []).map((delivery: Omit<ReservedDelivery, "queue_kind">) => ({
       ...delivery,
       queue_kind: "synthetic_capacity" as const,
+      environment: syntheticRequest.environment,
+      synthetic_test: syntheticRequest.synthetic_test,
     }));
     return await deliver(supabase, transporter, deliveries);
   }
@@ -266,7 +274,14 @@ async function deliver(
       const recipient = delivery.queue_kind === "customer"
         ? await resolveRecipientContext(supabase, delivery.email)
         : { firstName: null, language: String(delivery.payload?.language ?? "de") };
-      const mail = delivery.queue_kind === "capacity" || delivery.queue_kind === "synthetic_capacity"
+      const mail = delivery.queue_kind === "synthetic_capacity"
+        ? renderSyntheticCapacityTestMail({
+          environment: delivery.environment,
+          syntheticTest: delivery.synthetic_test,
+          requestId: delivery.request_id,
+          correlationId: delivery.correlation_id,
+        })
+        : delivery.queue_kind === "capacity"
         ? renderOwnerCapacityWarningMail({
           restaurantName: delivery.restaurant_name,
           payload: delivery.payload ?? {},

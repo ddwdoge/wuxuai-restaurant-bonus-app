@@ -1,10 +1,54 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { URL } from "node:url";
+import {
+  renderOwnerCapacityWarningMail,
+  renderSyntheticCapacityTestMail,
+} from "../supabase/functions/_shared/transactionalMailTemplates.mjs";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260922001000_capacity_warning_synthetic_staging_test.sql", import.meta.url), "utf8");
 const worker = readFileSync(new URL("../supabase/functions/transactional-mail-dispatcher/index.ts", import.meta.url), "utf8");
+const requestId = "75d6d87d-860f-4b64-8cd7-9aa7cc219001";
+const correlationId = "75d6d87d-860f-4b64-8cd7-9aa7cc219002";
+
+test("synthetic renderer is visibly test-only and has no commercial action", () => {
+  const mail = renderSyntheticCapacityTestMail({
+    environment: "staging",
+    syntheticTest: true,
+    requestId,
+    correlationId,
+  });
+  assert.equal(mail.subject, "[STAGING TEST] WUXUAI® Bonus Kapazitätswarnung");
+  for (const output of [mail.text, mail.html]) {
+    assert.match(output, /Synthetische Staging-Testnachricht/);
+    assert.match(output, /keine echte Kapazitätswarnung/i);
+    assert.match(output, /keine Buchung, Abbuchung oder Tarifänderung/i);
+    assert.match(output, new RegExp(requestId));
+    assert.match(output, new RegExp(correlationId));
+    assert.doesNotMatch(output, /kaufen|upgrade|checkout|billing|Tarif & Kapazität öffnen|Deine Kapazität braucht Aufmerksamkeit/i);
+    assert.doesNotMatch(output, /Restaurant|Kunde|verwendet|verfügbar|Prognose/i);
+  }
+  assert.doesNotMatch(mail.html, /<a\b|https?:\/\//i);
+});
+
+test("synthetic renderer rejects incomplete or non-staging contracts", () => {
+  assert.throws(() => renderSyntheticCapacityTestMail({ environment: "production", syntheticTest: true, requestId, correlationId }), /STAGING_ONLY/);
+  assert.throws(() => renderSyntheticCapacityTestMail({ environment: "staging", syntheticTest: false, requestId, correlationId }), /STAGING_ONLY/);
+  assert.throws(() => renderSyntheticCapacityTestMail({ environment: "staging", syntheticTest: true, requestId: "", correlationId }), /IDS_REQUIRED/);
+  assert.throws(() => renderSyntheticCapacityTestMail({ environment: "staging", syntheticTest: true, requestId, correlationId: "" }), /IDS_REQUIRED/);
+});
+
+test("normal capacity renderer remains byte-stable across all seven languages", () => {
+  const outputs = ["de", "en", "fr", "it", "es", "zh", "ko"].map((language) => renderOwnerCapacityWarningMail({
+    restaurantName: "Regression Restaurant",
+    payload: { capacity_type: "offer", warning_level: "90", usage: 9, effective_limit: 10, remaining: 1, projected_usage_7d: 10, language },
+    appBaseUrl: "https://staging-app.bonus.wuxuaisbi.com",
+    language,
+  }));
+  assert.equal(createHash("sha256").update(JSON.stringify(outputs)).digest("hex"), "6c0d8e28f68307169b461970fcfcab43e78dd94c8cc7a2a250f9d8058daf974f");
+});
 
 test("synthetic transport uses a separate private staging-only table", () => {
   assert.match(migration, /create table if not exists public\.capacity_warning_synthetic_email_tests/);
@@ -44,9 +88,12 @@ test("staging synthetic mode blocks general queue processing fail-closed", () =>
   assert.match(worker, /staging_synthetic_contract_required/);
   assert.match(worker, /STAGING_TEST_RECIPIENT/);
   assert.match(worker, /office@wuxuaisbi\.com/);
+  assert.match(worker, /message_type !== "synthetic_capacity"/);
   assert.match(worker, /reserve_capacity_warning_synthetic_email_test/);
   const isolated = worker.slice(worker.indexOf("if (syntheticRequest)"), worker.indexOf("const { data: customerData"));
   assert.doesNotMatch(isolated, /reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
+  assert.match(worker, /renderSyntheticCapacityTestMail/);
+  assert.match(worker, /delivery\.queue_kind === "synthetic_capacity"/);
 });
 
 test("sender, reply-to and provider acceptance are bound to the isolated record", () => {

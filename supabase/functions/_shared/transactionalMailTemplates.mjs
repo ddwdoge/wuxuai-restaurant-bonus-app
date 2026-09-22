@@ -157,6 +157,36 @@ export function renderOwnerCapacityWarningMail({ restaurantName, payload, appBas
   };
 }
 
+const SYNTHETIC_CAPACITY_TEST_SUBJECT = "[STAGING TEST] WUXUAI® Bonus Kapazitätswarnung";
+
+function isUuidReference(value) {
+  return typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function renderSyntheticCapacityTestMail({ environment, syntheticTest, requestId, correlationId }) {
+  if (environment !== "staging" || syntheticTest !== true) {
+    throw new Error("SYNTHETIC_CAPACITY_TEST_STAGING_ONLY");
+  }
+  if (!isUuidReference(requestId) || !isUuidReference(correlationId)) {
+    throw new Error("SYNTHETIC_CAPACITY_TEST_IDS_REQUIRED");
+  }
+
+  const notice = "Synthetische Staging-Testnachricht";
+  const explanation = "Dies ist keine echte Kapazitätswarnung. Es wurden keine Buchung, Abbuchung oder Tarifänderung ausgelöst.";
+  const requestReference = `Request-ID: ${requestId}`;
+  const correlationReference = `Correlation-ID: ${correlationId}`;
+  const environmentReference = "Environment: staging";
+  const text = `${notice}\n\n${explanation}\n\n${environmentReference}\n${requestReference}\n${correlationReference}\n\nWUXUAI® Bonus`;
+
+  return {
+    subject: SYNTHETIC_CAPACITY_TEST_SUBJECT,
+    text,
+    html: `<!doctype html><html lang="de"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(notice)}</h1><p style="margin:0 0 18px;line-height:1.6">${escapeHtml(explanation)}</p><div style="padding:14px;background:#f7f4ee;border-radius:6px;color:#5f574d;font-family:monospace;font-size:13px;line-height:1.7"><p style="margin:0">${escapeHtml(environmentReference)}</p><p style="margin:0">${escapeHtml(requestReference)}</p><p style="margin:0">${escapeHtml(correlationReference)}</p></div></div></div></body></html>`,
+    language: "de",
+  };
+}
+
 export function renderTransactionalMail({ templateKey, restaurantName, restaurantSlug, payload, appBaseUrl, language, firstName }) {
   if (!TEMPLATE_KEYS.has(templateKey)) throw new Error("TEMPLATE_NOT_SUPPORTED");
   const resolvedLanguage = resolveTransactionalMailLanguage({
