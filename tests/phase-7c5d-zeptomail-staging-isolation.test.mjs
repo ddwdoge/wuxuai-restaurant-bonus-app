@@ -12,6 +12,7 @@ const migration = readFileSync(new URL("../supabase/migrations/20260922001000_ca
 const worker = readFileSync(new URL("../supabase/functions/transactional-mail-dispatcher/index.ts", import.meta.url), "utf8");
 const schedulerMigration = readFileSync(new URL("../supabase/migrations/20260922003000_synthetic_mail_scheduler_test_contract.sql", import.meta.url), "utf8");
 const schedulerJwtMigration = readFileSync(new URL("../supabase/migrations/20260922004000_synthetic_mail_scheduler_jwt_transport.sql", import.meta.url), "utf8");
+const schedulerSingleRunMigration = readFileSync(new URL("../supabase/migrations/20260922005000_synthetic_mail_scheduler_single_run.sql", import.meta.url), "utf8");
 const requestId = "75d6d87d-860f-4b64-8cd7-9aa7cc219001";
 const correlationId = "75d6d87d-860f-4b64-8cd7-9aa7cc219002";
 
@@ -131,6 +132,13 @@ test("scheduled transport preserves the Edge JWT boundary", () => {
   assert.match(schedulerJwtMigration, /revoke execute on function public\.schedule_capacity_warning_synthetic_email_test\(text, text, timestamptz\)[\s\S]*service_role/);
   assert.doesNotMatch(schedulerJwtMigration, /grant execute/);
   assert.doesNotMatch(schedulerJwtMigration, /customer_transactional_email_deliveries|capacity_warning_deliveries|reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
+});
+
+test("trusted scheduling channel is database-lifetime single-use", () => {
+  assert.match(schedulerSingleRunMigration, /unique index if not exists capacity_warning_synthetic_scheduler_singleton_idx/);
+  assert.match(schedulerSingleRunMigration, /on public\.capacity_warning_synthetic_scheduler_tests \(\(true\)\)/);
+  assert.match(schedulerSingleRunMigration, /grant execute on function public\.schedule_capacity_warning_synthetic_email_test\(text, text, timestamptz\)[\s\S]*to service_role/);
+  assert.doesNotMatch(schedulerSingleRunMigration, /grant execute[\s\S]*to (?:public|anon|authenticated)/);
 });
 
 test("sender, reply-to and provider acceptance are bound to the isolated record", () => {
