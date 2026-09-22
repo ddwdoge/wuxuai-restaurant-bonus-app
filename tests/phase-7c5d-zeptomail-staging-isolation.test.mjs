@@ -10,6 +10,7 @@ import {
 
 const migration = readFileSync(new URL("../supabase/migrations/20260922001000_capacity_warning_synthetic_staging_test.sql", import.meta.url), "utf8");
 const worker = readFileSync(new URL("../supabase/functions/transactional-mail-dispatcher/index.ts", import.meta.url), "utf8");
+const schedulerMigration = readFileSync(new URL("../supabase/migrations/20260922003000_synthetic_mail_scheduler_test_contract.sql", import.meta.url), "utf8");
 const requestId = "75d6d87d-860f-4b64-8cd7-9aa7cc219001";
 const correlationId = "75d6d87d-860f-4b64-8cd7-9aa7cc219002";
 
@@ -94,6 +95,32 @@ test("staging synthetic mode blocks general queue processing fail-closed", () =>
   assert.doesNotMatch(isolated, /reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
   assert.match(worker, /renderSyntheticCapacityTestMail/);
   assert.match(worker, /delivery\.queue_kind === "synthetic_capacity"/);
+});
+
+test("scheduled synthetic mode requires a one-time database authorization", () => {
+  assert.match(worker, /scheduled_synthetic_capacity_test/);
+  assert.match(worker, /scheduler_token/);
+  assert.match(worker, /authorize_capacity_warning_synthetic_scheduler_test/);
+  assert.match(worker, /authorizationError \|\| authorized !== true/);
+  const isolated = worker.slice(worker.indexOf("if (syntheticRequest)"), worker.indexOf("const { data: customerData"));
+  assert.match(isolated, /if \(!scheduledSyntheticRequest\)/);
+  assert.match(isolated, /reserve_capacity_warning_synthetic_email_test/);
+  assert.doesNotMatch(isolated, /reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
+});
+
+test("one-shot scheduler contract cannot scan general queues or disclose its token", () => {
+  assert.match(schedulerMigration, /create extension if not exists pg_net/);
+  assert.match(schedulerMigration, /SYNTHETIC_SCHEDULER_POSTGRES_ONLY/);
+  assert.match(schedulerMigration, /office@wuxuaisbi\.com/);
+  assert.match(schedulerMigration, /notifications@wuxuaibonus\.com/);
+  assert.match(schedulerMigration, /support@wuxuaibonus\.com/);
+  assert.match(schedulerMigration, /extensions\.digest\(scheduler_token, 'sha256'\)/);
+  assert.match(schedulerMigration, /token_hash = null/);
+  assert.match(schedulerMigration, /perform cron\.unschedule\(run_record\.cron_job_name\)/);
+  assert.match(schedulerMigration, /grant execute on function public\.authorize_capacity_warning_synthetic_scheduler_test[\s\S]*to service_role/);
+  assert.match(schedulerMigration, /revoke execute on function public\.schedule_capacity_warning_synthetic_email_test[\s\S]*service_role/);
+  assert.doesNotMatch(schedulerMigration, /customer_transactional_email_deliveries|capacity_warning_deliveries|reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
+  assert.doesNotMatch(worker, /console\.(?:log|info|error)\([^\n]*(scheduler_token|schedulerSecret)/);
 });
 
 test("sender, reply-to and provider acceptance are bound to the isolated record", () => {

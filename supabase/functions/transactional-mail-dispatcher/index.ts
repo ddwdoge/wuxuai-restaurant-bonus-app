@@ -42,13 +42,14 @@ const STAGING_TEST_SENDER = "notifications@wuxuaibonus.com";
 const STAGING_TEST_REPLY_TO = "support@wuxuaibonus.com";
 
 type SyntheticTestRequest = {
-  mode: "synthetic_capacity_test";
+  mode: "synthetic_capacity_test" | "scheduled_synthetic_capacity_test";
   message_type: "synthetic_capacity";
   request_id: string;
   correlation_id: string;
   environment: "staging";
   synthetic_test: true;
   recipient: string;
+  scheduler_token?: string;
 };
 
 function json(body: unknown, status = 200) {
@@ -103,18 +104,22 @@ function isUuid(value: unknown): value is string {
 
 function parseSyntheticTestRequest(value: unknown): SyntheticTestRequest | null {
   const body = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  if (body.mode !== "synthetic_capacity_test" || body.message_type !== "synthetic_capacity"
+  if ((body.mode !== "synthetic_capacity_test" && body.mode !== "scheduled_synthetic_capacity_test")
+    || body.message_type !== "synthetic_capacity"
     || body.environment !== "staging" || body.synthetic_test !== true) return null;
   if (!isUuid(body.request_id) || !isUuid(body.correlation_id)) return null;
   if (typeof body.recipient !== "string" || body.recipient.trim().toLowerCase() !== stagingTestRecipient) return null;
+  if (body.mode === "scheduled_synthetic_capacity_test"
+    && (typeof body.scheduler_token !== "string" || !/^[0-9a-f]{64}$/.test(body.scheduler_token))) return null;
   return {
-    mode: "synthetic_capacity_test",
+    mode: body.mode,
     message_type: "synthetic_capacity",
     request_id: body.request_id,
     correlation_id: body.correlation_id,
     environment: "staging",
     synthetic_test: true,
     recipient: body.recipient.trim().toLowerCase(),
+    scheduler_token: body.mode === "scheduled_synthetic_capacity_test" ? body.scheduler_token as string : undefined,
   };
 }
 
@@ -165,10 +170,6 @@ Deno.serve(async (request) => {
     && smtpHost && Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65_535
     && smtpUsername && smtpPassword && smtpFromEmail && smtpReplyTo;
   if (!configured) return json({ error: "transactional_mail_not_configured" }, 503);
-  if (!await secureEqual(request.headers.get("x-wuxuai-scheduler-secret") ?? "", schedulerSecret)) {
-    return json({ error: "not_authorized" }, 401);
-  }
-
   let parsedBody: unknown = {};
   try {
     parsedBody = await request.json();
@@ -176,6 +177,11 @@ Deno.serve(async (request) => {
     // An empty scheduler request is valid.
   }
   const syntheticRequest = parseSyntheticTestRequest(parsedBody);
+  const scheduledSyntheticRequest = syntheticRequest?.mode === "scheduled_synthetic_capacity_test";
+  if (!scheduledSyntheticRequest
+    && !await secureEqual(request.headers.get("x-wuxuai-scheduler-secret") ?? "", schedulerSecret)) {
+    return json({ error: "not_authorized" }, 401);
+  }
   if (transportMode === "staging_synthetic_only" && !syntheticRequest) {
     return json({ error: "staging_synthetic_contract_required" }, 403);
   }
@@ -196,6 +202,17 @@ Deno.serve(async (request) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  if (scheduledSyntheticRequest) {
+    const { data: authorized, error: authorizationError } = await supabase.rpc(
+      "authorize_capacity_warning_synthetic_scheduler_test",
+      {
+        input_request_id: syntheticRequest.request_id,
+        input_correlation_id: syntheticRequest.correlation_id,
+        input_scheduler_token: syntheticRequest.scheduler_token,
+      },
+    );
+    if (authorizationError || authorized !== true) return json({ error: "not_authorized" }, 401);
+  }
   const transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
@@ -209,16 +226,18 @@ Deno.serve(async (request) => {
   });
 
   if (syntheticRequest) {
-    const { error: enqueueError } = await supabase.rpc("enqueue_capacity_warning_synthetic_email_test", {
-      input_request_id: syntheticRequest.request_id,
-      input_correlation_id: syntheticRequest.correlation_id,
-      input_environment: syntheticRequest.environment,
-      input_synthetic_test: syntheticRequest.synthetic_test,
-      input_recipient_email: syntheticRequest.recipient,
-      input_sender_email: smtpFromEmail,
-      input_reply_to_email: smtpReplyTo,
-    });
-    if (enqueueError) return json({ error: "synthetic_test_enqueue_failed" }, 409);
+    if (!scheduledSyntheticRequest) {
+      const { error: enqueueError } = await supabase.rpc("enqueue_capacity_warning_synthetic_email_test", {
+        input_request_id: syntheticRequest.request_id,
+        input_correlation_id: syntheticRequest.correlation_id,
+        input_environment: syntheticRequest.environment,
+        input_synthetic_test: syntheticRequest.synthetic_test,
+        input_recipient_email: syntheticRequest.recipient,
+        input_sender_email: smtpFromEmail,
+        input_reply_to_email: smtpReplyTo,
+      });
+      if (enqueueError) return json({ error: "synthetic_test_enqueue_failed" }, 409);
+    }
     const { data, error } = await supabase.rpc("reserve_capacity_warning_synthetic_email_test", {
       input_request_id: syntheticRequest.request_id,
       input_correlation_id: syntheticRequest.correlation_id,
