@@ -15,6 +15,7 @@ begin
 
   scheduler_id := public.schedule_capacity_warning_synthetic_email_test(
     'https://bwhvfjuwixgwduoeqaya.supabase.co/functions/v1/transactional-mail-dispatcher',
+    'eyJsb2NhbCI.eyJzY2hlZHVsZXIiOiJ0ZXN0In0.bG9jYWwtc2lnbmF0dXJl',
     statement_timestamp() + interval '1 minute'
   );
 

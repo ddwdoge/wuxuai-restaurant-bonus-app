@@ -11,6 +11,7 @@ import {
 const migration = readFileSync(new URL("../supabase/migrations/20260922001000_capacity_warning_synthetic_staging_test.sql", import.meta.url), "utf8");
 const worker = readFileSync(new URL("../supabase/functions/transactional-mail-dispatcher/index.ts", import.meta.url), "utf8");
 const schedulerMigration = readFileSync(new URL("../supabase/migrations/20260922003000_synthetic_mail_scheduler_test_contract.sql", import.meta.url), "utf8");
+const schedulerJwtMigration = readFileSync(new URL("../supabase/migrations/20260922004000_synthetic_mail_scheduler_jwt_transport.sql", import.meta.url), "utf8");
 const requestId = "75d6d87d-860f-4b64-8cd7-9aa7cc219001";
 const correlationId = "75d6d87d-860f-4b64-8cd7-9aa7cc219002";
 
@@ -121,6 +122,15 @@ test("one-shot scheduler contract cannot scan general queues or disclose its tok
   assert.match(schedulerMigration, /revoke execute on function public\.schedule_capacity_warning_synthetic_email_test[\s\S]*service_role/);
   assert.doesNotMatch(schedulerMigration, /customer_transactional_email_deliveries|capacity_warning_deliveries|reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
   assert.doesNotMatch(worker, /console\.(?:log|info|error)\([^\n]*(scheduler_token|schedulerSecret)/);
+});
+
+test("scheduled transport preserves the Edge JWT boundary", () => {
+  assert.match(schedulerJwtMigration, /input_authorization_jwt text/);
+  assert.match(schedulerJwtMigration, /SYNTHETIC_SCHEDULER_JWT_REJECTED/);
+  assert.match(schedulerJwtMigration, /'Authorization', 'Bearer ' \|\| input_authorization_jwt/);
+  assert.match(schedulerJwtMigration, /revoke execute on function public\.schedule_capacity_warning_synthetic_email_test\(text, text, timestamptz\)[\s\S]*service_role/);
+  assert.doesNotMatch(schedulerJwtMigration, /grant execute/);
+  assert.doesNotMatch(schedulerJwtMigration, /customer_transactional_email_deliveries|capacity_warning_deliveries|reserve_customer_transactional_emails|reserve_capacity_warning_emails/);
 });
 
 test("sender, reply-to and provider acceptance are bound to the isolated record", () => {
