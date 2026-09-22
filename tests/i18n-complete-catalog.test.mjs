@@ -106,10 +106,10 @@ test("dynamic customer reward counts use explicit locale-aware labels", () => {
 
 test("public entry copy keeps the commercial contract localized and explicit", () => {
   const localizeContract = (language) => translateStructural("public.home.registrationDescription", language)
-    .replace("{months}", "3")
+    .replace("{months}", "1")
     .replace("{price}", "59");
-  assert.equal(localizeContract("de"), "Bonusprogramm in wenigen Minuten einrichten. 3 Monate kostenlos. Danach 59 € pro Monat exkl. USt.");
-  assert.match(localizeContract("ko"), /3개월 무료/);
+  assert.equal(localizeContract("de"), "Bonusprogramm vorbereiten. Registrierung startet keinen Trial. BASIC: 59 € netto/Monat. Der erste vollständige Kalendermonat ist erst nach bestätigter Provideraktivierung kostenlos; Add-ons sind ausgenommen.");
+  assert.match(localizeContract("ko"), /활성화 확인 후 첫 한 달만 무료/);
   assert.doesNotMatch(translateStructural("public.home.registrationDescription", "ko"), /Monate|kostenlos|Danach/);
   const home = readFileSync(new URL("../src/modules/public/PublicHome.tsx", import.meta.url), "utf8");
   assert.match(home, /public\.home\.registrationDescription/);

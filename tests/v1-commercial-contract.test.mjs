@@ -15,12 +15,12 @@ const settingsPage = read("../src/modules/admin/pages/SettingsPage.tsx");
 const migration = read("../supabase/migrations/20260830001000_v1_commercial_contract_three_month_trial.sql");
 
 test("der kanonische V1-Vertrag definiert Trial, Preis und Steuerdarstellung", () => {
-  assert.equal(V1_COMMERCIAL_CONTRACT.trial.calendarMonths, 3);
+  assert.equal(V1_COMMERCIAL_CONTRACT.trial.calendarMonths, 1);
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.monthlyPrice, 59);
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.currency, "EUR");
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.vat, "exclusive");
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.billingInterval, "monthly");
-  assert.equal(V1_COMMERCIAL_COPY.registrationCta, "3 Monate kostenlos starten");
+  assert.equal(V1_COMMERCIAL_COPY.registrationCta, "Bonusprogramm vorbereiten");
   assert.equal(V1_COMMERCIAL_COPY.price, "Danach 59 € pro Monat exkl. USt.");
 });
 
@@ -49,7 +49,7 @@ test("Stripe und zukünftige Zusatzpakete bleiben deaktiviert und unsichtbar", (
   assert.doesNotMatch([registerPage, publicHome, settingsPage].join("\n"), /advanced marketing automation|multi-location \/ branch package|premium campaign tools/i);
 });
 
-test("die additive Migration setzt nur neue Trials auf drei Kalendermonate", () => {
+test("historische Migration dokumentiert unverändert den geschützten Dreimonats-Altvertrag", () => {
   assert.match(migration, /create or replace function public\.start_restaurant_owner_trial/);
   assert.match(migration, /now\(\) \+ interval '3 months'/);
   assert.doesNotMatch(migration, /update\s+public\.branch_subscriptions\s+set\s+trial_ends_at/i);

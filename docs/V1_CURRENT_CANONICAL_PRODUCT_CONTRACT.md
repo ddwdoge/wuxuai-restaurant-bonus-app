@@ -1,5 +1,55 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Phase 7C.6B3 – Canonical Billing Catalog LOCAL CODE LOCK (2026-09-23)
+
+Dieser Abschnitt ersetzt aktive 99-EUR-/Unlimited- und Registrierungs-Trial-
+Aussagen. Historische Evidenz und bestehende Verträge bleiben unverändert.
+Lokale Migration-/Rollen-/Regression-/Browser-Gates bestanden:
+**PHASE 7C.6B3 CANONICAL BILLING CATALOG LOCAL CODE LOCK**.
+Kein Staging-, Stripe-, Production- oder Gesamt-FINAL-LOCK.
+
+- BASIC: 59 EUR netto/Monat, 5 Angebote, 3.000 Kundenkonten.
+- PRO: 149 EUR netto/Monat, 15 Angebote, 15.000 Kundenkonten; niemals unlimited.
+- Offer Add-on: 19 EUR netto/Monat je Einheit, +5 Angebote.
+- Customer Add-on: 29 EUR netto/Monat je Einheit, +5.000 Kundenkonten.
+- Kundenvertrag: **Aktive eindeutige Kundenkonten innerhalb der jeweils
+  zurückliegenden 365 Tage.** Serverzeitgebundenes halboffenes Intervall
+  `[as_of - 365 Tage, as_of)`; keine zwölf Kalendermonate. Zählweise,
+  Tenant-Grain und Customer-Enforcement bleiben unverändert.
+- EUR, monatlich, netto/USt. exklusiv. Keine erfundene Steuerautomatik.
+- BASIC/PRO: erster vollständiger Kalendermonat kostenlos, ausschließlich ab
+  künftig bestätigter Provideraktivierung nach KYB, Country Release, aktuellen
+  Vertragsannahmen, Tenantbindung, Checkout, Zahlungsmethode und signiertem,
+  idempotent verarbeitetem Ereignis. Nicht bei Registrierung, nicht 30 Tage.
+  Monatsende wird auf den letzten gültigen Tag des Folgemonats geklemmt;
+  Berechnung am servergebundenen Aktivierungszeitpunkt in UTC.
+- Trial höchstens einmal pro kanonischer Organisation/Restaurant; Planwechsel
+  startet keinen neuen Trial. Add-ons besitzen keinen kostenlosen Trial.
+- PENDING_ACTIVATION bleibt ohne Trialdaten, Entitlements und wirksame Capacity.
+  Bestehende Drei-Monats-Trials und Subscriptionperioden bleiben unberührt.
+- Katalog referenziert immutable Capacity-Versionen; Preisrotation und
+  Providerbindungen sind neue Revisionen, keine Änderung historischer Zeilen.
+- STRIPE TEST/LIVE getrennt; unbekannte Product-/Price-IDs NULL/UNBOUND.
+  Kein Checkout, Webhook, Provideraufruf oder Aktivierungspfad in dieser Phase.
+- Geplanter Seller: **WUXUAI Digital & Trading GmbH**, noch zu gründen;
+  Status PLANNED. **WU & XU Group GmbH** ist IP-Inhaberin/Lizenzgeberin,
+  nicht Rechnungsausstellerin gegenüber Bonus-Kunden.
+- Seller-Versionen unterscheiden PLANNED/TEST_READY/LIVE_READY. API-DML ist
+  gesperrt; LIVE_READY erfordert Gesellschafts-, Steuer-, Bank- und
+  Stripe-Verifikationsreferenzen. Es wird keinerlei solche Verifikation behauptet.
+- Live Billing, echte Rechnungen, Zahlungen und Auszahlungen bleiben gesperrt.
+- VAT/Reverse Charge/Stripe Tax, Refunds, Chargebacks und Proration benötigen
+  spätere Entscheidungen und separate Stripe-Implementierung. Keine neuen Regeln.
+
+Lokale additive Migration: `20260922007000_billing_catalog_reconciliation.sql`.
+Migrationen 001–163, Outbox/Scheduler, Warning-Dispatcher, Commercial Audit,
+Country-/TEST_ONLY-Verträge und gespeicherte Grants werden nicht geändert.
+
+Nachweis: `docs/reports/2026-09-23_PHASE_7C_6B3_CANONICAL_BILLING_CATALOG_REPORT.md`.
+Fresh 164, Upgrade 163→164, zwei Repeats, 24 parallele Read-only-Auflösungen,
+Rollen-/Tenanttests und 1.953/1.953 finale Tests bestanden. Typecheck, Lint
+(acht vorbestehende Warnungen) und Build bestanden. Nicht committed/gepusht.
+
 ## Phase 7C.6B2 – Pending Activation LOCAL CODE LOCK (2026-09-22)
 
 **PHASE 7C.6B2 PENDING ACTIVATION AND LIVE-GATE LOCAL CODE LOCK.** Die folgenden
@@ -630,13 +680,13 @@ dass die Gates des Austria Launch Master Contract bereits geschlossen sind.
   die fruehere Nummerierung Gate 6 ist SUPERSEDED. Stripe Live bleibt
   separat freigabepflichtig.
 
-## Commercial Contract - APPROVED
+## Commercial Contract – historischer Altvertrag (für Neuregistrierung ersetzt)
 
 - Trial: 3 Kalendermonate kostenlos.
 - Basispaket: `WUXUAI Bonus V1` fuer 59 EUR pro Monat exkl. USt.
 - Abrechnung: monatlich; automatische Abrechnung noch nicht aktiv.
 - Zahlungsmittel: aktuell nicht erforderlich.
-- Neue Trials verwenden eine kalenderbasierte Dreimonatsfrist. Bestehende
+- Damalige Trials verwendeten eine kalenderbasierte Dreimonatsfrist. Bestehende
   Vertragsdaten werden nicht rueckwirkend umgeschrieben.
 - Die zentrale Produktkonfiguration enthaelt einen leeren Add-on-Katalog als
   Erweiterungspunkt. Unfertige Zusatzpakete sind fuer Owner nicht sichtbar.
@@ -715,7 +765,7 @@ Verbindliche Reihenfolge nach einer gesonderten Founder-Freigabe:
 1. **Phase 7B – Commercial Lock und Resolver-Vertrag:** unabhaengigen,
    fail-closed Founder-Release-Lock definieren; Resolver, Admin-RPCs,
    Subscription-Lifecycle und Bypass-Vertraege darauf ausrichten.
-2. **Phase 7C – Pro-Feature-Vollstaendigkeit:** unbegrenzte aktive Angebote,
+2. **Phase 7C – Pro-Feature-Vollstaendigkeit:** begrenzte Angebotskapazität gemäß aktuellem Capacity-Katalog,
    Angebots- und Reward-Benachrichtigungen sowie Consent- und Plananzeigen
    gegen denselben serverseitigen Vertrag schliessen.
 3. **Phase 7D – Usage und Sicherheitsnachweis:** konfigurierbare Messung fuer

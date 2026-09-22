@@ -50,6 +50,7 @@ import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLa
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../../shared/components/RestaurantLogoStage";
 import { SmartMediaEditor } from "../../../shared/components/SmartMediaEditor";
+import { BillingCatalogInfo } from "../../capacity/BillingCatalogInfo";
 import { DEFAULT_MEDIA_PRESENTATION, type MediaPresentation } from "../../../shared/mediaPresentation";
 import {
   addV1TrialMonthsIso,
@@ -1573,7 +1574,7 @@ export function SettingsPage() {
                   label="Zahlungsstatus"
                   value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Automatische Abrechnung nicht aktiv"}
                 />
-                <InfoValue label="Plan" value={`${V1_COMMERCIAL_CONTRACT.productName} · ${V1_COMMERCIAL_COPY.price.replace("Danach ", "")}`} />
+                <InfoValue label="Plan" value={V1_COMMERCIAL_CONTRACT.productName} />
                 <InfoValue label="Testphase Start" value={formatDate(subscription.trial_started_at)} />
                 <InfoValue label="Testphase Ende" value={formatDate(subscription.trial_ends_at)} />
                 <InfoValue label="Verbleibende Tage" value={trialDays === null ? "Nicht gesetzt" : `${trialDays} Tage`} />
@@ -1591,11 +1592,12 @@ export function SettingsPage() {
           ) : (
             <div className="settings-info-card">
               <h2>Kein Abo eingerichtet</h2>
-              <p className="muted">Die Testphase wird automatisch eingerichtet, sobald dein Restaurantkonto bereit ist.</p>
+              <PendingActivationNotice />
               <p className="muted">{V1_COMMERCIAL_COPY.price} Automatische Abrechnung ist noch nicht aktiv.</p>
             </div>
           )}
         </section>
+        {activeRestaurant?.id && !isPendingActivation(activeRestaurant) ? <BillingCatalogInfo restaurantId={activeRestaurant.id} /> : null}
       </>
     );
   }

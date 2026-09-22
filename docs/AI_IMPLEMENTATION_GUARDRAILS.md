@@ -144,7 +144,9 @@ vom 2026-08-30.
 
 ## 7. Commercial Contract
 
-- Trial: exakt 3 Kalendermonate kostenlos.
+- Neue Registrierung bleibt PENDING_ACTIVATION ohne Trial. Künftiger Trial:
+  exakt ein Kalendermonat erst nach verifizierter Provideraktivierung gemäß
+  Phase 7C.6B3; bestehende Drei-Monats-Trials bleiben unverändert.
 - Basispaket: WUXUAI Bonus V1, 59 EUR pro Monat exkl. USt., monatlich.
 - Automatische Abrechnung ist nicht aktiv; Stripe bleibt `DEFERRED` als
   technischer Ist-Status. **SUPERSEDED fuer die Launch-Reihenfolge
@@ -153,7 +155,8 @@ vom 2026-08-30.
 - Aktuell wird kein Zahlungsmittel verlangt. Es gibt keinen Fake-Checkout und
   keine vorgetaeuschte automatische Umwandlung in ein bezahltes Abo.
 - Die zentrale Laufzeitkonfiguration ist `src/shared/commercialContract.mjs`.
-  Unfertige Add-ons bleiben unsichtbar.
+  Add-ons sind gemäß Capacity-Vertrag ausschließlich informativ sichtbar;
+  dies erlaubt weder Buchung noch automatische Aktivierung.
 
 Quellen: `docs/V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md` Abschnitt Commercial
 Contract; `docs/22_PAYMENT_STRIPE_PLAN.md`; `src/shared/commercialContract.mjs`.

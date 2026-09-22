@@ -22,6 +22,7 @@ import {
 import { useTenant } from "../../tenant/TenantProvider";
 import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
 import { isPendingActivation } from "../../tenant/pendingActivation";
+import { BillingCatalogInfo } from "../../capacity/BillingCatalogInfo";
 
 function statusTone(status: CapacityStatus) {
   if (status === "OVER_LIMIT") return "danger";
@@ -33,7 +34,10 @@ function statusTone(status: CapacityStatus) {
 export function OwnerCapacityPage() {
   const { activeRestaurant } = useTenant();
   if (isPendingActivation(activeRestaurant)) return <PendingActivationNotice preview />;
-  return <OperationalOwnerCapacityPage />;
+  return <>
+    <OperationalOwnerCapacityPage />
+    {activeRestaurant?.id ? <BillingCatalogInfo restaurantId={activeRestaurant.id} /> : null}
+  </>;
 }
 
 function OperationalOwnerCapacityPage() {

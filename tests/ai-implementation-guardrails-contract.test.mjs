@@ -33,7 +33,7 @@ test("guardrails cover the established V1 release boundaries", () => {
 });
 
 test("documented commercial values match the canonical runtime configuration", () => {
-  assert.equal(V1_COMMERCIAL_CONTRACT.trial.calendarMonths, 3);
+  assert.equal(V1_COMMERCIAL_CONTRACT.trial.calendarMonths, 1);
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.monthlyPrice, 59);
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.currency, "EUR");
   assert.equal(V1_COMMERCIAL_CONTRACT.basePlan.vat, "exclusive");

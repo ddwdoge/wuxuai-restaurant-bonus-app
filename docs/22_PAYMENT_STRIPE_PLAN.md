@@ -3,6 +3,22 @@
 
 # WUXUAI Bonus V1 – Payment & Stripe Plan
 
+## Aktueller Vertrag 2026-09-23
+
+Für neue Registrierung und künftiges Billing gilt ausschließlich Phase 7C.6B3
+in `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`: BASIC 59 EUR, PRO 149 EUR,
+Offer Add-on 19 EUR/+5, Customer Add-on 29 EUR/+5.000; netto monatlich.
+Aktive eindeutige Kundenkonten innerhalb der jeweils zurückliegenden 365 Tage.
+PRO ist begrenzt. Ein Kalendermonat Trial erst nach verifizierter
+Provideraktivierung, einmal pro Unternehmen, ohne Add-ons. Registrierung bleibt
+PENDING_ACTIVATION. Seller WUXUAI Digital & Trading GmbH: PLANNED; LIVE gesperrt.
+WU & XU Group GmbH ist IP-Lizenzgeberin, nicht Rechnungsausstellerin.
+Keine Stripe-Anbindung in dieser lokalen Katalogphase.
+
+Die folgenden älteren Abschnitte sind historische Planungs-/Altvertrags-Evidenz,
+keine aktive Autorität für neue Preise, Trialstarts oder Providerintegration.
+Bestehende Trials und Subscriptions werden nicht umgeschrieben.
+
 ## Founder-Ergaenzung 2026-09-05 - PRO technisch vorbereitet, nicht verkauft
 
 Der oeffentliche V1-Vertrag bleibt BASIC mit 59 EUR pro Monat exkl. USt. PRO

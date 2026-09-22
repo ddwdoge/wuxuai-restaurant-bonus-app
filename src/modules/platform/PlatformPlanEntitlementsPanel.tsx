@@ -110,7 +110,7 @@ function PlanOverridePanel({ canWrite, restaurantId }: Props) {
           <div><dt>{t("source")}</dt><dd>{t(source ?? "unavailable")}</dd></div>
           <div><dt>{t("start")}</dt><dd>{date(data.effective_from)}</dd></div>
           <div><dt>{t("end")}</dt><dd>{date(data.effective_until)}</dd></div>
-          <div><dt>{t("offers")}</dt><dd>{data.effective.offer_limit_unlimited ? t("unlimited") : data.effective.offer_limit ?? t("unavailable")}</dd></div>
+          <div><dt>{t("offers")}</dt><dd>{!data.effective.offer_limit_unlimited && Number.isFinite(data.effective.offer_limit) ? data.effective.offer_limit : t("unavailable")}</dd></div>
           <div><dt>{t("offerMail")}</dt><dd>{t(data.effective.offer_notifications ? "on" : "off")}</dd></div>
           <div><dt>{t("rewardMail")}</dt><dd>{t(data.effective.reward_notifications ? "on" : "off")}</dd></div>
         </dl>
