@@ -21,7 +21,7 @@ type RestaurantMembership = {
 };
 
 const restaurantSelect =
-  "id, owner_id, organization_id, primary_branch_id, name, slug, status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
+  "id, owner_id, organization_id, primary_branch_id, name, slug, status, activation_status, owner_phone, restaurant_type, language, opening_hours, smart_open_enabled, onboarding_status, onboarding_checklist, created_at";
 
 type RestaurantBranchAddress = {
   id: string;

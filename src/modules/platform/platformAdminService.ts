@@ -1,6 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 
-export type SubscriptionStatus = "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused" | "pending_activation";
 export type PaymentStatus = "not_required" | "pending" | "paid" | "failed" | "manual";
 export type RestaurantStatus = "active" | "draft" | "suspended";
 export type CommercialPlan = "BASIC" | "PRO" | "PREMIUM";

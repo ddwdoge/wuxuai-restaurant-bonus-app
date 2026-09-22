@@ -31,12 +31,12 @@ test("die Dreimonatsfrist folgt Kalendermonaten einschließlich Monatsende", () 
 });
 
 test("alle aktiven Owner-Akquiseflächen verwenden die zentrale Vertragsquelle", () => {
-  for (const source of [registerPage, publicHome, settingsPage]) {
+  for (const source of [publicHome, settingsPage]) {
     assert.match(source, /commercialContract\.mjs/);
     assert.doesNotMatch(source, /30 Tage kostenlos|149\s*(?:€|EUR)/);
   }
-  assert.match(registerPage, /V1_COMMERCIAL_CONTRACT\.trial\.calendarMonths/);
-  assert.match(registerPage, /V1_COMMERCIAL_CONTRACT\.basePlan\.monthlyPrice/);
+  assert.match(registerPage, /usePendingActivationMessages/);
+  assert.doesNotMatch(registerPage, /V1_COMMERCIAL_CONTRACT\.trial/);
   assert.match(publicHome, /V1_COMMERCIAL_CONTRACT\.trial\.calendarMonths/);
   assert.match(publicHome, /V1_COMMERCIAL_CONTRACT\.basePlan\.monthlyPrice/);
   assert.match(settingsPage, /addV1TrialMonthsIso/);

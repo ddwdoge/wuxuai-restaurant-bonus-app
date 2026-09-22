@@ -74,11 +74,12 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
   const restaurantId = requireExistingRestaurantId(input.restaurantId);
   const { data: existingRestaurant, error: restaurantError } = await supabase
     .from("restaurants")
-    .select("id, owner_id, name, slug, status, onboarding_status, created_at")
+    .select("id, owner_id, name, slug, status, activation_status, onboarding_status, created_at")
     .eq("id", restaurantId)
     .single();
 
   if (restaurantError) throw restaurantError;
+  const pendingActivation = existingRestaurant.activation_status === "pending_activation";
 
   if (shouldSkipCompletedOnboarding(existingRestaurant.onboarding_status)) {
     const { data: existingOffer, error: existingOfferError } = await supabase
@@ -193,7 +194,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
       reward_type: "reward" as RewardType,
       required_points: 0,
       required_stamps: 0,
-      active: reward.active,
+      active: pendingActivation ? false : reward.active,
       image_url: reward.imageUrl,
       category: reward.category.trim() || null,
       available_products: reward.products,
@@ -235,6 +236,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     rewards.push(savedReward);
   }
 
+  if (!pendingActivation) {
   const { data: existingStaff, error: existingStaffError } = await supabase
     .from("staff_members")
     .select("id")
@@ -257,6 +259,7 @@ export async function completePilotOnboarding(input: PilotOnboardingInput) {
     if (staffError) throw staffError;
   }
 
+  }
   await syncRestaurantAddressFromLegalProfile(restaurantId, input.legalProfile);
 
   const { data: completion, error: completionError } = await supabase.rpc("complete_restaurant_onboarding", {

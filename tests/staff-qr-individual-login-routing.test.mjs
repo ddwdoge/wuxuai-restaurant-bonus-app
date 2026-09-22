@@ -51,7 +51,7 @@ test("legacy Staff QR redirects anonymous users to the restaurant-specific Staff
 
 test("new QR and Starter Kit links point directly to the individual Staff login", () => {
   assert.match(qrCenter, /staffTabletUrl = restaurantSlug \? `\$\{publicBaseUrl\}\$\{buildStaffLoginPath\(restaurantSlug\)\}`/);
-  assert.match(onboarding, /staffTabletUrl = `\$\{publicBaseUrl\}\$\{buildStaffLoginPath\(restaurantSlug\)\}`/);
+  assert.match(onboarding, /staffTabletUrl = pendingActivation \? "" : `\$\{publicBaseUrl\}\$\{buildStaffLoginPath\(restaurantSlug\)\}`/);
   assert.doesNotMatch(qrCenter, /staffTabletUrl = restaurantSlug \? `\$\{publicBaseUrl\}\/staff\/\$\{restaurantSlug\}`/);
 });
 

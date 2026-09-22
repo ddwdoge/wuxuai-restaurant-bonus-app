@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { usePendingActivationMessages } from "../tenant/pendingActivation";
 import type {
   PaymentStatus,
   PlatformMetric,
@@ -64,6 +65,7 @@ type PlatformRestaurantControlCenterProps = {
 };
 
 const subscriptionLabels: Record<SubscriptionStatus, string> = {
+  pending_activation: "Verifizierung ausstehend",
   trialing: "Testphase",
   active: "Aktiv",
   past_due: "Überfällig",
@@ -124,7 +126,7 @@ export function PlatformControlCenterSkeleton() {
 }
 
 export function PlatformRestaurantControlCenter({
-  canWrite,
+  canWrite: permittedWrite,
   data,
   error,
   loading,
@@ -135,6 +137,8 @@ export function PlatformRestaurantControlCenter({
   view,
 }: PlatformRestaurantControlCenterProps) {
   const { translateKey } = useI18n();
+  const pendingMessages = usePendingActivationMessages();
+  const canWrite = permittedWrite && restaurant.subscription_status !== "pending_activation";
   const [pendingAction, updatePendingAction] = useState<(PendingAction & { restaurantId: string; idempotencyKey: string }) | null>(null);
   const [reason, setReason] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -171,7 +175,7 @@ export function PlatformRestaurantControlCenter({
   const subscriptionValue = subscription.status === "available" ? subscription.value : null;
   const currentRestaurantStatus = getRestaurantStatusLabel(account.restaurant_status);
   const currentSubscriptionStatus = subscriptionValue?.subscription_status
-    ? subscriptionLabels[subscriptionValue.subscription_status]
+    ? subscriptionValue.subscription_status === "pending_activation" ? pendingMessages.title : subscriptionLabels[subscriptionValue.subscription_status]
     : "–";
   const portalOrigin = window.location.origin;
   const internalTest = account.internal_test.status === "available" && account.internal_test.value;

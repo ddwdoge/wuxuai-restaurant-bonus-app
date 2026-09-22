@@ -16,14 +16,12 @@ import {
 import { RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { isOwnerEmailConfirmed, validateOwnerPassword } from "./ownerAuthFlow.mjs";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { V1_COMMERCIAL_CONTRACT } from "../../shared/commercialContract.mjs";
+import { usePendingActivationMessages } from "../tenant/pendingActivation";
 import { LaunchCountrySelect } from "../onboarding/LaunchCountrySelect";
 
 export function RegisterPage() {
   const { translateKey: t } = useI18n();
-  const commercialValue = (key: string) => t(key)
-    .replace("{months}", String(V1_COMMERCIAL_CONTRACT.trial.calendarMonths))
-    .replace("{price}", String(V1_COMMERCIAL_CONTRACT.basePlan.monthlyPrice));
+  const pendingMessage = usePendingActivationMessages();
   const navigate = useNavigate();
   const location = useLocation();
   const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, signIn, user } = useAuth();
@@ -177,8 +175,8 @@ export function RegisterPage() {
 
   return (
     <PublicPageShell
-      description={commercialValue("auth.register.description")}
-      eyebrow={commercialValue("auth.register.trial")}
+      description={pendingMessage.body}
+      eyebrow={pendingMessage.title}
       title={t("auth.register.title")}
     >
       <PublicContentCard>
@@ -253,9 +251,9 @@ export function RegisterPage() {
           {error && !existingIdentityFlow ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}
 
           <PublicPrimaryButton disabled={!formValid} icon={<Sparkles size={18} />} loading={loading} loadingLabel={t("auth.businessStarting")} type="submit">
-            {activatingExistingAccount || existingIdentityFlow ? t("auth.ownerArea.activate") : commercialValue("auth.register.cta")}
+            {pendingMessage.save}
           </PublicPrimaryButton>
-          <p className="public-premium-trust-note">{t("auth.register.noPaymentMethod")}</p>
+          <p className="public-premium-trust-note">{pendingMessage.plan}</p>
           <div className="public-premium-secondary-actions">
             {activatingExistingAccount || existingIdentityFlow ? <span>Deine bestehende Anmeldung wird weiterverwendet.</span> : <><span>Bereits registriert?</span><Link className="public-premium-secondary-link" to="/login">Zum Login</Link></>}
           </div>

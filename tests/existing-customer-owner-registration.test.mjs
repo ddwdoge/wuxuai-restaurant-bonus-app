@@ -49,7 +49,7 @@ test("bestehende Identitaet wird authentifiziert und danach als Owner fortgesetz
   assert.match(registerPage, /if \(existingIdentityFlow\)[\s\S]*await signIn\(email, password\)/);
   assert.match(registerPage, /await completePendingOwnerRegistration\(email\)/);
   assert.match(registerPage, /window\.location\.assign\("\/admin\/onboarding"\)/);
-  assert.match(registerPage, /t\("auth\.ownerArea\.activate"\)/);
+  assert.match(registerPage, /pendingMessage\.save/);
   assert.equal(translateStructural("auth.ownerArea.activate", "de"), "Betriebsbereich aktivieren");
   assert.doesNotMatch(registerPage, /admin\.createUser|auth\.admin|createUser\(/);
 });

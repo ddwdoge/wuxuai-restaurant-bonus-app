@@ -20,6 +20,8 @@ import {
   type OwnerCapacityWarning,
 } from "../../capacity/ownerCapacityService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
+import { isPendingActivation } from "../../tenant/pendingActivation";
 
 function statusTone(status: CapacityStatus) {
   if (status === "OVER_LIMIT") return "danger";
@@ -29,6 +31,12 @@ function statusTone(status: CapacityStatus) {
 }
 
 export function OwnerCapacityPage() {
+  const { activeRestaurant } = useTenant();
+  if (isPendingActivation(activeRestaurant)) return <PendingActivationNotice preview />;
+  return <OperationalOwnerCapacityPage />;
+}
+
+function OperationalOwnerCapacityPage() {
   const { language } = useI18n();
   const messages = ownerCapacityMessages(language);
   const { activeRestaurant } = useTenant();

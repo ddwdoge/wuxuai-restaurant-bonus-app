@@ -23,6 +23,7 @@ import { PlatformProControlCenter } from "./PlatformProControlCenter";
 import { PlatformAdminLayout } from "./PlatformAdminLayout";
 import { platformAdminNavigationMessages, type PlatformAdminSection } from "./platformAdminNavigationI18n";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { usePendingActivationMessages } from "../tenant/pendingActivation";
 
 const emptySummary: PlatformSummary = {
   restaurants_total: 0,
@@ -39,6 +40,7 @@ const emptySummary: PlatformSummary = {
 };
 
 const subscriptionLabels: Record<SubscriptionStatus, string> = {
+  pending_activation: "Verifizierung ausstehend",
   trialing: "Testphase",
   active: "Abo aktiv",
   past_due: "Überfällig",
@@ -78,7 +80,8 @@ function isToday(value: string | null | undefined) {
   return new Date(value).toDateString() === new Date().toDateString();
 }
 
-function trialLabel(restaurant: PlatformRestaurant) {
+function trialLabel(restaurant: PlatformRestaurant, pendingLabel: string) {
+  if (restaurant.subscription_status === "pending_activation") return pendingLabel;
   if (!restaurant.subscription_exists) return "Kein Abo eingerichtet";
   if (restaurant.subscription_status !== "trialing") {
     return restaurant.subscription_status ? subscriptionLabels[restaurant.subscription_status] : "Kein Abo eingerichtet";
@@ -106,6 +109,7 @@ function computeSummary(restaurants: PlatformRestaurant[], summary: PlatformSumm
 export function PlatformAdminPage() {
   const { platformRole, signOut } = useAuth();
   const { language } = useI18n();
+  const pendingMessages = usePendingActivationMessages();
   const routeParams = useParams();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -320,7 +324,7 @@ export function PlatformAdminPage() {
           </div>
           {loading ? <p className="muted">Restaurants werden geladen …</p> : null}
           {!loading && filteredRestaurants.length === 0 ? <div className="empty-state-card"><Building2 size={32} /><h3>Keine Restaurants gefunden</h3><p>Ändere Suche oder Filter, um weitere Restaurants zu sehen.</p></div> : null}
-          <div className="platform-restaurant-list">{filteredRestaurants.map((restaurant) => <article className={`platform-restaurant-row${restaurant.id === selectedRestaurantId ? " selected" : ""}`} key={restaurant.id}><button onClick={() => selectRestaurant(restaurant.id)} type="button"><span><strong>{restaurant.name}</strong><small>{restaurant.slug}</small><small>{restaurant.owner_email ?? "Betreiber nicht bekannt"}</small></span><span className="platform-row-meta"><span>{restaurantStatusLabels[restaurant.status]}</span><span>{trialLabel(restaurant)}</span><span>Setup: {setupLabel(restaurant)}</span><span>{restaurant.customer_count} Gäste</span><span>Details öffnen</span></span></button></article>)}</div>
+          <div className="platform-restaurant-list">{filteredRestaurants.map((restaurant) => <article className={`platform-restaurant-row${restaurant.id === selectedRestaurantId ? " selected" : ""}`} key={restaurant.id}><button onClick={() => selectRestaurant(restaurant.id)} type="button"><span><strong>{restaurant.name}</strong><small>{restaurant.slug}</small><small>{restaurant.owner_email ?? "Betreiber nicht bekannt"}</small></span><span className="platform-row-meta"><span>{restaurantStatusLabels[restaurant.status]}</span><span>{trialLabel(restaurant, pendingMessages.title)}</span><span>Setup: {setupLabel(restaurant)}</span><span>{restaurant.customer_count} Gäste</span><span>Details öffnen</span></span></button></article>)}</div>
         </div>
 
         <div className="platform-control-column">

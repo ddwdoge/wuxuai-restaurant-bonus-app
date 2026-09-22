@@ -16,6 +16,7 @@ export type PointsCollectionMode = "restaurant_controlled_only" | "customer_init
 export type RewardType = "reward" | "coupon";
 
 export type Restaurant = {
+  activation_status?: "pending_activation" | null;
   id: string;
   owner_id: string;
   organization_id?: string;
@@ -59,8 +60,10 @@ export type BranchSubscription = {
   id: string;
   organization_id: string;
   branch_id: string;
-  status: "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused";
-  subscription_status?: "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused";
+  status: "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused" | "pending_activation";
+  subscription_status?: "trialing" | "active" | "past_due" | "unpaid" | "cancelled" | "paused" | "pending_activation";
+  selected_plan?: "BASIC" | null;
+  current_period_start?: string | null;
   payment_status?: "not_required" | "pending" | "paid" | "failed" | "manual";
   plan_key: string;
   current_period_ends_at: string | null;

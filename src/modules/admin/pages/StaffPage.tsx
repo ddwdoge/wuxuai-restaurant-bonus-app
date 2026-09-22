@@ -6,6 +6,8 @@ import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLa
 import { useAuth } from "../../auth/AuthProvider";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 import { useTenant } from "../../tenant/TenantProvider";
+import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
+import { isPendingActivation } from "../../tenant/pendingActivation";
 import { STAFF_STATUS_LABELS, staffActionsForStatus, validateStaffInvitation } from "../staffManagementFlow.mjs";
 import {
   changeOwnerStaffStatus,
@@ -24,6 +26,12 @@ function formatDate(value: string | null) {
 }
 
 export function StaffPage() {
+  const { activeRestaurant } = useTenant();
+  if (isPendingActivation(activeRestaurant)) return <PendingActivationNotice preview />;
+  return <OperationalStaffPage />;
+}
+
+function OperationalStaffPage() {
   const smartSetup = useOwnerSmartSetupContinuation();
   const { restaurantRole } = useAuth();
   const { activeRestaurant } = useTenant();

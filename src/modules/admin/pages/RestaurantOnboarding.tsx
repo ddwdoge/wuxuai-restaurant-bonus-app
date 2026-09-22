@@ -19,6 +19,8 @@ import {
   saveOnboardingDraft,
 } from "../../onboarding/pilotOnboardingService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
+import { isPendingActivation, usePendingActivationMessages } from "../../tenant/pendingActivation";
 import { getPublicAppBaseUrl } from "../../../shared/lib/publicBaseUrl";
 import { buildStarterKitFilename } from "../../../shared/lib/starterKitFilename.mjs";
 import { getStarterKitPageDefinitions, STARTER_KIT_FOOTER, STARTER_KIT_REFERRAL, type StarterKitPageDefinition } from "../../../shared/lib/starterKitPages.mjs";
@@ -1081,6 +1083,8 @@ export function RestaurantOnboarding() {
   const smartSetup = useOwnerSmartSetupContinuation();
   const { onboardingAccountAction, onboardingRestaurantAction } = useOutletContext<OnboardingOutletContext>();
   const { activeRestaurant, branding: tenantBranding, loading: tenantLoading, refreshTenants } = useTenant();
+  const pendingActivation = isPendingActivation(activeRestaurant);
+  const pendingMessage = usePendingActivationMessages();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const submissionInFlightRef = useRef(false);
   const [step, setStep] = useState(0);
@@ -1100,8 +1104,8 @@ export function RestaurantOnboarding() {
 
   const restaurantSlug = activeRestaurant?.slug ?? "";
   const publicBaseUrl = getPublicAppBaseUrl();
-  const restaurantQrUrl = `${publicBaseUrl}/customer/${restaurantSlug}`;
-  const staffTabletUrl = `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}`;
+  const restaurantQrUrl = pendingActivation ? "" : `${publicBaseUrl}/customer/${restaurantSlug}`;
+  const staffTabletUrl = pendingActivation ? "" : `${publicBaseUrl}${buildStaffLoginPath(restaurantSlug)}`;
   const visibleLogoUrl = logoPreviewUrl || form.logoUrl;
   const bonusCardColor = lightenColor(form.secondaryColor, 0.72);
   const restaurantAddressComplete = Boolean(
@@ -1118,7 +1122,9 @@ export function RestaurantOnboarding() {
   const checklist = useMemo(() => buildChecklist(effectiveForm, step), [effectiveForm, step]);
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
-  const allReady = Object.values(checklist).every(Boolean) && kassaAcknowledged;
+  const allReady = pendingActivation
+    ? Object.entries(checklist).filter(([key]) => !["legalPublicationConfirmed", "guestTestReady", "qrReady"].includes(key)).every(([, ready]) => ready)
+    : Object.values(checklist).every(Boolean) && kassaAcknowledged;
   const stepBlocker = getStepBlocker(step, effectiveForm, checklist);
   const missingItems = missingChecklistItems(checklist);
   const selectedStarterRewardCount = form.starterRewards.length;
@@ -1208,7 +1214,9 @@ export function RestaurantOnboarding() {
   }, [activeRestaurant?.id]);
 
   useEffect(() => {
-    if (draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
+    // Pending setup persists only through an explicit step/save action.
+    // Hydration, page views and closing overlays must not create writes.
+    if (pendingActivation || draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
       return;
     }
 
@@ -1233,7 +1241,7 @@ export function RestaurantOnboarding() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [activeRestaurant?.id, checklist, draftLoading, form, pendingOpeningHours, step, tenantLoading]);
+  }, [activeRestaurant?.id, checklist, draftLoading, form, pendingActivation, pendingOpeningHours, step, tenantLoading]);
 
   async function persistDraftSnapshot(nextStep: number, nextForm: OnboardingForm) {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1510,7 +1518,7 @@ export function RestaurantOnboarding() {
     setStatus(null);
 
     try {
-      await acceptKassaSeparation(activeRestaurant.id, uiLanguage);
+      if (!pendingActivation) await acceptKassaSeparation(activeRestaurant.id, uiLanguage);
       const result = await completePilotOnboarding({
         restaurantId: activeRestaurant.id,
         restaurantName: form.restaurantName.trim(),
@@ -1535,7 +1543,7 @@ export function RestaurantOnboarding() {
           category: reward.category,
           products: linesToList(reward.availableProducts),
           imageUrl: null,
-          active: true,
+          active: !pendingActivation,
         })),
         staffName: form.staffName,
         staffPin: form.staffPin,
@@ -1557,9 +1565,9 @@ export function RestaurantOnboarding() {
       });
       await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
       await refreshTenants();
-      setStatus(`${result.restaurant.name} ist startklar.`);
+      setStatus(pendingActivation ? pendingMessage.saved : `${result.restaurant.name} ist startklar.`);
       setStep(steps.length - 1);
-      if (!smartSetup.complete("onboarding_completed")) navigate("/admin", { replace: true });
+      if (!pendingActivation && !smartSetup.complete("onboarding_completed")) navigate("/admin", { replace: true });
     } catch (error) {
       console.error("Onboarding-Abschluss fehlgeschlagen.", safeLegalRpcError(error));
       setStatus(onboardingCompletionErrorMessage(error));
@@ -1582,8 +1590,8 @@ export function RestaurantOnboarding() {
       <header className="installation-header">
         <div className="installation-header-copy">
           <span className="installation-eyebrow">Restaurant einrichten</span>
-          <h1>Willkommen! In wenigen Minuten startet dein digitales Bonusprogramm.</h1>
-          <p>Gleich bereit für deine Gäste.</p>
+          <h1>{pendingActivation ? pendingMessage.title : "Willkommen! In wenigen Minuten startet dein digitales Bonusprogramm."}</h1>
+          <p>{pendingActivation ? pendingMessage.body : "Gleich bereit für deine Gäste."}</p>
         </div>
         <div className="installation-header-actions">
           {onboardingRestaurantAction}
@@ -2030,6 +2038,7 @@ export function RestaurantOnboarding() {
 
           {step === 5 ? (
             <section className="wizard-screen">
+              {pendingActivation ? <PendingActivationNotice preview /> : <>
               <article className="calculation-card">
                 <strong>Restaurant Starter Kit</strong>
                 <p className="muted">
@@ -2085,11 +2094,13 @@ export function RestaurantOnboarding() {
                   📦 Restaurant Starter Kit herunterladen
                 </button>
               </div>
+              </>}
             </section>
           ) : null}
 
           {step === 6 ? (
             <section className="wizard-screen onboarding-completion-screen">
+              {pendingActivation ? <PendingActivationNotice /> : <>
               <div className="rule-list">
                 <ChecklistRow done={checklist.restaurantDataCompleted} label={checklistLabels.restaurantDataCompleted} />
                 <ChecklistRow done={checklist.brandingCompleted} label={checklistLabels.brandingCompleted} />
@@ -2124,6 +2135,7 @@ export function RestaurantOnboarding() {
                 <input checked={kassaAcknowledged} onChange={(event) => setKassaAcknowledged(event.target.checked)} required type="checkbox" />
                 <span><strong>{translateKey("legal.kassa.acknowledgement")}</strong><small>{translateKey("legal.kassa.immutableThis")}</small></span>
               </label>
+              </>}
               {!allReady ? (
                 <div className="status-message">
                   <strong>Fast geschafft.</strong>
@@ -2154,7 +2166,7 @@ export function RestaurantOnboarding() {
               </button>
             ) : (
               <button className="button" disabled={saving || !allReady} type="submit">
-                Restaurant starten
+                {pendingActivation ? pendingMessage.save : "Restaurant starten"}
               </button>
             )}
           </div>

@@ -1,5 +1,38 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Phase 7C.6B2 – Pending Activation LOCAL CODE LOCK (2026-09-22)
+
+**PHASE 7C.6B2 PENDING ACTIVATION AND LIVE-GATE LOCAL CODE LOCK.** Die folgenden
+Founder-Regeln sind lokal implementiert und gegen den echten lokalen Supabase-
+Stack geprüft. Kein Staging-/Production-/FINAL LOCK; nicht ausgeliefert;
+historische Locks und bestehende Datensätze werden dadurch nicht umgedeutet.
+
+- Country-first: neue Registrierung ausschließlich im freigegebenen Land und
+  mit serverseitigem, transaktionsgebundenem Registrierungskontext.
+- Neue Betriebe: PENDING_ACTIVATION; BASIC nur als selected_plan. Keine
+  Trial-/Periodenzeiten, keine Providerautorität, aktiven Entitlements oder
+  wirksamen Kapazitäten. Kein owner_trial_started-Audit.
+- Owner-Membership erlaubt eigene Setup-/Entwurfs-/Vorschauarbeit. Profil,
+  Branding, Öffnungszeiten, Programm und unveröffentlichte Inhalte bleiben
+  vorbereitbar. Bloße Seitenaufrufe und Overlay-Schließen dürfen nicht schreiben.
+- Live-QR/PIN, öffentliche Freigabe, Kundenbindung, Punkte, Einlösung,
+  Mitarbeiter-Einladung, Benachrichtigungen und interne Aktivierungs-Overrides
+  bleiben serverseitig gesperrt. UI-Zustand ist keine Aktivierungsautorität.
+- Ein späterer Trial beginnt ausschließlich nach KYB-Verifizierung,
+  Länderfreigabe, aktuellen Legal-/Preisannahmen, bestätigter Owner-/Tenant-
+  Bindung, erfolgreichem Stripe-Checkout mit Zahlungsmethode und signiertem,
+  idempotent verarbeitetem Providerereignis. Diese Teilphase implementiert
+  weder Checkout noch Provideraktivierung.
+- Späterer BASIC-/PRO-Trial: ein voller Billing-Monat, ohne Add-ons.
+  Bestehende Trials, Subscriptions und historische Dreimonats-Evidenz bleiben
+  unverändert; außerhalb neuer Registrierung bleibt der Legacy-Creator erhalten.
+
+Nachweise: Fresh 163, Upgrade/Repeat, Rollen-/RLS-/Parallelitätsmatrix,
+1.947/1.947 Tests, Typecheck/Lint/Build und 202 lokale Browserprüfungen bestanden.
+Migrationen 001–162 bytegleich. Kein Commit oder Push; spätere Staging- und
+Provideraktivierung benötigen eigene Freigabe. Abschlussbericht:
+`docs/reports/2026-09-22_PHASE_7C_6B2_PENDING_ACTIVATION_REPORT.md`.
+
 Status: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**
 Stand: 2026-09-01
 Authoritative Branch: `codex/v1-canonical-recovery`

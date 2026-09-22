@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useTenant } from "../tenant/TenantProvider";
+import { isPendingActivation } from "../tenant/pendingActivation";
 import { getLegalDocumentContent, getPointsValidityState, ownerLegalLoadErrorMessage } from "./legalDocumentState.mjs";
 import { safeLegalRpcError, viennaCalendarDate } from "./legalPublicationDate.mjs";
 import {
@@ -352,7 +353,7 @@ export function OwnerLegalSettingsPage() {
           {readiness.action.kind === "company" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
           {readiness.action.kind === "prepare" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
           {readiness.action.kind === "review" ? <a className="button" href="#legal-publication">{readiness.action.label}</a> : null}
-          {readiness.action.kind === "publish" ? <button className="button" disabled={saving} onClick={() => void handleConfirmedPublication()} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "publish" ? <button className="button" disabled={saving || isPendingActivation(activeRestaurant)} onClick={() => void handleConfirmedPublication()} type="button">{readiness.action.label}</button> : null}
           {readiness.action.kind === "view" ? <Link className="button secondary" to={publicLegalPath}>{readiness.action.label}</Link> : null}
         </div>
       </section>

@@ -89,6 +89,13 @@ Deno.serve(async (request) => {
 
   try {
     let staffMemberId: string;
+    // Check before any auth-admin call or external invitation delivery.
+    const { data: activation, error: activationError } = await userClient.rpc("get_restaurant_activation_state", {
+      input_restaurant_id: restaurantId,
+    });
+    if (activationError || activation?.operational !== true) {
+      return json({ error: "RESTAURANT_NOT_OPERATIONAL" }, 403, origin);
+    }
     let email: string;
     let authUserId: string | null = null;
 

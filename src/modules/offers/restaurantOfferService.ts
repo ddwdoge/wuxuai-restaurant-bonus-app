@@ -245,12 +245,12 @@ export async function loadRestaurantOffers(restaurantId: string): Promise<Restau
   return Array.isArray(data) ? data as RestaurantOffer[] : [];
 }
 
-export async function loadRestaurantOfferBranches(restaurantId: string): Promise<RestaurantOfferBranch[]> {
+export async function loadRestaurantOfferBranches(restaurantId: string, draftSetup = false): Promise<RestaurantOfferBranch[]> {
   const { data, error } = await requireClient()
     .from("branches")
     .select("id, name, status")
     .eq("restaurant_id", restaurantId)
-    .eq("status", "active")
+    .eq("status", draftSetup ? "draft" : "active")
     .order("created_at", { ascending: true });
   if (error) throw offerLoadError();
   return (data ?? []) as RestaurantOfferBranch[];

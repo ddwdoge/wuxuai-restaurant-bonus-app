@@ -1,0 +1,17 @@
+/* Pending setup only: preserve the active-owner layout and drawer contracts. */
+[data-pending-setup] select {
+  height: 44px;
+}
+
+[data-pending-setup] button,
+[data-pending-setup] select,
+[data-pending-setup] input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+[data-pending-setup] label:has(input[type="checkbox"]),
+[data-pending-setup] label:has(input[type="radio"]) {
+  min-height: 44px;
+  min-width: 44px;
+}

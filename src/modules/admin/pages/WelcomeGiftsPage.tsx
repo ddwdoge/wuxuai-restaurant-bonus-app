@@ -30,6 +30,7 @@ import {
   type RewardOffer,
 } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { isPendingActivation } from "../../tenant/pendingActivation";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
@@ -288,7 +289,7 @@ export function WelcomeGiftsPage() {
         birthday_pool_enabled: editing.birthdayPoolEnabled,
         starter_reward_key: starterRewardKeyForCategory(category),
         starter_reward_order: original?.starter_reward_order ?? gifts.length,
-        active: editing.active,
+        active: isPendingActivation(activeRestaurant) ? false : editing.active,
         expires_at: original?.expires_at ?? null,
       });
       setGifts((current) => current.some((gift) => gift.id === saved.id)
@@ -405,7 +406,7 @@ export function WelcomeGiftsPage() {
             const condition = gift.welcome_gift_mode === "fixed_product" && gift.fixed_product_name ? gift.fixed_product_name : `Wert bis ${formatEuro(gift.product_price ?? defaultGiftValue(gift.category))}`;
             return (
               <PremiumOwnerRewardCard
-                actions={<><button className="button secondary icon-text-button" onClick={() => setPreviewGift(gift)} type="button"><Eye size={17} />Vorschau</button><button className="button secondary icon-text-button" onClick={() => startEdit(gift)} type="button"><Edit3 size={17} />Bearbeiten</button><button className="button secondary icon-text-button" onClick={() => setPendingStatusGift(gift)} type="button">{gift.active ? <PowerOff size={17} /> : <Power size={17} />}{gift.active ? "Deaktivieren" : "Aktivieren"}</button></>}
+                actions={<><button className="button secondary icon-text-button" onClick={() => setPreviewGift(gift)} type="button"><Eye size={17} />Vorschau</button><button className="button secondary icon-text-button" onClick={() => startEdit(gift)} type="button"><Edit3 size={17} />Bearbeiten</button><button className="button secondary icon-text-button" disabled={isPendingActivation(activeRestaurant)} onClick={() => setPendingStatusGift(gift)} type="button">{gift.active ? <PowerOff size={17} /> : <Power size={17} />}{gift.active ? "Deaktivieren" : "Aktivieren"}</button></>}
                 badgeLabel={currentStatus.label}
                 badgeTone={currentStatus.tone}
                 category={gift.category ?? "Eigene Überraschung"}
@@ -486,7 +487,7 @@ export function WelcomeGiftsPage() {
                   />
                 ) : null}
               </div>
-              <label className="premium-owner-toggle"><input checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
+              <label className="premium-owner-toggle"><input disabled={isPendingActivation(activeRestaurant)} checked={!isPendingActivation(activeRestaurant) && editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} type="checkbox" /><span><strong>Im Kundenportal aktiv</strong><small>Aktive Geschenke gehören zum Pool für neue Gäste.</small></span></label>
               <label className="premium-owner-toggle"><input checked={editing.birthdayPoolEnabled} onChange={(event) => setEditing({ ...editing, birthdayPoolEnabled: event.target.checked })} type="checkbox" /><span><strong>Für Geburtstagsgeschenke verwenden</strong><small>Dieses Geschenk kann Kunden einmal jährlich rund um ihren Geburtstag automatisch zugeteilt werden.</small></span></label>
             </section>
             {status && editing ? <p className="status-message" role="status">{status}</p> : null}

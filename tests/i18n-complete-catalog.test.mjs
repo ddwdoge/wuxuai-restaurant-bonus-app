@@ -124,11 +124,11 @@ test("registration copy localizes the complete commercial and form-help contract
     assert.notEqual(translateStructural("auth.register.phoneHint", language), "auth.register.phoneHint");
   }
   const register = readFileSync(new URL("../src/modules/auth/RegisterPage.tsx", import.meta.url), "utf8");
-  assert.match(register, /auth\.register\.description/);
+  assert.match(register, /description=\{pendingMessage\.body\}/);
   assert.match(register, /auth\.register\.passwordHint/);
   assert.match(register, /auth\.register\.phoneHint/);
-  assert.match(register, /V1_COMMERCIAL_CONTRACT\.trial\.calendarMonths/);
-  assert.match(register, /V1_COMMERCIAL_CONTRACT\.basePlan\.monthlyPrice/);
+  assert.match(register, /eyebrow=\{pendingMessage\.title\}/);
+  assert.match(register, /pendingMessage\.plan/);
 });
 
 test("runtime localization translates only cataloged static sources and preserves dynamic owner content", () => {

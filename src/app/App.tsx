@@ -13,6 +13,7 @@ import { StaffRestaurantRouteGate } from "../modules/auth/StaffRestaurantRouteGa
 import { PublicHome } from "../modules/public/PublicHome";
 import { OwnerLegalErrorBoundary } from "../modules/legal/OwnerLegalErrorBoundary";
 import { isSetupAllowedPath } from "../modules/admin/setupAllowedPath";
+import { isPendingActivation } from "../modules/tenant/pendingActivation";
 import { useTenant } from "../modules/tenant/TenantProvider";
 import { useAuth } from "../modules/auth/AuthProvider";
 import { PLATFORM_ADMIN_ROLES } from "../modules/platform/platformAdminAuthorization.mjs";
@@ -199,7 +200,7 @@ function CustomerCentralRoute({ children }: { children: ReactNode }) {
 function RestaurantSetupGate({ children }: { children: ReactNode }) {
   const { activeRestaurant, loadError, loading, refreshTenants } = useTenant();
   const location = useLocation();
-  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
+  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname, isPendingActivation(activeRestaurant));
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const onboardingCompleted = onboardingStatus === "ready" || onboardingStatus === "completed";
 

@@ -38,6 +38,8 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../../shared/lib/supabase";
 import type { BranchSubscription, PointsCollectionMode, Restaurant } from "../../../shared/types/domain";
 import { useTenant } from "../../tenant/TenantProvider";
+import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
+import { isPendingActivation, usePendingActivationMessages } from "../../tenant/pendingActivation";
 import { LazyPartnerRestaurantMap } from "../../customer/LazyPartnerRestaurantMap";
 import type { PartnerRestaurant } from "../../customer/partnerRestaurantService";
 import { normalizeOpeningDay, validateOpeningDay, type OpeningDay } from "../../../shared/openingHours.mjs";
@@ -138,6 +140,7 @@ const defaultOpeningHours: Record<Weekday, OpeningDay> = {
 };
 
 const subscriptionLabels: Record<string, string> = {
+  pending_activation: "Verifizierung ausstehend",
   trialing: "Testphase aktiv",
   active: "Abo aktiv",
   past_due: "Zahlung überfällig",
@@ -181,8 +184,9 @@ function normalizeSubscription(record: Partial<BranchSubscription> | null): Bran
   if (!record?.id || !record.branch_id || !record.organization_id) return null;
   const status = record.subscription_status ?? record.status ?? "trialing";
   const createdAt = record.created_at ?? new Date().toISOString();
-  const trialStartedAt = record.trial_started_at ?? createdAt;
-  const trialEndsAt = record.trial_ends_at ?? record.current_period_ends_at ?? addV1TrialMonthsIso(trialStartedAt);
+  const pending = status === "pending_activation";
+  const trialStartedAt = pending ? null : record.trial_started_at ?? createdAt;
+  const trialEndsAt = pending ? null : record.trial_ends_at ?? record.current_period_ends_at ?? addV1TrialMonthsIso(trialStartedAt!);
 
   return {
     id: record.id,
@@ -555,6 +559,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 }
 
 export function SettingsPage() {
+  const pendingMessages = usePendingActivationMessages();
   const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant, branding, loading: tenantLoading, refreshTenants } = useTenant();
@@ -1541,11 +1546,11 @@ export function SettingsPage() {
         <section className="card settings-detail-card">
           {subscriptionError ? (
             <p className="status-message error">{subscriptionError}</p>
-          ) : subscription ? (
+          ) : isPendingActivation(activeRestaurant) ? <PendingActivationNotice /> : subscription ? (
             <>
               <div className="settings-subscription-hero">
                 <span className={`settings-status-badge${subscriptionActive ? " success" : trialExpired ? " warning" : ""}`}>
-                  {subscriptionActive ? "Abo aktiv" : trialExpired ? "Testphase abgelaufen" : "Testphase aktiv"}
+                  {subscription?.subscription_status === "pending_activation" ? pendingMessages.title : subscriptionActive ? "Abo aktiv" : trialExpired ? "Testphase abgelaufen" : "Testphase aktiv"}
                 </span>
                 <h2>
                   {subscriptionActive

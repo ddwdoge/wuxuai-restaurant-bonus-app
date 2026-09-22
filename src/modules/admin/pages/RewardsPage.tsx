@@ -42,6 +42,7 @@ import {
   type RewardOffer,
 } from "../../rewards/rewardService";
 import { useTenant } from "../../tenant/TenantProvider";
+import { isPendingActivation } from "../../tenant/pendingActivation";
 import { PremiumOwnerRewardCard } from "../components/PremiumOwnerRewardCard";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
 import { OwnerRewardImageEditor } from "../components/OwnerRewardImageEditor";
@@ -330,7 +331,7 @@ export function RewardsPage() {
         active_days: editingOffer?.active_days?.length ? editingOffer.active_days : defaultActiveDays,
         available_products: [currentCategory],
         is_starter_reward: false,
-        active: editingOffer?.active ?? true,
+        active: isPendingActivation(activeRestaurant) ? false : editingOffer?.active ?? true,
         expires_at: editingOffer?.expires_at ?? null,
       });
       setOffers((current) => current.some((offer) => offer.id === saved.id)
@@ -557,7 +558,7 @@ export function RewardsPage() {
             const PlaceholderIcon = iconForCategory(offer.category);
             return (
               <PremiumOwnerRewardCard
-                actions={<><button className="button secondary icon-text-button" onClick={() => setPreviewOffer(offer)} type="button"><Eye size={17} />Vorschau</button><button className="button secondary icon-text-button" onClick={() => editOffer(offer)} type="button"><Edit3 size={17} />Bearbeiten</button><button className="button secondary icon-text-button" onClick={() => setPendingStatusOffer(offer)} type="button">{offer.active ? <PowerOff size={17} /> : <Power size={17} />}{offer.active ? "Deaktivieren" : "Aktivieren"}</button></>}
+                actions={<><button className="button secondary icon-text-button" onClick={() => setPreviewOffer(offer)} type="button"><Eye size={17} />Vorschau</button><button className="button secondary icon-text-button" onClick={() => editOffer(offer)} type="button"><Edit3 size={17} />Bearbeiten</button><button className="button secondary icon-text-button" disabled={isPendingActivation(activeRestaurant)} onClick={() => setPendingStatusOffer(offer)} type="button">{offer.active ? <PowerOff size={17} /> : <Power size={17} />}{offer.active ? "Deaktivieren" : "Aktivieren"}</button></>}
                 badgeLabel={currentStatus.label}
                 badgeTone={currentStatus.tone}
                 category={offer.category ?? "Eigenes Produkt"}

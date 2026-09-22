@@ -21,6 +21,9 @@ import { useAuth } from "../auth/AuthProvider";
 import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
+import { PendingActivationNotice } from "../tenant/PendingActivationNotice";
+import { isPendingActivation, usePendingActivationMessages } from "../tenant/pendingActivation";
+import "../tenant/pendingActivation.css";
 import "./admin-premium.css";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
@@ -46,8 +49,9 @@ export function AdminLayout() {
   const { portalAccess, restaurantRole, signOut, user } = useAuth();
   const { activeRestaurant, branding, clearTenantState, loading } = useTenant();
   const restaurantStatus = activeRestaurant?.status ?? "draft";
+  const pendingMessage = usePendingActivationMessages();
   const restaurantStatusLabel =
-    restaurantStatus === "active" ? t("owner.status.active") : restaurantStatus === "draft" ? t("owner.status.draft") : t("owner.status.blocked");
+    isPendingActivation(activeRestaurant) ? pendingMessage.title : restaurantStatus === "active" ? t("owner.status.active") : restaurantStatus === "draft" ? t("owner.status.draft") : t("owner.status.blocked");
   const profileName = readProfileName(user, t("owner.profile.account"));
   const profileInitial = profileName.charAt(0).toLocaleUpperCase("de-AT") || "R";
   const profileRoleLabel = restaurantRole
@@ -56,7 +60,8 @@ export function AdminLayout() {
   const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
   const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
-  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname);
+  const pendingActivation = isPendingActivation(activeRestaurant);
+  const isSetupAllowedRoute = isSetupAllowedPath(location.pathname, pendingActivation);
   const navItems = [
     { to: "/admin", label: t("owner.dashboard"), icon: Home, end: true },
     { to: "/admin/rewards", label: t("owner.rewards"), icon: Gift },
@@ -167,7 +172,7 @@ export function AdminLayout() {
     <nav aria-label={variant === "drawer" ? t("owner.menu") : t("owner.navigation")}>
       {navItems.map((item) => {
         const Icon = item.icon;
-        const locked = setupIncomplete && !isSetupAllowedPath(item.to);
+        const locked = setupIncomplete && !isSetupAllowedPath(item.to, pendingActivation);
         if (locked) {
           return (
             <span
@@ -212,7 +217,7 @@ export function AdminLayout() {
 
   if (isOnboardingRoute) {
     return (
-      <div className="setup-shell">
+      <div className="setup-shell" data-pending-setup={pendingActivation || undefined}>
         <Outlet
           context={{
             onboardingAccountAction: <div className="onboarding-account-actions"><LanguageSelector />{profileMenu}</div>,
@@ -224,7 +229,7 @@ export function AdminLayout() {
   }
 
   const portal = (
-    <div className="app-shell premium-owner-shell">
+    <div className="app-shell premium-owner-shell" data-pending-setup={pendingActivation || undefined}>
       <header className="topbar premium-owner-topbar">
         <div className="restaurant-brand-header admin-restaurant-brand">
           <RestaurantLogoStage className="restaurant-logo-frame" logoUrl={branding?.logo_url} name={activeRestaurant?.name ?? "Restaurant"} presentation={branding} primaryColor={branding?.primary_color} size="header" />
@@ -272,6 +277,7 @@ export function AdminLayout() {
           ) : null}
         </aside>
         <main className="content premium-owner-content">
+          {pendingActivation ? <PendingActivationNotice /> : null}
           <Outlet />
         </main>
       </div>
@@ -299,7 +305,7 @@ export function AdminLayout() {
       </AppDrawer>
     </div>
   );
-  return activeRestaurant && (restaurantRole === "owner" || restaurantRole === "admin")
+  return activeRestaurant && !pendingActivation && (restaurantRole === "owner" || restaurantRole === "admin")
     ? <KassaAcknowledgementGate restaurantId={activeRestaurant.id}>{portal}</KassaAcknowledgementGate>
     : portal;
 }

@@ -20,6 +20,7 @@ import { SmartMediaFrame } from "../../../shared/components/SmartMediaFrame";
 import { FormLabel, RequiredFieldsNote } from "../../../shared/components/FormLabel";
 import { DEFAULT_REWARD_IMAGE_CROP, rewardImageCropFromRecord, type RewardImageCrop } from "../../../shared/rewardImageCrop";
 import { useTenant } from "../../tenant/TenantProvider";
+import { isPendingActivation } from "../../tenant/pendingActivation";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { formatLocaleDate } from "../../../shared/i18n/formatters.mjs";
 import { OwnerRewardImageUploader } from "../components/OwnerRewardImageUploader";
@@ -171,6 +172,7 @@ export function RestaurantOffersPage() {
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id ?? "";
+  const pendingActivation = isPendingActivation(activeRestaurant);
   const [offers, setOffers] = useState<RestaurantOffer[]>([]);
   const [branches, setBranches] = useState<RestaurantOfferBranch[]>([]);
   const [emailSummary, setEmailSummary] = useState<RestaurantOfferEmailSummary | null>(null);
@@ -197,7 +199,7 @@ export function RestaurantOffersPage() {
     try {
       const [nextOffers, nextBranches, nextEmailSummary, nextCapacity, nextPlanWindow] = await Promise.all([
         loadRestaurantOffers(restaurantId),
-        loadRestaurantOfferBranches(restaurantId),
+        loadRestaurantOfferBranches(restaurantId, pendingActivation),
         loadRestaurantOfferEmailSummary(restaurantId).catch(() => null),
         loadOwnerOfferCapacity(restaurantId).catch(() => null),
         loadOwnerOfferPlanWindow(restaurantId).catch(() => null),
@@ -217,7 +219,7 @@ export function RestaurantOffersPage() {
     } finally {
       setLoading(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, pendingActivation]);
 
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
@@ -411,7 +413,7 @@ export function RestaurantOffersPage() {
         <button className="button premium-owner-primary-action" onClick={startCreate} type="button"><Plus aria-hidden="true" size={19} />Neues Angebot erstellen</button>
       </header>
 
-      {capacity ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotskapazität"><div><span>Aktuelles Paket</span><strong>{capacity.plan.plan_key === "BASIC" ? "Basic" : "Pro"}</strong></div><div><span>Aktive und geplante Angebote</span><strong>{`${capacity.offers.usage} / ${capacity.offers.effective_limit}`}</strong></div><p>Plan und Kapazität werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
+      {capacity && !isPendingActivation(activeRestaurant) ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotskapazität"><div><span>Aktuelles Paket</span><strong>{capacity.plan.plan_key === "BASIC" ? "Basic" : "Pro"}</strong></div><div><span>Aktive und geplante Angebote</span><strong>{`${capacity.offers.usage} / ${capacity.offers.effective_limit}`}</strong></div><p>Plan und Kapazität werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
       {planWindow?.effective_from || planWindow?.effective_until ? <dl className="platform-detail-list" data-i18n-skip="true">
         {([['start', planWindow.effective_from], ['end', planWindow.effective_until]] as const).map(([key, value]) => value && Number.isFinite(Date.parse(value)) ? <div key={key}><dt>{translateKey(`platform.planOverride.${key}`)}</dt><dd>{formatLocaleDate(value, language, { dateStyle: "medium", timeStyle: "short" })}</dd></div> : null)}
       </dl> : null}
@@ -486,7 +488,7 @@ export function RestaurantOffersPage() {
                   <div className="restaurant-offer-actions">
                     <button onClick={() => startEdit(offer)} type="button"><Edit3 aria-hidden="true" size={17} />Bearbeiten</button>
                     <button onClick={() => setPreviewOffer(offer)} type="button"><Eye aria-hidden="true" size={17} />Vorschau</button>
-                    {offer.status === "DRAFT" || offer.status === "DISABLED" ? <button onClick={() => void runAction(offer, "PUBLISH")} type="button"><Send aria-hidden="true" size={17} />Veröffentlichen</button> : null}
+                    {offer.status === "DRAFT" || offer.status === "DISABLED" ? <button disabled={isPendingActivation(activeRestaurant)} onClick={() => void runAction(offer, "PUBLISH")} type="button"><Send aria-hidden="true" size={17} />Veröffentlichen</button> : null}
                     {offer.status === "PUBLISHED" && offer.is_active ? <button onClick={() => void runAction(offer, "DISABLE")} type="button"><XCircle aria-hidden="true" size={17} />Deaktivieren</button> : null}
                     <button onClick={() => void duplicateOffer(offer)} type="button"><Copy aria-hidden="true" size={17} />Duplizieren</button>
                     {offer.status === "DRAFT" ? <button className="danger" onClick={() => void deleteDraft(offer)} type="button"><Trash2 aria-hidden="true" size={17} />Entwurf löschen</button> : offer.status !== "ARCHIVED" ? <button onClick={() => void runAction(offer, "ARCHIVE")} type="button"><Archive aria-hidden="true" size={17} />Archivieren</button> : null}
