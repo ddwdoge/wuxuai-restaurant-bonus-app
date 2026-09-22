@@ -7,16 +7,27 @@ const TEMPLATE_KEYS = new Set([
 
 export const supportedTransactionalMailLanguages = Object.freeze(["de", "en", "fr", "it", "es", "zh", "ko"]);
 const SUPPORTED_LANGUAGES = new Set(supportedTransactionalMailLanguages);
-const SUPPORT_EMAIL = "support@wuxuaisbi.com";
+const CUSTOMER_SUPPORT_EMAIL = "support@wuxuaibonus.com";
+const CAPACITY_SUPPORT_EMAIL = "support@wuxuaisbi.com";
 
 const COMMON = {
-  de: { greeting: "Hallo", accountNote: "Diese Transaktionsnachricht gehört zu deinem WUXUAI® Bonus Konto.", support: "Hilfe: support@wuxuaisbi.com" },
-  en: { greeting: "Hello", accountNote: "This transactional message relates to your WUXUAI® Bonus account.", support: "Support: support@wuxuaisbi.com" },
-  fr: { greeting: "Bonjour", accountNote: "Ce message transactionnel concerne votre compte WUXUAI® Bonus.", support: "Assistance : support@wuxuaisbi.com" },
-  it: { greeting: "Ciao", accountNote: "Questo messaggio transazionale riguarda il tuo account WUXUAI® Bonus.", support: "Assistenza: support@wuxuaisbi.com" },
-  es: { greeting: "Hola", accountNote: "Este mensaje transaccional está relacionado con tu cuenta de WUXUAI® Bonus.", support: "Ayuda: support@wuxuaisbi.com" },
-  zh: { greeting: "您好", accountNote: "这是一封与您的 WUXUAI® Bonus 账户相关的服务邮件。", support: "支持：support@wuxuaisbi.com" },
-  ko: { greeting: "안녕하세요", accountNote: "이 메일은 WUXUAI® Bonus 계정과 관련된 서비스 안내입니다.", support: "지원: support@wuxuaisbi.com" },
+  de: { greeting: "Hallo", accountNote: "Diese Transaktionsnachricht gehört zu deinem WUXUAI® Bonus Konto.", support: "Hilfe: support@wuxuaibonus.com" },
+  en: { greeting: "Hello", accountNote: "This transactional message relates to your WUXUAI® Bonus account.", support: "Support: support@wuxuaibonus.com" },
+  fr: { greeting: "Bonjour", accountNote: "Ce message transactionnel concerne votre compte WUXUAI® Bonus.", support: "Assistance : support@wuxuaibonus.com" },
+  it: { greeting: "Ciao", accountNote: "Questo messaggio transazionale riguarda il tuo account WUXUAI® Bonus.", support: "Assistenza: support@wuxuaibonus.com" },
+  es: { greeting: "Hola", accountNote: "Este mensaje transaccional está relacionado con tu cuenta de WUXUAI® Bonus.", support: "Ayuda: support@wuxuaibonus.com" },
+  zh: { greeting: "您好", accountNote: "这是一封与您的 WUXUAI® Bonus 账户相关的服务邮件。", support: "支持：support@wuxuaibonus.com" },
+  ko: { greeting: "안녕하세요", accountNote: "이 메일은 WUXUAI® Bonus 계정과 관련된 서비스 안내입니다.", support: "지원: support@wuxuaibonus.com" },
+};
+
+const CAPACITY_SUPPORT = {
+  de: "Hilfe: support@wuxuaisbi.com",
+  en: "Support: support@wuxuaisbi.com",
+  fr: "Assistance : support@wuxuaisbi.com",
+  it: "Assistenza: support@wuxuaisbi.com",
+  es: "Ayuda: support@wuxuaisbi.com",
+  zh: "支持：support@wuxuaisbi.com",
+  ko: "지원: support@wuxuaisbi.com",
 };
 
 const COPY = {
@@ -146,12 +157,12 @@ export function renderOwnerCapacityWarningMail({ restaurantName, payload, appBas
     projected === null ? null : copy.forecast(projected),
     copy.noAuto,
   ].filter(Boolean);
-  const text = `${copy.headline}\n\n${lines.join("\n")}\n\n${copy.cta}: ${actionUrl}\n\n${copy.accountNote}\n${COMMON[resolvedLanguage].support}\n\nWUXUAI® Bonus`;
+  const text = `${copy.headline}\n\n${lines.join("\n")}\n\n${copy.cta}: ${actionUrl}\n\n${copy.accountNote}\n${CAPACITY_SUPPORT[resolvedLanguage]}\n\nWUXUAI® Bonus`;
   const detailHtml = lines.map((line) => `<p style="margin:0 0 10px;line-height:1.6">${escapeHtml(String(line))}</p>`).join("");
   return {
     subject: copy.subject,
     text,
-    html: `<!doctype html><html lang="${resolvedLanguage}"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(copy.headline)}</h1>${detailHtml}<a href="${escapeHtml(actionUrl)}" style="display:inline-block;min-height:44px;box-sizing:border-box;padding:13px 18px;border-radius:8px;background:#8d681f;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(copy.cta)}</a></div><div style="padding:18px 8px 0;text-align:center;color:#71695f;font-size:12px;line-height:1.6"><p style="margin:0">${escapeHtml(copy.accountNote)}</p><p style="margin:4px 0 0"><a href="mailto:${SUPPORT_EMAIL}" style="color:#71695f">${escapeHtml(COMMON[resolvedLanguage].support)}</a></p></div></div></body></html>`,
+    html: `<!doctype html><html lang="${resolvedLanguage}"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(copy.headline)}</h1>${detailHtml}<a href="${escapeHtml(actionUrl)}" style="display:inline-block;min-height:44px;box-sizing:border-box;padding:13px 18px;border-radius:8px;background:#8d681f;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(copy.cta)}</a></div><div style="padding:18px 8px 0;text-align:center;color:#71695f;font-size:12px;line-height:1.6"><p style="margin:0">${escapeHtml(copy.accountNote)}</p><p style="margin:4px 0 0"><a href="mailto:${CAPACITY_SUPPORT_EMAIL}" style="color:#71695f">${escapeHtml(CAPACITY_SUPPORT[resolvedLanguage])}</a></p></div></div></body></html>`,
     actionUrl,
     language: resolvedLanguage,
   };
@@ -219,7 +230,7 @@ export function renderTransactionalMail({ templateKey, restaurantName, restauran
   return {
     subject: cleanText(copy.subject, "WUXUAI® Bonus", 180),
     text,
-    html: `<!doctype html><html lang="${resolvedLanguage}"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(copy.headline)}</h1><p style="margin:0 0 12px;line-height:1.6">${escapeHtml(greeting)}</p><p style="margin:0 0 12px;line-height:1.6">${escapeHtml(intro)}</p><p style="margin:0 0 24px;line-height:1.6;color:#5f574d">${escapeHtml(detail)}</p><a href="${escapeHtml(actionUrl)}" style="display:inline-block;min-height:44px;box-sizing:border-box;padding:13px 18px;border-radius:8px;background:#8d681f;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(copy.cta)}</a></div><div style="padding:18px 8px 0;text-align:center;color:#71695f;font-size:12px;line-height:1.6"><p style="margin:0">${escapeHtml(common.accountNote)}</p><p style="margin:4px 0 0"><a href="mailto:${SUPPORT_EMAIL}" style="color:#71695f">${escapeHtml(common.support)}</a></p></div></div></body></html>`,
+    html: `<!doctype html><html lang="${resolvedLanguage}"><body style="margin:0;background:#f7f4ee;color:#221f1b;font-family:Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:24px 14px"><div style="background:#ffffff;border:1px solid #e5ddd0;border-radius:8px;padding:26px 22px"><p style="margin:0 0 14px;color:#8b661f;font-size:13px;font-weight:700">WUXUAI® Bonus</p><h1 style="margin:0 0 18px;font-size:24px;line-height:1.3">${escapeHtml(copy.headline)}</h1><p style="margin:0 0 12px;line-height:1.6">${escapeHtml(greeting)}</p><p style="margin:0 0 12px;line-height:1.6">${escapeHtml(intro)}</p><p style="margin:0 0 24px;line-height:1.6;color:#5f574d">${escapeHtml(detail)}</p><a href="${escapeHtml(actionUrl)}" style="display:inline-block;min-height:44px;box-sizing:border-box;padding:13px 18px;border-radius:8px;background:#8d681f;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(copy.cta)}</a></div><div style="padding:18px 8px 0;text-align:center;color:#71695f;font-size:12px;line-height:1.6"><p style="margin:0">${escapeHtml(common.accountNote)}</p><p style="margin:4px 0 0"><a href="mailto:${CUSTOMER_SUPPORT_EMAIL}" style="color:#71695f">${escapeHtml(common.support)}</a></p></div></div></body></html>`,
     actionUrl,
     language: resolvedLanguage,
   };

@@ -1265,3 +1265,26 @@ Nachher blieben alle Warning-Systemtabellen leer, Mail 19/19 PENDING, Grants
 0 und Add-on-Entitlements 0. Damit gilt Phase 7C.5C als Staging Lock, jedoch
 nicht als FINAL LOCK fuer reale externe E-Mail-Zustellung oder Production.
 AT + PRO, Production und Stripe bleiben unveraendert beziehungsweise LOCKED.
+
+## Phase 7C.5E Historical Staging Outbox und Production Clean Start
+
+Production wird ausschliesslich aus dem vollstaendigen, geprueften
+Migrationsverlauf und einer getrennten Production-Konfiguration aufgebaut.
+Die Staging-Datenbank wird weder geklont noch als Backup in Production
+wiederhergestellt. Restaurants, Kunden, Memberships, Punkte, Angebote,
+Einloesungen, Grants, Outbox-Zeilen, Test-Audits und TEST_ONLY-Daten werden
+nicht aus Staging uebernommen.
+
+Zulaessige Production-Initialdaten sind ausschliesslich Plan- und
+Capacity-Katalog, zunaechst LOCKED gesetzte Country Policies, notwendige
+Rollen- und Systemkonfiguration, Mailvorlagen sowie technisch erforderliche
+Referenzdaten. Production-Secrets werden getrennt eingerichtet. Stripe und
+der allgemeine Mail-Scheduler bleiben bis zu ihren eigenen Founder-Gates aus.
+
+Historische Staging-Customer-Outbox-Zeilen duerfen nur nach exakter
+Fingerprint-, ID-, Status-, Attempt- und Lease-Pruefung ohne Versand als
+`SKIPPED` mit dem festen Quarantaenegrund
+`HISTORICAL_STAGING_TEST_DATA` markiert werden. Die Zeilen werden nicht
+geloescht, der Versuchszahler wird nicht erhoeht und ein unveraenderbarer
+Auditnachweis bindet Anzahl, Vorher-Fingerprint, Ziel-IDs, Serverzeit und
+ausfuehrende Datenbank-/Auth-Identitaet.

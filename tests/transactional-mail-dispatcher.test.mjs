@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
@@ -54,7 +55,8 @@ test("transactional mail supports the seven approved languages with English fall
       });
       assert.equal(mail.language, language);
       assert.match(mail.subject + mail.text + mail.html, /WUXUAI® Bonus/);
-      assert.match(mail.text + mail.html, /support@wuxuaisbi\.com/);
+      assert.match(mail.text + mail.html, /support@wuxuaibonus\.com/);
+      assert.doesNotMatch(mail.text + mail.html, /support@wuxuaisbi\.com/);
       assert.match(mail.text, /Mei/);
       assert.doesNotMatch(
         mail.text + mail.html,
@@ -62,6 +64,24 @@ test("transactional mail supports the seven approved languages with English fall
       );
     }
   }
+});
+
+test("customer support footer snapshot changes only to the approved domain", () => {
+  const outputs = [];
+  for (const language of supportedTransactionalMailLanguages) {
+    for (const templateKey of supportedTransactionalMailTemplates) {
+      outputs.push(renderTransactionalMail({
+        templateKey,
+        restaurantName: "Snapshot Restaurant",
+        restaurantSlug: "snapshot-restaurant",
+        payload: { reward_name: "Snapshot Reward", offer_title: "Snapshot Offer", required_points: 100 },
+        appBaseUrl: "https://app.bonus.wuxuaisbi.com",
+        language,
+        firstName: "Snapshot",
+      }));
+    }
+  }
+  assert.equal(createHash("sha256").update(JSON.stringify(outputs)).digest("hex"), "8bc6c45a8247ab602b9f4f8fd802554fe447f7d16370f03ded13aed89ab9d904");
 });
 
 test("reminder and threshold templates expose no token or internal entity identifier", () => {
