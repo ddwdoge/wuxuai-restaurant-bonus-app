@@ -1,6 +1,18 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+**Aktueller Registrierungs-/Billing-Zustand (24.09.2026):** Migrationen
+163–165 sind laut letztem Staging-Gate angewendet (165/165). Neue
+Registrierung erzeugt PENDING_ACTIVATION ohne Trialdaten oder wirksame
+Entitlements. Setup/Preview bleibt erlaubt; Live-QR, Punkte, Einloesung und
+Kommunikation bleiben blockiert. Ein kostenloser BASIC-/PRO-Kalendermonat
+darf erst nach Country-, Legal-, KYB- und verifizierter Provideraktivierung
+starten; dieser positive Providerpfad ist noch nicht implementiert.
+Historische Subscription- und Trialdaten bleiben unveraendert. Aeltere
+datierte Abschnitte unten, insbesondere Phase-7B-LOCAL-ONLY- und
+Drei-Monats-Aussagen, sind Zustands-Snapshots und keine aktuelle Autoritaet.
+Siehe `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+
 ## 2026-09-15 – Phase 7B.3A Control-Center-Reads lokal
 
 `20260915002000_pro_commercial_control_center_reads.sql` fuegt ausschliesslich
@@ -562,12 +574,19 @@ V1 Status:
 - cancelled
 - expired
 
-Regeln:
+Regeln fuer neue Betriebe:
 
-- Registrierung startet eine Testphase von 3 Kalendermonaten.
-- Keine Kreditkarte erforderlich.
+- Registrierung erzeugt PENDING_ACTIVATION ohne Trialstart/-ende und ohne
+  bezahlte Periode oder Live-Entitlements.
+- Nur Setup/Preview ist zulaessig; produktive QR-, Punkte-, Einloese- und
+  Kommunikationsaktionen bleiben serverseitig blockiert.
+- Erst verifizierte Provideraktivierung nach Country-, Legal- und KYB-Gates
+  darf einen kostenlosen BASIC-/PRO-Kalendermonat beginnen. Add-ons ohne Trial.
+- Rechtmaessige historische Trials bleiben unveraendert.
 - Keine rückwirkende Zahlung.
-- RPC `start_restaurant_owner_trial` muss Branch Subscription sicher per `INSERT ... ON CONFLICT` erzeugen.
+- Der historische RPC-Name `start_restaurant_owner_trial` erteilt keine
+  Trial-Autoritaet bei neuer Registrierung; der Pending-Insert bleibt
+  transaktionsgebunden und serverseitig gesichert.
 - `subscription_record` darf nie NULL sein.
 
 ---

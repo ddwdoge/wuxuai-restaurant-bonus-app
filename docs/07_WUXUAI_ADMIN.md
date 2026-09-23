@@ -2,6 +2,18 @@
 
 # WUXUAI Bonus V1 -- WUXUAI Admin Portal
 
+**Aktueller Billing-/Admin-Vertrag (24.09.2026):** Neue Betriebe starten
+PENDING_ACTIVATION ohne Trial oder Live-Entitlements; Setup/Preview ist
+erlaubt, produktive Aktionen bleiben blockiert. BASIC und PRO erhalten erst
+nach bestandenen Country-, Legal- und KYB-Gates und verifizierter
+Provideraktivierung genau einen kostenlosen Kalendermonat. Add-ons haben
+keinen Trial; rechtmaessige historische Trials bleiben unveraendert. Der
+aktuelle Platform-Admin-Readiness-Stand ist Staging 165/165, Seller PLANNED,
+Stripe TEST/LIVE UNBOUND und AT + PRO LOCKED. Datierte Aussagen unten zu
+drei Monaten, Unlimited, lokal-only oder fehlender UI sind historische
+Snapshots, keine heutige Aktivierungsautoritaet. Siehe
+`V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+
 ## Phase 7B.2 – Commercial Pro Backend auf Staging gesperrt
 
 Die geschuetzten Laender- und Zugangs-RPCs sind auf Staging vorhanden, wurden
@@ -375,7 +387,7 @@ kompletter V1-Feature-Block gebaut.
 
 🟢 **FIX**
 
-### 7.1 Testphase
+### 7.1 Historische Testphase – SUPERSEDED fuer neue Registrierungen
 
 Jedes Restaurant erhält:
 
@@ -386,8 +398,9 @@ Jederzeit kündbar
 Kein rückwirkendes Nachzahlen
 ```
 
-Nach drei Kalendermonaten entscheidet das Restaurant, ob es weiter nutzen
-moechte.
+Der obige Drei-Monats-Vertrag gilt nur als historische Dokumentation;
+bestehende rechtmaessige Trialdaten werden nicht rueckwirkend geaendert.
+Neue Betriebe bleiben bis zur verifizierten Provideraktivierung Pending.
 
 ### 7.2 Keine rückwirkende Zahlung
 

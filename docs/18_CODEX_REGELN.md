@@ -150,7 +150,7 @@ V1 enthält:
 - Willkommensgeschenke
 - Bonus Boost
 - QR / Starter Kit
-- 3 Kalendermonate kostenlos
+- Neue BASIC-/PRO-Trials: ein voller Kalendermonat erst nach bestaetigter Provideraktivierung; Registrierung bleibt PENDING_ACTIVATION ohne Trial.
 - Deutsch
 - Mobile First
 

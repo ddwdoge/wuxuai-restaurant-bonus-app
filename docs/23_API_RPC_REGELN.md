@@ -1,6 +1,17 @@
 
 # 23_API_RPC_REGELN.md
 
+**Aktueller Registrierungs-RPC-Vertrag (24.09.2026):** Neue Betriebe
+erhalten PENDING_ACTIVATION ohne Trialdaten oder Live-Entitlements. Der
+Registrierungs-RPC darf keinen Trial erzeugen; sein historischer Name
+`start_restaurant_owner_trial` ist keine Aktivierungsautoritaet. Eine
+spaetere Provideraktivierung muss davon getrennt, serverseitig autorisiert,
+signiert und idempotent nach Country-, Legal- und KYB-Gates erfolgen.
+Checkout/Webhook und positiver Staging-Pending-Flow sind noch offen.
+Migrationen 163–165 sind laut letztem Staging-Gate angewendet. Aeltere
+Phase-7B-LOCAL-ONLY- und Trial-Abschnitte sind historische Snapshots;
+aktueller Vertrag: `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+
 ## Phase 7B.3A Pro Control Center Read-RPCs – LOCAL ONLY
 
 Die neue additive Migration stellt `get_platform_pro_country_status`,
@@ -305,11 +316,11 @@ SECURITY DEFINER RPCs dürfen niemals zurückgeben:
 
 Die folgenden RPCs oder Funktionsgruppen sind zentrale Systemprozesse.
 
-### 7.1 start_restaurant_owner_trial
+### 7.1 Registrierung (historischer RPC-Name: start_restaurant_owner_trial)
 
 Zweck:
 
-- neuen Restaurant Owner mit Trial starten
+- neuen Restaurant Owner im PENDING_ACTIVATION-Zustand anlegen
 - Restaurant erzeugen
 - Organisation/Branch erzeugen
 - Membership owner setzen
@@ -323,8 +334,12 @@ Pflichten:
 - branch_subscriptions per Insert/Upsert sicherstellen
 - subscription_record darf nicht NULL sein
 - keine doppelten Restaurants durch normalen Flow
-- Trial-Ende auf exakt drei Kalendermonate nach Trial-Start setzen
-- keine Kreditkarte verlangen
+- keine Trial-Start-/Enddaten, bezahlte Periode oder Live-Entitlements
+  bei Registrierung setzen
+- Setup/Preview erlauben und produktive Aktionen serverseitig blockieren
+- spaetere Provideraktivierung getrennt, autorisiert, signiert und
+  idempotent behandeln; erst dann ein BASIC-/PRO-Kalendermonat Trial
+- Add-ons ohne Trial; historische rechtmaessige Trials unveraendert lassen
 - Audit schreiben
 
 ### 7.2 register_restaurant_customer

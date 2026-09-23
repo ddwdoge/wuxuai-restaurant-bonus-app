@@ -1,6 +1,6 @@
 # WUXUAI Bonus V1 Release Readiness
 
-Stand: 2026-08-31
+Stand: 2026-08-31 – **HISTORISCHER READINESS-SNAPSHOT / SUPERSEDED**
 
 Branch: `codex/v1-canonical-recovery`
 
@@ -8,7 +8,16 @@ Der eingefrorene aktuelle Releasevertrag steht in
 `docs/V1_FINAL_RELEASE_STATUS.md`. Diese Datei bleibt die ausfuehrlichere
 Readiness-Begruendung; historische Reports bleiben unveraendert.
 
-## Aktueller Release-Stand
+**Aktueller Vorrang (24.09.2026):** `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+und `V1_CURRENT_IMPLEMENTATION_STATUS.md`. Neue Betriebe starten
+PENDING_ACTIVATION ohne Trial oder Live-Entitlements. BASIC 59 EUR netto,
+PRO 149 EUR netto mit begrenzter Capacity und 365-Tage-Kundenfenster;
+BASIC/PRO erhalten einen kostenlosen Kalendermonat erst nach verifizierter
+Provideraktivierung, Add-ons keinen Trial. Die untenstehende Drei-Monats-
+PASS-Zeile belegt ausschliesslich den 2026-08-31-Altstand. Seller-Verifikation,
+Stripe-Providerbindung, Legal-/KYB-Gates und Production bleiben offen.
+
+## Historischer Release-Stand vom 2026-08-31
 
 Die spaeteren Development/Test- und physischen Founder-Nachweise schliessen die
 in historischen Reports noch als offen bezeichneten V1-Gates. Historische

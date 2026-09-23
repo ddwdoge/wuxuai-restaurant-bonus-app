@@ -18,7 +18,7 @@ nicht als aktuelle Implementierungsanweisung verwendet werden.
 | Multiplikator 3x oder stapelbare Multiplikatoren | maximal 2x; weitere Referrals verlaengern nur Zeit | alte Referral-Migrationen und historische Reports |
 | Manuelle Latitude/Longitude als Pflicht | Address-only Owner-Flow, serverseitiges Nominatim | alte Standortberichte und Screenshots |
 | Staff-Codepruefung als normale Hauptaktion | QR primaer, Navigation Start/QR/Tages-PIN/Suchen/Mehr | alte Staff-Abschnitte und Reports |
-| V1 Trial 30 Tage kostenlos | exakt 3 Kalendermonate kostenlos | alte Trial-, Admin-, Payment-, V2- und Onboarding-Abschnitte vor 2026-08-30 |
+| V1 Trial 30 Tage beziehungsweise drei kostenlose Kalendermonate ab Registrierung | Neue Betriebe starten PENDING_ACTIVATION ohne Trial. BASIC und PRO erhalten erst nach verifizierter Provideraktivierung einen kostenlosen Kalendermonat; Add-ons haben keinen Trial. Rechtmaessige historische Drei-Monats-Trials bleiben unveraendert. | Historische Trial-, Admin-, Payment-, V2- und Onboarding-Abschnitte bis 2026-09-23 |
 | V1 Basistarif 149 EUR oder Preisband 59-69 EUR | 59 EUR pro Monat exkl. USt. | alte Pricing-, Payment- und V2-Abschnitte |
 | Nur ein sichtbares persoenliches Geschenk auf Customer Home | alle aktiven Welcome-/Birthday-Geschenke im Multi-Gift-Carousel | alte Customer-Home- und Reward-Abschnitte |
 | Birthday-Zuweisung nur exakt 14 Tage vorher oder manueller Draw | inklusives lokales Fenster Geburtstag heute bis +14 Tage, sofort bei Membership und taeglicher Cron | alte Birthday-, Retention- und Reward-Abschnitte |
@@ -26,7 +26,7 @@ nicht als aktuelle Implementierungsanweisung verwendet werden.
 | Manuelle Birthday-Zuweisung als V1-Hauptflow | automatische kanonische, deduplizierte Assignment-Engine | alte Birthday-Draw- und Release-Finishing-Abschnitte |
 | V1 ausschliesslich Deutsch; Mehrsprachigkeit erst V2/EN-ZH | Deutsch ist verpflichtende Austria-Launch-Sprache; bestehende Architektur fuer DE/EN/FR/IT/ES/ZH/KO bleibt erhalten | `AGENTS`, `00`, `15`, `17`, Guardrails und aeltere i18n-Statussaetze |
 | Kein Installationshinweis nach Customer-Registrierung | optionale PWA-/Home-Screen-Aktivierung ist V1; keine native App ist Pflicht | aeltere Customer-Flow-Aussagen |
-| Stripe unbestimmt spaeter oder nur V2 | Stripe Staging/Billing ist Austria-Launch-Gate 6; Stripe Live bleibt separat freigabepflichtig | `21`, `22`, Guardrails und Release-Snapshot vom 2026-09-01 |
+| Stripe unbestimmt spaeter oder nur V2; alter Gate-6-Plan | Stripe-Testintegration ist Folgegate; Anwendung TEST/LIVE UNBOUND, Live Billing BLOCKED. Keine Provideraktivierung aus einem Roadmap-Eintrag ableiten. | `21`, `22`, Guardrails und Release-Snapshot vom 2026-09-01 |
 | V1 bereits ohne offene Launch-Gates releasebereit | Legal, Activation UX, Password Visibility, UI/UX, Konsolidierung, Billing, Legal Final und Golden Path sind nach aktuellem Master noch zu auditieren | `V1_FINAL_RELEASE_STATUS.md` vom 2026-09-01 |
 | Alte technische Go-live-Liste als Priorisierungsreihenfolge | aktuelle neunstufige Austria-Launch-Reihenfolge | `21_PRODUCTION_GO_LIVE_PLAN.md` |
 | E-Mail-Bestaetigung fuer Production noch unentschieden | E-Mail-Bestaetigung, Resend und Recovery sind Production-Pflicht | `21_PRODUCTION_GO_LIVE_PLAN.md` |

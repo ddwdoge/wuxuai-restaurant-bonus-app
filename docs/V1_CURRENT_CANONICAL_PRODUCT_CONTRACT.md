@@ -1,6 +1,85 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-## Phase 7C.6B5 – Platform-Admin-Billing-Readiness LOCAL CODE LOCK (2026-09-23)
+## Aktueller Integrationsstand – 2026-09-23
+
+Kanonischer Branch: `codex/v1-release-integration`; gepruefter Basis-HEAD
+vor diesem Dokumentationsabgleich:
+`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`. Der letzte eingecheckte
+Staging-Nachweis belegt Migrationen **165/165** und Platform-Admin-Billing-
+Readiness als **STAGING LOCK**; die positive Pending-Registrierung auf Staging
+bleibt ausdruecklich ungeprueft. `WUXUAI Digital & Trading GmbH` ist als
+operative Verkaeuferin, SaaS-Vertragspartnerin und Rechnungsausstellerin
+geplant (`PLANNED`), aber noch nicht gegruendet/verifiziert. WU & XU Group
+GmbH ist IP-, Marken-, Domain- und Designinhaberin sowie Lizenzgeberin,
+nicht Bonus-Kunden-Rechnungsausstellerin. Stripe
+TEST/LIVE sind im Anwendungssystem `UNBOUND`; Live Billing, AT + PRO und
+Production bleiben `LOCKED`/`BLOCKED`.
+
+Der Founder berichtet ein vorhandenes Stripe-Sandbox-Konto und vier manuell
+angelegte Sandbox-Produkte/Monatspreise (BASIC 59, PRO 149, Offer Add-on 19,
+Customer Add-on 29 EUR). Diese externen Objekte wurden in diesem
+Dokumentationsaudit **nicht** unabhaengig inventarisiert; es gibt weiterhin
+keine App-Price-Bindings, Checkout-/Webhook- oder Live-Autoritaet.
+
+Der aktuelle Detailstatus steht in `V1_CURRENT_IMPLEMENTATION_STATUS.md`, der
+operative Einstieg fuer ein zweites Konto in `CODEX_SECOND_ACCOUNT_HANDOFF.md`.
+Die nachfolgenden datierten Phase-Abschnitte sind historische Gate-Snapshots;
+ihre damaligen LOCAL-/NOT-STAGING-Aussagen sind **nicht** der heutige Status.
+
+### Aktueller Founder-Vertrag und offene Grenzen
+
+- BASIC: 59 EUR netto/Monat, 5 Angebote und 3.000 aktive eindeutige
+  Kundenkonten innerhalb der jeweils zurueckliegenden 365 Tage. PRO:
+  149 EUR netto/Monat, 15 Angebote und 15.000 solche Kundenkonten; nie
+  unbegrenzt. Serverzeitgebundenes Intervall `[as_of - 365 Tage, as_of)`.
+- Offer Add-on: +5 Angebote fuer 19 EUR netto/Monat je Einheit. Customer
+  Add-on: +5.000 Kunden fuer 29 EUR netto/Monat je Einheit. Mehrere Einheiten
+  sind moeglich, aber nur bestaetigter Providerstatus zaehlt. Kein Add-on-
+  Trial; UI-Auswahl erteilt kein Entitlement.
+- Neue Registrierung: selected_plan BASIC, PENDING_ACTIVATION, nur Setup und
+  Preview; keine produktiven QR-/Live-Aktionen, keine Trial-Zeiten, aktive
+  Entitlements oder Kapazitaetsfreigabe. Der erste volle BASIC-/PRO-
+  Kalendermonat ist erst nach KYB, Country Release, aktueller Legal-/Preis-
+  Annahme, Owner-/Tenant-Bindung, Zahlungsmittel und signiertem,
+  idempotent verarbeitetem Providerereignis kostenlos. Historische Trials
+  bleiben unveraendert; Legacy-Verlaengerung erzeugt keinen neuen Trial.
+- AT zuerst, aber derzeit LOCKED; weitere EU-Laender vorbereitet und
+  gesperrt. Die Schweiz ist nicht Bestandteil dieses EU-Launchumfangs.
+  PRO bleibt LOCKED. Downgrade/Add-on-Ende loescht keine Businessdaten;
+  Over-Limit blockiert nur neue kapazitaetssteigernde Aktionen. Server-
+  Resolver/Enforcement, nicht UI-Werte, sind die Autoritaet.
+- Capacity-Warnungen: 80 %, 90 %, 100 % und OVER_LIMIT; App-/E-Mail-
+  Vertrag, ohne automatischen Kauf oder Planwechsel. Die allgemeine reale
+  Mailzustellung und ihr Scheduler sind **nicht freigegeben**. Lediglich
+  isolierte synthetische Staging-Mail und Einmal-Scheduler sind nachgewiesen.
+- V1 verlangt keine Pflicht-MFA fuer Customer, Staff oder Owner. Platform
+  Admin braucht vor Production TOTP-MFA/AAL2. Passkeys sind V2/V3, zunaechst
+  optional; SMS ist nur spaeterer Fallback. Stripe, Supabase, Cloudflare,
+  Git und Zoho sind mit Provider-2FA zu schuetzen.
+- Stripe soll spaeter System of Record fuer Rechnungen, Zahlungen und
+  Gutschriften werden; die Plattform spiegelt/reconciliert, erzeugt keine
+  zweite Kundenrechnung. Finance-/Reconciliation-Dashboard ist ein Upgrade
+  nach Veroeffentlichung. Steuer-/Reverse-Charge-, Checkout-, Webhook-,
+  Refund- und Proration-Regeln sind noch nicht implementiert/entschieden.
+  Stripe Connect wird nicht fuer Restaurant-Auszahlungen verwendet.
+
+### Phase 7D – Founder-Zielentscheidungen, DEFERRED / NOT IMPLEMENTED
+
+- KYB: zuerst Land waehlen, länderspezifisches Onboarding, anschliessend
+  PENDING_VERIFICATION/PENDING_ACTIVATION. Setup/Demo waehrend Pending,
+  produktive Nutzung erst nach Verifizierung. Digitale oder manuelle
+  Firmenpruefung; manuelle Nachweise umfassen Unternehmen, Identitaet und
+  Vertretungsbefugnis/Vollmacht. Platform-Admin-Pruef-/Korrektur-/Freigabe-
+  funktionen und Datenschutz-/Loeschfristen fuer KYB-Dokumente sind Folgearbeit.
+- Geplanter Einloesevertrag: Kunde startet 15-minuetige, serverseitig an
+  restaurant_id gebundene Anforderung. Endgueltige Bestaetigung nur entweder
+  mit restaurantgebundenem taeglich wechselndem PIN auf dem Kundengeraet
+  oder durch Staff im Mitarbeiterportal; niemals rein kundenseitig.
+  Parallele Bestaetigung idempotent, Ablauf nach 15 Minuten, keine
+  Cross-Restaurant-Bestaetigung. Umsetzung Phase 7D bzw. teilweise V2;
+  bestehende Einloeseflows dadurch nicht als bereits migriert behaupten.
+
+## Phase 7C.6B5 – historischer LOCAL CODE LOCK vor Staging (2026-09-23)
 
 Lokal implementiert und geprueft: Die Platform-Admin-Ansicht zeigt den
 serverseitigen BASIC-/PRO-/Add-on-Katalog, den geplanten Seller, ungebundene
@@ -24,12 +103,13 @@ fehlenden Datensatz als PENDING_ACTIVATION ohne Trial anlegen. Der
 BEFORE-INSERT-Guard bleibt fail-closed.
 
 Die lokalen Fresh-/Upgrade-/Repeat-, Rollen-, Parallelitaets-, Browser- und
-Code-Gates sind im Phase-7C.6B5-Bericht belegt. Dies ist ausschliesslich ein
-lokaler Code Lock; Migration 165 ist nicht auf Staging angewendet. Seller,
-Stripe, Production und kommerzielle Aktivierung bleiben unfreigegeben.
+Code-Gates sind im Phase-7C.6B5-Bericht belegt. **Historischer Zeitpunkt:**
+Damals war Migration 165 noch nicht auf Staging angewendet. Der spaetere
+7C.6B5B-Bericht belegt 165/165 und Staging Lock. Seller, Stripe, Production
+und kommerzielle Aktivierung bleiben unfreigegeben.
 
 
-## Phase 7C.6B3 – Canonical Billing Catalog LOCAL CODE LOCK (2026-09-23)
+## Phase 7C.6B3 – historischer Billing Catalog LOCAL CODE LOCK (2026-09-23)
 
 Dieser Abschnitt ersetzt aktive 99-EUR-/Unlimited- und Registrierungs-Trial-
 Aussagen. Historische Evidenz und bestehende Verträge bleiben unverändert.
@@ -115,10 +195,9 @@ Migrationen 001–162 bytegleich. Der geprüfte Umfang ist mit
 und Provideraktivierung benötigen eigene Freigabe. Abschlussbericht:
 `docs/reports/2026-09-22_PHASE_7C_6B2_PENDING_ACTIVATION_REPORT.md`.
 
-Status: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**
+Historischer Status-Snapshot vom 2026-09-01: **V1 FINAL LOCK / READY FOR FOUNDER MAIN MERGE**; nicht heutiger Integrations- oder Production-Status.
 Stand: 2026-09-01
-Authoritative Branch: `codex/v1-canonical-recovery`
-Recovery Branch: `codex/v1-canonical-recovery`
+Damals autoritativer Recovery-Branch: `codex/v1-canonical-recovery`
 
 Dieses Dokument beschreibt den nach Source, Tests, Development/Test-Live-Gates
 und physischen Founder-Gates verifizierten V1-Stand. Historische Reports

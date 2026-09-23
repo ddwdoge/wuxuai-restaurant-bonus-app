@@ -87,7 +87,8 @@ V1 ist:
 Ein Restaurant
 Ein Standort
 Deutsch
-3 Kalendermonate kostenlos
+Neue Registrierung PENDING_ACTIVATION, ohne Trial
+Setup/Preview erlaubt; produktive Live-Aktionen blockiert
 QR-basiert
 ohne Kassensystem
 ohne SMS/WhatsApp
@@ -906,7 +907,8 @@ Fragen:
 5. Welche Funktion wurde genutzt?
 6. Welche Funktion wurde ignoriert?
 7. Wo entstand Supportbedarf?
-8. Würde Restaurant nach drei Kalendermonaten 59 € pro Monat exkl. USt. zahlen?
+8. Wuerde das Restaurant nach einem kuenftig providerbestaetigten kostenlosen
+   BASIC-Kalendermonat 59 € netto/Monat zahlen?
 9. Welche V1-Fixes sind Pflicht?
 10. Welche Ideen gehören V2?
 
@@ -966,15 +968,21 @@ Entscheidung:
 
 ## 28. Pilot und Zahlungsmodell
 
-V1 Testphase:
+Aktueller Registrierungs- und Trial-Testvertrag:
 
 ```text
-3 Kalendermonate kostenlos
-Keine Kreditkarte
-Keine Nachzahlung
+Registrierung: PENDING_ACTIVATION, keine Trialdaten
+Pending: nur Setup und Preview; produktive Live-Aktionen blockiert
+BASIC/PRO: ein kostenloser Kalendermonat erst nach verifizierter Provideraktivierung
+Add-ons: kein Trial
+Rechtmaessige historische Trials bleiben unveraendert
 ```
 
-Vor Ablauf:
+Der positive Provideraktivierungs- und Pending-Staging-Flow ist noch nicht
+ausgefuehrt und braucht separate Freigabe. Zahlungsmittel/Checkout duerfen
+nicht durch einen Pilot-UI-Zustand ersetzt werden.
+
+Vor Ablauf eines spaeter tatsaechlich gestarteten Trials:
 
 Erfolgsbericht:
 

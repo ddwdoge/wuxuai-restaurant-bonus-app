@@ -13,7 +13,10 @@ PRO ist begrenzt. Ein Kalendermonat Trial erst nach verifizierter
 Provideraktivierung, einmal pro Unternehmen, ohne Add-ons. Registrierung bleibt
 PENDING_ACTIVATION. Seller WUXUAI Digital & Trading GmbH: PLANNED; LIVE gesperrt.
 WU & XU Group GmbH ist IP-Lizenzgeberin, nicht Rechnungsausstellerin.
-Keine Stripe-Anbindung in dieser lokalen Katalogphase.
+Stripe-Sandbox-Konto und vier manuell erstellte Sandbox-Produkte/Monatspreise
+werden vom Founder berichtet; diese externe Inventur ist hier nicht unabhaengig
+verifiziert. Im Anwendungssystem sind TEST und LIVE weiterhin UNBOUND; Checkout,
+Webhooks und Billing Portal sind nicht implementiert. Live Billing bleibt BLOCKED.
 
 Die folgenden älteren Abschnitte sind historische Planungs-/Altvertrags-Evidenz,
 keine aktive Autorität für neue Preise, Trialstarts oder Providerintegration.
@@ -41,7 +44,7 @@ separat freigegeben sind.
 
 Status: **LOCK**
 
-## Founder-Launchentscheidung 2026-09-10 - CURRENT
+## Founder-Launchentscheidung 2026-09-10 - HISTORICAL / SUPERSEDED
 
 **SUPERSEDED fuer die Launch-Reihenfolge:** Stripe ist nicht mehr pauschal ein
 unbestimmter spaeterer Block. `Stripe Staging / Billing` ist Gate 6 des

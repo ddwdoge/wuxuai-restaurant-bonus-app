@@ -93,7 +93,13 @@ V1 bleibt fokussiert:
 
 - Restaurant/Café
 - ein Standort
-- 3 Kalendermonate kostenlos
+- Neue Registrierung: PENDING_ACTIVATION ohne Trial oder Live-Entitlements;
+  Setup/Preview erlaubt, produktive Aktionen blockiert.
+- BASIC: 59 EUR netto/Monat, 5 Angebote, 3.000 aktive Kunden in 365 Tagen;
+  PRO: 149 EUR netto/Monat, 15 Angebote, 15.000 aktive Kunden, nicht unbegrenzt.
+- BASIC-/PRO-Trial: ein voller kostenloser Kalendermonat erst nach verifizierter
+  Provideraktivierung und bestandenen Country-, Legal- und KYB-Gates;
+  Add-ons ohne Trial. Historische rechtmaessige Trials bleiben erhalten.
 - keine SMS
 - kein WhatsApp
 - keine Kassa-Integration

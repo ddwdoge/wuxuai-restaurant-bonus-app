@@ -5,6 +5,14 @@
 
 Status: **LOCK**
 
+**Aktueller Billing-Vertrag (23.09.2026):** Neue Registrierung erzeugt
+PENDING_ACTIVATION ohne Trial und ohne aktives Entitlement. BASIC/PRO erhalten
+erst nach KYB-, Country-, Legal-, Zahlungsmittel- und bestaetigter
+Provideraktivierung einen vollen kostenlosen Kalendermonat. Production und
+Live Stripe sind weiterhin gesperrt. Historische Trial- und Release-Aussagen
+in diesem Betriebsplan sind insoweit SUPERSEDED; bestehende Trials bleiben
+unveraendert. Siehe `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+
 Aktueller Austria-Launch-Scope und die verbindliche Reihenfolge stehen in
 `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Aeltere Reihenfolgen in diesem
 Betriebsplan bleiben als Detailcheckliste erhalten, sind aber fuer die
@@ -196,7 +204,9 @@ Staging muss zeigen:
 - Customer Portal funktioniert,
 - Staff Portal funktioniert,
 - Restaurant Portal funktioniert,
-- Trial Registrierung funktioniert.
+- Pending-Registrierung erzeugt keinen Trial; verifizierte Provideraktivierung
+  startet nach Country-, Legal- und KYB-Gates exakt einen kostenlosen
+  BASIC-/PRO-Kalendermonat. Add-ons haben keinen Trial.
 
 ### 5.3 Flows
 
@@ -642,25 +652,28 @@ Prüfen:
 
 ## 13. Trial- und Abo-Go-Live Check
 
-### 13.1 V1 Trial
+### 13.1 Neuer BASIC-/PRO-Trial
 
 Regel:
 
 ```text
-3 Kalendermonate kostenlos
-Keine Kreditkarte
+Ein voller Kalendermonat kostenlos ab bestaetigter Provideraktivierung
+Zahlungsmethode vor Aktivierung erforderlich
 Keine Nachzahlung
 ```
 
 ### 13.2 branch_subscriptions
 
-Nach Registrierung:
+Nach neuer Registrierung:
 
-- status = trialing
-- trial_started_at gesetzt
-- trial_ends_at = now + 3 Kalendermonate
+- status = PENDING_ACTIVATION
+- trial_started_at und trial_ends_at = NULL
 - branch_id vorhanden
 - organization_id vorhanden
+
+TRIALING und Trial-Zeiten duerfen erst ein signiertes, idempotent verarbeitetes
+Providerereignis nach den verbindlichen Aktivierungsgates setzen. Historische
+Subscriptions und Trial-Zeiten bleiben unveraendert.
 
 ### 13.3 Nach Trial
 

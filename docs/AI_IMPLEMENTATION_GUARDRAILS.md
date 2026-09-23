@@ -21,7 +21,7 @@ wird als `CURRENT CODE/CONTRACT MISMATCH` und `NOT READY` gemeldet.
   7. historische Reports und Changelog
 - Der permanente Git-Stand ist die technische Arbeitsgrundlage. Historische
   Reports und Pruef-ZIPs sind Nachweise, aber keine aktive Spezifikation.
-- Fuer die laufende V1-Recovery ist `codex/v1-canonical-recovery` der
+- Fuer die laufende V1-Release-Integration ist `codex/v1-release-integration` der
   kanonische Arbeitsbranch. Der bewusste Production-Release erfolgt spaeter
   ueber `main` nach Founder-Freigabe.
 - Aktuelle Produktregeln stehen zentral in
@@ -195,7 +195,7 @@ Quellen: `AGENTS.md` Abschnitte 12.8 bis 13;
 
 ## 10. Git Safety
 
-- Im aktuellen V1-Recovery-Zyklus auf `codex/v1-canonical-recovery` arbeiten;
+- Im aktuellen V1-Release-Integrationszyklus auf `codex/v1-release-integration` arbeiten;
   `main` bleibt dem bewussten Production-Release vorbehalten.
 - Vor Aenderungen Branch, HEAD, Remote-Bezug und Worktree-Status pruefen.
 - Bestehende, nicht zur Aufgabe gehoerende Aenderungen nicht ueberschreiben,

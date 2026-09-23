@@ -79,7 +79,14 @@ Bonus V1.
 
 Status: LOCK
 
-## LOCK-Ergänzung 2026-08-30: V1 Commercial Contract
+## Historischer Commercial Contract vom 2026-08-30 – SUPERSEDED
+
+Die folgende Altentscheidung ist ausschliesslich historische Evidenz. Fuer
+neue Registrierungen, Trial, Preise und Entitlements gilt seit 2026-09-23
+`V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`: PENDING_ACTIVATION ohne Trial,
+BASIC 59 EUR, PRO 149 EUR, ein voller Kalendermonat nach bestaetigter
+Provideraktivierung; Add-ons ohne Trial. Gespeicherte Alt-Trials bleiben
+unveraendert. Keine untenstehende Altregel autorisiert Stripe/Production.
 
 - Die kostenlose Testphase beträgt drei Kalendermonate.
 - Danach kostet das Basispaket `WUXUAI Bonus V1` 59 EUR pro Monat exkl. USt.

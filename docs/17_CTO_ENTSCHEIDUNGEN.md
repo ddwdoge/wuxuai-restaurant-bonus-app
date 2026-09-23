@@ -3,6 +3,26 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## Founder-Entscheidung 2026-09-24: aktueller Billing-/Trial-Vertrag
+
+Diese Entscheidung ersetzt fuer **neue** Betriebe alle untenstehenden
+Drei-Monats-, Trial-bei-Registrierung-, 99-EUR-PRO- und Unlimited-Aussagen.
+Neue Registrierung erzeugt PENDING_ACTIVATION ohne Trial und Live-Entitlements;
+Setup/Preview ist erlaubt, produktive QR-, Punkte-, Einloese- und
+Kommunikationsaktionen bleiben blockiert. BASIC: 59 EUR netto/Monat,
+5 Angebote, 3.000 aktive Kunden; PRO: 149 EUR netto/Monat, 15 Angebote,
+15.000 aktive Kunden, nie unbegrenzt. Offer Add-on: +5 Angebote fuer
+19 EUR netto/Monat je Einheit; Customer Add-on: +5.000 Kunden fuer
+29 EUR netto/Monat je Einheit. Kundenfenster: exakt rollierende 365 Tage.
+BASIC/PRO erhalten genau einen kostenlosen Kalendermonat erst nach
+Country-, Legal-, KYB- und verifizierter Provideraktivierung; Add-ons
+haben keinen Trial. Bestehende rechtmaessige Trials bleiben geschuetzt.
+Seller WUXUAI Digital & Trading GmbH ist PLANNED, Stripe TEST/LIVE UNBOUND;
+AT + PRO und Production bleiben LOCKED. Verbindliche Detailquelle:
+`V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`. Die aelteren APPROVED-/FIX-
+Abschnitte bleiben historische Entscheidungs-Evidenz, nicht aktueller
+Billing-Vertrag.
+
 ## 2026-08-31 - Standortland als lokalisierte ISO-Auswahl
 
 - Das freie zweistellige Landfeld unter `Standort & Restaurantsuche` wird
@@ -2429,9 +2449,9 @@ Restaurantkontext` präzisiert beziehungsweise ersetzt.
 - RLS, Restaurant-/Filialbindung, Reward-Eligibility und Punkteberechnung
   werden nicht gelockert oder clientseitig entschieden.
 
-## CTO-Entscheidung 2026-08-30: V1 Commercial Contract
+## Historische CTO-Entscheidung 2026-08-30: V1 Commercial Contract – SUPERSEDED
 
-🟢 **APPROVED / V1 / ERSETZT FRÜHERE TRIAL- UND PREISANGABEN**
+🟢 **DAMALS APPROVED / HEUTE SUPERSEDED FUER NEUE REGISTRIERUNGEN**
 
 - Die V1-Testphase beträgt drei Kalendermonate. Neue Vertragszeiträume werden
   kalenderbasiert und nicht als feste Tagesanzahl berechnet.

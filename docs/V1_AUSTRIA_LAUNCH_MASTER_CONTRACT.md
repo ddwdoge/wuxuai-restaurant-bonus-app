@@ -1,8 +1,16 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
 Status: **CURRENT FOUNDER-APPROVED MASTER CONTRACT**
-Stand: **2026-09-12**
+Stand: **2026-09-23 (kanonische Preis-/Capacity-Reconciliation)**
 Markt: **Oesterreich / Restaurant V1**
+
+**Aktueller Vorrang (23.09.2026):** Fuer Preise, Capacity, Trial,
+Pending-Aktivierung, Seller und Country Gate gilt
+`V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`. Die 2026-09-12-Roadmap unten ist
+historische Planung, keine heutige Commercial-/Production-Freigabe. 99 EUR
+PRO, unbegrenzte Angebote, Trial bei Registrierung und die Schweiz als Teil
+des EU-Rollouts sind **SUPERSEDED**. AT + PRO bleiben LOCKED. Siehe
+`V1_CURRENT_IMPLEMENTATION_STATUS.md` fuer den tatsaechlichen Phasenstand.
 
 Founder-Entscheidung vom 2026-09-12: **FOUNDER PRODUCT ROADMAP LOCK**.
 Basic, Pro und Catalog werden vor dem Launch technisch fertiggestellt;
@@ -387,10 +395,10 @@ Country-, PRO-Phase-1-, Password-, Phase-4- und Phase-5-Final-Locks bleiben erha
 | Phase | Verbindlicher Umfang | Abschlussgrenze |
 | --- | --- | --- |
 | 6 | Compact Mobile UI fuer Customer, Staff, Owner, Auth und Platform Admin; alle Drawer/Bottom Sheets | Mobile Final Lock; keinerlei Business-, Security-, QR-, PIN-, Rechte- oder Datenbankaenderung |
-| 7 | Pro Feature Completion: Unlimited Active Offers, Offer Notifications, Reward-Reached Notifications, Consent, Owner-Plananzeige, kompletter Platform-Pro-Schalter, Ablauf und sicherer Downgrade | Technisch fertig; Server Gate geschlossen, kein oeffentlicher Kauf |
+| 7 | PRO und zentrale Capacity: 15 Angebote und 15.000 aktive eindeutige Kunden in 365 Tagen; Warnungen, Owner-Plananzeige und sicherer Downgrade | Staging-Vertraege vorhanden; AT + PRO LOCKED, kein oeffentlicher Kauf |
 | 8 | Catalog Add-on: sichere Uploads, Quoten, Publikation, Customer-Anzeige, Deaktivierung mit Datenerhalt, eigene Platform-Steuerung | Technisch fertig; Server Gate geschlossen, kein oeffentlicher Kauf |
-| 9 | Stripe und einheitliche Add-on-Steuerung: Basic/Pro/Catalog Subscription Item im Test Mode, Webhooks und Entitlement-Synchronisierung | Keine eigenmaechtig erstellten oder freigegebenen Live-Preise; Stripe Live bleibt bis Legal, Betreiber und formaler Billing-Freigabe aus |
-| 10 | Austria Basic Launch Gate: AT, Basic 59 EUR/Monat plus USt.; Pro/Catalog-Kauf aus; DE/CH/FR/IT/ES Prepared and Blocked | Legal/Readiness, Golden Path und alle Release-Nachweise; Production und kommerzieller Start nur nach ausdruecklicher finaler Founder-Freigabe |
+| 9 | Stripe-Testintegration und versionierte BASIC-/PRO-/Offer-/Customer-Add-on-Bindungen, Checkout, Webhooks und Entitlement-Synchronisierung | Anwendung TEST/LIVE UNBOUND; kein Checkout; Live bleibt bis Legal, Seller und formaler Billing-Freigabe aus |
+| 10 | Austria Basic Launch Gate: AT aktuell LOCKED; Basic 59 EUR netto/Monat erst nach gesonderter Freigabe; weitere EU-Laender vorbereitet und gesperrt | Legal/Readiness, Golden Path und Release-Nachweise; Production und kommerzieller Start nur nach finaler Founder-Freigabe |
 
 Phase 6 umfasst insbesondere inhaltsgetriebene Drawer-Hoehen, keinen
 unproduktiven Leerraum, eindeutige primaere/sekundaere Aktionen,
@@ -418,9 +426,11 @@ Austria Restaurant V1 LIVE
 -> Dienstleistungen
 -> Oesterreich stabilisieren
 -> Deutschland
--> DACH
 -> EU
 ```
+
+Die Schweiz ist nicht Bestandteil dieses EU-Launchumfangs und bedarf einer
+gesonderten spaeteren Entscheidung.
 
 Es gibt genau einen Core. Separate geklonte Apps je Branche sind nicht erlaubt.
 
@@ -487,16 +497,18 @@ separat nachweisen.
 ## 15. Basic, Pro und eigenstaendige Add-ons – Founder-Zielvertrag
 
 Die Anwendung bleibt `app.bonus.wuxuaisbi.com`. Der erste kommerzielle Release
-erlaubt ausschliesslich AT-Registrierungen. DE, CH, FR, IT und ES bleiben
+soll AT zuerst freigeben; aktuell bleibt AT LOCKED. DE, FR, IT und ES bleiben
 technisch vorbereitet und oeffentlich gesperrt; Oeffnung pro Land erst nach
-dessen eigener Legal-/Readiness-Abnahme. UI-Sprache ist keine Laenderfreigabe.
+dessen eigener Legal-/Readiness-Abnahme. Die Schweiz gehoert nicht zum
+EU-Launchumfang. UI-Sprache ist keine Laenderfreigabe.
 
 | Produkt | Preisziel | Kommerzieller Erststart | Funktionsziel |
 | --- | --- | --- | --- |
-| Basic | 59 EUR/Monat plus USt. | Austria offen, erst nach Phase 10 und Founder-Freigabe | Punkte, Einloesungen, Geschenke, Staff-Flows, Owner-Verwaltung, maximal 5 Active Offers |
-| Pro | 99 EUR/Monat plus USt. | Technisch fertig, Kauf und Nutzung serverseitig gesperrt | Basic plus unbegrenzte Active Offers, Offer Notifications, Reward-Reached Notifications und zugehoerige Marketing-/Plansteuerung |
-| Catalog Add-on | Vorlaeufig 5 EUR/Monat/Standort; Endpreis nach Nutzungsdaten | Technisch fertig, Kauf und Nutzung serverseitig gesperrt | PDF-/JPG-/JPEG-/PNG-Speisekarte hochladen, publizieren und fuer Kunden anzeigen |
-| Premium/Business | Spaeter festzulegen; Planungsreferenz 199 EUR/Monat | Nicht entwickeln oder verkaufen | Spaetere Kombination aus Pro und mehreren reifen Add-ons |
+| Basic | 59 EUR netto/Monat | AT derzeit LOCKED | 5 Angebote; 3.000 aktive eindeutige Kunden innerhalb der jeweils zurueckliegenden 365 Tage |
+| Pro | 149 EUR netto/Monat | AT + PRO derzeit LOCKED | 15 Angebote; 15.000 aktive eindeutige Kunden innerhalb der jeweils zurueckliegenden 365 Tage; nicht unbegrenzt |
+| Offer Add-on | 19 EUR netto/Monat je Einheit | Keine automatische Aktivierung | +5 Angebote je Einheit; mehrere Einheiten moeglich |
+| Customer Add-on | 29 EUR netto/Monat je Einheit | Keine automatische Aktivierung | +5.000 Kunden je Einheit; mehrere Einheiten moeglich |
+| Catalog/Premium | Preis und Freigabe spaeter gesondert zu entscheiden | Nicht als aktueller Billing-Katalog verkaufen | Historische Roadmap-Idee, keine aktive Price-Bindung |
 
 Grundlegende UX-, Sicherheits- und Performanceverbesserungen bleiben in
 bestehenden Paketen enthalten. Nur Module mit eigenstaendigem Wert oder
@@ -509,16 +521,15 @@ Kuenftige Bundles beseitigen die separate Kaufbarkeit reifer Add-ons nicht.
 - Offer Notifications und Reward-Reached Notifications deaktiviert.
 - Catalog deaktiviert, ausser nach einer zukuenftig freigegebenen separaten
   Catalog-Berechtigung; Pro allein autorisiert Catalog niemals.
-- Kundenanzahl als konfigurierbare Messung, Warnung und Upgrade-Hinweis
-  vorbereiten. Kein ploetzlicher Stopp normaler Punktebuchung oder Einloesung
-  beim Erreichen eines Schwellenwerts.
-- 3.000 Kunden sind, falls beibehalten, ausschliesslich ein Soft Limit fuer
-  Upgrade-Hinweise. Finaler Schwellenwert erst nach Erstmarkt-Daten; kein neues
-  hartes Transaktionslimit und keine Aenderung vorhandener Missbrauchsschutzlimits.
+- Kundenkapazitaet: 3.000 aktive eindeutige Kunden im serverzeitgebundenen,
+  halboffenen 365-Tage-Fenster. Neue kapazitaetssteigernde Aktionen werden
+  serverseitig blockiert, sobald das wirksame Limit erreicht ist. Bestehende
+  Daten bleiben erhalten; Downgrade und Add-on-Ende loeschen nichts.
 
 ### 15.2 Pro
 
-- Unbegrenzte Active Offers sowie beide genannten Notification-Arten.
+- 15 Active Offers und 15.000 aktive eindeutige Kunden im 365-Tage-Fenster;
+  weitere Kapazitaet nur durch wirksame Add-on-Einheiten.
 - Kunden-Consent und Abmeldung bleiben fuer Notifications verpflichtend.
 - Owner sehen aktuellen effektiven Plan, Funktionen, Beginn und Ablauf klar.
 - Platform Admin schaltet die vollstaendige Pro-Entitlement-Gruppe mit einem
@@ -532,6 +543,11 @@ Kuenftige Bundles beseitigen die separate Kaufbarkeit reifer Add-ons nicht.
   `hoehere Marketingfaehigkeit` ableiten.
 
 ## 16. Catalog Add-on – eigenstaendiger V1-Zielumfang
+
+**Historische Roadmap, nicht aktueller Billing-Katalog:** Preis, Umsetzung
+und kommerzielle Freigabe des Catalog-Moduls sind gesondert zu entscheiden.
+Die bereits implementierten Capacity-Add-ons sind Offer +5 und Customer
++5.000; siehe den aktuellen kanonischen Produktvertrag.
 
 - PDF, JPG, JPEG und PNG; maximal 10 MB pro Datei.
 - Vorlaeufig 50 MB Gesamtspeicher pro Standort, als konfigurierbares Entitlement.
@@ -579,11 +595,16 @@ Plan Entitlements
   weder kaufbar noch nutzbar. Administrative technische Tests sind keine
   kommerzielle Freigabe.
 
-## 18. Erste drei Monate nach Launch
+## 18. Historischer Drei-Monats-Beobachtungsplan nach Launch
+
+Die folgenden Punkte sind eine datierte Roadmap-Idee, nicht der aktuelle
+Preis-, Capacity- oder Trial-Vertrag. PRO-Kapazitaet und Capacity-Add-on-
+Preise sind inzwischen kanonisch festgelegt; Catalog bleibt gesondert.
 
 1. Etwa drei Monate reale Restaurantnutzung, Speicher-, Notification-, Angebots-
    und Supportkosten auswerten.
-2. Finale Pro-Kapazitaet und kundenbezogene Upgrade-Regeln festlegen.
+2. Historisch geplante Pro-Kapazitaet und Upgrade-Regeln; heute durch den
+   kanonischen 15-Angebote-/15.000-Kunden-Vertrag ersetzt.
 3. Catalog-Endpreis anhand dieser Daten bestimmen: 5 EUR, 9 EUR oder anderer
    Betrag; die 5-EUR-Planung ist kein bereits angelegter Live-Preis.
 4. Pro und Catalog nach bewusster Entscheidung ueber Stripe und Platform-
@@ -592,14 +613,15 @@ Plan Entitlements
 5. Naechste Add-ons anhand echten Bedarfs waehlen; bei 3–5 reifen Add-ons
    Premium-/Business-Bundles entwerfen und Einzelkauf erhalten.
 
-Dieser Beobachtungszeitraum ist nicht mit der bestehenden individuellen
-Drei-Kalendermonats-Testphase zu verwechseln und aendert keine laufenden Trials.
+Dieser Beobachtungszeitraum ist nicht mit dem neuen einmonatigen BASIC-/PRO-
+Trial nach bestaetigter Provideraktivierung zu verwechseln. Historische
+Drei-Kalendermonats-Trials bleiben unveraendert.
 
 ## 19. Pflichtabnahme je Phase 6–10
 
 - Country, PRO Phase 1, Global Password Visibility, Phase 4 UI/UX Consistency
   und Phase 5 Operations & Health Center: bestehende Final Locks erhalten.
-- Country Gate: AT Active; DE/CH/FR/IT/ES Prepared and Blocked. Technische
+- Country Gate: AT derzeit LOCKED; weitere EU-Laender Prepared and Blocked. Technische
   Country-Aktivierung ist keine automatische Production-/Commercial-Freigabe.
 - DE/EN/FR/IT/ES/ZH/KO und 320/360/375/390/430/768 px plus Desktop bestehen.
 - Business-/Security-Vertraege, RLS und Cross-Tenant-Isolation erhalten;
@@ -613,6 +635,9 @@ Drei-Kalendermonats-Testphase zu verwechseln und aendert keine laufenden Trials.
   behalten. Keine fremden Prozesse beenden.
 
 ## 20. Zielzustand versus heutiger Nachweis
+
+**Historischer Snapshot vom 2026-09-12.** Aktueller Staging-Stand und
+offene Restgates stehen in `V1_CURRENT_IMPLEMENTATION_STATUS.md`.
 
 Ziel: Basic, Pro und Catalog technisch bereit; kommerziell ausschliesslich
 Austria Basic; spaetere Freigabe der beiden Upgrades nach realen Daten ueber
