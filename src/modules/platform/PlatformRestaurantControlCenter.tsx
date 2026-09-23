@@ -16,6 +16,8 @@ import {
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { usePendingActivationMessages } from "../tenant/pendingActivation";
+import { useBillingReadiness } from "./useBillingReadiness";
+import { billingReadinessMessages } from "./billingReadinessMessages.mjs";
 import type {
   PaymentStatus,
   PlatformMetric,
@@ -136,7 +138,10 @@ export function PlatformRestaurantControlCenter({
   saving,
   view,
 }: PlatformRestaurantControlCenterProps) {
-  const { translateKey } = useI18n();
+  const { translateKey, language } = useI18n();
+  const billingText = billingReadinessMessages(language);
+  const readiness = useBillingReadiness(restaurant.id);
+  const billingActions = readiness.data?.businesses.find(item => item.restaurant_id === restaurant.id)?.actions;
   const pendingMessages = usePendingActivationMessages();
   const canWrite = permittedWrite && restaurant.subscription_status !== "pending_activation";
   const [pendingAction, updatePendingAction] = useState<(PendingAction & { restaurantId: string; idempotencyKey: string }) | null>(null);
@@ -183,12 +188,14 @@ export function PlatformRestaurantControlCenter({
   async function confirmAction() {
     if (!pendingAction || !canWrite || saving || pendingAction.restaurantId !== account.restaurant_id
       || confirmation !== "CONFIRMED" || reason.trim().length < 10) return;
+    if (pendingAction.payload.trialExtensionDays ? !billingActions?.extend_trial : !billingActions?.reduce_access) return;
     const action = pendingAction;
     setSubmitted(true);
     try {
       await onAction(action.actionLabel, { ...action.payload, restaurantId: action.restaurantId,
         reason: reason.trim(), confirmation, idempotencyKey: action.idempotencyKey });
       setPendingAction(null);
+      readiness.refresh();
     } catch {
       // The page-level alert retains the safe error message and the drawer stays open.
     }
@@ -314,7 +321,13 @@ export function PlatformRestaurantControlCenter({
       {view === "plans" || view === "system" ? <div className="platform-control-columns">
         {view === "plans" ? <section className="platform-control-section">
           <div className="section-heading"><h3>Vertrag verwalten</h3><p className="muted">Restaurantbetrieb und Veröffentlichung werden getrennt im Bereich Support & Verwaltung gesteuert.</p></div>
-          {canWrite ? <div className="platform-actions"><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo aktivieren?", actionLabel: "Abo aktiviert", description: "Der SaaS-Vertragsstatus wird auf Aktiv gesetzt.", impact: "Es wird keine Stripe-Zahlung ausgelöst und kein Zahlungsstatus gesetzt.", payload: { subscriptionStatus: "active", reason: "Abo im WUXUAI Admin aktiviert" }})} type="button">Abo aktivieren</button><button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: "Abo pausieren?", actionLabel: "Abo pausiert", description: "Der SaaS-Vertragsstatus wird pausiert.", impact: "Restaurantdaten und Betriebsstatus bleiben erhalten.", payload: { subscriptionStatus: "paused", reason: "Abo im WUXUAI Admin pausiert" }})} type="button">Abo pausieren</button><button className="button secondary" disabled={saving || subscription.status !== "available"} onClick={() => setPendingAction({ title: "Testphase verlängern?", actionLabel: "Testphase verlängert", description: `Aktuelles Ende: ${formatDate(subscriptionValue?.trial_ends_at)}. Verlängerung: 14 Tage.`, impact: "Die bestehende Testphase wird über den freigegebenen Vertrag verlängert.", payload: { trialExtensionDays: 14, reason: "Testphase manuell um 14 Tage verlängert" }})} type="button">Testphase um 14 Tage verlängern</button></div> : <p className="muted">Nur Ansicht. Deine Plattformrolle darf keine Änderungen speichern.</p>}
+          <div className="platform-actions billing-legacy-actions" data-i18n-skip="true">
+            <p>{billingText.blocked}</p>
+            <p>{billingActions?.legacy_eligible ? billingText.legacy : billingText.trialBlocked}</p>
+            {!readiness.data ? <p role="status">{readiness.error ? billingText.error : billingText.loading}</p> : null}
+            {canWrite && billingActions?.reduce_access ? <button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: billingText.confirmTitle, actionLabel: billingText.pause, description: billingText.pause, impact: billingText.legacy, payload: { subscriptionStatus: "paused", reason: "" }})} type="button">{billingText.pause}</button> : null}
+            {canWrite && billingActions?.extend_trial ? <button className="button secondary" disabled={saving} onClick={() => setPendingAction({ title: billingText.confirmTitle, actionLabel: billingText.extend, description: billingText.extend, impact: billingText.legacy, payload: { trialExtensionDays: 14, reason: "" }})} type="button">{billingText.extend}</button> : null}
+          </div>
         </section> : null}
 
         {view === "system" ? <section className="platform-control-section">

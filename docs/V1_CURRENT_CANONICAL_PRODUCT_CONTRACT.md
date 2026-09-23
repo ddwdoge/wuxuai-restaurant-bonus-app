@@ -1,5 +1,34 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Phase 7C.6B5 – Platform-Admin-Billing-Readiness LOCAL CODE LOCK (2026-09-23)
+
+Lokal implementiert und geprueft: Die Platform-Admin-Ansicht zeigt den
+serverseitigen BASIC-/PRO-/Add-on-Katalog, den geplanten Seller, ungebundene
+TEST-/LIVE-Providerpreise und den ausstehenden Aktivierungszustand. Sie
+aktiviert weder Abonnements noch Zahlungen oder Entitlements.
+
+Die additive Migration `20260923001000_platform_admin_billing_readiness_reads.sql`
+stellt einen rollenbegrenzten, schreibfreien Read-RPC und eine zum
+Migrationszeitpunkt versiegelte, unveraenderbare Legacy-Eligibility bereit.
+Neue TRIALING-/ACTIVE-/PAID-Uebergaenge bleiben gesperrt. Nur ein nachweislich
+historischer, noch laufender Trial mit vorhandenen Start-/Endwerten darf unter
+den bestehenden Rollen-, Recent-Auth-, Bestaetigungs-, Idempotenz- und
+Auditvertraegen verlaengert werden. Risikoreduzierende Bestandsaktionen bleiben
+zulaessig; sie ermoeglichen keine Reaktivierung.
+
+`ensure_restaurant_branch` verwendet den kanonischen Restaurant-Row-Lock und
+gibt vorhandene, korrekt tenantgebundene Subscriptions ohne INSERT oder
+Status-/Trial-/Perioden-/Provider-Aenderung zurueck. Nur die bereits bestehende
+private, transaktionsgebundene Pending-Registrierungsautoritaet darf einen
+fehlenden Datensatz als PENDING_ACTIVATION ohne Trial anlegen. Der
+BEFORE-INSERT-Guard bleibt fail-closed.
+
+Die lokalen Fresh-/Upgrade-/Repeat-, Rollen-, Parallelitaets-, Browser- und
+Code-Gates sind im Phase-7C.6B5-Bericht belegt. Dies ist ausschliesslich ein
+lokaler Code Lock; Migration 165 ist nicht auf Staging angewendet. Seller,
+Stripe, Production und kommerzielle Aktivierung bleiben unfreigegeben.
+
+
 ## Phase 7C.6B3 – Canonical Billing Catalog LOCAL CODE LOCK (2026-09-23)
 
 Dieser Abschnitt ersetzt aktive 99-EUR-/Unlimited- und Registrierungs-Trial-

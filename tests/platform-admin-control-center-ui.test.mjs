@@ -58,9 +58,10 @@ test("Lifecycle und Vertrag bleiben getrennt und bestätigte Vertragsaktionen la
   assert.match(controlCenter, /Restaurantbetrieb und Veröffentlichung werden getrennt/);
   assert.doesNotMatch(controlCenter, /Restaurantstatus ändern\?/);
   assert.doesNotMatch(controlCenter, /restaurantStatus:/);
-  assert.match(controlCenter, /Abo aktivieren\?/);
-  assert.match(controlCenter, /Abo pausieren\?/);
-  assert.match(controlCenter, /Testphase verlängern\?/);
+  assert.doesNotMatch(controlCenter, /subscriptionStatus: "active"/);
+  assert.match(controlCenter, /billingActions\?\.reduce_access/);
+  assert.match(controlCenter, /billingActions\?\.extend_trial/);
+  assert.match(controlCenter, /billingText\.legacy/);
   assert.match(page, /await loadRestaurantData\(selectedRestaurant\.id\)/);
   assert.match(page, /await loadDetail\(selectedRestaurant\.id\)/);
 });

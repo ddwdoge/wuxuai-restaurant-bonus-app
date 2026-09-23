@@ -1,0 +1,6 @@
+.billing-readiness { min-width: 0; overflow-wrap: anywhere; }
+.billing-readiness header, .billing-readiness nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.billing-readiness-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.billing-readiness article { min-width: 0; padding: 16px; border: 1px solid var(--border, #ddd); border-radius: 12px; }
+.billing-readiness dd { margin: 0 0 12px; overflow-wrap: anywhere; }
+.billing-readiness button, .billing-legacy-actions button { min-width: 44px; min-height: 44px; white-space: normal; }

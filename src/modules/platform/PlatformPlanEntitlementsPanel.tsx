@@ -124,12 +124,15 @@ function PlanOverridePanel({ canWrite, restaurantId }: Props) {
         </dl>
       </div>
       {canWrite ? <div className="platform-entitlement-controls platform-plan-override-controls">
+        {/* New free-form PRO overrides have no capacity authority. Keep only reduction. */}
+        <fieldset disabled hidden aria-hidden="true">
         <label>{t("start")}<select disabled={saving} value={scheduled ? "scheduled" : "now"} onChange={event => setScheduled(event.target.value === "scheduled")}><option value="now">{t("now")}</option><option value="scheduled">{t("schedule")}</option></select></label>
         {scheduled ? <label>{t("schedule")}<input required type="datetime-local" disabled={saving} value={startsAt} onChange={event => setStartsAt(event.target.value)} /></label> : null}
         <label>{t("expiry")}<input required type="datetime-local" disabled={saving} value={expiresAt} onChange={event => setExpiresAt(event.target.value)} /></label>
         <label>{t("reason")}<textarea required minLength={10} rows={3} disabled={saving} value={reason} onChange={event => setReason(event.target.value)} /></label>
         <label>{t("confirmation")}<input required autoComplete="off" spellCheck={false} placeholder="CONFIRMED" disabled={saving} value={confirmation} onChange={event => setConfirmation(event.target.value)} /></label>
         <button className="button primary" disabled={saving || loading || !expiresAt || reason.trim().length < 10 || confirmation !== "CONFIRMED"} onClick={() => void run("activate")} type="button"><PackageCheck size={18} aria-hidden="true" />{t("activate")}</button>
+        </fieldset>
         <button className="button secondary" disabled={saving || loading || !canEnd} onClick={() => { setEndReason(""); setEndConfirmation(""); setEndTarget(data.override?.id ?? null); }} type="button"><Square size={18} aria-hidden="true" />{t("terminate")}</button>
       </div> : <p className="muted">{t("readOnly")}</p>}
     </> : null}

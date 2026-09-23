@@ -8,6 +8,9 @@ import {
   type ProBusiness, type ProCommercialAudit, type ProCountryStatus, type ProEntitlement, type ProGrantState,
 } from "./platformAdminService";
 import { proControlCenterMessages } from "./proControlCenterI18n";
+import { PlatformBillingReadiness } from "./PlatformBillingReadiness";
+import { useBillingReadiness } from "./useBillingReadiness";
+import { billingReadinessMessages } from "./billingReadinessMessages.mjs";
 
 type DrawerState =
   | { kind: "country"; country: ProCountryStatus; release: boolean }
@@ -44,6 +47,10 @@ export function PlatformProControlCenter() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const requestId = useRef<string | null>(null);
+  const billingText = billingReadinessMessages(language);
+  const targetReadiness = useBillingReadiness(drawer?.kind === "access" ? drawer.business.restaurant_id : undefined);
+  const targetActions = drawer?.kind === "access" ? targetReadiness.data?.businesses.find(item => item.restaurant_id === drawer.business.restaurant_id)?.actions : null;
+  const activationBlocked = drawer?.kind === "access" && drawer.action !== "REVOKE" && targetActions?.reduce_access !== true;
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -72,7 +79,7 @@ export function PlatformProControlCenter() {
     const action = drawer.action === "GRANT" ? "FREIGEBEN" : drawer.action === "EXTEND" ? "VERLAENGERN" : "WIDERRUFEN";
     return `PRO ${kind} ${drawer.business.business_name} ${action}`;
   }, [drawer]);
-  const valid = !lockedPilotPreview && reason.trim().length >= 10 && confirmation === exactConfirmation
+  const valid = !lockedPilotPreview && !activationBlocked && reason.trim().length >= 10 && confirmation === exactConfirmation
     && (drawer?.kind !== "access" || drawer.action === "REVOKE" || (Boolean(startsAt) && Boolean(expiresAt) && new Date(expiresAt) > new Date(startsAt)));
 
   function openDrawer(next: DrawerState) {
@@ -85,7 +92,7 @@ export function PlatformProControlCenter() {
     setDrawer(null); setReason(""); setConfirmation(""); setFormError(""); requestId.current = null;
   }
   async function submit() {
-    if (!drawer || lockedPilotPreview || !valid || saving || !requestId.current) { setFormError(t.validation); return; }
+    if (!drawer || lockedPilotPreview || !valid || activationBlocked || saving || !requestId.current) { setFormError(t.validation); return; }
     setSaving(true); setFormError("");
     try {
       if (drawer.kind === "country") {
@@ -105,8 +112,9 @@ export function PlatformProControlCenter() {
   }
 
   return <div className="pro-control-center" data-testid="pro-control-center">
-    <section aria-live="polite" className={`pro-at-lock ${at?.release_state === "LOCKED" ? "locked" : "released"}`}>
-      <LockKeyhole aria-hidden="true" size={28} /><div><strong>AT · {at?.release_state === "LOCKED" ? t.locked : t.released}</strong><span>{t.releaseImpact}</span></div>
+    <PlatformBillingReadiness />
+    <section aria-live="polite" className={`pro-at-lock ${at?.release_state !== "RELEASED" ? "locked" : "released"}`}>
+      <LockKeyhole aria-hidden="true" size={28} /><div><strong>AT · {at?.release_state !== "RELEASED" ? t.locked : t.released}</strong><span>{t.releaseImpact}</span></div>
     </section>
     <div className="pro-toolbar"><label><Search aria-hidden="true" size={18}/><span className="sr-only">{t.businessSearch}</span><input aria-label={t.businessSearch} onChange={(event) => setSearch(event.target.value)} placeholder={t.businessSearch} type="search" value={search}/></label><button className="button secondary" disabled={loading} onClick={() => void load()} type="button"><RefreshCw aria-hidden="true" size={18}/>{t.refresh}</button></div>
     {loading ? <div className="pro-loading" role="status"><span/><span/><span/><p>{t.loading}</p></div> : null}
@@ -124,6 +132,7 @@ export function PlatformProControlCenter() {
     </> : null}
 
     <AppDrawer closeLabel={t.cancel} description={lockedPilotPreview ? t.lockedPilotPreview : t.recentAuth} dismissOnOverlay={!saving} onClose={closeDrawer} open={Boolean(drawer)} size="standard" title={drawer?.kind === "country" ? t.countryDrawer : drawer?.accessKind === "INTERNAL_TEST_ONLY" ? t.testDrawer : t.pilotDrawer} footer={<><button className="button secondary" disabled={saving} onClick={closeDrawer} type="button">{t.cancel}</button>{!lockedPilotPreview ? <button className="button primary" disabled={!valid || saving} onClick={() => void submit()} type="button">{t.submit}</button> : null}</>}>
+      {activationBlocked ? <p role="status" data-i18n-skip="true">{billingText.blocked}</p> : null}
       {drawer ? <form className="pro-action-form" onSubmit={(event) => { event.preventDefault(); if (!lockedPilotPreview) void submit(); }}><div className={`pro-impact${lockedPilotPreview ? " locked-preview" : ""}`}><AlertTriangle aria-hidden="true"/><div><strong>{lockedPilotPreview ? t.lockedPreviewTitle : t.impact}</strong><p>{lockedPilotPreview ? t.lockedPilotPreview : drawer.kind === "country" ? (drawer.release ? t.releaseImpact : t.lockImpact) : t.pilotImpact}</p></div></div>{lockedPilotPreview && drawer.kind === "access" ? <><label>{t.businessSearch}<input className="input" disabled type="text" value={drawer.business.business_name}/></label><dl className="pro-locked-preview-meta"><div><dt>{t.selectedBusiness}</dt><dd>{drawer.business.business_name}</dd></div><div><dt>{t.country}</dt><dd>{drawer.business.country_code}</dd></div><div><dt>{t.status}</dt><dd>LOCKED</dd></div></dl></> : <div className="pro-recent-auth"><Clock3 aria-hidden="true" size={19}/><p>{t.recentAuth}</p></div>}{drawer.kind === "access" && drawer.action !== "REVOKE" ? <><fieldset disabled={lockedPilotPreview}><legend>{t.duration}</legend>{[30,60,90].map((days) => <button className="button secondary" key={days} onClick={() => setExpiresAt(addDays(startsAt, days))} type="button">{t[`days${days}`]}</button>)}</fieldset><div className="grid two"><label>{t.start}<input className="input" disabled={lockedPilotPreview} onChange={(event) => setStartsAt(event.target.value)} type="datetime-local" value={startsAt}/></label><label>{t.end}<input className="input" disabled={lockedPilotPreview} onChange={(event) => setExpiresAt(event.target.value)} type="datetime-local" value={expiresAt}/></label></div></> : null}<label>{t.reason}<textarea autoFocus={!lockedPilotPreview} className="input" disabled={lockedPilotPreview} minLength={10} onChange={(event) => setReason(event.target.value)} placeholder={t.enterReason} required={!lockedPilotPreview} rows={4} value={reason}/></label>{!lockedPilotPreview ? <><label>{t.confirmation}<input autoComplete="off" className="input" onChange={(event) => setConfirmation(event.target.value)} required spellCheck={false} value={confirmation}/></label><code className="pro-confirmation">{exactConfirmation}</code></> : null}{formError ? <p className="status-message error" role="alert">{formError}</p> : null}</form> : null}
     </AppDrawer>
   </div>;
