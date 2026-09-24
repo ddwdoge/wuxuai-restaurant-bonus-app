@@ -15,6 +15,8 @@ const eventId = 'evt_wuxuai_staging_12345678';
 const signingSecret = 'local-synthetic-signing-secret-32-bytes';
 const marker = 'local-synthetic-marker-secret-32-bytes';
 const checkout = { plan_key: 'BASIC', request_id: requestId, return_route: route };
+const stagingOrigin = 'https://staging-app.bonus.wuxuaisbi.com';
+const localOrigin = 'http://127.0.0.1:56126';
 
 function loadHandler(file, env, state) {
   let handler;
@@ -61,7 +63,8 @@ async function withHttp(handler, action) {
     for await (const chunk of incoming) chunks.push(chunk);
     const body = Buffer.concat(chunks);
     const response = await handler(new Request('http://127.0.0.1/test', {
-      method: incoming.method, headers: incoming.headers, body,
+      method: incoming.method, headers: incoming.headers,
+      ...(['GET', 'HEAD'].includes(incoming.method) ? {} : { body }),
     }));
     outgoing.writeHead(response.status, Object.fromEntries(response.headers));
     outgoing.end(Buffer.from(await response.arrayBuffer()));
@@ -77,13 +80,71 @@ const stagingEnv = {
   SUPABASE_ANON_KEY: 'local-anon-fixture', SUPABASE_SERVICE_ROLE_KEY: 'local-service-fixture',
   BILLING_ARCHITECTURE_MODE: 'staging_negative_only', BILLING_STAGING_PROJECT_REF: project,
   BILLING_ENVIRONMENT: 'STAGING', BILLING_STAGING_SYNTHETIC_WEBHOOK_SECRET: signingSecret,
+  BILLING_STAGING_ALLOWED_ORIGIN: stagingOrigin,
   BILLING_STAGING_SYNTHETIC_MARKER: marker, BILLING_STAGING_SYNTHETIC_EVENT_ID: eventId,
   BILLING_STAGING_SYNTHETIC_REQUEST_ID: requestId,
   BILLING_STAGING_SYNTHETIC_CORRELATION_ID: correlationId,
 };
 const localEnv = { SUPABASE_URL: 'http://127.0.0.1:56121', SUPABASE_ANON_KEY: 'local-anon-fixture',
   SUPABASE_SERVICE_ROLE_KEY: 'local-service-fixture', BILLING_ARCHITECTURE_MODE: 'local_only',
+  BILLING_LOCAL_ALLOWED_ORIGIN: localOrigin,
   BILLING_LOCAL_FAKE_WEBHOOK_SECRET: signingSecret };
+
+test('checkout CORS preflight is exact, early, write-free and limited to browser headers', async () => {
+  for (const [env, allowedOrigin] of [[localEnv, localOrigin], [stagingEnv, stagingOrigin]]) {
+    const state = { ready: true, rpcCalls: [], inbox: new Map() };
+    await withHttp(loadHandler('billing-checkout-architecture', env, state), async (url) => {
+      const preflight = (origin, method = 'POST', headers = 'authorization, apikey, content-type, x-client-info') =>
+        fetch(url, { method: 'OPTIONS', headers: {
+          ...(origin === undefined ? {} : { origin }), 'access-control-request-method': method,
+          'access-control-request-headers': headers,
+        } });
+      const allowed = await preflight(allowedOrigin);
+      assert.equal(allowed.status, 204);
+      assert.equal(await allowed.text(), '');
+      assert.equal(allowed.headers.get('access-control-allow-origin'), allowedOrigin);
+      assert.equal(allowed.headers.get('vary'), 'Origin');
+      assert.equal(allowed.headers.get('access-control-allow-methods'), 'POST, OPTIONS');
+      assert.equal(allowed.headers.get('access-control-allow-credentials'), null);
+      for (const origin of ['https://foreign.example', `${allowedOrigin}.evil.example`,
+        `${allowedOrigin}-extra`, 'null', undefined]) {
+        const blocked = await preflight(origin);
+        assert.equal(blocked.status, 403);
+        assert.equal(blocked.headers.get('access-control-allow-origin'), null);
+      }
+      for (const [method, headers] of [['DELETE', 'authorization'], ['POST', 'x-unapproved']]) {
+        const blocked = await preflight(allowedOrigin, method, headers);
+        assert.equal(blocked.status, 403);
+        assert.equal(blocked.headers.get('access-control-allow-origin'), null);
+      }
+      assert.equal((await fetch(url, { method: 'GET', headers: { origin: allowedOrigin } })).status, 405);
+      assert.deepEqual(state.rpcCalls, []);
+      const unauthorized = await fetch(url, { method: 'POST', headers: { origin: allowedOrigin },
+        body: JSON.stringify(checkout) });
+      assert.equal(unauthorized.status, 401);
+      assert.equal(unauthorized.headers.get('access-control-allow-origin'), allowedOrigin);
+      const malformed = await fetch(url, { method: 'POST', headers: {
+        origin: allowedOrigin, authorization: 'Bearer local-owner-token' }, body: '{}' });
+      assert.equal(malformed.status, 400);
+      assert.equal(malformed.headers.get('access-control-allow-origin'), allowedOrigin);
+      assert.deepEqual(state.rpcCalls, []);
+      const denied = await fetch(url, { method: 'POST', headers: {
+        origin: allowedOrigin, authorization: 'Bearer local-owner-token' }, body: JSON.stringify(checkout) });
+      assert.equal(denied.status, 403);
+      assert.equal(denied.headers.get('access-control-allow-origin'), allowedOrigin);
+      assert.equal(denied.headers.get('access-control-allow-credentials'), null);
+    });
+  }
+  const invalid = { ...stagingEnv, BILLING_STAGING_ALLOWED_ORIGIN: 'https://foreign.example' };
+  const state = { ready: true, rpcCalls: [], inbox: new Map() };
+  await withHttp(loadHandler('billing-checkout-architecture', invalid, state), async (url) => {
+    const response = await fetch(url, { method: 'OPTIONS', headers: { origin: stagingOrigin,
+      'access-control-request-method': 'POST' } });
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+  });
+  assert.deepEqual(state.rpcCalls, []);
+});
 
 test('physical local HTTP checkout: local and simulated Staging stay blocked; identity failures write nothing', async () => {
   for (const env of [localEnv, stagingEnv]) {

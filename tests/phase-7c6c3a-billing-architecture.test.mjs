@@ -121,7 +121,7 @@ test('SQL records only technical blocked decisions and no product activation', (
   assert.doesNotMatch(checkoutEndpoint, /createFakeStripeAdapter|createCheckout\(/);
   assert.match(checkoutEndpoint, /request_blocked_test_checkout/);
   assert.match(checkoutEndpoint, /local_only/);
-  assert.match(checkoutEndpoint, /respond\(403, "CHECKOUT_OWNER_REQUIRED"\)/);
+  assert.match(checkoutEndpoint, /respond\(403, "CHECKOUT_OWNER_REQUIRED", undefined, origin\)/);
   assert.ok(checkoutEndpoint.indexOf('local_only') < checkoutEndpoint.indexOf('createClient(url'));
   assert.match(webhookEndpoint, /local_only/);
   assert.ok(webhookEndpoint.indexOf('local_only') < webhookEndpoint.indexOf('createClient(url'));
