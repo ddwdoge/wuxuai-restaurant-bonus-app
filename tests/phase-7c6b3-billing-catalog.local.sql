@@ -14,10 +14,12 @@ select pg_temp.assert_true(public.billing_trial_end_internal('2026-03-31 12:34:5
 select pg_temp.assert_true(public.billing_trial_end_internal('2026-12-15 12:34:56Z')='2027-01-15 12:34:56Z'::timestamptz,'year change');
 set local timezone='Pacific/Auckland';
 select pg_temp.assert_true(public.billing_trial_end_internal('2024-01-31 12:34:56Z')='2024-02-29 12:34:56Z'::timestamptz,'session timezone independent');
-do $$ declare env text; p jsonb; relation text; api_role text; begin
+do $$ declare env text; p jsonb; relation text; api_role text; expected_status text; begin
  foreach env in array array['TEST','LIVE'] loop
   p:=public.resolve_billing_product_internal('PRO',env);
-  perform pg_temp.assert_true(p->>'environment'=env and p->>'binding_status'='UNBOUND' and p->>'provider_ready'='false'
+  expected_status:=case when env='TEST' and to_regclass('public.billing_tax_readiness_versions') is not null
+    then 'VERIFIED' else 'UNBOUND' end;
+  perform pg_temp.assert_true(p->>'environment'=env and p->>'binding_status'=expected_status and p->>'provider_ready'='false'
    and p->>'seller_readiness'='PLANNED' and p->>'purchase_allowed'='false','unbound seller isolation');
  end loop;
  begin perform public.resolve_billing_product_internal('PRO',null); raise exception 'null environment accepted'; exception when invalid_parameter_value then null; end;

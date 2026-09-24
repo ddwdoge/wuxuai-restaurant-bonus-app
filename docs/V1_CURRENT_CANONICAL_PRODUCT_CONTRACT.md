@@ -12,14 +12,32 @@ operative Verkaeuferin, SaaS-Vertragspartnerin und Rechnungsausstellerin
 geplant (`PLANNED`), aber noch nicht gegruendet/verifiziert. WU & XU Group
 GmbH ist IP-, Marken-, Domain- und Designinhaberin sowie Lizenzgeberin,
 nicht Bonus-Kunden-Rechnungsausstellerin. Stripe
-TEST/LIVE sind im Anwendungssystem `UNBOUND`; Live Billing, AT + PRO und
-Production bleiben `LOCKED`/`BLOCKED`.
+TEST/LIVE sind im ausgerollten Staging-Anwendungssystem `UNBOUND`; der rein
+lokale, noch nicht angewendete Phase-7C.6C2-Entwurf bindet ausschliesslich
+vier verifizierte Sandbox-Prices als TEST-Revisionen. Live Billing, AT + PRO
+und Production bleiben `LOCKED`/`BLOCKED`.
 
 Der Founder berichtet ein vorhandenes Stripe-Sandbox-Konto und vier manuell
 angelegte Sandbox-Produkte/Monatspreise (BASIC 59, PRO 149, Offer Add-on 19,
-Customer Add-on 29 EUR). Diese externen Objekte wurden in diesem
-Dokumentationsaudit **nicht** unabhaengig inventarisiert; es gibt weiterhin
-keine App-Price-Bindings, Checkout-/Webhook- oder Live-Autoritaet.
+Customer Add-on 29 EUR). Im spaeteren read-only Phase-7C.6C1C-Gate wurden
+das Kontoland AT sowie alle vier aktiven Product-/Price-Paare und die leeren
+historischen Preislisten unabhaengig nachgewiesen. Es gibt weiterhin keine
+ausgerollten App-Price-Bindings, Checkout-/Webhook- oder Live-Autoritaet.
+
+### Phase 7C.6C2 – lokaler TEST-only Provider-/Tax-Vertrag (nicht ausgerollt)
+
+Providerbindung und Tax Readiness sind getrennt. Die vier nachgewiesenen
+Stripe-Sandbox-Prices duerfen lokal `VERIFIED` gebunden werden, waehrend der
+Seller `PLANNED` bleibt. Ein eigener versionierter Tax-Readiness-Vertrag haelt
+fuer TEST `PENDING_CONFIGURATION`, beobachtetes Provider-Tax-Behavior
+`UNSPECIFIED`, `automatic_tax_enabled=false` und Kontoland AT fest. Fehlende
+Tax-Readiness ist fail-closed. Die bestehende Provider-Statusmenge
+`UNBOUND / VERIFIED / RETIRED` bleibt unveraendert. Keine dieser lokalen
+Revisionen erlaubt kommerzielle Aktivierung, Entitlements, Checkout, Trial,
+Subscription oder Rechnung. Technische synthetische TEST-Checkouts sind erst
+ein gesondert zu implementierender und freizugebender Folgepfad; LIVE bleibt
+ohne Binding. Stripe Tax, Head Office, Price-Tax-Behavior und Kontodaten
+bleiben unveraendert. Dies ist weder Tax-/Invoice-Final-Lock noch Staging-Lock.
 
 Der aktuelle Detailstatus steht in `V1_CURRENT_IMPLEMENTATION_STATUS.md`, der
 operative Einstieg fuer ein zweites Konto in `CODEX_SECOND_ACCOUNT_HANDOFF.md`.

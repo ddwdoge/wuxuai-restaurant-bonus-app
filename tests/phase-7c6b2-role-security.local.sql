@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
-create temporary table security_fixture(owner_id uuid default gen_random_uuid(), outsider_id uuid default gen_random_uuid(), admin_id uuid default gen_random_uuid(), customer_id uuid default gen_random_uuid(), tenant uuid, slug text);
+create temporary table security_fixture(owner_id uuid default gen_random_uuid(), outsider_id uuid default gen_random_uuid(), admin_id uuid default gen_random_uuid(), customer_id uuid default gen_random_uuid(), tenant uuid, slug text,
+ active_organization_id uuid default gen_random_uuid(), active_restaurant_id uuid default gen_random_uuid(), active_branch_id uuid default gen_random_uuid());
 insert into security_fixture default values;
 grant select,update on security_fixture to authenticated,anon,service_role;
 insert into auth.users(id,aud,role,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -66,8 +67,22 @@ do $$ declare t uuid:=(select tenant from security_fixture); begin
 end $$;
 reset role;
 -- Real server-bound staff/customer identities, not metadata claims.
-insert into public.restaurant_members(restaurant_id,user_id,role)
-select (select id from public.restaurants where activation_status is null order by id limit 1),outsider_id,'staff' from security_fixture;
+-- The role test must not depend on an unrelated persisted active restaurant.
+-- This historical active fixture is local, synthetic and fully rolled back.
+set local session_replication_role = replica;
+insert into public.organizations(id,owner_id,name)
+ select active_organization_id,admin_id,'Synthetic historical role fixture' from security_fixture;
+insert into public.restaurants(id,owner_id,name,slug,organization_id)
+ select active_restaurant_id,admin_id,'Synthetic historical role fixture',
+  'phase-7c6b2-active-role-fixture',active_organization_id from security_fixture;
+insert into public.branches(id,organization_id,restaurant_id,name,slug,country)
+ select active_branch_id,active_organization_id,active_restaurant_id,
+  'Synthetic historical role fixture','phase-7c6b2-active-role-fixture','AT' from security_fixture;
+update public.restaurants r set primary_branch_id=f.active_branch_id
+ from security_fixture f where r.id=f.active_restaurant_id;
+insert into public.restaurant_members(restaurant_id,organization_id,branch_id,user_id,role)
+select active_restaurant_id,active_organization_id,active_branch_id,outsider_id,'staff' from security_fixture;
+set local session_replication_role = origin;
 insert into public.customer_accounts(auth_user_id) select customer_id from security_fixture;
 set local role authenticated;
 do $$ declare t uuid:=(select tenant from security_fixture); begin

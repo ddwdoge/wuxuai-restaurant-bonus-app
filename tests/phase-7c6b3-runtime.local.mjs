@@ -16,24 +16,45 @@ for(const {stdout} of results)assert.equal(stdout.trim(),baseline);
 console.log('PARALLEL_READS_24_IDENTICAL_PASS');
 // Staff, customer and anonymous cannot read the owner's catalog.
 sql(`begin;
+create temporary table billing_role_fixture(tenant uuid);
+insert into billing_role_fixture values(null);
+grant select,update on billing_role_fixture to authenticated;
 insert into auth.users(id,aud,role,email) values
  ('7c630000-0000-4000-8000-000000000071','authenticated','authenticated','staff@example.invalid'),
- ('7c630000-0000-4000-8000-000000000072','authenticated','authenticated','customer@example.invalid');
-insert into public.restaurant_members(restaurant_id,user_id,role) values
- ('7c500000-0000-4000-8000-000000000011','7c630000-0000-4000-8000-000000000071','staff');
+ ('7c630000-0000-4000-8000-000000000072','authenticated','authenticated','customer@example.invalid'),
+ ('7c630000-0000-4000-8000-000000000074','authenticated','authenticated','owner@example.invalid');
+select set_config('request.jwt.claim.sub','7c630000-0000-4000-8000-000000000074',true);
+set local role authenticated;
+update billing_role_fixture set tenant=(public.start_restaurant_owner_trial('Synthetic Billing Owner','Synthetic Billing Owner',null,'AT')->'restaurant'->>'id')::uuid;
+reset role;
+-- A historical active staff membership is synthetic and rolled back; it does
+-- not grant access to the pending owner's separate restaurant.
+set local session_replication_role=replica;
+insert into public.organizations(id,owner_id,name) values
+ ('7c630000-0000-4000-8000-000000000080','7c630000-0000-4000-8000-000000000071','Synthetic Billing Staff');
+insert into public.restaurants(id,owner_id,name,slug,organization_id) values
+ ('7c630000-0000-4000-8000-000000000081','7c630000-0000-4000-8000-000000000071',
+  'Synthetic Billing Staff','phase-7c6b3-billing-staff','7c630000-0000-4000-8000-000000000080');
+insert into public.branches(id,organization_id,restaurant_id,name,slug,country) values
+ ('7c630000-0000-4000-8000-000000000082','7c630000-0000-4000-8000-000000000080',
+  '7c630000-0000-4000-8000-000000000081','Synthetic Billing Staff','phase-7c6b3-billing-staff','AT');
+insert into public.restaurant_members(restaurant_id,organization_id,branch_id,user_id,role) values
+ ('7c630000-0000-4000-8000-000000000081','7c630000-0000-4000-8000-000000000080',
+  '7c630000-0000-4000-8000-000000000082','7c630000-0000-4000-8000-000000000071','staff');
+set local session_replication_role=origin;
 insert into public.customer_accounts(auth_user_id) values('7c630000-0000-4000-8000-000000000072');
 set local role authenticated;
 do $$ declare actor uuid; begin
  foreach actor in array array['7c630000-0000-4000-8000-000000000071'::uuid,'7c630000-0000-4000-8000-000000000072'::uuid] loop
  perform set_config('request.jwt.claim.sub',actor::text,true);
- begin perform public.get_restaurant_billing_catalog('7c500000-0000-4000-8000-000000000011');
+ begin perform public.get_restaurant_billing_catalog((select tenant from billing_role_fixture));
  raise exception 'Billing role bypass'; exception when insufficient_privilege then null; end;
  end loop;
 end $$;
 reset role;
 set local role anon;
 do $$ begin
-begin perform public.get_restaurant_billing_catalog('7c500000-0000-4000-8000-000000000011');
+begin perform public.get_restaurant_billing_catalog((select tenant from billing_role_fixture));
 raise exception 'Anonymous billing bypass'; exception when insufficient_privilege then null; end;
 end $$;
 reset role;
@@ -42,7 +63,7 @@ insert into public.platform_admins(user_id,role,active) values('7c630000-0000-40
 select set_config('request.jwt.claim.sub','7c630000-0000-4000-8000-000000000073',true);
 set local role authenticated;
 do $$ begin
- if public.get_restaurant_billing_catalog('7c500000-0000-4000-8000-000000000011')->>'catalog_version'<>'1' then
+ if public.get_restaurant_billing_catalog((select tenant from billing_role_fixture))->>'catalog_version'<>'1' then
  raise exception 'Platform read unavailable'; end if;
 end $$;
 reset role; rollback;`);
