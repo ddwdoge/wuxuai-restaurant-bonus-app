@@ -1,43 +1,43 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
-## Aktueller Integrationsstand – 2026-09-23
+## Aktueller Integrationsstand – 2026-09-24
 
 Kanonischer Branch: `codex/v1-release-integration`; gepruefter Basis-HEAD
 vor diesem Dokumentationsabgleich:
-`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`. Der letzte eingecheckte
-Staging-Nachweis belegt Migrationen **165/165** und Platform-Admin-Billing-
+`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`. Der aktuelle
+Staging-Nachweis belegt Migrationen **166/166** und Platform-Admin-Billing-
 Readiness als **STAGING LOCK**; die positive Pending-Registrierung auf Staging
 bleibt ausdruecklich ungeprueft. `WUXUAI Digital & Trading GmbH` ist als
 operative Verkaeuferin, SaaS-Vertragspartnerin und Rechnungsausstellerin
 geplant (`PLANNED`), aber noch nicht gegruendet/verifiziert. WU & XU Group
 GmbH ist IP-, Marken-, Domain- und Designinhaberin sowie Lizenzgeberin,
 nicht Bonus-Kunden-Rechnungsausstellerin. Stripe
-TEST/LIVE sind im ausgerollten Staging-Anwendungssystem `UNBOUND`; der rein
-lokale, noch nicht angewendete Phase-7C.6C2-Entwurf bindet ausschliesslich
-vier verifizierte Sandbox-Prices als TEST-Revisionen. Live Billing, AT + PRO
-und Production bleiben `LOCKED`/`BLOCKED`.
+TEST hat auf Staging vier verifizierte Sandbox-Price-Bindungen; LIVE bleibt
+`UNBOUND`. Diese technische Bindung aktiviert keinen Checkout und kein
+Billing. Live Billing, AT + PRO und Production bleiben `LOCKED`/`BLOCKED`.
 
 Der Founder berichtet ein vorhandenes Stripe-Sandbox-Konto und vier manuell
 angelegte Sandbox-Produkte/Monatspreise (BASIC 59, PRO 149, Offer Add-on 19,
 Customer Add-on 29 EUR). Im spaeteren read-only Phase-7C.6C1C-Gate wurden
 das Kontoland AT sowie alle vier aktiven Product-/Price-Paare und die leeren
-historischen Preislisten unabhaengig nachgewiesen. Es gibt weiterhin keine
-ausgerollten App-Price-Bindings, Checkout-/Webhook- oder Live-Autoritaet.
+historischen Preislisten unabhaengig nachgewiesen. Es gibt vier ausgerollte
+TEST-Price-Bindings, aber keine Checkout-/Webhook- oder Live-Autoritaet.
 
-### Phase 7C.6C2 – lokaler TEST-only Provider-/Tax-Vertrag (nicht ausgerollt)
+### Phase 7C.6C2B – TEST-only Provider-/Tax-Vertrag auf Staging
 
 Providerbindung und Tax Readiness sind getrennt. Die vier nachgewiesenen
-Stripe-Sandbox-Prices duerfen lokal `VERIFIED` gebunden werden, waehrend der
+Stripe-Sandbox-Prices sind auf Staging `VERIFIED` gebunden, waehrend der
 Seller `PLANNED` bleibt. Ein eigener versionierter Tax-Readiness-Vertrag haelt
 fuer TEST `PENDING_CONFIGURATION`, beobachtetes Provider-Tax-Behavior
 `UNSPECIFIED`, `automatic_tax_enabled=false` und Kontoland AT fest. Fehlende
 Tax-Readiness ist fail-closed. Die bestehende Provider-Statusmenge
-`UNBOUND / VERIFIED / RETIRED` bleibt unveraendert. Keine dieser lokalen
+`UNBOUND / VERIFIED / RETIRED` bleibt unveraendert. Keine dieser TEST-
 Revisionen erlaubt kommerzielle Aktivierung, Entitlements, Checkout, Trial,
 Subscription oder Rechnung. Technische synthetische TEST-Checkouts sind erst
 ein gesondert zu implementierender und freizugebender Folgepfad; LIVE bleibt
 ohne Binding. Stripe Tax, Head Office, Price-Tax-Behavior und Kontodaten
-bleiben unveraendert. Dies ist weder Tax-/Invoice-Final-Lock noch Staging-Lock.
+bleiben unveraendert. Dies ist ein Staging-Backend-Lock, kein Tax-/Invoice-
+Final-Lock und keine kommerzielle Freigabe.
 
 Der aktuelle Detailstatus steht in `V1_CURRENT_IMPLEMENTATION_STATUS.md`, der
 operative Einstieg fuer ein zweites Konto in `CODEX_SECOND_ACCOUNT_HANDOFF.md`.

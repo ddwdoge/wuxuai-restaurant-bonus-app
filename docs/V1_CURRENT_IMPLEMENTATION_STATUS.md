@@ -1,10 +1,11 @@
 # WUXUAI Bonus V1 – aktueller Implementierungsstatus
 
-Stand: 2026-09-23. Kanonischer Branch `codex/v1-release-integration`,
+Stand: 2026-09-24. Kanonischer Branch `codex/v1-release-integration`,
 gepruefter Basis-HEAD vor diesem Dokumentationsabgleich
 `2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`.
-Staging-Angaben stammen aus den letzten eingecheckten Gate-Berichten; dieses
-Dokumentationsaudit hat Staging nicht erneut verbunden. Production ist LOCKED.
+Staging-Angaben bis Migration 165 stammen aus den letzten eingecheckten
+Gate-Berichten; Phase 7C.6C2B wurde erneut gegen Staging geprueft.
+Production ist LOCKED.
 `UNKNOWN` bedeutet nicht nachgewiesen, nicht automatisch fehlgeschlagen.
 
 | Phase | Feature | Migration | Lokal | Staging | Production | Lock-Typ | Commit | Letzter Evidenzbericht | Offenes Restgate |
@@ -21,12 +22,13 @@ Dokumentationsaudit hat Staging nicht erneut verbunden. Production ist LOCKED.
 | 7C.6B2 | Pending Activation und Live-Gates | 163 | PASS | Vertrag installiert | LOCKED | STAGING TECHNICAL GATE | `063eb40` | [7C.6B5B](reports/2026-09-23_PHASE_7C_6B5B_PLATFORM_ADMIN_BILLING_STAGING_GATE_REPORT.md) | Positiver Pending-Staging-Flow separat autorisieren |
 | 7C.6B3 | Kanonischer Billing-Katalog und Seller-/Provider-Grundlage | 164 | PASS | PASS | LOCKED | STAGING TECHNICAL GATE | `4e3da2e` | [7C.6B3](reports/2026-09-23_PHASE_7C_6B3_CANONICAL_BILLING_CATALOG_REPORT.md) | Seller-/Stripe-Verifikation und Provider-Bindung |
 | 7C.6B5 | Platform-Admin Billing Readiness | 165 | PASS | PASS, 165/165; Deployment `29d37aaf-1bf0-487e-a1ee-e65263b7a202` | LOCKED | STAGING LOCK | `c7f5fb9` / `2c4e632` Evidenz | [7C.6B5B](reports/2026-09-23_PHASE_7C_6B5B_PLATFORM_ADMIN_BILLING_STAGING_GATE_REPORT.md) | Positiver Pending-Flow deferred; Seller/Provider unbound |
-| 7C.6C | Stripe Sandbox | Keine | App-Integration NOT STARTED | TEST Provider UNBOUND | LIVE UNBOUND | NO PROVIDER LOCK | Founder-Angabe, kein App-Commit | NOT RECORDED | Konto/Land/vier Produkte und Preise read-only inventarisieren |
+| 7C.6C2B | Vier versionierte Stripe-Sandbox-Bindungen; getrennte Tax Readiness | 166 | PASS | PASS, 166/166; TEST VERIFIED, Tax PENDING_CONFIGURATION | LIVE UNBOUND / LOCKED | STAGING BACKEND LOCK, kein Checkout | `045cd8f` (Implementierung) | [7C.6C2B](reports/2026-09-24_PHASE_7C_6C2B_TEST_PROVIDER_BINDING_STAGING_GATE_REPORT.md) | Tax, Checkout, Webhook, Aktivierung und LIVE separat |
 | Vor Production | Platform-Admin TOTP-MFA/AAL2 | Keine | PLANNED | NOT VERIFIED | REQUIRED BEFORE PRODUCTION | NO LOCK | NOT RECORDED | NOT RECORDED | Implementieren und physisch pruefen |
 
-Stripe-Sandbox: Konto und vier monatliche Produkte/Preise wurden vom Founder
-gemeldet, in diesem Audit aber nicht extern verifiziert. Das ist keine
-Anwendungsbindung. BASIC 59 EUR netto/Monat: 5 Angebote, 3.000 aktive
+Stripe-Sandbox: Konto und vier monatliche Produkte/Preise wurden in 7C.6C1C
+read-only verifiziert und in 7C.6C2B ausschliesslich als TEST gebunden.
+Das ist keine Checkout- oder Billing-Autoritaet. BASIC 59 EUR netto/Monat:
+5 Angebote, 3.000 aktive
 eindeutige Kunden; PRO 149 EUR netto/Monat: 15 Angebote, 15.000 aktive
 eindeutige Kunden, nie unbegrenzt. Offer Add-on: 19 EUR netto/Monat je +5
 Angebote; Customer Add-on: 29 EUR netto/Monat je +5.000 Kunden. Das
@@ -37,15 +39,15 @@ verifizierter Provideraktivierung; Add-ons besitzen keinen Trial. Historische
 rechtmaessige Trials bleiben geschuetzt. Seller `WUXUAI Digital & Trading
 GmbH` ist als operative Verkaeuferin, SaaS-Vertragspartnerin und
 Rechnungsausstellerin PLANNED; WU & XU Group GmbH haelt IP, Marken, Domains
-und Designs und ist Lizenzgeberin. TEST und LIVE Provider UNBOUND; Live
-Billing BLOCKED. AT + PRO LOCKED.
+und Designs und ist Lizenzgeberin. TEST Provider VERIFIED bei getrennter Tax
+Readiness PENDING_CONFIGURATION; LIVE Provider UNBOUND. Live Billing BLOCKED.
+AT + PRO kommerziell LOCKED; AT ist technisch im Registrierungs-Gate
+aktiviert, nicht oeffentlich freigegeben.
 
-## Migrationen 153–165 (Repository-Dateinamen)
+## Migrationen 153–166 (Repository-Dateinamen)
 
-Alle 13 Dateien sind im Basiscommit enthalten; der letzte eingecheckte
-Staging-Gate-Bericht belegt 165/165. Insbesondere sind 163, 164 und 165 auf
-Staging angewendet; 165 ist nicht mehr nur lokal. Historische Migrationen
-nicht umschreiben.
+Migrationen 153–165 sind historisch unveraendert; der aktuelle Staging-
+Nachweis belegt 166/166. Historische Migrationen nicht umschreiben.
 
 | Nr. | Datei |
 | --- | --- |
@@ -62,11 +64,12 @@ nicht umschreiben.
 | 163 | `20260922006000_pending_activation_registration_and_live_gates.sql` |
 | 164 | `20260922007000_billing_catalog_reconciliation.sql` |
 | 165 | `20260923001000_platform_admin_billing_readiness_reads.sql` |
+| 166 | `20260924001000_test_provider_binding_tax_readiness.sql` |
 
 ## Nicht implementiert / gesondert freizugeben
 
 - Positive Pending-Registrierung auf Staging, Stripe-Checkout/Webhook/Portal,
-  versionierte TEST-/LIVE-Price-Bindings und Live Billing.
+  LIVE-Price-Bindings und Live Billing.
 - Allgemeiner Scheduler fuer reale Customer-/Capacity-Mails; nur isolierte
   synthetische Testzustellung und Einmallauf sind nachgewiesen.
 - Platform-Admin TOTP-MFA/AAL2 vor Production, KYB-Dokumentenpruefung und
