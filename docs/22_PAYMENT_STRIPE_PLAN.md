@@ -14,9 +14,13 @@ Provideraktivierung, einmal pro Unternehmen, ohne Add-ons. Registrierung bleibt
 PENDING_ACTIVATION. Seller WUXUAI Digital & Trading GmbH: PLANNED; LIVE gesperrt.
 WU & XU Group GmbH ist IP-Lizenzgeberin, nicht Rechnungsausstellerin.
 Stripe-Sandbox-Konto und vier manuell erstellte Sandbox-Produkte/Monatspreise
-werden vom Founder berichtet; diese externe Inventur ist hier nicht unabhaengig
-verifiziert. Im Anwendungssystem sind TEST und LIVE weiterhin UNBOUND; Checkout,
-Webhooks und Billing Portal sind nicht implementiert. Live Billing bleibt BLOCKED.
+wurden im read-only Stripe-Sandbox-Inventar bestaetigt. Im Anwendungssystem
+sind vier TEST-Price-Bindungen VERIFIED; LIVE bleibt UNBOUND, Seller PLANNED
+und Tax Readiness PENDING_CONFIGURATION. Die technische negative Checkout-
+und signierte Webhook-Inbox-/Replay-/Parallelitaetsarchitektur ist auf Staging
+gelockt. Positiver Stripe-Checkout und echter Stripe-Webhook mit Subscription-,
+Trial- oder Entitlement-Aktivierung sind nicht implementiert oder freigegeben;
+Billing Portal sowie Tax-/Invoice-Readiness bleiben offen. Live Billing bleibt BLOCKED.
 
 Die folgenden älteren Abschnitte sind historische Planungs-/Altvertrags-Evidenz,
 keine aktive Autorität für neue Preise, Trialstarts oder Providerintegration.

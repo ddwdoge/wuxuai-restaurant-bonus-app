@@ -2,23 +2,30 @@
 
 Stand: 2026-09-24. Repository: `ddwdoge/wuxuai-restaurant-bonus-app`.
 Kanonischer Branch: `codex/v1-release-integration`.
-Gepruefter Basis-HEAD vor dem Dokumentationsabgleich:
-`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`.
+Gepruefter Remote-HEAD vor diesem Dokumentationsabgleich:
+`4e03f9142eab853ac3130998f59f08a870bc6ba2`.
 Vor jeder Arbeit Remote erneut pruefen; dieses Dokument ist kein Ersatz dafuer.
 
 - Bekannte absichtlich uncommittete Datei: `supabase/.temp/cli-latest`.
   Nicht veraendern, entfernen, stagen oder committen. Andere Worktrees koennen
   fremde Aenderungen enthalten; nur den kanonischen Branch bearbeiten.
 - Aktueller Staging-Nachweis: Projekt `bwhvfjuwixgwduoeqaya`
-  (`wuxuai-bonus-staging`), Migrationen **166/166**. Das letzte App-Deployment
+  (`wuxuai-bonus-staging`), Migrationen **168/168**. Das letzte App-Deployment
   `29d37aaf-1bf0-487e-a1ee-e65263b7a202`, Version
   `8b5b0dc2-c67a-4daa-969c-5768133b0928` wurde durch 7C.6C2B nicht
-  veraendert. Production bleibt LOCKED und unveraendert.
+  durch die negativen Edge-Gates nicht veraendert. Production bleibt LOCKED und unveraendert.
 - Seller `WUXUAI Digital & Trading GmbH`: PLANNED, nicht gegruendet oder
   Stripe-verifiziert. WU & XU Group GmbH: IP-Inhaberin/Lizenzgeberin, nicht
   Kunden-Rechnungsausstellerin. App-Provider TEST: vier `VERIFIED`-Bindungen;
   Tax Readiness `PENDING_CONFIGURATION`; LIVE: `UNBOUND`. AT + PRO kommerziell
-  LOCKED. Positive Pending-Staging-Registrierung: NOT EXECUTED.
+  LOCKED. Der negative Checkout-/signierte technische Webhook-Pfad besitzt
+  STAGING NEGATIVE BILLING RESTGATE LOCK; Stripe-/Provideraufrufe und positive
+  Aktivierungen waren dabei 0. Positiver Stripe-Checkout, echter Stripe-
+  Webhook und KYB-Grundlage bleiben offen. Migration 169 ist lokal 169/169
+  vollstaendig geprueft und im LOCAL CODE LOCK. Staging bleibt 168/168;
+  Migration 169 wurde dort nicht angewendet. Ein Staging- oder Final-Lock
+  besteht dafuer nicht.
+  Positive Pending-Staging-Registrierung: NOT EXECUTED.
 - Stripe-Sandbox-Konto und vier monatliche Produkte/Preise wurden in 7C.6C1C
   read-only verifiziert. Die TEST-Price-Bindungen in Migration 166 sind keine
   Checkout-, Webhook-, Billing- oder Live-Autoritaet. Siehe den
@@ -32,9 +39,9 @@ Kundenfenster: exakt rollierende 365 Tage. Registrierung erzeugt
 PENDING_ACTIVATION ohne Trial, erlaubt Setup/Preview und blockiert Live-
 Aktionen. Erst verifizierte Provideraktivierung startet einen kostenlosen
 BASIC-/PRO-Kalendermonat; Add-ons haben keinen Trial. Historische rechtmaessige
-Trials bleiben erhalten. Migrationen 163–166 sind auf Staging angewendet
-(166/166); 7C.6C2B ist ein TEST-only STAGING BACKEND LOCK, nicht Production-
-oder kommerzielle Freigabe.
+Trials bleiben erhalten. Migrationen 163–168 sind auf Staging angewendet
+(168/168); 7C.6C2B ist ein TEST-only STAGING BACKEND LOCK und 7C.6C3B
+ein negativer Billing-Restgate-Lock, nicht Production- oder kommerzielle Freigabe.
 
 ## Quellen und Sicherheit
 
@@ -53,12 +60,16 @@ Secret-Aenderung. Historische Migrationen und Reports niemals umschreiben.
 Keine vollstaendigen Provider-IDs, Tokens, Cookies oder personenbezogenen
 Testdaten in Markdown, Chat oder Logs.
 
-## Naechster Arbeitsschritt: 7C.6C3 nur nach separater Freigabe
+## Naechster Arbeitsschritt: Business Verification Foundation lokal pruefen
 
-Checkout, signierter Webhook, Billing Portal und synthetische Sandbox-E2E-
-Tests sind noch nicht implementiert oder freigegeben. Vor jeder Folgearbeit
-den aktuellen Remote-HEAD, Migration 166 und die Staging-Fingerprints aus
-dem 7C.6C2B-Bericht erneut pruefen. Tax-/Invoice-Readiness und Seller-
+Die negative technische Checkout-/Signatur-/Replay-Architektur ist auf Staging
+gelockt; der positive Stripe-Checkout, echte Provider-Webhook-Aktivierung,
+Billing Portal und synthetische positive Sandbox-E2E-Tests sind nicht
+implementiert oder freigegeben. Phase 7C.6C5A/7D.1 baut die gemeinsame
+Business-Verification-Grundlage ausschliesslich lokal; Migration 169 ist
+lokal 169/169 geprueft und im LOCAL CODE LOCK, aber nicht auf Staging
+angewendet. Vor Folgearbeit Remote-HEAD, Staging 168/168 und den
+negativen Restgate-Bericht erneut pruefen. Tax-/Invoice-Readiness und Seller-
 Verifikation bleiben getrennte Gates; LIVE ist gesperrt.
 
 Sichere Baseline-Befehle im richtigen Worktree (ohne Secrets):

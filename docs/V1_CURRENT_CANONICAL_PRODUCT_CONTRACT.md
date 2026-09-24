@@ -4,16 +4,23 @@
 
 Kanonischer Branch: `codex/v1-release-integration`; gepruefter Basis-HEAD
 vor diesem Dokumentationsabgleich:
-`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`. Der aktuelle
-Staging-Nachweis belegt Migrationen **166/166** und Platform-Admin-Billing-
-Readiness als **STAGING LOCK**; die positive Pending-Registrierung auf Staging
+`4e03f9142eab853ac3130998f59f08a870bc6ba2`. Der aktuelle
+Staging-Nachweis belegt Migrationen **168/168**, Platform-Admin-Billing-
+Readiness als **STAGING LOCK** und die negative Checkout-/Webhook-Architektur
+als **STAGING NEGATIVE BILLING RESTGATE LOCK**. Der Checkout-CORS-Vertrag fuer
+den exakten Staging-Origin ist deployed; im negativen Restgate gab es 0
+Stripe-/Provideraufrufe und 0 positive Aktivierungen. Der positive Stripe-
+Sandbox-Checkout ist weder implementiert noch freigegeben. Migration 169 ist
+lokal 169/169 vollstaendig geprueft und im LOCAL CODE LOCK. Staging bleibt
+168/168; Migration 169 wurde dort nicht angewendet. Ein Staging- oder Final-
+Lock besteht dafuer nicht. Die positive Pending-Registrierung auf Staging
 bleibt ausdruecklich ungeprueft. `WUXUAI Digital & Trading GmbH` ist als
 operative Verkaeuferin, SaaS-Vertragspartnerin und Rechnungsausstellerin
 geplant (`PLANNED`), aber noch nicht gegruendet/verifiziert. WU & XU Group
 GmbH ist IP-, Marken-, Domain- und Designinhaberin sowie Lizenzgeberin,
 nicht Bonus-Kunden-Rechnungsausstellerin. Stripe
-TEST hat auf Staging vier verifizierte Sandbox-Price-Bindungen; LIVE bleibt
-`UNBOUND`. Diese technische Bindung aktiviert keinen Checkout und kein
+TEST hat auf Staging vier verifizierte Sandbox-Price-Bindungen (`VERIFIED`);
+LIVE bleibt `UNBOUND`, Tax Readiness `PENDING_CONFIGURATION`. Diese technische Bindung aktiviert keinen Checkout und kein
 Billing. Live Billing, AT + PRO und Production bleiben `LOCKED`/`BLOCKED`.
 
 Der Founder berichtet ein vorhandenes Stripe-Sandbox-Konto und vier manuell

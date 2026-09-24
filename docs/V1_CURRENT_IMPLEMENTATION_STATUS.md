@@ -1,10 +1,11 @@
 # WUXUAI Bonus V1 – aktueller Implementierungsstatus
 
 Stand: 2026-09-24. Kanonischer Branch `codex/v1-release-integration`,
-gepruefter Basis-HEAD vor diesem Dokumentationsabgleich
-`2c4e632fb242bc90cfc2fd4b3044ccaa79dbdd47`.
-Staging-Angaben bis Migration 165 stammen aus den letzten eingecheckten
-Gate-Berichten; Phase 7C.6C2B wurde erneut gegen Staging geprueft.
+gepruefter Remote-HEAD vor diesem Dokumentationsabgleich
+`4e03f9142eab853ac3130998f59f08a870bc6ba2`.
+Der aktuelle Staging-Migrationsstand ist 168/168. Die untenstehenden
+Phasenzeilen mit 165/165 oder 166/166 sind historische Gates ihrer Phase,
+nicht der gegenwaertige Gesamtstand.
 Production ist LOCKED.
 `UNKNOWN` bedeutet nicht nachgewiesen, nicht automatisch fehlgeschlagen.
 
@@ -22,7 +23,8 @@ Production ist LOCKED.
 | 7C.6B2 | Pending Activation und Live-Gates | 163 | PASS | Vertrag installiert | LOCKED | STAGING TECHNICAL GATE | `063eb40` | [7C.6B5B](reports/2026-09-23_PHASE_7C_6B5B_PLATFORM_ADMIN_BILLING_STAGING_GATE_REPORT.md) | Positiver Pending-Staging-Flow separat autorisieren |
 | 7C.6B3 | Kanonischer Billing-Katalog und Seller-/Provider-Grundlage | 164 | PASS | PASS | LOCKED | STAGING TECHNICAL GATE | `4e3da2e` | [7C.6B3](reports/2026-09-23_PHASE_7C_6B3_CANONICAL_BILLING_CATALOG_REPORT.md) | Seller-/Stripe-Verifikation und Provider-Bindung |
 | 7C.6B5 | Platform-Admin Billing Readiness | 165 | PASS | PASS, 165/165; Deployment `29d37aaf-1bf0-487e-a1ee-e65263b7a202` | LOCKED | STAGING LOCK | `c7f5fb9` / `2c4e632` Evidenz | [7C.6B5B](reports/2026-09-23_PHASE_7C_6B5B_PLATFORM_ADMIN_BILLING_STAGING_GATE_REPORT.md) | Positiver Pending-Flow deferred; Seller/Provider unbound |
-| 7C.6C2B | Vier versionierte Stripe-Sandbox-Bindungen; getrennte Tax Readiness | 166 | PASS | PASS, 166/166; TEST VERIFIED, Tax PENDING_CONFIGURATION | LIVE UNBOUND / LOCKED | STAGING BACKEND LOCK, kein Checkout | `045cd8f` (Implementierung) | [7C.6C2B](reports/2026-09-24_PHASE_7C_6C2B_TEST_PROVIDER_BINDING_STAGING_GATE_REPORT.md) | Tax, Checkout, Webhook, Aktivierung und LIVE separat |
+| 7C.6C2B | Vier versionierte Stripe-Sandbox-Bindungen; getrennte Tax Readiness | 166 | PASS | PASS, damals 166/166; TEST VERIFIED, Tax PENDING_CONFIGURATION | LIVE UNBOUND / LOCKED | STAGING BACKEND LOCK, kein positiver Checkout | `045cd8f` (Implementierung) | [7C.6C2B](reports/2026-09-24_PHASE_7C_6C2B_TEST_PROVIDER_BINDING_STAGING_GATE_REPORT.md) | Positive Aktivierung und LIVE separat |
+| 7C.6C3B | Negativer Checkout-/signierter technischer Webhook-Pfad, CORS-/Owner-/Staff-Restgate | 167–168 | PASS | PASS, 168/168; 0 Stripe-/Provideraufrufe, 0 positive Aktivierungen | LOCKED | STAGING NEGATIVE BILLING RESTGATE LOCK | `4e03f91` (letzte Evidenz) | [7C.6C3B2B](reports/2026-09-24_PHASE_7C_6C3B2B_OWNER_RESTGATE_REPORT.md) | Positiver Stripe-Checkout, echter Stripe-Webhook, Trial-/Entitlement-Aktivierung offen |
 | Vor Production | Platform-Admin TOTP-MFA/AAL2 | Keine | PLANNED | NOT VERIFIED | REQUIRED BEFORE PRODUCTION | NO LOCK | NOT RECORDED | NOT RECORDED | Implementieren und physisch pruefen |
 
 Stripe-Sandbox: Konto und vier monatliche Produkte/Preise wurden in 7C.6C1C
@@ -44,10 +46,12 @@ Readiness PENDING_CONFIGURATION; LIVE Provider UNBOUND. Live Billing BLOCKED.
 AT + PRO kommerziell LOCKED; AT ist technisch im Registrierungs-Gate
 aktiviert, nicht oeffentlich freigegeben.
 
-## Migrationen 153–166 (Repository-Dateinamen)
+## Migrationen 153–168 (Repository-Dateinamen)
 
-Migrationen 153–165 sind historisch unveraendert; der aktuelle Staging-
-Nachweis belegt 166/166. Historische Migrationen nicht umschreiben.
+Migrationen 153–168 sind auf Staging angewendet; der aktuelle Nachweis belegt
+168/168. Migration 169 ist lokal 169/169 vollstaendig geprueft und im LOCAL
+CODE LOCK; auf Staging wurde sie nicht angewendet. Ein Staging- oder Final-
+Lock besteht dafuer nicht. Historische Migrationen nicht umschreiben.
 
 | Nr. | Datei |
 | --- | --- |
@@ -65,6 +69,8 @@ Nachweis belegt 166/166. Historische Migrationen nicht umschreiben.
 | 164 | `20260922007000_billing_catalog_reconciliation.sql` |
 | 165 | `20260923001000_platform_admin_billing_readiness_reads.sql` |
 | 166 | `20260924001000_test_provider_binding_tax_readiness.sql` |
+| 167 | `20260924002000_checkout_webhook_architecture_blocked.sql` |
+| 168 | `20260924003000_staging_negative_billing_readiness.sql` |
 
 ## Nicht implementiert / gesondert freizugeben
 

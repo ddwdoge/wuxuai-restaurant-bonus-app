@@ -8,8 +8,17 @@ erlaubt, produktive Aktionen bleiben blockiert. BASIC und PRO erhalten erst
 nach bestandenen Country-, Legal- und KYB-Gates und verifizierter
 Provideraktivierung genau einen kostenlosen Kalendermonat. Add-ons haben
 keinen Trial; rechtmaessige historische Trials bleiben unveraendert. Der
-aktuelle Platform-Admin-Readiness-Stand ist Staging 165/165, Seller PLANNED,
-Stripe TEST/LIVE UNBOUND und AT + PRO LOCKED. Datierte Aussagen unten zu
+aktuelle Staging-Migrationsstand ist 168/168. Vier Stripe-Sandbox-TEST-
+Providerbindungen sind VERIFIED; LIVE bleibt UNBOUND, Seller PLANNED und
+Tax Readiness PENDING_CONFIGURATION. Die negative Checkout-/Webhook-
+Architektur besitzt den STAGING NEGATIVE BILLING RESTGATE LOCK; der enge
+Checkout-CORS-Vertrag fuer den exakten Staging-Origin ist deployed. Im
+negativen Restgate gab es 0 Stripe-/Provideraufrufe und 0 positive
+Aktivierungen. Der positive Stripe-Sandbox-Checkout ist weder implementiert
+noch freigegeben. Production und LIVE bleiben gesperrt. Migration 169 ist
+lokal 169/169 vollstaendig geprueft und im LOCAL CODE LOCK. Staging bleibt
+168/168; Migration 169 ist dort nicht angewendet. Ein Staging- oder Final-
+Lock besteht dafuer nicht. AT + PRO bleiben LOCKED. Datierte Aussagen unten zu
 drei Monaten, Unlimited, lokal-only oder fehlender UI sind historische
 Snapshots, keine heutige Aktivierungsautoritaet. Siehe
 `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
@@ -24,7 +33,7 @@ Platform-Rollen- und Recent-Auth-Pruefung autoritativ bleibt. Direkte
 Tabellen-DML ist fuer Browser- und Service-Rollen entzogen. Eine
 Platform-Admin-UI wurde nicht implementiert.
 
-## Founder Phase 7B.1A – aktueller Pro-Steuerungsvertrag
+## Founder Phase 7B.1A – historischer Pro-Steuerungsvertrag
 
 Die fruehere Aussage, es gebe keinen Platform-Admin-Commercial-Mutator, ist
 SUPERSEDED. Lokal vorbereitet sind ausschliesslich geschuetzte

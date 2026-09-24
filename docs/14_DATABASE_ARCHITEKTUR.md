@@ -2,7 +2,13 @@
 # 14_DATABASE_ARCHITEKTUR.md
 
 **Aktueller Registrierungs-/Billing-Zustand (24.09.2026):** Migrationen
-163–165 sind laut letztem Staging-Gate angewendet (165/165). Neue
+163–168 sind auf Staging angewendet (168/168). Vier Stripe-Sandbox-TEST-
+Providerbindungen sind VERIFIED; LIVE bleibt UNBOUND, Seller PLANNED und
+Tax Readiness PENDING_CONFIGURATION. Der negative Checkout-/Webhook-Vertrag
+ist auf Staging gelockt; der positive Stripe-Pfad bleibt blockiert. Migration
+169 ist lokal 169/169 vollstaendig geprueft und im LOCAL CODE LOCK. Staging
+bleibt 168/168; Migration 169 wurde dort nicht angewendet. Ein Staging- oder
+Final-Lock besteht dafuer nicht. Neue
 Registrierung erzeugt PENDING_ACTIVATION ohne Trialdaten oder wirksame
 Entitlements. Setup/Preview bleibt erlaubt; Live-QR, Punkte, Einloesung und
 Kommunikation bleiben blockiert. Ein kostenloser BASIC-/PRO-Kalendermonat

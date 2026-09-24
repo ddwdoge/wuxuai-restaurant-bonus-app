@@ -17,7 +17,10 @@ Kommunikationsaktionen bleiben blockiert. BASIC: 59 EUR netto/Monat,
 BASIC/PRO erhalten genau einen kostenlosen Kalendermonat erst nach
 Country-, Legal-, KYB- und verifizierter Provideraktivierung; Add-ons
 haben keinen Trial. Bestehende rechtmaessige Trials bleiben geschuetzt.
-Seller WUXUAI Digital & Trading GmbH ist PLANNED, Stripe TEST/LIVE UNBOUND;
+Seller WUXUAI Digital & Trading GmbH ist PLANNED; Stripe TEST ist mit vier
+Sandbox-Price-Bindungen VERIFIED, LIVE bleibt UNBOUND und Tax Readiness
+PENDING_CONFIGURATION. Der negative Checkout-/Webhook-Vertrag ist auf
+Staging gelockt; positive Stripe-Aktivierung ist nicht implementiert.
 AT + PRO und Production bleiben LOCKED. Verbindliche Detailquelle:
 `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`. Die aelteren APPROVED-/FIX-
 Abschnitte bleiben historische Entscheidungs-Evidenz, nicht aktueller

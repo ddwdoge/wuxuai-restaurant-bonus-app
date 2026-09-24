@@ -397,7 +397,7 @@ Country-, PRO-Phase-1-, Password-, Phase-4- und Phase-5-Final-Locks bleiben erha
 | 6 | Compact Mobile UI fuer Customer, Staff, Owner, Auth und Platform Admin; alle Drawer/Bottom Sheets | Mobile Final Lock; keinerlei Business-, Security-, QR-, PIN-, Rechte- oder Datenbankaenderung |
 | 7 | PRO und zentrale Capacity: 15 Angebote und 15.000 aktive eindeutige Kunden in 365 Tagen; Warnungen, Owner-Plananzeige und sicherer Downgrade | Staging-Vertraege vorhanden; AT + PRO LOCKED, kein oeffentlicher Kauf |
 | 8 | Catalog Add-on: sichere Uploads, Quoten, Publikation, Customer-Anzeige, Deaktivierung mit Datenerhalt, eigene Platform-Steuerung | Technisch fertig; Server Gate geschlossen, kein oeffentlicher Kauf |
-| 9 | Stripe-Testintegration und versionierte BASIC-/PRO-/Offer-/Customer-Add-on-Bindungen, Checkout, Webhooks und Entitlement-Synchronisierung | Anwendung TEST/LIVE UNBOUND; kein Checkout; Live bleibt bis Legal, Seller und formaler Billing-Freigabe aus |
+| 9 | Stripe-Testintegration und versionierte BASIC-/PRO-/Offer-/Customer-Add-on-Bindungen, Checkout, Webhooks und Entitlement-Synchronisierung | Vier TEST-Price-Bindungen VERIFIED, LIVE UNBOUND; Tax PENDING_CONFIGURATION. Negativer technischer Checkout-/Webhook-Vertrag auf Staging gelockt; positiver Stripe-Checkout und echte Webhook-Aktivierung offen. LIVE bleibt bis Legal, Seller und formaler Billing-Freigabe gesperrt. |
 | 10 | Austria Basic Launch Gate: AT aktuell LOCKED; Basic 59 EUR netto/Monat erst nach gesonderter Freigabe; weitere EU-Laender vorbereitet und gesperrt | Legal/Readiness, Golden Path und Release-Nachweise; Production und kommerzieller Start nur nach finaler Founder-Freigabe |
 
 Phase 6 umfasst insbesondere inhaltsgetriebene Drawer-Hoehen, keinen
