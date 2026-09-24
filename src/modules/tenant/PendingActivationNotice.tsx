@@ -1,4 +1,5 @@
 import { usePendingActivationMessages } from "./pendingActivation";
+import { Link } from "react-router-dom";
 
 export function PendingActivationNotice({ preview = false }: { preview?: boolean }) {
   const message = usePendingActivationMessages();
@@ -7,5 +8,6 @@ export function PendingActivationNotice({ preview = false }: { preview?: boolean
     <p>{message.body}</p>
     <p>{message.plan}</p>
     {preview ? <p>{message.preview}</p> : null}
+    <Link className="button secondary" to="/admin/settings/betriebsverifizierung">{message.verification}</Link>
   </section>;
 }

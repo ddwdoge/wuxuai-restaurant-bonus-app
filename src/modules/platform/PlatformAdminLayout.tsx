@@ -35,6 +35,10 @@ function Navigation({ close }: { close?: () => void }) {
   const { language } = useI18n();
   const pathname = useLocation().pathname;
   const t = platformAdminNavigationMessages(language);
+  const verificationLabel: Record<string, string> = {
+    de: "Betriebsprüfung", en: "Business verification", fr: "Vérification des établissements",
+    it: "Verifica delle attività", es: "Verificación de negocios", zh: "商户审核", ko: "사업체 검토",
+  };
   return <nav aria-label={t.navigation} className="platform-admin-navigation">
     {items.map(({ key, path, icon: Icon }) => {
       const active = isActiveSection(pathname, key);
@@ -44,6 +48,11 @@ function Navigation({ close }: { close?: () => void }) {
         {active ? <strong aria-hidden="true">●</strong> : null}
       </Link>;
     })}
+    <Link aria-current={pathname === "/admin/platform/verification" ? "page" : undefined}
+      className={pathname === "/admin/platform/verification" ? "active" : undefined}
+      onClick={close} to="/admin/platform/verification">
+      <Building2 aria-hidden="true" size={19} /><span>{verificationLabel[language] ?? verificationLabel.de}</span>
+    </Link>
   </nav>;
 }
 

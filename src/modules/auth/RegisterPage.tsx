@@ -20,7 +20,7 @@ import { usePendingActivationMessages } from "../tenant/pendingActivation";
 import { LaunchCountrySelect } from "../onboarding/LaunchCountrySelect";
 
 export function RegisterPage() {
-  const { translateKey: t } = useI18n();
+  const { language, translateKey: t } = useI18n();
   const pendingMessage = usePendingActivationMessages();
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,6 +66,22 @@ export function RegisterPage() {
       ))
     )
   );
+
+  function changeCountry(nextCountry: string) {
+    if (country && country !== nextCountry && (ownerName || restaurantName || email || phone)) {
+      const questions: Record<string, string> = {
+        de: "Betriebsland wechseln? Deine bisherigen Eingaben bleiben erhalten, müssen aber zum neuen Land passen.",
+        en: "Change business country? Your entries will be retained but must match the new country.",
+        fr: "Changer de pays ? Vos données seront conservées mais devront correspondre au nouveau pays.",
+        it: "Cambiare paese? I dati inseriti saranno conservati ma dovranno corrispondere al nuovo paese.",
+        es: "¿Cambiar de país? Tus datos se conservarán, pero deberán coincidir con el nuevo país.",
+        zh: "更换经营国家？已填写的内容会保留，但必须符合新国家的要求。",
+        ko: "사업 국가를 변경할까요? 입력 내용은 유지되지만 새 국가의 요건에 맞아야 합니다.",
+      };
+      if (!window.confirm(questions[language] ?? questions.de)) return;
+    }
+    setCountry(nextCountry);
+  }
 
   useEffect(() => {
     if (!authLoading && user && portalAccess.owner_access) {
@@ -182,6 +198,9 @@ export function RegisterPage() {
       <PublicContentCard>
         <form className="public-premium-form" onSubmit={handleSubmit}>
           <RequiredFieldsNote />
+          <label htmlFor="registration-country">{t("platform.country.label")} *</label>
+          <LaunchCountrySelect id="registration-country" value={country} onChange={changeCountry} disabled={loading} />
+          {country ? <>
           <PublicFormField autoComplete="name" disabled={loading} id="owner-name" label="Dein Name" onChange={(event) => setOwnerName(event.target.value)} required value={ownerName} />
           {activatingExistingAccount ? (
             <PublicFormField disabled id="register-existing-email" label="Bestätigte E-Mail" type="email" value={user?.email ?? ""} />
@@ -233,8 +252,6 @@ export function RegisterPage() {
             </>
           )}
           <PublicFormField autoComplete="organization" disabled={loading} id="restaurant-name" label={t("auth.businessName")} onChange={(event) => setRestaurantName(event.target.value)} required value={restaurantName} />
-          <label htmlFor="registration-country">{t("platform.country.label")} *</label>
-          <LaunchCountrySelect id="registration-country" value={country} onChange={setCountry} disabled={loading} />
           <PublicFormField
             autoComplete="tel"
             disabled={loading}
@@ -246,6 +263,7 @@ export function RegisterPage() {
             type="tel"
             value={phone}
           />
+          </> : null}
 
           {message ? <p className="public-premium-alert public-premium-alert-success" role="status" aria-live="polite">{message}</p> : null}
           {error && !existingIdentityFlow ? <p className="public-premium-alert public-premium-alert-error" role="alert" aria-live="assertive">{error}</p> : null}

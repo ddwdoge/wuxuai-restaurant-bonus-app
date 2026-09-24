@@ -1697,6 +1697,13 @@ export function SettingsPage() {
           to="/admin/settings/tarif-kapazitaet"
         />
         <SettingsLinkCard
+          description="Prüfe deine Firmendaten und reiche sie über den sicheren manuellen Prüfweg ein."
+          icon={Building2}
+          label="Betriebsverifizierung öffnen"
+          title="Betriebsverifizierung"
+          to="/admin/settings/betriebsverifizierung"
+        />
+        <SettingsLinkCard
           description="Sieh Testphase, Abo-Status und Zahlungsstatus."
           icon={CreditCard}
           label="Abo & Testphase ansehen"

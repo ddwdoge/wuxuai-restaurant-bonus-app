@@ -59,11 +59,17 @@ const SettingsPage = lazy(() =>
 const OwnerCapacityPage = lazy(() =>
   import("../modules/admin/pages/OwnerCapacityPage").then((module) => ({ default: module.OwnerCapacityPage })),
 );
+const OwnerBusinessVerificationPage = lazy(() =>
+  import("../modules/verification/OwnerBusinessVerificationPage").then((module) => ({ default: module.OwnerBusinessVerificationPage })),
+);
 const OwnerSetupOverviewPage = lazy(() =>
   import("../modules/admin/pages/OwnerSetupOverviewPage").then((module) => ({ default: module.OwnerSetupOverviewPage })),
 );
 const PlatformAdminPage = lazy(() =>
   import("../modules/platform/PlatformAdminPage").then((module) => ({ default: module.PlatformAdminPage })),
+);
+const PlatformBusinessVerificationPage = lazy(() =>
+  import("../modules/verification/PlatformBusinessVerificationPage").then((module) => ({ default: module.PlatformBusinessVerificationPage })),
 );
 const PlatformAuditPage = lazy(() =>
   import("../modules/platform/PlatformAuditPage").then((module) => ({ default: module.PlatformAuditPage })),
@@ -254,6 +260,7 @@ export function App() {
         <Route path="onboarding" element={withFallback(<RestaurantOnboarding />, <AdminLoading />)} />
         <Route path="settings" element={withFallback(<SettingsPage />, <AdminLoading />)} />
         <Route path="settings/tarif-kapazitaet" element={withFallback(<OwnerCapacityPage />, <AdminLoading />)} />
+        <Route path="settings/betriebsverifizierung" element={withFallback(<OwnerBusinessVerificationPage />, <AdminLoading />)} />
         <Route path="settings/setup" element={withFallback(<OwnerSetupOverviewPage />, <AdminLoading />)} />
         <Route path="settings/program-end" element={withFallback(<ProgramTerminationPage />, <AdminLoading />)} />
         <Route path="settings/:section" element={withFallback(<SettingsPage />, <AdminLoading />)} />
@@ -268,6 +275,14 @@ export function App() {
         <Route path="reports" element={withFallback(<BonusActivityReportsPage />, <AdminLoading />)} />
         <Route path="legal" element={withFallback(<OwnerLegalErrorBoundary><OwnerLegalSettingsPage /></OwnerLegalErrorBoundary>, <AdminLoading />)} />
       </Route>
+      <Route
+        path="/admin/platform/verification"
+        element={
+          <ProtectedRoute allowedRoles={[...PLATFORM_ADMIN_ROLES]} portalKind="platform" roleScope="platform">
+            {withFallback(<PlatformBusinessVerificationPage />, <PlatformLoading />)}
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/admin/platform/*"
         element={
