@@ -44,6 +44,29 @@ operative Einstieg fuer ein zweites Konto in `CODEX_SECOND_ACCOUNT_HANDOFF.md`.
 Die nachfolgenden datierten Phase-Abschnitte sind historische Gate-Snapshots;
 ihre damaligen LOCAL-/NOT-STAGING-Aussagen sind **nicht** der heutige Status.
 
+### Phase 7C.6C3B0 – isolierter Staging-Negativmodus (lokaler Codevertrag)
+
+Die zwei Checkout-/Webhook-Edge-Funktionen akzeptieren `local_only` weiterhin
+unveraendert. `staging_negative_only` ist ausschliesslich serverseitig
+konfigurierbar und verlangt den exakten Staging-Project-Ref, die exakte
+Staging-Supabase-URL, `STAGING` sowie einen schreibfreien Service-Role-Read
+fuer Seller `PLANNED`, TEST-Tax `PENDING_CONFIGURATION`, LIVE-Provider
+`UNBOUND` und `commercial_activation_allowed=false`. Ein fehlender oder
+abweichender Nachweis sperrt die Funktion. Der zusaetzliche Read-Vertrag liegt
+in der additiven Migration 168; Migrationen 001–167 bleiben unveraendert.
+
+Checkout kann nur den bestehenden blockierten Owner-/Tenant-RPC erreichen,
+niemals einen Fake- oder Stripe-Provider. Der Staging-Webhook akzeptiert nur
+einen korrekt raw-body-signierten, mit getrenntem serverseitigem Marker und
+festen Request-/Correlation-/Event-IDs gebundenen synthetischen Event. Bei
+fehlendem Testsecret entstehen keine Inbox- oder Auditwrites. Die technische
+Inbox darf `ACTIVATION_BLOCKED` dokumentieren, aber keine Subscription,
+Trial-, Entitlement- oder Businessmutation ausloesen. Dies ist **nur lokaler
+Codevertrag**: Weder Migration 167 noch 168, Edge-Funktionen oder Secrets
+sind durch diese Phase auf Staging angewendet beziehungsweise eingerichtet.
+Der spaetere Staging-Migrationsumfang muss wegen Migration 168 separat
+freigegeben werden. Stripe und Production bleiben unveraendert.
+
 ### Aktueller Founder-Vertrag und offene Grenzen
 
 - BASIC: 59 EUR netto/Monat, 5 Angebote und 3.000 aktive eindeutige

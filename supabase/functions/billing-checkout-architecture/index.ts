@@ -11,8 +11,14 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return respond(405, "METHOD_NOT_ALLOWED");
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  if (Deno.env.get("BILLING_ARCHITECTURE_MODE") !== "local_only"
-    || !/^http:\/\/(127\.0\.0\.1|localhost|kong)(:\d+)?\/?$/.test(url) || !anonKey) {
+  const mode = Deno.env.get("BILLING_ARCHITECTURE_MODE");
+  const local = mode === "local_only" && /^http:\/\/(127\.0\.0\.1|localhost|kong)(:\d+)?\/?$/.test(url);
+  const staging = mode === "staging_negative_only"
+    && Deno.env.get("BILLING_STAGING_PROJECT_REF") === "bwhvfjuwixgwduoeqaya"
+    && url === "https://bwhvfjuwixgwduoeqaya.supabase.co"
+    && Deno.env.get("BILLING_ENVIRONMENT") === "STAGING"
+    && !Object.values(Deno.env.toObject()).some((value) => /sk[_-]?live[_-]/i.test(value));
+  if ((!local && !staging) || !anonKey || (staging && !Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))) {
     return respond(503, "BILLING_ARCHITECTURE_NOT_ENABLED");
   }
   const authorization = request.headers.get("authorization") ?? "";
@@ -29,6 +35,13 @@ Deno.serve(async (request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   try {
+    if (staging) {
+      const service = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: ready, error: readinessError } = await service.rpc("billing_staging_negative_readiness");
+      if (readinessError || ready !== true) return respond(503, "STAGING_NEGATIVE_READINESS_BLOCKED");
+    }
     const decision = await orchestrateBlockedCheckout(input, (parsed) => client.rpc("request_blocked_test_checkout", {
       input_plan_key: parsed.plan_key,
       input_request_id: parsed.request_id,
