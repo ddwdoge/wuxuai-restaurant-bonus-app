@@ -1078,6 +1078,7 @@
 
 .customer-premium-shell .customer-hero-card h2 { font-size: 30px; line-height: 1.15; }
 .customer-premium-shell .input { border-color: var(--premium-border-strong); border-radius: 14px; min-height: 50px; }
+.premium-redemption-pin-entry .input { box-sizing: border-box; min-height: 44px; }
 .customer-premium-shell .status-message { border-radius: 14px; }
 
 .customer-registration-card,

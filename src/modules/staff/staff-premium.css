@@ -2276,3 +2276,17 @@
     transition-duration: 0.01ms !important;
   }
 }
+.secure-redemption-queue-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.secure-redemption-queue-image > .reward-image-frame {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+}

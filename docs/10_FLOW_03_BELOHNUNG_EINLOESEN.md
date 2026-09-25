@@ -1,6 +1,36 @@
 
 # 10_FLOW_03_BELOHNUNG_EINLOESEN.md
 
+## Phase 7D.3B – lokaler, noch nicht ausgerollter Sicherheitsvertrag
+
+Auf `codex/v1-7d-redemption-confirmation` wird Migration 171 lokal geprüft.
+Sie ist weder auf Staging noch auf Production angewendet. Der folgende
+Vertrag ersetzt die nachstehenden historischen „Current Lock“- und
+„Current Contract“-Abschnitte **erst nach einem gesonderten Staging-Gate**:
+
+- Kunde startet einen restaurant- und filialgebundenen, 15 Minuten gültigen
+  Antrag für Punkteprämie, Welcome Gift oder Birthday Gift.
+- Entweder gibt ein Mitarbeiter die separate, sechsstellige und nur gehasht
+  gespeicherte Redemption-PIN auf dem Kundengerät ein; erst nach serverseitigem
+  Nachweis kann der Kunde swipen. Oder Staff/Owner bestätigt den offenen Antrag
+  im eigenen Portal direkt. Beide Wege nutzen dieselbe atomare Finalisierung.
+- Die vierstellige Tages-PIN zum Punktesammeln bleibt getrennt. PIN-Eingabe
+  allein löst nichts ein. Staff/Owner können die Kunden-PIN-Prüfung nicht
+  simulieren; Platform Admin führt keine operative Einlösung aus.
+- Serverseitige Grenzen: fünf falsche PIN-Versuche pro Antrag, 20 Versuche je
+  Customer-Identität/Restaurant/Filiale/Stunde, fünf neue Anträge je Kunde und
+  Restaurant/Stunde, 60 Sekunden Wiederantrags-Cooldown nach terminalem
+  Fehlschlag und ein aktiver Antrag pro konkretem Anspruch.
+- Das dedizierte Edge-Tor verifiziert den JWT-Principal. Browserrollen haben
+  kein direktes EXECUTE auf mutierende RPCs; der alte Self-Swipe liefert
+  `REDEMPTION_CONFIRMATION_REQUIRED`. Offene Altvorgänge werden nicht
+  automatisch migriert oder eingelöst und benötigen einen Neustart beim Team.
+- Status und Warteschlange sind read-only, tenantgebunden und datensparsam.
+  Historische Receipts und Migrationen bleiben unverändert.
+
+Bis zum Staging-Gate ist dies ein lokaler Implementierungsstand, **kein**
+Staging-, Production- oder FINAL LOCK.
+
 ## Current Lock 2026-08-24
 
 Der V1-Primärflow ist die serverzeitgebundene 15-Minuten-Live-Präsentation für

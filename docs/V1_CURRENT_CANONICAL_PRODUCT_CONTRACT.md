@@ -454,6 +454,15 @@ angewendet; eine Control-Center-UI ist weiterhin nicht implementiert.
 
 ## Redemption - IMPLEMENTED
 
+**Lokale 7D.3B-Fortentwicklung, nicht deployed:** Auf dem isolierten Branch
+`codex/v1-7d-redemption-confirmation` liegt Migration 171 für ein dediziertes
+Edge-Mutationstor und zwei gesicherte Bestätigungswege. Kundenswipe setzt
+zuerst die separate sechsstellige Redemption-PIN voraus; alternativ
+bestätigt Staff/Owner den 15-Minuten-Antrag direkt. Der alte Self-Swipe ist
+im lokalen Migrationsvertrag fail-closed. Staging bleibt auf dem zuvor
+bestätigten Stand 168/168; Migrationen 169–171 sind nicht dort angewendet.
+Dies ist keine Aussage über bereits aktive Staging- oder Production-Flows.
+
 - Primaerflow fuer Punkte-, Welcome- und Birthday-Einloesung ist eine
   serverzeitgebundene 15-Minuten-Live-Praesentation.
 - Die normale Staff-Oberflaeche enthaelt keine sechsstellige Codepruefung.
@@ -580,6 +589,13 @@ angewendet; eine Control-Center-UI ist weiterhin nicht implementiert.
 - Owner, Admins und Manager duerfen den operativen Mitarbeiterbereich nur fuer
   eigene, autoritativ zugeordnete Restaurants verwenden. Ihre Rolle bleibt
   unveraendert; es wird keine Staff-Identitaet erzeugt oder imitiert.
+- Der allgemeine Mitarbeiterbereich bleibt fuer serverseitig zugeordnete
+  Owner, Admins, Manager und Staff des eigenen Restaurants zugaenglich. Die
+  Einloese-Queue besitzt eine davon getrennte, engere serverseitige
+  Berechtigung: Nur `STAFF` oder `OWNER` fuer exakt den aktuellen Restaurant-
+  Slug duerfen Queue-Inhalte und Aktionen sehen. Admin-/Manager-Portalzugang
+  allein berechtigt nicht zur Queue. Beim Slug-Wechsel wird eine alte
+  Portal- oder Queue-Freigabe niemals fuer den neuen Tenant wiederverwendet.
 - Betreiberaktionen behalten `auth.uid()` als Akteur und werden im Audit als
   Admin-Aktion mit der konkreten Restaurantrolle gekennzeichnet.
 - Direkter Staff-Login mit E-Mail und gemeinsamem Auth-Passwort funktioniert

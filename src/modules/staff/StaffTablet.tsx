@@ -51,6 +51,7 @@ import {
 import { useTenant } from "../tenant/TenantProvider";
 import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
+import { SecureRedemptionQueue } from "./SecureRedemptionQueue";
 import {
   activePointsTaskExpiryMs,
   activePointsTaskStage,
@@ -1209,6 +1210,9 @@ export function StaffTablet() {
             </section>
 
             {renderProcessOverview(0)}
+
+            {staffRestaurant?.slug ? <SecureRedemptionQueue restaurantSlug={staffRestaurant.slug}
+              owner={staffPortalAccess?.restaurant_role === "owner"} /> : null}
 
             <div className="staff-premium-priority-grid">
               {restaurantControlledEnabled ? (

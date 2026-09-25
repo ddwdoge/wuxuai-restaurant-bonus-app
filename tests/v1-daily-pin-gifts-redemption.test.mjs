@@ -58,11 +58,9 @@ test("Geschenk-Einlösecode ist sechsstellig, gehasht, einmalig und 15 Minuten g
   assert.match(migration, /revoke execute on function public\.redeem_reward_with_staff_session/);
 });
 
-test("Customer-Portal verwendet das 15-Minuten-Präsentationsfenster auch für Geschenke", () => {
-  assert.match(customerPortal, /startCustomerPointsPresentation/);
-  assert.match(customerPortal, /startCustomerGiftPresentation/);
-  assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)/);
-  assert.match(customerPortal, /Bitte erst vor dem Mitarbeiter bestätigen/);
+test("Customer-Portal verwendet den sicheren 15-Minuten-Antrag auch für Geschenke", () => {
+  assert.match(customerPortal, /startSecureRedemption/);
+  assert.match(customerPortal, /secureRedemptionMessages/);
   assert.match(customerPortal, /<SwipeToRedeem/);
   assert.match(releaseMigration, /status = 'redemption_started'/);
   assert.match(releaseMigration, /status = 'redeemed', redeemed_at = input_now/);

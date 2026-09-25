@@ -59,8 +59,7 @@ test("Punkteabzug, Journal und Präsentation entstehen in derselben RPC-Transakt
 
 test("Punktevertrag bleibt getrennt, während Geschenke denselben Präsentationsstil additiv erhalten", () => {
   assert.match(migration, /not r\.is_starter_reward/);
-  assert.match(customerPortal, /if \(!redeemOffer\.is_starter_reward\)[\s\S]*startCustomerPointsPresentation/);
-  assert.match(customerPortal, /startCustomerGiftPresentation/);
+  assert.match(customerPortal, /startSecureRedemption\(restaurantSlug,/);
   assert.match(releaseMigration, /customer_reward_id uuid not null unique/);
   assert.match(releaseMigration, /CUSTOMER_PRESENTATION_WINDOW/);
 });
@@ -108,8 +107,8 @@ test("Browserrollen haben keinen direkten Tabellenzugriff und nur enge RPC-Recht
 
 test("die Kundenoberfläche zeigt Bestätigung, Countdown und bewegte Sicherheitsmerkmale", () => {
   assert.match(customerPortal, /ct\("redeemNow"\)/);
-  assert.match(customerPortal, /Bitte erst vor dem Mitarbeiter bestätigen/);
-  assert.match(customerPortal, /Punkte werden erst nach dem Wischen abgezogen/);
+  assert.match(customerPortal, /sr\.legacy/);
+  assert.match(customerPortal, /secureRedemption\.status === "PIN_VERIFIED"/);
   assert.match(customerPortal, /<SwipeToRedeem/);
   assert.match(customerPortal, /Verbleibende Zeit/);
   assert.match(customerPortal, /Serverzeit/);

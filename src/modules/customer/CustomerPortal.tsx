@@ -39,11 +39,16 @@ import {
   loadCustomerPointsPresentation,
   loadCustomerGiftPresentation,
   loadCustomerRedemptionStatus,
-  confirmCustomerRedemptionSwipe,
-  startCustomerPointsPresentation,
-  startCustomerGiftPresentation,
   type CustomerPointsPresentation,
 } from "../rewards/rewardService";
+import {
+  actOnSecureRedemption,
+  loadSecureRedemptionStatus,
+  startSecureRedemption,
+  verifySecureRedemptionPin,
+  type SecureRedemptionState,
+} from "../rewards/secureRedemptionService";
+import { secureRedemptionMessages } from "../rewards/secureRedemptionMessages";
 import {
   legalCenterStateFromResponse,
   loadPublicLegalCenter,
@@ -252,8 +257,9 @@ type CustomerPortalProps = {
 };
 
 export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug }: CustomerPortalProps) {
-  const { portalAccess, signOut } = useAuth();
+  const { portalAccess, signOut, user } = useAuth();
   const { language, translateKey: t } = useI18n();
+  const sr = secureRedemptionMessages(language);
   const ct = (key: string, parameters?: Record<string, string | number>) => customerPresentationText(key, language, parameters);
   const present = (reward: CustomerRewardPresentationInput) => customerRewardPresentation(reward, language);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -273,9 +279,11 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [redemptionStatus, setRedemptionStatus] = useState<string | null>(null);
   const [activeRedemptionCode, setActiveRedemptionCode] = useState<ActiveRedemptionCode | null>(null);
   const [activePointsPresentation, setActivePointsPresentation] = useState<CustomerPointsPresentation | null>(null);
+  const [secureRedemption, setSecureRedemption] = useState<SecureRedemptionState | null>(null);
+  const [redemptionPinDraft, setRedemptionPinDraft] = useState("");
+  const [secureActionPending, setSecureActionPending] = useState(false);
   const [presentationClockOffsetMs, setPresentationClockOffsetMs] = useState(0);
   const [redeemingReward, setRedeemingReward] = useState(false);
-  const [confirmingSwipe, setConfirmingSwipe] = useState(false);
   const [redemptionDrawerOpen, setRedemptionDrawerOpen] = useState(false);
   const [storedCustomerToken, setStoredCustomerToken] = useState<string | null>(() => (
     isUsableRestaurantSlug(restaurantSlug) ? readStoredCustomerToken(restaurantSlug) : null
@@ -310,7 +318,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
-  const swipeConfirmationKeysRef = useRef(new Map<string, string>());
+  const secureSwipeKeysRef = useRef(new Map<string, string>());
+  const secureStartKeysRef = useRef(new Map<string, string>());
   const processedReminderDeepLinkRef = useRef<string | null>(null);
   const referralCreationTokenRef = useRef<string | null>(null);
   const activeToken = customerToken ?? storedCustomerToken;
@@ -722,6 +731,10 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const redemptionSecondsRemaining = activeRedemptionCode
     ? Math.min(15 * 60, Math.max(0, Math.ceil((new Date(activeRedemptionCode.expiresAt).getTime() - nowMs) / 1_000)))
     : 0;
+  const secureSecondsRemaining = secureRedemption
+    ? Math.min(15 * 60, Math.max(0, Math.ceil(
+      (new Date(secureRedemption.expires_at).getTime() - nowMs) / 1_000,
+    ))) : 0;
   const presentationNowMs = nowMs + presentationClockOffsetMs;
   const presentationSecondsRemaining = activePointsPresentation?.active
     ? Math.min(15 * 60, Math.max(0, Math.ceil(
@@ -890,6 +903,47 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       });
     return () => { cancelled = true; };
   }, [activeToken, applyPointsPresentation, customer, restaurantSlug]);
+
+  useEffect(() => {
+    if (!user || !customer || !restaurantSlug) return;
+    let cancelled = false;
+    void loadSecureRedemptionStatus(restaurantSlug).then((state) => {
+      if (!cancelled && state) setSecureRedemption(state);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [user, customer, restaurantSlug]);
+
+  useEffect(() => {
+    if (!redemptionDrawerOpen || !secureRedemption?.redemption_id
+      || !["REQUESTED", "PIN_VERIFIED"].includes(secureRedemption.status)) return;
+    const redemptionId = secureRedemption.redemption_id;
+    let cancelled = false;
+    let timer: number | undefined;
+    let delay = 2_000;
+    const refresh = async () => {
+      try {
+        const state = await loadSecureRedemptionStatus(restaurantSlug, redemptionId);
+        if (cancelled || !state) return;
+        setSecureRedemption(state);
+        if (!["REQUESTED", "PIN_VERIFIED"].includes(state.status)) {
+          if (state.source_id) secureStartKeysRef.current.delete(state.source_id);
+          if (state.status === "REDEEMED") setRefreshToken((value) => value + 1);
+          return;
+        }
+      } catch {
+        // Polling failure does not change the authoritative server state.
+      }
+      if (!cancelled) {
+        delay = Math.min(5_000, Math.round(delay * 1.25));
+        timer = window.setTimeout(() => void refresh(), delay);
+      }
+    };
+    timer = window.setTimeout(() => void refresh(), delay);
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [redemptionDrawerOpen, restaurantSlug, secureRedemption?.redemption_id, secureRedemption?.status]);
 
   useEffect(() => {
     const presentationId = activePointsPresentation?.presentation_id;
@@ -1290,6 +1344,10 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
     setRedemptionDrawerOpen(false);
     setRedemptionStatus(null);
     setRedemptionSheetStep("detail");
+    setRedemptionPinDraft("");
+    if (secureRedemption && !["REQUESTED", "PIN_VERIFIED"].includes(secureRedemption.status)) {
+      setSecureRedemption(null);
+    }
     if (!activeRedemptionCode && !activePointsPresentation) {
       setRedeemOffer(null);
       setRedemptionOutcome(null);
@@ -1297,48 +1355,29 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   }
 
   async function handleRedeemCustomerReward() {
-    if (!activeToken || !redeemOffer || redemptionInFlightRef.current) return;
+    if (!redeemOffer || !restaurantSlug || redemptionInFlightRef.current) return;
+    if (!user) {
+      setRedemptionStatus(sr.login);
+      return;
+    }
     redemptionInFlightRef.current = true;
     setRedeemingReward(true);
     setRedemptionStatus(null);
-
     try {
-      if (!redeemOffer.is_starter_reward) {
-        const presentation = await startCustomerPointsPresentation({
-          customerToken: activeToken,
-          rewardId: redeemOffer.id,
-          idempotencyKey: crypto.randomUUID(),
-        });
-        applyPointsPresentation(presentation, { openDrawer: true });
-        setActiveRedemptionCode(null);
-        setRewards((current) => current.map((reward) => {
-          if (reward.id !== redeemOffer.id || reward.is_starter_reward) return reward;
-          return {
-            ...reward,
-            status: "redemption_started",
-          };
-        }));
-        setRedemptionStatus("Bitte erst vor dem Mitarbeiter bestätigen.");
-        return;
-      }
-
-      if (!redeemOffer.assignment_id) {
-        throw new Error("Dieses Geschenk ist nicht mehr verfügbar.");
-      }
-      const presentation = await startCustomerGiftPresentation({
-        customerToken: activeToken,
-        customerRewardId: redeemOffer.assignment_id,
-        idempotencyKey: crypto.randomUUID(),
-      });
-      applyPointsPresentation(presentation, { openDrawer: true });
+      const entitlementId = redeemOffer.is_starter_reward ? redeemOffer.assignment_id : redeemOffer.id;
+      if (!entitlementId) throw new Error(sr.missingGift);
+      const startKey = secureStartKeysRef.current.get(entitlementId) ?? crypto.randomUUID();
+      secureStartKeysRef.current.set(entitlementId, startKey);
+      const started = await startSecureRedemption(restaurantSlug,
+        redeemOffer.is_starter_reward ? "gift" : "points", entitlementId, startKey);
+      const state = await loadSecureRedemptionStatus(restaurantSlug, started.redemption_id);
+      if (!state) throw new Error(sr.missingStatus);
+      setSecureRedemption(state);
+      setActivePointsPresentation(null);
       setActiveRedemptionCode(null);
-      setRewards((current) => current.map((reward) =>
-        reward.assignment_id === redeemOffer.assignment_id
-          ? { ...reward, status: "redemption_started" }
-          : reward));
-      setRedemptionStatus("Bitte erst vor dem Mitarbeiter bestätigen.");
+      setRedemptionDrawerOpen(true);
+      setRedemptionStatus(sr.sent);
     } catch (error) {
-      console.error("Punkteeinlösung konnte nicht verwendet werden.", error);
       setRedemptionStatus(customerRedemptionErrorMessage(error));
     } finally {
       redemptionInFlightRef.current = false;
@@ -1346,71 +1385,83 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
     }
   }
 
-  async function handleConfirmRedemptionSwipe() {
-    const presentation = activePointsPresentation;
-    if (!activeToken || !presentation || confirmingSwipe) return false;
-    const confirmationKey = swipeConfirmationKeysRef.current.get(presentation.presentation_id)
-      ?? crypto.randomUUID();
-    swipeConfirmationKeysRef.current.set(presentation.presentation_id, confirmationKey);
-    setConfirmingSwipe(true);
-    setRedemptionStatus("Verbindung wird geprüft…");
-
+  async function handleVerifySecurePin() {
+    if (!secureRedemption || secureActionPending || !/^\d{6}$/.test(redemptionPinDraft)) return;
+    setSecureActionPending(true);
+    setRedemptionStatus(null);
     try {
-      const result = await confirmCustomerRedemptionSwipe({
-        customerToken: activeToken,
-        presentationType: presentation.presentation_type,
-        presentationId: presentation.presentation_id,
-        idempotencyKey: confirmationKey,
-      });
-      applyPointsPresentation(result, { openDrawer: true });
+      await verifySecureRedemptionPin(secureRedemption.redemption_id,
+        secureRedemption.correlation_id, redemptionPinDraft);
+      const state = await loadSecureRedemptionStatus(restaurantSlug, secureRedemption.redemption_id);
+      if (state) setSecureRedemption(state);
+      setRedemptionPinDraft("");
+      setRedemptionStatus(sr.pinSuccess);
+    } catch {
+      setRedemptionPinDraft("");
+      setRedemptionStatus(sr.pinFailure);
+    } finally {
+      setSecureActionPending(false);
+    }
+  }
+
+  async function handleCancelSecureRedemption() {
+    if (!secureRedemption || secureActionPending) return;
+    setSecureActionPending(true);
+    try {
+      await actOnSecureRedemption("cancel", secureRedemption.redemption_id,
+        secureRedemption.correlation_id);
+      const state = await loadSecureRedemptionStatus(restaurantSlug, secureRedemption.redemption_id);
+      if (state) setSecureRedemption(state);
+      if (secureRedemption.source_id) secureStartKeysRef.current.delete(secureRedemption.source_id);
+      setRedemptionStatus(sr.cancelled);
+    } catch {
+      setRedemptionStatus(sr.cancelFailed);
+    } finally {
+      setSecureActionPending(false);
+    }
+  }
+
+  async function handleConfirmRedemptionSwipe() {
+    const current = secureRedemption;
+    if (!current || current.status !== "PIN_VERIFIED" || secureActionPending) return false;
+    const key = secureSwipeKeysRef.current.get(current.redemption_id) ?? crypto.randomUUID();
+    secureSwipeKeysRef.current.set(current.redemption_id, key);
+    setSecureActionPending(true);
+    setRedemptionStatus(sr.checking);
+    try {
+      const result = await actOnSecureRedemption("swipe",
+        current.redemption_id, current.correlation_id, key);
+      const state = await loadSecureRedemptionStatus(restaurantSlug, current.redemption_id);
+      if (state) setSecureRedemption(state);
       if (result.status === "REDEEMED") {
-        setCustomer((current) => current && result.points_balance != null
-          ? {
-            ...current,
-            points_balance: result.points_balance,
-            stamp_balance: result.stamp_balance ?? current.stamp_balance,
-          }
-          : current);
-        setRedemptionStatus(result.success === false ? "Bereits eingelöst" : "Erfolgreich eingelöst");
-        setRefreshToken((current) => current + 1);
+        if (current.source_id) secureStartKeysRef.current.delete(current.source_id);
+        setCustomer((previous) => previous && result.points_balance != null
+          ? { ...previous, points_balance: result.points_balance,
+              stamp_balance: result.stamp_balance ?? previous.stamp_balance }
+          : previous);
+        setRedemptionStatus(sr.success);
+        setRefreshToken((value) => value + 1);
         return true;
       }
-      setRedemptionStatus(result.error_message ?? (result.status === "EXPIRED"
-        ? "Einlösezeit abgelaufen"
-        : "Diese Einlösung ist nicht mehr verfügbar."));
+      setRedemptionStatus(sr.notConfirmed);
       return false;
-    } catch (error) {
-      console.error("Einlösestatus wird nach Verbindungsfehler geprüft.", error);
+    } catch {
       try {
-        const loadPresentation = presentation.presentation_type === "gift"
-          ? loadCustomerGiftPresentation
-          : loadCustomerPointsPresentation;
-        const serverState = await loadPresentation({
-          restaurantSlug,
-          customerToken: activeToken,
-          presentationId: presentation.presentation_id,
-        });
-        if (serverState) {
-          applyPointsPresentation(serverState, { openDrawer: true });
-          if (serverState.status === "REDEEMED") {
-            setRedemptionStatus("Erfolgreich eingelöst");
-            setRefreshToken((current) => current + 1);
-            return true;
-          }
-          if (serverState.status === "EXPIRED") {
-            setRedemptionStatus("Einlösezeit abgelaufen");
-            return false;
-          }
+        const state = await loadSecureRedemptionStatus(restaurantSlug, current.redemption_id);
+        if (state) setSecureRedemption(state);
+        if (state?.status === "REDEEMED") {
+          if (current.source_id) secureStartKeysRef.current.delete(current.source_id);
+          setRedemptionStatus(sr.success);
+          setRefreshToken((value) => value + 1);
+          return true;
         }
-        setRedemptionStatus("Verbindung unterbrochen. Die Einlösung wurde nicht bestätigt. Bitte erneut wischen.");
-        return false;
-      } catch (statusError) {
-        console.error("Autoritativer Einlösestatus konnte nicht geladen werden.", statusError);
-        setRedemptionStatus("Status noch unklar. Bitte erneut wischen; der Server verhindert eine doppelte Einlösung.");
-        return false;
+      } catch {
+        // A lost response cannot be interpreted as a successful redemption.
       }
+      setRedemptionStatus(sr.uncertain);
+      return false;
     } finally {
-      setConfirmingSwipe(false);
+      setSecureActionPending(false);
     }
   }
 
@@ -1425,7 +1476,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const activeRewardTitle = activePointsPresentation
     ? displayRewardTitle(activePointsPresentation.reward_title, activePointsPresentation.reward_id)
     : activeRedemptionCode ? displayRewardTitle(activeRedemptionCode.title, activeRedemptionCode.rewardId) : null;
-  const redemptionDrawerFooter = activeRedemptionCode || activePointsPresentation || redemptionOutcome ? (
+  const redemptionDrawerFooter = activeRedemptionCode || activePointsPresentation || secureRedemption || redemptionOutcome ? (
     <PrimaryButton onClick={closeRedemptionDrawer}>{ct("close")}</PrimaryButton>
   ) : redeemOffer ? (
     <>
@@ -1903,7 +1954,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
         {customer && !isBonusCollection ? (
           <>
-            {(activeRedemptionCode || activePointsPresentation) && !redemptionDrawerOpen ? (
+            {(activeRedemptionCode || activePointsPresentation || (secureRedemption && ["REQUESTED", "PIN_VERIFIED"].includes(secureRedemption.status))) && !redemptionDrawerOpen ? (
               <button
                 aria-label={t("customer.showNamed").replace("{name}", activeRewardTitle ?? t("customer.liveRedemption"))}
                 className="premium-active-code"
@@ -1912,8 +1963,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               >
                 <span className="premium-active-code-icon"><Sparkles aria-hidden="true" size={18} /></span>
                 <span className="premium-active-code-copy">
-                  <strong data-i18n-skip="true">{activeRewardTitle}</strong>
-                  <small>{activePointsPresentation ? "Bestätigung ausstehend" : "Live-Einlösung aktiv"} · {Math.floor((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) / 60)}:{String((activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) % 60).padStart(2, "0")}</small>
+                  <strong data-i18n-skip="true">{secureRedemption?.reward_title ?? activeRewardTitle}</strong>
+                  <small>{secureRedemption ? sr.pending : activePointsPresentation ? "Bestätigung ausstehend" : "Live-Einlösung aktiv"} · {Math.floor((secureRedemption ? secureSecondsRemaining : activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) / 60)}:{String((secureRedemption ? secureSecondsRemaining : activePointsPresentation ? presentationSecondsRemaining : redemptionSecondsRemaining) % 60).padStart(2, "0")}</small>
                 </span>
                 <span className="premium-active-code-action">Anzeigen</span>
               </button>
@@ -2370,7 +2421,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
             <AppDrawer
               className={activeView === "redemptions" ? "customer-block-a-detail" : undefined}
-              description={activePointsPresentation
+              description={secureRedemption
+                ? sr.securePending
+                : activePointsPresentation
                 ? "Bitte jetzt vor dem Mitarbeiter bestätigen."
                 : activeRedemptionCode
                   ? "Zeige den aktiven Code jetzt dem Mitarbeiter."
@@ -2378,7 +2431,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               footer={redemptionDrawerFooter}
               closeLabel={ct("close")}
               onClose={closeRedemptionDrawer}
-              open={redemptionDrawerOpen && Boolean(activePointsPresentation || activeRedemptionCode || redeemOffer || redemptionOutcome)}
+              open={redemptionDrawerOpen && Boolean(secureRedemption || activePointsPresentation || activeRedemptionCode || redeemOffer || redemptionOutcome)}
               title={redemptionOutcome ? displayRewardTitle(redemptionOutcome.title) : activeRewardTitle ?? (redeemOffer ? present(redeemOffer).title : ct("pointRedemption"))}
             >
               <div className="premium-redemption-sheet-content">
@@ -2423,7 +2476,78 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   </article>
                 ) : null}
 
-                {activePointsPresentation ? (
+                {secureRedemption ? (
+                  <article className="premium-presentation-window" aria-live="polite">
+                    <header>
+                      <span className="premium-presentation-security-mark" aria-hidden="true"><ShieldCheck size={28} /></span>
+                      <StatusBadge tone={secureRedemption.status === "REDEEMED" ? "success" : "warning"}>
+                        {secureRedemption.status === "REDEEMED" ? sr.redeemed :
+                          secureRedemption.status === "PIN_VERIFIED" ? sr.pinVerified :
+                            secureRedemption.status === "REQUESTED" ? sr.pending : sr.ended}
+                      </StatusBadge>
+                    </header>
+                    <div className="premium-presentation-image">
+                      <RewardImage
+                        crop={rewardImageCropFromRecord({
+                          image_zoom: secureRedemption.image_zoom ?? 1,
+                          image_position_x: secureRedemption.image_position_x ?? 0.5,
+                          image_position_y: secureRedemption.image_position_y ?? 0.5,
+                        })}
+                        imageUrl={secureRedemption.reward_image_url ?? null}
+                        title={secureRedemption.reward_title ?? "Belohnung"}
+                      />
+                    </div>
+                    <div className="premium-presentation-heading">
+                      <span>{restaurant?.name}</span>
+                      <h2 data-i18n-skip="true">{secureRedemption.reward_title}</h2>
+                      <p>{secureRedemption.status === "REQUESTED"
+                        ? sr.requestHelp
+                        : secureRedemption.status === "PIN_VERIFIED"
+                          ? sr.pinHelp
+                          : secureRedemption.status === "REDEEMED"
+                            ? sr.redeemedHelp
+                            : sr.endedHelp}</p>
+                    </div>
+                    <div className="premium-presentation-countdown">
+                      <span>{sr.remaining}</span>
+                      <strong>{Math.floor(secureSecondsRemaining / 60)}:{String(secureSecondsRemaining % 60).padStart(2, "0")}</strong>
+                    </div>
+                    {secureRedemption.status === "REQUESTED" && secureSecondsRemaining > 0 ? (
+                      <div className="premium-redemption-pin-entry">
+                        <FormLabel htmlFor="secure-redemption-pin">{sr.pinLabel}</FormLabel>
+                        <input
+                          autoComplete="off"
+                          className="input"
+                          id="secure-redemption-pin"
+                          inputMode="numeric"
+                          maxLength={6}
+                          onChange={(event) => setRedemptionPinDraft(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                          pattern="[0-9]{6}"
+                          type="password"
+                          value={redemptionPinDraft}
+                        />
+                        <PrimaryButton disabled={secureActionPending || redemptionPinDraft.length !== 6}
+                          onClick={() => void handleVerifySecurePin()}>{sr.checkPin}</PrimaryButton>
+                        <p>{sr.pinEntryHelp}</p>
+                      </div>
+                    ) : null}
+                    {secureRedemption.status === "PIN_VERIFIED" && secureSecondsRemaining > 0 ? (
+                      <SwipeToRedeem ariaLabel={sr.swipeAriaLabel}
+                        swipeLabel={secureActionPending ? sr.checking : sr.swipeLabel}
+                        helperText={sr.swipeHelperText}
+                        disabled={secureActionPending} pending={secureActionPending}
+                        onConfirm={handleConfirmRedemptionSwipe} />
+                    ) : null}
+                    {["REQUESTED", "PIN_VERIFIED"].includes(secureRedemption.status) ? (
+                      <SecondaryButton disabled={secureActionPending} onClick={() => void handleCancelSecureRedemption()}>
+                        {sr.cancel}
+                      </SecondaryButton>
+                    ) : null}
+                    {redemptionStatus ? <p className="status-message" role="status">{redemptionStatus}</p> : null}
+                  </article>
+                ) : null}
+
+                {activePointsPresentation && !secureRedemption ? (
                   <article className="premium-presentation-window" aria-live="polite">
                     <div className="premium-presentation-shine" aria-hidden="true" />
                     <header>
@@ -2444,9 +2568,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     <div className="premium-presentation-heading">
                       <span>{activePointsPresentation.restaurant_name}</span>
                       <h2 data-i18n-skip="true">{activeRewardTitle}</h2>
-                      <p>{activePointsPresentation.gift_type
-                        ? activePointsPresentation.gift_type === "birthday" ? "Deine Geburtstagsüberraschung" : "Dein Willkommensgeschenk"
-                        : `${activePointsPresentation.points_spent.toLocaleString("de-AT")} Punkte werden erst nach dem Wischen abgezogen.`}</p>
+                      <p>{sr.legacy}</p>
                     </div>
                     <div className="premium-presentation-countdown">
                       <span>Verbleibende Zeit</span>
@@ -2462,15 +2584,10 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                         timeZone: "Europe/Vienna",
                       }).format(new Date(activePointsPresentation.expires_at))}</strong></div>
                     </div>
-                    <div className="premium-redemption-before-swipe">
+                    <div className="premium-redemption-before-swipe" role="status">
                       <LockKeyhole aria-hidden="true" size={20} />
-                      <p><strong>Bitte erst vor dem Mitarbeiter bestätigen.</strong> Das Öffnen dieses Fensters löst noch nichts ein.</p>
+                      <p>{sr.legacy}</p>
                     </div>
-                    <SwipeToRedeem
-                      disabled={!activePointsPresentation.active || presentationSecondsRemaining <= 0}
-                      onConfirm={handleConfirmRedemptionSwipe}
-                      pending={confirmingSwipe}
-                    />
                     {redemptionStatus ? <p className="status-message" role="status">{redemptionStatus}</p> : null}
                     <p className="premium-presentation-number">Vorbereitung {activePointsPresentation.redemption_number}</p>
                   </article>
@@ -2487,22 +2604,19 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                     </StatusBadge>
                     <div className="premium-code-heading">
                       <span><Sparkles aria-hidden="true" size={22} /></span>
-                      <div><h2 data-i18n-skip="true">{activeRewardTitle}</h2><p>Zeige diesen Code jetzt dem Mitarbeiter.</p></div>
+                      <div><h2 data-i18n-skip="true">{activeRewardTitle}</h2><p>{sr.legacy}</p></div>
                     </div>
-                    <strong aria-label={`Einlösecode ${activeRedemptionCode.code}`} className="redemption-code-value">
-                      {activeRedemptionCode.code.replace(/^(\d{3})(\d{3})$/, "$1 $2")}
-                    </strong>
                     <div className="premium-code-countdown">
                       <Clock3 aria-hidden="true" size={18} />
                       <span>Gültig noch</span>
                       <strong>{Math.floor(redemptionSecondsRemaining / 60)}:{String(redemptionSecondsRemaining % 60).padStart(2, "0")} Minuten</strong>
                     </div>
-                    <p className="premium-code-security"><LockKeyhole aria-hidden="true" size={16} /> Der Code kann nur einmal verwendet werden.</p>
+                    <p className="premium-code-security"><LockKeyhole aria-hidden="true" size={16} /> {sr.legacy}</p>
                     {redemptionStatus ? <p className="status-message" role="status">{redemptionStatus}</p> : null}
                   </article>
                 ) : null}
 
-                {redeemOffer && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "detail" ? (
+                {redeemOffer && !secureRedemption && !activeRedemptionCode && !redemptionOutcome && redemptionSheetStep === "detail" ? (
                   <article className="premium-reward-detail">
                     <div className="premium-reward-detail-media"><RewardImage crop={rewardImageCropFromRecord(redeemOffer)} imageUrl={redeemOffer.image_url} title={present(redeemOffer).title} /></div>
                     <div className="premium-reward-detail-heading">

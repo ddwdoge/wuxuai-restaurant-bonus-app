@@ -122,11 +122,10 @@ test("UI confirms through server and recovers authoritative state after network 
   assert.match(rewardService, /confirm_customer_redemption_swipe/);
   assert.match(rewardService, /input_presentation_type: input\.presentationType/);
   assert.match(customerPortal, /<SwipeToRedeem/);
-  assert.match(customerPortal, /Bitte erst vor dem Mitarbeiter bestätigen\./);
-  assert.match(customerPortal, /Verbindung wird geprüft…/);
+  assert.match(customerPortal, /sr\.legacy/);
+  assert.match(customerPortal, /setRedemptionStatus\(sr\.checking\)/);
   assert.match(customerPortal, /loadCustomerGiftPresentation[\s\S]*loadCustomerPointsPresentation/);
-  assert.match(customerPortal, /serverState\.status === "REDEEMED"/);
+  assert.match(customerPortal, /state\?\.status === "REDEEMED"/);
   assert.match(customerPortal, /Einlösezeit abgelaufen/);
   assert.doesNotMatch(customerPortal, /Die Punkte wurden endgültig eingelöst\. Zeige diesen Bildschirm/);
 });
-

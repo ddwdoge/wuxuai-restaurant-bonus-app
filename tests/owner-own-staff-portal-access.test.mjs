@@ -51,7 +51,9 @@ test("owner operational actions retain the real actor and normalize the audit ro
 });
 
 test("the Staff UI clearly labels authoritative operator access", () => {
-  assert.match(gate, /StaffPortalAccessContext\.Provider value=\{access\}/);
+  assert.match(gate, /StaffPortalAccessContext\.Provider value=\{check\.access\}/);
+  assert.match(gate, /check\.slug === slug/);
+  assert.match(gate, /\["owner", "admin", "manager", "staff", "supervisor"\]/);
   assert.match(accessContext, /export function useStaffPortalAccess/);
   assert.match(staffTablet, /useStaffPortalAccess\(\)/);
   assert.match(staffTablet, /staff\.header\.operatorArea/);

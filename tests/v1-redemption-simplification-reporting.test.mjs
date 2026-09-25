@@ -12,11 +12,10 @@ const reportService = readFileSync("src/modules/reports/bonusActivityService.ts"
 const pointsPresentation = readFileSync("supabase/migrations/20260803007000_points_redemption_presentation_window.sql", "utf8");
 const giftPresentation = readFileSync("supabase/migrations/20260809001000_v1_release_gift_presentations_notifications.sql", "utf8");
 
-test("primary customer flow starts presentations instead of six-digit codes", () => {
-  assert.match(customer, /startCustomerPointsPresentation/);
-  assert.match(customer, /startCustomerGiftPresentation/);
+test("primary customer flow starts secure requests instead of legacy codes", () => {
+  assert.match(customer, /startSecureRedemption/);
   assert.doesNotMatch(customer, /startCustomerRedemption\(/);
-  assert.match(customer, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(customer, /secureRedemptionMessages/);
   assert.match(customer, /<SwipeToRedeem/);
 });
 

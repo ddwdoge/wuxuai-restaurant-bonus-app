@@ -37,9 +37,9 @@ test("customer uses the same live display for points welcome and birthday gifts"
   assert.match(service, /start_customer_gift_presentation/);
   assert.match(service, /get_customer_gift_presentation/);
   assert.match(portal, /loadCustomerGiftPresentation/);
-  assert.match(portal, /startCustomerGiftPresentation/);
-  assert.match(portal, /activePointsPresentation\.gift_type/);
-  assert.match(portal, /Bitte erst vor dem Mitarbeiter bestätigen/);
+  assert.match(portal, /startSecureRedemption/);
+  assert.match(portal, /redeemOffer\.is_starter_reward \? "gift" : "points"/);
+  assert.match(portal, /secureRedemptionMessages/);
   assert.match(portal, /<SwipeToRedeem/);
 });
 

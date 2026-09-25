@@ -22,7 +22,8 @@ const cssEnd = customerCss.indexOf(".premium-redemption-code", cssStart);
 const indicatorCss = customerCss.slice(cssStart, cssEnd);
 
 test("explicit presentation starts open the drawer once", () => {
-  assert.equal(customerPortal.match(/applyPointsPresentation\(presentation, \{ openDrawer: true \}\)/g)?.length, 2);
+  assert.match(customerPortal, /setSecureRedemption\(state\);[\s\S]*setRedemptionDrawerOpen\(true\)/);
+  assert.ok((customerPortal.match(/applyPointsPresentation\(presentation, \{ openDrawer: true \}\)/g)?.length ?? 0) <= 2);
 });
 
 test("hydration and polling update the presentation without reopening the drawer", () => {
@@ -50,7 +51,7 @@ test("customer navigation does not reopen or discard a live presentation", () =>
 });
 
 test("closed active presentation remains visible as a compact manual reopen action", () => {
-  assert.match(customerPortal, /\(activeRedemptionCode \|\| activePointsPresentation\) && !redemptionDrawerOpen/);
+  assert.match(customerPortal, /activeRedemptionCode \|\| activePointsPresentation \|\| \(secureRedemption/);
   assert.match(indicatorBlock, /setRedemptionDrawerOpen\(true\)/);
   assert.match(indicatorBlock, /Live-Einlösung aktiv/);
   assert.match(indicatorBlock, /premium-active-code-action">Anzeigen/);

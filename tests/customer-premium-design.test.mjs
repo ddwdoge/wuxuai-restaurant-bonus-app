@@ -29,10 +29,9 @@ test("Kundennavigation hat exakt vier verständliche deutsche Hauptpunkte", () =
   assert.match(styles, /grid-template-columns: repeat\(4/);
 });
 
-test("Punkte sammeln und Einlösung behalten vorhandene Service-Aufrufe", () => {
+test("Punkte sammeln und sichere Einlösung behalten ihre Service-Aufrufe", () => {
   assert.match(portal, /collectBonusPoints\(\{/);
-  assert.match(portal, /startCustomerGiftPresentation\(\{/);
-  assert.match(portal, /startCustomerPointsPresentation\(\{/);
+  assert.match(portal, /startSecureRedemption\(restaurantSlug,/);
   assert.match(portal, /type="password"/);
   assert.match(portal, /\[0, 1, 2, 3\]\.map/);
   assert.match(portal, /maxLength=\{1\}/);

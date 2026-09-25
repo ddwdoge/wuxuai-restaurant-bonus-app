@@ -9,13 +9,15 @@ const premiumUi = read("src/modules/customer/components/PremiumCustomerUi.tsx");
 const smartMedia = read("src/shared/components/SmartMediaFrame.tsx");
 const smartMediaCss = read("src/shared/components/smart-media.css");
 
-const presentationStart = customerPortal.indexOf('{activePointsPresentation ? (');
+const secureStart = customerPortal.indexOf('{secureRedemption ? (');
+const presentationStart = customerPortal.indexOf('{activePointsPresentation && !secureRedemption ? (');
 const presentationEnd = customerPortal.indexOf('{activeRedemptionCode ? (', presentationStart);
+const securePresentation = customerPortal.slice(secureStart, presentationStart);
 const presentation = customerPortal.slice(presentationStart, presentationEnd);
 
 test("Geburtstags-, Willkommens- und Punkteeinlösungen verwenden denselben Gift-Bildvertrag", () => {
   assert.ok(presentationStart >= 0 && presentationEnd > presentationStart);
-  assert.match(presentation, /activePointsPresentation\.gift_type/);
+  assert.match(securePresentation, /secureRedemption\.reward_title/);
   assert.match(presentation, /<RewardImage/);
   assert.doesNotMatch(presentation, /<RewardImageFrame/);
   assert.match(presentation, /imageUrl=\{activePointsPresentation\.reward_image_url\}/);
@@ -68,14 +70,15 @@ test("wiederholtes Anzeigen und Schließen bleibt schreibfrei", () => {
 test("Bestätigung, Countdown und Einlösungslogik bleiben Teil des unveränderten Fensters", () => {
   assert.match(presentation, /Bestätigung ausstehend/);
   assert.match(presentation, /Verbleibende Zeit/);
-  assert.match(presentation, /<SwipeToRedeem/);
-  assert.match(presentation, /handleConfirmRedemptionSwipe/);
+  assert.doesNotMatch(presentation, /<SwipeToRedeem/);
+  assert.match(securePresentation, /<SwipeToRedeem/);
+  assert.match(securePresentation, /handleConfirmRedemptionSwipe/);
   assert.match(presentation, /presentationSecondsRemaining/);
 });
 
 test("Erfolgs- und Fehlerausgänge erhalten keine erfundene Bildbindung", () => {
   const outcomeStart = customerPortal.indexOf('{redemptionOutcome ? (');
-  const outcome = customerPortal.slice(outcomeStart, presentationStart);
+  const outcome = customerPortal.slice(outcomeStart, secureStart);
   assert.ok(outcomeStart >= 0 && presentationStart > outcomeStart);
   assert.doesNotMatch(outcome, /<RewardImage(?:Frame)?/);
 });

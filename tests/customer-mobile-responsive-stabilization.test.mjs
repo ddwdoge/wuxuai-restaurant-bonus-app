@@ -55,7 +55,7 @@ test("Finder hält Karte, Controls und Portal-Drawer in klarer Layer-Hierarchie"
 });
 
 test("Customer Business-Handler und sichere Finder-Aktionen bleiben erhalten", () => {
-  for (const contract of ["collectBonusPoints({", "startCustomerGiftPresentation({", "startCustomerPointsPresentation({"]) {
+  for (const contract of ["collectBonusPoints({", "startSecureRedemption(restaurantSlug,"]) {
     assert.ok(portal.includes(contract));
   }
   assert.match(finder, /navigator\.geolocation\.getCurrentPosition/);

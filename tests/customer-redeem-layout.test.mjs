@@ -35,9 +35,8 @@ test("kleine Displays stapeln die Punktezeile ohne horizontales Ueberlaufen", ()
   assert.match(styles, /\.premium-redemption-summary p \{ max-width: none; text-align: left; \}/);
 });
 
-test("Redeem-Fix veraendert weder Navigation noch Einloesehandler", () => {
+test("Redeem-Fix erhaelt Navigation und sicheren Einloesehandler", () => {
   assert.match(portal, /<BottomNavigation activeView=\{activeView\}/);
   assert.match(portal, /onOpen=\{\(\) => openRewardRedemption\(reward\)\}/);
-  assert.match(portal, /startCustomerPointsPresentation\(\{/);
-  assert.match(portal, /startCustomerGiftPresentation\(\{/);
+  assert.match(portal, /startSecureRedemption\(restaurantSlug,/);
 });

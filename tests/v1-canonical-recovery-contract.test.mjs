@@ -62,9 +62,9 @@ test("aktive Customer-Registrierung verwendet ausschließlich den Legal-RPC", ()
   assert.doesNotMatch(loyaltyService, /supabase\.rpc\("register_referral_customer"/);
 });
 
-test("15-Minuten-Präsentation bleibt aktiv und Staff erhält keinen Primary-Code-Flow", () => {
+test("15-Minuten-Fenster bleibt und Staff nutzt den sicheren Einloesepfad", () => {
   assert.match(presentationMigration, /15 minutes/);
-  assert.match(customerPortal, /startCustomerPointsPresentation/);
+  assert.match(customerPortal, /startSecureRedemption/);
   assert.doesNotMatch(staffPortal, /Sechsstelliger Einlösecode|consumeRedemptionCode/);
 });
 

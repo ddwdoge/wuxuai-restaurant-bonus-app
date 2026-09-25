@@ -44,7 +44,7 @@ test("Carousel-Vertrag skaliert von einer bis zwanzig Karten ohne vertikales Sta
 test("Alle ansehen und bestehender Detail-/Einlöseflow bleiben erhalten", () => {
   assert.match(portal, /action=\{pointRedemptions\.length > 2 \?[\s\S]{0,220}>Alle ansehen<\/button>/);
   assert.match(homeSection, /openRewardRedemption\(reward\)/);
-  assert.match(portal, /startCustomerPointsPresentation\(\{/);
+  assert.match(portal, /startSecureRedemption\(restaurantSlug,/);
   assert.match(portal, />Alle Belohnungen<\/button>/);
   assert.match(portal, />Meine Belohnungen<\/button>/);
 });

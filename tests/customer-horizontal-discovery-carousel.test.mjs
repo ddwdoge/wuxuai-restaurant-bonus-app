@@ -75,11 +75,11 @@ test("Einzelkarten haben keine Bedienelemente und leere Zustaende bleiben ausser
   assert.match(portal, /filteredRedemptions\.length \? \([\s\S]*PremiumHorizontalCarousel[\s\S]*\) : \([\s\S]*<EmptyState/);
 });
 
-test("Tabs und bestehender Einloesehandler bleiben unveraendert", () => {
+test("Tabs und sicherer Einloesehandler bleiben erreichbar", () => {
   assert.match(portal, />Alle Belohnungen<\/button>/);
   assert.match(portal, />Meine Belohnungen<\/button>/);
   assert.match(portal, /onOpen=\{\(\) => openRewardRedemption\(reward\)\}/);
-  assert.match(portal, /startCustomerPointsPresentation\(\{/);
+  assert.match(portal, /startSecureRedemption\(restaurantSlug,/);
 });
 
 test("Tablet und Desktop zeigen mehrere Karten ohne globale Seitenbreite", () => {

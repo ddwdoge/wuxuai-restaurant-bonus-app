@@ -3,12 +3,15 @@ import { ArrowRight, LoaderCircle } from "lucide-react";
 import { clampSwipeProgress, swipeCompletesRedemption } from "../swipeRedemption.mjs";
 
 type SwipeToRedeemProps = {
+  ariaLabel: string;
+  swipeLabel: string;
+  helperText: string;
   disabled?: boolean;
   pending?: boolean;
   onConfirm: () => Promise<boolean>;
 };
 
-export function SwipeToRedeem({ disabled = false, pending = false, onConfirm }: SwipeToRedeemProps) {
+export function SwipeToRedeem({ ariaLabel, swipeLabel, helperText, disabled = false, pending = false, onConfirm }: SwipeToRedeemProps) {
   const [progress, setProgress] = useState(0);
   const [locked, setLocked] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -96,7 +99,7 @@ export function SwipeToRedeem({ disabled = false, pending = false, onConfirm }: 
     <div className="premium-swipe-confirmation">
       <div
         aria-disabled={isLocked}
-        aria-label="Zum Einlösen wischen"
+        aria-label={ariaLabel}
         aria-valuemax={100}
         aria-valuemin={0}
         aria-valuenow={Math.round(progress * 100)}
@@ -112,13 +115,13 @@ export function SwipeToRedeem({ disabled = false, pending = false, onConfirm }: 
       >
         <span className="premium-swipe-fill" style={{ width: `${Math.max(12, progress * 100)}%` }} />
         <span className="premium-swipe-label">
-          {pending ? "Verbindung wird geprüft…" : "Zum Einlösen wischen"}
+          {swipeLabel}
         </span>
         <span className="premium-swipe-thumb" style={{ left: `calc(${progress * 100}% - ${progress * 58}px)` }}>
           {pending ? <LoaderCircle aria-hidden="true" className="premium-swipe-spinner" size={26} /> : <ArrowRight aria-hidden="true" size={28} />}
         </span>
       </div>
-      <p>Bitte jetzt vor dem Mitarbeiter von links nach rechts wischen.</p>
+      <p>{helperText}</p>
     </div>
   );
 }
