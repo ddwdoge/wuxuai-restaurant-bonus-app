@@ -2276,17 +2276,66 @@
     transition-duration: 0.01ms !important;
   }
 }
-.secure-redemption-queue-image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
+.secure-redemption-queue { display: grid; gap: 10px; min-width: 0; overflow: hidden; }
+.secure-redemption-queue-heading,
+.secure-redemption-all-heading { align-items: center; display: flex; gap: 10px; min-width: 0; }
+.secure-redemption-queue-heading { min-height: 44px; }
+.secure-redemption-queue-heading h2,
+.secure-redemption-all-heading h2 { margin: 0 auto 0 0; min-width: 0; overflow-wrap: anywhere; }
+.secure-redemption-queue-heading .button { min-height: 44px; }
+.secure-redemption-queue-track {
+  display: grid;
+  gap: 12px;
+  grid-auto-columns: 100%;
+  grid-auto-flow: column;
+  height: 242px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  touch-action: pan-x;
 }
-
-.secure-redemption-queue-image > .reward-image-frame {
-  position: absolute;
-  inset: 0;
-  width: auto;
-  height: auto;
+.secure-redemption-card {
+  background: #fff;
+  border: 1px solid rgba(65, 58, 48, .14);
+  border-radius: 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 242px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px;
+  scroll-snap-align: start;
+}
+.secure-redemption-card-main { display: grid; flex-grow: 1; gap: 10px; grid-template-columns: 72px minmax(0, 1fr); min-height: 0; min-width: 0; }
+.secure-redemption-queue-image { align-self: start; aspect-ratio: 1; border-radius: 8px; height: 72px; overflow: hidden; width: 72px; }
+.secure-redemption-queue-image > .reward-image-frame { aspect-ratio: 1; height: 100%; width: 100%; }
+.secure-redemption-queue-image img { height: 100%; object-fit: cover; width: 100%; }
+.secure-redemption-card-copy { min-width: 0; overflow: hidden; }
+.secure-redemption-card-copy h3 { display: -webkit-box; font-size: 1rem; line-height: 1.25; margin: 0 0 4px; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.secure-redemption-card-copy p { line-height: 1.25; margin: 0 0 3px; overflow: hidden; overflow-wrap: anywhere; text-overflow: ellipsis; white-space: nowrap; }
+.secure-redemption-card-copy .secure-redemption-card-status { color: #514c45; font-variant-numeric: tabular-nums; white-space: normal; }
+.secure-redemption-card-actions { display: flex; gap: 8px; min-width: 0; }
+.secure-redemption-card-actions .button { flex-basis: 0; flex-grow: 1; min-height: 44px; min-width: 0; overflow-wrap: anywhere; padding-inline: 6px; }
+.secure-redemption-queue-navigation { align-items: center; display: flex; gap: 10px; justify-content: center; min-height: 44px; }
+.secure-redemption-queue-navigation span { font-variant-numeric: tabular-nums; min-width: 72px; text-align: center; }
+.secure-redemption-queue-arrow { align-items: center; background: #fff; border: 1px solid rgba(65, 58, 48, .22); border-radius: 10px; color: #29241d; display: inline-flex; flex: 0 0 44px; font-size: 1.2rem; height: 44px; justify-content: center; width: 44px; }
+.secure-redemption-queue-arrow:disabled { cursor: not-allowed; opacity: .45; }
+.secure-redemption-all-dialog { border: 1px solid rgba(65, 58, 48, .18); border-radius: 18px; box-sizing: border-box; color: #29241d; max-height: min(82dvh, 760px); max-width: min(680px, calc(100vw - 24px)); padding: 16px; width: 100%; }
+.secure-redemption-all-dialog::backdrop { background: rgba(16, 15, 13, .62); }
+.secure-redemption-all-list { display: grid; gap: 10px; margin-block: 12px; max-height: min(58dvh, 560px); overflow-y: auto; }
+.secure-redemption-card--all { height: auto; min-height: 190px; }
+.secure-redemption-card--all .secure-redemption-card-copy p { white-space: normal; }
+.secure-redemption-all-dialog > .button { min-height: 44px; }
+@media (min-width: 920px) {
+  .secure-redemption-queue-track { grid-auto-columns: calc((100% - 12px) / 2); }
+  .secure-redemption-card-main { grid-template-columns: 80px minmax(0, 1fr); }
+  .secure-redemption-queue-image { height: 80px; width: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .secure-redemption-queue-track { scroll-behavior: auto; }
 }
