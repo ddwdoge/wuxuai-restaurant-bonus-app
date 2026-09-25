@@ -1,6 +1,6 @@
 import { supabase } from "../../shared/lib/supabase";
 import type { RestaurantOffer } from "../offers/restaurantOfferService";
-import { removeStoredCustomerToken, saveStoredCustomerToken } from "./customerTokenStorage";
+import { readStoredCustomerToken, removeStoredCustomerToken, saveStoredCustomerToken } from "./customerTokenStorage";
 
 export type CustomerAccountReward = {
   id: string;
@@ -58,6 +58,7 @@ export type CustomerRestaurantContext = {
   restaurant_slug: string;
   membership_exists: boolean;
   legal_ready: boolean;
+  token_valid?: boolean;
 };
 
 function requireClient() {
@@ -83,16 +84,27 @@ export async function openCustomerMembership(restaurantId: string) {
     }
     throw new Error("Das Bonuskonto konnte gerade nicht geöffnet werden.");
   }
-  const result = data as { restaurant_slug: string; customer_token: string };
-  saveStoredCustomerToken(result.restaurant_slug, {
-    customer_token: result.customer_token,
-    device_id: null,
-  });
+  const result = data as { restaurant_slug: string };
   return result.restaurant_slug;
 }
 
 export async function openCustomerAccountMembership(membership: CustomerAccountMembership) {
-  return openCustomerMembership(membership.restaurant_id);
+  const slug = await openCustomerMembership(membership.restaurant_id);
+  const { error } = await requireClient().rpc("set_customer_portal_context", {
+    input_restaurant_slug: slug,
+    input_request_id: crypto.randomUUID(),
+    input_correlation_id: crypto.randomUUID(),
+  });
+  if (error) throw new Error("Der Restaurantwechsel konnte gerade nicht abgeschlossen werden.");
+  return slug;
+}
+
+export async function recordCustomerLoginSuccess(returnTo: string) {
+  const match = returnTo.match(/^\/(?:customer|w)\/([^/?#]+)/);
+  const { error } = await requireClient().rpc("record_customer_login_success", {
+    input_restaurant_slug: match ? decodeURIComponent(match[1]) : null,
+  });
+  if (error) throw new Error("Die Anmeldung konnte nicht sicher protokolliert werden.");
 }
 
 export async function loadCustomerRestaurantContext(restaurantSlug: string) {
@@ -101,6 +113,35 @@ export async function loadCustomerRestaurantContext(restaurantSlug: string) {
   });
   if (error) throw new Error("Dieses Restaurant konnte gerade nicht geöffnet werden.");
   return data as CustomerRestaurantContext;
+}
+
+export async function loadCustomerRestaurantAccess(restaurantSlug: string) {
+  const { data, error } = await requireClient().rpc("get_customer_restaurant_access", {
+    input_restaurant_slug: restaurantSlug,
+    input_customer_token: readStoredCustomerToken(restaurantSlug),
+  });
+  if (error) throw new Error("Dieses Restaurant konnte gerade nicht geöffnet werden.");
+  return data as CustomerRestaurantContext;
+}
+
+export async function recoverCustomerMembershipToken(restaurantSlug: string) {
+  const { data, error } = await requireClient().rpc("recover_customer_membership_token", {
+    input_restaurant_slug: restaurantSlug,
+    input_request_id: crypto.randomUUID(),
+    input_correlation_id: crypto.randomUUID(),
+  });
+  if (error) {
+    if (error.message.includes("RECENT_CUSTOMER_AUTH_REQUIRED") || error.message.includes("CUSTOMER_RECOVERY_REAUTH_REQUIRED")) {
+      throw new Error("Bitte melde dich erneut an, bevor du deinen Zugang wiederherstellst.");
+    }
+    throw new Error("Der Zugang konnte nicht wiederhergestellt werden.");
+  }
+  const result = data as { restaurant_slug: string; customer_token: string };
+  if (result.restaurant_slug !== restaurantSlug || !result.customer_token) {
+    throw new Error("Der Zugang konnte nicht wiederhergestellt werden.");
+  }
+  saveStoredCustomerToken(result.restaurant_slug, { customer_token: result.customer_token, device_id: null });
+  return result.restaurant_slug;
 }
 
 export async function joinCustomerRestaurant(input: {
@@ -138,10 +179,9 @@ export async function joinCustomerRestaurant(input: {
     }
     throw new Error("Der Beitritt konnte gerade nicht abgeschlossen werden.");
   }
-  const result = data as { joined: boolean; restaurant_slug: string; customer_token: string };
-  saveStoredCustomerToken(result.restaurant_slug, {
-    customer_token: result.customer_token,
-    device_id: input.deviceId,
+  const result = data as { joined: boolean; restaurant_slug: string; customer_token: string | null };
+  if (result.customer_token) saveStoredCustomerToken(result.restaurant_slug, {
+    customer_token: result.customer_token, device_id: input.deviceId,
   });
   return result;
 }
@@ -177,13 +217,12 @@ export async function joinCustomerReferral(input: {
   }
   const result = data as {
     restaurant_slug: string;
-    customer_token: string;
+    customer_token: string | null;
     referral_status: "pending_registered" | "activated";
     welcome_gift_assigned: boolean;
   };
-  saveStoredCustomerToken(result.restaurant_slug, {
-    customer_token: result.customer_token,
-    device_id: input.deviceId,
+  if (result.customer_token) saveStoredCustomerToken(result.restaurant_slug, {
+    customer_token: result.customer_token, device_id: input.deviceId,
   });
   return result;
 }

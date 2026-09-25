@@ -900,7 +900,8 @@ nur für bereits angemeldete zentrale Kunden:
   `Bereits besucht`. Die erste erfolgreiche Punktebuchung bleibt dafür
   maßgeblich.
 - Nach erfolgreichem Beitritt wird der Restaurantkontext über
-  `open_customer_account_membership(...)` aktiviert. Header, Punkte,
+  `open_customer_account_membership(...)` serverseitig gelesen; der explizite
+  Kontextwechsel wird getrennt protokolliert. Header, Punkte,
   Belohnungen, Angebote, Geschenke und Referral bleiben dadurch strikt an die
   neue Membership gebunden.
 - Wiederholung ist idempotent und darf weder eine zweite Membership noch ein

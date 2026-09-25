@@ -1,48 +1,60 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, LogIn, Store, UserPlus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getWebDeviceId } from "../../shared/lib/deviceId";
+import { supabase } from "../../shared/lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 import { legalCenterStateFromResponse, loadPublicLegalCenter } from "../legal/legalService";
 import { CustomerPortal } from "./CustomerPortal";
 import { AppShell, CustomerLanguageAction, ErrorState, LoadingState, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
-import { joinCustomerRestaurant, loadCustomerRestaurantContext, openCustomerMembership, type CustomerRestaurantContext } from "./customerAccountService";
+import { joinCustomerRestaurant, loadCustomerRestaurantAccess, recoverCustomerMembershipToken, type CustomerRestaurantContext } from "./customerAccountService";
 import { readStoredCustomerToken } from "./customerTokenStorage";
 import "./central-customer.css";
 
 export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: { isBonusCollection: boolean; restaurantSlug: string }) {
   const { loading: authLoading, user } = useAuth();
+  const { translateKey: t } = useI18n();
+  const navigate = useNavigate();
   const [context, setContext] = useState<CustomerRestaurantContext | null>(null);
   const [portalRestaurantSlug, setPortalRestaurantSlug] = useState<string | null>(null);
   const [legalReady, setLegalReady] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [joinSuccessMessage, setJoinSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const loadGeneration = useRef(0);
   const returnTo = `${isBonusCollection ? "/w" : "/customer"}/${encodeURIComponent(restaurantSlug)}`;
 
   const loadContext = useCallback(async () => {
     if (!user) return;
+    const generation = ++loadGeneration.current;
     setError(null);
     setJoinSuccessMessage(null);
     setPortalRestaurantSlug(null);
     try {
-      const nextContext = await loadCustomerRestaurantContext(restaurantSlug);
+      const nextContext = await loadCustomerRestaurantAccess(restaurantSlug);
+      if (generation !== loadGeneration.current) return;
       setContext(nextContext);
-      if (nextContext.membership_exists) {
-        const activeSlug = await openCustomerMembership(nextContext.restaurant_id);
-        setPortalRestaurantSlug(activeSlug);
+      if (nextContext.membership_exists && nextContext.token_valid) {
+        setPortalRestaurantSlug(nextContext.restaurant_slug);
       } else {
         const legal = legalCenterStateFromResponse(await loadPublicLegalCenter(restaurantSlug));
+        if (generation !== loadGeneration.current) return;
         setLegalReady(legal.status === "ready");
       }
     } catch (caught) {
+      if (generation !== loadGeneration.current) return;
       setError(caught instanceof Error ? caught.message : "Dieses Restaurant konnte gerade nicht geöffnet werden.");
     }
   }, [restaurantSlug, user]);
 
-  useEffect(() => { void loadContext(); }, [loadContext]);
+  useEffect(() => {
+    void loadContext();
+    return () => { loadGeneration.current += 1; };
+  }, [loadContext]);
 
   async function join() {
     if (!context || joining || !termsAccepted || !privacyAcknowledged) return;
@@ -56,14 +68,39 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
         deviceId: getWebDeviceId(),
         existingCustomerToken: readStoredCustomerToken(restaurantSlug),
       });
-      const activeSlug = await openCustomerMembership(context.restaurant_id);
+      const nextContext = await loadCustomerRestaurantAccess(restaurantSlug);
       setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
-      setPortalRestaurantSlug(activeSlug);
+      setContext(nextContext);
+      if (nextContext.token_valid) setPortalRestaurantSlug(nextContext.restaurant_slug);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");
     } finally {
       setJoining(false);
     }
+  }
+
+  async function recover() {
+    if (recovering) return;
+    setRecovering(true);
+    setError(null);
+    try {
+      const slug = await recoverCustomerMembershipToken(restaurantSlug);
+      setPortalRestaurantSlug(slug);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Der Zugang konnte nicht wiederhergestellt werden.");
+    } finally {
+      setRecovering(false);
+    }
+  }
+
+  async function reauthenticate() {
+    if (!supabase) return;
+    const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+    if (signOutError) {
+      setError("Die erneute Anmeldung konnte nicht vorbereitet werden.");
+      return;
+    }
+    navigate(`/customer/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
   if (authLoading) return <AppShell className="central-auth-shell"><div className="central-auth-page"><div className="central-card-header-actions"><CustomerLanguageAction /></div><LoadingState description="Dein Gästekonto wird geprüft." /></div></AppShell>;
@@ -74,9 +111,16 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
       <div className="central-auth-actions"><Link className="premium-button premium-button-primary" to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`}><LogIn aria-hidden="true" size={19} /> Mit bestehendem Gästekonto anmelden</Link><Link className="premium-button premium-button-secondary" to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`}><UserPlus aria-hidden="true" size={19} /> Neues Gästekonto erstellen</Link></div>
     </PremiumCard></div></AppShell>
   );
-  if (portalRestaurantSlug) return <CustomerPortal entryMessage={joinSuccessMessage} isBonusCollection={isBonusCollection} restaurantSlug={portalRestaurantSlug} />;
+  if (portalRestaurantSlug === restaurantSlug) return <CustomerPortal entryMessage={joinSuccessMessage} isBonusCollection={isBonusCollection} restaurantSlug={portalRestaurantSlug} />;
   if (error && !context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><div className="central-card-header-actions"><CustomerLanguageAction /></div><ErrorState action={<SecondaryButton onClick={() => void loadContext()}>Erneut versuchen</SecondaryButton>} description={error} title="Bonusprogramm konnte nicht geöffnet werden" /></div></AppShell>;
-  if (!context) return <AppShell className="central-auth-shell"><div className="central-auth-page"><div className="central-card-header-actions"><CustomerLanguageAction /></div><LoadingState description="Das Restaurant wird geladen." /></div></AppShell>;
+  if (!context || context.restaurant_slug !== restaurantSlug) return <AppShell className="central-auth-shell"><div className="central-auth-page"><div className="central-card-header-actions"><CustomerLanguageAction /></div><LoadingState description="Das Restaurant wird geladen." /></div></AppShell>;
+
+  if (context.membership_exists) return <AppShell className="central-auth-shell"><div className="central-auth-page"><PremiumCard className="central-auth-card">
+    <div className="central-icon-heading"><Store aria-hidden="true" size={24} /><div><span>{t("customer.recovery.title")}</span><h1>{context.restaurant_name}</h1></div><CustomerLanguageAction /></div>
+    <p>{t("customer.recovery.description")}</p>
+    {error ? <p className="central-status-message" role="alert">{error}</p> : null}
+    <div className="central-auth-actions"><Link className="premium-button premium-button-secondary" to="/customer">Abbrechen</Link><SecondaryButton onClick={() => void reauthenticate()}>{t("customer.recovery.reauthenticate")}</SecondaryButton><PrimaryButton disabled={recovering} onClick={() => void recover()}>{recovering ? t("customer.recovery.working") : t("customer.recovery.action")}</PrimaryButton></div>
+  </PremiumCard></div></AppShell>;
 
   return <AppShell className="central-auth-shell"><div className="central-auth-page"><PremiumCard className="central-auth-card">
     <div className="central-icon-heading"><Store aria-hidden="true" size={24} /><div><span>Neues Lokal</span><h1>{context.restaurant_name}</h1></div><CustomerLanguageAction /></div>

@@ -73,21 +73,23 @@ test("ein, fünf und zwanzig Restaurants bleiben deterministisch filterbar", () 
   assert.equal(customerSwitcherMemberships(twenty, "restaurant-1", "Restaurant 20").at(-1)?.slug, "restaurant-20");
 });
 
-test("Slug-Wechsel zeigt erst nach serverseitigem Open den neuen Portalinhalt", () => {
+test("Slug-Wechsel zeigt erst nach serverseitigem Read und gültigem Browser-Token den neuen Portalinhalt", () => {
   assert.match(access, /setPortalRestaurantSlug\(null\)/);
-  assert.match(access, /await openCustomerMembership\(nextContext\.restaurant_id\)/);
-  assert.match(access, /const activeSlug = await openCustomerMembership/);
-  assert.match(access, /setPortalRestaurantSlug\(activeSlug\)/);
-  assert.match(access, /if \(portalRestaurantSlug\) return <CustomerPortal/);
+  assert.match(access, /await loadCustomerRestaurantAccess\(restaurantSlug\)/);
+  assert.match(access, /nextContext\.membership_exists && nextContext\.token_valid/);
+  assert.match(access, /generation !== loadGeneration\.current/);
+  assert.match(access, /if \(portalRestaurantSlug === restaurantSlug\) return <CustomerPortal/);
+  assert.match(access, /context\.restaurant_slug !== restaurantSlug/);
   assert.match(access, /restaurantSlug=\{portalRestaurantSlug\}/);
   assert.match(switcher, /ct\("switcherSwitching"\)/);
   assert.match(switcher, /ct\("switcherSwitchError"\)/);
 });
 
 test("QR und manueller Wechsel enden im selben kanonischen Restaurantzugang", () => {
-  assert.match(access, /loadCustomerRestaurantContext\(restaurantSlug\)/);
-  assert.match(access, /openCustomerMembership\(nextContext\.restaurant_id\)/);
+  assert.match(access, /loadCustomerRestaurantAccess\(restaurantSlug\)/);
+  assert.doesNotMatch(access, /openCustomerMembership\(/);
   assert.match(switcher, /openCustomerAccountMembership\(membership\)/);
+  assert.match(service, /rpc\("set_customer_portal_context"/);
   assert.match(switcher, /navigate\(`\/customer\/\$\{encodeURIComponent\(canonicalSlug\)\}`\)/);
   assert.doesNotMatch(`${access}\n${switcher}`, /qrCurrentRestaurant|manualCurrentRestaurant/);
 });

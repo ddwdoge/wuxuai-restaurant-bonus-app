@@ -606,6 +606,21 @@ Dies ist keine Aussage über bereits aktive Staging- oder Production-Flows.
 
 ## Aktiver Customer-Restaurantkontext - FINAL LOCK
 
+**Phase 7D.4B (lokaler Soll-Vertrag; Staging-Migration 172 offen):** Ein
+Customer-Seitenaufruf und Reload sind reine Reads. Eine vorhandene Membership
+wird nicht erneut geöffnet; ein gültiger, nicht widerrufener Browser-QR-Token
+wird wiederverwendet. Fehlt ein solcher Token, zeigt die UI nur eine
+ausdrückliche Wiederherstellung. Diese verlangt eine kürzlich serverseitig
+bestätigte Auth-Session, widerruft atomar alle bisherigen aktiven Tokens und
+gibt genau einen neuen Rohwert einmalig an den aktuellen Browser zurück; in
+der Datenbank liegt nur der Hash. Pro Membership darf höchstens ein Token
+nicht widerrufen sein. Historische Mehrfach-Tokens werden deterministisch
+nach Gültigkeit, `created_at` und Token-ID bereinigt, nie gelöscht. Login-
+und Kontext-Audits entstehen nur bei tatsächlicher Anmeldung beziehungsweise
+bewusstem Restaurantwechsel; Summary-/Read-RPCs schreiben nicht. Dies ist
+noch kein Staging- oder Final-Lock und ändert den bisherigen Staging-Stand
+nicht rückwirkend.
+
 - Es gibt genau einen kanonischen aktiven Restaurantkontext je Customer-
   Sitzung. Beitritt oder bewusster Restaurantwechsel aktualisiert diesen
   Kontext servervalidiert.

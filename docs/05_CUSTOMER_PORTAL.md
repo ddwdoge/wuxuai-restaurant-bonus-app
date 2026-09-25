@@ -1017,7 +1017,9 @@ Geburtstagsauslosung als primären V1-Kundenflow:
   bleiben sichtbar; Suche filtert nur diese bereits verbundenen Restaurants.
 - Ein manueller Wechsel verwendet `open_customer_account_membership(...)`.
   Dadurch werden Membership und Restaurant serverseitig validiert, bevor der
-  kanonische Pfad `/customer/:slug` geladen wird.
+  kanonische Pfad `/customer/:slug` geladen wird. Ab dem lokalen Entwurf von
+  Migration 172 ist dieser Opener selbst read-only; ein expliziter Wechsel
+  wird separat als tatsächliche Kontextänderung protokolliert.
 - QR und manueller Wechsel enden im selben `CustomerRestaurantAccess`. Es gibt
   keinen zweiten clientseitigen Restaurantzustand und keinen Browser-Reload.
 - Beim Pfadwechsel wird der bisherige Portalinhalt sofort entfernt. Der neue
@@ -1039,8 +1041,10 @@ Geburtstagsauslosung als primären V1-Kundenflow:
   akzeptiert und die Datenschutzerklärung zur Kenntnis genommen werden.
 - Der Beitritt verwendet ausschließlich den bestehenden authentifizierten,
   tenantgebundenen und idempotenten Server-RPC. Danach öffnet derselbe
-  servervalidierte Membership-Opener wie beim Restaurant-Schnellwechsel den
-  neuen aktiven Restaurantkontext.
+  servervalidierte Membership-Read wie beim Restaurant-Schnellwechsel den
+  neuen Restaurantkontext. Fehlt ein gültiger Browser-Token, erfolgt keine
+  automatische Ausstellung; die Wiederherstellung ist explizit und verlangt
+  eine aktuelle serverseitig bestätigte Anmeldung.
 - Der Beitritt erzeugt genau eine Membership, aber keinen Besuch, keine Punkte
   und keine Referral-Zuordnung. Ein Besuch entsteht weiterhin erst nach einer
   erfolgreichen Punktebuchung.

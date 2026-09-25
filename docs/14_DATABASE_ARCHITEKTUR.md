@@ -653,6 +653,19 @@ Regeln:
 - Token darf nicht restaurantübergreifend funktionieren.
 - Token kann später rotiert werden.
 
+Phase 7D.4B (Migration 172 nur lokal): Das tatsächliche Ownership-Grain ist
+`(restaurant_id, customer_id)` der eindeutigen zentralen Membership. Ein
+partieller Unique-Index erlaubt höchstens einen aktiven QR-Token je Grain.
+Normale Account-, Kontext- und Identity-Reads erzeugen weder Account- noch
+Membership-, Token- oder Auditwrites. Eine fehlende Browser-Credential wird
+nicht automatisch neu ausgestellt. Der ausdrücklich ausgelöste Recovery-RPC
+prüft die vom Auth-Server gespeicherte frische Session, sperrt die Membership
+transaktionsgebunden, widerruft bisherige aktive Tokens und gibt einen neuen
+Rohwert genau einmal zurück; persistiert wird nur dessen Hash. Historische
+Mehrfach-Tokens werden bei einer später gesondert freizugebenden Anwendung
+deterministisch zugunsten des neuesten gültigen Tokens widerrufen, nicht
+gelöscht. Migration 172 ist noch nicht auf Staging angewendet.
+
 ---
 
 ### 7.3 customer_devices

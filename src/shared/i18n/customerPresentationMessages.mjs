@@ -1,6 +1,11 @@
 // Customer-only presentation copy. Owner/Admin dictionaries remain unchanged.
 export const CUSTOMER_PRESENTATION_MESSAGES = {
   "de": {
+    "customer.recovery.title": "Zugang wiederherstellen",
+    "customer.recovery.description": "Dein Zugangscode fehlt oder ist ungültig. Nur nach einer aktuellen Anmeldung und deiner ausdrücklichen Bestätigung wird ein neuer Code erstellt.",
+    "customer.recovery.action": "Zugang wiederherstellen",
+    "customer.recovery.working": "Zugang wird geprüft …",
+    "customer.recovery.reauthenticate": "Erneut anmelden",
     "customer.presentation.offerTitle": "Aktuelles & Angebote",
     "customer.presentation.offerDescription": "Information des Restaurants",
     "customer.presentation.offerImage": "Bild zu {title}",
@@ -161,6 +166,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "Heute {open}–{close} und {secondOpen}–{secondClose} Uhr"
   },
   "en": {
+    "customer.recovery.title": "Restore access",
+    "customer.recovery.description": "Your access code is missing or invalid. A new code is issued only after a recent sign-in and your explicit confirmation.",
+    "customer.recovery.action": "Restore access",
+    "customer.recovery.working": "Checking access…",
+    "customer.recovery.reauthenticate": "Sign in again",
     "customer.presentation.offerTitle": "News & offers",
     "customer.presentation.offerDescription": "Information from the restaurant",
     "customer.presentation.offerImage": "Image for {title}",
@@ -321,6 +331,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "Today {open}–{close} and {secondOpen}–{secondClose}"
   },
   "fr": {
+    "customer.recovery.title": "Rétablir l’accès",
+    "customer.recovery.description": "Votre code d’accès est absent ou invalide. Un nouveau code n’est créé qu’après une connexion récente et votre confirmation explicite.",
+    "customer.recovery.action": "Rétablir l’accès",
+    "customer.recovery.working": "Vérification de l’accès…",
+    "customer.recovery.reauthenticate": "Se reconnecter",
     "customer.presentation.offerTitle": "Actualités et offres",
     "customer.presentation.offerDescription": "Informations du restaurant",
     "customer.presentation.offerImage": "Image de {title}",
@@ -481,6 +496,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "Aujourd’hui {open}–{close} et {secondOpen}–{secondClose}"
   },
   "it": {
+    "customer.recovery.title": "Ripristina l’accesso",
+    "customer.recovery.description": "Il codice di accesso manca o non è valido. Un nuovo codice viene creato solo dopo un accesso recente e la tua conferma esplicita.",
+    "customer.recovery.action": "Ripristina l’accesso",
+    "customer.recovery.working": "Verifica dell’accesso…",
+    "customer.recovery.reauthenticate": "Accedi di nuovo",
     "customer.presentation.offerTitle": "Novità e offerte",
     "customer.presentation.offerDescription": "Informazioni del ristorante",
     "customer.presentation.offerImage": "Immagine di {title}",
@@ -641,6 +661,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "Oggi {open}–{close} e {secondOpen}–{secondClose}"
   },
   "es": {
+    "customer.recovery.title": "Restablecer el acceso",
+    "customer.recovery.description": "Falta tu código de acceso o no es válido. Solo se crea uno nuevo tras iniciar sesión recientemente y confirmarlo expresamente.",
+    "customer.recovery.action": "Restablecer el acceso",
+    "customer.recovery.working": "Comprobando el acceso…",
+    "customer.recovery.reauthenticate": "Iniciar sesión de nuevo",
     "customer.presentation.offerTitle": "Novedades y ofertas",
     "customer.presentation.offerDescription": "Información del restaurante",
     "customer.presentation.offerImage": "Imagen de {title}",
@@ -801,6 +826,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "Hoy {open}–{close} y {secondOpen}–{secondClose}"
   },
   "zh": {
+    "customer.recovery.title": "恢复访问权限",
+    "customer.recovery.description": "访问码缺失或无效。只有在近期登录并明确确认后才会生成新码。",
+    "customer.recovery.action": "恢复访问权限",
+    "customer.recovery.working": "正在验证访问权限…",
+    "customer.recovery.reauthenticate": "重新登录",
     "customer.presentation.offerTitle": "资讯与优惠",
     "customer.presentation.offerDescription": "餐厅提供的信息",
     "customer.presentation.offerImage": "{title}的图片",
@@ -961,6 +991,11 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
     "customer.presentation.openingTodaySplit": "今日 {open}–{close}、{secondOpen}–{secondClose}"
   },
   "ko": {
+    "customer.recovery.title": "접근 권한 복구",
+    "customer.recovery.description": "접근 코드가 없거나 유효하지 않습니다. 최근 로그인 후 명시적으로 확인한 경우에만 새 코드가 발급됩니다.",
+    "customer.recovery.action": "접근 권한 복구",
+    "customer.recovery.working": "접근 권한 확인 중…",
+    "customer.recovery.reauthenticate": "다시 로그인",
     "customer.presentation.offerTitle": "소식과 혜택",
     "customer.presentation.offerDescription": "매장 제공 정보",
     "customer.presentation.offerImage": "{title} 이미지",

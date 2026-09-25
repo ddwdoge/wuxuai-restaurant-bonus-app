@@ -44,11 +44,12 @@ test("Discovery verwendet den bestehenden ausdrücklichen Legal-Consent-Flow", (
   assert.doesNotMatch(finder, /\.from\("(?:customers|customer_account_memberships)"\)/);
 });
 
-test("Beitritt wechselt anschließend über denselben kanonischen Membership-Opener", () => {
+test("Beitritt öffnet anschließend nur den lesenden Restaurant-Zugang", () => {
   const joinHandler = access.slice(access.indexOf("async function join()"), access.indexOf("if (authLoading)"));
   assert.match(joinHandler, /await joinCustomerRestaurant\(/);
-  assert.match(joinHandler, /await openCustomerMembership\(context\.restaurant_id\)/);
-  assert.ok(joinHandler.indexOf("joinCustomerRestaurant") < joinHandler.indexOf("openCustomerMembership"));
+  assert.match(joinHandler, /await loadCustomerRestaurantAccess\(restaurantSlug\)/);
+  assert.ok(joinHandler.indexOf("joinCustomerRestaurant") < joinHandler.indexOf("loadCustomerRestaurantAccess"));
+  assert.doesNotMatch(joinHandler, /openCustomerMembership\(/);
   assert.doesNotMatch(joinHandler, /result\.joined/);
   assert.match(access, /Du bist jetzt im Bonusprogramm von \$\{context\.restaurant_name\}/);
   assert.match(access, /<CustomerPortal entryMessage=\{joinSuccessMessage\}/);

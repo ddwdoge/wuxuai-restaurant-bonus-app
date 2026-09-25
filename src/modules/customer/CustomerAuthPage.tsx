@@ -13,6 +13,7 @@ import {
   isCustomerPasswordConfirmationValid,
 } from "./customerAuthFlow.mjs";
 import { activateAuthenticatedCustomerAccount, registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
+import { recordCustomerLoginSuccess } from "./customerAccountService";
 import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import { AppShell, CustomerLanguageAction, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
@@ -41,6 +42,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const [phone, setPhone] = useState("");
   const [birthday, setBirthday] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loginAuditPending, setLoginAuditPending] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [confirmationPending, setConfirmationPending] = useState(false);
@@ -65,10 +67,10 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     ));
 
   useEffect(() => {
-    if (!authLoading && user && portalAccess.customer_access) {
+    if (!authLoading && user && portalAccess.customer_access && !loginAuditPending) {
       navigate(returnTo, { replace: true });
     }
-  }, [authLoading, navigate, portalAccess.customer_access, returnTo, user]);
+  }, [authLoading, loginAuditPending, navigate, portalAccess.customer_access, returnTo, user]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -89,7 +91,14 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     setConfirmationPending(false);
     try {
       if (mode === "login") {
+        setLoginAuditPending(true);
         await signIn(email.trim().toLowerCase(), password);
+        try {
+          await recordCustomerLoginSuccess(returnTo);
+        } catch (auditError) {
+          await supabase.auth.signOut({ scope: "local" });
+          throw auditError;
+        }
         navigate(returnTo, { replace: true });
         return;
       }
@@ -135,6 +144,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         throw new Error("customer_signup_incomplete");
       }
     } catch (caught) {
+      setLoginAuditPending(false);
       setMessageKind("error");
       setMessage(customerAuthErrorMessage(caught, mode === "login" ? "login" : "signup"));
     } finally {
