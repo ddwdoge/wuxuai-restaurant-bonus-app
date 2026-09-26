@@ -12,4 +12,5 @@ export type PortalAccess = {
 export const emptyPortalAccess: Readonly<PortalAccess>;
 export function portalDestination(portal: PortalKind, access: PortalAccess): { path: string; label: string } | null;
 export function wrongPortalCopy(portal: PortalKind, access: PortalAccess): string;
+export function isConfirmedStaffAccountSwitch(access: PortalAccess): boolean;
 export function portalLoginPath(portal: PortalKind, staffSlug?: string | null): string;

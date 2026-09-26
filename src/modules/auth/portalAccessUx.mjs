@@ -43,6 +43,12 @@ export function wrongPortalCopy(portal, access) {
   return "Dieses Konto hat keinen Zugriff auf den WUXUAI Admin.";
 }
 
+export function isConfirmedStaffAccountSwitch(access) {
+  return access.authenticated
+    && !access.staff_access
+    && (access.customer_access || access.owner_access || access.platform_access);
+}
+
 export function portalLoginPath(portal, staffSlug = null) {
   if (portal === "customer") return "/customer/login";
   if (portal === "staff") return staffSlug

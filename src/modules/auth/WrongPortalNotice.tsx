@@ -1,6 +1,7 @@
 import { ArrowRight, LogOut, ShieldAlert } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  isConfirmedStaffAccountSwitch,
   portalDestination,
   portalLoginPath,
   wrongPortalCopy,
@@ -13,6 +14,7 @@ import {
   PublicPageShell,
   PublicPrimaryButton,
 } from "../public/PublicPageComponents";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type WrongPortalNoticeProps = {
   portal: PortalKind;
@@ -21,11 +23,16 @@ type WrongPortalNoticeProps = {
 };
 
 export function WrongPortalNotice({ portal, staffSlug = null, description }: WrongPortalNoticeProps) {
+  const { translateKey: t } = useI18n();
   const { portalAccess, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const access = portalAccess as PortalAccess;
   const destination = portalDestination(portal, access);
+  const noticeDescription = description
+    ?? (portal === "staff" && isConfirmedStaffAccountSwitch(access)
+      ? t("auth.staffAccess.accountSwitch")
+      : wrongPortalCopy(portal, access));
 
   async function switchAccount() {
     await signOut().catch(() => undefined);
@@ -45,7 +52,7 @@ export function WrongPortalNotice({ portal, staffSlug = null, description }: Wro
       <PublicContentCard>
         <div className="public-premium-status-icon" aria-hidden="true"><ShieldAlert size={28} /></div>
         <div className="public-premium-form">
-          <p className="public-premium-alert" role="status">{description ?? wrongPortalCopy(portal, access)}</p>
+          <p className="public-premium-alert" role="status">{noticeDescription}</p>
           {destination ? (
             <PublicPrimaryButton icon={<ArrowRight size={18} />} onClick={() => navigate(destination.path)} type="button">
               {destination.label}

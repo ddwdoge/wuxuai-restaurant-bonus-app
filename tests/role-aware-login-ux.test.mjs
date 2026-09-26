@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   emptyPortalAccess,
+  isConfirmedStaffAccountSwitch,
   portalDestination,
   portalLoginPath,
   wrongPortalCopy,
@@ -44,6 +45,20 @@ test("Owner and Staff wrong-role messages remain restaurant specific", () => {
     label: "Zur Kundenansicht",
     path: "/customer",
   });
+});
+
+test("Staff account-switch guidance requires a confirmed different portal identity", () => {
+  assert.equal(isConfirmedStaffAccountSwitch(access({ customer_access: true })), true);
+  assert.equal(isConfirmedStaffAccountSwitch(access({ owner_access: true })), true);
+  assert.equal(isConfirmedStaffAccountSwitch(access({ platform_access: true })), true);
+  assert.equal(isConfirmedStaffAccountSwitch(access()), false);
+  assert.equal(isConfirmedStaffAccountSwitch(emptyPortalAccess), false);
+});
+
+test("Valid Staff access never triggers account-switch guidance, including additive roles", () => {
+  assert.equal(isConfirmedStaffAccountSwitch(access({ staff_access: true })), false);
+  assert.equal(isConfirmedStaffAccountSwitch(access({ customer_access: true, staff_access: true })), false);
+  assert.equal(isConfirmedStaffAccountSwitch(access({ owner_access: true, staff_access: true })), false);
 });
 
 test("Mixed roles retain independent portal destinations", () => {
@@ -102,4 +117,11 @@ test("Role disclosure is rendered only after an authenticated user exists", () =
   const wrongPortalCheck = protectedRoute.indexOf("if (effectivePortalKind && !portalAllowed)");
   assert.ok(unauthenticatedCheck >= 0 && unauthenticatedCheck < wrongPortalCheck);
   assert.match(notice, /Deine Anmeldung ist gültig/);
+});
+
+test("Staff collision guidance is selected only after server-confirmed portal hydration", () => {
+  assert.match(notice, /portal === "staff" && isConfirmedStaffAccountSwitch\(access\)/);
+  assert.match(staffLogin, /isConfirmedStaffAccountSwitch\(portalAccess\)/);
+  assert.match(staffLogin, /auth\.staffAccess\.accountSwitch/);
+  assert.match(staffLogin, /auth\.staffAccess\.noScopedAccess/);
 });

@@ -16,6 +16,7 @@ import { WrongPortalNotice } from "./WrongPortalNotice";
 import { PortalLoginNavigation } from "./PortalLoginNavigation";
 import { buildPasswordRecoveryPath } from "./portalRecoveryUx.mjs";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { isConfirmedStaffAccountSwitch } from "./portalAccessUx.mjs";
 
 export function StaffLoginPage() {
   const { translateKey: t } = useI18n();
@@ -137,9 +138,12 @@ export function StaffLoginPage() {
   const unavailable = !supabase || contextLoading || Boolean(restaurantSlug && !restaurantName);
 
   if (user && accessDenied) {
+    const accessDeniedDescription = isConfirmedStaffAccountSwitch(portalAccess)
+      ? t("auth.staffAccess.accountSwitch")
+      : t("auth.staffAccess.noScopedAccess");
     return (
       <WrongPortalNotice
-        description={t("auth.staffAccess.noScopedAccess")}
+        description={accessDeniedDescription}
         portal="staff"
         staffSlug={restaurantSlug}
       />
