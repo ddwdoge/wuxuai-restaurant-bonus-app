@@ -100,11 +100,15 @@ Recovery-Codes werden nicht in Ticket, Audit, Bericht oder Git übernommen.
    separater globaler Sitzungswiderruf stattgefunden hat. Supabase invalidiert
    dabei die weitere Sitzungserneuerung; ein bereits signiertes Access-JWT kann
    jedoch bis zu seinem `exp` kryptografisch gültig bleiben.
-7. Unmittelbar danach wird der vor der Entfernung gespeicherte, noch nicht
-   abgelaufene AAL2-Token nur im geschützten Testprozess gegen eine schreibfreie
-   Platform-RPC geprüft. Migration 173 muss ihn sofort abweisen, weil die
-   referenzierte Auth-Session nicht mehr an einen existierenden, verifizierten
-   TOTP-Faktor gebunden ist. Tokenwerte werden nie ausgegeben.
+7. **Bedingter Alt-Token-Negativnachweis:** Nur wenn aus einer bereits
+   autorisierten, geschützten Sitzung ein vor der Entfernung ausgestellter und
+   noch nicht abgelaufener AAL2-Token sicher verfügbar ist, wird er im
+   geschützten Recovery-Prozess gegen eine schreibfreie Platform-RPC geprüft.
+   Migration 173 muss ihn sofort abweisen, weil die referenzierte Auth-Session
+   nicht mehr an einen existierenden, verifizierten TOTP-Faktor gebunden ist.
+   Tokenwerte werden nie ausgegeben, exportiert oder eigens für diesen Nachweis
+   beschafft. Im realen Faktorverlust ist ein solcher Token ausdrücklich **keine
+   Voraussetzung** für Recovery oder Wiederherstellung.
 8. Die Person meldet sich in einem sauberen Browserprofil mit dem bestehenden
    ersten Faktor neu an. Diese AAL1-Sitzung besitzt weiterhin keine Platform-
    Aktionsberechtigung.
@@ -118,14 +122,25 @@ Recovery-Codes werden nicht in Ticket, Audit, Bericht oder Git übernommen.
    geschützte Read-RPC ist mit der neuen TOTP-AAL2-Sitzung zulässig. Eine
    schreibende Aktion ist für Recovery nicht erforderlich.
 12. Der verlorene Faktor wird erneut als nicht vorhanden bestätigt. Die
-    Restlaufzeit aller vor der Entfernung ausgestellten Access-JWTs wird aus
-    deren `exp` beziehungsweise der verifizierten Projektkonfiguration bestimmt,
-    ohne Tokenwerte zu protokollieren.
-13. Der Vorfall wird erst geschlossen, wenn der alte AAL2-Token am direkten RPC
-    blockiert ist, der neue Faktor AAL2 wiederherstellt und keine unbekannte
-    Session verbleibt. Bei jedem unklaren Ergebnis bleiben Platform-Mutationen
-    eingefroren; als defensiver Abbruchweg wird mindestens bis zum spätesten
-    `exp` aller Vor-Recovery-Tokens gewartet.
+    maximale mögliche Restlaufzeit aller vor der Entfernung ausgestellten
+    Access-JWTs wird ohne Tokenwert aus der unmittelbar vorher read-only
+    verifizierten Staging-Projektkonfiguration bestimmt. Ist ein sicher
+    verfügbarer Alt-Token vorhanden, darf dessen `exp` zusätzlich als engerer
+    Nachweis verwendet werden; es ersetzt nicht die projektweite
+    Worst-Case-Betrachtung.
+13. Ist kein alter Token sicher verfügbar, wird dies als `NOT AVAILABLE`
+    dokumentiert und es wird kein Ersatz-Token erzeugt oder aus einem Browser
+    exportiert. Ab der serverseitig belegten Faktorentfernungszeit läuft ein
+    Quarantänefenster von mindestens der verifizierten maximalen JWT-Laufzeit
+    zuzüglich dokumentierter Uhrtoleranz. Bis zu dessen Ende bleiben sämtliche
+    Platform-Admin-Mutationen organisatorisch eingefroren. Migration 173 und
+    die serverseitige TOTP-AAL2-Grenze bleiben dabei vollständig aktiv.
+14. Der Vorfall wird erst geschlossen, wenn der neue Faktor AAL2
+    wiederherstellt, keine unbekannte Session verbleibt und entweder der
+    bedingte Alt-Token-Negativnachweis PASS ist oder das vollständige
+    Quarantänefenster ohne sicherheitsrelevantes Ereignis abgelaufen ist. Bei
+    unklarer Projektlaufzeit, Zeitbasis oder Sessionlage bleibt der Vorfall
+    offen und Platform-Mutationen bleiben eingefroren.
 
 Die lokale Referenzkonfiguration verwendet eine Access-Token-Laufzeit von rund
 einer Stunde. Die tatsächliche Staging-Laufzeit ist vor dem Recovery read-only
@@ -151,6 +166,13 @@ Guard verlangt deshalb gleichzeitig eine aktuelle `auth.sessions`-Zeile und den
 zu dieser Session gehörenden weiterhin vorhandenen, verifizierten TOTP-Faktor.
 Mit diesem Guard wurde derselbe alte Token unmittelbar abgewiesen.
 
+Dieser lokale Beweis validiert den Guard, verpflichtet einen realen
+Recovery-Vorgang aber nicht dazu, einen alten Token vorzuhalten. Ohne sicher
+verfügbaren Alt-Token gilt der zeitgebundene Abschlussweg aus Abschnitt 5:
+projektweit verifizierte maximale JWT-Laufzeit, dokumentierte Uhrtoleranz,
+eingefrorene Platform-Mutationen und kein Schließen vor Ablauf des
+Quarantänefensters.
+
 ## 7. Unveränderbarer Nachweis
 
 Der Incident-Nachweis wird zunächst im zugriffsgeschützten, append-only
@@ -166,8 +188,9 @@ Pflichtfelder:
 - pseudonymisierte Requestor-, Approver- und Executor-Referenzen;
 - verwendete Identitätsnachweisklassen und deren PASS/FAIL;
 - Fingerprint der entfernten Faktor-ID, niemals Secret oder Code;
-- Faktorentfernung, alter-Token-Negativnachweis, Neueinrichtung und
-  AAL2-Wiederherstellung;
+- Faktorentfernung, Neueinrichtung und AAL2-Wiederherstellung;
+- bedingter Alt-Token-Negativnachweis mit PASS oder `NOT AVAILABLE`; bei
+  `NOT AVAILABLE` Beginn, Dauer und Ende des vollständigen Quarantänefensters;
 - bestätigte maximale Restlaufzeit der Vor-Recovery-Access-Tokens;
 - Ergebnisse der AAL1-/AAL2-RPC-Nachweise;
 - Abweichungen und Abschlussentscheidung.
@@ -194,10 +217,16 @@ Pflichtfelder:
   wird sie vollständig zurückgerollt. Keine manuelle Teilkorrektur.
 - **UI-Fehler nach Migration:** Migration und AAL2-Grenze bleiben aktiv. Recovery
   erfolgt nur über den offiziellen Auth-Admin-Faktorpfad; keine AAL1-Freigabe.
-- **Faktor entfernt, alter RPC nicht blockiert:** Platform-Mutationen bleiben
+- **Faktor entfernt, verfügbarer alter Token am RPC nicht blockiert:**
+  Platform-Mutationen bleiben
   organisatorisch eingefroren. Keine weitere Recovery-Mutation. Bis zum spätesten
   `exp` aller alten Access-Tokens warten, Evidenz sichern und Migration/Guard als
   Security Incident behandeln.
+- **Kein alter Token verfügbar:** keinen Token beschaffen, exportieren oder
+  rekonstruieren. Faktorentfernungszeit und verifizierte maximale
+  Staging-JWT-Laufzeit bilden das Quarantänefenster; bis zu dessen vollständigem
+  Ablauf bleiben Platform-Mutationen eingefroren. Unbekannte Laufzeit bedeutet
+  offener Incident, nicht AAL1-Freigabe.
 - **Supabase-MFA-Störung:** Platform-Aktionen bleiben eingefroren, bis der Dienst
   wieder verfügbar ist. Es gibt keinen Bypass.
 - **Verdacht auf kompromittierten ersten Faktor:** separater Credential-Incident;

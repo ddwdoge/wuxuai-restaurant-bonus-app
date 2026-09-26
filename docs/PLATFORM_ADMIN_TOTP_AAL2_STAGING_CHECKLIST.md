@@ -126,11 +126,20 @@ jedem Block werden Business- und Auditfingerprints verglichen.
 
 - [ ] Sign-out: direkter geschützter RPC abgewiesen.
 - [ ] Abgelaufene oder ersetzte Sitzung: abgewiesen.
-- [ ] Ein vor Faktorentfernung ausgestellter und noch nicht abgelaufener
-  AAL2-Token wird nach Entfernung seines verifizierten TOTP-Faktors unmittelbar
-  vom direkten Read-RPC abgewiesen. Dieser destruktive Nachweis erfolgt lokal mit
-  synthetischem Benutzer; auf Staging nur mit separat freigegebenem Testbenutzer,
-  niemals mit dem einzigen echten Platform Admin.
+- [ ] **Bedingter Nachweis:** Wenn ein vor Faktorentfernung ausgestellter und
+  noch nicht abgelaufener AAL2-Token aus einem autorisierten geschützten
+  Testkontext sicher verfügbar ist, wird er nach Entfernung seines verifizierten
+  TOTP-Faktors unmittelbar vom direkten Read-RPC abgewiesen. Dieser destruktive
+  Nachweis erfolgt lokal mit synthetischem Benutzer; auf Staging nur mit separat
+  freigegebenem Testbenutzer, niemals mit dem einzigen echten Platform Admin.
+  Für einen realen Faktorverlust wird kein alter Token vorausgesetzt, beschafft
+  oder aus einem Browser exportiert.
+- [ ] Ohne sicher verfügbaren alten Token wird `NOT AVAILABLE` dokumentiert. Ab
+  der serverseitig belegten Faktorentfernungszeit bleiben Platform-Mutationen
+  mindestens für die read-only verifizierte maximale Staging-JWT-Laufzeit
+  zuzüglich dokumentierter Uhrtoleranz eingefroren. Der Recovery-Abschluss
+  erfolgt erst nach vollständigem Ablauf dieses Quarantänefensters; AAL2- und
+  TOTP-Grenzen bleiben unverändert aktiv.
 - [ ] Nicht-TOTP-AAL2-Methode: abgewiesen.
 - [ ] Tokenwechsel führt synchron zurück in den Prüfzustand; ein früherer
   React-Gate-Nachweis autorisiert keinen neuen Token.
@@ -180,6 +189,10 @@ Ein Staging-PASS ist erst zulässig, wenn:
 - Migration 173 genau einmal angewendet und 173/173 bestätigt ist;
 - AAL1-Direktaufrufe fail-closed und TOTP-AAL2-Read-Aufrufe erfolgreich sind;
 - Tokenwechsel, Refresh und Sign-out korrekt neu bewertet werden;
+- der Alt-Token-Negativnachweis entweder bedingt PASS ist oder bei
+  `NOT AVAILABLE` das aus Faktorentfernungszeit, verifizierter maximaler
+  Staging-JWT-Laufzeit und Uhrtoleranz gebildete Quarantänefenster vollständig
+  abgelaufen und dokumentiert ist;
 - Recovery-Besetzung und geschützter Auth-Admin-Recovery-Runner physisch
   verfügbar sind;
 - alle geschützten Datenfingerprints unverändert sind;
