@@ -56,18 +56,30 @@ test("codes are numeric and the verified factor choice is deterministic", () => 
 });
 
 test("server role authorization fails closed without TOTP AAL2", () => {
+  assert.match(migration, /from auth\.sessions session_record/);
+  assert.match(migration, /session_record\.user_id = auth\.uid\(\)/);
+  assert.match(migration, /session_record\.not_after is null or session_record\.not_after > statement_timestamp\(\)/);
+  assert.match(migration, /and public\.platform_session_current_internal\(\)/);
+  assert.match(migration, /join auth\.mfa_factors factor_record/);
+  assert.match(migration, /session_record\.aal = 'aal2'/);
+  assert.match(migration, /factor_record\.factor_type = 'totp'/);
+  assert.match(migration, /factor_record\.status = 'verified'/);
+  assert.match(migration, /and public\.platform_totp_factor_current_internal\(\)/);
   assert.match(migration, /auth\.jwt\(\)->>'aal' = 'aal2'/);
   assert.match(migration, /method->>'method' = 'totp'/);
   assert.match(migration, /and public\.platform_totp_aal2_verified_internal\(\)/);
   assert.match(migration, /select coalesce\([\s\S]*public\.current_platform_role\(\) in/);
   assert.match(migration, /RECENT_PLATFORM_TOTP_REQUIRED/);
   assert.doesNotMatch(migration, /grant execute on function public\.platform_totp_aal2_verified_internal/);
+  assert.doesNotMatch(migration, /grant execute on function public\.platform_session_current_internal/);
+  assert.doesNotMatch(migration, /grant execute on function public\.platform_totp_factor_current_internal/);
 });
 
 test("role discovery remains narrow and separate so enrollment cannot lock out the sole admin", () => {
   const discovery = migration.match(/create or replace function public\.get_current_platform_role\(\)[\s\S]*?\$function\$;/)?.[0] ?? "";
   assert.match(discovery, /from public\.platform_admins pa/);
   assert.match(discovery, /pa\.user_id = auth\.uid\(\)/);
+  assert.match(discovery, /platform_session_current_internal/);
   assert.doesNotMatch(discovery, /platform_totp_aal2_verified_internal/);
   assert.match(migration, /grant execute on function public\.get_current_platform_role\(\) to authenticated/);
 });

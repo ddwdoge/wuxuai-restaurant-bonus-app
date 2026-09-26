@@ -85,13 +85,33 @@ try {
   assert.equal(refreshedAal.data.currentLevel, "aal2");
   assert.ifError((await browser.rpc("get_platform_restaurants")).error);
 
-  assert.ifError((await browser.auth.signOut({ scope: "local" })).error);
-  assert.ok((await browser.rpc("get_platform_restaurants")).error);
+  const staleAal2Token = refreshed.data.session?.access_token;
+  assert.ok(staleAal2Token);
+  const factorsBeforeDelete = await admin.auth.admin.mfa.listFactors({ userId });
+  assert.ifError(factorsBeforeDelete.error);
+  assert.equal(factorsBeforeDelete.data.factors.some((factor) => factor.id === enrollment.data.id), true);
+
+  const deletedFactor = await admin.auth.admin.mfa.deleteFactor({
+    userId,
+    id: enrollment.data.id,
+  });
+  assert.ifError(deletedFactor.error);
+  const factorsAfterDelete = await admin.auth.admin.mfa.listFactors({ userId });
+  assert.ifError(factorsAfterDelete.error);
+  assert.equal(factorsAfterDelete.data.factors.some((factor) => factor.id === enrollment.data.id), false);
+
+  const staleSessionClient = createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${staleAal2Token}` } },
+  });
+  const revokedSessionRpc = await staleSessionClient.rpc("get_platform_restaurants");
+  assert.ok(revokedSessionRpc.error, "A revoked session's unexpired AAL2 token must fail immediately");
 
   console.log("LOCAL_REAL_TOTP_ENROLLMENT_CHALLENGE_PASS");
   console.log("LOCAL_AAL1_DIRECT_RPC_BLOCKED_PASS");
   console.log("LOCAL_AAL2_REFRESH_AND_SERVER_ACCESS_PASS");
-  console.log("LOCAL_SIGNED_OUT_DIRECT_RPC_BLOCKED_PASS");
+  console.log("LOCAL_ADMIN_FACTOR_DELETE_PATH_PASS");
+  console.log("LOCAL_REVOKED_SESSION_STALE_AAL2_RPC_BLOCKED_PASS");
 } finally {
   await admin.from("platform_admins").delete().eq("user_id", userId);
   await admin.auth.admin.deleteUser(userId);

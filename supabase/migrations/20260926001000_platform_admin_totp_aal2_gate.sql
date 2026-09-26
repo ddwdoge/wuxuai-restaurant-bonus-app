@@ -4,9 +4,70 @@
 -- authenticated Platform Admin can reach the TOTP enrollment/challenge UI.
 -- Every existing server-side Platform Admin authorization path goes through
 -- current_platform_role() or is_platform_admin(); both now fail closed unless
--- the current JWT proves AAL2 with a TOTP authentication method.
+-- the JWT maps to a current Auth session bound to a still-verified TOTP factor
+-- and proves AAL2 with a TOTP authentication method.
 
 begin;
+
+create or replace function public.platform_session_current_internal()
+returns boolean
+language sql
+security definer
+set search_path = pg_catalog, public, pg_temp
+stable
+as $function$
+  select coalesce(
+    auth.uid() is not null
+    and exists (
+      select 1
+      from auth.sessions session_record
+      where session_record.id = case
+        when coalesce(auth.jwt()->>'session_id', '') ~
+          '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
+          then (auth.jwt()->>'session_id')::uuid
+        else null
+      end
+        and session_record.user_id = auth.uid()
+        and (session_record.not_after is null or session_record.not_after > statement_timestamp())
+    ),
+    false
+  );
+$function$;
+
+revoke all on function public.platform_session_current_internal()
+from public, anon, authenticated, service_role;
+
+create or replace function public.platform_totp_factor_current_internal()
+returns boolean
+language sql
+security definer
+set search_path = pg_catalog, public, pg_temp
+stable
+as $function$
+  select coalesce(
+    exists (
+      select 1
+      from auth.sessions session_record
+      join auth.mfa_factors factor_record
+        on factor_record.id = session_record.factor_id
+       and factor_record.user_id = session_record.user_id
+       and factor_record.factor_type = 'totp'
+       and factor_record.status = 'verified'
+      where session_record.id = case
+        when coalesce(auth.jwt()->>'session_id', '') ~
+          '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
+          then (auth.jwt()->>'session_id')::uuid
+        else null
+      end
+        and session_record.user_id = auth.uid()
+        and session_record.aal = 'aal2'
+    ),
+    false
+  );
+$function$;
+
+revoke all on function public.platform_totp_factor_current_internal()
+from public, anon, authenticated, service_role;
 
 create or replace function public.platform_totp_aal2_verified_internal()
 returns boolean
@@ -18,6 +79,8 @@ as $function$
   select coalesce(
     auth.uid() is not null
     and auth.jwt()->>'sub' = auth.uid()::text
+    and public.platform_session_current_internal()
+    and public.platform_totp_factor_current_internal()
     and auth.jwt()->>'aal' = 'aal2'
     and exists (
       select 1
@@ -87,6 +150,7 @@ as $function$
   from public.platform_admins pa
   where pa.user_id = auth.uid()
     and pa.active = true
+    and public.platform_session_current_internal()
   limit 1;
 $function$;
 
@@ -139,7 +203,11 @@ revoke all on function public.require_recent_platform_auth_internal()
 from public, anon, authenticated, service_role;
 
 comment on function public.platform_totp_aal2_verified_internal() is
-  'Internal fail-closed Platform Admin authorization predicate: current JWT must prove AAL2 and a TOTP AMR method.';
+  'Internal fail-closed Platform Admin authorization predicate: current JWT must map to a live Auth session and its still-verified TOTP factor, and must prove AAL2 with a TOTP AMR method.';
+comment on function public.platform_session_current_internal() is
+  'Internal live-session predicate for Platform access: JWT session_id must still exist for auth.uid() and must not be past not_after.';
+comment on function public.platform_totp_factor_current_internal() is
+  'Internal current-factor predicate: the JWT session must still reference a verified TOTP factor owned by auth.uid().';
 comment on function public.get_current_platform_role() is
   'Returns only the authenticated caller own active Platform role for pre-AAL2 MFA routing; never use this RPC as an action authorization predicate.';
 
