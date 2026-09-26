@@ -94,6 +94,12 @@ enable_confirmations = false
 template = "Your code is {{ .Code }}"
 max_frequency = "5s"
 
+# Local-only Platform Admin TOTP/AAL2 verification. Hosted Auth settings remain
+# unchanged and require a separate Staging/Production authorization.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [edge_runtime]
 enabled = false
 policy = "per_worker"

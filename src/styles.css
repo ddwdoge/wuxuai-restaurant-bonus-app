@@ -2940,6 +2940,43 @@ a {
   padding: 24px;
 }
 
+.platform-mfa-shell {
+  min-height: 100dvh;
+}
+
+.platform-mfa-card {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 520px);
+}
+
+.platform-mfa-card h1,
+.platform-mfa-card p {
+  margin: 0;
+}
+
+.platform-mfa-setup,
+.platform-mfa-form {
+  display: grid;
+  gap: 12px;
+}
+
+.platform-mfa-qr {
+  aspect-ratio: 1;
+  display: block;
+  height: auto;
+  max-width: min(100%, 280px);
+  width: 280px;
+}
+
+.platform-mfa-form input {
+  box-sizing: border-box;
+  font-size: 1.125rem;
+  letter-spacing: 0.18em;
+  min-height: 44px;
+  width: 100%;
+}
+
 .tablet-actions {
   display: grid;
   gap: 12px;

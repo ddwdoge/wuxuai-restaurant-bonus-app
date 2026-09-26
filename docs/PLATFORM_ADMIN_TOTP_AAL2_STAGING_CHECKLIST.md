@@ -1,0 +1,148 @@
+# Platform Admin TOTP/AAL2 – ausführbare Staging-Checkliste
+
+Status: **ENTWURF FÜR ARCHITEKTURPRÜFUNG / NICHT AUSGEFÜHRT**
+
+Migration: `20260926001000_platform_admin_totp_aal2_gate.sql` (173)
+
+Stand: 2026-09-26
+
+Diese Checkliste beschreibt die spätere Staging-Freigabe. Sie autorisiert keine
+Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
+
+## A. Vorbedingungen und Stop-Gates
+
+- [ ] Founder und Security-Review haben den Break-glass-/Recovery-Vertrag
+  schriftlich freigegeben.
+- [ ] Requestor, unabhängiger Approver und Executor sind namentlich registriert
+  und erreichbar.
+- [ ] Executor besitzt einen eigenen MFA-geschützten Supabase-
+  Organisationszugang; keine geteilte Sitzung.
+- [ ] Staging-Projekt-ID und Projektname wurden unmittelbar vorher read-only
+  bestätigt; Production ist nicht verbunden.
+- [ ] Branch, Remote-Parität und exakter freigegebener Commit wurden bestätigt.
+- [ ] Staff-Auth-Basiscommit
+  `8acb24ca7661d2c8422267885809624842625009` ist Vorfahr des Commit-Tips.
+- [ ] Migrationen 001–172 sind bytegleich; ausschließlich Migration 173 ist
+  ausstehend.
+- [ ] Migration-173-SHA-256 stimmt mit der freigegebenen Evidenz überein.
+- [ ] Das einzige Platform-Admin-Konto ist aktiv, der erste Faktor funktioniert,
+  und eine legitime isolierte Sitzung ist vorhanden.
+- [ ] Vorher-Snapshot: Platform-Admin-Zeile, Rollen, Faktor-Metadaten,
+  Auth-Sitzungsanzahl, Grants, Funktionsdefinitionen und relevante Auditpräfixe.
+- [ ] Es existiert ein getesteter Zugriff auf den offiziellen Supabase-MFA-
+  Control-Plane-Recoverypfad.
+
+**Sofort stoppen**, wenn Projekt, Commit, Migration, Admin-Identität,
+Recovery-Besetzung oder Ausgangsfingerprints nicht eindeutig sind.
+
+## B. Empfohlene Reihenfolge ohne Aussperrungsfenster
+
+1. **Staging-TOTP-Fähigkeit prüfen/aktivieren.** Nur die offiziell freigegebene
+   Supabase-TOTP-Konfiguration verwenden. Keine SMS-, Phone- oder generische
+   AAL2-Ausnahme aktivieren.
+2. **UI-Build zuerst bereitstellen.** Den geprüften Commit mit
+   `PlatformAdminMfaGate` auf Staging deployen, während die Datenbank noch auf
+   Migration 172 steht. Asset-/Commit-Parität und HTTP-Health prüfen.
+3. **Ersteinrichtung physisch durchführen.** In einer isolierten legitimen
+   Platform-Admin-Sitzung `/admin/platform` öffnen, die explizite TOTP-
+   Einrichtung starten, QR nur in der Authenticator-App erfassen und Challenge
+   abschließen. Keine QR-Payload und keinen Code protokollieren.
+4. **AAL2 vor Migration beweisen.** Neuen Access-Token und TOTP-AMR intern
+   fingerprinten; nur `AAL2/TOTP PASS` berichten. Session/Tokenwert nicht
+   ausgeben. Seite neu laden und serverseitige Rolle weiterhin read-only prüfen.
+5. **Migration 173 anwenden.** Nur die additive Migration aus dem bestätigten
+   Commit ausführen. Erwartung: 173/173. Danach Hash, Schemahistorie,
+   Funktionsdefinitionen, `search_path`, ACL und Grants erneut prüfen.
+6. **Repeat-Dry-Run und DB-Lint.** Keine ausstehende Migration; DB-Lint ohne neue
+   sicherheitsrelevante Findings.
+7. **Direkte RPC-Matrix ausführen.** Siehe Abschnitt C.
+8. **Physisches Gate ausführen.** AAL1-/AAL2-Wechsel, Reload, Token-Refresh,
+   Sign-out und erneute Challenge prüfen. Keine reale Mutation ausführen.
+9. **Nachher-Snapshot.** Rollen, Platform-Admin-Zeile und Businessdaten müssen
+   identisch sein. Zulässig sind nur erwartete Supabase-Faktor-/Sessionmetadaten
+   und klassifizierte Auth-Audits.
+10. **Secret-freie Evidenz sichern.** Bericht, Fingerprints, Migration-Hash,
+    RPC-Statuscodes und Recovery-Bereitschaft; keine IDs, Tokens, QR-Daten oder
+    Codes.
+
+## C. Direkte RPC-Nachweise
+
+Für alle Aufrufe wird dieselbe legitime Platform-Admin-Identität verwendet. Die
+Access-Tokens bleiben ausschließlich im Browser-/Testprozessspeicher. Als
+geschützte, schreibfreie Probe dient `get_platform_restaurants`; vor und nach
+jedem Block werden Business- und Auditfingerprints verglichen.
+
+### C1. AAL1
+
+- [ ] Frische erste-Faktor-Sitzung ohne TOTP-Challenge herstellen.
+- [ ] `get_current_platform_role` liefert ausschließlich die eigene aktive Rolle.
+- [ ] Direkter Aufruf `get_platform_restaurants` wird serverseitig verweigert
+  beziehungsweise liefert keine Platform-Daten.
+- [ ] Direkter Aufruf einer geschützten Funktion mit manipulierten Clientclaims
+  ändert das Ergebnis nicht.
+- [ ] Platform-UI rendert keine geschützten Inhalte, sondern Setup/Challenge.
+- [ ] Businesswrites und Auditdelta: 0.
+
+### C2. TOTP-AAL2
+
+- [ ] TOTP-Challenge über die reguläre Anwendung erfolgreich abschließen.
+- [ ] Neuer Token ist nachweisbar und enthält serverseitig AAL2 plus TOTP-AMR;
+  Werte nicht ausgeben.
+- [ ] Derselbe direkte Aufruf `get_platform_restaurants` ist zulässig.
+- [ ] Ergebnisse bleiben durch bestehende Datenminimierung/RLS begrenzt.
+- [ ] Nach regulärem Access-Token-Refresh bleibt AAL2/TOTP erhalten und der
+  direkte Read-RPC zulässig.
+- [ ] Businesswrites und unerwartetes Auditdelta: 0.
+
+### C3. Negativ- und Sitzungswechsel
+
+- [ ] Sign-out: direkter geschützter RPC abgewiesen.
+- [ ] Abgelaufene oder ersetzte Sitzung: abgewiesen.
+- [ ] Nicht-TOTP-AAL2-Methode: abgewiesen.
+- [ ] Tokenwechsel führt synchron zurück in den Prüfzustand; ein früherer
+  React-Gate-Nachweis autorisiert keinen neuen Token.
+- [ ] Ein TOTP-Nachweis älter als zehn Minuten wird von einer bestehenden
+  High-Risk-Aktion als `RECENT_PLATFORM_TOTP_REQUIRED` abgewiesen. Dieser Test
+  darf nur rollback-geschützt und ohne persistente Fachwirkung erfolgen.
+
+## D. Nachweise zu Migration 173
+
+- [ ] `platform_totp_aal2_verified_internal()` besitzt keine EXECUTE-Grants für
+  Browserrollen oder Service Role.
+- [ ] `current_platform_role()` und `is_platform_admin()` sind nicht direkt für
+  Browserrollen ausführbar und verwenden die interne AAL2/TOTP-Prüfung.
+- [ ] Nur `get_current_platform_role()` ist für `authenticated` ausführbar; sie
+  liefert nur die eigene aktive Rolle und wird von keiner Aktion als
+  Autorisierung benutzt.
+- [ ] `require_recent_platform_auth_internal()` verwendet den neuesten TOTP-AMR-
+  Zeitstempel und bleibt intern.
+- [ ] Alle Funktionen besitzen sicheren `search_path`.
+- [ ] Keine Rolle, Membership, Platform-Admin-Zeile oder Businessrelation wurde
+  durch die Migration verändert.
+
+## E. Rückfall- und Abbruchplan
+
+- **Vor Migration:** bei jedem Fehler stoppen; Datenbank bleibt 172/172. Falls
+  bereits ein neuer TOTP-Faktor eingerichtet wurde, bleibt er bestehen und wird
+  nicht automatisch entfernt.
+- **Migration schlägt fehl:** transaktionales Rollback bestätigen, 172/172 und
+  vorherige Funktionshashes prüfen; kein manueller Teil-Fix.
+- **Nach Migration kein UI-Zugang:** AAL2-Grenze nicht zurücknehmen. Den geprüften
+  Recovery-Vertrag über den offiziellen Supabase-MFA-Control-Plane-Weg ausführen.
+- **MFA-Dienst gestört:** Platform-Admin-Aktionen einfrieren und Gate offen lassen;
+  keine AAL1-Ausnahme.
+- **Unerwartete Datenänderung:** sofort stoppen, Fingerprints sichern, keine
+  Korrektur ohne neue Founder-Freigabe.
+
+## F. Abschlusskriterien
+
+Ein Staging-PASS ist erst zulässig, wenn:
+
+- Migration 173 genau einmal angewendet und 173/173 bestätigt ist;
+- AAL1-Direktaufrufe fail-closed und TOTP-AAL2-Read-Aufrufe erfolgreich sind;
+- Tokenwechsel, Refresh und Sign-out korrekt neu bewertet werden;
+- Recovery-Besetzung und Recovery-Control-Plane physisch verfügbar sind;
+- alle geschützten Datenfingerprints unverändert sind;
+- keine Secrets oder personenbezogenen Auth-Daten in Evidenz gelangt sind.
+
+Production bleibt unabhängig davon gesperrt.

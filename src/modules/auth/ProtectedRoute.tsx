@@ -6,6 +6,7 @@ import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.m
 import type { PortalKind } from "./portalAccessUx.mjs";
 import { WrongPortalNotice } from "./WrongPortalNotice";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { PlatformAdminMfaGate } from "../platform/PlatformAdminMfaGate";
 
 type ProtectedRouteProps = {
   allowedRoles: UserRole[];
@@ -93,6 +94,10 @@ export function ProtectedRoute({ allowedRoles, children, portalKind, roleScope =
         <button onClick={retryAuthorization} type="button">Erneut prüfen</button>
       </main>
     );
+  }
+
+  if (roleScope === "platform") {
+    return <PlatformAdminMfaGate key={user.id}>{children}</PlatformAdminMfaGate>;
   }
 
   return <>{children}</>;
