@@ -81,12 +81,47 @@ stehen in `docs/V1_AT_KYB_LEGAL_FIELD_DOCUMENT_MATRIX.md`.
 
 ## Staging
 
-Vor Anwendung: 178/178. Die Staging-Anwendung, App-Parität und der synthetische
-TEST_ONLY-Resttest sind noch nicht ausgeführt. Der geprüfte Worktree besitzt
-keinen eigenen `origin`; der read-only Fetch im kanonischen GitHub-Checkout
-lieferte innerhalb des kontrollierten Versuchs keine Remote-Antwort und wurde
-beendet. Ohne frisch bestätigte Remote-Parität wird weder Migration 179
-angewendet noch die App deployt. Bis dahin kein Staging-Lock.
+### Source-, Migrations- und Deployment-Parität
+
+- Implementierungscommit: `a3ef543d46f85205aa072694ec7d5a173cfc229e`.
+- Der kanonische Remote-Branch `codex/v1-release-integration` wurde unmittelbar
+  vor dem Rollout auf exakt denselben Commit geprüft.
+- Ausgangsstand: 178/178; der Dry-Run enthielt ausschließlich Migration 179.
+- Migration 179 wurde genau einmal auf das verifizierte Staging-Projekt
+  angewendet. Endstand: 179/179.
+- Repeat-Dry-Run: leer. DB-Lint auf Fehlerstufe: PASS.
+- Aktiver Staging-Worker: `wuxuai-restaurant-bonus-app-staging`.
+- Aktive Staging-Version: `6a80c61d-abf4-4f70-b71a-06223dad296f`.
+- Deploymentmeldung bindet die Version an Commit `a3ef543`; Staging liefert
+  HTTP 200 und das neu gebaute Entry-Asset `assets/index-2_fxi-0K.js`.
+- Root-Worker und Production-Worker wurden nicht deployt oder verändert.
+
+### Daten- und Sicherheitsnachweis
+
+Vor und nach Migration und Deployment wurden 138 bestehende Relationen über
+read-only Tabellenstatistiken verglichen. Keine bestehende Relation änderte
+ihre Zeilenzahl. Ausschließlich die neue append-only Relation
+`legal_operator_publication_decisions` kam mit 0 Zeilen hinzu. Es wurde keine
+Freigabeentscheidung erzeugt.
+
+Der bekannte synthetische TEST_ONLY-Owner-/AAL2-Admin-Flow aus Migration 178
+bleibt als bereits physisch belegter Intake-/Dokumentvergleich maßgeblich. In
+diesem engen Resttest wurde keine weitere Dokumentversion erzeugt und keine
+Freigabeaktion ausgeführt. Die öffentliche Rechtstextseite des bekannten
+synthetischen Tenants wurde nach Deployment read-only aufgerufen und blieb wie
+vorgesehen fail-closed (`Rechtliches nicht verfügbar`), weil keine manuell
+freigegebene Profilrevision und keine final verifizierte Legal-/Privacy-/
+Dokumentkatalog-/Retention-Policy vorliegen.
+
+Damit sind technisch belegt:
+
+- Upload, vorhandene vollständige Stammdaten und bestehende Dokumentversionen
+  veröffentlichen keine Betreiberangaben und aktivieren den Betrieb nicht;
+- private KYB-Dokumente und interne Prüfdaten werden durch die neue Public-RPC
+  nicht ausgegeben;
+- Restaurant/Subscription bleiben `pending_activation`; Trial, Entitlements,
+  Grants, Billing und Stripe wurden nicht verändert;
+- reale KYB-Verarbeitung und kommerzielle Aktivierung bleiben gesperrt.
 
 ## Offene Rechtsentscheidungen
 
@@ -97,4 +132,4 @@ Prüfung. Reales KYB und kommerzielle Aktivierung bleiben gesperrt.
 
 ## Status
 
-LOCAL CODE LOCK / STAGING BLOCKED BY REMOTE PARITY / REAL KYB AND COMMERCIAL ACTIVATION BLOCKED
+STAGING TECHNICAL LOCK / MANUAL LEGAL PUBLICATION GATE FAIL-CLOSED / REAL KYB, COMMERCIAL ACTIVATION AND PRODUCTION BLOCKED
