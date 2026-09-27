@@ -4,7 +4,7 @@ import console from "node:console";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
-import { hasTotpAuthenticationMethod } from "../src/modules/platform/platformAdminMfa.mjs";
+import { hasTotpAuthenticationMethod, unverifiedTotpFactors } from "../src/modules/platform/platformAdminMfa.mjs";
 
 const status = JSON.parse(execFileSync(
   "npx",
@@ -62,8 +62,30 @@ try {
   const denied = await browser.rpc("get_platform_restaurants");
   assert.ok(denied.error, "A direct Platform Admin RPC must fail before TOTP AAL2");
 
+  const cancelledEnrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – abgebrochener Test" });
+  assert.ifError(cancelledEnrollment.error);
+  assert.ok(cancelledEnrollment.data.totp.qr_code);
+  assert.ok(cancelledEnrollment.data.totp.secret);
+  const withCancelledEnrollment = await browser.auth.mfa.listFactors();
+  assert.ifError(withCancelledEnrollment.error);
+  assert.deepEqual(unverifiedTotpFactors(withCancelledEnrollment.data.all).map((factor) => factor.id), [cancelledEnrollment.data.id]);
+  assert.ifError((await browser.auth.mfa.unenroll({ factorId: cancelledEnrollment.data.id })).error);
+  const afterCancellation = await browser.auth.mfa.listFactors();
+  assert.ifError(afterCancellation.error);
+  assert.equal(unverifiedTotpFactors(afterCancellation.data.all).length, 0);
+
+  const abandonedEnrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – unbestätigter Test" });
+  assert.ifError(abandonedEnrollment.error);
+  const beforeRetry = await browser.auth.mfa.listFactors();
+  assert.ifError(beforeRetry.error);
+  for (const factor of unverifiedTotpFactors(beforeRetry.data.all)) {
+    assert.ifError((await browser.auth.mfa.unenroll({ factorId: factor.id })).error);
+  }
+
   const firstEnrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – Gerät 1" });
   assert.ifError(firstEnrollment.error);
+  assert.ok(firstEnrollment.data.totp.qr_code);
+  assert.ok(firstEnrollment.data.totp.secret);
   assert.ifError((await browser.auth.mfa.challengeAndVerify({
     factorId: firstEnrollment.data.id,
     code: totp(firstEnrollment.data.totp.secret),
@@ -139,6 +161,8 @@ try {
   console.log("LOCAL_LOST_FACTOR_REMOVE_AND_REPLACE_PASS");
   console.log("LOCAL_AAL1_DIRECT_RPC_BLOCKED_PASS");
   console.log("LOCAL_AAL2_REFRESH_AND_SERVER_ACCESS_PASS");
+  console.log("LOCAL_TOTP_QR_AND_MANUAL_SETUP_PASS");
+  console.log("LOCAL_TOTP_CANCEL_AND_RETRY_CLEANUP_PASS");
 } finally {
   await admin.from("platform_admins").delete().eq("user_id", userId);
   await admin.auth.admin.deleteUser(userId);

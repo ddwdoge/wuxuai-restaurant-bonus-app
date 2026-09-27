@@ -2969,6 +2969,26 @@ a {
   width: 280px;
 }
 
+.platform-mfa-manual-secret {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.platform-mfa-manual-secret code {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface-muted);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  user-select: all;
+}
+
 .platform-mfa-form input {
   box-sizing: border-box;
   font-size: 1.125rem;

@@ -8,16 +8,19 @@ import {
   nextTotpDeviceName,
   normalizeTotpCode,
   totpFactorLabel,
+  unverifiedTotpFactors,
   verifiedTotpFactors,
 } from "./platformAdminMfa.mjs";
 
 type Factor = { id: string; status?: string; friendly_name?: string; created_at?: string; updated_at?: string };
-type Enrollment = { factorId: string; qrCode: string };
+type Enrollment = { factorId: string; qrCode: string; secret: string };
 
 export function PlatformAdminMfaSecurityControl() {
   const [open, setOpen] = useState(false);
   const [factors, setFactors] = useState<Factor[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [manualSecretVisible, setManualSecretVisible] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   const [proofFactor, setProofFactor] = useState<string | null>(null);
@@ -38,13 +41,25 @@ export function PlatformAdminMfaSecurityControl() {
 
   const proofChoices = useMemo(() => factors.filter((factor) => factor.id !== removeTarget), [factors, removeTarget]);
 
+  async function removeUnverifiedTotpFactors() {
+    if (!supabase) throw new Error("Supabase unavailable");
+    const listed = await supabase.auth.mfa.listFactors();
+    if (listed.error) throw listed.error;
+    for (const factor of unverifiedTotpFactors(listed.data.all)) {
+      const removed = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      if (removed.error) throw removed.error;
+    }
+  }
+
   async function beginEnrollment() {
     if (!supabase || factors.length >= 2) return;
     setBusy(true); setError(null);
     try {
+      await removeUnverifiedTotpFactors();
       const result = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: nextTotpDeviceName(factors) });
       if (result.error) throw result.error;
-      setEnrollment({ factorId: result.data.id, qrCode: result.data.totp.qr_code });
+      setEnrollment({ factorId: result.data.id, qrCode: result.data.totp.qr_code, secret: result.data.totp.secret });
+      setManualSecretVisible(false); setCopyStatus(null);
       setCode("");
     } catch { setError("Das zweite Authenticator-Gerät konnte nicht eingerichtet werden."); }
     finally { setBusy(false); }
@@ -57,10 +72,46 @@ export function PlatformAdminMfaSecurityControl() {
     try {
       const result = await supabase.auth.mfa.challengeAndVerify({ factorId: enrollment.factorId, code });
       if (result.error) throw result.error;
-      setEnrollment(null); setCode("");
+      setEnrollment(null); setManualSecretVisible(false); setCopyStatus(null); setCode("");
       await refreshFactors();
     } catch { setError("Der Bestätigungscode ist ungültig oder abgelaufen."); }
     finally { setBusy(false); }
+  }
+
+  async function cancelEnrollment(closeDrawer = false) {
+    if (!supabase || !enrollment) {
+      if (closeDrawer) setOpen(false);
+      return;
+    }
+    setBusy(true); setError(null);
+    try {
+      const listed = await supabase.auth.mfa.listFactors();
+      if (listed.error) throw listed.error;
+      const remainsUnverified = unverifiedTotpFactors(listed.data.all).some((factor) => factor.id === enrollment.factorId);
+      if (remainsUnverified) {
+        const removed = await supabase.auth.mfa.unenroll({ factorId: enrollment.factorId });
+        if (removed.error) throw removed.error;
+      }
+      setEnrollment(null); setManualSecretVisible(false); setCopyStatus(null); setCode("");
+      if (closeDrawer) setOpen(false);
+      await refreshFactors();
+    } catch {
+      setError("Die angefangene Einrichtung konnte nicht sicher abgebrochen werden. Bitte starte keinen weiteren Versuch.");
+    } finally { setBusy(false); }
+  }
+
+  async function copyManualSecret() {
+    if (!enrollment || !manualSecretVisible) return;
+    if (!navigator.clipboard) {
+      setCopyStatus("Automatisches Kopieren ist in diesem Browser nicht verfügbar. Markiere den Einrichtungsschlüssel bitte manuell.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(enrollment.secret);
+      setCopyStatus("Einrichtungsschlüssel kopiert. Füge ihn jetzt direkt in deiner Authenticator-App ein.");
+    } catch {
+      setCopyStatus("Der Einrichtungsschlüssel konnte nicht kopiert werden. Markiere ihn bitte manuell.");
+    }
   }
 
   function requestRemoval(targetId: string) {
@@ -87,7 +138,7 @@ export function PlatformAdminMfaSecurityControl() {
     <button className="button secondary platform-mfa-security-trigger" onClick={() => setOpen(true)} type="button">
       <ShieldCheck aria-hidden="true" size={19} /><span>Anmeldeschutz</span>
     </button>
-    <AppDrawer closeLabel="Schließen" description="Zwei getrennte Authenticator-Geräte schützen den Platform-Admin-Zugang." onClose={() => setOpen(false)} open={open} size="compact" title="Authenticator-Geräte">
+    <AppDrawer closeLabel="Schließen" description="Zwei getrennte Authenticator-Geräte schützen den Platform-Admin-Zugang." onClose={() => void cancelEnrollment(true)} open={open} size="compact" title="Authenticator-Geräte">
       <div className="platform-mfa-security">
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         <p>Registriert: {factors.length} von 2 Geräten</p>
@@ -104,9 +155,22 @@ export function PlatformAdminMfaSecurityControl() {
         {enrollment ? <form className="platform-mfa-form" onSubmit={(event) => void verifyEnrollment(event)}>
           <p>Scanne diesen QR-Code ausschließlich mit dem zweiten Gerät. Er wird nicht gespeichert oder protokolliert.</p>
           <img alt="QR-Code für das zweite Authenticator-Gerät" className="platform-mfa-qr" src={enrollment.qrCode} />
+          {!manualSecretVisible ? (
+            <UiButton disabled={busy} onClick={() => { setManualSecretVisible(true); setCopyStatus(null); }} type="button">
+              Einrichtungsschlüssel für Authenticator-App anzeigen
+            </UiButton>
+          ) : (
+            <div className="platform-mfa-manual-secret">
+              <p>Verwende diesen Schlüssel nur für die gerade gestartete Einrichtung. Er wird nach Bestätigung oder Abbruch verworfen.</p>
+              <code aria-label="Einrichtungsschlüssel für Authenticator-App">{enrollment.secret}</code>
+              <UiButton disabled={busy} onClick={() => void copyManualSecret()} type="button">Einrichtungsschlüssel kopieren</UiButton>
+              {copyStatus ? <p aria-live="polite" role="status">{copyStatus}</p> : null}
+            </div>
+          )}
           <label htmlFor="platform-admin-second-device-code">Bestätigungscode des zweiten Geräts</label>
           <input autoComplete="one-time-code" id="platform-admin-second-device-code" inputMode="numeric" maxLength={6} onChange={(event) => setCode(normalizeTotpCode(event.target.value))} pattern="[0-9]{6}" required type="text" value={code} />
           <UiButton disabled={busy || code.length !== 6} loading={busy} type="submit">Zweites Gerät bestätigen</UiButton>
+          <UiButton disabled={busy} onClick={() => void cancelEnrollment()} type="button">Einrichtung abbrechen</UiButton>
         </form> : null}
         {removeTarget ? <form className="platform-mfa-form platform-mfa-removal" onSubmit={(event) => void confirmRemoval(event)}>
           <h3>Verlorenes Gerät entfernen</h3>

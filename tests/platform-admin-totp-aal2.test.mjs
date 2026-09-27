@@ -10,6 +10,7 @@ import {
   normalizeTotpCode,
   platformAdminMfaMode,
   totpFactorLabel,
+  unverifiedTotpFactors,
   verifiedTotpFactors,
 } from "../src/modules/platform/platformAdminMfa.mjs";
 
@@ -71,6 +72,16 @@ test("two verified TOTP devices remain distinct and safely labelled", () => {
   assert.equal(totpFactorLabel(factors[0], 0), "WUXUAI Platform Admin – Gerät 1");
   assert.equal(totpFactorLabel({ id: "fallback", status: "verified" }, 1), "Authenticator-Gerät 2");
   assert.equal(nextTotpDeviceName([factors[0]]), "WUXUAI Platform Admin – Gerät 2");
+});
+
+test("only unverified TOTP factors are selected for abandoned-enrollment cleanup", () => {
+  const factors = unverifiedTotpFactors([
+    { id: "verified", factor_type: "totp", status: "verified", created_at: "2026-09-27T08:00:00Z" },
+    { id: "phone", factor_type: "phone", status: "unverified", created_at: "2026-09-27T08:01:00Z" },
+    { id: "second", factor_type: "totp", status: "unverified", created_at: "2026-09-27T08:03:00Z" },
+    { id: "first", factor_type: "totp", status: "unverified", created_at: "2026-09-27T08:02:00Z" },
+  ]);
+  assert.deepEqual(factors.map((factor) => factor.id), ["first", "second"]);
 });
 
 test("loss recovery requires a different verified factor and preserves the last factor", () => {
@@ -151,6 +162,30 @@ test("TOTP enrollment is explicit and never starts during the initial gate check
   assert.match(effect, /refresh\(\)/);
   assert.doesNotMatch(effect, /mfa\.enroll/);
   assert.match(gate, /onClick=\{\(\) => void beginEnrollment\(\)\}/);
+});
+
+test("manual setup secret is explicit, transient, copyable and cleared on completion or cancellation", () => {
+  for (const component of [gate, securityControl]) {
+    assert.match(component, /secret: result\.data\.totp\.secret/);
+    assert.match(component, /Einrichtungsschlüssel für Authenticator-App anzeigen/);
+    assert.match(component, /navigator\.clipboard\.writeText\(enrollment\.secret\)/);
+    assert.match(component, /Einrichtung abbrechen/);
+    assert.match(component, /const remainsUnverified = unverifiedTotpFactors\(listed\.data\.all\)\.some\(\(factor\) => factor\.id === enrollment\.factorId\)/);
+    assert.match(component, /if \(remainsUnverified\) \{[\s\S]*mfa\.unenroll\(\{ factorId: enrollment\.factorId \}\)/);
+    assert.match(component, /mfa\.unenroll\(\{ factorId: enrollment\.factorId \}\)/);
+    assert.match(component, /setEnrollment\(null\)/);
+    assert.match(component, /setManualSecretVisible\(false\)/);
+    assert.doesNotMatch(component, /localStorage|sessionStorage|console\.|analytics|track\(/);
+  }
+});
+
+test("a retry removes only stale unverified TOTP factors before enrolling a new one", () => {
+  for (const component of [gate, securityControl]) {
+    assert.match(component, /mfa\.listFactors\(\)/);
+    assert.match(component, /unverifiedTotpFactors\(listed\.data\.all\)/);
+    assert.match(component, /mfa\.unenroll\(\{ factorId: factor\.id \}\)/);
+    assert.match(component, /await removeUnverifiedTotpFactors\(\);[\s\S]*mfa\.enroll/);
+  }
 });
 
 test("Platform Support Edge inherits server-side AAL2 through both authorization RPCs", () => {

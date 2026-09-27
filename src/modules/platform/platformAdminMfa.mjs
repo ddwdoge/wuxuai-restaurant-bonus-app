@@ -37,6 +37,15 @@ export function verifiedTotpFactors(factors) {
     });
 }
 
+export function unverifiedTotpFactors(factors) {
+  return [...(factors ?? [])]
+    .filter((factor) => factor?.factor_type === "totp" && factor?.status === "unverified")
+    .sort((left, right) => {
+      const createdOrder = String(left.created_at ?? "").localeCompare(String(right.created_at ?? ""));
+      return createdOrder || String(left.id).localeCompare(String(right.id));
+    });
+}
+
 export function totpFactorLabel(factor, index = 0) {
   const friendlyName = String(factor?.friendly_name ?? "").trim();
   return friendlyName || `Authenticator-Gerät ${index + 1}`;

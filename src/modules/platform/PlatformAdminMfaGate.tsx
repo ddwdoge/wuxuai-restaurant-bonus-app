@@ -7,6 +7,7 @@ import {
   normalizeTotpCode,
   platformAdminMfaMode,
   totpFactorLabel,
+  unverifiedTotpFactors,
   verifiedTotpFactors,
   type PlatformMfaMode,
 } from "./platformAdminMfa.mjs";
@@ -14,6 +15,7 @@ import {
 type Enrollment = {
   factorId: string;
   qrCode: string;
+  secret: string;
 };
 
 type VerifiedFactor = { id: string; status?: string; friendly_name?: string; created_at?: string; updated_at?: string };
@@ -24,6 +26,8 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
   const [factorId, setFactorId] = useState<string | null>(null);
   const [factors, setFactors] = useState<VerifiedFactor[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [manualSecretVisible, setManualSecretVisible] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -66,9 +70,21 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     setFactorId((current) => nextFactors.some((factor) => factor.id === current) ? current : (nextFactors[0]?.id ?? null));
     if (nextMode === "authorized") {
       setEnrollment(null);
+      setManualSecretVisible(false);
+      setCopyStatus(null);
       setCode("");
     }
   }, []);
+
+  async function removeUnverifiedTotpFactors() {
+    if (!supabase) throw new Error("Supabase unavailable");
+    const listed = await supabase.auth.mfa.listFactors();
+    if (listed.error) throw listed.error;
+    for (const factor of unverifiedTotpFactors(listed.data.all)) {
+      const removed = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      if (removed.error) throw removed.error;
+    }
+  }
 
   useEffect(() => {
     const request = refresh();
@@ -87,17 +103,59 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     setSubmitting(true);
     setError(null);
     try {
+      await removeUnverifiedTotpFactors();
       const result = await supabase.auth.mfa.enroll({
         factorType: "totp",
         friendlyName: "WUXUAI Platform Admin – Gerät 1",
       });
       if (result.error) throw result.error;
-      setEnrollment({ factorId: result.data.id, qrCode: result.data.totp.qr_code });
+      setEnrollment({ factorId: result.data.id, qrCode: result.data.totp.qr_code, secret: result.data.totp.secret });
+      setManualSecretVisible(false);
+      setCopyStatus(null);
       setFactorId(result.data.id);
     } catch {
       setError("TOTP konnte nicht eingerichtet werden. Die bestehende Anmeldung wurde nicht verändert.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function cancelEnrollment() {
+    if (!supabase || !enrollment) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const listed = await supabase.auth.mfa.listFactors();
+      if (listed.error) throw listed.error;
+      const remainsUnverified = unverifiedTotpFactors(listed.data.all).some((factor) => factor.id === enrollment.factorId);
+      if (remainsUnverified) {
+        const removed = await supabase.auth.mfa.unenroll({ factorId: enrollment.factorId });
+        if (removed.error) throw removed.error;
+      }
+      setEnrollment(null);
+      setFactorId(null);
+      setManualSecretVisible(false);
+      setCopyStatus(null);
+      setCode("");
+      await refresh();
+    } catch {
+      setError("Die angefangene Einrichtung konnte nicht sicher abgebrochen werden. Bitte starte keinen weiteren Versuch.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function copyManualSecret() {
+    if (!enrollment || !manualSecretVisible) return;
+    if (!navigator.clipboard) {
+      setCopyStatus("Automatisches Kopieren ist in diesem Browser nicht verfügbar. Markiere den Einrichtungsschlüssel bitte manuell.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(enrollment.secret);
+      setCopyStatus("Einrichtungsschlüssel kopiert. Füge ihn jetzt direkt in deiner Authenticator-App ein.");
+    } catch {
+      setCopyStatus("Der Einrichtungsschlüssel konnte nicht kopiert werden. Markiere ihn bitte manuell.");
     }
   }
 
@@ -149,6 +207,18 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
           <div className="platform-mfa-setup">
             <p>Scanne den QR-Code mit deiner Authenticator-App. Der darin enthaltene Schlüssel wird weder protokolliert noch gespeichert.</p>
             <img alt="QR-Code zur Einrichtung der Authenticator-App" className="platform-mfa-qr" src={enrollment.qrCode} />
+            {!manualSecretVisible ? (
+              <UiButton disabled={submitting} onClick={() => { setManualSecretVisible(true); setCopyStatus(null); }} type="button">
+                Einrichtungsschlüssel für Authenticator-App anzeigen
+              </UiButton>
+            ) : (
+              <div className="platform-mfa-manual-secret">
+                <p>Verwende diesen Schlüssel nur für die gerade gestartete Einrichtung. Er wird nach Bestätigung oder Abbruch verworfen.</p>
+                <code aria-label="Einrichtungsschlüssel für Authenticator-App">{enrollment.secret}</code>
+                <UiButton disabled={submitting} onClick={() => void copyManualSecret()} type="button">Einrichtungsschlüssel kopieren</UiButton>
+                {copyStatus ? <p aria-live="polite" role="status">{copyStatus}</p> : null}
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -180,6 +250,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
             <UiButton disabled={submitting || code.length !== 6} loading={submitting} type="submit">
               Sicher bestätigen
             </UiButton>
+            {enrollment ? <UiButton disabled={submitting} onClick={() => void cancelEnrollment()} type="button">Einrichtung abbrechen</UiButton> : null}
           </form>
         ) : null}
       </UiCard>
