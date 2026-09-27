@@ -48,3 +48,11 @@ test('owner submission is pending-only and live gates remain untouched',()=>{
   assert.match(owner,/ownerStatus\?\.rejection_reason/);
   assert.doesNotMatch(migration,/stripe|trial_started_at|entitlement/i);
 });
+
+test('owner KYB status stays fail-closed until a real submission exists',()=>{
+  assert.match(owner,/const displayedVerificationStatus = ownerStatus\?\.submitted_at/);
+  assert.match(owner,/\? statusNames\[ownerStatus\.status\]/);
+  assert.match(owner,/: t\.none;/);
+  assert.match(owner,/\{t\.status\}: \{displayedVerificationStatus\}/);
+  assert.doesNotMatch(owner,/readiness\?\.status/);
+});

@@ -14,7 +14,6 @@ import {
   type KybDocumentType,
   type VerificationOwnerStatus,
   type VerificationProfile,
-  type VerificationReadiness,
 } from "./businessVerificationService";
 import "./owner-business-verification.css";
 
@@ -53,7 +52,6 @@ export function OwnerBusinessVerificationPage() {
   const documentsText = documentCopy[language as keyof typeof documentCopy] ?? documentCopy.de;
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id;
-  const [readiness, setReadiness] = useState<VerificationReadiness | null>(null);
   const [profile, setProfile] = useState<VerificationProfile | null>(null);
   const [ownerStatus, setOwnerStatus] = useState<VerificationOwnerStatus | null>(null);
   const [registerType, setRegisterType] = useState("");
@@ -84,7 +82,6 @@ export function OwnerBusinessVerificationPage() {
         readOwnerVerification(restaurantId),
         listOwnerKybDocuments(restaurantId),
       ]);
-      setReadiness(data.readiness);
       setProfile(data.profile);
       setOwnerStatus(data.ownerStatus);
       setDocuments(ownerDocuments);
@@ -153,6 +150,9 @@ export function OwnerBusinessVerificationPage() {
 
   const selectedTypeHasUploadedVersion = documents.some((document) =>
     document.document_type === documentType && document.status === "UPLOADED");
+  const displayedVerificationStatus = ownerStatus?.submitted_at
+    ? statusNames[ownerStatus.status]?.[language] ?? ownerStatus.status
+    : t.none;
   const statusLabel = (status: KybDocument["status"]) => ({
     PENDING_UPLOAD: documentsText.reserved,
     UPLOADED: documentsText.uploaded,
@@ -179,7 +179,7 @@ export function OwnerBusinessVerificationPage() {
       <p>{t.manualInfo}</p>
       <p><label><input disabled type="radio" name="business-verification-method" /> {t.digital}</label></p>
       <p>{t.privacy}</p>
-      <p role="status">{t.status}: {readiness?.status ? statusNames[readiness.status]?.[language] ?? readiness.status : t.none}</p>
+      <p role="status">{t.status}: {displayedVerificationStatus}</p>
       {ownerStatus?.rejection_reason ? <p role="alert">{ownerStatus.rejection_reason}</p> : null}
       {error ? <p role="alert">{error}</p> : null}
       <button className="button" disabled={busy || registerType.trim().length < 2 || !ownerStatus?.pending_tenant || !ownerStatus.submission_allowed} onClick={() => void submit()} type="button">
