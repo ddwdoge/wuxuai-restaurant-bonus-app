@@ -41,5 +41,6 @@ test("Zusammenfassung bleibt mobil ohne Seitenüberlauf bedienbar", () => {
   assert.match(styles, /\.kyb-summary-row[^}]*min-width: 0/);
   assert.match(styles, /\.kyb-summary-row p[^}]*overflow-wrap: anywhere/);
   assert.match(styles, /\.kyb-summary-row a[^}]*min-height: 44px/);
+  assert.match(styles, /\.owner-business-verification-page \.button[^}]*min-height: 44px/);
   assert.match(styles, /@media \(max-width: 560px\)[\s\S]*\.kyb-summary-row[^}]*flex-direction: column/);
 });

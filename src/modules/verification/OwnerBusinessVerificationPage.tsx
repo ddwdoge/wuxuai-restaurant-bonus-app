@@ -169,7 +169,7 @@ export function OwnerBusinessVerificationPage() {
     DELETED: documentsText.deleted,
   })[status];
 
-  return <main className="page-container" data-testid="owner-business-verification">
+  return <main className="page-container owner-business-verification-page" data-testid="owner-business-verification">
     <header className="page-header"><div><h1>{t.title}</h1><p>{t.intro}</p></div></header>
     <section className="card" aria-labelledby="business-verification-data">
       <h2 id="business-verification-data">{t.data}</h2>
