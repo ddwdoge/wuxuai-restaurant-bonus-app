@@ -4,7 +4,7 @@ Status: **ARCHITEKTURPRÜFUNG ERFORDERLICH / NOCH NICHT FÜR STAGING FREIGEGEBEN
 
 Gültigkeitsbereich: Platform-Admin-Zugang von WUXUAI Bonus
 
-Stand: 2026-09-26
+Stand: 2026-09-27
 
 ## 1. Sicherheitsziel
 
@@ -65,6 +65,25 @@ offiziellen Supabase-JavaScript-Bibliothek sowie gegen das eindeutig bestätigte
 Staging-Projekt read-only geprüft. Der destruktive Nachweis erfolgte ausschließlich
 lokal an einem synthetischen Benutzer. Am einzigen echten Platform-Admin-Konto
 wurde weder ein Faktor aufgelistet noch entfernt.
+
+Die lokale Referenzimplementierung ist
+`scripts/platform-admin-totp-recovery-runner.mjs`. Sie ist kein Browserpfad und
+wird nicht mit der Anwendung deployed. Sie akzeptiert die Auth-Admin-Autorität
+nur zur Laufzeit, bindet Projekt-URL und Project Ref exakt, verlangt eine
+höchstens 15 Minuten gültige Ed25519-signierte Vier-Augen-Freigabe und eine
+separate Ausführungsbestätigung. Approval, öffentlicher Approver-Schlüssel und
+Evidenzablage müssen restriktive Dateirechte besitzen; private Signaturschlüssel
+und Auth-Admin-Credentials gehören niemals in Repository oder Approval-Datei.
+
+Vor dem ersten Auth-Admin-Aufruf erzeugt der Runner exklusiv einen
+pseudonymisierten `RECOVERY_AUTHORIZED`-Nachweis. Nach erfolgreicher Entfernung
+wird `TOTP_FACTOR_REMOVED` append-only ergänzt. Eine vorhandene Evidenzdatei,
+fehlende Rollentrennung, unvollständige Identitätsprüfung, Projekt-/Executor-
+Abweichung, falscher Migration-Hash oder ein nicht eindeutig verifizierter
+TOTP-Faktor stoppt den Vorgang fail-closed. Der lokale synthetische Lauf mit
+echtem Supabase Auth bestätigte genau eine Faktorentfernung und den unmittelbar
+blockierten alten AAL2-Zugriff. Die physische Verfügbarkeit der notwendigen
+Staging-Autorität und des geschützten Ausführungsorts bleibt ein separates Gate.
 
 ## 4. Unabhängige Identitätsprüfung
 
@@ -245,4 +264,6 @@ Vor jeder Staging-Freigabe müssen namentlich bestätigt sein:
 - zugängliche unabhängige Kontakt- und Unternehmensnachweise;
 - Freigabe dieses Vertrags durch Founder und Security-Review.
 
-Bis dahin gilt: **LOCAL CODE LOCK / STAGING NOT READY**.
+Der Runner ist lokal implementiert und synthetisch geprüft. Bis Rollen,
+Staging-Autorität, Ausführungsort, Incident-Ablage und tatsächliche JWT-Laufzeit
+belegt sind, gilt weiterhin: **LOCAL CODE LOCK / STAGING NOT READY**.

@@ -2,7 +2,7 @@
 
 Datum: 2026-09-27
 Arbeitsbranch: `codex/platform-admin-totp-aal2`
-Lokaler HEAD: `a510065adbe899d87b8929197af7ebf23d0cac65`
+Ausgangs-HEAD: `a510065adbe899d87b8929197af7ebf23d0cac65`
 
 ## Ursache und Ziel
 
@@ -30,9 +30,9 @@ veraendert.
 | Nr. | Datei | SHA-256 | Lokal | Staging |
 |---|---|---|---|---|
 | 173 | `20260926001000_platform_admin_totp_aal2_gate.sql` | `fe76bbbc8b24fc069231bb0f56d4351e801d40216c6625df9d4655d0162913ce` | committed/local code lock | offen |
-| 174 | `20260926002000_austrian_kyb_secure_documents.sql` | `f98a0e079dfb9d7dbae514ecafa7595a77eb36488bb7c9fa5ac81c8a43aa2bd5` | uncommitted/local geprüft | offen |
-| 175 | `20260926003000_pro_notification_dispatch_authorization.sql` | `d81ade0a6bc1a7f8b2aca0fa10a8b834fbacab67a881c002e20e19d84864195a` | uncommitted/local geprüft | offen |
-| 176 | `20260926004000_platform_admin_kyb_document_review.sql` | `257dfd6a5eee3c6700059cde1ea72effe814eaa6211c0e0da8da1d4ed602d865` | uncommitted/local geprüft | offen |
+| 174 | `20260926002000_austrian_kyb_secure_documents.sql` | `f98a0e079dfb9d7dbae514ecafa7595a77eb36488bb7c9fa5ac81c8a43aa2bd5` | committed/local geprüft (`5d2cb97`) | offen |
+| 175 | `20260926003000_pro_notification_dispatch_authorization.sql` | `d81ade0a6bc1a7f8b2aca0fa10a8b834fbacab67a881c002e20e19d84864195a` | committed/local geprüft (`9cc0668`) | offen |
+| 176 | `20260926004000_platform_admin_kyb_document_review.sql` | `257dfd6a5eee3c6700059cde1ea72effe814eaa6211c0e0da8da1d4ed602d865` | committed/local geprüft (`5d2cb97`) | offen |
 
 ## Abhaengigkeiten
 
@@ -55,22 +55,39 @@ Die lineare Commitkette `2ac215c` → `9c91a30` → `a510065` enthaelt Migration
 173, Platform-Admin-MFA-UI, Security-Tests, Recovery-Vertrag und die
 Staging-Checkliste. Der Staff-Auth-Commit `8acb24c` ist ein Vorfahr.
 
-### Noch eng zu committen
+### Eng abgegrenzte lokale Commits
 
-1. **KYB 174 + 176 gemeinsam als Implementierungsumfang:** Migrationen 174
+1. **`5d2cb97` – KYB 174 + 176 gemeinsam als Implementierungsumfang:** Migrationen 174
    und 176, Owner-/Platform-Seiten, beide CSS-Dateien, der gemeinsam genutzte
    `businessVerificationService`, KYB-/Security-/Browsertests. Diese gemeinsame
    Abgrenzung vermeidet eine riskante kuenstliche Teilung der gemeinsamen
    Service-Datei. Die Migrationen bleiben trotzdem einzeln in der Reihenfolge
    174 und 176 anwendbar.
-2. **PRO 175 separat:** Migration 175, geaenderter
+2. **`9cc0668` – PRO 175 separat:** Migration 175, geaenderter
    `transactional-mail-dispatcher`, drei fokussierte Testdateien.
-3. **Evidenz separat:** vier vorhandene Phase-Berichte plus dieser
+3. **`2910484` – Evidenz separat:** vier vorhandene Phase-Berichte plus dieser
    Uebergangsbericht und die neue Checkliste. Pruef-ZIPs werden nicht
    committed.
 
 Vor einem Commit sind Staged-Secret-Scan, `git diff --cached --check`, exakte
 Dateiliste und Remote-/Integrationsbranch-Abgleich erforderlich.
+
+## Kanonisches Repository und verlustfreie Uebernahme
+
+- kanonisches lokales Repository:
+  `/Users/dongdongwu/Documents/GitHub/wuxuai-restaurant-bonus-os`;
+- kanonischer Remote-Branch: `origin/codex/v1-release-integration`;
+- read-only bestaetigter Remote-Tip: `27d1174beb0ef9121643d83d51b73b87ac35ba5a`;
+- der aktuelle Feature-Branch ist eine lineare Fortsetzung dieses Tips und
+  besitzt selbst absichtlich keine Remote-Konfiguration.
+
+Die sichere Uebernahme erfolgt spaeter ohne Checkout, Reset oder Ueberschreiben
+fremder Arbeit: ein inkrementelles Bundle ab `27d1174...` erzeugen und
+verifizieren, dieses im kanonischen Repository zunaechst in eine neue temporaere
+Pruef-Ref fetchen, Commitliste und Ancestry vergleichen und erst nach frischem
+Remote-Fetch einen normalen expliziten Fast-forward-Refspec auf
+`origin/codex/v1-release-integration` freigeben. Bei abweichendem Remote-Tip wird
+ohne Merge, Rebase, Cherry-pick oder Force-Push gestoppt.
 
 ## Recovery-Voraussetzungen Migration 173
 
@@ -78,8 +95,8 @@ Dateiliste und Remote-/Integrationsbranch-Abgleich erforderlich.
 |---|---|---|
 | Lokaler AAL2/TOTP-Code und Session-/Faktorbindung | PASS | Migration 173 und lokale Security-Nachweise; gespeicherter AAL2-Token wird nach Sessionwiderruf/Faktorentfernung serverseitig blockiert |
 | Offizieller Faktor-Recoveryvertrag | PASS (Architektur) | `auth.admin.mfa.listFactors` + `deleteFactor`, keine AAL1-Ausnahme und kein Browser-/JWT-Bypass |
-| Tatsaechliche maximale Staging-JWT-Laufzeit | OPEN | CLI 2.116 bietet keinen read-only Config-Get; der authentifizierte Dashboard-Sessions-Bereich war erreichbar, der konkrete Projektwert in der verfuegbaren read-only Oberflaeche jedoch nicht belastbar auslesbar. Der lokale Ein-Stunden-Wert wird nicht auf Staging uebertragen. |
-| Geschuetzter Recovery-Runner | OPEN | Repository-Suche findet nur Browser-`listFactors`; kein serverseitiger Runner mit Auth-Admin-`listFactors/deleteFactor` ist implementiert oder auf Staging nachgewiesen. |
+| Tatsaechliche maximale Staging-JWT-Laufzeit | OPEN | Eine legitime Staging-Testsitzung war vorhanden. Der Wert `exp - iat` konnte mit den verfuegbaren Browserwerkzeugen nicht sicher im Browserkontext berechnet werden, ohne den Token zu exportieren oder sichtbar zu machen. Der lokale Ein-Stunden-Wert wird nicht auf Staging uebertragen. |
+| Geschuetzter Recovery-Runner | PASS (lokal), OPEN (Staging-Autoritaet/Ausfuehrungsort) | `scripts/platform-admin-totp-recovery-runner.mjs` bindet Projekt, signierte Vier-Augen-Freigabe, Identitaetschecks, Executor, Migration-Hash und exklusive append-only Evidenz fail-closed. Unit-Matrix und echter synthetischer lokaler Supabase-Auth-Lauf PASS. Keine Staging-Auth-Admin-Autoritaet wurde verwendet. |
 | Independent Recovery Approver | OPEN | Vertrag definiert die Rolle, nennt aber keine Person. |
 | Recovery Executor | OPEN | Vertrag definiert Rolle/Berechtigung, nennt aber keine Person und weist keinen separaten MFA-geschuetzten Supabase-Zugang nach. |
 | Kontrollierter TOTP-Einrichtungsablauf | PASS (Plan), OPEN (Staging) | UI, lokale Tests und Reihenfolge sind vorhanden; physische Einrichtung ist ohne die drei offenen Recovery-Gates nicht freigegeben. |
@@ -100,6 +117,9 @@ reinen Uebergangsloop nicht ohne konkreten Grund wiederholt.
 - read-only Staging-Projektidentitaet;
 - read-only Remote-Migrationshistorie;
 - Recovery-Runner-Suche in Produktcode, Funktionen, Skripten und Tests;
+- lokale Implementierung und synthetischer Test des geschuetzten Recovery-
+  Runners einschließlich echtem TOTP-Faktor, `listFactors`, `deleteFactor`,
+  Evidenz und blockiertem alten AAL2-Zugriff;
 - Rollenbesetzung im Recovery-Vertrag;
 - Deploy-Abhaengigkeiten und kontrollierte Rollout-Reihenfolge.
 
@@ -118,10 +138,12 @@ Founder/Organisation muessen namentlich festlegen:
 
 1. Independent Recovery Approver (nicht Requestor);
 2. Recovery Executor mit separatem MFA-geschuetztem Supabase-Zugang;
-3. verantwortliche Person und Wartungsfenster fuer TOTP-Ersteinrichtung;
-4. autorisierte bestehende Testkonten fuer Platform Admin, Owner, Staff,
+3. geschuetzten Runner-Ausfuehrungsort, Approver-Key-Verwahrung und externe
+   append-only Incident-Ablage;
+4. verantwortliche Person und Wartungsfenster fuer TOTP-Ersteinrichtung;
+5. autorisierte bestehende Testkonten fuer Platform Admin, Owner, Staff,
    Customer und fremden Tenant;
-5. ob/wann ein spaeterer positiver synthetischer E-Mail-E2E-Test ausdruecklich
+6. ob/wann ein spaeterer positiver synthetischer E-Mail-E2E-Test ausdruecklich
    freigegeben wird. Im geplanten Rollout bleibt reale Zustellung 0.
 
 Codex kann danach die technische Preflight-Matrix, Hashes, Fingerprints,
@@ -131,5 +153,6 @@ Organisationsrollen selbst benennen oder deren Supabase-Berechtigung erteilen.
 
 ## Status
 
-**STAGING TRANSITION PLAN COMPLETE / MIGRATIONS 173–176 NOT APPLIED /**
-**MIGRATION 173 BLOCKED BY OPEN RECOVERY GATES / PRODUCTION LOCKED**
+**LOCAL TRANSITION COMMITS SECURED / MIGRATIONS 173–176 NOT APPLIED /**
+**RECOVERY RUNNER LOCAL PASS / MIGRATION 173 BLOCKED BY OPEN HUMAN AND STAGING GATES /**
+**PRODUCTION LOCKED**

@@ -4,7 +4,7 @@ Status: **ENTWURF FÜR ARCHITEKTURPRÜFUNG / NICHT AUSGEFÜHRT**
 
 Migration: `20260926001000_platform_admin_totp_aal2_gate.sql` (173)
 
-Stand: 2026-09-26
+Stand: 2026-09-27
 
 Diese Checkliste beschreibt die spätere Staging-Freigabe. Sie autorisiert keine
 Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
@@ -32,6 +32,20 @@ Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
 - [ ] Es existiert ein getesteter Zugriff auf den offiziellen Supabase-MFA-
   Auth-Admin-Recoverypfad (`listFactors`/`deleteFactor`) über einen geschützten
   serverseitigen Recovery-Runner.
+- [x] Die lokale Referenzimplementierung
+  `scripts/platform-admin-totp-recovery-runner.mjs` wurde mit einem
+  synthetischen lokalen Auth-Benutzer und verifiziertem TOTP-Faktor geprüft.
+  Signatur-, Rollentrennungs-, Projektbindungs-, Berechtigungs- und
+  Einmaligkeitsfehler stoppen vor der Faktorentfernung.
+- [ ] Der Runner ist auf einem namentlich verantworteten, geschützten
+  Ausführungsort verfügbar. Der Executor kann dort die Staging-Auth-Admin-
+  Autorität nur kurzzeitig zur Laufzeit bereitstellen; weder Credential noch
+  privater Approver-Schlüssel liegen in Git, Approval oder Evidenz.
+- [ ] Der unabhängige Approver besitzt den registrierten privaten
+  Ed25519-Schlüssel; ausschließlich der öffentliche Schlüssel wird dem Runner
+  restriktiv bereitgestellt.
+- [ ] Die externe append-only Incident-Ablage ist erreichbar und übernimmt die
+  zwei pseudonymisierten Runner-Ereignisse sowie den späteren Abschlussnachweis.
 - [ ] Supabase-Organisations-MFA und WUXUAI-App-User-TOTP sind im Runbook als
   getrennte Faktoren und Berechtigungsgrenzen dokumentiert.
 - [ ] Die tatsächliche Staging-Access-Token-Laufzeit wurde read-only bestätigt;
@@ -39,6 +53,26 @@ Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
 
 **Sofort stoppen**, wenn Projekt, Commit, Migration, Admin-Identität,
 Recovery-Besetzung oder Ausgangsfingerprints nicht eindeutig sind.
+
+### A1. Runner-Preflight je Recovery-Vorgang
+
+- [ ] Zufällige Request- und Correlation-ID sowie pseudonymisierte Actor-
+  Referenzen wurden außerhalb der Anwendung angelegt.
+- [ ] Requestor, Approver und Executor entsprechen dem registrierten
+  Recovery-Register; Requestor ist weder Approver noch Executor.
+- [ ] Mindestens zwei zulässige unabhängige Identitätsnachweisklassen sind PASS.
+- [ ] Die signierte Approval-Datei ist höchstens 15 Minuten gültig, Modus 0600
+  und nennt exakt Staging-Project-Ref, TOTP-Faktor, Executor und freigegebenen
+  Migration-173-Hash.
+- [ ] Approver-Public-Key-Datei ist Modus 0600; Evidenzverzeichnis ist Modus
+  0700 und der konkrete Evidenzpfad existiert noch nicht.
+- [ ] Die Auth-Admin-Autorität stammt aus dem eindeutig bestätigten
+  Staging-Projekt, wird nur im Prozessspeicher bereitgestellt und erscheint
+  weder in Argumenten noch Logs.
+- [ ] Die exakte Bestätigungsphrase ist nur für die freigegebene Correlation-ID
+  gesetzt. Keine allgemeine oder wiederverwendbare Bestätigung.
+- [ ] Nach dem Lauf enthält die Evidenz genau `RECOVERY_AUTHORIZED` und bei
+  Erfolg `TOTP_FACTOR_REMOVED`; Roh-User-/Faktor-IDs und Credentials fehlen.
 
 ## B. Kontrollierte Reihenfolge und unvermeidbares Übergangsfenster
 
@@ -193,8 +227,8 @@ Ein Staging-PASS ist erst zulässig, wenn:
   `NOT AVAILABLE` das aus Faktorentfernungszeit, verifizierter maximaler
   Staging-JWT-Laufzeit und Uhrtoleranz gebildete Quarantänefenster vollständig
   abgelaufen und dokumentiert ist;
-- Recovery-Besetzung und geschützter Auth-Admin-Recovery-Runner physisch
-  verfügbar sind;
+- Recovery-Besetzung, geschützter Ausführungsort, Staging-Auth-Admin-Autorität
+  und lokale Runner-Version physisch verfügbar und gegeneinander geprüft sind;
 - alle geschützten Datenfingerprints unverändert sind;
 - keine Secrets oder personenbezogenen Auth-Daten in Evidenz gelangt sind.
 

@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { Buffer } from "node:buffer";
+import console from "node:console";
+import { createHmac, generateKeyPairSync, randomBytes, randomUUID, sign } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { hasTotpAuthenticationMethod } from "../src/modules/platform/platformAdminMfa.mjs";
+import {
+  canonicalApprovalPayload,
+  runRecovery,
+} from "../scripts/platform-admin-totp-recovery-runner.mjs";
 
 const status = JSON.parse(execFileSync(
   "npx",
@@ -45,6 +54,8 @@ const browser = createClient(url, anonKey, { auth: { persistSession: false, auto
 const userId = randomUUID();
 const email = `platform-aal2-${randomUUID()}@example.invalid`;
 const password = randomBytes(24).toString("base64url");
+const recoveryDirectory = await mkdtemp(join(tmpdir(), "wuxuai-platform-recovery-"));
+await chmod(recoveryDirectory, 0o700);
 
 try {
   const created = await admin.auth.admin.createUser({ id: userId, email, password, email_confirm: true });
@@ -91,11 +102,47 @@ try {
   assert.ifError(factorsBeforeDelete.error);
   assert.equal(factorsBeforeDelete.data.factors.some((factor) => factor.id === enrollment.data.id), true);
 
-  const deletedFactor = await admin.auth.admin.mfa.deleteFactor({
-    userId,
-    id: enrollment.data.id,
+  const approvalFile = join(recoveryDirectory, "approval.json");
+  const publicKeyFile = join(recoveryDirectory, "approver.pem");
+  const evidenceFile = join(recoveryDirectory, "evidence.jsonl");
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const approvedAt = new Date();
+  const request = {
+    version: 1,
+    action: "DELETE_TOTP_FACTOR",
+    project_ref: "abcdefghijklmnopqrst",
+    correlation_id: randomUUID(),
+    request_id: randomUUID(),
+    target_user_id: userId,
+    factor_id: enrollment.data.id,
+    factor_type: "totp",
+    requestor_ref: "synthetic-local-requestor",
+    approver_ref: "synthetic-local-approver",
+    executor_ref: "synthetic-local-executor",
+    identity_checks: ["REGISTERED_RECOVERY_CONTACT", "SECOND_MFA_PROTECTED_PROVIDER"],
+    reason_code: "FACTOR_UNAVAILABLE",
+    approved_at: approvedAt.toISOString(),
+    expires_at: new Date(approvedAt.getTime() + 5 * 60_000).toISOString(),
+    migration_173_sha256: "fe76bbbc8b24fc069231bb0f56d4351e801d40216c6625df9d4655d0162913ce",
+  };
+  request.signature = sign(null, Buffer.from(canonicalApprovalPayload(request)), privateKey).toString("base64");
+  await writeFile(approvalFile, `${JSON.stringify(request)}\n`, { mode: 0o600 });
+  await writeFile(publicKeyFile, publicKey.export({ type: "spki", format: "pem" }), { mode: 0o600 });
+  await runRecovery({
+    env: {
+      PLATFORM_RECOVERY_PROJECT_URL: "https://abcdefghijklmnopqrst.supabase.co",
+      PLATFORM_RECOVERY_PROJECT_REF: "abcdefghijklmnopqrst",
+      PLATFORM_RECOVERY_EXECUTOR_REF: "synthetic-local-executor",
+      PLATFORM_RECOVERY_APPROVAL_FILE: approvalFile,
+      PLATFORM_RECOVERY_APPROVER_PUBLIC_KEY_FILE: publicKeyFile,
+      PLATFORM_RECOVERY_EVIDENCE_FILE: evidenceFile,
+      PLATFORM_RECOVERY_CONFIRMATION: `DELETE_TOTP_FACTOR:${request.correlation_id}`,
+    },
+    adminMfa: admin.auth.admin.mfa,
   });
-  assert.ifError(deletedFactor.error);
+  const evidenceLines = (await readFile(evidenceFile, "utf8")).trim().split("\n").map((line) => JSON.parse(line));
+  assert.deepEqual(evidenceLines.map((entry) => entry.event), ["RECOVERY_AUTHORIZED", "TOTP_FACTOR_REMOVED"]);
+  assert.equal(evidenceLines.some((entry) => "target_user_id" in entry || "factor_id" in entry), false);
   const factorsAfterDelete = await admin.auth.admin.mfa.listFactors({ userId });
   assert.ifError(factorsAfterDelete.error);
   assert.equal(factorsAfterDelete.data.factors.some((factor) => factor.id === enrollment.data.id), false);
@@ -115,4 +162,5 @@ try {
 } finally {
   await admin.from("platform_admins").delete().eq("user_id", userId);
   await admin.auth.admin.deleteUser(userId);
+  await rm(recoveryDirectory, { recursive: true, force: true });
 }
