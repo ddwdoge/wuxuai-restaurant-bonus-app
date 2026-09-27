@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { PlatformAdminLayout } from "../platform/PlatformAdminLayout";
-import { manageVerification, readVerificationAdminDetail, readVerificationQueue,
-  type VerificationAdminAction, type VerificationAdminDetail, type VerificationQueueItem } from "./businessVerificationService";
+import { manageVerification, openPlatformKybDocument, readPlatformKybReviewDetail,
+  readPlatformKybReviewQueue, readVerificationAdminDetail,
+  type KybDocument, type PlatformKybReviewDetail, type PlatformKybReviewQueueItem,
+  type VerificationAdminAction, type VerificationAdminDetail } from "./businessVerificationService";
+import "./platform-business-verification.css";
 
 const actionNames: Record<VerificationAdminAction, Record<string, string>> = {
   START_REVIEW: { de: "Prüfung beginnen", en: "Start review", fr: "Commencer l’examen", it: "Avvia revisione", es: "Iniciar revisión", zh: "开始审核", ko: "검토 시작" },
@@ -34,12 +37,35 @@ const labels: Record<string, { title: string; intro: string; empty: string; deta
   ko: { title: "사업체 검토", intro: "제출 자료를 읽기 전용으로 확인합니다. 실제 인증은 차단됩니다.", empty: "제출 없음", details: "상세 정보", revisions: "프로필 수정 이력", history: "상태 기록", evidence: "증빙 메타데이터", error: "검토 자료를 불러올 수 없습니다.", close: "닫기" },
 };
 
+const kybCopy: Record<string, { documents: string; documentCount: string; version: string; open: string; opening: string; audit: string; missing: string; noInference: string; openError: string }> = {
+  de: { documents: "Private KYB-Nachweise", documentCount: "Nachweise", version: "Fassung", open: "Sicher öffnen", opening: "Wird sicher geladen …", audit: "Dokumentverlauf", missing: "Nicht angegeben", noInference: "Vorhandene Uploads belegen weder Vollständigkeit noch Freigabefähigkeit. Pflichtnachweise je Rechtsform und Aufbewahrungsfristen sind noch nicht festgelegt.", openError: "Das private Dokument konnte nicht sicher geöffnet werden." },
+  en: { documents: "Private KYB evidence", documentCount: "Evidence", version: "Version", open: "Open securely", opening: "Loading securely …", audit: "Document history", missing: "Not provided", noInference: "Uploaded files do not prove completeness or readiness for approval. Required evidence by legal form and retention periods are not defined yet.", openError: "The private document could not be opened securely." },
+  fr: { documents: "Justificatifs KYB privés", documentCount: "Justificatifs", version: "Version", open: "Ouvrir en sécurité", opening: "Chargement sécurisé…", audit: "Historique du document", missing: "Non renseigné", noInference: "Les fichiers téléversés ne prouvent ni l’exhaustivité ni l’aptitude à l’approbation. Les pièces obligatoires par forme juridique et les durées de conservation ne sont pas encore définies.", openError: "Le document privé n’a pas pu être ouvert en sécurité." },
+  it: { documents: "Documenti KYB privati", documentCount: "Documenti", version: "Versione", open: "Apri in sicurezza", opening: "Caricamento sicuro…", audit: "Cronologia del documento", missing: "Non indicato", noInference: "I file caricati non dimostrano completezza né idoneità all’approvazione. I documenti obbligatori per forma giuridica e i periodi di conservazione non sono ancora definiti.", openError: "Impossibile aprire il documento privato in modo sicuro." },
+  es: { documents: "Documentos KYB privados", documentCount: "Documentos", version: "Versión", open: "Abrir de forma segura", opening: "Carga segura…", audit: "Historial del documento", missing: "No indicado", noInference: "Los archivos subidos no demuestran integridad ni aptitud para aprobación. Los documentos obligatorios según la forma jurídica y los plazos de conservación aún no están definidos.", openError: "No se pudo abrir el documento privado de forma segura." },
+  zh: { documents: "私密 KYB 证明", documentCount: "证明文件", version: "版本", open: "安全打开", opening: "正在安全加载……", audit: "文件记录", missing: "未提供", noInference: "已上传文件不代表资料完整或具备批准条件。各法律形式所需文件及保存期限尚未确定。", openError: "无法安全打开私密文件。" },
+  ko: { documents: "비공개 KYB 증빙", documentCount: "증빙", version: "버전", open: "안전하게 열기", opening: "안전하게 불러오는 중…", audit: "문서 이력", missing: "제공되지 않음", noInference: "업로드된 파일만으로 완전성이나 승인 가능성이 입증되지 않습니다. 법적 형태별 필수 증빙과 보존 기간은 아직 정해지지 않았습니다.", openError: "비공개 문서를 안전하게 열 수 없습니다." },
+};
+
+const documentTypeLabels: Record<string, Record<string, string>> = {
+  GISA_EXTRACT: { de: "GISA-Auszug", en: "GISA extract", fr: "Extrait GISA", it: "Estratto GISA", es: "Extracto GISA", zh: "GISA 摘录", ko: "GISA 등록부 발췌본" },
+  COMPANY_REGISTER_EXTRACT: { de: "Firmenbuchauszug", en: "Company register extract", fr: "Extrait du registre des sociétés", it: "Estratto del registro delle imprese", es: "Extracto del registro mercantil", zh: "公司登记册摘录", ko: "회사 등기부 발췌본" },
+  TRADE_LICENSE: { de: "Gewerbeberechtigung", en: "Trade licence", fr: "Autorisation commerciale", it: "Licenza commerciale", es: "Licencia comercial", zh: "营业许可", ko: "영업 허가증" },
+  TAX_REGISTRATION: { de: "Steuerregistrierung", en: "Tax registration", fr: "Enregistrement fiscal", it: "Registrazione fiscale", es: "Registro fiscal", zh: "税务登记", ko: "세무 등록" },
+  REPRESENTATIVE_ID: { de: "Identitätsnachweis der Vertretung", en: "Representative identity document", fr: "Pièce d’identité du représentant", it: "Documento d’identità del rappresentante", es: "Documento de identidad del representante", zh: "代表人身份证明", ko: "대표자 신분증" },
+  POWER_OF_ATTORNEY: { de: "Vollmacht", en: "Power of attorney", fr: "Procuration", it: "Procura", es: "Poder de representación", zh: "授权委托书", ko: "위임장" },
+};
+
 export function PlatformBusinessVerificationPage() {
   const { language } = useI18n();
   const t = labels[language] ?? labels.de;
   const a = adminCopy[language] ?? adminCopy.de;
-  const [queue, setQueue] = useState<VerificationQueueItem[]>([]);
+  const k = kybCopy[language] ?? kybCopy.de;
+  const [queue, setQueue] = useState<PlatformKybReviewQueueItem[]>([]);
   const [detail, setDetail] = useState<VerificationAdminDetail | null>(null);
+  const [kybDetail, setKybDetail] = useState<PlatformKybReviewDetail | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [documentError, setDocumentError] = useState("");
   const [error, setError] = useState(false);
   const [action, setAction] = useState<VerificationAdminAction | null>(null);
   const [reasonCode, setReasonCode] = useState("");
@@ -51,13 +77,31 @@ export function PlatformBusinessVerificationPage() {
   const ids = useRef<{ requestId: string; correlationId: string } | null>(null);
   useEffect(() => {
     let active = true;
-    void readVerificationQueue().then((rows) => { if (active) setQueue(rows); })
+    void readPlatformKybReviewQueue().then((rows) => { if (active) setQueue(rows); })
       .catch(() => { if (active) setError(true); });
     return () => { active = false; };
   }, []);
   async function showDetail(caseId: string) {
-    try { setDetail(await readVerificationAdminDetail(caseId)); setError(false); }
+    try {
+      const [adminDetail, documentDetail] = await Promise.all([
+        readVerificationAdminDetail(caseId), readPlatformKybReviewDetail(caseId),
+      ]);
+      setDetail(adminDetail); setKybDetail(documentDetail); setDocumentError(""); setError(false);
+    }
     catch { setError(true); }
+  }
+  async function openDocument(document: KybDocument) {
+    if (openingId) return;
+    setOpeningId(document.document_id); setDocumentError("");
+    try {
+      const blob = await openPlatformKybDocument(document);
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement("a");
+      anchor.href = url; anchor.target = "_blank"; anchor.rel = "noopener noreferrer";
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch { setDocumentError(k.openError); }
+    finally { setOpeningId(null); }
   }
   function clearAction() {
     setAction(null); setReasonCode(""); setReason(""); setConfirmation("");
@@ -82,35 +126,60 @@ export function PlatformBusinessVerificationPage() {
         method: action === "START_REVIEW" ? "MANUAL" : undefined,
         reasonCode, reason: reason.trim(), profile: action === "CORRECT_PROFILE" ? profileDraft : undefined,
         requestId: ids.current.requestId, correlationId: ids.current.correlationId, confirmation });
-      const [freshDetail, freshQueue] = await Promise.all([readVerificationAdminDetail(detail.case_id), readVerificationQueue()]);
-      setDetail(freshDetail); setQueue(freshQueue); clearAction();
+      const [freshDetail, freshKybDetail, freshQueue] = await Promise.all([
+        readVerificationAdminDetail(detail.case_id), readPlatformKybReviewDetail(detail.case_id), readPlatformKybReviewQueue(),
+      ]);
+      setDetail(freshDetail); setKybDetail(freshKybDetail); setQueue(freshQueue); clearAction();
     } catch { setActionError(t.error); }
     finally { setBusy(false); }
   }
   return <PlatformAdminLayout title={t.title} description={t.intro}>
     <section className="card"><h2>{t.title}</h2>
       {queue.length ? <div style={{ overflowX: "auto" }}><table><thead><tr>
-        <th>{a.country}</th><th>{a.status}</th><th>{a.method}</th><th>{a.date}</th><th />
+        <th>{t.title}</th><th>{a.country}</th><th>{a.status}</th><th>{k.documentCount}</th><th>{a.date}</th><th />
       </tr></thead><tbody>{queue.map((item) => <tr key={item.case_id}>
-        <td>{item.country}</td><td>{item.status}</td><td>{item.method}</td>
-        <td>{new Date(item.submitted_at).toLocaleDateString(language)}</td>
+        <td>{item.restaurant_name}</td><td>{item.country}</td><td>{item.status}</td><td>{item.document_count}</td>
+        <td>{new Date(item.latest_document_at).toLocaleDateString(language)}</td>
         <td><button className="button secondary" onClick={() => void showDetail(item.case_id)} style={{ minHeight: 44 }} type="button">{t.details}</button></td>
       </tr>)}</tbody></table></div> : <p>{t.empty}</p>}
     </section>
     {error ? <p role="alert">{t.error}</p> : null}
-    <AppDrawer open={Boolean(detail)} onClose={() => { if (!busy) { clearAction(); setDetail(null); } }} size="large"
+    <AppDrawer open={Boolean(detail && kybDetail)} onClose={() => { if (!busy) { clearAction(); setDetail(null); setKybDetail(null); } }} size="large"
       title={detail?.restaurant_name ?? t.title} description={t.intro}
-      footer={<button className="button secondary" disabled={busy} onClick={() => { clearAction(); setDetail(null); }} style={{ minHeight: 44 }} type="button">{t.close}</button>}>
-      {detail ? <div>
+      footer={<button className="button secondary" disabled={busy} onClick={() => { clearAction(); setDetail(null); setKybDetail(null); }} style={{ minHeight: 44 }} type="button">{t.close}</button>}>
+      {detail && kybDetail ? <div>
         <p>{detail.country} · {detail.method} · {detail.status}</p>
+        <section aria-labelledby="platform-kyb-documents" className="platform-kyb-review-section" data-testid="platform-kyb-document-review">
+          <h3 id="platform-kyb-documents">{k.documents}</h3>
+          <p className="platform-kyb-review-notice">{k.noInference}</p>
+          {kybDetail.documents.length ? <ul className="platform-kyb-document-list">
+            {kybDetail.documents.map((document) => <li key={document.document_id}>
+              <div><strong>{documentTypeLabels[document.document_type]?.[language] ?? documentTypeLabels[document.document_type]?.de ?? k.missing}</strong>
+                <span>{k.version} {document.version} · {document.status}</span>
+                <time dateTime={document.uploaded_at ?? document.reserved_at}>{new Intl.DateTimeFormat(language).format(new Date(document.uploaded_at ?? document.reserved_at))}</time>
+              </div>
+              {document.status !== "PENDING_UPLOAD" && document.status !== "DELETED" ? <button className="button secondary" disabled={Boolean(openingId)} onClick={() => void openDocument(document)} type="button">
+                {openingId === document.document_id ? k.opening : k.open}
+              </button> : null}
+            </li>)}
+          </ul> : <p>{t.empty}</p>}
+          {documentError ? <p role="alert">{documentError}</p> : null}
+          <h3>{k.audit}</h3>
+          {kybDetail.document_events.length ? <ol className="platform-kyb-audit-list">
+            {kybDetail.document_events.map((event, index) => <li key={`${event.document_id}-${event.created_at}-${index}`}>
+              <strong>{event.event_type}</strong><span>{event.previous_status ?? k.missing} → {event.new_status}</span>
+              <span>{event.reason_code}</span><time dateTime={event.created_at}>{new Intl.DateTimeFormat(language).format(new Date(event.created_at))}</time>
+            </li>)}
+          </ol> : <p>{k.missing}</p>}
+        </section>
         <h3>{t.revisions}</h3>
         {detail.profiles.map((item) => <article className="card" key={item.id}>
           <strong>#{item.revision} · {item.status}</strong>
-          <p>{item.legal_name} · {item.legal_form}</p>
-          <p>{item.business_street}, {item.business_postal_code} {item.business_city}, {item.business_country}</p>
+          <p>{item.legal_name || k.missing} · {item.legal_form || k.missing}</p>
+          <p>{item.business_street || k.missing}, {item.business_postal_code || k.missing} {item.business_city || k.missing}, {item.business_country || k.missing}</p>
         </article>)}
         <h3>{t.history}</h3>{detail.history.map((item, index) => <p key={`${item.decided_at}-${index}`}>{item.action} · {item.new_status} · {item.reason_code}</p>)}
-        <h3>{t.evidence}</h3>{detail.evidence.map((item, index) => <p key={`${item.content_hash}-${index}`}>{item.evidence_type} · {item.retention_class}</p>)}
+        <h3>{t.evidence}</h3>{detail.evidence.map((item, index) => <p key={`${item.uploaded_at}-${index}`}>{item.evidence_type} · {item.retention_class}</p>)}
         <h3>{a.actions}</h3>
         <p>{a.locked}</p>
         {detail.allowed_actions.map((candidate) => <button className="button secondary" disabled={busy} key={candidate} style={{ minHeight: 44 }}

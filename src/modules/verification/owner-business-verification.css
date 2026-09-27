@@ -1,0 +1,17 @@
+.kyb-document-section { display: grid; gap: 16px; min-width: 0; }
+.kyb-document-section > :is(h2, p) { margin: 0; }
+.kyb-document-upload { display: grid; gap: 8px; max-width: 680px; }
+.kyb-document-upload :is(select, input[type="file"]) { box-sizing: border-box; max-width: 100%; min-height: 44px; width: 100%; }
+.kyb-document-upload .button { justify-self: start; min-height: 44px; }
+.kyb-document-notice { background: #f8f3e8; border-radius: 10px; padding: 12px; }
+.kyb-document-list { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.kyb-document-list li { align-items: center; border: 1px solid rgba(91, 71, 36, .18); border-radius: 12px; display: flex; gap: 12px; justify-content: space-between; min-width: 0; padding: 12px; }
+.kyb-document-list li > div { display: grid; gap: 3px; min-width: 0; }
+.kyb-document-list :is(strong, span, time) { overflow-wrap: anywhere; }
+.kyb-document-list span, .kyb-document-list time { color: #665d50; font-size: .875rem; }
+.kyb-document-list .button { flex: 0 0 auto; min-height: 44px; }
+
+@media (max-width: 560px) {
+  .kyb-document-list li { align-items: stretch; flex-direction: column; }
+  .kyb-document-list .button { width: 100%; }
+}

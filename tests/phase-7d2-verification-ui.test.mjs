@@ -18,7 +18,7 @@ test('admin controls derive from server read model and use only locked migration
   assert.match(foundation,/BUSINESS_VERIFICATION_CONFIRMATION_REQUIRED/);
   assert.match(foundation,/BUSINESS_VERIFICATION_IDEMPOTENCY_CONFLICT/);
   assert.match(admin,/readVerificationAdminDetail\(detail\.case_id\)/);
-  assert.match(admin,/readVerificationQueue\(\)/);
+  assert.match(admin,/readPlatformKybReviewQueue\(\)/);
   assert.match(admin,/ids\.current \?\?= \{ requestId: crypto\.randomUUID\(\), correlationId: crypto\.randomUUID\(\) \}/);
 });
 

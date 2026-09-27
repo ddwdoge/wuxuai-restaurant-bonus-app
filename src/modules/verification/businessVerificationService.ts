@@ -1,5 +1,47 @@
 import { supabase } from "../../shared/lib/supabase";
 
+export const KYB_DOCUMENT_TYPES = [
+  "GISA_EXTRACT",
+  "COMPANY_REGISTER_EXTRACT",
+  "TRADE_LICENSE",
+  "TAX_REGISTRATION",
+  "REPRESENTATIVE_ID",
+  "POWER_OF_ATTORNEY",
+] as const;
+
+export type KybDocumentType = typeof KYB_DOCUMENT_TYPES[number];
+export type KybDocumentStatus =
+  | "PENDING_UPLOAD"
+  | "UPLOADED"
+  | "SUPERSEDED"
+  | "DELETION_REQUESTED"
+  | "DELETED";
+
+export type KybDocument = {
+  document_id: string;
+  document_type: KybDocumentType;
+  version: number;
+  status: KybDocumentStatus;
+  mime_type: string;
+  byte_size: number | null;
+  reserved_at: string;
+  uploaded_at: string | null;
+  deletion_requested_at: string | null;
+};
+
+export type KybDocumentErrorCode = "FILE_TYPE" | "FILE_SIZE" | "PERMISSION" | "UPLOAD";
+
+export class KybDocumentError extends Error {
+  constructor(public readonly code: KybDocumentErrorCode) {
+    super(code);
+    this.name = "KybDocumentError";
+  }
+}
+
+const KYB_BUCKET = "business-verification-documents";
+const MAX_KYB_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_KYB_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+
 export type VerificationReadiness = {
   status: string;
   block_code?: string;
@@ -53,6 +95,42 @@ export type VerificationAdminDetail = {
   evidence: Array<{ evidence_type: string; content_hash: string; retention_class: string; uploaded_at: string; reviewed_at: string | null }>;
 };
 
+export type PlatformKybReviewQueueItem = {
+  case_id: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  country: string;
+  method: "MANUAL" | "DIGITAL";
+  status: string;
+  submitted_at: string;
+  document_count: number;
+  latest_document_at: string;
+};
+
+export type PlatformKybDocumentEvent = {
+  document_id: string;
+  event_type: string;
+  previous_status: string | null;
+  new_status: string;
+  reason_code: string;
+  created_at: string;
+};
+
+export type PlatformKybReviewDetail = {
+  case_id: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  country: string;
+  method: string;
+  status: string;
+  submitted_at: string;
+  review_started_at: string | null;
+  documents: Array<KybDocument & {
+    superseded_at: string | null;
+  }>;
+  document_events: PlatformKybDocumentEvent[];
+};
+
 export type VerificationAdminAction = "START_REVIEW" | "REJECT" | "SUSPEND" | "CORRECT_PROFILE" | "GRANT_TEST" | "REVOKE_TEST";
 
 function client() {
@@ -84,6 +162,89 @@ export async function submitOwnerVerification(restaurantId: string, registerType
   return data as { status: "PENDING_ACTIVATION"; idempotent: boolean };
 }
 
+export async function listOwnerKybDocuments(restaurantId: string): Promise<KybDocument[]> {
+  const { data, error } = await client().rpc("list_business_verification_documents", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error || !Array.isArray(data)) {
+    throw new KybDocumentError(error?.code === "42501" ? "PERMISSION" : "UPLOAD");
+  }
+  return data as KybDocument[];
+}
+
+async function sha256(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function uploadOwnerKybDocument(input: {
+  restaurantId: string;
+  documentType: KybDocumentType;
+  file: File;
+}) {
+  if (!ALLOWED_KYB_MIME_TYPES.has(input.file.type)) throw new KybDocumentError("FILE_TYPE");
+  if (input.file.size < 1 || input.file.size > MAX_KYB_FILE_SIZE) throw new KybDocumentError("FILE_SIZE");
+
+  const api = client();
+  const reservationRequestId = crypto.randomUUID();
+  const reservationCorrelationId = crypto.randomUUID();
+  const { data: reservation, error: reservationError } = await api.rpc(
+    "reserve_business_verification_document_upload",
+    {
+      input_restaurant_id: input.restaurantId,
+      input_document_type: input.documentType,
+      input_mime_type: input.file.type,
+      input_request_id: reservationRequestId,
+      input_correlation_id: reservationCorrelationId,
+    },
+  );
+  if (reservationError || !reservation || typeof reservation !== "object") {
+    throw new KybDocumentError(reservationError?.code === "42501" ? "PERMISSION" : "UPLOAD");
+  }
+
+  const reserved = reservation as { document_id?: string; bucket?: string; object_name?: string };
+  if (!reserved.document_id || reserved.bucket !== KYB_BUCKET || !reserved.object_name) {
+    throw new KybDocumentError("UPLOAD");
+  }
+
+  const { error: uploadError } = await api.storage.from(KYB_BUCKET).upload(
+    reserved.object_name,
+    input.file,
+    { contentType: input.file.type, upsert: false },
+  );
+  if (uploadError) throw new KybDocumentError(uploadError.statusCode === "403" ? "PERMISSION" : "UPLOAD");
+
+  const { data: completion, error: completionError } = await api.rpc(
+    "complete_business_verification_document_upload",
+    {
+      input_document_id: reserved.document_id,
+      input_content_sha256: await sha256(input.file),
+      input_request_id: crypto.randomUUID(),
+      input_correlation_id: crypto.randomUUID(),
+    },
+  );
+  if (completionError || !completion) {
+    throw new KybDocumentError(completionError?.code === "42501" ? "PERMISSION" : "UPLOAD");
+  }
+  return completion as { document_id: string; status: "UPLOADED"; idempotent: boolean };
+}
+
+export async function downloadOwnerKybDocument(document: KybDocument) {
+  const api = client();
+  const { data: object, error: objectError } = await api.rpc(
+    "get_business_verification_document_object",
+    { input_document_id: document.document_id },
+  );
+  if (objectError || !object || typeof object !== "object") {
+    throw new KybDocumentError(objectError?.code === "42501" ? "PERMISSION" : "UPLOAD");
+  }
+  const descriptor = object as { bucket?: string; object_name?: string };
+  if (descriptor.bucket !== KYB_BUCKET || !descriptor.object_name) throw new KybDocumentError("UPLOAD");
+  const { data, error } = await api.storage.from(KYB_BUCKET).download(descriptor.object_name);
+  if (error || !data) throw new KybDocumentError(error?.statusCode === "403" ? "PERMISSION" : "UPLOAD");
+  return data;
+}
+
 export async function readVerificationQueue(): Promise<VerificationQueueItem[]> {
   const { data, error } = await client().rpc("list_business_verification_queue");
   if (error || !Array.isArray(data)) throw new Error("Prüfliste konnte nicht geladen werden.");
@@ -94,6 +255,36 @@ export async function readVerificationAdminDetail(caseId: string): Promise<Verif
   const { data, error } = await client().rpc("get_business_verification_admin_detail", { input_case_id: caseId });
   if (error || !data || typeof data !== "object") throw new Error("Prüfdetails konnten nicht geladen werden.");
   return data as VerificationAdminDetail;
+}
+
+export async function readPlatformKybReviewQueue(): Promise<PlatformKybReviewQueueItem[]> {
+  const { data, error } = await client().rpc("list_platform_kyb_review_queue");
+  if (error || !Array.isArray(data)) throw new Error("KYB-Prüfliste konnte nicht geladen werden.");
+  return data as PlatformKybReviewQueueItem[];
+}
+
+export async function readPlatformKybReviewDetail(caseId: string): Promise<PlatformKybReviewDetail> {
+  const { data, error } = await client().rpc("get_platform_kyb_review_detail", {
+    input_case_id: caseId,
+  });
+  if (error || !data || typeof data !== "object") throw new Error("KYB-Prüfdetails konnten nicht geladen werden.");
+  return data as PlatformKybReviewDetail;
+}
+
+export async function openPlatformKybDocument(document: KybDocument) {
+  const api = client();
+  const { data: object, error: objectError } = await api.rpc(
+    "get_platform_kyb_document_object",
+    { input_document_id: document.document_id },
+  );
+  if (objectError || !object || typeof object !== "object") {
+    throw new KybDocumentError(objectError?.code === "42501" ? "PERMISSION" : "UPLOAD");
+  }
+  const descriptor = object as { bucket?: string; object_name?: string };
+  if (descriptor.bucket !== KYB_BUCKET || !descriptor.object_name) throw new KybDocumentError("UPLOAD");
+  const { data, error } = await api.storage.from(KYB_BUCKET).download(descriptor.object_name);
+  if (error || !data) throw new KybDocumentError(error?.statusCode === "403" ? "PERMISSION" : "UPLOAD");
+  return data;
 }
 
 export async function manageVerification(input: {
