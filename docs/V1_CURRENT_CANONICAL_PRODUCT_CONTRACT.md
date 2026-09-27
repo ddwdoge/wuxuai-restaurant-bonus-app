@@ -132,6 +132,28 @@ freigegeben werden. Stripe und Production bleiben unveraendert.
   Cross-Restaurant-Bestaetigung. Umsetzung Phase 7D bzw. teilweise V2;
   bestehende Einloeseflows dadurch nicht als bereits migriert behaupten.
 
+### Phase 7D – aktueller Owner-KYB-Intake-Vertrag (2026-09-27)
+
+- Country Launch Readiness und KYB-Intake sind getrennte serverseitige Gates.
+  Ein KYB-Intake aktiviert weder Land, Restaurant, Trial, Entitlements, Billing
+  noch Stripe.
+- Der gefuehrte Owner-Flow erfasst strukturierte Unternehmensdaten einmalig im
+  kanonischen organisationsgebundenen Profil. Die KYB-Seite zeigt daraus eine
+  Zusammenfassung; Korrekturen fuehren zur Stammdatenbearbeitung zurueck.
+- Fuer den oesterreichischen Abgleich werden GISA-Zahl, Name und Funktion der
+  vertretungsberechtigten Person erfasst. Firmenbuchangaben werden nur bei
+  entsprechender Rechtsform beziehungsweise ausdruecklicher Anwendbarkeit
+  verlangt. UID bleibt optional.
+- `GISA-Auszug` und `Ausweis der vertretungsberechtigten Person` sind die
+  verstaendlichen technischen Dokumentbezeichnungen. Firmenbuchauszug und
+  Vollmacht werden nur bedingt angeboten. Damit werden weder rechtlich
+  endgueltige Pflichtdokumente noch Aufbewahrungsfristen festgelegt.
+- Solange Legal-, Privacy-, Dokumentkatalog- und Retention-Status nicht final
+  bestaetigt sind, bleibt reale Dokumenteinreichung fail-closed. Auf Staging
+  darf ausschliesslich ein exakt serverseitig markierter TEST_ONLY-Betrieb in
+  `PENDING_ACTIVATION` den synthetischen Intake nutzen. Die Eigenschaft
+  `synthetisch` wird nicht aus Dateiinhalten abgeleitet.
+
 ## Phase 7C.6B5 – historischer LOCAL CODE LOCK vor Staging (2026-09-23)
 
 Lokal implementiert und geprueft: Die Platform-Admin-Ansicht zeigt den

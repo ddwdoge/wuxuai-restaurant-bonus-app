@@ -48,6 +48,11 @@ import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuatio
 import { LaunchCountrySelect } from "../../onboarding/LaunchCountrySelect";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { acceptKassaSeparation } from "../../kassa/kassaComplianceService";
+import {
+  legalFormRequiresCommercialRegister,
+  saveOwnerKybIntakeProfile,
+  validateKybIntakeProfile,
+} from "../../verification/kybIntakeProfile";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type Generosity = "Sparsam" | "Normal" | "Großzügig" | "Premium";
@@ -107,6 +112,10 @@ type OnboardingForm = {
   legalCompanyRegistrationNumber: string;
   legalVatId: string;
   legalAuthorizedRepresentative: string;
+  legalAuthorizedRepresentativeRole: string;
+  legalOwnerIsAuthorizedRepresentative: boolean;
+  legalGisaNumber: string;
+  legalCommercialRegisterApplicable: boolean;
   legalComplaintContact: string;
   logoUrl: string;
   primaryColor: string;
@@ -311,6 +320,10 @@ function createDefaultForm(): OnboardingForm {
     legalCompanyRegistrationNumber: "",
     legalVatId: "",
     legalAuthorizedRepresentative: "",
+    legalAuthorizedRepresentativeRole: "",
+    legalOwnerIsAuthorizedRepresentative: true,
+    legalGisaNumber: "",
+    legalCommercialRegisterApplicable: false,
     legalComplaintContact: "",
     logoUrl: "",
     primaryColor: "#0f766e",
@@ -1020,6 +1033,17 @@ function missingChecklistItems(checklist: Record<keyof typeof checklistLabels, b
 }
 
 function buildChecklist(form: OnboardingForm, step: number) {
+  const commercialRegisterApplicable = form.legalCommercialRegisterApplicable
+    || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry);
+  const kybMissing = validateKybIntakeProfile({
+    countryCode: form.legalCountry,
+    gisaNumber: form.legalGisaNumber,
+    ownerIsAuthorizedRepresentative: form.legalOwnerIsAuthorizedRepresentative,
+    authorizedRepresentativeName: form.legalAuthorizedRepresentative,
+    authorizedRepresentativeRole: form.legalAuthorizedRepresentativeRole,
+    commercialRegisterApplicable,
+    commercialRegisterNumber: form.legalCompanyRegistrationNumber,
+  });
   return {
     restaurantDataCompleted: Boolean(
       form.restaurantName.trim()
@@ -1031,7 +1055,8 @@ function buildChecklist(form: OnboardingForm, step: number) {
       && form.legalPostalCode.trim()
       && form.legalCity.trim()
       && form.legalCountry.trim()
-      && form.legalEmail.trim(),
+      && form.legalEmail.trim()
+      && kybMissing.length === 0,
     ),
     brandingCompleted: Boolean(form.primaryColor && form.secondaryColor),
     openingHoursCompleted: weekdays.some(({ key }) => form.openingHours[key].enabled)
@@ -1563,6 +1588,16 @@ export function RestaurantOnboarding() {
         },
         legalPublicationConfirmed: form.legalPublicationConfirmed,
       });
+      await saveOwnerKybIntakeProfile(activeRestaurant.id, {
+        countryCode: form.legalCountry,
+        gisaNumber: form.legalGisaNumber,
+        ownerIsAuthorizedRepresentative: form.legalOwnerIsAuthorizedRepresentative,
+        authorizedRepresentativeName: form.legalAuthorizedRepresentative,
+        authorizedRepresentativeRole: form.legalAuthorizedRepresentativeRole,
+        commercialRegisterApplicable: form.legalCommercialRegisterApplicable
+          || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry),
+        commercialRegisterNumber: form.legalCompanyRegistrationNumber,
+      });
       await saveOnboardingDraft(activeRestaurant.id, steps.length - 1, form, checklist);
       await refreshTenants();
       setStatus(pendingActivation ? pendingMessage.saved : `${result.restaurant.name} ist startklar.`);
@@ -1683,7 +1718,7 @@ export function RestaurantOnboarding() {
                 <div>
                   <span className="premium-dashboard-kicker">Unternehmensdaten</span>
                   <h3>Rechtliche Angaben zu deinem Betrieb</h3>
-                  <p className="muted">Diese Angaben werden später für rechtliche Dokumente, Impressum und Abrechnungsdaten verwendet. FN und UID kannst du auch später ergänzen.</p>
+                  <p className="muted">Diese Angaben werden später für rechtliche Dokumente, Impressum und den sicheren Betriebsabgleich verwendet. UID und nur bedingt benötigte Firmenbuchangaben kannst du auch später ergänzen.</p>
                 </div>
                 <div className="grid two">
                   <div className="field">
@@ -1726,24 +1761,47 @@ export function RestaurantOnboarding() {
                     <FormLabel htmlFor="legal-country" required>Land</FormLabel>
                     <LaunchCountrySelect disabled={form.legalAddressMatchesRestaurant && restaurantAddressComplete} id="legal-country" onChange={(country) => setForm((current) => ({ ...current, legalCountry: country }))} value={form.legalCountry} />
                   </div>
+                  {form.legalCountry === "AT" || form.legalCountry === "Österreich" ? <>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-gisa-number" required>GISA-Zahl</FormLabel>
+                      <input aria-required="true" className="input" id="legal-gisa-number" onChange={(event) => setForm((current) => ({ ...current, legalGisaNumber: event.target.value }))} required value={form.legalGisaNumber} />
+                      <p className="field-hint">Diese Angabe dient später dem Abgleich mit deinem GISA-Auszug.</p>
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-authorized-representative" required>Vertretungsberechtigte Person</FormLabel>
+                      <input aria-required="true" className="input" id="legal-authorized-representative" onChange={(event) => setForm((current) => ({ ...current, legalAuthorizedRepresentative: event.target.value }))} required value={form.legalAuthorizedRepresentative} />
+                    </div>
+                    <div className="field">
+                      <FormLabel htmlFor="legal-authorized-representative-role" required>Funktion der vertretungsberechtigten Person</FormLabel>
+                      <input aria-required="true" className="input" id="legal-authorized-representative-role" onChange={(event) => setForm((current) => ({ ...current, legalAuthorizedRepresentativeRole: event.target.value }))} placeholder="z. B. Inhaber oder Geschäftsführerin" required value={form.legalAuthorizedRepresentativeRole} />
+                    </div>
+                    <label className="legal-address-source-toggle" htmlFor="legal-owner-is-representative">
+                      <input checked={form.legalOwnerIsAuthorizedRepresentative} id="legal-owner-is-representative" onChange={(event) => setForm((current) => ({ ...current, legalOwnerIsAuthorizedRepresentative: event.target.checked }))} type="checkbox" />
+                      <span>Ich bin diese vertretungsberechtigte Person.</span>
+                    </label>
+                    <label className="legal-address-source-toggle" htmlFor="legal-commercial-register-applicable">
+                      <input checked={form.legalCommercialRegisterApplicable || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry)} disabled={legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry)} id="legal-commercial-register-applicable" onChange={(event) => setForm((current) => ({ ...current, legalCommercialRegisterApplicable: event.target.checked }))} type="checkbox" />
+                      <span>Der Betrieb ist im Firmenbuch eingetragen.</span>
+                    </label>
+                  </> : null}
                 </div>
                 <details className="advanced-panel">
                   <summary>Weitere Unternehmensangaben (optional)</summary>
                   <div className="grid two">
-                    <div className="field">
+                    {(form.legalCountry !== "AT" && form.legalCountry !== "Österreich") || form.legalCommercialRegisterApplicable || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry) ? <div className="field">
                       <FormLabel htmlFor="legal-company-registration" optional>{companyRegistrationLabel(form.legalCountry)}</FormLabel>
-                      <input className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} value={form.legalCompanyRegistrationNumber} />
+                      <input aria-required={form.legalCountry === "AT" || form.legalCountry === "Österreich"} className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "AT" || form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} required={form.legalCountry === "AT" || form.legalCountry === "Österreich"} value={form.legalCompanyRegistrationNumber} />
                       {optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry)}</p> : null}
-                    </div>
+                    </div> : null}
                     <div className="field">
                       <FormLabel htmlFor="legal-vat-id" optional>{vatIdLabel(form.legalCountry)}</FormLabel>
                       <input autoCapitalize="characters" className="input" id="legal-vat-id" onBlur={(event) => setForm((current) => ({ ...current, legalVatId: normalizeVatId(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalVatId: event.target.value }))} placeholder={form.legalCountry === "Österreich" ? "z. B. ATU12345678" : undefined} value={form.legalVatId} />
                       {optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("vat", form.legalVatId, form.legalCountry)}</p> : null}
                     </div>
-                    <div className="field">
+                    {form.legalCountry !== "AT" && form.legalCountry !== "Österreich" ? <div className="field">
                       <FormLabel htmlFor="legal-authorized-representative" optional>Vertretungsberechtigte Person / Geschäftsführung</FormLabel>
                       <input className="input" id="legal-authorized-representative" onChange={(event) => setForm((current) => ({ ...current, legalAuthorizedRepresentative: event.target.value }))} value={form.legalAuthorizedRepresentative} />
-                    </div>
+                    </div> : null}
                     <div className="field">
                       <FormLabel htmlFor="legal-complaint-contact" optional>Beschwerdekontakt</FormLabel>
                       <input className="input" id="legal-complaint-contact" onChange={(event) => setForm((current) => ({ ...current, legalComplaintContact: event.target.value }))} placeholder={form.legalEmail || "Kontakt-E-Mail wird verwendet"} value={form.legalComplaintContact} />

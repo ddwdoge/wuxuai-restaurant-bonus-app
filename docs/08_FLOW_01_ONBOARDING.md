@@ -211,12 +211,14 @@ Die rechtlichen Stammdaten dienen ausschließlich der automatischen Erzeugung
 des restaurantbezogenen Legal-Pakets. Der Owner schreibt im Onboarding keine
 juristischen Freitexte.
 
-Optional:
+Optional beziehungsweise nur bei Anwendbarkeit:
 
 - Telefonnummer
-- Firmenbuchnummer und Firmenbuchgericht
+- Firmenbuchnummer und Firmenbuchgericht (nur bei entsprechender Rechtsform
+  beziehungsweise ausdruecklicher Firmenbucheintragung)
 - UID-Nummer
-- vertretungsberechtigte Person / Geschäftsführung
+- vertretungsberechtigte Person / Geschäftsführung; fuer den spaeteren
+  oesterreichischen KYB-Abgleich sind Name und Funktion erforderlich
 - Kammerzugehörigkeit
 - Aufsichtsbehörde
 - Barrierefreiheitskontakt
@@ -241,8 +243,11 @@ rechtliche Anschrift gespeichert. Eine fehlende oder unvollständige
 Restaurantadresse darf nicht stillschweigend als Geschäftsanschrift verwendet
 werden.
 
-Firmenbuchnummer und UID sind in V1 optionale strukturierte Betreiberangaben.
-Ihr Fehlen blockiert weder den Onboarding-Schritt noch die Kundenregistrierung.
+Die UID bleibt in V1 optional. Firmenbuchangaben sind nur bedingt erforderlich.
+Fuer einen oesterreichischen KYB-Intake werden GISA-Zahl sowie Name und Funktion
+der vertretungsberechtigten Person strukturiert erfasst. Diese technischen
+Abgleichsfelder legen weder einen rechtlich endgueltigen Dokumentkatalog noch
+Aufbewahrungsfristen fest.
 Der rechtliche Unternehmensname, die Rechtsform, die Geschäftsanschrift und die
 Kontakt-E-Mail bleiben Bestandteil des bestehenden Legal-Veröffentlichungsvertrags.
 Österreichische FN- und UID-Werte werden zurückhaltend normalisiert; Angaben

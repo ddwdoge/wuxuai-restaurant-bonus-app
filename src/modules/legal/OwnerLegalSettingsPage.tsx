@@ -40,6 +40,12 @@ import {
   type RestaurantLegalSetup,
 } from "./legalService";
 import { useOwnerSmartSetupContinuation } from "../admin/useOwnerSmartSetupContinuation";
+import {
+  legalFormRequiresCommercialRegister,
+  readOwnerKybIntakeSummary,
+  saveOwnerKybIntakeProfile,
+  validateKybIntakeProfile,
+} from "../verification/kybIntakeProfile";
 
 const requiredProfileFields = [
   ["company_name", "Unternehmensname"],
@@ -64,6 +70,13 @@ const optionalProfileFields = [
 ] as const;
 
 const allProfileFields = [...requiredProfileFields, ...optionalProfileFields] as const;
+
+const kybProfileFields = [
+  ["gisa_number", "GISA-Zahl"],
+  ["authorized_representative_role", "Funktion der vertretungsberechtigten Person"],
+  ["owner_is_authorized_representative", "Vertretungsberechtigung"],
+  ["commercial_register_applicable", "Firmenbuchbezug"],
+] as const;
 
 const legalReadinessLabelKeys: Record<string, string> = {
   company: "legal.readiness.companyData",
@@ -152,12 +165,19 @@ export function OwnerLegalSettingsPage() {
     }
     setLoading(true);
     setError(null);
-    loadRestaurantLegalSetup(activeRestaurant.id)
-      .then((next) => {
+    Promise.all([loadRestaurantLegalSetup(activeRestaurant.id), readOwnerKybIntakeSummary(activeRestaurant.id)])
+      .then(([next, kyb]) => {
         if (cancelled) return;
+        const combinedProfile = {
+          ...next.profile,
+          gisa_number: kyb.gisaNumber,
+          authorized_representative_role: kyb.authorizedRepresentativeRole,
+          owner_is_authorized_representative: String(kyb.ownerIsAuthorizedRepresentative),
+          commercial_register_applicable: String(kyb.commercialRegisterApplicable),
+        };
         setSetup(next);
-        setProfile(next.profile);
-        setOriginalProfile(next.profile);
+        setProfile(combinedProfile);
+        setOriginalProfile(combinedProfile);
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
@@ -181,6 +201,16 @@ export function OwnerLegalSettingsPage() {
   const privacy = document(setup, "privacy");
   const imprint = document(setup, "imprint");
   const missingProfileFields = requiredProfileFields.filter(([key]) => !profile[key]?.trim());
+  const kybMissingFields = validateKybIntakeProfile({
+    countryCode: profile.country ?? "",
+    gisaNumber: profile.gisa_number ?? "",
+    ownerIsAuthorizedRepresentative: profile.owner_is_authorized_representative !== "false",
+    authorizedRepresentativeName: profile.responsible_person ?? "",
+    authorizedRepresentativeRole: profile.authorized_representative_role ?? "",
+    commercialRegisterApplicable: profile.commercial_register_applicable === "true"
+      || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? ""),
+    commercialRegisterNumber: profile.commercial_register_number ?? "",
+  });
   const registration = setup?.readiness.registration;
   const registrationReady = registration?.registration_allowed ?? false;
   const bonusProgramIncomplete = registration?.program_active === false;
@@ -198,6 +228,9 @@ export function OwnerLegalSettingsPage() {
   const changedFields = allProfileFields
     .filter(([key]) => (profile[key] ?? "").trim() !== (originalProfile[key] ?? "").trim())
     .map(([key, label]) => profileFieldLabel(key, label, profile.country))
+    .concat(kybProfileFields
+      .filter(([key]) => (profile[key] ?? "").trim() !== (originalProfile[key] ?? "").trim())
+      .map(([, label]) => label))
     .concat(profile.registered_address_source !== originalProfile.registered_address_source ? ["Geschäftsanschrift"] : []);
   const hasDrafts = setup?.documents.some((item) => Boolean(item.draft_version_id)) ?? false;
   const readiness = resolveOwnerLegalReadiness(registration, { hasDrafts, publicationConfirmed });
@@ -212,6 +245,16 @@ export function OwnerLegalSettingsPage() {
     setError(null);
     setMessage(null);
     try {
+      const savedKybProfile = await saveOwnerKybIntakeProfile(activeRestaurant.id, {
+        countryCode: profile.country ?? "",
+        gisaNumber: profile.gisa_number ?? "",
+        ownerIsAuthorizedRepresentative: profile.owner_is_authorized_representative !== "false",
+        authorizedRepresentativeName: profile.responsible_person ?? "",
+        authorizedRepresentativeRole: profile.authorized_representative_role ?? "",
+        commercialRegisterApplicable: profile.commercial_register_applicable === "true"
+          || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? ""),
+        commercialRegisterNumber: profile.commercial_register_number ?? "",
+      });
       const nextProfile = {
         ...profile,
         commercial_register_number: normalizeCompanyRegistrationNumber(profile.commercial_register_number, profile.country),
@@ -222,10 +265,17 @@ export function OwnerLegalSettingsPage() {
         restaurantId: activeRestaurant.id,
         profile: nextProfile,
       });
-      setProfile(next.profile);
+      const combinedProfile = {
+        ...next.profile,
+        gisa_number: savedKybProfile.gisaNumber,
+        authorized_representative_role: savedKybProfile.authorizedRepresentativeRole,
+        owner_is_authorized_representative: String(savedKybProfile.ownerIsAuthorizedRepresentative),
+        commercial_register_applicable: String(savedKybProfile.commercialRegisterApplicable),
+      };
+      setProfile(combinedProfile);
       setSetup(next);
       setPreparedChanges(changedFields);
-      setOriginalProfile(next.profile);
+      setOriginalProfile(combinedProfile);
       setEditing(false);
       setPublicationConfirmed(false);
       setMessage("Die neuen Dokumentversionen wurden als Entwurf vorbereitet. Frühere veröffentlichte Versionen bleiben unverändert.");
@@ -462,10 +512,40 @@ export function OwnerLegalSettingsPage() {
               );
             })}
           </div>
+          {profile.country === "AT" ? <section className="owner-legal-grid" aria-labelledby="owner-kyb-matching-data">
+            <h3 id="owner-kyb-matching-data">Angaben für den späteren Betriebsabgleich</h3>
+            <div className="field">
+              <FormLabel htmlFor="legal-profile-gisa-number" required>GISA-Zahl</FormLabel>
+              <input aria-required="true" className="input" id="legal-profile-gisa-number" onChange={(event) => setProfile((current) => ({ ...current, gisa_number: event.target.value }))} required value={profile.gisa_number ?? ""} />
+            </div>
+            <div className="field">
+              <FormLabel htmlFor="legal-profile-responsible-person-kyb" required>Vertretungsberechtigte Person</FormLabel>
+              <input aria-required="true" className="input" id="legal-profile-responsible-person-kyb" onChange={(event) => setProfile((current) => ({ ...current, responsible_person: event.target.value }))} required value={profile.responsible_person ?? ""} />
+            </div>
+            <div className="field">
+              <FormLabel htmlFor="legal-profile-authorized-role" required>Funktion der vertretungsberechtigten Person</FormLabel>
+              <input aria-required="true" className="input" id="legal-profile-authorized-role" onChange={(event) => setProfile((current) => ({ ...current, authorized_representative_role: event.target.value }))} required value={profile.authorized_representative_role ?? ""} />
+            </div>
+            <label className="legal-address-source-toggle" htmlFor="legal-profile-owner-representative">
+              <input checked={profile.owner_is_authorized_representative !== "false"} id="legal-profile-owner-representative" onChange={(event) => setProfile((current) => ({ ...current, owner_is_authorized_representative: String(event.target.checked) }))} type="checkbox" />
+              <span>Ich bin diese vertretungsberechtigte Person.</span>
+            </label>
+            <label className="legal-address-source-toggle" htmlFor="legal-profile-register-applicable">
+              <input checked={profile.commercial_register_applicable === "true" || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? "")} disabled={legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? "")} id="legal-profile-register-applicable" onChange={(event) => setProfile((current) => ({ ...current, commercial_register_applicable: String(event.target.checked) }))} type="checkbox" />
+              <span>Der Betrieb ist im Firmenbuch eingetragen.</span>
+            </label>
+            <p className="muted">Diese Angaben dienen dem späteren Dokumentabgleich. Sie legen weder endgültige Pflichtdokumente noch Aufbewahrungsfristen fest.</p>
+          </section> : null}
           <details className="owner-legal-advanced">
             <summary>Weitere Unternehmensangaben</summary>
             <div className="owner-legal-grid">
-              {optionalProfileFields.map(([key, label]) => {
+              {optionalProfileFields
+                .filter(([key]) => !(profile.country === "AT" && key === "responsible_person"))
+                .filter(([key]) => key !== "commercial_register_number"
+                  || profile.country !== "AT"
+                  || profile.commercial_register_applicable === "true"
+                  || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? ""))
+                .map(([key, label]) => {
                 const identifierKind = key === "commercial_register_number" ? "registration" : key === "vat_id" ? "vat" : null;
                 const hint = identifierKind ? optionalCompanyIdentifierHint(identifierKind, profile[key], profile.country) : null;
                 return (
@@ -494,7 +574,7 @@ export function OwnerLegalSettingsPage() {
           </details>
           <div className="owner-legal-form-actions">
             <button className="button secondary" onClick={() => setEditing(false)} type="button">Abbrechen</button>
-            <button className="button" disabled={saving || missingProfileFields.length > 0 || (changedFields.length === 0 && !setup.legal_update_required)} type="submit">{saving ? "Version wird vorbereitet …" : "Neue Version vorbereiten"}</button>
+            <button className="button" disabled={saving || missingProfileFields.length > 0 || kybMissingFields.length > 0 || (changedFields.length === 0 && !setup.legal_update_required)} type="submit">{saving ? "Version wird vorbereitet …" : "Neue Version vorbereiten"}</button>
           </div>
         </form>
       ) : null}

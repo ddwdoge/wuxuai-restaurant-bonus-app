@@ -151,10 +151,10 @@ export async function readOwnerVerification(restaurantId: string) {
 }
 
 export async function submitOwnerVerification(restaurantId: string, registerType: string, requestId: string, correlationId: string) {
-  const { data, error } = await client().rpc("submit_pending_business_verification", {
+  if (registerType !== "GISA") throw new Error("Einreichung konnte nicht abgeschlossen werden.");
+  const { data, error } = await client().rpc("submit_pending_business_verification_intake", {
     input_restaurant_id: restaurantId,
     input_method: "MANUAL",
-    input_register_type: registerType,
     input_request_id: requestId,
     input_correlation_id: correlationId,
   });

@@ -16,9 +16,10 @@ import {
   type VerificationProfile,
 } from "./businessVerificationService";
 import "./owner-business-verification.css";
+import { readOwnerKybIntakeSummary, type KybIntakeSummary } from "./kybIntakeProfile";
 
 const copy = {
-  de: { title: "Betriebsverifizierung", intro: "Bereite deine Firmendaten vor und reiche sie zur manuellen Prüfung ein. Es beginnt weder ein Trial noch eine Zahlung.", data: "Unternehmensdaten", edit: "Firmendaten bearbeiten", register: "Registertyp", method: "Prüfweg", manual: "Manuelle Prüfung", manualInfo: "Erforderlich sind Unternehmensnachweis, Geschäftsberechtigung und Vertretungsnachweis. Unser Verifikationsteam kontaktiert dich über einen sicheren Prüfweg. Bitte sende keine Dokumente per normaler E-Mail.", digital: "Digitale Prüfung – wird vorbereitet", privacy: "Die Angaben werden für die Betriebsprüfung verwendet. Keine automatische Register-, UID-, Adress- oder Identitätsprüfung findet statt.", submit: "Zur Prüfung einreichen", waiting: "Betriebsverifizierung ausstehend", failed: "Verifikationsstatus derzeit nicht verfügbar.", incomplete: "Ergänze zuerst die Firmendaten in den rechtlichen Einstellungen.", retry: "Erneut laden", country: "Land", address: "Geschäftsanschrift", status: "Status", none: "Noch nicht eingereicht", submitting: "Wird eingereicht …" },
+  de: { title: "Betriebsverifizierung", intro: "Bereite deine Firmendaten vor und reiche sie zur manuellen Prüfung ein. Es beginnt weder ein Trial noch eine Zahlung.", data: "Unternehmensdaten", edit: "Firmendaten bearbeiten", register: "Registertyp", method: "Prüfweg", manual: "Manuelle Prüfung", manualInfo: "Für den technischen Test werden ein GISA-Auszug und ein Ausweis der vertretungsberechtigten Person verwendet. Ein Firmenbuchauszug oder eine Vollmacht wird nur angezeigt, wenn die zuvor erfassten Angaben das vorsehen. Welche Nachweise rechtlich verpflichtend sind und wie lange sie aufbewahrt werden, wird vor einer realen Einreichung separat festgelegt.", digital: "Digitale Prüfung – wird vorbereitet", privacy: "Die Angaben werden für die Betriebsprüfung verwendet. Keine automatische Register-, UID-, Adress- oder Identitätsprüfung findet statt.", submit: "Zur Prüfung einreichen", waiting: "Betriebsverifizierung ausstehend", failed: "Verifikationsstatus derzeit nicht verfügbar.", incomplete: "Ergänze zuerst die Firmendaten in den rechtlichen Einstellungen.", retry: "Erneut laden", country: "Land", address: "Geschäftsanschrift", status: "Status", none: "Noch nicht eingereicht", submitting: "Wird eingereicht …" },
   en: { title: "Business verification", intro: "Prepare your business details and submit them for manual review. No trial or payment starts.", data: "Business details", edit: "Edit business details", register: "Register type", method: "Verification method", manual: "Manual review", manualInfo: "Company proof, business authorization and representation proof are required. Our team will contact you through a secure review channel. Do not email documents through ordinary email.", digital: "Digital review – in preparation", privacy: "Details are used for business review. Registry, VAT, address and identity checks are not automated.", submit: "Submit for review", waiting: "Business verification pending", failed: "Verification status is currently unavailable.", incomplete: "Complete business details in legal settings first.", retry: "Reload", country: "Country", address: "Business address", status: "Status", none: "Not submitted", submitting: "Submitting …" },
   fr: { title: "Vérification de l’établissement", intro: "Préparez les données de l’entreprise et soumettez-les à un examen manuel. Aucun essai ni paiement ne démarre.", data: "Données de l’entreprise", edit: "Modifier les données", register: "Type de registre", method: "Méthode de vérification", manual: "Examen manuel", manualInfo: "Une preuve de l’entreprise, une autorisation commerciale et une preuve de représentation sont nécessaires. Notre équipe vous contactera par un canal sécurisé. N’envoyez pas de documents par courriel ordinaire.", digital: "Examen numérique – en préparation", privacy: "Ces données servent à l’examen de l’entreprise. Aucun contrôle automatique du registre, de la TVA, de l’adresse ou de l’identité n’est effectué.", submit: "Soumettre pour examen", waiting: "Vérification en attente", failed: "Statut indisponible pour le moment.", incomplete: "Complétez d’abord les données dans les paramètres juridiques.", retry: "Recharger", country: "Pays", address: "Adresse professionnelle", status: "Statut", none: "Non soumis", submitting: "Envoi …" },
   it: { title: "Verifica dell’attività", intro: "Prepara i dati aziendali e inviali per la verifica manuale. Non iniziano prove né pagamenti.", data: "Dati aziendali", edit: "Modifica dati aziendali", register: "Tipo di registro", method: "Metodo di verifica", manual: "Verifica manuale", manualInfo: "Servono prova dell’impresa, autorizzazione commerciale e prova di rappresentanza. Il team ti contatterà tramite un canale sicuro. Non inviare documenti via email ordinaria.", digital: "Verifica digitale – in preparazione", privacy: "I dati sono usati per la verifica aziendale. Registro, IVA, indirizzo e identità non sono verificati automaticamente.", submit: "Invia per verifica", waiting: "Verifica in sospeso", failed: "Stato della verifica non disponibile.", incomplete: "Completa prima i dati nelle impostazioni legali.", retry: "Ricarica", country: "Paese", address: "Indirizzo commerciale", status: "Stato", none: "Non inviato", submitting: "Invio …" },
@@ -53,8 +54,8 @@ export function OwnerBusinessVerificationPage() {
   const { activeRestaurant } = useTenant();
   const restaurantId = activeRestaurant?.id;
   const [profile, setProfile] = useState<VerificationProfile | null>(null);
+  const [intakeSummary, setIntakeSummary] = useState<KybIntakeSummary | null>(null);
   const [ownerStatus, setOwnerStatus] = useState<VerificationOwnerStatus | null>(null);
-  const [registerType, setRegisterType] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [documents, setDocuments] = useState<KybDocument[]>([]);
@@ -82,20 +83,21 @@ export function OwnerBusinessVerificationPage() {
         readOwnerVerification(restaurantId),
         listOwnerKybDocuments(restaurantId),
       ]);
+      const summary = await readOwnerKybIntakeSummary(restaurantId);
       setProfile(data.profile);
+      setIntakeSummary(summary);
       setOwnerStatus(data.ownerStatus);
       setDocuments(ownerDocuments);
-      if (data.profile.register_type) setRegisterType(data.profile.register_type);
     } catch { setError(t.failed); }
   }, [restaurantId, t.failed]);
   useEffect(() => { void reload(); }, [reload]);
 
   async function submit() {
-    if (!restaurantId || busy || registerType.trim().length < 2) return;
+    if (!restaurantId || busy || intakeSummary?.status !== "COMPLETE") return;
     ids.current ??= { request: crypto.randomUUID(), correlation: crypto.randomUUID() };
     setBusy(true); setError("");
     try {
-      await submitOwnerVerification(restaurantId, registerType.trim(), ids.current.request, ids.current.correlation);
+      await submitOwnerVerification(restaurantId, "GISA", ids.current.request, ids.current.correlation);
       ids.current = null;
       await reload();
     } catch { setError(t.incomplete); }
@@ -150,6 +152,11 @@ export function OwnerBusinessVerificationPage() {
 
   const selectedTypeHasUploadedVersion = documents.some((document) =>
     document.document_type === documentType && document.status === "UPLOADED");
+  const availableDocumentTypes = KYB_DOCUMENT_TYPES.filter((type) => {
+    if (type === "COMPANY_REGISTER_EXTRACT") return intakeSummary?.commercialRegisterApplicable === true;
+    if (type === "POWER_OF_ATTORNEY") return intakeSummary?.ownerIsAuthorizedRepresentative === false;
+    return true;
+  });
   const displayedVerificationStatus = ownerStatus?.submitted_at
     ? statusNames[ownerStatus.status]?.[language] ?? ownerStatus.status
     : t.none;
@@ -165,16 +172,18 @@ export function OwnerBusinessVerificationPage() {
     <header className="page-header"><div><h1>{t.title}</h1><p>{t.intro}</p></div></header>
     <section className="card" aria-labelledby="business-verification-data">
       <h2 id="business-verification-data">{t.data}</h2>
-      <p>{t.country}: {profile?.business_country ?? activeRestaurant?.country ?? "—"}</p>
-      <p>{profile?.legal_name ?? activeRestaurant?.name ?? "—"} · {profile?.legal_form ?? "—"}</p>
-      <p>{t.address}: {profile?.business_street ?? activeRestaurant?.address ?? "—"}, {profile?.business_postal_code ?? activeRestaurant?.postal_code ?? ""} {profile?.business_city ?? activeRestaurant?.city ?? ""}</p>
+      <p>{t.country}: {intakeSummary?.countryCode ?? profile?.business_country ?? activeRestaurant?.country ?? "—"}</p>
+      <p>{intakeSummary?.companyName ?? profile?.legal_name ?? activeRestaurant?.name ?? "—"} · {intakeSummary?.legalForm ?? profile?.legal_form ?? "—"}</p>
+      <p>{t.address}: {intakeSummary?.street ?? profile?.business_street ?? activeRestaurant?.address ?? "—"}, {intakeSummary?.postalCode ?? profile?.business_postal_code ?? activeRestaurant?.postal_code ?? ""} {intakeSummary?.city ?? profile?.business_city ?? activeRestaurant?.city ?? ""}</p>
+      <p>GISA-Zahl: {intakeSummary?.gisaNumber || "—"}</p>
+      <p>Vertretungsberechtigte Person: {intakeSummary?.authorizedRepresentativeName || "—"} · {intakeSummary?.authorizedRepresentativeRole || "—"}</p>
+      {intakeSummary?.commercialRegisterApplicable ? <p>Firmenbuchnummer: {intakeSummary.commercialRegisterNumber || "—"}</p> : null}
+      {intakeSummary?.status !== "COMPLETE" ? <p role="alert">Ergänze vor der Einreichung: {intakeSummary?.missingFields.join(", ") || "Unternehmensdaten"}.</p> : null}
       {profile?.revision ? <p>{t.status}: {profile.status} · #{profile.revision}</p> : null}
       <Link className="button secondary" to="/admin/legal">{t.edit}</Link>
     </section>
     <section className="card" aria-labelledby="business-verification-method">
       <h2 id="business-verification-method">{t.method}</h2>
-      <label htmlFor="business-register-type">{t.register}</label>
-      <input className="input" id="business-register-type" maxLength={120} onChange={(event) => { ids.current = null; setRegisterType(event.target.value); }} required value={registerType} />
       <p><label><input checked readOnly type="radio" name="business-verification-method" /> {t.manual}</label></p>
       <p>{t.manualInfo}</p>
       <p><label><input disabled type="radio" name="business-verification-method" /> {t.digital}</label></p>
@@ -182,7 +191,7 @@ export function OwnerBusinessVerificationPage() {
       <p role="status">{t.status}: {displayedVerificationStatus}</p>
       {ownerStatus?.rejection_reason ? <p role="alert">{ownerStatus.rejection_reason}</p> : null}
       {error ? <p role="alert">{error}</p> : null}
-      <button className="button" disabled={busy || registerType.trim().length < 2 || !ownerStatus?.pending_tenant || !ownerStatus.submission_allowed} onClick={() => void submit()} type="button">
+      <button className="button" disabled={busy || intakeSummary?.status !== "COMPLETE" || !ownerStatus?.pending_tenant || !ownerStatus.submission_allowed} onClick={() => void submit()} type="button">
         {busy ? t.submitting : t.submit}
       </button>
       <button className="button secondary" onClick={() => void reload()} type="button">{t.retry}</button>
@@ -198,7 +207,7 @@ export function OwnerBusinessVerificationPage() {
             setDocumentError("");
             setDocumentMessage("");
           }}>
-            {KYB_DOCUMENT_TYPES.map((type) => <option key={type} value={type}>{documentsText[documentLabels[type]]}</option>)}
+            {availableDocumentTypes.map((type) => <option key={type} value={type}>{documentsText[documentLabels[type]]}</option>)}
           </select>
           <label htmlFor="kyb-document-file">{documentsText.file}</label>
           <input ref={fileInput} id="kyb-document-file" type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => {

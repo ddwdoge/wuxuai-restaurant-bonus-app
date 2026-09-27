@@ -46,16 +46,16 @@ test("Onboarding schreibt alle Angaben in das kanonische Operator-Profil", () =>
   assert.match(onboarding, /commercial_register_number: normalizeCompanyRegistrationNumber/);
   assert.match(onboarding, /vat_id: normalizeVatId/);
   assert.match(onboarding, /responsible_person: form\.legalAuthorizedRepresentative\.trim\(\)/);
-  assert.match(onboarding, /FN und UID kannst du auch später ergänzen/);
+  assert.match(onboarding, /UID und nur bedingt benötigte Firmenbuchangaben kannst du auch später ergänzen/);
 });
 
-test("FN, UID und vertretungsberechtigte Person blockieren das Onboarding nicht", () => {
+test("AT-KYB-Matching ist bedingt verpflichtend; UID und nicht anwendbare FN bleiben optional", () => {
   const checklist = onboarding.slice(onboarding.indexOf("function buildChecklist"), onboarding.indexOf("function getStepBlocker"));
   const blocker = onboarding.slice(onboarding.indexOf("function getStepBlocker"), onboarding.indexOf("export function RestaurantOnboarding"));
-  for (const optionalField of ["legalCompanyRegistrationNumber", "legalVatId", "legalAuthorizedRepresentative"]) {
-    assert.doesNotMatch(checklist, new RegExp(optionalField));
-    assert.doesNotMatch(blocker, new RegExp(optionalField));
-  }
+  assert.match(checklist, /validateKybIntakeProfile/);
+  assert.match(checklist, /legalFormRequiresCommercialRegister/);
+  assert.doesNotMatch(checklist, /legalVatId/);
+  assert.doesNotMatch(blocker, /legalVatId/);
 });
 
 test("Einstellungen bearbeiten dieselbe kanonische Quelle", () => {
