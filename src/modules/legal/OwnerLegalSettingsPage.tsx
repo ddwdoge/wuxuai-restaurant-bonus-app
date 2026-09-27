@@ -137,6 +137,11 @@ function formatDate(value?: string | null) {
 
 export function OwnerLegalSettingsPage() {
   const location = useLocation();
+  const routeEditTarget = typeof (location.state as { editTarget?: unknown } | null)?.editTarget === "string"
+    ? (location.state as { editTarget: string }).editTarget
+    : "";
+  const hashEditTarget = location.hash.startsWith("#legal-profile-") ? decodeURIComponent(location.hash.slice(1)) : "";
+  const editTarget = routeEditTarget.startsWith("legal-profile-") ? routeEditTarget : hashEditTarget;
   const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
@@ -144,7 +149,7 @@ export function OwnerLegalSettingsPage() {
   const [profile, setProfile] = useState<Record<string, string | null>>({});
   const [originalProfile, setOriginalProfile] = useState<Record<string, string | null>>({});
   const [preparedChanges, setPreparedChanges] = useState<string[]>([]);
-  const [editing, setEditing] = useState(() => location.hash.startsWith("#legal-profile-"));
+  const [editing, setEditing] = useState(() => Boolean(editTarget));
   const [effectiveDate, setEffectiveDate] = useState(() => viennaCalendarDate());
   const [reacceptanceRequired, setReacceptanceRequired] = useState(false);
   const [publicationConfirmed, setPublicationConfirmed] = useState(false);
@@ -197,18 +202,18 @@ export function OwnerLegalSettingsPage() {
   }, [activeRestaurant?.id, retryRevision]);
 
   useEffect(() => {
-    if (location.hash.startsWith("#legal-profile-")) setEditing(true);
-  }, [location.hash]);
+    if (editTarget) setEditing(true);
+  }, [editTarget]);
 
   useEffect(() => {
-    if (!editing || loading || !location.hash.startsWith("#legal-profile-")) return;
+    if (!editing || loading || !editTarget) return;
     const frame = window.requestAnimationFrame(() => {
-      const field = window.document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      const field = window.document.getElementById(editTarget);
       field?.scrollIntoView({ behavior: "smooth", block: "center" });
       if (field instanceof HTMLInputElement) field.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [editing, loading, location.hash]);
+  }, [editTarget, editing, loading]);
 
   const terms = document(setup, "participation_terms");
   const termsContent = getLegalDocumentContent(terms);

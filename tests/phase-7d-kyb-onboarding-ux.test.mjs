@@ -23,7 +23,8 @@ test("KYB zeigt gespeicherte Angaben und führt Korrekturen gezielt zum Stammdat
     "legal-profile-responsible-person-kyb",
     "legal-profile-commercial_register_number",
   ]) assert.match(verification, new RegExp(target));
-  assert.match(legalSettings, /location\.hash\.startsWith\("#legal-profile-"\)/);
+  assert.match(verification, /state=\{\{ editTarget: "legal-profile-gisa-number" \}\}/);
+  assert.match(legalSettings, /routeEditTarget\.startsWith\("legal-profile-"\)/);
   assert.match(legalSettings, /scrollIntoView/);
   assert.match(legalSettings, /field\.focus/);
   assert.doesNotMatch(verification, /id="business-register-type"/);
