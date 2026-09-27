@@ -1176,6 +1176,8 @@ export function SettingsPage() {
   const trialExpired = currentSubscriptionStatus === "trialing" && isDatePast(subscription?.trial_ends_at);
   const trialActive = currentSubscriptionStatus === "trialing" && !trialExpired;
   const subscriptionActive = currentSubscriptionStatus === "active";
+  const subscriptionCancelled = currentSubscriptionStatus === "cancelled";
+  const paidDecisionAvailable = trialExpired || (trialActive && trialDays !== null && trialDays <= 7);
 
   if (loading || tenantLoading) {
     return (
@@ -1552,17 +1554,21 @@ export function SettingsPage() {
             <>
               <div className="settings-subscription-hero">
                 <span className={`settings-status-badge${subscriptionActive ? " success" : trialExpired ? " warning" : ""}`}>
-                  {subscription?.subscription_status === "pending_activation" ? pendingMessages.title : subscriptionActive ? "Abo aktiv" : trialExpired ? "Testphase abgelaufen" : "Testphase aktiv"}
+                  {subscription?.subscription_status === "pending_activation" ? pendingMessages.title : subscriptionActive ? "Abo aktiv" : subscriptionCancelled ? "Abo gekündigt" : trialExpired ? "Testphase abgelaufen" : "Testphase aktiv"}
                 </span>
                 <h2>
                   {subscriptionActive
                     ? "Dein Restaurant-Bonusprogramm ist aktiv."
+                    : subscriptionCancelled
+                      ? "Dein BASIC-Vertrag ist beendet."
                     : trialExpired
                       ? "Deine kostenlose Testphase ist abgelaufen."
                       : "Du nutzt WUXUAI Bonus kostenlos."}
                 </h2>
                 {trialActive ? (
                   <p>Noch {trialDays ?? 0} Tage kostenlos.</p>
+                ) : subscriptionCancelled ? (
+                  <p>Eine Reaktivierung erfordert einen neuen, ausdrücklich angenommenen Vertrag.</p>
                 ) : trialExpired ? (
                   <p>{V1_COMMERCIAL_COPY.price}</p>
                 ) : (
@@ -1584,8 +1590,8 @@ export function SettingsPage() {
                 <p>{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
                 <p>Automatische Abrechnung ist noch nicht aktiv.</p>
               </div>
-              {trialExpired ? (
-                <BasicPaidOfferPanel restaurantId={details.id} />
+              {paidDecisionAvailable || subscriptionCancelled ? (
+                <BasicPaidOfferPanel restaurantId={details.id} mode={subscriptionCancelled ? "REACTIVATION" : "INITIAL"} />
               ) : null}
             </>
           ) : (

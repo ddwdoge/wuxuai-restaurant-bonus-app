@@ -6,6 +6,7 @@ import {
 } from '../supabase/functions/_shared/billingArchitecture.mjs';
 
 const migration = readFileSync(new URL('../supabase/migrations/20260927005000_basic_post_trial_and_stripe_test.sql', import.meta.url), 'utf8');
+const followup = readFileSync(new URL('../supabase/migrations/20260928001000_basic_preexpiry_acceptance_and_reactivation.sql', import.meta.url), 'utf8');
 const checkout = readFileSync(new URL('../supabase/functions/billing-basic-test-checkout/index.ts', import.meta.url), 'utf8');
 const webhook = readFileSync(new URL('../supabase/functions/billing-stripe-test-webhook/index.ts', import.meta.url), 'utf8');
 const panel = readFileSync(new URL('../src/modules/billing/BasicPaidOfferPanel.tsx', import.meta.url), 'utf8');
@@ -67,6 +68,23 @@ test('contract is BASIC TEST only and never auto-converts the trial', () => {
   assert.match(checkout, /automatic_tax\[enabled\].*false/);
   assert.match(panel, /Kostenpflichtiges BASIC-Angebot ausdrücklich annehmen/);
   assert.match(service, /BASIC KOSTENPFLICHTIG BESTELLEN/);
+});
+
+test('final-seven-day decision cannot start checkout before trial end', () => {
+  assert.match(followup, /d\.ends_at-statement_timestamp\(\)>interval '7 days'/);
+  assert.match(followup, /checkout_allowed:=d\.ends_at<=statement_timestamp\(\)/);
+  assert.match(followup, /BASIC_TEST_CHECKOUT_TRIAL_ACTIVE/);
+  assert.match(panel, /Der Checkout wird erst nach dem Ende der Testphase freigeschaltet/);
+});
+
+test('reactivation is a separate explicit contract, not reuse of the cancelled acceptance', () => {
+  assert.match(followup, /accept_basic_paid_reactivation/);
+  assert.match(followup, /BASIC ERNEUT KOSTENPFLICHTIG BESTELLEN/);
+  assert.match(followup, /acceptance_kind in \('INITIAL','REACTIVATION'\)/);
+  assert.match(followup, /prior_provider_subscription_id/);
+  assert.match(followup, /subscription_status<>'cancelled'/);
+  assert.match(service, /BASIC ERNEUT KOSTENPFLICHTIG BESTELLEN/);
+  assert.match(panel, /Die Reaktivierung ist ein neuer, ausdrücklich angenommener Vertrag/);
 });
 
 test('webhook state changes are allowlisted and replay protected', () => {
