@@ -12,7 +12,7 @@ import {
   ScrollText,
   ShieldCheck,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useTenant } from "../tenant/TenantProvider";
@@ -136,6 +136,7 @@ function formatDate(value?: string | null) {
 }
 
 export function OwnerLegalSettingsPage() {
+  const location = useLocation();
   const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
@@ -143,7 +144,7 @@ export function OwnerLegalSettingsPage() {
   const [profile, setProfile] = useState<Record<string, string | null>>({});
   const [originalProfile, setOriginalProfile] = useState<Record<string, string | null>>({});
   const [preparedChanges, setPreparedChanges] = useState<string[]>([]);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(() => location.hash.startsWith("#legal-profile-"));
   const [effectiveDate, setEffectiveDate] = useState(() => viennaCalendarDate());
   const [reacceptanceRequired, setReacceptanceRequired] = useState(false);
   const [publicationConfirmed, setPublicationConfirmed] = useState(false);
@@ -195,6 +196,20 @@ export function OwnerLegalSettingsPage() {
     };
   }, [activeRestaurant?.id, retryRevision]);
 
+  useEffect(() => {
+    if (location.hash.startsWith("#legal-profile-")) setEditing(true);
+  }, [location.hash]);
+
+  useEffect(() => {
+    if (!editing || loading || !location.hash.startsWith("#legal-profile-")) return;
+    const frame = window.requestAnimationFrame(() => {
+      const field = window.document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (field instanceof HTMLInputElement) field.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editing, loading, location.hash]);
+
   const terms = document(setup, "participation_terms");
   const termsContent = getLegalDocumentContent(terms);
   const pointsValidity = getPointsValidityState(terms);
@@ -211,6 +226,9 @@ export function OwnerLegalSettingsPage() {
       || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? ""),
     commercialRegisterNumber: profile.commercial_register_number ?? "",
   });
+  const commercialRegisterRequired = profile.country === "AT"
+    && (profile.commercial_register_applicable === "true"
+      || legalFormRequiresCommercialRegister(profile.legal_form ?? "", profile.country ?? ""));
   const registration = setup?.readiness.registration;
   const registrationReady = registration?.registration_allowed ?? false;
   const bonusProgramIncomplete = registration?.program_active === false;
@@ -550,8 +568,9 @@ export function OwnerLegalSettingsPage() {
                 const hint = identifierKind ? optionalCompanyIdentifierHint(identifierKind, profile[key], profile.country) : null;
                 return (
                   <div className="field" key={key}>
-                    <FormLabel htmlFor={`legal-profile-${key}`} optional>{profileFieldLabel(key, label, profile.country)}</FormLabel>
+                    <FormLabel htmlFor={`legal-profile-${key}`} optional={key !== "commercial_register_number" || !commercialRegisterRequired} required={key === "commercial_register_number" && commercialRegisterRequired}>{profileFieldLabel(key, label, profile.country)}</FormLabel>
                     <input
+                      aria-required={key === "commercial_register_number" && commercialRegisterRequired}
                       autoCapitalize={key === "vat_id" ? "characters" : undefined}
                       className="input"
                       id={`legal-profile-${key}`}
@@ -563,6 +582,7 @@ export function OwnerLegalSettingsPage() {
                       })) : undefined}
                       onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))}
                       placeholder={key === "complaint_contact" ? "Kontakt-E-Mail wird verwendet" : undefined}
+                      required={key === "commercial_register_number" && commercialRegisterRequired}
                       value={profile[key] ?? ""}
                     />
                     {hint ? <p className="field-hint warning">{hint}</p> : null}

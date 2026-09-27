@@ -1145,6 +1145,9 @@ export function RestaurantOnboarding() {
     [form, pendingOpeningHours],
   );
   const checklist = useMemo(() => buildChecklist(effectiveForm, step), [effectiveForm, step]);
+  const commercialRegisterRequired = (form.legalCountry === "AT" || form.legalCountry === "Österreich")
+    && (form.legalCommercialRegisterApplicable
+      || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry));
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
   const allReady = pendingActivation
@@ -1789,8 +1792,8 @@ export function RestaurantOnboarding() {
                   <summary>Weitere Unternehmensangaben (optional)</summary>
                   <div className="grid two">
                     {(form.legalCountry !== "AT" && form.legalCountry !== "Österreich") || form.legalCommercialRegisterApplicable || legalFormRequiresCommercialRegister(form.legalForm, form.legalCountry) ? <div className="field">
-                      <FormLabel htmlFor="legal-company-registration" optional>{companyRegistrationLabel(form.legalCountry)}</FormLabel>
-                      <input aria-required={form.legalCountry === "AT" || form.legalCountry === "Österreich"} className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "AT" || form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} required={form.legalCountry === "AT" || form.legalCountry === "Österreich"} value={form.legalCompanyRegistrationNumber} />
+                      <FormLabel htmlFor="legal-company-registration" optional={!commercialRegisterRequired} required={commercialRegisterRequired}>{companyRegistrationLabel(form.legalCountry)}</FormLabel>
+                      <input aria-required={commercialRegisterRequired} className="input" id="legal-company-registration" onBlur={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: normalizeCompanyRegistrationNumber(event.target.value, current.legalCountry) }))} onChange={(event) => setForm((current) => ({ ...current, legalCompanyRegistrationNumber: event.target.value }))} placeholder={form.legalCountry === "AT" || form.legalCountry === "Österreich" ? "z. B. FN 123456 a" : undefined} required={commercialRegisterRequired} value={form.legalCompanyRegistrationNumber} />
                       {optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry) ? <p className="field-hint warning">{optionalCompanyIdentifierHint("registration", form.legalCompanyRegistrationNumber, form.legalCountry)}</p> : null}
                     </div> : null}
                     <div className="field">

@@ -1,5 +1,8 @@
 .kyb-document-section { display: grid; gap: 16px; min-width: 0; }
 .kyb-document-section > :is(h2, p) { margin: 0; }
+.kyb-summary-row { align-items: start; display: flex; gap: 12px; justify-content: space-between; min-width: 0; }
+.kyb-summary-row p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.kyb-summary-row a { flex: 0 0 auto; min-height: 44px; padding: 10px 0; }
 .kyb-document-upload { display: grid; gap: 8px; max-width: 680px; }
 .kyb-document-upload :is(select, input[type="file"]) { box-sizing: border-box; max-width: 100%; min-height: 44px; width: 100%; }
 .kyb-document-upload .button { justify-self: start; min-height: 44px; }
@@ -12,6 +15,8 @@
 .kyb-document-list .button { flex: 0 0 auto; min-height: 44px; }
 
 @media (max-width: 560px) {
+  .kyb-summary-row { align-items: stretch; flex-direction: column; gap: 2px; }
+  .kyb-summary-row a { align-self: start; }
   .kyb-document-list li { align-items: stretch; flex-direction: column; }
   .kyb-document-list .button { width: 100%; }
 }
