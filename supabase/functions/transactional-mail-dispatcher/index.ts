@@ -75,6 +75,9 @@ async function secureEqual(left: string, right: string) {
 }
 
 function safeErrorCode(error: unknown) {
+  if (typeof error === "string") {
+    return error.toUpperCase().replace(/[^A-Z0-9_-]/g, "_").slice(0, 120) || "DELIVERY_FAILED";
+  }
   const source = error && typeof error === "object" ? error as Record<string, unknown> : {};
   const candidate = String(source.code ?? source.name ?? "DELIVERY_FAILED").toUpperCase();
   return candidate.replace(/[^A-Z0-9_-]/g, "_").slice(0, 120) || "DELIVERY_FAILED";
@@ -290,6 +293,34 @@ async function deliver(
   let failed = 0;
   for (const delivery of deliveries) {
     try {
+      if (delivery.queue_kind === "customer") {
+        const { data: authorizationData, error: authorizationError } = await supabase.rpc(
+          "authorize_customer_transactional_email_delivery",
+          { input_delivery_id: delivery.delivery_id },
+        );
+        const authorization = Array.isArray(authorizationData) ? authorizationData[0] : authorizationData;
+        if (authorizationError) {
+          const errorCode = "DISPATCH_AUTHORIZATION_FAILED";
+          await supabase.rpc("complete_customer_transactional_email", {
+            input_delivery_id: delivery.delivery_id,
+            input_success: false,
+            input_provider_message_id: null,
+            input_error_code: errorCode,
+          });
+          failed += 1;
+          logDelivery("error", "transactional_mail_authorization_failed", delivery, errorCode);
+          continue;
+        }
+        if (!authorization?.authorized) {
+          logDelivery(
+            "info",
+            "transactional_mail_authorization_blocked",
+            delivery,
+            safeErrorCode(authorization?.reason_code ?? "DISPATCH_NOT_AUTHORIZED"),
+          );
+          continue;
+        }
+      }
       const recipient = delivery.queue_kind === "customer"
         ? await resolveRecipientContext(supabase, delivery.email)
         : { firstName: null, language: String(delivery.payload?.language ?? "de") };
