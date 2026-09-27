@@ -20,13 +20,13 @@ import "./owner-business-verification.css";
 import { readOwnerKybIntakeSummary, type KybIntakeSummary } from "./kybIntakeProfile";
 
 const copy = {
-  de: { title: "Betriebsverifizierung", intro: "Bereite deine Firmendaten vor und reiche sie zur manuellen Prüfung ein. Es beginnt weder ein Trial noch eine Zahlung.", data: "Unternehmensdaten", edit: "Alle Firmendaten bearbeiten", correct: "Korrigieren", register: "Registertyp", method: "Prüfweg", manual: "Manuelle Prüfung", manualInfo: "Für den technischen Test werden ein GISA-Auszug und ein Ausweis der vertretungsberechtigten Person verwendet. Ein Firmenbuchauszug oder eine Vollmacht wird nur angezeigt, wenn die zuvor erfassten Angaben das vorsehen. Welche Nachweise rechtlich verpflichtend sind und wie lange sie aufbewahrt werden, wird vor einer realen Einreichung separat festgelegt.", digital: "Digitale Prüfung – wird vorbereitet", privacy: "Die Angaben werden für die Betriebsprüfung verwendet. Keine automatische Register-, UID-, Adress- oder Identitätsprüfung findet statt.", submit: "Zur Prüfung einreichen", waiting: "Betriebsverifizierung ausstehend", failed: "Verifikationsstatus derzeit nicht verfügbar.", incomplete: "Ergänze zuerst die Firmendaten in den rechtlichen Einstellungen.", retry: "Erneut laden", country: "Land", address: "Geschäftsanschrift", status: "Status", none: "Noch nicht eingereicht", submitting: "Wird eingereicht …" },
-  en: { title: "Business verification", intro: "Prepare your business details and submit them for manual review. No trial or payment starts.", data: "Business details", edit: "Edit all business details", correct: "Correct", register: "Register type", method: "Verification method", manual: "Manual review", manualInfo: "The technical test uses a GISA extract and identity evidence for the authorized representative. A company-register extract or power of attorney is shown only when the previously recorded details require it. Legally required evidence and retention periods will be decided separately before real submissions are enabled.", digital: "Digital review – in preparation", privacy: "Details are used for business review. Registry, VAT, address and identity checks are not automated.", submit: "Submit for review", waiting: "Business verification pending", failed: "Verification status is currently unavailable.", incomplete: "Complete business details in legal settings first.", retry: "Reload", country: "Country", address: "Business address", status: "Status", none: "Not submitted", submitting: "Submitting …" },
-  fr: { title: "Vérification de l’établissement", intro: "Préparez les données de l’entreprise et soumettez-les à un examen manuel. Aucun essai ni paiement ne démarre.", data: "Données de l’entreprise", edit: "Modifier toutes les données", correct: "Corriger", register: "Type de registre", method: "Méthode de vérification", manual: "Examen manuel", manualInfo: "Le test technique utilise un extrait GISA et une preuve d’identité de la personne autorisée. Un extrait du registre des sociétés ou une procuration n’est affiché que si les données déjà enregistrées le prévoient. Les justificatifs juridiquement obligatoires et les durées de conservation seront décidés séparément avant toute soumission réelle.", digital: "Examen numérique – en préparation", privacy: "Ces données servent à l’examen de l’entreprise. Aucun contrôle automatique du registre, de la TVA, de l’adresse ou de l’identité n’est effectué.", submit: "Soumettre pour examen", waiting: "Vérification en attente", failed: "Statut indisponible pour le moment.", incomplete: "Complétez d’abord les données dans les paramètres juridiques.", retry: "Recharger", country: "Pays", address: "Adresse professionnelle", status: "Statut", none: "Non soumis", submitting: "Envoi …" },
-  it: { title: "Verifica dell’attività", intro: "Prepara i dati aziendali e inviali per la verifica manuale. Non iniziano prove né pagamenti.", data: "Dati aziendali", edit: "Modifica tutti i dati", correct: "Correggi", register: "Tipo di registro", method: "Metodo di verifica", manual: "Verifica manuale", manualInfo: "Il test tecnico utilizza un estratto GISA e una prova d’identità della persona autorizzata. L’estratto del registro delle imprese o la procura vengono mostrati solo se previsti dai dati già registrati. I documenti legalmente obbligatori e i periodi di conservazione saranno definiti separatamente prima delle richieste reali.", digital: "Verifica digitale – in preparazione", privacy: "I dati sono usati per la verifica aziendale. Registro, IVA, indirizzo e identità non sono verificati automaticamente.", submit: "Invia per verifica", waiting: "Verifica in sospeso", failed: "Stato della verifica non disponibile.", incomplete: "Completa prima i dati nelle impostazioni legali.", retry: "Ricarica", country: "Paese", address: "Indirizzo commerciale", status: "Stato", none: "Non inviato", submitting: "Invio …" },
-  es: { title: "Verificación del negocio", intro: "Prepara los datos de la empresa y envíalos para revisión manual. No empieza ninguna prueba ni pago.", data: "Datos de la empresa", edit: "Editar todos los datos", correct: "Corregir", register: "Tipo de registro", method: "Método de verificación", manual: "Revisión manual", manualInfo: "La prueba técnica utiliza un extracto GISA y una prueba de identidad de la persona autorizada. El extracto del registro mercantil o el poder solo se muestran si los datos ya registrados lo requieren. Los documentos legalmente obligatorios y los plazos de conservación se decidirán por separado antes de habilitar solicitudes reales.", digital: "Revisión digital – en preparación", privacy: "Los datos se usan para revisar el negocio. No hay comprobación automática del registro, IVA, dirección ni identidad.", submit: "Enviar para revisión", waiting: "Verificación pendiente", failed: "Estado de verificación no disponible.", incomplete: "Completa primero los datos en los ajustes legales.", retry: "Recargar", country: "País", address: "Dirección comercial", status: "Estado", none: "Sin enviar", submitting: "Enviando …" },
-  zh: { title: "商户验证", intro: "填写企业资料并提交人工审核。此操作不会启动试用或付款。", data: "企业资料", edit: "编辑全部企业资料", correct: "更正", register: "登记类型", method: "验证方式", manual: "人工审核", manualInfo: "技术测试使用 GISA 摘录和授权代表的身份证明。只有在已录入信息适用时，才会显示公司登记册摘录或授权委托书。真实提交所需的法定材料和保存期限将在启用真实流程前另行确定。", digital: "数字验证——筹备中", privacy: "资料仅用于商户审核。目前不会自动核查登记、税号、地址或身份。", submit: "提交审核", waiting: "商户验证待处理", failed: "暂时无法获取验证状态。", incomplete: "请先在法律设置中补全企业资料。", retry: "重新加载", country: "国家", address: "营业地址", status: "状态", none: "尚未提交", submitting: "提交中……" },
-  ko: { title: "사업체 인증", intro: "사업체 정보를 준비하여 수동 검토를 요청하세요. 체험이나 결제는 시작되지 않습니다.", data: "사업체 정보", edit: "모든 사업체 정보 수정", correct: "수정", register: "등록 유형", method: "인증 방법", manual: "수동 검토", manualInfo: "기술 테스트에서는 GISA 등록부 발췌본과 권한 있는 대표자의 신분 증빙을 사용합니다. 회사 등기부 발췌본이나 위임장은 기존에 입력한 정보에 해당하는 경우에만 표시됩니다. 실제 제출에 필요한 법적 서류와 보관 기간은 실제 절차를 열기 전에 별도로 결정합니다.", digital: "디지털 검토 – 준비 중", privacy: "정보는 사업체 검토에 사용됩니다. 등록·세금번호·주소·신원은 자동으로 확인되지 않습니다.", submit: "검토 요청", waiting: "사업체 인증 대기 중", failed: "인증 상태를 확인할 수 없습니다.", incomplete: "먼저 법적 설정에서 사업체 정보를 완성하세요.", retry: "다시 불러오기", country: "국가", address: "사업장 주소", status: "상태", none: "미제출", submitting: "제출 중…" },
+  de: { title: "Betriebsverifizierung", intro: "Bereite deine Firmendaten vor und reiche sie zur manuellen Prüfung ein. Es beginnt weder ein Trial noch eine Zahlung.", data: "Unternehmensdaten", edit: "Alle Firmendaten bearbeiten", correct: "Korrigieren", register: "Registertyp", method: "Prüfweg", manual: "Manuelle Prüfung", manualInfo: "Für den technischen Test werden ein GISA-Auszug und ein Ausweis der vertretungsberechtigten Person verwendet. Ein Firmenbuchauszug oder eine Vollmacht wird nur angezeigt, wenn die zuvor erfassten Angaben das vorsehen. Welche Nachweise rechtlich verpflichtend sind und wie lange sie aufbewahrt werden, wird vor einer realen Einreichung separat festgelegt.", digital: "Digitale Prüfung – wird vorbereitet", privacy: "Die Angaben werden für die Betriebsprüfung verwendet. Keine automatische Register-, UID-, Adress- oder Identitätsprüfung findet statt.", submit: "Zur Prüfung einreichen", waiting: "Betriebsverifizierung ausstehend", loading: "Betriebsverifizierung wird geladen …", failed: "Verifikationsstatus derzeit nicht verfügbar.", incomplete: "Ergänze zuerst die Firmendaten in den rechtlichen Einstellungen.", retry: "Erneut laden", country: "Land", address: "Geschäftsanschrift", status: "Status", none: "Noch nicht eingereicht", submitting: "Wird eingereicht …" },
+  en: { title: "Business verification", intro: "Prepare your business details and submit them for manual review. No trial or payment starts.", data: "Business details", edit: "Edit all business details", correct: "Correct", register: "Register type", method: "Verification method", manual: "Manual review", manualInfo: "The technical test uses a GISA extract and identity evidence for the authorized representative. A company-register extract or power of attorney is shown only when the previously recorded details require it. Legally required evidence and retention periods will be decided separately before real submissions are enabled.", digital: "Digital review – in preparation", privacy: "Details are used for business review. Registry, VAT, address and identity checks are not automated.", submit: "Submit for review", waiting: "Business verification pending", loading: "Business verification is loading …", failed: "Verification status is currently unavailable.", incomplete: "Complete business details in legal settings first.", retry: "Reload", country: "Country", address: "Business address", status: "Status", none: "Not submitted", submitting: "Submitting …" },
+  fr: { title: "Vérification de l’établissement", intro: "Préparez les données de l’entreprise et soumettez-les à un examen manuel. Aucun essai ni paiement ne démarre.", data: "Données de l’entreprise", edit: "Modifier toutes les données", correct: "Corriger", register: "Type de registre", method: "Méthode de vérification", manual: "Examen manuel", manualInfo: "Le test technique utilise un extrait GISA et une preuve d’identité de la personne autorisée. Un extrait du registre des sociétés ou une procuration n’est affiché que si les données déjà enregistrées le prévoient. Les justificatifs juridiquement obligatoires et les durées de conservation seront décidés séparément avant toute soumission réelle.", digital: "Examen numérique – en préparation", privacy: "Ces données servent à l’examen de l’entreprise. Aucun contrôle automatique du registre, de la TVA, de l’adresse ou de l’identité n’est effectué.", submit: "Soumettre pour examen", waiting: "Vérification en attente", loading: "Chargement de la vérification de l’établissement…", failed: "Statut indisponible pour le moment.", incomplete: "Complétez d’abord les données dans les paramètres juridiques.", retry: "Recharger", country: "Pays", address: "Adresse professionnelle", status: "Statut", none: "Non soumis", submitting: "Envoi …" },
+  it: { title: "Verifica dell’attività", intro: "Prepara i dati aziendali e inviali per la verifica manuale. Non iniziano prove né pagamenti.", data: "Dati aziendali", edit: "Modifica tutti i dati", correct: "Correggi", register: "Tipo di registro", method: "Metodo di verifica", manual: "Verifica manuale", manualInfo: "Il test tecnico utilizza un estratto GISA e una prova d’identità della persona autorizzata. L’estratto del registro delle imprese o la procura vengono mostrati solo se previsti dai dati già registrati. I documenti legalmente obbligatori e i periodi di conservazione saranno definiti separatamente prima delle richieste reali.", digital: "Verifica digitale – in preparazione", privacy: "I dati sono usati per la verifica aziendale. Registro, IVA, indirizzo e identità non sono verificati automaticamente.", submit: "Invia per verifica", waiting: "Verifica in sospeso", loading: "Caricamento della verifica dell’attività…", failed: "Stato della verifica non disponibile.", incomplete: "Completa prima i dati nelle impostazioni legali.", retry: "Ricarica", country: "Paese", address: "Indirizzo commerciale", status: "Stato", none: "Non inviato", submitting: "Invio …" },
+  es: { title: "Verificación del negocio", intro: "Prepara los datos de la empresa y envíalos para revisión manual. No empieza ninguna prueba ni pago.", data: "Datos de la empresa", edit: "Editar todos los datos", correct: "Corregir", register: "Tipo de registro", method: "Método de verificación", manual: "Revisión manual", manualInfo: "La prueba técnica utiliza un extracto GISA y una prueba de identidad de la persona autorizada. El extracto del registro mercantil o el poder solo se muestran si los datos ya registrados lo requieren. Los documentos legalmente obligatorios y los plazos de conservación se decidirán por separado antes de habilitar solicitudes reales.", digital: "Revisión digital – en preparación", privacy: "Los datos se usan para revisar el negocio. No hay comprobación automática del registro, IVA, dirección ni identidad.", submit: "Enviar para revisión", waiting: "Verificación pendiente", loading: "Cargando la verificación del negocio…", failed: "Estado de verificación no disponible.", incomplete: "Completa primero los datos en los ajustes legales.", retry: "Recargar", country: "País", address: "Dirección comercial", status: "Estado", none: "Sin enviar", submitting: "Enviando …" },
+  zh: { title: "商户验证", intro: "填写企业资料并提交人工审核。此操作不会启动试用或付款。", data: "企业资料", edit: "编辑全部企业资料", correct: "更正", register: "登记类型", method: "验证方式", manual: "人工审核", manualInfo: "技术测试使用 GISA 摘录和授权代表的身份证明。只有在已录入信息适用时，才会显示公司登记册摘录或授权委托书。真实提交所需的法定材料和保存期限将在启用真实流程前另行确定。", digital: "数字验证——筹备中", privacy: "资料仅用于商户审核。目前不会自动核查登记、税号、地址或身份。", submit: "提交审核", waiting: "商户验证待处理", loading: "正在加载商户验证……", failed: "暂时无法获取验证状态。", incomplete: "请先在法律设置中补全企业资料。", retry: "重新加载", country: "国家", address: "营业地址", status: "状态", none: "尚未提交", submitting: "提交中……" },
+  ko: { title: "사업체 인증", intro: "사업체 정보를 준비하여 수동 검토를 요청하세요. 체험이나 결제는 시작되지 않습니다.", data: "사업체 정보", edit: "모든 사업체 정보 수정", correct: "수정", register: "등록 유형", method: "인증 방법", manual: "수동 검토", manualInfo: "기술 테스트에서는 GISA 등록부 발췌본과 권한 있는 대표자의 신분 증빙을 사용합니다. 회사 등기부 발췌본이나 위임장은 기존에 입력한 정보에 해당하는 경우에만 표시됩니다. 실제 제출에 필요한 법적 서류와 보관 기간은 실제 절차를 열기 전에 별도로 결정합니다.", digital: "디지털 검토 – 준비 중", privacy: "정보는 사업체 검토에 사용됩니다. 등록·세금번호·주소·신원은 자동으로 확인되지 않습니다.", submit: "검토 요청", waiting: "사업체 인증 대기 중", loading: "사업체 인증을 불러오는 중…", failed: "인증 상태를 확인할 수 없습니다.", incomplete: "먼저 법적 설정에서 사업체 정보를 완성하세요.", retry: "다시 불러오기", country: "국가", address: "사업장 주소", status: "상태", none: "미제출", submitting: "제출 중…" },
 } as const;
 
 const documentCopy = {
@@ -68,6 +68,11 @@ export function OwnerBusinessVerificationPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const ids = useRef<{ request: string; correlation: string } | null>(null);
+  const loadRequest = useRef(0);
+  const [loadState, setLoadState] = useState<{
+    restaurantId: string | null;
+    status: "loading" | "ready" | "error";
+  }>({ restaurantId: null, status: "loading" });
   const statusNames: Record<string, Record<string, string>> = {
     PENDING_ACTIVATION: { de: "Eingereicht / ausstehend", en: "Submitted / pending", fr: "Soumis / en attente", it: "Inviato / in attesa", es: "Enviado / pendiente", zh: "已提交／待审核", ko: "제출됨 / 대기 중" },
     IN_REVIEW: { de: "In Prüfung", en: "In review", fr: "En cours d’examen", it: "In revisione", es: "En revisión", zh: "审核中", ko: "검토 중" },
@@ -77,21 +82,35 @@ export function OwnerBusinessVerificationPage() {
   };
 
   const reload = useCallback(async () => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      setLoadState({ restaurantId: null, status: "loading" });
+      return;
+    }
+    const request = loadRequest.current + 1;
+    loadRequest.current = request;
+    setLoadState({ restaurantId, status: "loading" });
     setError("");
     try {
-      const [data, ownerDocuments] = await Promise.all([
+      const [data, ownerDocuments, summary] = await Promise.all([
         readOwnerVerification(restaurantId),
         listOwnerKybDocuments(restaurantId),
+        readOwnerKybIntakeSummary(restaurantId),
       ]);
-      const summary = await readOwnerKybIntakeSummary(restaurantId);
+      if (loadRequest.current !== request) return;
       setProfile(data.profile);
       setIntakeSummary(summary);
       setOwnerStatus(data.ownerStatus);
       setDocuments(ownerDocuments);
-    } catch { setError(t.failed); }
-  }, [restaurantId, t.failed]);
-  useEffect(() => { void reload(); }, [reload]);
+      setLoadState({ restaurantId, status: "ready" });
+    } catch {
+      if (loadRequest.current !== request) return;
+      setLoadState({ restaurantId, status: "error" });
+    }
+  }, [restaurantId]);
+  useEffect(() => {
+    void reload();
+    return () => { loadRequest.current += 1; };
+  }, [reload]);
 
   async function submit() {
     if (!restaurantId || busy || intakeSummary?.status !== "COMPLETE") return;
@@ -168,6 +187,18 @@ export function OwnerBusinessVerificationPage() {
     DELETION_REQUESTED: documentsText.deletion,
     DELETED: documentsText.deleted,
   })[status];
+
+  const currentLoadStatus = loadState.restaurantId === restaurantId ? loadState.status : "loading";
+  if (currentLoadStatus === "loading") {
+    return <main className="page-container owner-business-verification-page" data-testid="owner-business-verification-loading">
+      <section className="card"><p aria-live="polite" role="status">{t.loading}</p></section>
+    </main>;
+  }
+  if (currentLoadStatus === "error") {
+    return <main className="page-container owner-business-verification-page" data-testid="owner-business-verification-error">
+      <section className="card"><h1>{t.title}</h1><p role="alert">{t.failed}</p><button className="button secondary" onClick={() => void reload()} type="button">{t.retry}</button></section>
+    </main>;
+  }
 
   return <main className="page-container owner-business-verification-page" data-testid="owner-business-verification">
     <header className="page-header"><div><h1>{t.title}</h1><p>{t.intro}</p></div></header>

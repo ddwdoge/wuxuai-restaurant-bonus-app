@@ -10,12 +10,20 @@ values('70000000-0000-4000-8000-000000000002','70000000-0000-4000-8000-000000000
 insert into public.restaurants(id,owner_id,name,slug,status,organization_id)
 values('70000000-0000-4000-8000-000000000003','70000000-0000-4000-8000-000000000001',
   'SYNTHETIC LEGAL GATE','synthetic-legal-gate','active','70000000-0000-4000-8000-000000000002');
+update public.restaurants set activation_status='pending_activation'
+where id='70000000-0000-4000-8000-000000000003';
 insert into public.branches(id,organization_id,restaurant_id,name,slug,country,address,postal_code,city)
 values('70000000-0000-4000-8000-000000000004','70000000-0000-4000-8000-000000000002',
   '70000000-0000-4000-8000-000000000003','SYNTHETIC LEGAL GATE','synthetic-legal-gate-main',
   'AT','Synthetic Road 1','1000','Synthetic City');
 update public.restaurants set primary_branch_id='70000000-0000-4000-8000-000000000004'
 where id='70000000-0000-4000-8000-000000000003';
+insert into public.branch_subscriptions(
+  id,organization_id,branch_id,status,subscription_status,plan_key,selected_plan,payment_status
+) values(
+  '70000000-0000-4000-8000-000000000014','70000000-0000-4000-8000-000000000002',
+  '70000000-0000-4000-8000-000000000004','pending_activation','pending_activation','BASIC','BASIC','not_required'
+);
 insert into public.organization_legal_profiles(
   id,organization_id,company_name,legal_form,registered_address_source,address_source_restaurant_id,address_source_branch_id,
   email,commercial_register_number,vat_id,responsible_person,legal_review_status,updated_by
@@ -107,8 +115,38 @@ begin
   if not public.legal_operator_publication_ready_internal('70000000-0000-4000-8000-000000000003') then
     raise exception 'valid explicit approval did not open the source gate';
   end if;
-  update public.organization_legal_profiles set company_name='Changed After Review'
-    where id='70000000-0000-4000-8000-000000000005';
+
+  if not exists (select 1 from public.restaurants
+      where id='70000000-0000-4000-8000-000000000003'
+        and activation_status='pending_activation') then
+    raise exception 'publication approval changed restaurant activation';
+  end if;
+  if not exists (select 1 from public.branch_subscriptions
+      where id='70000000-0000-4000-8000-000000000014'
+        and status='pending_activation' and subscription_status='pending_activation'
+        and payment_status='not_required' and trial_started_at is null and trial_ends_at is null
+        and current_period_start is null and current_period_end is null
+        and stripe_customer_id is null and stripe_subscription_id is null) then
+    raise exception 'publication approval changed subscription, trial or Stripe state';
+  end if;
+  if exists (select 1 from public.billing_trial_claims
+      where restaurant_id='70000000-0000-4000-8000-000000000003')
+    or exists (select 1 from public.commercial_pro_access_grants
+      where restaurant_id='70000000-0000-4000-8000-000000000003')
+    or exists (select 1 from public.restaurant_capacity_addon_entitlements
+      where restaurant_id='70000000-0000-4000-8000-000000000003') then
+    raise exception 'publication approval created trial, entitlement or grant state';
+  end if;
+end
+$test$;
+
+set local session_replication_role=replica;
+update public.organization_legal_profiles set company_name='Changed After Review'
+where id='70000000-0000-4000-8000-000000000005';
+set local session_replication_role=origin;
+
+do $test$
+begin
   if public.legal_operator_publication_ready_internal('70000000-0000-4000-8000-000000000003') then
     raise exception 'profile change did not require re-review';
   end if;
