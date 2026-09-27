@@ -357,7 +357,7 @@ export function PlatformRestaurantControlCenter({
       {view === "system" ? <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
       {view === "plans" ? <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
       {view === "system" ? <PlatformLegalI18nPanel restaurantId={account.restaurant_id} /> : null}
-      {view === "system" ? <PlatformKassaCompliancePanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
+      {view === "system" ? <PlatformKassaCompliancePanel canWrite={permittedWrite} restaurantId={account.restaurant_id} /> : null}
 
       <AppDrawer description={`${account.restaurant_name} · ${pendingAction?.description ?? ""}`} dismissOnOverlay={false} footer={pendingAction ? <><button className="button secondary" disabled={saving} onClick={() => setPendingAction(null)} type="button">Abbrechen</button><button className="button" data-drawer-autofocus disabled={saving || confirmation !== "CONFIRMED" || reason.trim().length < 10} onClick={() => void confirmAction()} type="button">{saving ? "Wird gespeichert …" : pendingAction.actionLabel}</button></> : null} onClose={() => setPendingAction(null)} open={Boolean(pendingAction)} size="compact" title={pendingAction?.title ?? "Änderung bestätigen"}>
         <p>{pendingAction?.impact}</p>
