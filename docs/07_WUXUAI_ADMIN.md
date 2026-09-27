@@ -4,10 +4,13 @@
 
 **Aktueller Billing-/Admin-Vertrag (24.09.2026):** Neue Betriebe starten
 PENDING_ACTIVATION ohne Trial oder Live-Entitlements; Setup/Preview ist
-erlaubt, produktive Aktionen bleiben blockiert. BASIC und PRO erhalten erst
-nach bestandenen Country-, Legal- und KYB-Gates und verifizierter
-Provideraktivierung genau einen kostenlosen Kalendermonat. Add-ons haben
-keinen Trial; rechtmaessige historische Trials bleiben unveraendert. Der
+erlaubt, produktive Aktionen bleiben blockiert. Ein berechtigter Platform
+Admin darf BASIC erst nach bestandenen Country-, Legal-, KYB- und Kassa-Gates
+auditiert mit TOTP/AAL2 fuer individuell einen oder drei Kalendermonate als
+Trial aktivieren. Zahlungsmethode, Stripe-IDs, Belastung, automatische
+Verlaengerung und eine globale Trial-Hoechstzahl bleiben ausgeschlossen.
+Add-ons haben keinen Trial; rechtmaessige historische Trials bleiben
+unveraendert. Der
 aktuelle Staging-Migrationsstand ist 168/168. Vier Stripe-Sandbox-TEST-
 Providerbindungen sind VERIFIED; LIVE bleibt UNBOUND, Seller PLANNED und
 Tax Readiness PENDING_CONFIGURATION. Die negative Checkout-/Webhook-

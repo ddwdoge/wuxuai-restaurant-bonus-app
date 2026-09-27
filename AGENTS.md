@@ -97,9 +97,14 @@ V1 bleibt fokussiert:
   Setup/Preview erlaubt, produktive Aktionen blockiert.
 - BASIC: 59 EUR netto/Monat, 5 Angebote, 3.000 aktive Kunden in 365 Tagen;
   PRO: 149 EUR netto/Monat, 15 Angebote, 15.000 aktive Kunden, nicht unbegrenzt.
-- BASIC-/PRO-Trial: ein voller kostenloser Kalendermonat erst nach verifizierter
-  Provideraktivierung und bestandenen Country-, Legal- und KYB-Gates;
-  Add-ons ohne Trial. Historische rechtmaessige Trials bleiben erhalten.
+- BASIC-Trial: Ein berechtigter Platform Admin aktiviert nach aktuellem
+  TOTP-/AAL2-Nachweis manuell einen Trial von individuell einem oder drei
+  Kalendermonaten. Country-, KYB-, Legal- und Kassa-Gates bleiben
+  verpflichtend. Zahlungsmethode, Stripe-ID, Belastung, automatische
+  Umwandlung in einen Bezahlvertrag und eine globale Trial-Hoechstzahl im Code
+  sind ausgeschlossen. PRO und der spaetere bezahlte Stripe-Vertrag bleiben
+  separate Ablaeufe. Add-ons ohne Trial. Historische rechtmaessige Trials
+  bleiben erhalten.
 - keine SMS
 - kein WhatsApp
 - keine Kassa-Integration

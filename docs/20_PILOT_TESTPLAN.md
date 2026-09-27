@@ -973,14 +973,21 @@ Aktueller Registrierungs- und Trial-Testvertrag:
 ```text
 Registrierung: PENDING_ACTIVATION, keine Trialdaten
 Pending: nur Setup und Preview; produktive Live-Aktionen blockiert
-BASIC/PRO: ein kostenloser Kalendermonat erst nach verifizierter Provideraktivierung
+BASIC: manuelle, auditierte Platform-Admin-Aktivierung mit TOTP/AAL2
+Trialdauer je Betrieb: ein oder drei Kalendermonate
+Country-, KYB-, Legal- und Kassa-Gates bleiben verpflichtend
+Keine Zahlungsmethode, Stripe-ID, Belastung oder automatische Verlaengerung im Trial
+Keine globale Hoechstzahl von Trial-Betrieben im Code
 Add-ons: kein Trial
 Rechtmaessige historische Trials bleiben unveraendert
 ```
 
-Der positive Provideraktivierungs- und Pending-Staging-Flow ist noch nicht
-ausgefuehrt und braucht separate Freigabe. Zahlungsmittel/Checkout duerfen
-nicht durch einen Pilot-UI-Zustand ersetzt werden.
+Migration 180 bereitet diesen manuellen BASIC-Trial lokal vor; ihre
+Staging-Anwendung und der physische positive Flow brauchen separate Freigabe.
+Die organisatorisch beworbenen ersten zehn Pilotrestaurants werden nicht als
+technische Kapazitaetsgrenze implementiert. Zahlungsmittel/Checkout duerfen
+nicht durch einen Pilot-UI-Zustand ersetzt werden. Der Wechsel in einen
+bezahlten Folgezeitraum erfordert die ausdrueckliche Annahme des Betriebs.
 
 Vor Ablauf eines spaeter tatsaechlich gestarteten Trials:
 

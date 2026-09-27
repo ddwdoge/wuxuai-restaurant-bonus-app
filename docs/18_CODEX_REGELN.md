@@ -150,7 +150,13 @@ V1 enthält:
 - Willkommensgeschenke
 - Bonus Boost
 - QR / Starter Kit
-- Neue BASIC-/PRO-Trials: ein voller Kalendermonat erst nach bestaetigter Provideraktivierung; Registrierung bleibt PENDING_ACTIVATION ohne Trial.
+- Neue Registrierung bleibt PENDING_ACTIVATION ohne Trial. Ein berechtigter
+  Platform Admin aktiviert nach aktuellem TOTP-/AAL2-Nachweis manuell einen
+  BASIC-Trial von individuell einem oder drei Kalendermonaten. Country-, KYB-,
+  Legal- und Kassa-Gates bleiben verpflichtend. Zahlungsmethode, Stripe-ID,
+  Belastung, automatische Umwandlung in einen Bezahlvertrag und eine globale
+  Trial-Hoechstzahl im Code sind ausgeschlossen. PRO und der spaetere bezahlte
+  Stripe-Vertrag bleiben separate Ablaeufe.
 - Deutsch
 - Mobile First
 

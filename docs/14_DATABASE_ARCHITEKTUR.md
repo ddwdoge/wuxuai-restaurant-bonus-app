@@ -11,9 +11,12 @@ bleibt 168/168; Migration 169 wurde dort nicht angewendet. Ein Staging- oder
 Final-Lock besteht dafuer nicht. Neue
 Registrierung erzeugt PENDING_ACTIVATION ohne Trialdaten oder wirksame
 Entitlements. Setup/Preview bleibt erlaubt; Live-QR, Punkte, Einloesung und
-Kommunikation bleiben blockiert. Ein kostenloser BASIC-/PRO-Kalendermonat
-darf erst nach Country-, Legal-, KYB- und verifizierter Provideraktivierung
-starten; dieser positive Providerpfad ist noch nicht implementiert.
+Kommunikation bleiben blockiert. Migration 180 fuehrt lokal einen engen,
+auditierten TOTP-/AAL2-Mutator fuer einen BASIC-Trial von einem oder drei
+Kalendermonaten ein. Country-, Legal-, KYB- und Kassa-Gates bleiben
+verpflichtend; Zahlungsmethode, Stripe-IDs, Belastung und automatische
+Verlaengerung bleiben ausgeschlossen. Es gibt keine globale Trial-Grenze.
+Migration 180 ist nicht auf Staging angewendet.
 Historische Subscription- und Trialdaten bleiben unveraendert. Aeltere
 datierte Abschnitte unten, insbesondere Phase-7B-LOCAL-ONLY- und
 Drei-Monats-Aussagen, sind Zustands-Snapshots und keine aktuelle Autoritaet.

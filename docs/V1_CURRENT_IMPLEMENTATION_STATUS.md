@@ -37,9 +37,13 @@ eindeutige Kunden, nie unbegrenzt. Offer Add-on: 19 EUR netto/Monat je +5
 Angebote; Customer Add-on: 29 EUR netto/Monat je +5.000 Kunden. Das
 Kundenfenster sind exakt rollierende 365 Tage. Neue Registrierung erzeugt
 PENDING_ACTIVATION ohne Trial; Setup/Preview bleibt erlaubt, Live-Aktionen
-gesperrt. Ein voller kostenloser BASIC-/PRO-Kalendermonat beginnt erst nach
-verifizierter Provideraktivierung; Add-ons besitzen keinen Trial. Historische
-rechtmaessige Trials bleiben geschuetzt. Seller `WUXUAI Digital & Trading
+gesperrt. Migration 180 bereitet lokal eine auditierte TOTP-/AAL2-
+Platform-Admin-Aktivierung fuer einen BASIC-Trial von individuell einem oder
+drei Kalendermonaten nach Country-, KYB-, Legal- und Kassa-Gate vor. Sie ist
+nicht auf Staging angewendet. Zahlungsmethode, Stripe-ID, Belastung,
+automatische Verlaengerung und eine globale Trial-Hoechstzahl sind
+ausgeschlossen; Add-ons besitzen keinen Trial. Historische rechtmaessige
+Trials bleiben geschuetzt. Seller `WUXUAI Digital & Trading
 GmbH` ist als operative Verkaeuferin, SaaS-Vertragspartnerin und
 Rechnungsausstellerin PLANNED; WU & XU Group GmbH haelt IP, Marken, Domains
 und Designs und ist Lizenzgeberin. TEST Provider VERIFIED bei getrennter Tax

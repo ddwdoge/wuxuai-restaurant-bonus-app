@@ -86,11 +86,16 @@ freigegeben werden. Stripe und Production bleiben unveraendert.
   Trial; UI-Auswahl erteilt kein Entitlement.
 - Neue Registrierung: selected_plan BASIC, PENDING_ACTIVATION, nur Setup und
   Preview; keine produktiven QR-/Live-Aktionen, keine Trial-Zeiten, aktive
-  Entitlements oder Kapazitaetsfreigabe. Der erste volle BASIC-/PRO-
-  Kalendermonat ist erst nach KYB, Country Release, aktueller Legal-/Preis-
-  Annahme, Owner-/Tenant-Bindung, Zahlungsmittel und signiertem,
-  idempotent verarbeitetem Providerereignis kostenlos. Historische Trials
-  bleiben unveraendert; Legacy-Verlaengerung erzeugt keinen neuen Trial.
+  Entitlements oder Kapazitaetsfreigabe. Ein berechtigter Platform Admin darf
+  einen Betrieb erst nach Country-, KYB-, Legal- und Kassa-Gate auditiert und
+  mit TOTP/AAL2 in einen kostenlosen BASIC-Trial von individuell einem oder
+  drei Kalendermonaten aktivieren. Der Trial verlangt weder Zahlungsmethode
+  noch Stripe-ID und loest keine Belastung aus. Eine spaetere bezahlte Laufzeit
+  erfordert die ausdrueckliche Annahme des Betriebs und einen getrennt
+  bestaetigten Providerzustand. Es gibt keine globale Trial-Hoechstzahl im
+  Code; die ersten zehn Pilotrestaurants sind ausschliesslich Angebots- und
+  Organisationsvertrag. Historische Trials bleiben unveraendert;
+  Legacy-Verlaengerung erzeugt keinen neuen Trial.
 - AT zuerst, aber derzeit LOCKED; weitere EU-Laender vorbereitet und
   gesperrt. Die Schweiz ist nicht Bestandteil dieses EU-Launchumfangs.
   PRO bleibt LOCKED. Downgrade/Add-on-Ende loescht keine Businessdaten;

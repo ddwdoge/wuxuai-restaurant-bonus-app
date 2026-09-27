@@ -28,9 +28,12 @@ Kommunikationsaktionen bleiben blockiert. BASIC: 59 EUR netto/Monat,
 15.000 aktive Kunden, nie unbegrenzt. Offer Add-on: +5 Angebote fuer
 19 EUR netto/Monat je Einheit; Customer Add-on: +5.000 Kunden fuer
 29 EUR netto/Monat je Einheit. Kundenfenster: exakt rollierende 365 Tage.
-BASIC/PRO erhalten genau einen kostenlosen Kalendermonat erst nach
-Country-, Legal-, KYB- und verifizierter Provideraktivierung; Add-ons
-haben keinen Trial. Bestehende rechtmaessige Trials bleiben geschuetzt.
+BASIC kann nach Country-, Legal-, KYB- und Kassa-Gate durch eine auditierte
+TOTP-/AAL2-Entscheidung eines berechtigten Platform Admin fuer individuell
+einen oder drei Kalendermonate als Trial aktiviert werden. Zahlungsmethode,
+Stripe-IDs, Belastung und automatische Verlaengerung sind dabei ausgeschlossen;
+Add-ons haben keinen Trial. Es gibt keine globale Trial-Hoechstzahl im Code.
+Bestehende rechtmaessige Trials bleiben geschuetzt.
 Seller WUXUAI Digital & Trading GmbH ist PLANNED; Stripe TEST ist mit vier
 Sandbox-Price-Bindungen VERIFIED, LIVE bleibt UNBOUND und Tax Readiness
 PENDING_CONFIGURATION. Der negative Checkout-/Webhook-Vertrag ist auf

@@ -144,9 +144,12 @@ vom 2026-08-30.
 
 ## 7. Commercial Contract
 
-- Neue Registrierung bleibt PENDING_ACTIVATION ohne Trial. Künftiger Trial:
-  exakt ein Kalendermonat erst nach verifizierter Provideraktivierung gemäß
-  Phase 7C.6B3; bestehende Drei-Monats-Trials bleiben unverändert.
+- Neue Registrierung bleibt PENDING_ACTIVATION ohne Trial. Ein kuenftiger
+  BASIC-Trial darf nur durch den auditierten serverseitigen Platform-Admin-
+  Mutator mit TOTP/AAL2 nach Country-, KYB-, Legal- und Kassa-Gate fuer
+  individuell einen oder drei Kalendermonate starten. Keine Zahlungsmethode,
+  Stripe-ID, Belastung oder automatische Verlaengerung; keine globale
+  Trial-Hoechstzahl im Code. Bestehende Trials bleiben unveraendert.
 - Basispaket: WUXUAI Bonus V1, 59 EUR pro Monat exkl. USt., monatlich.
 - Automatische Abrechnung ist nicht aktiv; Stripe bleibt `DEFERRED` als
   technischer Ist-Status. **SUPERSEDED fuer die Launch-Reihenfolge

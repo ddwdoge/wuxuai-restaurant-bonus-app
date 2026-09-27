@@ -8,10 +8,12 @@ Status: **LOCK**
 **Billing-Supersession (24.09.2026):** Der folgende V2-Ideenplan ist keine
 Autoritaet fuer neue V1-Registrierungen oder Trials. Historische Aussagen
 zu drei kostenlosen Monaten/ohne Zahlungsmittel sind SUPERSEDED. Aktuell:
-PENDING_ACTIVATION ohne Trial bei Registrierung; BASIC/PRO je ein kostenloser
-Kalendermonat erst nach verifizierter Provideraktivierung und Country-,
-Legal- und KYB-Gates; Add-ons ohne Trial. Bestehende rechtmaessige Trials
-bleiben unveraendert. Siehe `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+PENDING_ACTIVATION ohne Trial bei Registrierung; BASIC kann nach Country-,
+Legal-, KYB- und Kassa-Gate durch eine auditierte TOTP-/AAL2-Entscheidung fuer
+individuell einen oder drei Kalendermonate aktiviert werden. Keine
+Zahlungsmethode, Stripe-ID, Belastung oder globale Trial-Hoechstzahl; Add-ons
+ohne Trial. Bestehende rechtmaessige Trials bleiben unveraendert. Siehe
+`V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
 
 ## Founder-Strategie 2026-09-10 - teilweise SUPERSEDED
 
