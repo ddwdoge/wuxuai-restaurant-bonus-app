@@ -11,6 +11,70 @@ const KNOWN_EVENTS = new Set([
 ]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export function parseBasicTestCheckoutRequest(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("BASIC_CHECKOUT_REQUEST_INVALID");
+  const keys = Object.keys(input).sort();
+  if (keys.join(",") !== "acceptance_id,request_id,return_route") throw new Error("BASIC_CHECKOUT_REQUEST_FIELDS_INVALID");
+  if (typeof input.acceptance_id !== "string" || !UUID.test(input.acceptance_id)) throw new Error("BASIC_CHECKOUT_ACCEPTANCE_INVALID");
+  if (typeof input.request_id !== "string" || !UUID.test(input.request_id)) throw new Error("BASIC_CHECKOUT_REQUEST_ID_INVALID");
+  if (input.return_route !== "/admin/settings/konto-testphase") throw new Error("BASIC_CHECKOUT_RETURN_ROUTE_INVALID");
+  return {
+    acceptance_id: input.acceptance_id.toLowerCase(),
+    request_id: input.request_id.toLowerCase(),
+    return_route: input.return_route,
+  };
+}
+
+export function sanitizeStripeTestEvent(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input) || input.livemode !== false
+    || typeof input.id !== "string" || !/^evt_[A-Za-z0-9_]{8,160}$/.test(input.id)
+    || !KNOWN_EVENTS.has(input.type) || !Number.isSafeInteger(input.created) || input.created <= 0) {
+    throw new Error("BASIC_TEST_WEBHOOK_EVENT_INVALID");
+  }
+  const object = input.data?.object;
+  if (!object || typeof object !== "object" || Array.isArray(object)) throw new Error("BASIC_TEST_WEBHOOK_OBJECT_INVALID");
+  const metadata = object.metadata ?? object.subscription_details?.metadata ?? object.parent?.subscription_details?.metadata ?? {};
+  const restaurantId = metadata.restaurant_id ?? null;
+  const acceptanceId = metadata.acceptance_id ?? null;
+  const requestId = metadata.request_id ?? null;
+  const correlationId = metadata.correlation_id ?? null;
+  for (const value of [restaurantId, acceptanceId, requestId, correlationId]) {
+    if (value !== null && (typeof value !== "string" || !UUID.test(value))) throw new Error("BASIC_TEST_WEBHOOK_METADATA_INVALID");
+  }
+  const sessionId = input.type === "checkout.session.completed" ? object.id : null;
+  const subscriptionId = input.type.startsWith("customer.subscription.") ? object.id : object.subscription;
+  const customerId = typeof object.customer === "string" ? object.customer : object.customer?.id ?? null;
+  if (sessionId !== null && (typeof sessionId !== "string" || !/^cs_test_[A-Za-z0-9_]{8,160}$/.test(sessionId))) {
+    throw new Error("BASIC_TEST_WEBHOOK_SESSION_INVALID");
+  }
+  if (subscriptionId !== null && subscriptionId !== undefined
+    && (typeof subscriptionId !== "string" || !/^sub_[A-Za-z0-9_]{8,160}$/.test(subscriptionId))) {
+    throw new Error("BASIC_TEST_WEBHOOK_SUBSCRIPTION_INVALID");
+  }
+  if (customerId !== null && (typeof customerId !== "string" || !/^cus_[A-Za-z0-9_]{8,160}$/.test(customerId))) {
+    throw new Error("BASIC_TEST_WEBHOOK_CUSTOMER_INVALID");
+  }
+  const periodStart = Number.isSafeInteger(object.period_start) ? new Date(object.period_start * 1000).toISOString()
+    : Number.isSafeInteger(object.current_period_start) ? new Date(object.current_period_start * 1000).toISOString() : null;
+  const periodEnd = Number.isSafeInteger(object.period_end) ? new Date(object.period_end * 1000).toISOString()
+    : Number.isSafeInteger(object.current_period_end) ? new Date(object.current_period_end * 1000).toISOString() : null;
+  return {
+    event_id: input.id,
+    event_type: input.type,
+    event_created_at: new Date(input.created * 1000).toISOString(),
+    provider_session_id: sessionId,
+    provider_customer_id: customerId,
+    provider_subscription_id: subscriptionId ?? null,
+    restaurant_id: restaurantId,
+    acceptance_id: acceptanceId,
+    provider_status: typeof object.status === "string" ? object.status.slice(0, 80) : null,
+    period_start: periodStart,
+    period_end: periodEnd,
+    request_id: requestId,
+    correlation_id: correlationId,
+  };
+}
+
 export function parseCheckoutRequest(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("CHECKOUT_REQUEST_INVALID");
   const keys = Object.keys(input).sort();

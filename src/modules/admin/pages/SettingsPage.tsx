@@ -75,6 +75,7 @@ import {
 import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { BasicPaidOfferPanel } from "../../billing/BasicPaidOfferPanel";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -1584,9 +1585,7 @@ export function SettingsPage() {
                 <p>Automatische Abrechnung ist noch nicht aktiv.</p>
               </div>
               {trialExpired ? (
-                <button className="button secondary" disabled type="button">
-                  Abo aktivieren
-                </button>
+                <BasicPaidOfferPanel restaurantId={details.id} />
               ) : null}
             </>
           ) : (

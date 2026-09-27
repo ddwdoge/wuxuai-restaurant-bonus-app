@@ -1,7 +1,10 @@
 export const V1_COMMERCIAL_CONTRACT = Object.freeze({
   planKey: "wuxuai_bonus_v1",
   productName: "WUXUAI Bonus V1",
-  trial: Object.freeze({ calendarMonths: 1 }),
+  trial: Object.freeze({
+    calendarMonths: 1,
+    allowedCalendarMonths: Object.freeze([1, 3]),
+  }),
   basePlan: Object.freeze({
     monthlyPrice: 59,
     currency: "EUR",
@@ -14,10 +17,10 @@ export const V1_COMMERCIAL_CONTRACT = Object.freeze({
 });
 
 export const V1_COMMERCIAL_COPY = Object.freeze({
-  trial: "Erster Kalendermonat nach bestätigter Provideraktivierung kostenlos; Add-ons ausgenommen",
+  trial: "Ein oder drei Kalendermonate BASIC nach manueller, geprüfter Platform-Admin-Aktivierung; keine automatische Verlängerung",
   registrationCta: "Bonusprogramm vorbereiten",
   price: "Danach 59 € pro Monat exkl. USt.",
-  noPaymentMethod: "Kein Zahlungsmittel erforderlich.",
+  noPaymentMethod: "Während der Testphase ist kein Zahlungsmittel erforderlich.",
 });
 
 export function addV1TrialMonthsIso(value) {

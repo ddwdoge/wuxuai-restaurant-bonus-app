@@ -7,7 +7,7 @@ export type CommercialAddOn = {
 export const V1_COMMERCIAL_CONTRACT: Readonly<{
   planKey: "wuxuai_bonus_v1";
   productName: "WUXUAI Bonus V1";
-  trial: Readonly<{ calendarMonths: 1 }>;
+  trial: Readonly<{ calendarMonths: 1; allowedCalendarMonths: readonly [1, 3] }>;
   basePlan: Readonly<{
     monthlyPrice: 59;
     currency: "EUR";
@@ -23,7 +23,7 @@ export const V1_COMMERCIAL_COPY: Readonly<{
   trial: string;
   registrationCta: string;
   price: "Danach 59 € pro Monat exkl. USt.";
-  noPaymentMethod: "Kein Zahlungsmittel erforderlich.";
+  noPaymentMethod: "Während der Testphase ist kein Zahlungsmittel erforderlich.";
 }>;
 
 export function addV1TrialMonthsIso(value: string | null | undefined): string | null;
