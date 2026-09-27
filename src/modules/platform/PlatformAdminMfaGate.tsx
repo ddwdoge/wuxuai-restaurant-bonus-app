@@ -4,9 +4,10 @@ import { UiButton, UiCard, UiState } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import {
   isPlatformSessionProofCurrent,
-  latestVerifiedTotpFactor,
   normalizeTotpCode,
   platformAdminMfaMode,
+  totpFactorLabel,
+  verifiedTotpFactors,
   type PlatformMfaMode,
 } from "./platformAdminMfa.mjs";
 
@@ -15,10 +16,13 @@ type Enrollment = {
   qrCode: string;
 };
 
+type VerifiedFactor = { id: string; status?: string; friendly_name?: string; created_at?: string; updated_at?: string };
+
 export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const [mode, setMode] = useState<PlatformMfaMode | "checking" | "error">("checking");
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [factors, setFactors] = useState<VerifiedFactor[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +61,9 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     });
     setVerifiedSessionToken(checkedSessionToken);
     setMode(nextMode);
-    setFactorId(latestVerifiedTotpFactor(factorsResult.data.totp)?.id ?? null);
+    const nextFactors = verifiedTotpFactors(factorsResult.data.totp);
+    setFactors(nextFactors);
+    setFactorId((current) => nextFactors.some((factor) => factor.id === current) ? current : (nextFactors[0]?.id ?? null));
     if (nextMode === "authorized") {
       setEnrollment(null);
       setCode("");
@@ -83,7 +89,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     try {
       const result = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "WUXUAI Platform Admin",
+        friendlyName: "WUXUAI Platform Admin – Gerät 1",
       });
       if (result.error) throw result.error;
       setEnrollment({ factorId: result.data.id, qrCode: result.data.totp.qr_code });
@@ -148,6 +154,17 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
 
         {(mode === "challenge" || enrollment) && factorId ? (
           <form className="platform-mfa-form" onSubmit={(event) => void verify(event)}>
+            {mode === "challenge" && factors.length > 1 ? (
+              <fieldset className="platform-mfa-factor-choice">
+                <legend>Authenticator-Gerät auswählen</legend>
+                {factors.map((factor, index) => (
+                  <label key={factor.id}>
+                    <input checked={factorId === factor.id} name="platform-admin-factor" onChange={() => { setFactorId(factor.id); setCode(""); }} type="radio" />
+                    <span>{totpFactorLabel(factor, index)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
             <label htmlFor="platform-admin-totp">Sechsstelliger Bestätigungscode</label>
             <input
               autoComplete="one-time-code"

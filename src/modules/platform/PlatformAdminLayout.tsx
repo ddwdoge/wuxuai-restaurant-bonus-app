@@ -5,6 +5,7 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { platformAdminNavigationMessages, type PlatformAdminSection } from "./platformAdminNavigationI18n";
+import { PlatformAdminMfaSecurityControl } from "./PlatformAdminMfaSecurityControl";
 
 type PlatformAdminLayoutProps = {
   children: ReactNode;
@@ -66,6 +67,7 @@ export function PlatformAdminLayout({ children, className = "", description, tit
       <div className="platform-admin-header-primary">
         <div className="platform-admin-header-identity"><span className="admin-brand-kicker">WUXUAI Admin</span><h1>{title}</h1></div>
         <div className="platform-admin-header-primary-actions">
+          <PlatformAdminMfaSecurityControl />
           <LanguageSelector />
           <button aria-expanded={menuOpen} aria-haspopup="dialog" className="button secondary platform-admin-menu-trigger" onClick={() => setMenuOpen(true)} type="button">
             <Menu aria-hidden="true" size={20} /><span className="platform-admin-menu-label">{t.adminMenu}</span>

@@ -1,6 +1,67 @@
 # Platform Admin TOTP/AAL2 – ausführbare Staging-Checkliste
 
-Status: **ENTWURF FÜR ARCHITEKTURPRÜFUNG / NICHT AUSGEFÜHRT**
+> **V1-Aktualisierung 27.09.2026:** Die nachstehende ältere Runner-/Approver-
+> Checkliste ist nur V3-Referenz. Für V1 gilt zuerst die folgende Zwei-Geräte-
+> Checkliste. Der lokale Recovery-Runner wird nicht deployt; Independent
+> Approver und Recovery Executor blockieren die V1-Staging-Prüfung nicht.
+
+## V1 – verbindliche Zwei-Geräte-Checkliste
+
+### Preflight
+
+- [ ] Projekt, Branch, Commit und 172/172 eindeutig bestätigt; Production ist
+  nicht verbunden.
+- [ ] Migrationen 001–172 bytegleich; Migration 173 allein ausstehend und mit
+  freigegebenem Hash bestätigt.
+- [ ] Zwei verschiedene physische Nutzergeräte mit Authenticator-App verfügbar.
+- [ ] Tatsächliche Staging-JWT-Laufzeit wurde read-only über `exp - iat`
+  ermittelt, ohne Token oder personenbezogene Claims auszugeben. **OPEN.**
+- [ ] Wartungsfreeze und verantwortlicher Nutzer sind festgelegt.
+- [ ] Vorher-Fingerprints für Rollen, Sessions/Faktormetadaten, ACL/Grants,
+  Audits und Businessdaten sind gesichert.
+
+### Reihenfolge und Übergangsfenster
+
+Zwischen UI-Deployment und Migration 173 gelten direkte Platform-RPCs noch
+nach der alten Rollenregel. Sämtliche Platform-Reads und -Mutatoren bleiben in
+diesem kurzen Fenster technisch erreichbar. Deshalb: Wartungsfreeze aktivieren,
+geprüfte UI deployen, beide Faktoren einrichten und einzeln belegen, Migration
+173 unmittelbar anwenden und erst nach bestandener RPC-Matrix wieder öffnen.
+Die UI allein ist keine Sicherheitsgrenze.
+
+1. Faktor 1 auf Gerät 1 ausdrücklich registrieren und verifizieren.
+2. Faktor 2 auf Gerät 2 ausdrücklich registrieren und verifizieren.
+3. Frische AAL1-Sitzung: Faktor 1 auswählen, AAL2/TOTP und Read-RPC beweisen.
+4. Sign-out; frische AAL1-Sitzung: Faktor 2 auswählen und denselben Nachweis
+   erbringen.
+5. Migration 173 einmalig anwenden; 173/173, Repeat, DB-Lint, Funktionshashes,
+   `search_path`, ACL und Grants prüfen.
+6. Direkter AAL1-RPC muss blockieren; direkter AAL2/TOTP-RPC muss mit jedem
+   Faktor funktionieren. Refresh und Sign-out neu bewerten.
+7. Verlusttest: mit verbleibendem Faktor anmelden, ihn erneut challengen,
+   Test-Zielfaktor entfernen, Ersatz auf zweitem Gerät einrichten und beide
+   Faktoren erneut einzeln beweisen. Der letzte Faktor darf nicht entfernbar sein.
+8. Nachher-Fingerprints: ausschließlich erwartete Auth-Metadaten/Audits;
+   Businessdelta 0. Keine QR-, Code-, Faktor-ID- oder Token-Evidenz.
+
+Jede reale Faktoraktion erfordert die ausdrückliche Nutzeraktion am jeweiligen
+Gerät. Gleichzeitiger Verlust beider Faktoren bedeutet in V1 Lockout; kein
+Runner und kein AAL1-Bypass. ID Austria und Personen-Recovery sind V3.
+
+### Noch offene technische V1-Gates
+
+- tatsächliche Staging-JWT-Laufzeit;
+- zwei physisch getrennte Geräte und ausdrückliche Nutzeraktionen;
+- geprüfter UI-Build/Commit und kontrolliertes Wartungsfenster;
+- Migration 173, Repeat, DB-Lint, ACL/RLS/search_path;
+- Zwei-Faktor-, Verlust-/Ersatz- und direkte AAL1/AAL2-RPC-Matrix;
+- regulärer Refresh, Reload, Sign-out und unveränderte Businessfingerprints.
+
+---
+
+## V3-Referenz – nicht für V1 ausführen
+
+Status: **HISTORISCHE V3-ARCHITEKTURREFERENZ / NICHT AUSGEFÜHRT**
 
 Migration: `20260926001000_platform_admin_totp_aal2_gate.sql` (173)
 
@@ -9,7 +70,7 @@ Stand: 2026-09-27
 Diese Checkliste beschreibt die spätere Staging-Freigabe. Sie autorisiert keine
 Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
 
-## A. Vorbedingungen und Stop-Gates
+### V3-A. Vorbedingungen und Stop-Gates
 
 - [ ] Founder und Security-Review haben den Break-glass-/Recovery-Vertrag
   schriftlich freigegeben.
@@ -54,7 +115,7 @@ Migration, Faktor-Einrichtung, Konfigurationsänderung oder Deployment-Aktion.
 **Sofort stoppen**, wenn Projekt, Commit, Migration, Admin-Identität,
 Recovery-Besetzung oder Ausgangsfingerprints nicht eindeutig sind.
 
-### A1. Runner-Preflight je Recovery-Vorgang
+#### V3-A1. Runner-Preflight je Recovery-Vorgang
 
 - [ ] Zufällige Request- und Correlation-ID sowie pseudonymisierte Actor-
   Referenzen wurden außerhalb der Anwendung angelegt.
@@ -74,7 +135,7 @@ Recovery-Besetzung oder Ausgangsfingerprints nicht eindeutig sind.
 - [ ] Nach dem Lauf enthält die Evidenz genau `RECOVERY_AUTHORIZED` und bei
   Erfolg `TOTP_FACTOR_REMOVED`; Roh-User-/Faktor-IDs und Credentials fehlen.
 
-## B. Kontrollierte Reihenfolge und unvermeidbares Übergangsfenster
+### V3-B. Kontrollierte Reihenfolge und unvermeidbares Übergangsfenster
 
 Zwischen UI-Deployment und Migration 173 besteht bewusst ein kurzes
 Wartungsfenster. Die neue UI kann bereits TOTP verlangen, die Datenbank folgt
@@ -127,14 +188,14 @@ Kontrollen für dieses Fenster:
     RPC-Statuscodes und Recovery-Bereitschaft; keine IDs, Tokens, QR-Daten oder
     Codes.
 
-## C. Direkte RPC-Nachweise
+### V3-C. Direkte RPC-Nachweise
 
 Für alle Aufrufe wird dieselbe legitime Platform-Admin-Identität verwendet. Die
 Access-Tokens bleiben ausschließlich im Browser-/Testprozessspeicher. Als
 geschützte, schreibfreie Probe dient `get_platform_restaurants`; vor und nach
 jedem Block werden Business- und Auditfingerprints verglichen.
 
-### C1. AAL1
+#### V3-C1. AAL1
 
 - [ ] Frische erste-Faktor-Sitzung ohne TOTP-Challenge herstellen.
 - [ ] `get_current_platform_role` liefert ausschließlich die eigene aktive Rolle.
@@ -145,7 +206,7 @@ jedem Block werden Business- und Auditfingerprints verglichen.
 - [ ] Platform-UI rendert keine geschützten Inhalte, sondern Setup/Challenge.
 - [ ] Businesswrites und Auditdelta: 0.
 
-### C2. TOTP-AAL2
+#### V3-C2. TOTP-AAL2
 
 - [ ] TOTP-Challenge über die reguläre Anwendung erfolgreich abschließen.
 - [ ] Neuer Token ist nachweisbar und enthält serverseitig AAL2 plus TOTP-AMR;
@@ -156,7 +217,7 @@ jedem Block werden Business- und Auditfingerprints verglichen.
   direkte Read-RPC zulässig.
 - [ ] Businesswrites und unerwartetes Auditdelta: 0.
 
-### C3. Negativ- und Sitzungswechsel
+#### V3-C3. Negativ- und Sitzungswechsel
 
 - [ ] Sign-out: direkter geschützter RPC abgewiesen.
 - [ ] Abgelaufene oder ersetzte Sitzung: abgewiesen.
@@ -181,7 +242,7 @@ jedem Block werden Business- und Auditfingerprints verglichen.
   High-Risk-Aktion als `RECENT_PLATFORM_TOTP_REQUIRED` abgewiesen. Dieser Test
   darf nur rollback-geschützt und ohne persistente Fachwirkung erfolgen.
 
-## D. Nachweise zu Migration 173
+### V3-D. Nachweise zu Migration 173
 
 - [ ] `platform_session_current_internal()` bindet `session_id` an `auth.uid()`,
   verlangt eine vorhandene Session und berücksichtigt `not_after`.
@@ -200,7 +261,7 @@ jedem Block werden Business- und Auditfingerprints verglichen.
 - [ ] Keine Rolle, Membership, Platform-Admin-Zeile oder Businessrelation wurde
   durch die Migration verändert.
 
-## E. Rückfall- und Abbruchplan
+### V3-E. Rückfall- und Abbruchplan
 
 - **Vor Migration:** bei jedem Fehler stoppen; Datenbank bleibt 172/172. Falls
   bereits ein neuer TOTP-Faktor eingerichtet wurde, bleibt er bestehen und wird
@@ -216,7 +277,7 @@ jedem Block werden Business- und Auditfingerprints verglichen.
 - **Unerwartete Datenänderung:** sofort stoppen, Fingerprints sichern, keine
   Korrektur ohne neue Founder-Freigabe.
 
-## F. Abschlusskriterien
+### V3-F. Abschlusskriterien
 
 Ein Staging-PASS ist erst zulässig, wenn:
 

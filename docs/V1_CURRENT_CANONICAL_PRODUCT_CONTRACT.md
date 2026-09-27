@@ -101,8 +101,13 @@ freigegeben werden. Stripe und Production bleiben unveraendert.
   Mailzustellung und ihr Scheduler sind **nicht freigegeben**. Lediglich
   isolierte synthetische Staging-Mail und Einmal-Scheduler sind nachgewiesen.
 - V1 verlangt keine Pflicht-MFA fuer Customer, Staff oder Owner. Platform
-  Admin braucht vor Production TOTP-MFA/AAL2. Passkeys sind V2/V3, zunaechst
-  optional; SMS ist nur spaeterer Fallback. Stripe, Supabase, Cloudflare,
+  Admin braucht vor Production TOTP-MFA/AAL2 mit zwei separat verifizierten
+  Faktoren desselben Kontos auf zwei verschiedenen Geraeten. Bei Verlust eines
+  Geraets wird mit dem verbleibenden Faktor angemeldet, der verlorene Faktor
+  entfernt und ein neuer zweiter Faktor eingerichtet. Gleichzeitiger Verlust
+  beider Faktoren bleibt in V1 fail-closed; ID Austria und unabhaengiges
+  Personen-Recovery sind V3. Passkeys sind V2/V3, zunaechst optional; SMS ist
+  nur spaeterer Fallback. Stripe, Supabase, Cloudflare,
   Git und Zoho sind mit Provider-2FA zu schuetzen.
 - Stripe soll spaeter System of Record fuer Rechnungen, Zahlungen und
   Gutschriften werden; die Plattform spiegelt/reconciliert, erzeugt keine

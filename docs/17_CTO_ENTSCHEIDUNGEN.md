@@ -3,6 +3,20 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## Founder-Entscheidung 2026-09-27: Platform-Admin-MFA mit zwei TOTP-Geräten
+
+V1 verwendet für dasselbe Platform-Admin-Konto zwei separat registrierte und
+verifizierte TOTP-Faktoren auf zwei verschiedenen Geräten. Jeder Faktor muss
+einen eigenen Login bis AAL2 ermöglichen. Bei Verlust eines Geräts bestätigt
+der Admin den Vorgang mit dem verbleibenden Faktor, entfernt den verlorenen
+Faktor und richtet unmittelbar einen neuen zweiten Faktor ein. Der letzte
+Faktor kann im V1-Self-Service nicht entfernt werden. Migration 173 bleibt
+serverseitig fail-closed. Gleichzeitiger Verlust beider Geräte führt in V1 zum
+Lockout; es gibt keinen AAL1- oder Auth-Admin-Bypass. ID Austria und ein
+unabhängig kontrolliertes Personen-Recovery sind V3. Der lokale Recovery-
+Runner wird für V1 nicht eingesetzt oder deployt; Approver-/Executor-Besetzung
+ist deshalb kein V1-Staging-Gate.
+
 ## Founder-Entscheidung 2026-09-24: aktueller Billing-/Trial-Vertrag
 
 Diese Entscheidung ersetzt fuer **neue** Betriebe alle untenstehenden

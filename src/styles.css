@@ -2977,6 +2977,53 @@ a {
   width: 100%;
 }
 
+.platform-mfa-factor-choice,
+.platform-mfa-security,
+.platform-mfa-device-list,
+.platform-mfa-removal {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.platform-mfa-factor-choice {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.platform-mfa-factor-choice label,
+.platform-mfa-removal label {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.platform-mfa-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.platform-mfa-device-list li {
+  align-items: center;
+  border: 1px solid var(--color-border, #d8d8d8);
+  border-radius: 12px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem;
+}
+
+.platform-mfa-device-list li > div {
+  display: grid;
+  min-width: 0;
+}
+
+.platform-mfa-security-trigger {
+  min-height: 44px;
+}
+
 .tablet-actions {
   display: grid;
   gap: 12px;

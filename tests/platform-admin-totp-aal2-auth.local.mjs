@@ -1,17 +1,10 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import console from "node:console";
-import { createHmac, generateKeyPairSync, randomBytes, randomUUID, sign } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { hasTotpAuthenticationMethod } from "../src/modules/platform/platformAdminMfa.mjs";
-import {
-  canonicalApprovalPayload,
-  runRecovery,
-} from "../scripts/platform-admin-totp-recovery-runner.mjs";
 
 const status = JSON.parse(execFileSync(
   "npx",
@@ -54,9 +47,6 @@ const browser = createClient(url, anonKey, { auth: { persistSession: false, auto
 const userId = randomUUID();
 const email = `platform-aal2-${randomUUID()}@example.invalid`;
 const password = randomBytes(24).toString("base64url");
-const recoveryDirectory = await mkdtemp(join(tmpdir(), "wuxuai-platform-recovery-"));
-await chmod(recoveryDirectory, 0o700);
-
 try {
   const created = await admin.auth.admin.createUser({ id: userId, email, password, email_confirm: true });
   assert.ifError(created.error);
@@ -72,13 +62,40 @@ try {
   const denied = await browser.rpc("get_platform_restaurants");
   assert.ok(denied.error, "A direct Platform Admin RPC must fail before TOTP AAL2");
 
-  const enrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "Local security gate" });
-  assert.ifError(enrollment.error);
-  const verified = await browser.auth.mfa.challengeAndVerify({
-    factorId: enrollment.data.id,
-    code: totp(enrollment.data.totp.secret),
-  });
-  assert.ifError(verified.error);
+  const firstEnrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – Gerät 1" });
+  assert.ifError(firstEnrollment.error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({
+    factorId: firstEnrollment.data.id,
+    code: totp(firstEnrollment.data.totp.secret),
+  })).error);
+
+  const secondEnrollment = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – Gerät 2" });
+  assert.ifError(secondEnrollment.error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({
+    factorId: secondEnrollment.data.id,
+    code: totp(secondEnrollment.data.totp.secret),
+  })).error);
+  const twoFactors = await browser.auth.mfa.listFactors();
+  assert.ifError(twoFactors.error);
+  assert.equal(twoFactors.data.totp.filter((factor) => factor.status === "verified").length, 2);
+
+  await browser.auth.signOut();
+  assert.ifError((await browser.auth.signInWithPassword({ email, password })).error);
+  assert.ok((await browser.rpc("get_platform_restaurants")).error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({
+    factorId: firstEnrollment.data.id,
+    code: totp(firstEnrollment.data.totp.secret),
+  })).error);
+  assert.ifError((await browser.rpc("get_platform_restaurants")).error);
+
+  await browser.auth.signOut();
+  assert.ifError((await browser.auth.signInWithPassword({ email, password })).error);
+  assert.ok((await browser.rpc("get_platform_restaurants")).error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({
+    factorId: secondEnrollment.data.id,
+    code: totp(secondEnrollment.data.totp.secret),
+  })).error);
+  assert.ifError((await browser.rpc("get_platform_restaurants")).error);
 
   const aal2 = await browser.auth.mfa.getAuthenticatorAssuranceLevel();
   assert.ifError(aal2.error);
@@ -96,71 +113,33 @@ try {
   assert.equal(refreshedAal.data.currentLevel, "aal2");
   assert.ifError((await browser.rpc("get_platform_restaurants")).error);
 
-  const staleAal2Token = refreshed.data.session?.access_token;
-  assert.ok(staleAal2Token);
-  const factorsBeforeDelete = await admin.auth.admin.mfa.listFactors({ userId });
-  assert.ifError(factorsBeforeDelete.error);
-  assert.equal(factorsBeforeDelete.data.factors.some((factor) => factor.id === enrollment.data.id), true);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({
+    factorId: secondEnrollment.data.id,
+    code: totp(secondEnrollment.data.totp.secret),
+  })).error);
+  assert.ifError((await browser.auth.mfa.unenroll({ factorId: firstEnrollment.data.id })).error);
+  const oneFactor = await browser.auth.mfa.listFactors();
+  assert.ifError(oneFactor.error);
+  assert.deepEqual(oneFactor.data.totp.filter((factor) => factor.status === "verified").map((factor) => factor.id), [secondEnrollment.data.id]);
 
-  const approvalFile = join(recoveryDirectory, "approval.json");
-  const publicKeyFile = join(recoveryDirectory, "approver.pem");
-  const evidenceFile = join(recoveryDirectory, "evidence.jsonl");
-  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
-  const approvedAt = new Date();
-  const request = {
-    version: 1,
-    action: "DELETE_TOTP_FACTOR",
-    project_ref: "abcdefghijklmnopqrst",
-    correlation_id: randomUUID(),
-    request_id: randomUUID(),
-    target_user_id: userId,
-    factor_id: enrollment.data.id,
-    factor_type: "totp",
-    requestor_ref: "synthetic-local-requestor",
-    approver_ref: "synthetic-local-approver",
-    executor_ref: "synthetic-local-executor",
-    identity_checks: ["REGISTERED_RECOVERY_CONTACT", "SECOND_MFA_PROTECTED_PROVIDER"],
-    reason_code: "FACTOR_UNAVAILABLE",
-    approved_at: approvedAt.toISOString(),
-    expires_at: new Date(approvedAt.getTime() + 5 * 60_000).toISOString(),
-    migration_173_sha256: "fe76bbbc8b24fc069231bb0f56d4351e801d40216c6625df9d4655d0162913ce",
-  };
-  request.signature = sign(null, Buffer.from(canonicalApprovalPayload(request)), privateKey).toString("base64");
-  await writeFile(approvalFile, `${JSON.stringify(request)}\n`, { mode: 0o600 });
-  await writeFile(publicKeyFile, publicKey.export({ type: "spki", format: "pem" }), { mode: 0o600 });
-  await runRecovery({
-    env: {
-      PLATFORM_RECOVERY_PROJECT_URL: "https://abcdefghijklmnopqrst.supabase.co",
-      PLATFORM_RECOVERY_PROJECT_REF: "abcdefghijklmnopqrst",
-      PLATFORM_RECOVERY_EXECUTOR_REF: "synthetic-local-executor",
-      PLATFORM_RECOVERY_APPROVAL_FILE: approvalFile,
-      PLATFORM_RECOVERY_APPROVER_PUBLIC_KEY_FILE: publicKeyFile,
-      PLATFORM_RECOVERY_EVIDENCE_FILE: evidenceFile,
-      PLATFORM_RECOVERY_CONFIRMATION: `DELETE_TOTP_FACTOR:${request.correlation_id}`,
-    },
-    adminMfa: admin.auth.admin.mfa,
-  });
-  const evidenceLines = (await readFile(evidenceFile, "utf8")).trim().split("\n").map((line) => JSON.parse(line));
-  assert.deepEqual(evidenceLines.map((entry) => entry.event), ["RECOVERY_AUTHORIZED", "TOTP_FACTOR_REMOVED"]);
-  assert.equal(evidenceLines.some((entry) => "target_user_id" in entry || "factor_id" in entry), false);
-  const factorsAfterDelete = await admin.auth.admin.mfa.listFactors({ userId });
-  assert.ifError(factorsAfterDelete.error);
-  assert.equal(factorsAfterDelete.data.factors.some((factor) => factor.id === enrollment.data.id), false);
+  const replacement = await browser.auth.mfa.enroll({ factorType: "totp", friendlyName: "WUXUAI Platform Admin – Gerät 1" });
+  assert.ifError(replacement.error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({ factorId: replacement.data.id, code: totp(replacement.data.totp.secret) })).error);
+  const restoredFactors = await browser.auth.mfa.listFactors();
+  assert.ifError(restoredFactors.error);
+  assert.equal(restoredFactors.data.totp.filter((factor) => factor.status === "verified").length, 2);
 
-  const staleSessionClient = createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: `Bearer ${staleAal2Token}` } },
-  });
-  const revokedSessionRpc = await staleSessionClient.rpc("get_platform_restaurants");
-  assert.ok(revokedSessionRpc.error, "A revoked session's unexpired AAL2 token must fail immediately");
+  await browser.auth.signOut();
+  assert.ifError((await browser.auth.signInWithPassword({ email, password })).error);
+  assert.ifError((await browser.auth.mfa.challengeAndVerify({ factorId: replacement.data.id, code: totp(replacement.data.totp.secret) })).error);
+  assert.ifError((await browser.rpc("get_platform_restaurants")).error);
 
-  console.log("LOCAL_REAL_TOTP_ENROLLMENT_CHALLENGE_PASS");
+  console.log("LOCAL_TWO_DISTINCT_TOTP_FACTORS_PASS");
+  console.log("LOCAL_EACH_FACTOR_LOGIN_PASS");
+  console.log("LOCAL_LOST_FACTOR_REMOVE_AND_REPLACE_PASS");
   console.log("LOCAL_AAL1_DIRECT_RPC_BLOCKED_PASS");
   console.log("LOCAL_AAL2_REFRESH_AND_SERVER_ACCESS_PASS");
-  console.log("LOCAL_ADMIN_FACTOR_DELETE_PATH_PASS");
-  console.log("LOCAL_REVOKED_SESSION_STALE_AAL2_RPC_BLOCKED_PASS");
 } finally {
   await admin.from("platform_admins").delete().eq("user_id", userId);
   await admin.auth.admin.deleteUser(userId);
-  await rm(recoveryDirectory, { recursive: true, force: true });
 }

@@ -1,4 +1,58 @@
-# Platform Admin TOTP/AAL2 – Break-glass- und Recovery-Vertrag
+# Platform Admin TOTP/AAL2 – V1 Zwei-Geräte- und Recovery-Vertrag
+
+> **Vorrangige Founder-Entscheidung vom 27.09.2026:** V1 verwendet zwei
+> separat registrierte und verifizierte TOTP-Faktoren desselben Platform-Admin-
+> Kontos auf zwei verschiedenen Geräten. Der bisher nachstehend dokumentierte
+> Personen-/Auth-Admin-Recovery-Vertrag und ID Austria sind V3-Referenz. Der
+> lokale Recovery-Runner wird für V1 weder eingesetzt noch deployt; Approver
+> und Executor sind keine V1-Staging-Blocker.
+
+## V1: verbindlicher Zwei-Geräte-Vertrag
+
+Beide Faktoren müssen separat verifiziert sein und jeweils einen frischen
+Login bis AAL2 ermöglichen. Migration 173 bleibt unverändert die serverseitige
+Autoritätsgrenze: aktuelle Session, `aal2`, TOTP-AMR und weiterhin verifizierter
+Sessionfaktor. Es gibt keine AAL1-Ausnahme.
+
+Bei Verlust eines Geräts meldet sich der Admin mit dem verbleibenden Faktor an.
+Vor der Entfernung muss genau dieser vom Ziel verschiedene Faktor nochmals
+serverseitig gechallenged werden. Erst danach darf der verlorene Faktor über
+die reguläre Benutzer-MFA-API entfernt werden. Der letzte Faktor ist nicht
+entfernbar. Anschließend wird auf einem neuen zweiten Gerät ein Ersatzfaktor
+eingerichtet und verifiziert; danach werden beide Faktoren jeweils in einer
+frischen Sitzung einzeln geprüft. Faktor-IDs, QR-Payloads, Secrets und Codes
+werden weder angezeigt noch protokolliert.
+
+Die App kann die physische Trennung nicht beweisen. Sie muss vom Nutzer im
+kontrollierten Staging-Ablauf bestätigt werden.
+
+### Gleichzeitiger Verlust
+
+Der gleichzeitige Verlust beider Geräte führt in V1 absichtlich zum Lockout.
+Platform-Aktionen bleiben fail-closed. Es gibt keinen Recovery-Code, keinen
+verdeckten Auth-Admin-Pfad und keinen dauerhaften MFA-Bypass. Dieses Restrisiko
+wird durch zwei getrennte Geräte und regelmäßige Einzeltests reduziert. Ein
+realer Doppelausfall braucht eine neue ausdrückliche Sicherheitsentscheidung;
+er darf nicht ad hoc umgangen werden.
+
+### V1-Abschlusskriterien
+
+- zwei physisch getrennte Geräte verfügbar und vom Nutzer bestätigt;
+- beide Faktoren separat registriert, verifiziert und loginfähig;
+- Verlust-/Entfernung-/Ersatzablauf mit einem synthetischen lokalen Benutzer
+  nachgewiesen;
+- letzter Faktor unentfernbar und Entfernung nur nach Challenge mit dem
+  verbleibenden Faktor;
+- AAL1-Direktaufrufe blockiert, AAL2/TOTP-RPCs je Faktor erfolgreich;
+- regulärer Token-Refresh erhält den AAL2/TOTP-Serverzugang;
+- tatsächliche Staging-JWT-Laufzeit und kontrolliertes Übergangsfenster belegt.
+
+---
+
+## V3-Referenz: unabhängig kontrolliertes Personen-Recovery
+
+Der folgende frühere Vertrag bleibt als V3-Architekturevidenz erhalten. Er ist
+für V1 nicht operativ, nicht zu deployen und nicht als V1-Freigabegate zu lesen.
 
 Status: **ARCHITEKTURPRÜFUNG ERFORDERLICH / NOCH NICHT FÜR STAGING FREIGEGEBEN**
 
@@ -6,7 +60,7 @@ Gültigkeitsbereich: Platform-Admin-Zugang von WUXUAI Bonus
 
 Stand: 2026-09-27
 
-## 1. Sicherheitsziel
+### V3.1 Sicherheitsziel
 
 Platform-Admin-Aktionen bleiben auch während eines Recovery-Vorgangs serverseitig
 an eine mit TOTP bestätigte AAL2-Sitzung gebunden. Recovery ersetzt ausschließlich
@@ -17,7 +71,7 @@ Wenn TOTP oder der Supabase-MFA-Dienst nicht verfügbar ist, bleiben Platform-
 Admin-Aktionen gesperrt. Betriebsdruck ist kein Grund, die AAL2-Prüfung zu
 deaktivieren oder `platform_admins` direkt zu verändern.
 
-## 2. Zulässige Rollen
+### V3.2 Zulässige Rollen
 
 Vor der Staging-Aktivierung müssen folgende Personen namentlich in einem
 zugriffsgeschützten Recovery-Register außerhalb der Anwendung hinterlegt sein:
@@ -37,7 +91,7 @@ Fehlt eine erreichbare, vorab registrierte zweite Prüfinstanz, wird kein Recove
 ausgeführt. Der Platform-Admin-Zugang bleibt gesperrt. Diese Besetzung ist ein
 offenes Freigabe-Gate vor Staging.
 
-## 3. Zwei getrennte MFA-Grenzen
+### V3.3 Zwei getrennte MFA-Grenzen
 
 Der MFA-Zugang zum **Supabase-Organisationskonto** schützt Dashboard,
 Organisation und Control Plane des Executors. Er ist weder der TOTP-Faktor des
@@ -85,7 +139,7 @@ echtem Supabase Auth bestätigte genau eine Faktorentfernung und den unmittelbar
 blockierten alten AAL2-Zugriff. Die physische Verfügbarkeit der notwendigen
 Staging-Autorität und des geschützten Ausführungsorts bleibt ein separates Gate.
 
-## 4. Unabhängige Identitätsprüfung
+### V3.4 Unabhängige Identitätsprüfung
 
 Die gesperrte Platform-Admin-Sitzung, das verlorene Gerät und ein dort erzeugter
 Code gelten nicht als Identitätsnachweis. Vor einer Faktoränderung sind mindestens
@@ -100,7 +154,7 @@ zwei voneinander unabhängige Nachweise erforderlich:
 Ausweiskopien, TOTP-Secrets, QR-Payloads, Codes, Access-/Refresh-Tokens und
 Recovery-Codes werden nicht in Ticket, Audit, Bericht oder Git übernommen.
 
-## 5. Verbindlicher Recovery-Ablauf
+### V3.5 Verbindlicher Recovery-Ablauf
 
 1. Requestor eröffnet einen Vorfall mit zufälliger Correlation-ID, Grund,
    Zeitstempel und betroffener pseudonymisierter Platform-Admin-Referenz.
@@ -165,7 +219,7 @@ Die lokale Referenzkonfiguration verwendet eine Access-Token-Laufzeit von rund
 einer Stunde. Die tatsächliche Staging-Laufzeit ist vor dem Recovery read-only
 zu bestätigen und darf nicht aus der lokalen Einstellung abgeleitet werden.
 
-## 6. Sichere Verifikation ohne echtes Admin-Risiko
+### V3.6 Sichere Verifikation ohne echtes Admin-Risiko
 
 - Lokaler End-to-End-Test: synthetischen Auth-Benutzer anlegen, TOTP regulär
   enrollen und verifizieren, AAL2-Token sichern, Faktor über die offizielle
@@ -192,7 +246,7 @@ projektweit verifizierte maximale JWT-Laufzeit, dokumentierte Uhrtoleranz,
 eingefrorene Platform-Mutationen und kein Schließen vor Ablauf des
 Quarantänefensters.
 
-## 7. Unveränderbarer Nachweis
+### V3.7 Unveränderbarer Nachweis
 
 Der Incident-Nachweis wird zunächst im zugriffsgeschützten, append-only
 Security-Incident-System außerhalb der gesperrten Anwendung geführt. Nach
@@ -214,7 +268,7 @@ Pflichtfelder:
 - Ergebnisse der AAL1-/AAL2-RPC-Nachweise;
 - Abweichungen und Abschlussentscheidung.
 
-## 8. Verbotene Recovery-Methoden
+### V3.8 Verbotene Recovery-Methoden
 
 - keine dauerhafte oder zeitweise AAL1-Freigabe für Platform-Aktionen;
 - keine Änderung oder Deaktivierung von Migration 173 als Recovery-Abkürzung;
@@ -229,7 +283,7 @@ Pflichtfelder:
 - keine Faktorentfernung, solange Migration 173 mit Session-/Faktorbindung nicht
   aktiv und geprüft ist.
 
-## 9. Rückfallweg
+### V3.9 Rückfallweg
 
 - **Fehler vor Migration 173:** abbrechen; Datenbank bleibt auf Migration 172.
 - **Fehler innerhalb Migration 173:** die Migration ist transaktional; bei Fehler
@@ -251,7 +305,7 @@ Pflichtfelder:
 - **Verdacht auf kompromittierten ersten Faktor:** separater Credential-Incident;
   zusätzlich Passwort/Providerzugang rotieren und alle Sitzungen widerrufen.
 
-## 10. Architektur-Gates
+### V3.10 Architektur-Gates
 
 Vor jeder Staging-Freigabe müssen namentlich bestätigt sein:
 

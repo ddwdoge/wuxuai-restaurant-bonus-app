@@ -3,10 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   hasTotpAuthenticationMethod,
+  canRemoveTotpFactor,
   isPlatformSessionProofCurrent,
   latestVerifiedTotpFactor,
+  nextTotpDeviceName,
   normalizeTotpCode,
   platformAdminMfaMode,
+  totpFactorLabel,
+  verifiedTotpFactors,
 } from "../src/modules/platform/platformAdminMfa.mjs";
 
 const migration = readFileSync(
@@ -14,6 +18,8 @@ const migration = readFileSync(
   "utf8",
 );
 const gate = readFileSync(new URL("../src/modules/platform/PlatformAdminMfaGate.tsx", import.meta.url), "utf8");
+const securityControl = readFileSync(new URL("../src/modules/platform/PlatformAdminMfaSecurityControl.tsx", import.meta.url), "utf8");
+const layout = readFileSync(new URL("../src/modules/platform/PlatformAdminLayout.tsx", import.meta.url), "utf8");
 const protectedRoute = readFileSync(new URL("../src/modules/auth/ProtectedRoute.tsx", import.meta.url), "utf8");
 const supportEdge = readFileSync(new URL("../supabase/functions/platform-support-auth/index.ts", import.meta.url), "utf8");
 
@@ -55,6 +61,29 @@ test("codes are numeric and the verified factor choice is deterministic", () => 
   ])?.id, "b");
 });
 
+test("two verified TOTP devices remain distinct and safely labelled", () => {
+  const factors = verifiedTotpFactors([
+    { id: "second", status: "verified", friendly_name: "WUXUAI Platform Admin – Gerät 2", created_at: "2026-09-27T09:00:00Z" },
+    { id: "ignored", status: "unverified", friendly_name: "Unverified" },
+    { id: "first", status: "verified", friendly_name: "WUXUAI Platform Admin – Gerät 1", created_at: "2026-09-27T08:00:00Z" },
+  ]);
+  assert.deepEqual(factors.map((factor) => factor.id), ["first", "second"]);
+  assert.equal(totpFactorLabel(factors[0], 0), "WUXUAI Platform Admin – Gerät 1");
+  assert.equal(totpFactorLabel({ id: "fallback", status: "verified" }, 1), "Authenticator-Gerät 2");
+  assert.equal(nextTotpDeviceName([factors[0]]), "WUXUAI Platform Admin – Gerät 2");
+});
+
+test("loss recovery requires a different verified factor and preserves the last factor", () => {
+  const factors = [
+    { id: "first", status: "verified" },
+    { id: "second", status: "verified" },
+  ];
+  assert.equal(canRemoveTotpFactor(factors, "first", "second"), true);
+  assert.equal(canRemoveTotpFactor(factors, "first", "first"), false);
+  assert.equal(canRemoveTotpFactor([factors[0]], "first", "second"), false);
+  assert.equal(canRemoveTotpFactor(factors, "unknown", "second"), false);
+});
+
 test("server role authorization fails closed without TOTP AAL2", () => {
   assert.match(migration, /from auth\.sessions session_record/);
   assert.match(migration, /session_record\.user_id = auth\.uid\(\)/);
@@ -90,6 +119,18 @@ test("every platform route is synchronously wrapped by the MFA gate after role a
   assert.match(gate, /listFactors\(\)/);
   assert.match(gate, /challengeAndVerify\(\{ factorId, code \}\)/);
   assert.match(gate, /factorType: "totp"/);
+  assert.match(gate, /Authenticator-Gerät auswählen/);
+  assert.match(gate, /factors\.map/);
+});
+
+test("authorized Platform Admin can manage exactly two devices without an admin bypass", () => {
+  assert.match(layout, /<PlatformAdminMfaSecurityControl \/>/);
+  assert.match(securityControl, /factors\.length >= 2/);
+  assert.match(securityControl, /canRemoveTotpFactor\(factors, removeTarget, proofFactor\)/);
+  assert.match(securityControl, /challengeAndVerify\(\{ factorId: proofFactor, code \}\)/);
+  assert.match(securityControl, /mfa\.unenroll\(\{ factorId: removeTarget \}\)/);
+  assert.match(securityControl, /factors\.length < 2/);
+  assert.doesNotMatch(securityControl, /service_role|auth\.admin|deleteFactor/);
 });
 
 test("the rendered Platform surface is bound fail-closed to the exact checked session", () => {

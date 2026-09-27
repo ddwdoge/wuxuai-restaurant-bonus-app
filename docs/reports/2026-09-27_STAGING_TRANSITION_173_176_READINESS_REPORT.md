@@ -91,15 +91,20 @@ ohne Merge, Rebase, Cherry-pick oder Force-Push gestoppt.
 
 ## Recovery-Voraussetzungen Migration 173
 
+**V1-Entscheidung vom 27.09.2026:** Die operative Absicherung erfolgt durch zwei
+separat verifizierte TOTP-Faktoren desselben Platform-Admin-Kontos auf zwei
+verschiedenen Geräten. Der lokale Personen-/Auth-Admin-Recovery-Runner, ein
+Independent Approver und ein Recovery Executor sind V3 und keine V1-Staging-
+Blocker. Gleichzeitiger Verlust beider Faktoren bleibt in V1 fail-closed.
+
 | Gate | Status | Nachweis |
 |---|---|---|
 | Lokaler AAL2/TOTP-Code und Session-/Faktorbindung | PASS | Migration 173 und lokale Security-Nachweise; gespeicherter AAL2-Token wird nach Sessionwiderruf/Faktorentfernung serverseitig blockiert |
-| Offizieller Faktor-Recoveryvertrag | PASS (Architektur) | `auth.admin.mfa.listFactors` + `deleteFactor`, keine AAL1-Ausnahme und kein Browser-/JWT-Bypass |
+| V1 Zwei-Geräte-Verlustvertrag | PASS (lokal) | Faktorentfernung nur nach Challenge mit einem anderen verifizierten Faktor; letzter Faktor unentfernbar; Ersatzfaktor wird regulär neu verifiziert |
 | Tatsaechliche maximale Staging-JWT-Laufzeit | OPEN | Eine legitime Staging-Testsitzung war vorhanden. Der Wert `exp - iat` konnte mit den verfuegbaren Browserwerkzeugen nicht sicher im Browserkontext berechnet werden, ohne den Token zu exportieren oder sichtbar zu machen. Der lokale Ein-Stunden-Wert wird nicht auf Staging uebertragen. |
-| Geschuetzter Recovery-Runner | PASS (lokal), OPEN (Staging-Autoritaet/Ausfuehrungsort) | `scripts/platform-admin-totp-recovery-runner.mjs` bindet Projekt, signierte Vier-Augen-Freigabe, Identitaetschecks, Executor, Migration-Hash und exklusive append-only Evidenz fail-closed. Unit-Matrix und echter synthetischer lokaler Supabase-Auth-Lauf PASS. Keine Staging-Auth-Admin-Autoritaet wurde verwendet. |
-| Independent Recovery Approver | OPEN | Vertrag definiert die Rolle, nennt aber keine Person. |
-| Recovery Executor | OPEN | Vertrag definiert Rolle/Berechtigung, nennt aber keine Person und weist keinen separaten MFA-geschuetzten Supabase-Zugang nach. |
-| Kontrollierter TOTP-Einrichtungsablauf | PASS (Plan), OPEN (Staging) | UI, lokale Tests und Reihenfolge sind vorhanden; physische Einrichtung ist ohne die drei offenen Recovery-Gates nicht freigegeben. |
+| Geschuetzter Recovery-Runner | V3 / NOT DEPLOYED | Der vorhandene lokale Runner wird für V1 weder eingesetzt noch deployt und erhält keine Staging-Autorität. |
+| Independent Recovery Approver / Executor | V3 / NOT A V1 GATE | Namentliche Besetzung blockiert die V1-Staging-Prüfung nicht. |
+| Kontrollierter Zwei-Geräte-Ablauf | PASS (lokal), OPEN (Staging) | Zwei synthetische Faktoren, Einzel-Login, Verlustentfernung und Ersatz sind lokal bestanden; die physische Einrichtung auf zwei Nutzergeräten verlangt ausdrückliche Nutzeraktionen. |
 
 Damit ist Migration 173 **nicht zur Anwendung bereit**.
 
@@ -134,16 +139,13 @@ reinen Uebergangsloop nicht ohne konkreten Grund wiederholt.
 
 ## Entscheidungen vor der Staging-Anwendung
 
-Founder/Organisation muessen namentlich festlegen:
+Founder/Organisation muessen fuer V1 festlegen beziehungsweise bereitstellen:
 
-1. Independent Recovery Approver (nicht Requestor);
-2. Recovery Executor mit separatem MFA-geschuetztem Supabase-Zugang;
-3. geschuetzten Runner-Ausfuehrungsort, Approver-Key-Verwahrung und externe
-   append-only Incident-Ablage;
-4. verantwortliche Person und Wartungsfenster fuer TOTP-Ersteinrichtung;
-5. autorisierte bestehende Testkonten fuer Platform Admin, Owner, Staff,
+1. zwei getrennte physische Platform-Admin-Geräte;
+2. verantwortliche Person und Wartungsfenster fuer die Einrichtung;
+3. autorisierte bestehende Testkonten fuer Platform Admin, Owner, Staff,
    Customer und fremden Tenant;
-6. ob/wann ein spaeterer positiver synthetischer E-Mail-E2E-Test ausdruecklich
+4. ob/wann ein spaeterer positiver synthetischer E-Mail-E2E-Test ausdruecklich
    freigegeben wird. Im geplanten Rollout bleibt reale Zustellung 0.
 
 Codex kann danach die technische Preflight-Matrix, Hashes, Fingerprints,
