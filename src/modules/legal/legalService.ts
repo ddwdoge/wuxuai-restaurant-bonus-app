@@ -37,7 +37,7 @@ export type LegalDocumentView = {
 
 export type PublicLegalCenter = {
   restaurant: { name: string; slug: string };
-  roles: { program_operator: string; platform_provider: string; notice: string };
+  roles: { program_operator: string | null; platform_provider: string; end_user: string; notice: string };
   imprint: Record<string, string | null>;
   documents: LegalDocumentView[];
   consents: Array<{ consent_type: ConsentType; status: ConsentStatus; version: string; updated_at: string }>;

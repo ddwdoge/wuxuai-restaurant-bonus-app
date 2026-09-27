@@ -214,7 +214,17 @@ export function LegalCenterPage() {
           <ShieldCheck aria-hidden="true" size={25} />
         </header>
 
-        <section className="legal-role-card"><Building2 aria-hidden="true" size={23} /><div><strong>Klare Verantwortung</strong><p>{data.restaurant.name} betreibt das Bonusprogramm, vergibt Punkte und bietet Punkteeinlösungen an. WUXUAI stellt die technische Plattform bereit und hält keine Kundengelder.</p></div></section>
+        <section className="legal-role-card">
+          <Building2 aria-hidden="true" size={23} />
+          <div>
+            <strong>Klare Rollen</strong>
+            <dl>
+              <div><dt>Plattformanbieter</dt><dd>{data.roles.platform_provider} stellt die technische Plattform bereit und hält keine Kundengelder.</dd></div>
+              <div><dt>Betreiber</dt><dd>{data.roles.program_operator} betreibt dieses Bonusprogramm, vergibt Punkte und bietet Punkteeinlösungen an.</dd></div>
+              <div><dt>Endnutzer</dt><dd>Gäste nutzen das restaurantbezogene Bonusprogramm als Kunden.</dd></div>
+            </dl>
+          </div>
+        </section>
         <p className="legal-product-notice">{data.product_notice}</p>
 
         {token && data.customer_recognized && reacceptanceRequired ? (

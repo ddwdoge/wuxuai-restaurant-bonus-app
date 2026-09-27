@@ -10,6 +10,10 @@
 .legal-role-card svg { color: #e5c886; }
 .legal-role-card strong { font-weight: 600; }
 .legal-role-card p { color: #d3cec4; line-height: 1.5; margin: 5px 0 0; }
+.legal-role-card dl { display: grid; gap: 9px; margin: 11px 0 0; }
+.legal-role-card dl div { display: grid; gap: 3px; grid-template-columns: minmax(112px,.55fr) minmax(0,1.45fr); }
+.legal-role-card dt { color: #e5c886; font-size: 12px; font-weight: 700; }
+.legal-role-card dd { color: #d3cec4; line-height: 1.45; margin: 0; overflow-wrap: anywhere; }
 .legal-product-notice { background: #f3e6cc; border-radius: 15px; color: #725320; line-height: 1.5; margin: 0; padding: 15px 17px; }
 .legal-reacceptance { align-items: center; background: #f3e6cc; border-radius: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0,1fr) auto; padding: 16px 18px; }
 .legal-reacceptance p { color: #665334; line-height: 1.45; margin: 5px 0 0; }
@@ -38,4 +42,4 @@
 .legal-status { align-items: center; background: #eaf3ec; border-radius: 14px; color: #3d6b4b; display: flex; gap: 9px; margin: 0; padding: 14px; }
 .legal-center-shell footer { color: #777169; font-size: 13px; text-align: center; }
 .legal-center-shell :focus-visible { outline: 3px solid rgba(191,143,54,.35); outline-offset: 3px; }
-@media (max-width: 520px) { .legal-document-card dl div { grid-template-columns: 1fr; }.legal-center-header { grid-template-columns: 48px minmax(0,1fr); }.legal-center-header > svg { display: none; }.legal-reacceptance { grid-template-columns: minmax(0,1fr); }.legal-reacceptance button { width: 100%; } }
+@media (max-width: 520px) { .legal-document-card dl div,.legal-role-card dl div { grid-template-columns: 1fr; }.legal-center-header { grid-template-columns: 48px minmax(0,1fr); }.legal-center-header > svg { display: none; }.legal-reacceptance { grid-template-columns: minmax(0,1fr); }.legal-reacceptance button { width: 100%; } }

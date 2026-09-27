@@ -153,6 +153,20 @@ freigegeben werden. Stripe und Production bleiben unveraendert.
   darf ausschliesslich ein exakt serverseitig markierter TEST_ONLY-Betrieb in
   `PENDING_ACTIVATION` den synthetischen Intake nutzen. Die Eigenschaft
   `synthetisch` wird nicht aus Dateiinhalten abgeleitet.
+- V1 fuehrt keine automatischen GISA-, Firmenbuch-, UID-, Adress- oder
+  Identitaetsabfragen aus. Registertreffer, Upload und Feldvollstaendigkeit
+  duerfen weder KYB noch Restaurant, Trial, Entitlements oder Billing
+  automatisch aktivieren.
+- Kundenseitige Betreiberangaben duerfen nur aus einer ausdruecklich und
+  auditierbar durch einen berechtigten Platform Admin freigegebenen,
+  unveraenderbaren Profilrevision stammen. Aendert sich ein rechtlich
+  relevantes Betreiberfeld, ist fuer die neue Fassung eine erneute Pruefung
+  erforderlich.
+- WUXUAI ist Plattformanbieter, das Restaurant Betreiber seines Bonusprogramms
+  und der Gast Endnutzer. Private KYB-Dokumente, Ausweise, interne Pruefnotizen,
+  Objektpfade und signierte Download-URLs erscheinen niemals oeffentlich.
+- Die Feld-/Dokumentzuordnung bleibt bis zur anwaltlichen Freigabe der Matrix
+  `docs/V1_AT_KYB_LEGAL_FIELD_DOCUMENT_MATRIX.md` ein technischer Entwurf.
 
 ## Phase 7C.6B5 – historischer LOCAL CODE LOCK vor Staging (2026-09-23)
 
