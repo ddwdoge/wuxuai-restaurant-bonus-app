@@ -1123,4 +1123,150 @@ Build-Befehl bleibt die verbindliche und im Build-Log zuerst erwartete Stufe.
 
 ---
 
+## 31. BASIC-V1-Releasevertrag ab Migration 183
+
+Dieser Abschnitt beschreibt den nachgewiesenen technischen Stand des
+Integrationsbranches nach den Migrationen 180 bis 183. Er ist keine
+Production-Freigabe und ersetzt keine rechtliche, steuerliche oder
+gesellschaftsrechtliche Entscheidung.
+
+### 31.1 Verbindliche Reihenfolge
+
+1. Integrationsbranch und Remote-HEAD frisch abgleichen; keine Divergenz,
+   keinen Force-Push und keine fremden Änderungen zulassen.
+2. Zielumgebung anhand Projekt-Ref, Projektname und öffentlicher App-Domain
+   dreifach bestätigen. Staging- und Production-Werte dürfen nie gemischt
+   werden.
+3. Vor jedem Write einen Datenbank-Backup-/PITR-Nachweis sowie deterministische
+   Fingerprints der geschützten Business-, Rollen-, Billing-, Trial-, KYB-,
+   Punkte- und Redemption-Relationen sichern.
+4. Migrationen ausschließlich in Repository-Reihenfolge anwenden. Für den
+   aktuellen BASIC-Vertrag sind insbesondere 180 (manueller BASIC-Trial),
+   181 (expliziter Folgeauftrag, Stripe-TEST-Lifecycle und 60-Tage-Fenster),
+   182 (Entscheidung in den letzten sieben Tagen und Reaktivierung) und 183
+   (getrennte Free-Pilot-/Paid-Readiness) untrennbar in dieser Reihenfolge zu
+   prüfen. Keine Migration darf übersprungen, umnummeriert oder rückwirkend
+   geändert werden.
+5. Nach jeder Migration Migrationshistorie, DB-Lint, RLS/ACL, Direkt-RPC-
+   Negativmatrix und Fingerprint-Delta prüfen. Nach der letzten Migration muss
+   der Repeat-Dry-Run leer sein.
+6. Erst danach die für den Release benötigten Edge Functions aus exakt
+   demselben Commit deployen und ihre Versionen festhalten.
+7. Die Web-App zuletzt aus demselben Commit mit den korrekten öffentlichen
+   Clientbindungen bauen und ausschließlich auf den vorgesehenen Worker
+   deployen. HTML-/Asset-Parität und HTTP-Smoke-Test sind Pflicht.
+8. Erst nach DB-, Edge- und Asset-Parität die Rollen-Smoke-Tests ausführen.
+
+Die Funktionen `billing-basic-test-checkout` und
+`billing-stripe-test-webhook` sind ausschließlich für das verifizierte
+Stripe-Testsystem gebaut. Sie dürfen nicht als LIVE-Zahlungsweg nach
+Production übernommen oder durch Umbenennen ihrer Konfiguration umgedeutet
+werden. Ein eigener geprüfter LIVE-Vertrag ist vor bezahltem Production-BASIC
+zwingend.
+
+### 31.2 Konfigurationsnamen ohne Werte
+
+Öffentliche, buildzeitgebundene Web-App-Konfiguration:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+VITE_APP_BASE_URL
+VITE_VAPID_PUBLIC_KEY (nur wenn der freigegebene Push-Vertrag genutzt wird)
+```
+
+Verwaltete Supabase-Runtime-Bindungen der betroffenen Edge Functions:
+
+```text
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+Nur Staging/Stripe TEST:
+
+```text
+BASIC_BILLING_MODE
+BASIC_BILLING_PROJECT_REF
+STRIPE_TEST_SECRET_KEY
+STRIPE_TEST_WEBHOOK_SECRET
+REDEMPTION_EDGE_MODE
+REDEMPTION_STAGING_PROJECT_REF
+```
+
+Nur lokale Redemption-Tests:
+
+```text
+REDEMPTION_LOCAL_ALLOWED_ORIGIN
+```
+
+Kein Wert wird in Git, Bericht, ZIP, Kommandozeilenargument oder
+Frontend-Log aufgenommen. `SUPABASE_SERVICE_ROLE_KEY`, Stripe-Secrets und
+vergleichbare Server-Credentials dürfen niemals in einem Vite-Bundle stehen.
+Eine fehlende Production-Konfiguration wird nicht aus Staging-Werten
+abgeleitet, sondern ist ein Stop-Kriterium.
+
+### 31.3 BASIC-Smoke-Matrix
+
+Vor dem ersten Pilotbetrieb müssen mit ausdrücklich autorisierten
+synthetischen Konten mindestens nachgewiesen sein:
+
+- Platform Admin: aktuelle TOTP/AAL2-Sitzung; offene Pilot-Gates sind sichtbar
+  und serverseitig identisch blockiert; ein oder drei Kalendermonate sind erst
+  nach vollständiger Readiness auswählbar.
+- Owner: korrekte Tenantbindung, Trialstatus und Enddatum; keine
+  Zahlungsmethode, Stripe-ID oder automatische Verlängerung im Gratis-Trial;
+  ausdrückliche BASIC-Annahme frühestens im vorgesehenen Entscheidungsfenster.
+- Staff: eigener Tenant, Tages-PIN-/Betragsvertrag, genau einmalige
+  Punktebuchung, falscher Tenant und falsche Rolle blockiert.
+- Gast: persönlicher Bonus-QR, sichtbarer Punktestand, Belohnungsstatus und
+  sichere Einlösung; Replay, Doppel-Scan und Parallelität wirken höchstens
+  einmal.
+- Nach Trialende: keine neuen Beitritte, positiven Punkte/Stempel,
+  Punkte-QRs oder neuen Angebote; nur bereits zulässige Einlösungen im
+  60-Kalendertage-Fenster. Die Grenzen werden in `Europe/Vienna` berechnet und
+  das Ende ist exklusiv.
+
+Navigation, Reload, Sprachwechsel und reine Ansicht dürfen keine
+Businesswrites erzeugen. Ein physischer Staging-Nachweis wird nicht durch
+lokale Zeitinjektion oder eine verstellte Serveruhr ersetzt.
+
+### 31.4 Monitoring beim ersten Pilotbetrieb
+
+Während des ersten Betriebs werden mindestens überwacht:
+
+- Auth-Hydration, Token-Refresh und unerwartete Rollen-/Tenantwechsel;
+- Trialentscheidung, Start-/Endgrenze und verbleibende Tage;
+- fehlgeschlagene oder doppelte Punktebuchungen sowie Idempotenzkonflikte;
+- Redemption-Inbox, Replay-/Hashkonflikte, Parallelität und Terminalstatus;
+- Fehlerquote und Latenz der betroffenen RPCs und Edge Functions;
+- unerwartete Änderungen an Subscription-, Entitlement-, Grant-, Stripe-,
+  KYB-, Country- oder Auditrelationen.
+
+Verantwortlichkeiten vor Start: Release-Verantwortlicher für DB/Worker,
+Platform Admin für AAL2-Entscheidungen, Support-Verantwortlicher für
+Owner/Staff/Gast und fachlich benannte Verantwortliche für Legal, Privacy,
+Steuer und Kassa. Unbesetzte Verantwortlichkeiten sind ein Stop-Kriterium.
+
+### 31.5 Rollback und Stop-Kriterien
+
+- Web-App: auf die vorher verifizierte Worker-Version zurückstellen und
+  Asset-Parität erneut prüfen.
+- Edge Functions: ausschließlich auf die vorher dokumentierte Version
+  zurückstellen; keine unbekannte Version deployen.
+- Datenbank: Migrationen sind vorwärtsgerichtet. Kein destruktives Down-SQL
+  improvisieren. Bei einem Schemafehler Writes stoppen, PITR/Backup schützen
+  und einen geprüften additiven Hotfix erstellen.
+- Bereits erzeugte Audit-, Trial-, Acceptance-, Event- oder
+  Redemption-Evidenz wird nicht gelöscht oder rückwirkend umgeschrieben.
+
+Sofortiger Abbruch bei falschem Projekt/Worker, Remote-Divergenz, nicht leerem
+Repeat-Dry-Run, unerwartetem Fingerprint-Delta, RLS-/Rollenabweichung,
+Tenant-Leak, doppelter Punkte-/Redemption-Wirkung, automatischer Trialzahlung,
+ungeprüfter LIVE-Billing-Konfiguration oder offenem Legal-/Privacy-/Tax-/KYB-/
+Kassa-Gate. Production und Stripe LIVE bleiben bis zur ausdrücklichen
+Freigabe gesperrt.
+
+---
+
 Endstatus: **LOCK**
