@@ -1,11 +1,44 @@
 \set ON_ERROR_STOP on
 begin;
+set local timezone='UTC';
 set local session_replication_role=replica;
 
 create function pg_temp.u(label text) returns uuid language sql immutable as $$
   select (substr(md5(label),1,8)||'-'||substr(md5(label),9,4)||'-4'||substr(md5(label),14,3)
     ||'-8'||substr(md5(label),18,3)||'-'||substr(md5(label),21,12))::uuid
 $$;
+
+-- Deterministic boundary contract. Production uses the same inclusive-start
+-- and exclusive-end predicates with statement_timestamp().
+create function pg_temp.window_open(starts_at timestamptz,ends_at timestamptz,evaluated_at timestamptz)
+returns boolean language sql immutable as $$
+  select starts_at<=evaluated_at and ends_at>evaluated_at
+$$;
+
+do $test$ declare
+  trial_start constant timestamptz:='2028-01-31 12:00:00+00';
+  trial_end constant timestamptz:=trial_start+interval '1 month';
+  grace_end constant timestamptz:=trial_end+interval '60 days';
+begin
+  if trial_end<>'2028-02-29 12:00:00+00'::timestamptz then
+    raise exception 'LEAP_YEAR_MONTH_END_INVALID'; end if;
+  if not pg_temp.window_open(trial_start,trial_end,trial_end-interval '1 microsecond')
+    or pg_temp.window_open(trial_start,trial_end,trial_end)
+    or pg_temp.window_open(trial_start,trial_end,trial_end+interval '1 microsecond') then
+    raise exception 'TRIAL_END_BOUNDARY_INVALID'; end if;
+  if not pg_temp.window_open(trial_end,grace_end,trial_end)
+    or not pg_temp.window_open(trial_end,grace_end,trial_end+interval '1 microsecond')
+    or not pg_temp.window_open(trial_end,grace_end,grace_end-interval '1 microsecond')
+    or pg_temp.window_open(trial_end,grace_end,grace_end)
+    or pg_temp.window_open(trial_end,grace_end,grace_end+interval '1 microsecond') then
+    raise exception 'REDEMPTION_GRACE_BOUNDARY_INVALID'; end if;
+  if ('2027-01-31 23:30:00+00'::timestamptz+interval '1 month')
+      <>'2027-02-28 23:30:00+00'::timestamptz then
+    raise exception 'NON_LEAP_MONTH_END_INVALID'; end if;
+  if ('2027-03-28 01:30:00 Europe/Vienna'::timestamptz+interval '60 days')
+      <>'2027-05-27 00:30:00+00'::timestamptz then
+    raise exception 'UTC_DURATION_ACROSS_DST_INVALID'; end if;
+end $test$;
 
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 values

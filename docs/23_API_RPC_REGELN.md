@@ -5,9 +5,11 @@
 erhalten PENDING_ACTIVATION ohne Trialdaten oder Live-Entitlements. Der
 Registrierungs-RPC darf keinen Trial erzeugen; sein historischer Name
 `start_restaurant_owner_trial` ist keine Aktivierungsautoritaet. Eine
-spaetere Provideraktivierung muss davon getrennt, serverseitig autorisiert,
-signiert und idempotent nach Country-, Legal- und KYB-Gates erfolgen.
-Checkout/Webhook und positiver Staging-Pending-Flow sind noch offen.
+spaetere BASIC-Trialaktivierung muss davon getrennt, serverseitig autorisiert,
+auditiert und idempotent durch einen berechtigten Platform Admin mit aktuellem
+TOTP/AAL2 nach Country-, KYB-, Legal- und Kassa-Gates erfolgen; erlaubt sind
+ausdrücklich ein oder drei Kalendermonate. Checkout/Webhook und der spätere
+Bezahlvertrag sind davon getrennt.
 Migrationen 163–165 sind laut letztem Staging-Gate angewendet. Aeltere
 Phase-7B-LOCAL-ONLY- und Trial-Abschnitte sind historische Snapshots;
 aktueller Vertrag: `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
@@ -337,8 +339,11 @@ Pflichten:
 - keine Trial-Start-/Enddaten, bezahlte Periode oder Live-Entitlements
   bei Registrierung setzen
 - Setup/Preview erlauben und produktive Aktionen serverseitig blockieren
-- spaetere Provideraktivierung getrennt, autorisiert, signiert und
-  idempotent behandeln; erst dann ein BASIC-/PRO-Kalendermonat Trial
+- spätere BASIC-Trialaktivierung getrennt, autorisiert, auditiert und
+  idempotent behandeln; nur ein berechtigter Platform Admin mit aktuellem
+  TOTP/AAL2 darf nach bestandenen Country-/KYB-/Legal-/Kassa-Gates ausdrücklich
+  einen oder drei Kalendermonate aktivieren
+- PRO und der spätere Bezahlvertrag bleiben getrennte Abläufe
 - Add-ons ohne Trial; historische rechtmaessige Trials unveraendert lassen
 - Audit schreiben
 

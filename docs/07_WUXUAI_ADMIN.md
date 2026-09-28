@@ -412,7 +412,10 @@ Kein rückwirkendes Nachzahlen
 
 Der obige Drei-Monats-Vertrag gilt nur als historische Dokumentation;
 bestehende rechtmaessige Trialdaten werden nicht rueckwirkend geaendert.
-Neue Betriebe bleiben bis zur verifizierten Provideraktivierung Pending.
+Neue Betriebe bleiben Pending, bis ein berechtigter Platform Admin nach
+bestandenen Country-, KYB-, Legal- und Kassa-Gates mit aktuellem TOTP/AAL2
+ausdrücklich einen BASIC-Trial von einem oder drei Kalendermonaten aktiviert.
+PRO und ein späterer Bezahlvertrag bleiben getrennte Abläufe.
 
 ### 7.2 Keine rückwirkende Zahlung
 

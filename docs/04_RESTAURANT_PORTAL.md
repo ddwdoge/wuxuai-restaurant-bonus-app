@@ -680,7 +680,7 @@ Regel:
 - Punkteeinlösung, Willkommensgeschenke, Mitarbeiter/Tages-PIN und QR Center sind echte Links.
 - Abo & Testphase zeigt echte Subscription-Daten oder einen klaren Nicht-verfügbar-Zustand.
 - Abo & Testphase darf keine kaputten DB-Spalten abfragen. Wenn Stripe-/Payment-Felder noch fehlen, zeigt die Seite einen ruhigen V1-Status.
-- Neue Registrierung: BASIC ist nur vorgemerkt (PENDING_ACTIVATION), ohne Trial oder aktives Entitlement. BASIC kostet nach spaeterer Provideraktivierung 59 EUR netto/Monat; der erste volle Abrechnungsmonat ist kostenlos. Checkout und Zahlungsmittel sind Voraussetzung, automatische Live-Abrechnung bleibt gesperrt.
+- Neue Registrierung: BASIC ist nur vorgemerkt (`PENDING_ACTIVATION`), ohne Trial oder aktives Entitlement. Nach bestandenen Country-, KYB-, Legal- und Kassa-Gates kann ein berechtigter Platform Admin mit aktuellem TOTP/AAL2 einen BASIC-Trial von ausdrücklich einem oder drei Kalendermonaten aktivieren. Während des Trials gibt es keine Zahlungsmethode, Stripe-ID, Belastung oder automatische Verlängerung. Ein kostenpflichtiger BASIC-Folgevertrag zu 59 EUR netto/Monat entsteht nur durch gesonderte Owner-Annahme und den freigegebenen Zahlungsweg; PRO bleibt ein eigener Ablauf.
 - Solange Stripe Checkout/Webhooks nicht echt aktiv sind, gibt es keine Fake-Zahlung und keinen Fake-Erfolg.
 - Keine klickbare Karte darf ins Leere führen.
 - Keine Karte darf wie eine Funktion wirken, wenn dahinter keine echte Funktion steht.

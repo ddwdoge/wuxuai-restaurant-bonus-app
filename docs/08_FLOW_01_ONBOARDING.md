@@ -80,8 +80,10 @@ Flow 01 dient direkt dem Cashflow-Ziel der Plattform.
 Ein Restaurant soll die Software schnell testen können.\
 Je schneller ein Restaurant starten kann, desto höher ist die
 Wahrscheinlichkeit, dass es den Setup-/Preview-Modus waehrend
-PENDING_ACTIVATION sinnvoll vorbereitet und nach spaeterer verifizierter
-Provideraktivierung den ersten vollen kostenlosen Abrechnungsmonat nutzt.
+PENDING_ACTIVATION sinnvoll vorbereitet und nach bestandenen Country-, KYB-,
+Legal- und Kassa-Gates durch eine manuelle, aktuelle TOTP/AAL2-Entscheidung
+eines berechtigten Platform Admin einen BASIC-Trial von ausdrücklich einem
+oder drei Kalendermonaten nutzen kann.
 
 Deshalb gilt:
 

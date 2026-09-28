@@ -37,10 +37,14 @@ aktiven eindeutigen Kunden; PRO 149 EUR netto/Monat mit 15 Angeboten und
 je +5 Angebote; Customer Add-on 29 EUR netto/Monat je +5.000 Kunden.
 Kundenfenster: exakt rollierende 365 Tage. Registrierung erzeugt
 PENDING_ACTIVATION ohne Trial, erlaubt Setup/Preview und blockiert Live-
-Aktionen. Erst verifizierte Provideraktivierung startet einen kostenlosen
-BASIC-/PRO-Kalendermonat; Add-ons haben keinen Trial. Historische rechtmaessige
-Trials bleiben erhalten. Migrationen 163–168 sind auf Staging angewendet
-(168/168); 7C.6C2B ist ein TEST-only STAGING BACKEND LOCK und 7C.6C3B
+Aktionen. Ein berechtigter Platform Admin kann nach bestandenen Country-,
+KYB-, Legal- und Kassa-Gates mit aktuellem TOTP/AAL2 ausdrücklich einen
+BASIC-Trial von einem oder drei Kalendermonaten aktivieren. Währenddessen gibt
+es keine Zahlungsmethode, Stripe-ID, Belastung oder automatische Verlängerung.
+PRO, Add-ons und der spätere Bezahlvertrag bleiben getrennte Abläufe.
+Historische rechtmaessige Trials bleiben erhalten. Migrationen 163–168 sind
+auf Staging angewendet (168/168); 7C.6C2B ist ein TEST-only STAGING BACKEND
+LOCK und 7C.6C3B
 ein negativer Billing-Restgate-Lock, nicht Production- oder kommerzielle Freigabe.
 
 ## Quellen und Sicherheit

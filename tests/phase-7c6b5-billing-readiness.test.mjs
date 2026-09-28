@@ -47,6 +47,19 @@ test('all seven locales have complete distinct localized readiness text',()=>{
   if(locale!=='en')assert.notEqual(t.trialNote,billingReadinessMessages('en').trialNote);
  }
 });
+test('active readiness copy describes manual BASIC trial without payment setup',()=>{
+ const stale=/one calendar month only after|ein kalendermonat erst nach|checkout with payment|checkout mit zahlungsmittel/i;
+ for(const locale of ['de','en','fr','it','es','zh','ko']){
+  const note=billingReadinessMessages(locale).trialNote;
+  assert.match(note,/BASIC/);
+  assert.match(note,/TOTP\/AAL2/);
+  assert.equal(stale.test(note),false,`${locale} still exposes the superseded provider trial`);
+ }
+ const de=billingReadinessMessages('de').trialNote;
+ assert.match(de,/einem oder drei Kalendermonaten/);
+ assert.match(de,/keine Zahlungsmethode/);
+ assert.match(de,/PRO bleibt ein eigener Ablauf/);
+});
 test('UI is read-only and legacy controls consume server action authority',()=>{
  const ui=read('src/modules/platform/PlatformBillingReadiness.tsx');
  assert.match(read('src/modules/platform/useBillingReadiness.ts'),/get_platform_billing_readiness/);

@@ -8,14 +8,17 @@ Der eingefrorene aktuelle Releasevertrag steht in
 `docs/V1_FINAL_RELEASE_STATUS.md`. Diese Datei bleibt die ausfuehrlichere
 Readiness-Begruendung; historische Reports bleiben unveraendert.
 
-**Aktueller Vorrang (24.09.2026):** `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
+**Aktueller Vorrang (28.09.2026):** `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`
 und `V1_CURRENT_IMPLEMENTATION_STATUS.md`. Neue Betriebe starten
 PENDING_ACTIVATION ohne Trial oder Live-Entitlements. BASIC 59 EUR netto,
 PRO 149 EUR netto mit begrenzter Capacity und 365-Tage-Kundenfenster;
-BASIC/PRO erhalten einen kostenlosen Kalendermonat erst nach verifizierter
-Provideraktivierung, Add-ons keinen Trial. Die untenstehende Drei-Monats-
-PASS-Zeile belegt ausschliesslich den 2026-08-31-Altstand. Seller-Verifikation,
-Stripe-Providerbindung, Legal-/KYB-Gates und Production bleiben offen.
+BASIC erhält nach bestandenen Country-, KYB-, Legal- und Kassa-Gates durch
+eine auditierte manuelle Entscheidung eines berechtigten Platform Admin mit
+aktuellem TOTP/AAL2 einen Trial von ausdrücklich einem oder drei
+Kalendermonaten. PRO, Add-ons und der spätere Bezahlvertrag bleiben getrennte
+Abläufe. Die untenstehende Drei-Monats-PASS-Zeile belegt ausschliesslich den
+2026-08-31-Altstand. Seller-Verifikation, Stripe-Providerbindung,
+Legal-/KYB-Gates und Production bleiben offen.
 
 ## Historischer Release-Stand vom 2026-08-31
 

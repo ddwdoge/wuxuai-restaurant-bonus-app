@@ -589,8 +589,12 @@ Regeln fuer neue Betriebe:
   bezahlte Periode oder Live-Entitlements.
 - Nur Setup/Preview ist zulaessig; produktive QR-, Punkte-, Einloese- und
   Kommunikationsaktionen bleiben serverseitig blockiert.
-- Erst verifizierte Provideraktivierung nach Country-, Legal- und KYB-Gates
-  darf einen kostenlosen BASIC-/PRO-Kalendermonat beginnen. Add-ons ohne Trial.
+- Erst eine auditierte manuelle Entscheidung eines berechtigten Platform Admin
+  mit aktuellem TOTP/AAL2 darf nach bestandenen Country-, KYB-, Legal- und
+  Kassa-Gates einen BASIC-Trial von ausdrücklich einem oder drei
+  Kalendermonaten beginnen. PRO, Add-ons und der spätere Bezahlvertrag bleiben
+  getrennte Abläufe; während des BASIC-Trials gibt es keine Stripe-ID oder
+  Zahlungsmethode.
 - Rechtmaessige historische Trials bleiben unveraendert.
 - Keine rückwirkende Zahlung.
 - Der historische RPC-Name `start_restaurant_owner_trial` erteilt keine

@@ -70,6 +70,15 @@ test('contract is BASIC TEST only and never auto-converts the trial', () => {
   assert.match(service, /BASIC KOSTENPFLICHTIG BESTELLEN/);
 });
 
+test('trial and 60-day redemption windows use inclusive start and exclusive end', () => {
+  assert.match(migration, /starts_at<=statement_timestamp\(\)/);
+  assert.match(migration, /ends_at>statement_timestamp\(\)/);
+  assert.match(migration, /ends_at=starts_at\+interval '60 days'/);
+  assert.match(migration, /forfeiture_authorized boolean not null default false/);
+  assert.match(migration, /deletion_authorized boolean not null default false/);
+  assert.doesNotMatch(migration, /delete from public\.(?:points_transactions|customer_rewards)/i);
+});
+
 test('final-seven-day decision cannot start checkout before trial end', () => {
   assert.match(followup, /d\.ends_at-statement_timestamp\(\)>interval '7 days'/);
   assert.match(followup, /checkout_allowed:=d\.ends_at<=statement_timestamp\(\)/);

@@ -5,13 +5,16 @@
 
 Status: **LOCK**
 
-**Aktueller Billing-Vertrag (23.09.2026):** Neue Registrierung erzeugt
-PENDING_ACTIVATION ohne Trial und ohne aktives Entitlement. BASIC/PRO erhalten
-erst nach KYB-, Country-, Legal-, Zahlungsmittel- und bestaetigter
-Provideraktivierung einen vollen kostenlosen Kalendermonat. Production und
-Live Stripe sind weiterhin gesperrt. Historische Trial- und Release-Aussagen
-in diesem Betriebsplan sind insoweit SUPERSEDED; bestehende Trials bleiben
-unveraendert. Siehe `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
+**Aktueller Billing-Vertrag (28.09.2026):** Neue Registrierung erzeugt
+PENDING_ACTIVATION ohne Trial und ohne aktives Entitlement. Erst nach
+bestandenen Country-, KYB-, Legal- und Kassa-Gates kann ein berechtigter
+Platform Admin mit aktuellem TOTP/AAL2 einen BASIC-Trial von ausdrücklich einem
+oder drei Kalendermonaten aktivieren. Während des Trials gibt es keine
+Zahlungsmethode, Stripe-ID, Belastung oder automatische Verlängerung. PRO und
+ein späterer Bezahlvertrag bleiben getrennte Abläufe. Production und Stripe
+LIVE sind weiterhin gesperrt. Historische Trial- und Release-Aussagen in diesem
+Betriebsplan sind insoweit SUPERSEDED; bestehende Trials bleiben unveraendert.
+Siehe `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`.
 
 Aktueller Austria-Launch-Scope und die verbindliche Reihenfolge stehen in
 `docs/V1_AUSTRIA_LAUNCH_MASTER_CONTRACT.md`. Aeltere Reihenfolgen in diesem
@@ -204,9 +207,10 @@ Staging muss zeigen:
 - Customer Portal funktioniert,
 - Staff Portal funktioniert,
 - Restaurant Portal funktioniert,
-- Pending-Registrierung erzeugt keinen Trial; verifizierte Provideraktivierung
-  startet nach Country-, Legal- und KYB-Gates exakt einen kostenlosen
-  BASIC-/PRO-Kalendermonat. Add-ons haben keinen Trial.
+- Pending-Registrierung erzeugt keinen Trial; ein berechtigter Platform Admin
+  aktiviert nach bestandenen Country-, KYB-, Legal- und Kassa-Gates mit
+  aktuellem TOTP/AAL2 ausdrücklich einen BASIC-Trial von einem oder drei
+  Kalendermonaten. PRO und Add-ons bleiben getrennt.
 
 ### 5.3 Flows
 
@@ -652,14 +656,17 @@ Prüfen:
 
 ## 13. Trial- und Abo-Go-Live Check
 
-### 13.1 Neuer BASIC-/PRO-Trial
+### 13.1 Neuer BASIC-Trial
 
 Regel:
 
 ```text
-Ein voller Kalendermonat kostenlos ab bestaetigter Provideraktivierung
-Zahlungsmethode vor Aktivierung erforderlich
+Ein oder drei Kalendermonate ab auditierter manueller Platform-Admin-Aktivierung
+Aktueller TOTP/AAL2-Nachweis und bestandene Country-/KYB-/Legal-/Kassa-Gates
+Keine Zahlungsmethode und keine Stripe-ID waehrend des Trials
+Keine automatische Verlaengerung oder Umwandlung in einen Bezahlvertrag
 Keine Nachzahlung
+PRO bleibt ein eigener Ablauf
 ```
 
 ### 13.2 branch_subscriptions

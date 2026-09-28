@@ -84,8 +84,10 @@ Status: LOCK
 Die folgende Altentscheidung ist ausschliesslich historische Evidenz. Fuer
 neue Registrierungen, Trial, Preise und Entitlements gilt seit 2026-09-23
 `V1_CURRENT_CANONICAL_PRODUCT_CONTRACT.md`: PENDING_ACTIVATION ohne Trial,
-BASIC 59 EUR, PRO 149 EUR, ein voller Kalendermonat nach bestaetigter
-Provideraktivierung; Add-ons ohne Trial. Gespeicherte Alt-Trials bleiben
+BASIC 59 EUR und PRO 149 EUR. Nach bestandenen Country-, KYB-, Legal- und
+Kassa-Gates kann ein berechtigter Platform Admin mit aktuellem TOTP/AAL2 einen
+BASIC-Trial von ausdrücklich einem oder drei Kalendermonaten aktivieren. PRO
+und Add-ons folgen getrennten Verträgen. Gespeicherte Alt-Trials bleiben
 unveraendert. Keine untenstehende Altregel autorisiert Stripe/Production.
 
 - Die kostenlose Testphase beträgt drei Kalendermonate.
