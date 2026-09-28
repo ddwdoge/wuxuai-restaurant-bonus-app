@@ -1388,3 +1388,28 @@ LIVE. Die aktuelle Production-Umgebung ist wegen 62 offener Migrationen,
 abweichendem App-Asset, fehlenden BASIC-Edge-Komponenten, nicht vollstaendig
 belegter Mailkonfiguration, fehlendem externen Monitoring und den externen
 Legal-/Privacy-/Tax-/KYB-/Kassa-/Seller-/Stripe-Gates noch nicht releasebereit.
+
+## 33. Verifizierte Restgates nach Staging-Integration
+
+- Marketing-Domain: `bonus.wuxuaisbi.com` liefert Cloudflare 530 / Fehler 1016
+  (`Origin DNS error`). `app` und `staging-app` liefern 200. Die Reparatur muss
+  den separaten Landingpage-Origin beziehungsweise eine explizite Landingpage-
+  Worker-Route herstellen; kein stiller Alias auf die Production-App.
+- Monitoring: Kein aktiver externer Uptime-/Error-/Alarmdienst ist belegt.
+  Cloudflare-/Supabase-Logs und Health Center ersetzen keinen getesteten
+  Alarmkanal mit benannter Reaktion.
+- Production-Mail: `SMTP_REPLY_TO` ist nicht als vorhandener Runtime-Name
+  belegt; der Dispatcher bleibt ohne ihn 503/fail-closed. Auth-SMTP,
+  SPF/DKIM/DMARC, Redirects und interne Testzustellung sind separat offen.
+- Upgrade 123→185: Eine isolierte lokale Schema-Probe bestand die Checkpoints
+  149, 165, 173, 179 und 185 jeweils mit DB-Lint sowie einen leeren Repeat-
+  Dry-Run. Der Production-Snapshot-/Datenfingerprint-Test bleibt Pflicht.
+- Backup/Restore: Acht physische `COMPLETED`-Backups sind sichtbar, PITR ist
+  aus. Die CLI kann nur PITR wiederherstellen. Vor Production muss deshalb ein
+  praktisch ausfuehrbarer Dashboard-/Support-Restore oder ein separat
+  freigegebener PITR-Vertrag samt isolierter Restore-Probe belegt sein.
+- Ein SQL-Down-Rollback fuer Migrationen 124–185 wird nicht vorausgesetzt.
+
+Das pruefbare Dateiinventar und alle Migration-Hashes stehen im
+Release-Manifest
+`docs/reports/2026-09-28_BASIC_V1_PRODUCTION_RELEASE_MANIFEST.md`.
