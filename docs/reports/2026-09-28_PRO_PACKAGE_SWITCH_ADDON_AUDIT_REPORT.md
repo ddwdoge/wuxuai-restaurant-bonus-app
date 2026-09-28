@@ -56,9 +56,17 @@ Contract:
 - Build: PASS with ephemeral public bindings from the isolated local Supabase stack; no environment file was created.
 - Secret scan and staged diff checks: PASS immediately before commit.
 
-## Staging boundary
+## Staging result
 
-At the start of this audit, the verified staging database remained at 186/186. Migration 187 has not yet been applied by this report. No staging business write, PRO grant, payment, customer mail or Stripe call occurred.
+- Verified project: `bwhvfjuwixgwduoeqaya` / `wuxuai-bonus-staging`.
+- Preflight: 186/186; the dry-run listed only migration 187.
+- Migration 187 applied successfully; final history is 187/187.
+- Repeat dry-run: empty.
+- Staging DB lint at error level: PASS, 0 findings.
+- Constraint validation succeeded, so no pre-existing `CANCELLED` add-on revision lacked its mandatory end boundary.
+- The migration contains no DML and produced no PRO grant, subscription, entitlement, payment, offer, customer, reward, notification or Stripe write.
+- The Git push did not activate another web deployment. The Staging worker remained on the previously verified PRO Inbox version `44c1eee5-6b5a-4736-ba19-55c677c4c0de` at 100%; no Runtime application code changed in this package.
+- Remote source parity after push: `4249640f599214d75ccfc6a6698526dcd672956f`, 0/0 before this post-application evidence update.
 
 The positive PRO Inbox browser flow remains OPEN. It requires a regularly created, authorized TEST_ONLY tenant with a synthetic customer. No grant was fabricated, no LEGACY tenant was changed, and no activation gate was relaxed.
 
@@ -83,6 +91,8 @@ Foreign and pre-existing files, including `supabase/.temp/cli-latest` and two un
 ## Status
 
 PRO PACKAGE SWITCH AND ADD-ON HARDENING: LOCAL CODE LOCK
+
+STAGING MIGRATION 187: APPLIED / DB GATES PASS
 
 PAID PRO / ADD-ON ACTIVATION: BLOCKED
 
