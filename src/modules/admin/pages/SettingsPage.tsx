@@ -76,6 +76,8 @@ import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { BasicPaidOfferPanel } from "../../billing/BasicPaidOfferPanel";
+import { loadBasicOwnerContractSnapshot, type BasicOwnerContractSnapshot } from "../../billing/basicBillingService";
+import { basicTrialDurationLabel, formatViennaDateTime } from "../../billing/basicTrialPresentation.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -165,11 +167,6 @@ function normalizeOpeningHours(value: unknown): Record<Weekday, OpeningDay> {
     result[key] = normalizeOpeningDay(input[key], defaultOpeningHours[key]);
     return result;
   }, {} as Record<Weekday, OpeningDay>);
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "Nicht gesetzt";
-  return new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
 }
 
 function remainingTrialDays(value?: string | null) {
@@ -551,7 +548,7 @@ async function loadPrimarySubscription(restaurant: RestaurantDetails | null) {
 
   const { data, error } = await supabase
     .from("branch_subscriptions")
-    .select("id, organization_id, branch_id, status, plan_key, current_period_ends_at, created_at")
+    .select("id, organization_id, branch_id, status, subscription_status, selected_plan, payment_status, plan_key, current_period_start, current_period_end, current_period_ends_at, trial_started_at, trial_ends_at, stripe_customer_id, stripe_subscription_id, created_at")
     .eq("branch_id", branchId)
     .maybeSingle();
 
@@ -590,6 +587,7 @@ export function SettingsPage() {
   const [logoEditorOpen, setLogoEditorOpen] = useState(false);
   const [transparentLogoAdjustment, setTransparentLogoAdjustment] = useState<LogoPresentation | null>(null);
   const [subscription, setSubscription] = useState<BranchSubscription | null>(null);
+  const [basicContract, setBasicContract] = useState<BasicOwnerContractSnapshot | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocationForm | null>(null);
   const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>("idle");
   const [geocodingCandidates, setGeocodingCandidates] = useState<OwnerLocationCandidate[]>([]);
@@ -693,11 +691,16 @@ export function SettingsPage() {
 
         try {
           const nextSubscription = await loadPrimarySubscription(nextDetails);
-          if (!cancelled) setSubscription(nextSubscription);
+          const nextBasicContract = await loadBasicOwnerContractSnapshot(nextDetails.id);
+          if (!cancelled) {
+            setSubscription(nextSubscription);
+            setBasicContract(nextBasicContract);
+          }
         } catch (error) {
           console.error("Abo-Daten konnten nicht geladen werden.", error);
           if (!cancelled) {
             setSubscription(null);
+            setBasicContract(null);
             setSubscriptionError("Abo-Daten konnten gerade nicht geladen werden.");
           }
         }
@@ -1171,13 +1174,14 @@ export function SettingsPage() {
     positionY: brandingForm.logoPositionY,
     scale: brandingForm.logoScale,
   };
-  const trialDays = remainingTrialDays(subscription?.trial_ends_at);
+  const trialDays = basicContract?.remaining_calendar_days ?? remainingTrialDays(subscription?.trial_ends_at);
   const currentSubscriptionStatus = subscription?.subscription_status ?? subscription?.status ?? null;
   const trialExpired = currentSubscriptionStatus === "trialing" && isDatePast(subscription?.trial_ends_at);
   const trialActive = currentSubscriptionStatus === "trialing" && !trialExpired;
   const subscriptionActive = currentSubscriptionStatus === "active";
   const subscriptionCancelled = currentSubscriptionStatus === "cancelled";
-  const paidDecisionAvailable = trialExpired || (trialActive && trialDays !== null && trialDays <= 7);
+  const paidDecisionAvailable = basicContract?.decision_available
+    ?? (trialExpired || (trialActive && trialDays !== null && trialDays <= 7));
 
   if (loading || tenantLoading) {
     return (
@@ -1582,16 +1586,27 @@ export function SettingsPage() {
                   value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Automatische Abrechnung nicht aktiv"}
                 />
                 <InfoValue label="Plan" value={V1_COMMERCIAL_CONTRACT.productName} />
-                <InfoValue label="Testphase Start" value={formatDate(subscription.trial_started_at)} />
-                <InfoValue label="Testphase Ende" value={formatDate(subscription.trial_ends_at)} />
+                <InfoValue label="Vereinbarte Dauer" value={basicTrialDurationLabel(basicContract?.trial_calendar_months)} />
+                <InfoValue label="Testphase Start" value={formatViennaDateTime(basicContract?.trial_starts_at ?? subscription.trial_started_at)} />
+                <InfoValue label="Testphase Ende (exklusiv)" value={formatViennaDateTime(basicContract?.trial_ends_at ?? subscription.trial_ends_at)} />
                 <InfoValue label="Verbleibende Tage" value={trialDays === null ? "Nicht gesetzt" : `${trialDays} Tage`} />
               </div>
               <div className="settings-subscription-note">
                 <p>{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
                 <p>Automatische Abrechnung ist noch nicht aktiv.</p>
               </div>
-              {paidDecisionAvailable || subscriptionCancelled ? (
-                <BasicPaidOfferPanel restaurantId={details.id} mode={subscriptionCancelled ? "REACTIVATION" : "INITIAL"} />
+              {trialExpired ? <div className="settings-subscription-note">
+                <p><strong>Neue Beitritte, Punkte, QR-Vorgänge und Angebote sind beendet.</strong></p>
+                <p>Bereits bestehende Punkte und Belohnungen können bis zum exklusiven Ende des 60-Kalendertage-Fensters eingelöst werden: {formatViennaDateTime(basicContract?.post_trial_grace_ends_at)}.</p>
+                <p>Es gibt keinen automatischen Punkteverfall und keine automatische Datenlöschung.</p>
+              </div> : null}
+              {paidDecisionAvailable || subscriptionCancelled || Boolean(basicContract?.acceptance_id) ? (
+                <BasicPaidOfferPanel
+                  acceptanceId={basicContract?.acceptance_id}
+                  checkoutAllowed={basicContract?.checkout_allowed ?? trialExpired}
+                  restaurantId={details.id}
+                  mode={subscriptionCancelled ? "REACTIVATION" : "INITIAL"}
+                />
               ) : null}
             </>
           ) : (

@@ -1123,10 +1123,10 @@ Build-Befehl bleibt die verbindliche und im Build-Log zuerst erwartete Stufe.
 
 ---
 
-## 31. BASIC-V1-Releasevertrag ab Migration 183
+## 31. BASIC-V1-Releasevertrag ab Migration 184
 
 Dieser Abschnitt beschreibt den nachgewiesenen technischen Stand des
-Integrationsbranches nach den Migrationen 180 bis 183. Er ist keine
+Integrationsbranches nach den Migrationen 180 bis 184. Er ist keine
 Production-Freigabe und ersetzt keine rechtliche, steuerliche oder
 gesellschaftsrechtliche Entscheidung.
 
@@ -1144,18 +1144,28 @@ gesellschaftsrechtliche Entscheidung.
    aktuellen BASIC-Vertrag sind insbesondere 180 (manueller BASIC-Trial),
    181 (expliziter Folgeauftrag, Stripe-TEST-Lifecycle und 60-Tage-Fenster),
    182 (Entscheidung in den letzten sieben Tagen und Reaktivierung) und 183
-   (getrennte Free-Pilot-/Paid-Readiness) untrennbar in dieser Reihenfolge zu
-   prüfen. Keine Migration darf übersprungen, umnummeriert oder rückwirkend
-   geändert werden.
+   (getrennte Free-Pilot-/Paid-Readiness) und 184 (Owner-Vertragsanzeige,
+   sieben Wiener Kalendertage und resumierbare Annahme) untrennbar in dieser
+   Reihenfolge zu prüfen. Keine Migration darf übersprungen, umnummeriert oder
+   rückwirkend geändert werden.
 5. Nach jeder Migration Migrationshistorie, DB-Lint, RLS/ACL, Direkt-RPC-
    Negativmatrix und Fingerprint-Delta prüfen. Nach der letzten Migration muss
    der Repeat-Dry-Run leer sein.
 6. Erst danach die für den Release benötigten Edge Functions aus exakt
    demselben Commit deployen und ihre Versionen festhalten.
 7. Die Web-App zuletzt aus demselben Commit mit den korrekten öffentlichen
-   Clientbindungen bauen und ausschließlich auf den vorgesehenen Worker
-   deployen. HTML-/Asset-Parität und HTTP-Smoke-Test sind Pflicht.
+   Clientbindungen bauen und ausschließlich auf den Staging-Worker
+   `wuxuai-restaurant-bonus-app-staging` deployen. Der Root-Workers.dev-Worker
+   und der Production-Worker sind kein zulässiges Ziel. HTML-/Asset-Parität
+   und HTTP-Smoke-Test sind Pflicht.
 8. Erst nach DB-, Edge- und Asset-Parität die Rollen-Smoke-Tests ausführen.
+
+Ein Push auf den Integrationsbranch kann über die Cloudflare-GitHub-Anbindung
+einen Build beziehungsweise einen neuen Versions-Upload auslösen. Das beweist
+weder die Aktivierung dieser Version noch ihre Parität. Vor und nach jedem Push
+werden deshalb Ziel-Worker, hochgeladene Version, aktive Version, Commit und
+ausgeliefertes Asset getrennt geprüft. Eine neue Version wird nur nach diesem
+Nachweis ausdrücklich auf dem Staging-Worker aktiviert.
 
 Die Funktionen `billing-basic-test-checkout` und
 `billing-stripe-test-webhook` sind ausschließlich für das verifizierte
@@ -1214,9 +1224,15 @@ synthetischen Konten mindestens nachgewiesen sein:
 - Platform Admin: aktuelle TOTP/AAL2-Sitzung; offene Pilot-Gates sind sichtbar
   und serverseitig identisch blockiert; ein oder drei Kalendermonate sind erst
   nach vollständiger Readiness auswählbar.
-- Owner: korrekte Tenantbindung, Trialstatus und Enddatum; keine
+- Owner: korrekte Tenantbindung, tatsächliche Trialdauer von einem oder drei
+  Kalendermonaten sowie Start- und exklusiver Endzeitpunkt in `Europe/Vienna`;
+  die letzten sieben Wiener Kalendertage werden aus dem serverseitigen
+  Vertrags-Snapshot bestimmt; keine
   Zahlungsmethode, Stripe-ID oder automatische Verlängerung im Gratis-Trial;
   ausdrückliche BASIC-Annahme frühestens im vorgesehenen Entscheidungsfenster.
+  Eine vor Ablauf gespeicherte Annahme wird nach Ablauf wiederverwendet und
+  darf keinen zweiten Vertrag erzeugen. Es wird kein E-Mail-Hinweis behauptet,
+  solange Versand und Zustellung nicht gesondert belegt sind.
 - Staff: eigener Tenant, Tages-PIN-/Betragsvertrag, genau einmalige
   Punktebuchung, falscher Tenant und falsche Rolle blockiert.
 - Gast: persönlicher Bonus-QR, sichtbarer Punktestand, Belohnungsstatus und
