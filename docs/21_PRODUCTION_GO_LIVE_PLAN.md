@@ -1290,3 +1290,101 @@ Freigabe gesperrt.
 ---
 
 Endstatus: **LOCK**
+
+## 32. BASIC V1 Staging-zu-Production-Matrix ab Migration 185
+
+Stand dieser Matrix: 28.09.2026. Gepruefter Source-Stand vor der
+Production-Vorbereitung: `f1e767ae2376cb993ea3debce8fa6a8dfc20f032`.
+Die Matrix ist ein technischer Rolloutvertrag, keine Production-Freigabe.
+Legal, Privacy, Tax, KYB, Kassa, Seller, Stripe LIVE und der allgemeine
+Production-Go/No-Go bleiben externe Stop-Gates.
+
+### 32.1 Ist-/Soll-Matrix
+
+| Bereich | Staging-Nachweis | Production-Iststand | Muss vor Aktivierung geschehen | Rollback/Stop |
+| --- | --- | --- | --- | --- |
+| Git/Source | Integrationsbranch und Remote bei `f1e767ae...`, Paritaet `0/0` | Production-Source nicht auf diesem Stand belegt | Freigegebenen Release-Commit unveraenderlich festhalten; kein Build aus einem Dirty Tree | Bei Divergenz oder unbekanntem Build sofort stoppen |
+| Web-App | Worker `wuxuai-restaurant-bonus-app-staging`, Version `7e89c92e-27ba-474f-a090-f2f1a5469168`, Hauptasset-Hash belegt | Worker `wuxuai-restaurant-bonus-app-production`, Version `bd7f45cd-6601-4429-ab76-8a94e8c68a27`; anderes Hauptasset | Production-Bundle mit Production-Clientbindung bauen, als neue Version hochladen, vor Aktivierung Source-/Assetparitaet pruefen | Auf die vorher dokumentierte Production-Version zurueckstellen |
+| Datenbank | 185/185, kein Pending | 123/185; letzte Remote-Migration `20260903004000`, 62 Migrationen offen | Ausschliesslich die unveraenderten Migrationen 124 bis 185 ab `20260904001000` in Repository-Reihenfolge anwenden | Kein improvisiertes Down-SQL; Writes stoppen und additiven Hotfix beziehungsweise Restore verwenden |
+| Edge Functions | Neun Funktionen vorhanden; TEST-Billing bleibt Staging-only | `owner-location-geocode`, `owner-staff-invite`, `transactional-mail-dispatcher` vorhanden; Platform-Support und Redemption fehlen | BASIC-Runtime aus demselben Commit deployen: bestehende Funktionen bytegleich aktualisieren, danach `platform-support-auth` und `redemption-confirmation`; Production-Redemption exakt an Production-Projekt und `app.bonus.wuxuaisbi.com` binden | Vorherige Function-Versionen dokumentieren und einzeln wiederherstellen |
+| Stripe-/Billing-Edge | `billing-basic-test-checkout` und `billing-stripe-test-webhook` nur im verifizierten TEST-Vertrag | Kein freigegebener LIVE-Vertrag | Diese TEST-Funktionen niemals nach Production uebernehmen; LIVE erst nach Seller-/Tax-/Stripe-Freigabe als eigener Vertrag | Jede TEST-/LIVE-Vermischung ist sofortiges Stop-Gate |
+| Build-Konfiguration | Staging-Bindung und Assetparitaet nachgewiesen | Production-Bindung im alten Asset, nicht fuer den Release-Commit belegt | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_BASE_URL`; optional `VITE_VAPID_PUBLIC_KEY` nur bei freigegebenem Push-Vertrag | Fehlende/fremde Projektbindung bricht den Build/Release ab |
+| Supabase Runtime | Runtime-Bindungen vorhanden; Redemption ist Staging-gebunden | Basis-Supabase-Bindungen und `APP_BASE_URL` vorhanden | Function-spezifisch nur Namen setzen: `REDEMPTION_EDGE_MODE`, `REDEMPTION_PRODUCTION_PROJECT_REF`; Supabase-Basiswerte bleiben serverseitig | Keine Staging-Werte kopieren; fehlende Bindung muss 503/fail-closed ergeben |
+| Domains | `staging-app.bonus.wuxuaisbi.com` liefert HTTPS 200 | `app.bonus.wuxuaisbi.com` liefert HTTPS 200; `bonus.wuxuaisbi.com` lieferte beim Check HTTP 530 | App-Domain, Auth-Redirects, Invite-/Recovery-Links, CORS und QR-Basis auf Production pruefen; Marketing-Domain separat reparieren oder bewusst vom App-Go-Live abgrenzen | Falsche Route, falscher Worker oder nicht erreichbarer Pflicht-Endpunkt stoppt den Rollout |
+| E-Mail | Synthetischer Staging-Vertrag; allgemeiner Customer-Mail-Scheduler gesperrt | Dispatcher vorhanden, aber `SMTP_REPLY_TO` und `TRANSACTIONAL_MAIL_MODE` nicht als vorhandene Namen belegt; damit aktueller Dispatcher fail-closed | Supabase-Auth-SMTP und Redirects separat physisch pruefen. Customer-Mail-Scheduler deaktiviert lassen. Dispatcher erst nach freigegebenem Mailvertrag vollstaendig konfigurieren | Keine echte Kundenzustellung im Smoke-Test; bei Fehlrouting sofort deaktiviert lassen |
+| Push/Reminder | Kein Production-Nachweis | `expiry-reminders` nicht deployed; zugehoerige VAPID-/Scheduler-Namen nicht belegt | Push bleibt fuer BASIC aus, solange VAPID-, Consent- und Scheduler-Vertrag nicht separat freigegeben sind | Kein stilles Aktivieren ueber Buildvariable oder Cron |
+| Monitoring | DB-Health-Center und Staging-Logs vorhanden | Health-/Monitoring-Migrationen ab 124 noch nicht angewendet; kein externer Uptime-/Error-Tracker nachgewiesen | Nach Migrationen Health Center, Auth/RPC/Storage/cron, Cloudflare- und Supabase-Logs pruefen; Release-Verantwortliche und Alarmkanal benennen | Unbeobachtbarer P0/P1-Zustand ist Stop-Gate |
+| Backup | Staging-Evidenz vorhanden | Acht physische Backups sichtbar; letztes gelesenes Backup `COMPLETED`; PITR war beim Check deaktiviert | Unmittelbar vor Migrationen frisches abgeschlossenes Production-Backup nachweisen und Restore-Verantwortlichen benennen | Ohne frisches Backup kein DB-Write; wegen fehlendem PITR besonders strikt stoppen |
+
+Secretwerte werden weder in dieser Matrix noch in Reports oder ZIPs erfasst.
+Vorhandensein eines Namens beweist nicht die fachliche Richtigkeit seines
+Werts. Jeder Wert wird im Wartungsfenster nur durch Projekt-/Origin-/Rollen-
+und Negativtests validiert.
+
+### 32.2 Exakte spaetere Rollout-Reihenfolge
+
+1. Alle externen Stop-Gates schriftlich freigeben; Production-Change-Fenster,
+   Release-Verantwortlichen, Platform Admin und Support benennen.
+2. Release-Commit und Remote-Paritaet frisch bestaetigen. Production-Projekt,
+   Worker und Domain dreifach vergleichen. Stripe LIVE bleibt aus.
+3. Writes einfrieren. Vorher-Fingerprints aller Auth-, Rollen-, Tenant-,
+   Subscription-, Trial-, KYB-, Punkte-, Reward-, Redemption-, Audit- und
+   Storage-relevanten Bereiche sichern.
+4. Ein frisches physisches Production-Backup mit Status `COMPLETED` nachweisen.
+   PITR ist nicht vorausgesetzt, sein deaktivierter Zustand erhoeht jedoch das
+   Stop-/Restore-Risiko und muss im Go/No-Go akzeptiert sein.
+5. Die 62 offenen Migrationen exakt in lexikographischer Repository-Reihenfolge
+   von `20260904001000` bis `20260928004000` anwenden. Keine PRO-, TEST- oder
+   synthetische Migration auslassen: deren Guards muessen fail-closed mitkommen.
+   Checkpoints mindestens nach 149, 165, 173, 179 und 185: History, DB-Lint,
+   RLS/ACL, Direkt-RPC-Negativtests und Fingerprint-Delta. Am Ende 185/185 und
+   leerer Repeat-Dry-Run.
+6. Edge Functions aus demselben Commit deployen und Versionen notieren:
+   `owner-location-geocode`, `owner-staff-invite`, `platform-support-auth`,
+   `redemption-confirmation`. `transactional-mail-dispatcher` bleibt ohne
+   freigegebenen allgemeinen Scheduler fail-closed. `expiry-reminders` bleibt
+   aus. Keine `billing-*test*`-Funktion nach Production deployen.
+7. Production-App mit den drei verpflichtenden oeffentlichen Build-Bindungen
+   bauen. Bundle auf Production-Projektbindung und Abwesenheit von Service-
+   Role-, SMTP-, Stripe- und sonstigen Server-Secrets scannen.
+8. Neue Worker-Version zunaechst hochladen, Version/Commit/Asset pruefen und
+   erst danach zu 100 Prozent auf `wuxuai-restaurant-bonus-app-production`
+   aktivieren. Weder Root- noch Staging-Worker veraendern.
+9. Den Smoke-Test aus Abschnitt 32.3 ausfuehren. Nur erwartete technische
+   Audits duerfen hinzukommen; alle Business-Fingerprints bleiben ohne
+   ausdrueckliche Testmutation identisch.
+10. Erst nach dokumentiertem PASS das Wartungsfenster beenden. Pilot-, Trial-
+    oder Bezahlaktivierung bleibt ein eigener, AAL2-geschuetzter Vorgang.
+
+### 32.3 Kurzer Production-Smoke-Test
+
+- HTTPS 200, erwartetes Hauptasset, `no-cache` fuer HTML und immutable Cache
+  fuer gehashte Assets; keine Staging-Projektreferenz im Bundle.
+- Owner-/Staff-/Customer-/Platform-Admin-Login mit autorisierten internen
+  Testkonten; Platform Admin erreicht geschuetzte Mutatoren nur mit TOTP/AAL2.
+- Direkte AAL1-, anon-, falsche Rolle- und Cross-Tenant-RPC-Aufrufe werden
+  serverseitig abgewiesen.
+- Owner-Dashboard, Onboarding-/KYB-Read, Staff-Portal und Customer-Portal laden
+  ohne Demo-Fallback. Reine Navigation erzeugt keine Businesswrites.
+- Redemption: fremder Origin/anon/falscher Tenant blockiert; autorisierter
+  synthetischer Request wirkt hoechstens einmal. Keine echte Belohnung nutzen.
+- E-Mail: Auth-Mail nur an ein autorisiertes internes Postfach; allgemeiner
+  Customer-Mail-Scheduler und PRO-Mail bleiben aus.
+- Keine Stripe-ID, Zahlungsmethode, Belastung, LIVE-Webhook-, Trial- oder
+  Entitlement-Mutation im Smoke-Test.
+- Nachher-Fingerprints, Auditdelta, Health Center, Cloudflare-/Supabase-Logs,
+  DB-Lint und Repeat-Dry-Run pruefen.
+
+### 32.4 Aktuelle Freigabegrenze
+
+Technisch vorbereitet sind der reproduzierbare Ausgangs-Commit, Staging 185/185,
+die feste App-/DB-/Edge-Reihenfolge, der versionsbasierte Web-/Edge-Rollback,
+der additive DB-Hotfixvertrag, der Smoke-Test und der fail-closed Production-
+Redemption-Konfigurationsvertrag. Der lokale Production-Redemption-Fix muss vor
+dem Rollout noch eng committed und ueber den Integrations-/Staging-Pfad
+verifiziert werden. Nicht freigegeben sind Production-Write,
+Production-Deployment, echte Aktivierung, Customer-Mail-Scheduler und Stripe
+LIVE. Die aktuelle Production-Umgebung ist wegen 62 offener Migrationen,
+abweichendem App-Asset, fehlenden BASIC-Edge-Komponenten, nicht vollstaendig
+belegter Mailkonfiguration, fehlendem externen Monitoring und den externen
+Legal-/Privacy-/Tax-/KYB-/Kassa-/Seller-/Stripe-Gates noch nicht releasebereit.

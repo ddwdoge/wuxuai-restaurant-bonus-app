@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import {
   allowedRedemptionOrigin,
   allowedRedemptionPreflight,
+  allowedRedemptionRuntime,
   parseRedemptionMutation,
 } from "../_shared/redemptionEdgeContract.mjs";
 
@@ -17,7 +18,9 @@ const response = (status: number, code: string, origin?: string, data?: unknown)
 
 Deno.serve(async (request) => {
   const mode = Deno.env.get("REDEMPTION_EDGE_MODE") ?? "";
-  const projectRef = Deno.env.get("REDEMPTION_STAGING_PROJECT_REF") ?? "";
+  const projectRef = Deno.env.get(
+    mode === "production" ? "REDEMPTION_PRODUCTION_PROJECT_REF" : "REDEMPTION_STAGING_PROJECT_REF",
+  ) ?? "";
   const localOrigin = Deno.env.get("REDEMPTION_LOCAL_ALLOWED_ORIGIN") ?? "";
   const requestedOrigin = request.headers.get("origin");
   const origin = allowedRedemptionOrigin(requestedOrigin, mode, localOrigin, projectRef) ?? undefined;
@@ -39,10 +42,9 @@ Deno.serve(async (request) => {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const local = mode === "local_only" && /^http:\/\/(127\.0\.0\.1|localhost|kong)(:\d+)?\/?$/.test(url);
-  const staging = mode === "staging" && projectRef === "bwhvfjuwixgwduoeqaya"
-    && url === "https://bwhvfjuwixgwduoeqaya.supabase.co";
-  if ((!local && !staging) || !anonKey || !serviceKey) return response(503, "REDEMPTION_EDGE_NOT_CONFIGURED", origin);
+  if (!allowedRedemptionRuntime(mode, url, projectRef) || !anonKey || !serviceKey) {
+    return response(503, "REDEMPTION_EDGE_NOT_CONFIGURED", origin);
+  }
 
   const authorization = request.headers.get("authorization") ?? "";
   if (!/^Bearer [A-Za-z0-9._-]+$/.test(authorization)) return response(401, "AUTH_REQUIRED", origin);

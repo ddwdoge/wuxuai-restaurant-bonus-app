@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   allowedRedemptionOrigin,
   allowedRedemptionPreflight,
+  allowedRedemptionRuntime,
   parseRedemptionMutation,
 } from "../supabase/functions/_shared/redemptionEdgeContract.mjs";
 
@@ -27,7 +28,34 @@ test("CORS is exact and rejects unknown headers and origins", () => {
   assert.equal(allowedRedemptionOrigin("http://127.0.0.1:4180", "local_only", "http://127.0.0.1:4180"), "http://127.0.0.1:4180");
   assert.equal(allowedRedemptionOrigin("http://evil.test", "local_only", "http://127.0.0.1:4180"), null);
   assert.equal(allowedRedemptionOrigin("https://staging-app.bonus.wuxuaisbi.com", "staging", "", "wrong"), null);
+  assert.equal(allowedRedemptionOrigin(
+    "https://app.bonus.wuxuaisbi.com", "production", "", "fuqhljgesclipzduhykl",
+  ), "https://app.bonus.wuxuaisbi.com");
+  assert.equal(allowedRedemptionOrigin(
+    "https://staging-app.bonus.wuxuaisbi.com", "production", "", "fuqhljgesclipzduhykl",
+  ), null);
+  assert.equal(allowedRedemptionOrigin(
+    "https://app.bonus.wuxuaisbi.com", "production", "", "wrong",
+  ), null);
   assert.equal(allowedRedemptionPreflight("POST", "authorization, apikey, content-type"), true);
   assert.equal(allowedRedemptionPreflight("POST", "authorization, x-forwarded-for"), false);
   assert.equal(allowedRedemptionPreflight("GET", "authorization"), false);
+});
+
+test("Staging and Production redemption runtimes are bound to their exact Supabase project", () => {
+  assert.equal(allowedRedemptionRuntime(
+    "staging", "https://bwhvfjuwixgwduoeqaya.supabase.co", "bwhvfjuwixgwduoeqaya",
+  ), true);
+  assert.equal(allowedRedemptionRuntime(
+    "production", "https://fuqhljgesclipzduhykl.supabase.co", "fuqhljgesclipzduhykl",
+  ), true);
+  assert.equal(allowedRedemptionRuntime(
+    "production", "https://bwhvfjuwixgwduoeqaya.supabase.co", "fuqhljgesclipzduhykl",
+  ), false);
+  assert.equal(allowedRedemptionRuntime(
+    "production", "https://fuqhljgesclipzduhykl.supabase.co", "bwhvfjuwixgwduoeqaya",
+  ), false);
+  assert.equal(allowedRedemptionRuntime(
+    "", "https://fuqhljgesclipzduhykl.supabase.co", "fuqhljgesclipzduhykl",
+  ), false);
 });
