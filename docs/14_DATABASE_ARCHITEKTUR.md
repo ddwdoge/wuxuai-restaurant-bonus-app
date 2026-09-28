@@ -1,6 +1,24 @@
 
 # 14_DATABASE_ARCHITEKTUR.md
 
+## 2026-09-28 – PRO Customer In-App-Inbox (Migration 186)
+
+`20260928005000_pro_customer_in_app_inbox.sql` fuehrt eine private,
+tenant- und kundenbezogene In-App-Inbox fuer genau `OFFER_PUBLISHED` und
+`POINT_REWARD_AVAILABLE` ein. Erzeugung und Abruf pruefen die jeweils
+aktuelle PRO-Berechtigung. Der Abruf verlangt zusaetzlich die angemeldete
+Customer-Identitaet und den bestehenden restaurantgebundenen Customer-Token;
+direkter Tabellenzugriff ist fuer `anon` und `authenticated` entzogen.
+Ein eindeutiger fachlicher Ereignisschluessel verhindert Duplikate auch bei
+Retries und parallelen Triggern. `read_at` ist die einzige durch den
+Customer-RPC veraenderbare Inbox-Eigenschaft.
+
+Bis Werbe-/Consent- und Aufbewahrungsvertrag freigegeben sind, bleibt der
+sichtbare Pfad fail-closed auf `STAGING`, einen exakt markierten
+`TEST_ONLY`-Tenant und synthetische Testkunden beschraenkt. Die Migration
+aktiviert weder E-Mail noch Push oder Scheduler und erzeugt keine Punkte,
+Rewards, Angebote, Aktivierungen oder Entitlements.
+
 **Aktueller Registrierungs-/Billing-Zustand (24.09.2026):** Migrationen
 163–168 sind auf Staging angewendet (168/168). Vier Stripe-Sandbox-TEST-
 Providerbindungen sind VERIFIED; LIVE bleibt UNBOUND, Seller PLANNED und

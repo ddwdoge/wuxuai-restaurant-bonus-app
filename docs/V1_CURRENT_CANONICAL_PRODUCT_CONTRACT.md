@@ -1,5 +1,21 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## PRO In-App-Benachrichtigungen – technischer TEST_ONLY-Vertrag
+
+Die Customer-Inbox umfasst technisch ausschliesslich ein neu veroeffentlichtes
+Angebot und die erstmals erreichte Schwelle einer Punktebelohnung. Sie ist kein
+E-Mail-, Push- oder Customer-Mail-Scheduler-Vertrag. Erzeugung und Abruf
+verlangen die aktuelle ereignisspezifische PRO-Berechtigung; nach einem
+Downgrade sind gespeicherte PRO-Inboxeintraege nicht mehr sichtbar.
+
+Bis zur fachlich/rechtlichen Entscheidung ueber werbliche
+In-App-Benachrichtigungen, Widerruf und Aufbewahrung ist die sichtbare
+Aktivierung ausschliesslich fuer synthetische Customer in einem exakt
+markierten TEST_ONLY-Tenant auf STAGING zulaessig. Reale Customer,
+Production und eine allgemeine PRO-Freigabe bleiben gesperrt. Eine
+Benachrichtigung veraendert keine Punkte, Rewards, Angebote, Aktivierungen,
+Entitlements oder Billingzustaende.
+
 ## Aktueller Integrationsstand – 2026-09-24
 
 Kanonischer Branch: `codex/v1-release-integration`; gepruefter Basis-HEAD

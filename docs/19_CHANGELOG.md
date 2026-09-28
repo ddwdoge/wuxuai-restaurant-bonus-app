@@ -1,6 +1,19 @@
 
 # 19_CHANGELOG.md
 
+## 2026-09-28 - PRO Customer In-App-Inbox lokal implementiert
+
+- Additive Migration 186 fuehrt eine private, tenant- und kundenbezogene
+  In-App-Inbox fuer neue veroeffentlichte Angebote und erstmals erreichte
+  Punktebelohnungsschwellen ein.
+- Erzeugung und Abruf pruefen die aktuelle PRO-Berechtigung; Deduplizierung,
+  Customer-only-Lesezustand und Rollen-/Tenantgrenzen sind serverseitig.
+- Die Customer-Ansicht ist in DE/EN/FR/IT/ES/ZH/KO vorhanden. Reale Sichtbarkeit
+  bleibt bis zum Werbe-/Consent- und Aufbewahrungsvertrag gesperrt; technisch
+  ist nur synthetisches STAGING/TEST_ONLY freigegeben.
+- Kein E-Mail-, Push-, Scheduler-, Punkte-, Reward-, Angebots-, Billing- oder
+  Aktivierungsvertrag wurde erweitert.
+
 ## 2026-09-21 - Phase 7C.2 zentrale Capacity-Read-Schicht lokal abgeschlossen
 
 - Der verbindliche Founder-Vertrag definiert BASIC mit 5/3.000, PRO mit

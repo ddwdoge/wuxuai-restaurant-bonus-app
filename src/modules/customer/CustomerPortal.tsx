@@ -150,6 +150,11 @@ import {
 } from "./customerRegistration.mjs";
 import { customerPhoneValidation } from "./customerIdentity.mjs";
 import { customerPresentationText, customerRewardDescription, customerRewardPresentation, type CustomerRewardPresentationInput } from "./customerRewardPresentation.mjs";
+import {
+  loadProInAppInbox,
+  markProInAppNotificationRead,
+  type ProInAppInbox,
+} from "./proInAppInboxService";
 
 type GuestStep = "welcome" | "register" | "persist" | "success";
 type CollectStep = "entry" | "tier" | "pin";
@@ -315,6 +320,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [pointsQrLoading, setPointsQrLoading] = useState(false);
   const [restaurantOffers, setRestaurantOffers] = useState<RestaurantOffer[]>([]);
   const [selectedRestaurantOffer, setSelectedRestaurantOffer] = useState<RestaurantOffer | null>(null);
+  const [proInbox, setProInbox] = useState<ProInAppInbox | null>(null);
+  const [proInboxOpen, setProInboxOpen] = useState(false);
+  const [proInboxError, setProInboxError] = useState<string | null>(null);
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
@@ -364,6 +372,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
   useEffect(() => {
     let cancelled = false;
+    setProInbox(null);
+    setProInboxOpen(false);
+    setProInboxError(null);
 
     if (!isUsableRestaurantSlug(restaurantSlug)) {
       setRestaurant(null);
@@ -421,15 +432,17 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
         try {
-          const [retentionData, identityData, inviteStatus] = await Promise.all([
+          const [retentionData, identityData, inviteStatus, inboxData] = await Promise.all([
             loadCustomerRetentionStatus(restaurantSlug, activeToken),
             loadCustomerIdentitySummary(restaurantSlug, activeToken),
             loadCustomerReferralInviteStatus(restaurantSlug, activeToken).catch(() => null),
+            loadProInAppInbox(restaurantSlug, activeToken).catch(() => null),
           ]);
           if (!cancelled) {
             setRetention(retentionData);
             setIdentitySummary(identityData);
             setReferralInviteStatus(inviteStatus);
+            setProInbox(inboxData);
           }
         } catch (retentionError) {
           if (!cancelled) {
@@ -437,12 +450,14 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             setRetention(null);
             setIdentitySummary(null);
             setReferralInviteStatus(null);
+            setProInbox(null);
           }
         }
       } else if (!cancelled) {
         setRetention(null);
         setIdentitySummary(null);
         setReferralInviteStatus(null);
+        setProInbox(null);
       }
     }
 
@@ -511,6 +526,16 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   function openRestaurantOffer(offer: RestaurantOffer) {
     setSelectedRestaurantOffer(offer);
     void recordRestaurantOfferEvent(offer.id, "OFFER_CTA_CLICKED");
+  }
+
+  async function markInboxItemRead(notificationId: string) {
+    if (!activeToken) return;
+    setProInboxError(null);
+    try {
+      setProInbox(await markProInAppNotificationRead(restaurantSlug, activeToken, notificationId));
+    } catch {
+      setProInboxError(ct("inboxReadError"));
+    }
   }
 
   const restaurantControlledEnabled = settings?.points_collection_mode === "restaurant_controlled_only"
@@ -1538,6 +1563,46 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
           onClose={() => setRestaurantSwitcherOpen(false)}
           open={restaurantSwitcherOpen}
         />
+
+        {customer && proInbox?.available ? (
+          <button
+            aria-label={ct("inboxOpen", { count: proInbox.unread_count })}
+            className="customer-pro-inbox-trigger"
+            onClick={() => setProInboxOpen(true)}
+            type="button"
+          >
+            <BellRing aria-hidden="true" size={20} />
+            <span>{ct("inboxTitle")}</span>
+            {proInbox.unread_count > 0 ? <strong aria-label={ct("inboxUnread", { count: proInbox.unread_count })}>{proInbox.unread_count}</strong> : null}
+          </button>
+        ) : null}
+
+        <AppDrawer
+          closeLabel={ct("close")}
+          onClose={() => setProInboxOpen(false)}
+          open={proInboxOpen && Boolean(proInbox?.available)}
+          title={ct("inboxTitle")}
+        >
+          <div className="customer-pro-inbox-list">
+            {proInbox?.items.length ? proInbox.items.map((item) => (
+              <article className={item.read_at ? "is-read" : "is-unread"} key={item.id}>
+                <div>
+                  <span>{ct(item.event_type === "OFFER_PUBLISHED" ? "inboxOffer" : "inboxReward")}</span>
+                  <strong data-i18n-skip="true">{item.title}</strong>
+                  <time dateTime={item.created_at}>{new Intl.DateTimeFormat(language === "de" ? "de-AT" : language, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                    timeZone: "Europe/Vienna",
+                  }).format(new Date(item.created_at))}</time>
+                </div>
+                {!item.read_at ? (
+                  <button onClick={() => void markInboxItemRead(item.id)} type="button">{ct("inboxMarkRead")}</button>
+                ) : <span className="customer-pro-inbox-read">{ct("inboxRead")}</span>}
+              </article>
+            )) : <p className="muted">{ct("inboxEmpty")}</p>}
+            {proInboxError ? <p className="status-message error" role="alert">{proInboxError}</p> : null}
+          </div>
+        </AppDrawer>
 
         <AppDrawer
           footer={(
