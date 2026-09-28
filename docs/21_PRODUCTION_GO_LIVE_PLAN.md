@@ -1241,7 +1241,11 @@ synthetischen Konten mindestens nachgewiesen sein:
 - Nach Trialende: keine neuen Beitritte, positiven Punkte/Stempel,
   Punkte-QRs oder neuen Angebote; nur bereits zulässige Einlösungen im
   60-Kalendertage-Fenster. Die Grenzen werden in `Europe/Vienna` berechnet und
-  das Ende ist exklusiv.
+  das Ende ist exklusiv. Trial- und Abwicklungsgrenzen behalten die Wiener
+  Ortszeit des Starts; Monatsenden werden geklemmt. Nicht existente
+  Fruehjahrszeiten werden um die DST-Luecke vorwaerts verschoben, doppelte
+  Herbstzeiten auf die spaetere CET-Instanz aufgeloest. Historisch gespeicherte
+  UTC-Grenzen werden nur ausgewiesen, nicht automatisch umgeschrieben.
 
 Navigation, Reload, Sprachwechsel und reine Ansicht dürfen keine
 Businesswrites erzeugen. Ein physischer Staging-Nachweis wird nicht durch

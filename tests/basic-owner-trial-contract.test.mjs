@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   basicTrialDurationLabel,
   formatViennaDateTime,
+  hasLegacyUtcCalendarBoundary,
   inferTrialCalendarMonths,
 } from "../src/modules/billing/basicTrialPresentation.mjs";
 
@@ -48,11 +49,15 @@ test("owner UI shows duration, Vienna endpoint and post-trial contract", () => {
   assert.match(settings, /keinen automatischen Punkteverfall/);
 });
 
-test("preserved trials infer one or three Vienna calendar months without inventing a decision", () => {
-  assert.equal(inferTrialCalendarMonths("2026-09-11T08:31:00Z", "2026-12-11T08:31:00Z"), 3);
+test("preserved trials require the same Vienna wall time and disclose legacy UTC boundaries", () => {
+  assert.equal(inferTrialCalendarMonths("2026-09-11T08:31:00Z", "2026-12-11T08:31:00Z"), null);
+  assert.equal(hasLegacyUtcCalendarBoundary("2026-09-11T08:31:00Z", "2026-12-11T08:31:00Z"), true);
+  assert.equal(inferTrialCalendarMonths("2026-09-11T08:31:00Z", "2026-12-11T09:31:00Z"), 3);
+  assert.equal(hasLegacyUtcCalendarBoundary("2026-09-11T08:31:00Z", "2026-12-11T09:31:00Z"), false);
   assert.equal(inferTrialCalendarMonths("2027-01-31T09:00:00Z", "2027-02-28T09:00:00Z"), 1);
   assert.equal(inferTrialCalendarMonths("2026-09-11T08:31:00Z", "2026-11-11T08:31:00Z"), null);
   assert.match(settings, /inferTrialCalendarMonths/);
+  assert.match(settings, /Historischer Zeitraum – Wiener Ortszeit abweichend/);
 });
 
 test("no owner trial reminder email is claimed", () => {

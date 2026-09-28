@@ -6,6 +6,10 @@ const migration = await readFile(new URL(
   "../supabase/migrations/20260928002000_basic_paid_and_free_pilot_readiness.sql",
   import.meta.url,
 ), "utf8");
+const timeContractMigration = await readFile(new URL(
+  "../supabase/migrations/20260928004000_basic_vienna_time_boundary_contract.sql",
+  import.meta.url,
+), "utf8");
 const panel = await readFile(new URL(
   "../src/modules/platform/PlatformBasicPilotActivationPanel.tsx",
   import.meta.url,
@@ -57,6 +61,11 @@ test("Vienna trial and redemption boundaries are server-derived and exclusive", 
   assert.match(migration, /vienna_calendar_day_boundary_internal/);
   assert.match(migration, /boundary_timezone='Europe\/Vienna'/);
   assert.match(migration, /ends_at>statement_timestamp\(\)/);
+  assert.match(timeContractMigration, /resolve_vienna_local_timestamp_internal/);
+  assert.match(timeContractMigration, /default_roundtrip-input_local=interval '1 hour'/);
+  assert.match(timeContractMigration, /select max\(candidate\)/);
+  assert.match(timeContractMigration, /EXISTING_VIENNA_TRIAL_BOUNDARY_MISMATCH/);
+  assert.match(timeContractMigration, /EXISTING_VIENNA_GRACE_BOUNDARY_MISMATCH/);
 });
 
 test("Platform Admin UI uses only server readiness and the fixed activation RPC", () => {

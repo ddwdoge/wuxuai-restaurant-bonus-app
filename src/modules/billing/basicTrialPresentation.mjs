@@ -51,17 +51,28 @@ export function inferTrialCalendarMonths(startValue, endValue) {
   const start = viennaDateTimeParts(startValue);
   const end = viennaDateTimeParts(endValue);
   if (!start || !end) return null;
-  const startDate = new Date(startValue);
-  const endDate = new Date(endValue);
-
   const calendarMonths = (end.year * 12 + end.month) - (start.year * 12 + start.month);
   if (calendarMonths !== 1 && calendarMonths !== 3) return null;
 
   const daysInEndMonth = new Date(Date.UTC(end.year, end.month, 0)).getUTCDate();
   const expectedEndDay = Math.min(start.day, daysInEndMonth);
   const sameLocalTime = start.hour === end.hour && start.minute === end.minute && start.second === end.second;
+  return end.day === expectedEndDay && sameLocalTime ? calendarMonths : null;
+}
+
+export function hasLegacyUtcCalendarBoundary(startValue, endValue) {
+  const start = viennaDateTimeParts(startValue);
+  const end = viennaDateTimeParts(endValue);
+  const startDate = new Date(startValue);
+  const endDate = new Date(endValue);
+  if (!start || !end || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return false;
+
+  const calendarMonths = (end.year * 12 + end.month) - (start.year * 12 + start.month);
+  if (calendarMonths !== 1 && calendarMonths !== 3) return false;
+  const daysInEndMonth = new Date(Date.UTC(end.year, end.month, 0)).getUTCDate();
+  const sameLocalTime = start.hour === end.hour && start.minute === end.minute && start.second === end.second;
   const sameUtcTime = startDate.getUTCHours() === endDate.getUTCHours()
     && startDate.getUTCMinutes() === endDate.getUTCMinutes()
     && startDate.getUTCSeconds() === endDate.getUTCSeconds();
-  return end.day === expectedEndDay && (sameLocalTime || sameUtcTime) ? calendarMonths : null;
+  return end.day === Math.min(start.day, daysInEndMonth) && !sameLocalTime && sameUtcTime;
 }

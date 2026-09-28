@@ -77,7 +77,12 @@ import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuatio
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { BasicPaidOfferPanel } from "../../billing/BasicPaidOfferPanel";
 import { loadBasicOwnerContractSnapshot, type BasicOwnerContractSnapshot } from "../../billing/basicBillingService";
-import { basicTrialDurationLabel, formatViennaDateTime, inferTrialCalendarMonths } from "../../billing/basicTrialPresentation.mjs";
+import {
+  basicTrialDurationLabel,
+  formatViennaDateTime,
+  hasLegacyUtcCalendarBoundary,
+  inferTrialCalendarMonths,
+} from "../../billing/basicTrialPresentation.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -1588,13 +1593,15 @@ export function SettingsPage() {
                 <InfoValue label="Plan" value={V1_COMMERCIAL_CONTRACT.productName} />
                 <InfoValue
                   label="Vereinbarte Dauer"
-                  value={basicTrialDurationLabel(
-                    basicContract?.trial_calendar_months
-                    ?? inferTrialCalendarMonths(
-                      basicContract?.trial_starts_at ?? subscription.trial_started_at,
-                      basicContract?.trial_ends_at ?? subscription.trial_ends_at,
-                    ),
-                  )}
+                  value={(() => {
+                    const trialStart = basicContract?.trial_starts_at ?? subscription.trial_started_at;
+                    const trialEnd = basicContract?.trial_ends_at ?? subscription.trial_ends_at;
+                    const months = basicContract?.trial_calendar_months
+                      ?? inferTrialCalendarMonths(trialStart, trialEnd);
+                    return months === null && hasLegacyUtcCalendarBoundary(trialStart, trialEnd)
+                      ? "Historischer Zeitraum – Wiener Ortszeit abweichend"
+                      : basicTrialDurationLabel(months);
+                  })()}
                 />
                 <InfoValue label="Testphase Start" value={formatViennaDateTime(basicContract?.trial_starts_at ?? subscription.trial_started_at)} />
                 <InfoValue label="Testphase Ende (exklusiv)" value={formatViennaDateTime(basicContract?.trial_ends_at ?? subscription.trial_ends_at)} />

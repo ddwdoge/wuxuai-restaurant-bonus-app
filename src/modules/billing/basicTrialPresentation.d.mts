@@ -4,3 +4,7 @@ export function inferTrialCalendarMonths(
   startValue: string | null | undefined,
   endValue: string | null | undefined,
 ): 1 | 3 | null;
+export function hasLegacyUtcCalendarBoundary(
+  startValue: string | null | undefined,
+  endValue: string | null | undefined,
+): boolean;

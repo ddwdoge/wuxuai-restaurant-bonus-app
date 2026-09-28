@@ -96,6 +96,13 @@ freigegeben werden. Stripe und Production bleiben unveraendert.
   Code; die ersten zehn Pilotrestaurants sind ausschliesslich Angebots- und
   Organisationsvertrag. Historische Trials bleiben unveraendert;
   Legacy-Verlaengerung erzeugt keinen neuen Trial.
+- Trial- und 60-Kalendertage-Grenzen werden serverseitig in `Europe/Vienna`
+  berechnet und enden exklusiv. Das Zieldatum behaelt die Wiener Ortszeit des
+  Starts, soweit sie existiert; Monatsenden werden auf den letzten gueltigen
+  Kalendertag geklemmt. Eine in der Fruehjahrs-DST-Luecke nicht existente
+  Ortszeit wird um genau die Luecke vorwaerts verschoben. Bei einer im Herbst
+  doppelt vorkommenden Ortszeit gilt die spaetere CET-Instanz. Bereits
+  gespeicherte historische UTC-Grenzen werden nicht stillschweigend geaendert.
 - AT zuerst, aber derzeit LOCKED; weitere EU-Laender vorbereitet und
   gesperrt. Die Schweiz ist nicht Bestandteil dieses EU-Launchumfangs.
   PRO bleibt LOCKED. Downgrade/Add-on-Ende loescht keine Businessdaten;
