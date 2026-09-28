@@ -180,6 +180,20 @@ begin
   exception when check_violation then null;
   end;
   begin
+    insert into public.restaurant_capacity_addon_entitlements (
+      entitlement_key, revision, restaurant_id, organization_id, branch_id,
+      addon_key, addon_version, units, status, effective_from,
+      past_due_started_at, source, request_id, reason
+    ) values (
+      '7c200000-0000-4000-8000-000000000732', 1,
+      '7c200000-0000-4000-8000-000000000011', '7c200000-0000-4000-8000-000000000010', '7c200000-0000-4000-8000-000000000012',
+      'OFFER_CAPACITY', 1, 1, 'CANCELLED', '2026-09-01 00:00+00', null,
+      'TEST_FIXTURE', '7c200000-0000-4000-8000-000000000832', 'Synthetic unbounded cancellation rejection'
+    );
+    raise exception 'unbounded cancelled add-on unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+  begin
     update public.restaurant_capacity_addon_entitlements
     set units = units
     where id = (
