@@ -14,13 +14,16 @@ export function extractCustomerPointsQrReference(value) {
 
   try {
     const parsed = JSON.parse(trimmed);
-    return parsed?.type === POINTS_CREDIT_QR_TYPE
+    const qrToken = parsed?.type === POINTS_CREDIT_QR_TYPE
       && typeof parsed.token === "string"
       && parsed.token.trim()
       ? parsed.token.trim()
       : null;
+    if (qrToken) return qrToken;
   } catch {
-    const manualCode = trimmed.replace(/\s/g, "");
-    return /^\d{8}$/.test(manualCode) ? manualCode : null;
+    // Non-JSON input may still be the short manual fallback below.
   }
+
+  const manualCode = trimmed.replace(/\s/g, "");
+  return /^\d{8}$/.test(manualCode) ? manualCode : null;
 }

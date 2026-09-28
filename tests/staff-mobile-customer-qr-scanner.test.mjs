@@ -91,6 +91,7 @@ test("customer points QR uses the operational quiet-zone and contrast component"
 
 test("scanner contract accepts current payload and manual code but rejects unrelated QR values", () => {
   assert.equal(extractCustomerPointsQrReference("1234 5678"), "12345678");
+  assert.equal(extractCustomerPointsQrReference("12345678"), "12345678");
   assert.equal(extractCustomerPointsQrReference('{"type":"wuxuai_points_credit","token":"current"}'), "current");
   assert.equal(extractCustomerPointsQrReference('{"type":"wuxuai_reward","token":"other"}'), null);
   assert.equal(extractCustomerPointsQrReference("123456"), null);
