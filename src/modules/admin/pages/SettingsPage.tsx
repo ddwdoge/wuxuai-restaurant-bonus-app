@@ -77,7 +77,7 @@ import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuatio
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { BasicPaidOfferPanel } from "../../billing/BasicPaidOfferPanel";
 import { loadBasicOwnerContractSnapshot, type BasicOwnerContractSnapshot } from "../../billing/basicBillingService";
-import { basicTrialDurationLabel, formatViennaDateTime } from "../../billing/basicTrialPresentation.mjs";
+import { basicTrialDurationLabel, formatViennaDateTime, inferTrialCalendarMonths } from "../../billing/basicTrialPresentation.mjs";
 
 type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -1586,7 +1586,16 @@ export function SettingsPage() {
                   value={subscription.payment_status ? paymentLabels[subscription.payment_status] : "Automatische Abrechnung nicht aktiv"}
                 />
                 <InfoValue label="Plan" value={V1_COMMERCIAL_CONTRACT.productName} />
-                <InfoValue label="Vereinbarte Dauer" value={basicTrialDurationLabel(basicContract?.trial_calendar_months)} />
+                <InfoValue
+                  label="Vereinbarte Dauer"
+                  value={basicTrialDurationLabel(
+                    basicContract?.trial_calendar_months
+                    ?? inferTrialCalendarMonths(
+                      basicContract?.trial_starts_at ?? subscription.trial_started_at,
+                      basicContract?.trial_ends_at ?? subscription.trial_ends_at,
+                    ),
+                  )}
+                />
                 <InfoValue label="Testphase Start" value={formatViennaDateTime(basicContract?.trial_starts_at ?? subscription.trial_started_at)} />
                 <InfoValue label="Testphase Ende (exklusiv)" value={formatViennaDateTime(basicContract?.trial_ends_at ?? subscription.trial_ends_at)} />
                 <InfoValue label="Verbleibende Tage" value={trialDays === null ? "Nicht gesetzt" : `${trialDays} Tage`} />
