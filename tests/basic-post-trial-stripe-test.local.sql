@@ -52,9 +52,9 @@ insert into public.restaurants(id,owner_id,name,slug,status,organization_id,acti
   operational_ready,security_ready,legal_ready,onboarding_status)
 values(pg_temp.u('basic-restaurant'),pg_temp.u('basic-owner'),'SYNTHETIC BASIC','synthetic-basic',
   'active',pg_temp.u('basic-org'),null,true,true,true,'completed');
-insert into public.branches(id,organization_id,restaurant_id,name,slug,country,status)
+insert into public.branches(id,organization_id,restaurant_id,name,slug,country,address,postal_code,city,status)
 values(pg_temp.u('basic-branch'),pg_temp.u('basic-org'),pg_temp.u('basic-restaurant'),
-  'SYNTHETIC BASIC','synthetic-basic-main','AT','active');
+  'SYNTHETIC BASIC','synthetic-basic-main','AT','Synthetic Road 1','1000','Synthetic City','active');
 update public.restaurants set primary_branch_id=pg_temp.u('basic-branch') where id=pg_temp.u('basic-restaurant');
 insert into public.restaurant_members(restaurant_id,organization_id,branch_id,user_id,role)
 values(pg_temp.u('basic-restaurant'),pg_temp.u('basic-org'),pg_temp.u('basic-branch'),pg_temp.u('basic-owner'),'owner');
@@ -83,6 +83,21 @@ insert into public.customers(id,restaurant_id,organization_id,branch_id,name,cus
 values(pg_temp.u('basic-customer'),pg_temp.u('basic-restaurant'),pg_temp.u('basic-org'),
   pg_temp.u('basic-branch'),'Synthetic Customer','SYN-BASIC-01','+436600000001','+436600000001');
 set local session_replication_role=origin;
+
+-- TEST_ONLY alone is not a paid-activation authority and direct state writes fail closed.
+select set_config('request.jwt.claims',jsonb_build_object('role','service_role')::text,true);
+set local role service_role;
+do $test$ begin
+  update public.branch_subscriptions set status='active',subscription_status='active',
+    payment_status='paid',stripe_customer_id='cus_SYNTHETIC_DIRECT',
+    stripe_subscription_id='sub_SYNTHETIC_DIRECT'
+  where id=pg_temp.u('basic-subscription');
+  raise exception 'DIRECT_PAID_ACTIVATION_WAS_NOT_BLOCKED';
+exception when sqlstate '42501' then
+  if sqlerrm<>'BILLING_PROVIDER_ACTIVATION_REQUIRED'
+    and sqlerrm not like 'permission denied for table branch_subscriptions%' then raise; end if;
+end $test$;
+reset role;
 
 -- Expired trial permits only redemption actions during the bounded grace.
 do $test$ begin
@@ -124,13 +139,79 @@ end $test$;
 select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.u('basic-owner'),
   'role','authenticated','aal','aal1')::text,true);
 set local role authenticated;
-select public.accept_basic_paid_offer(pg_temp.u('basic-restaurant'),'basic-v1-local',
+select public.accept_basic_paid_offer(pg_temp.u('basic-restaurant'),'basic-paid-v1-2026-09-28',
   'BASIC KOSTENPFLICHTIG BESTELLEN',pg_temp.u('basic-accept-request'),
   pg_temp.u('basic-correlation'));
-select public.accept_basic_paid_offer(pg_temp.u('basic-restaurant'),'basic-v1-local',
+select public.accept_basic_paid_offer(pg_temp.u('basic-restaurant'),'basic-paid-v1-2026-09-28',
   'BASIC KOSTENPFLICHTIG BESTELLEN',pg_temp.u('basic-accept-request'),
   pg_temp.u('basic-correlation'));
 reset role;
+do $test$ begin
+  perform public.prepare_basic_test_checkout((select id from public.basic_paid_offer_acceptances
+    where restaurant_id=pg_temp.u('basic-restaurant')),pg_temp.u('basic-blocked-checkout-request'),
+    '/admin/settings/konto-testphase');
+  raise exception 'SELLER_TAX_READINESS_WAS_NOT_BLOCKED';
+exception when sqlstate '42501' then
+  if sqlerrm<>'BASIC_PAID_READINESS_BLOCKED' then raise; end if;
+end $test$;
+
+-- Positive provider-path fixtures are explicit, synthetic and rolled back.
+set local session_replication_role=replica;
+insert into public.kassa_compliance_acknowledgements(
+  restaurant_id,user_id,text_version,ui_language,legal_country
+) values(pg_temp.u('basic-restaurant'),pg_temp.u('basic-owner'),'kassa-separation-de-v1','de','AT');
+insert into public.organization_legal_profiles(id,organization_id,company_name,legal_form,
+  registered_address_source,address_source_restaurant_id,address_source_branch_id,email,
+  commercial_register_number,vat_id,responsible_person,legal_review_status,updated_by)
+values(pg_temp.u('basic-operator'),pg_temp.u('basic-org'),'Synthetic Basic GmbH','GmbH','restaurant',
+  pg_temp.u('basic-restaurant'),pg_temp.u('basic-branch'),'basic@example.invalid','FN SYNTHETIC',
+  'ATU00000000','Synthetic Representative','reviewed',pg_temp.u('basic-owner'));
+insert into public.restaurant_legal_profiles(restaurant_id,company_name,legal_form,street,
+  postal_code,city,country,email,commercial_register_number,vat_id,complaint_contact,
+  legal_review_status,operator_profile_id,registered_address_source,address_source_restaurant_id)
+values(pg_temp.u('basic-restaurant'),'Synthetic Basic GmbH','GmbH','Synthetic Road 1','1000',
+  'Synthetic City','AT','basic@example.invalid','FN SYNTHETIC','ATU00000000',
+  'basic@example.invalid','reviewed',pg_temp.u('basic-operator'),'restaurant',pg_temp.u('basic-restaurant'));
+insert into public.business_verification_cases(id,restaurant_id,country_code,verification_method,
+  status,test_only,decided_at,expires_at,created_by)
+values(pg_temp.u('basic-case'),pg_temp.u('basic-restaurant'),'AT','MANUAL','VERIFIED',false,
+  now(),now()+interval '1 year',pg_temp.u('basic-admin'));
+insert into public.business_verified_profile_revisions(id,case_id,revision,legal_name,legal_form,
+  register_identifier,vat_id,business_street,business_postal_code,business_city,business_country,
+  authorized_representative,status,decision_ref,created_by)
+values(pg_temp.u('basic-revision'),pg_temp.u('basic-case'),1,'Synthetic Basic GmbH','GmbH',
+  'FN SYNTHETIC','ATU00000000','Synthetic Road 1','1000','Synthetic City','AT',
+  'Synthetic Representative','VERIFIED',pg_temp.u('basic-decision'),pg_temp.u('basic-admin'));
+insert into public.legal_operator_publication_decisions(id,restaurant_id,case_id,profile_revision_id,
+  action,field_mapping_version,reason_code,redacted_reason,actor_id,aal2_verified_at,
+  session_expires_at,auth_session_sha256,request_id,correlation_id)
+values(pg_temp.u('basic-publication'),pg_temp.u('basic-restaurant'),pg_temp.u('basic-case'),
+  pg_temp.u('basic-revision'),'APPROVED','AT_V1_LEGAL_OPERATOR_V1','SYNTHETIC_PAID_REVIEW',
+  'Synthetic local paid readiness only',pg_temp.u('basic-admin'),now(),now()+interval '1 hour',
+  repeat('d',64),pg_temp.u('basic-publication-request'),pg_temp.u('basic-publication-correlation'));
+set local session_replication_role=origin;
+update public.country_kyb_intake_policies set real_intake_status='READY',legal_status='VERIFIED',
+  privacy_status='VERIFIED',document_catalog_status='VERIFIED',retention_status='VERIFIED'
+where country_code='AT';
+update public.country_launch_readiness set status='ready',evidence_ref='LOCAL_SYNTHETIC_PAID',
+  document_version_refs=case when check_key='required_documents'
+    then array['LOCAL_SYNTHETIC_DOCUMENT'] else '{}' end where country_code='AT';
+update public.country_launch_policy set enabled=true,market_status='live',activated_at=now()
+where country_code='AT';
+insert into public.billing_seller_versions(version,seller_name,ip_licensor_name,readiness,
+  valid_from,revision_reason)
+values(2,'Synthetic local seller','Synthetic local licensor','TEST_READY',now(),
+  'Rollback-only positive paid readiness fixture');
+insert into public.billing_tax_readiness_versions(seller_version,provider,environment,revision,
+  account_country,readiness_status,observed_provider_tax_behavior,automatic_tax_enabled,
+  verified_at,verified_by,evidence_reference,revision_reason)
+values(2,'STRIPE','TEST',1,'AT','VERIFIED','EXCLUSIVE',false,now(),'synthetic-local-test',
+  'LOCAL_SYNTHETIC_TAX_REVIEW','Rollback-only verified tax readiness fixture');
+
+select public.basic_paid_activation_readiness_internal(
+  (select id from public.basic_paid_offer_acceptances where restaurant_id=pg_temp.u('basic-restaurant')),
+  'TEST',(select price_id from public.billing_provider_binding_versions
+    where product_code='BASIC' and environment='TEST' order by revision desc limit 1),false);
 select public.prepare_basic_test_checkout((select id from public.basic_paid_offer_acceptances
   where restaurant_id=pg_temp.u('basic-restaurant')),pg_temp.u('basic-checkout-request'),
   '/admin/settings/konto-testphase');
@@ -145,6 +226,16 @@ select public.record_basic_stripe_test_event('evt_SYNTHETICPAID000001',repeat('b
   pg_temp.u('basic-restaurant'),(select id from public.basic_paid_offer_acceptances
     where restaurant_id=pg_temp.u('basic-restaurant')),'paid',now(),now()+interval '1 month',
   pg_temp.u('basic-event-request-2'),pg_temp.u('basic-event-correlation-2'),false);
+do $test$ begin
+  perform public.record_basic_stripe_test_event('evt_SYNTHETICPAID000001',repeat('e',64),
+    'invoice.paid',now()+interval '1 second',null,'cus_SYNTHETIC123456','sub_SYNTHETIC123456',
+    pg_temp.u('basic-restaurant'),(select id from public.basic_paid_offer_acceptances
+      where restaurant_id=pg_temp.u('basic-restaurant')),'paid',now(),now()+interval '1 month',
+    pg_temp.u('basic-event-request-2'),pg_temp.u('basic-event-correlation-2'),false);
+  raise exception 'WEBHOOK_HASH_CONFLICT_WAS_NOT_BLOCKED';
+exception when sqlstate '23505' then
+  if sqlerrm<>'BASIC_TEST_WEBHOOK_HASH_CONFLICT' then raise; end if;
+end $test$;
 select public.record_basic_stripe_test_event('evt_SYNTHETICCHECKOUT01',repeat('a',64),
   'checkout.session.completed',now(),'cs_test_SYNTHETIC123456','cus_SYNTHETIC123456',
   'sub_SYNTHETIC123456',pg_temp.u('basic-restaurant'),

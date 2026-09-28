@@ -30,6 +30,20 @@ function query(sql) {
 const source = await readFile(new URL("./v1-manual-basic-trial.local.sql", import.meta.url), "utf8");
 const setup = source.slice(0, source.indexOf("-- AAL1 remains blocked.")) + `
 set local session_replication_role=origin;
+update public.country_kyb_intake_policies set real_intake_status='READY',legal_status='VERIFIED',
+  privacy_status='VERIFIED',document_catalog_status='VERIFIED',retention_status='VERIFIED'
+where country_code='AT';
+update public.country_launch_readiness set status='ready',evidence_ref='LOCAL_SYNTHETIC_TRIAL',
+  document_version_refs=case when check_key='required_documents'
+    then array['LOCAL_SYNTHETIC_DOCUMENT'] else '{}' end
+where country_code='AT' and check_key in
+  ('legal','privacy','tax','translation','technical_smoke','required_documents');
+insert into public.country_basic_pilot_policy_versions(
+  country_code,revision,state,evidence_reference,valid_from,revision_reason
+) values ('AT',2,'APPROVED','LOCAL_SYNTHETIC_COUNSEL_DECISION',now(),
+  'Synthetic local approval for the concurrency security test');
+update public.country_launch_policy set enabled=true,market_status='prepared',activated_at=null
+where country_code='AT';
 commit;`;
 await query(setup);
 

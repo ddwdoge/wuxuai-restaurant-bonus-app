@@ -773,6 +773,58 @@ export async function updatePlatformRestaurantSubscription(input: {
   }
 }
 
+export type PlatformBasicPilotReadiness = {
+  ready: boolean;
+  restaurant_id?: string;
+  restaurant_name?: string;
+  country_code?: string;
+  subscription_status?: string;
+  payment_status?: string;
+  legal_operator_ready?: boolean;
+  kassa_ready?: boolean;
+  blockers: string[];
+  country_readiness?: {
+    ready: boolean;
+    market_status?: string;
+    policy_state?: string;
+    billing_configuration_required?: false;
+    stripe_configuration_required?: false;
+    blockers?: string[];
+  };
+};
+
+export async function loadPlatformBasicPilotReadiness(
+  restaurantId: string,
+): Promise<PlatformBasicPilotReadiness> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("get_platform_basic_pilot_readiness", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw error;
+  return data as PlatformBasicPilotReadiness;
+}
+
+export async function activatePlatformBasicPilot(input: {
+  restaurantId: string;
+  restaurantName: string;
+  calendarMonths: 1 | 3;
+  reason: string;
+  requestId: string;
+  correlationId: string;
+}): Promise<Record<string, unknown>> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const { data, error } = await supabase.rpc("activate_v1_manual_basic_trial", {
+    input_restaurant_id: input.restaurantId,
+    input_calendar_months: input.calendarMonths,
+    input_reason: input.reason,
+    input_confirmation: `BASIC-TRIAL ${input.restaurantName} ${input.calendarMonths} MONATE AKTIVIEREN`,
+    input_request_id: input.requestId,
+    input_correlation_id: input.correlationId,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+
 export async function loadPlatformAuditEvents(filters: PlatformAuditFilters = {}): Promise<PlatformAuditEvent[]> {
   if (!supabase) {
     throw new Error("Supabase ist nicht konfiguriert.");

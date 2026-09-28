@@ -4,8 +4,12 @@ import { spawn } from "node:child_process";
 
 const databaseUrl = process.env.WUXUAI_MANUAL_TRIAL_LOCAL_DB;
 assert.ok(databaseUrl, "WUXUAI_MANUAL_TRIAL_LOCAL_DB is required");
-const migration = await readFile(new URL(
+const migration180 = await readFile(new URL(
   "../supabase/migrations/20260927004000_v1_manual_basic_trial_activation.sql",
+  import.meta.url,
+), "utf8");
+const migration183 = await readFile(new URL(
+  "../supabase/migrations/20260928002000_basic_paid_and_free_pilot_readiness.sql",
   import.meta.url,
 ), "utf8");
 
@@ -23,17 +27,21 @@ declare relation text; relation_hash text; combined text:=''; begin
   return md5(combined);
 end $$;
 create temporary table protected_before as select pg_temp.protected_fingerprint() fingerprint;
+create temporary table decisions_before as
+  select count(*)::bigint decision_count from public.manual_basic_trial_decisions;
 `;
 const check = String.raw`
 do $$ begin
   if pg_temp.protected_fingerprint() is distinct from (select fingerprint from protected_before) then
     raise exception 'PROTECTED_DATA_CHANGED';
   end if;
-  if (select count(*) from public.manual_basic_trial_decisions)<>0 then
+  if (select count(*) from public.manual_basic_trial_decisions)
+      <>(select decision_count from decisions_before) then
     raise exception 'TRIAL_DECISION_CREATED_BY_MIGRATION';
   end if;
 end $$;
 `;
+const migration = migration180 + "\n" + migration183;
 const input = preflight + migration + check + "select 'REPEAT_1_PASS';\n"
   + migration + check + "select 'REPEAT_2_PASS';\n";
 
@@ -52,5 +60,5 @@ const output = await new Promise((resolve, reject) => {
 
 assert.match(output, /REPEAT_1_PASS/);
 assert.match(output, /REPEAT_2_PASS/);
-console.log("MIGRATION_180_REPEAT_1_2_PASS");
+console.log("MIGRATIONS_180_183_REPEAT_1_2_PASS");
 console.log("PROTECTED_DATA_FINGERPRINTS_UNCHANGED");

@@ -118,7 +118,7 @@ do $test$ begin
     pg_temp.synthetic_uuid('trial-country-request'),pg_temp.synthetic_uuid('trial-country-correlation'));
   raise exception 'COUNTRY_GATE_WAS_NOT_BLOCKED';
 exception when sqlstate '42501' then
-  if sqlerrm<>'MANUAL_TRIAL_COUNTRY_NOT_READY' then raise; end if;
+  if sqlerrm<>'MANUAL_TRIAL_PILOT_READINESS_NOT_READY' then raise; end if;
 end $test$;
 reset role;
 update public.country_kyb_intake_policies set real_intake_status='READY',legal_status='VERIFIED',
@@ -126,8 +126,14 @@ update public.country_kyb_intake_policies set real_intake_status='READY',legal_s
 where country_code='AT';
 update public.country_launch_readiness set status='ready',evidence_ref='LOCAL_SYNTHETIC_TRIAL',
   document_version_refs=case when check_key='required_documents'
-    then array['LOCAL_SYNTHETIC_DOCUMENT'] else '{}' end where country_code='AT';
-update public.country_launch_policy set enabled=true,market_status='live',activated_at=now()
+    then array['LOCAL_SYNTHETIC_DOCUMENT'] else '{}' end
+where country_code='AT' and check_key in
+  ('legal','privacy','tax','translation','technical_smoke','required_documents');
+insert into public.country_basic_pilot_policy_versions(
+  country_code,revision,state,evidence_reference,valid_from,revision_reason
+) values ('AT',2,'APPROVED','LOCAL_SYNTHETIC_COUNSEL_DECISION',now(),
+  'Synthetic local approval used only inside the rolled-back security test');
+update public.country_launch_policy set enabled=true,market_status='prepared',activated_at=null
 where country_code='AT';
 set local role authenticated;
 -- Missing KYB/legal publication approval remains fail-closed.
@@ -164,8 +170,13 @@ do $test$ begin
   if (select count(*) from public.manual_basic_trial_decisions)<>2 then
     raise exception 'TRIAL_DECISION_COUNT_INVALID'; end if;
   if exists(select 1 from public.manual_basic_trial_decisions
-    where ends_at<>starts_at+make_interval(months=>calendar_months)) then
+    where ends_at<>public.vienna_calendar_month_boundary_internal(starts_at,calendar_months)) then
     raise exception 'CALENDAR_MONTH_BOUNDARY_INVALID'; end if;
+  if exists(select 1 from public.basic_post_trial_redemption_grace g
+    join public.manual_basic_trial_decisions d on d.id=g.trial_decision_id
+    where g.boundary_timezone<>'Europe/Vienna'
+      or g.ends_at<>public.vienna_calendar_day_boundary_internal(d.ends_at,60)) then
+    raise exception 'VIENNA_GRACE_BOUNDARY_INVALID'; end if;
   if exists(select 1 from public.branch_subscriptions
     where id in (pg_temp.synthetic_uuid('trial-one-subscription'),pg_temp.synthetic_uuid('trial-three-subscription'))
       and (status<>'trialing' or subscription_status<>'trialing' or plan_key<>'BASIC'
@@ -194,11 +205,14 @@ reset role;
 -- Synthetic time travel: expiry causes no charge/extension and blocks active use.
 set local session_replication_role=replica;
 update public.manual_basic_trial_decisions set starts_at=starts_at-interval '4 months',
-  ends_at=ends_at-interval '4 months' where restaurant_id=pg_temp.synthetic_uuid('trial-one-restaurant');
-update public.branch_subscriptions set trial_started_at=trial_started_at-interval '4 months',
-  trial_ends_at=trial_ends_at-interval '4 months',current_period_start=current_period_start-interval '4 months',
-  current_period_end=current_period_end-interval '4 months',current_period_ends_at=current_period_ends_at-interval '4 months'
-where id=pg_temp.synthetic_uuid('trial-one-subscription');
+  ends_at=public.vienna_calendar_month_boundary_internal(starts_at-interval '4 months',calendar_months)
+where restaurant_id=pg_temp.synthetic_uuid('trial-one-restaurant');
+update public.branch_subscriptions s set
+  trial_started_at=d.starts_at,trial_ends_at=d.ends_at,current_period_start=d.starts_at,
+  current_period_end=d.ends_at,current_period_ends_at=d.ends_at
+from public.manual_basic_trial_decisions d
+where s.id=pg_temp.synthetic_uuid('trial-one-subscription')
+  and d.restaurant_id=pg_temp.synthetic_uuid('trial-one-restaurant');
 set local session_replication_role=origin;
 do $test$ begin
   if public.restaurant_activation_state_internal(pg_temp.synthetic_uuid('trial-one-restaurant'))->>'reason_code'

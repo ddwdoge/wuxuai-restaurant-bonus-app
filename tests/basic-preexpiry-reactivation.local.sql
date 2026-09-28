@@ -66,16 +66,21 @@ set local session_replication_role=origin;
 
 set local role authenticated;
 do $test$ declare first_result jsonb; replay_result jsonb; begin
-  first_result:=public.accept_basic_paid_reactivation(pg_temp.u('pre-restaurant'),'basic-v1-reactivation',
+  first_result:=public.accept_basic_paid_reactivation(pg_temp.u('pre-restaurant'),'basic-paid-v1-2026-09-28',
     'BASIC ERNEUT KOSTENPFLICHTIG BESTELLEN',pg_temp.u('react-accept-request'),pg_temp.u('react-correlation'));
-  replay_result:=public.accept_basic_paid_reactivation(pg_temp.u('pre-restaurant'),'basic-v1-reactivation',
+  replay_result:=public.accept_basic_paid_reactivation(pg_temp.u('pre-restaurant'),'basic-paid-v1-2026-09-28',
     'BASIC ERNEUT KOSTENPFLICHTIG BESTELLEN',pg_temp.u('react-accept-request'),pg_temp.u('react-correlation'));
   if (first_result->>'acceptance_kind')<>'REACTIVATION'
     or coalesce((first_result->>'checkout_allowed')::boolean,false) is not true
     or coalesce((replay_result->>'idempotent')::boolean,false) is not true then
     raise exception 'REACTIVATION_ACCEPTANCE_CONTRACT_FAILED'; end if;
-  perform public.prepare_basic_test_checkout((first_result->>'acceptance_id')::uuid,
-    pg_temp.u('react-checkout-request'),'/admin/settings/konto-testphase');
+  begin
+    perform public.prepare_basic_test_checkout((first_result->>'acceptance_id')::uuid,
+      pg_temp.u('react-checkout-request'),'/admin/settings/konto-testphase');
+    raise exception 'REACTIVATION_READINESS_WAS_NOT_BLOCKED';
+  exception when sqlstate '42501' then
+    if sqlerrm<>'BASIC_PAID_READINESS_BLOCKED' then raise; end if;
+  end;
 end $test$;
 reset role;
 
@@ -87,8 +92,8 @@ do $test$ begin
       where restaurant_id=pg_temp.u('pre-restaurant') and acceptance_kind='REACTIVATION')<>1 then
     raise exception 'REACTIVATION_ACCEPTANCE_COUNT_INVALID'; end if;
   if (select count(*) from public.basic_test_checkout_requests
-      where restaurant_id=pg_temp.u('pre-restaurant'))<>1 then
-    raise exception 'REACTIVATION_CHECKOUT_COUNT_INVALID'; end if;
+      where restaurant_id=pg_temp.u('pre-restaurant'))<>0 then
+    raise exception 'BLOCKED_REACTIVATION_CREATED_CHECKOUT'; end if;
 end $test$;
 
 rollback;

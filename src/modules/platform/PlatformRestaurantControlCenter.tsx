@@ -38,6 +38,7 @@ import { PlatformOperationsPanel } from "./PlatformOperationsPanel";
 import { PlatformPlanEntitlementsPanel } from "./PlatformPlanEntitlementsPanel";
 import { PlatformLegalI18nPanel } from "./PlatformLegalI18nPanel";
 import { PlatformKassaCompliancePanel } from "./PlatformKassaCompliancePanel";
+import { PlatformBasicPilotActivationPanel } from "./PlatformBasicPilotActivationPanel";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
@@ -355,6 +356,12 @@ export function PlatformRestaurantControlCenter({
       </details> : null}
 
       {view === "system" ? <PlatformOperationsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
+      {view === "plans" && subscriptionValue?.subscription_status === "pending_activation" ? <PlatformBasicPilotActivationPanel
+        canWrite={permittedWrite}
+        onActivated={async () => { onRetry(); }}
+        restaurantId={account.restaurant_id}
+        restaurantName={account.restaurant_name}
+      /> : null}
       {view === "plans" ? <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
       {view === "system" ? <PlatformLegalI18nPanel restaurantId={account.restaurant_id} /> : null}
       {view === "system" ? <PlatformKassaCompliancePanel canWrite={permittedWrite} restaurantId={account.restaurant_id} /> : null}
