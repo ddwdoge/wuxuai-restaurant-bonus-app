@@ -54,12 +54,20 @@ test("other role headers retain their existing shared selector inside action gro
     assert.match(read(`src/modules/platform/${page}.tsx`), /<PlatformAdminLayout/);
 });
 
-test("Platform Admin keeps identity and language in one compact primary row", () => {
+test("Platform Admin keeps identity and actions in one desktop row", () => {
   assert.match(platformCss, /\.platform-admin-header-primary\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto/);
   assert.match(platformCss, /\.platform-admin-header-primary-actions\s*>\s*\.wux-language-selector\s*\{[\s\S]*flex: 0 0 auto/);
-  assert.match(platformCss, /@media \(max-width: 820px\)[\s\S]*\.platform-admin-header-primary\s*\{[\s\S]*min-height: 44px/);
   assert.doesNotMatch(platformCss, /\.platform-admin-header-actions/);
   assert.doesNotMatch(sharedUiCss, /\.platform-admin-header-actions/);
+});
+
+test("Platform Admin stacks title and wrapping actions on narrow screens", () => {
+  const mobile = platformCss.slice(platformCss.indexOf("@media (max-width: 820px)"));
+  assert.match(mobile, /\.platform-admin-header-primary\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(mobile, /\.platform-admin-header-primary-actions\s*\{[\s\S]*flex-wrap: wrap[\s\S]*width: 100%/);
+  assert.match(mobile, /\.platform-admin-header h1\s*\{[\s\S]*overflow-wrap: normal[\s\S]*word-break: normal/);
+  assert.doesNotMatch(mobile, /\.platform-admin-header h1\s*\{[^}]*overflow-wrap: anywhere/);
+  assert.match(platformCss, /\.platform-admin-header-toolbar \.platform-admin-sign-out\s*\{[^}]*min-height: 44px;[^}]*min-width: 44px;/s);
 });
 
 test("Platform Admin mobile toolbar shrinks without creating page overflow", () => {
