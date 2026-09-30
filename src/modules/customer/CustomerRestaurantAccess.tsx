@@ -26,6 +26,7 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   const [joinSuccessMessage, setJoinSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loadGeneration = useRef(0);
+  const joinInFlight = useRef(false);
   const returnTo = `${isBonusCollection ? "/w" : "/customer"}/${encodeURIComponent(restaurantSlug)}`;
 
   const loadContext = useCallback(async () => {
@@ -57,11 +58,12 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   }, [loadContext]);
 
   async function join() {
-    if (!context || joining || !termsAccepted || !privacyAcknowledged) return;
+    if (!context || joinInFlight.current || joining || !termsAccepted || !privacyAcknowledged) return;
+    joinInFlight.current = true;
     setJoining(true);
     setError(null);
     try {
-      await joinCustomerRestaurant({
+      const joinResult = await joinCustomerRestaurant({
         restaurantSlug,
         termsAccepted,
         privacyAcknowledged,
@@ -69,12 +71,15 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
         existingCustomerToken: readStoredCustomerToken(restaurantSlug),
       });
       const nextContext = await loadCustomerRestaurantAccess(restaurantSlug);
-      setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
       setContext(nextContext);
-      if (nextContext.token_valid) setPortalRestaurantSlug(nextContext.restaurant_slug);
+      if (nextContext.token_valid) {
+        if (joinResult.joined) setJoinSuccessMessage(`Du bist jetzt im Bonusprogramm von ${context.restaurant_name}.`);
+        setPortalRestaurantSlug(nextContext.restaurant_slug);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");
     } finally {
+      joinInFlight.current = false;
       setJoining(false);
     }
   }

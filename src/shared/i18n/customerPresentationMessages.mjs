@@ -2,8 +2,8 @@
 export const CUSTOMER_PRESENTATION_MESSAGES = {
   "de": {
     "customer.recovery.title": "Zugang wiederherstellen",
-    "customer.recovery.description": "Dein Zugangscode fehlt oder ist ungültig. Nur nach einer aktuellen Anmeldung und deiner ausdrücklichen Bestätigung wird ein neuer Code erstellt.",
-    "customer.recovery.action": "Zugang wiederherstellen",
+    "customer.recovery.description": "Du bist diesem Bonusprogramm bereits beigetreten. Dein Zugang auf diesem Gerät muss erneut bestätigt werden. Deine Mitgliedschaft und deine Punkte bleiben unverändert.",
+    "customer.recovery.action": "Zugang auf diesem Gerät wiederherstellen",
     "customer.recovery.working": "Zugang wird geprüft …",
     "customer.recovery.reauthenticate": "Erneut anmelden",
     "customer.presentation.offerTitle": "Aktuelles & Angebote",
@@ -176,8 +176,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "en": {
     "customer.recovery.title": "Restore access",
-    "customer.recovery.description": "Your access code is missing or invalid. A new code is issued only after a recent sign-in and your explicit confirmation.",
-    "customer.recovery.action": "Restore access",
+    "customer.recovery.description": "You have already joined this rewards programme. Access on this device must be confirmed again. Your membership and points remain unchanged.",
+    "customer.recovery.action": "Restore access on this device",
     "customer.recovery.working": "Checking access…",
     "customer.recovery.reauthenticate": "Sign in again",
     "customer.presentation.offerTitle": "News & offers",
@@ -350,8 +350,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "fr": {
     "customer.recovery.title": "Rétablir l’accès",
-    "customer.recovery.description": "Votre code d’accès est absent ou invalide. Un nouveau code n’est créé qu’après une connexion récente et votre confirmation explicite.",
-    "customer.recovery.action": "Rétablir l’accès",
+    "customer.recovery.description": "Vous avez déjà rejoint ce programme de fidélité. L’accès sur cet appareil doit être confirmé à nouveau. Votre adhésion et vos points restent inchangés.",
+    "customer.recovery.action": "Rétablir l’accès sur cet appareil",
     "customer.recovery.working": "Vérification de l’accès…",
     "customer.recovery.reauthenticate": "Se reconnecter",
     "customer.presentation.offerTitle": "Actualités et offres",
@@ -524,8 +524,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "it": {
     "customer.recovery.title": "Ripristina l’accesso",
-    "customer.recovery.description": "Il codice di accesso manca o non è valido. Un nuovo codice viene creato solo dopo un accesso recente e la tua conferma esplicita.",
-    "customer.recovery.action": "Ripristina l’accesso",
+    "customer.recovery.description": "Hai già aderito a questo programma fedeltà. L’accesso su questo dispositivo deve essere confermato di nuovo. La tua adesione e i tuoi punti restano invariati.",
+    "customer.recovery.action": "Ripristina l’accesso su questo dispositivo",
     "customer.recovery.working": "Verifica dell’accesso…",
     "customer.recovery.reauthenticate": "Accedi di nuovo",
     "customer.presentation.offerTitle": "Novità e offerte",
@@ -698,8 +698,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "es": {
     "customer.recovery.title": "Restablecer el acceso",
-    "customer.recovery.description": "Falta tu código de acceso o no es válido. Solo se crea uno nuevo tras iniciar sesión recientemente y confirmarlo expresamente.",
-    "customer.recovery.action": "Restablecer el acceso",
+    "customer.recovery.description": "Ya te has unido a este programa de fidelidad. Debes volver a confirmar el acceso en este dispositivo. Tu afiliación y tus puntos no cambian.",
+    "customer.recovery.action": "Restablecer el acceso en este dispositivo",
     "customer.recovery.working": "Comprobando el acceso…",
     "customer.recovery.reauthenticate": "Iniciar sesión de nuevo",
     "customer.presentation.offerTitle": "Novedades y ofertas",
@@ -872,8 +872,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "zh": {
     "customer.recovery.title": "恢复访问权限",
-    "customer.recovery.description": "访问码缺失或无效。只有在近期登录并明确确认后才会生成新码。",
-    "customer.recovery.action": "恢复访问权限",
+    "customer.recovery.description": "你已加入此会员奖励计划。需要重新确认此设备上的访问权限。你的会员资格和积分不会改变。",
+    "customer.recovery.action": "恢复此设备上的访问权限",
     "customer.recovery.working": "正在验证访问权限…",
     "customer.recovery.reauthenticate": "重新登录",
     "customer.presentation.offerTitle": "资讯与优惠",
@@ -1046,8 +1046,8 @@ export const CUSTOMER_PRESENTATION_MESSAGES = {
   },
   "ko": {
     "customer.recovery.title": "접근 권한 복구",
-    "customer.recovery.description": "접근 코드가 없거나 유효하지 않습니다. 최근 로그인 후 명시적으로 확인한 경우에만 새 코드가 발급됩니다.",
-    "customer.recovery.action": "접근 권한 복구",
+    "customer.recovery.description": "이미 이 리워드 프로그램에 가입되어 있습니다. 이 기기에서의 접근을 다시 확인해야 합니다. 멤버십과 포인트는 그대로 유지됩니다.",
+    "customer.recovery.action": "이 기기에서 접근 권한 복구",
     "customer.recovery.working": "접근 권한 확인 중…",
     "customer.recovery.reauthenticate": "다시 로그인",
     "customer.presentation.offerTitle": "소식과 혜택",
