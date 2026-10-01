@@ -48,10 +48,13 @@ const realSettings = id(22);
 const factor = id(800);
 const unverifiedFactor = id(801);
 const foreignFactor = id(802);
+const foreignPlatformFactor = id(803);
 const session = id(700);
 const missingFactorSession = id(701);
 const unverifiedFactorSession = id(702);
 const foreignFactorSession = id(703);
+const foreignPlatformSession = id(704);
+const foreignPlatform = id(107);
 const actionCode = "TEST_ONLY_PRO_REWARD_FLOW";
 
 const jwt = ({ who = actor, sessionId = session, age = 0, aal = "aal2", method = "totp" } = {}) => {
@@ -68,6 +71,14 @@ const change = ({
 } = {}) => `select public.set_platform_test_collection_mode(
   '${tenant}','${expected}','${targetMode}',${key === null ? "null" : `'${key}'`},'${code}'
 )`;
+const receipt = ({
+  tenant = targetRestaurant,
+  key = id(500),
+  previous = "restaurant_controlled_only",
+  next = "both",
+} = {}) => `select public.get_platform_test_collection_mode_receipt(
+  '${tenant}',${key === null ? "null" : `'${key}'`},'${previous}','${next}'
+)`;
 const denied = (
   statement,
   prefix = auth(),
@@ -83,6 +94,7 @@ const denied = (
 
 assert.equal(target.host === "127.0.0.1" || target.host === "localhost" || target.host === "[::1]", true);
 assert.equal(sql("select count(*) from supabase_migrations.schema_migrations where version='20261001002000'"), "1");
+assert.equal(sql("select count(*) from supabase_migrations.schema_migrations where version='20261001003000'"), "1");
 const originalEnvironment = sql("select environment from public.business_verification_environment where singleton");
 
 const cleanup = () => sql(`
@@ -95,10 +107,10 @@ delete from public.restaurant_members where restaurant_id in ('${targetRestauran
 delete from public.branches where id in ('${targetBranch}','${realBranch}');
 delete from public.restaurants where id in ('${targetRestaurant}','${realRestaurant}');
 delete from public.organizations where id in ('${targetRestaurant}','${realRestaurant}');
-delete from public.platform_admins where user_id='${actor}';
-delete from auth.sessions where id in ('${session}','${missingFactorSession}','${unverifiedFactorSession}','${foreignFactorSession}');
-delete from auth.mfa_factors where id in ('${factor}','${unverifiedFactor}','${foreignFactor}');
-delete from auth.users where id in ('${actor}','${owner}','${admin}','${manager}','${staff}','${customer}','${other}');
+delete from public.platform_admins where user_id in ('${actor}','${foreignPlatform}');
+delete from auth.sessions where id in ('${session}','${missingFactorSession}','${unverifiedFactorSession}','${foreignFactorSession}','${foreignPlatformSession}');
+delete from auth.mfa_factors where id in ('${factor}','${unverifiedFactor}','${foreignFactor}','${foreignPlatformFactor}');
+delete from auth.users where id in ('${actor}','${owner}','${admin}','${manager}','${staff}','${customer}','${other}','${foreignPlatform}');
 update public.business_verification_environment set environment='${originalEnvironment.replaceAll("'", "''")}', change_ref='MIGRATION_190_LOCAL_CLEANUP' where singleton;
 set session_replication_role=origin;
 `);
@@ -111,23 +123,27 @@ select null, user_id, 'authenticated', 'authenticated', '{}'::jsonb, '{}'::jsonb
   clock_timestamp(), clock_timestamp(), false, false
 from (values
   ('${actor}'::uuid),('${owner}'::uuid),('${admin}'::uuid),('${manager}'::uuid),
-  ('${staff}'::uuid),('${customer}'::uuid),('${other}'::uuid)
+  ('${staff}'::uuid),('${customer}'::uuid),('${other}'::uuid),('${foreignPlatform}'::uuid)
 ) users(user_id);
 
 insert into auth.mfa_factors(id,user_id,friendly_name,factor_type,status,created_at,updated_at)
 values
   ('${factor}','${actor}','Synthetic platform factor','totp','verified',clock_timestamp(),clock_timestamp()),
   ('${unverifiedFactor}','${actor}','Synthetic unverified factor','totp','unverified',clock_timestamp(),clock_timestamp()),
-  ('${foreignFactor}','${other}','Synthetic foreign factor','totp','verified',clock_timestamp(),clock_timestamp());
+  ('${foreignFactor}','${other}','Synthetic foreign factor','totp','verified',clock_timestamp(),clock_timestamp()),
+  ('${foreignPlatformFactor}','${foreignPlatform}','Synthetic foreign platform factor','totp','verified',clock_timestamp(),clock_timestamp());
 
 insert into auth.sessions(id,user_id,created_at,updated_at,factor_id,aal,not_after)
 values
   ('${session}','${actor}',clock_timestamp(),clock_timestamp(),'${factor}','aal2',clock_timestamp()+interval '1 hour'),
   ('${missingFactorSession}','${actor}',clock_timestamp(),clock_timestamp(),null,'aal2',clock_timestamp()+interval '1 hour'),
   ('${unverifiedFactorSession}','${actor}',clock_timestamp(),clock_timestamp(),'${unverifiedFactor}','aal2',clock_timestamp()+interval '1 hour'),
-  ('${foreignFactorSession}','${actor}',clock_timestamp(),clock_timestamp(),'${foreignFactor}','aal2',clock_timestamp()+interval '1 hour');
+  ('${foreignFactorSession}','${actor}',clock_timestamp(),clock_timestamp(),'${foreignFactor}','aal2',clock_timestamp()+interval '1 hour'),
+  ('${foreignPlatformSession}','${foreignPlatform}',clock_timestamp(),clock_timestamp(),'${foreignPlatformFactor}','aal2',clock_timestamp()+interval '1 hour');
 
-insert into public.platform_admins(user_id,role,active) values('${actor}','platform_admin',true);
+insert into public.platform_admins(user_id,role,active) values
+  ('${actor}','platform_admin',true),
+  ('${foreignPlatform}','platform_admin',true);
 update public.business_verification_environment
 set environment='STAGING', change_ref='SYNTHETIC_LOCAL_MIGRATION_190_TEST'
 where singleton;
@@ -180,6 +196,22 @@ set session_replication_role=origin;
   assert.equal(sql("select has_function_privilege('authenticated','public.set_platform_test_collection_mode(uuid,text,text,uuid,text)','EXECUTE')"), "t");
   assert.equal(sql("select has_function_privilege('service_role','public.set_platform_test_collection_mode(uuid,text,text,uuid,text)','EXECUTE')"), "f");
   assert.equal(sql("select has_table_privilege('authenticated','public.platform_test_collection_mode_audit','SELECT')"), "f");
+  assert.equal(sql("select has_function_privilege('anon','public.get_platform_test_collection_mode_receipt(uuid,uuid,text,text)','EXECUTE')"), "f");
+  assert.equal(sql("select has_function_privilege('authenticated','public.get_platform_test_collection_mode_receipt(uuid,uuid,text,text)','EXECUTE')"), "t");
+  assert.equal(sql("select has_function_privilege('service_role','public.get_platform_test_collection_mode_receipt(uuid,uuid,text,text)','EXECUTE')"), "f");
+  denied(receipt(), "set role anon;", /permission denied/i);
+  denied(receipt(), auth({ who: customer, sessionId: id(721) }));
+  denied(receipt(), auth({ who: staff, sessionId: id(722) }));
+  denied(receipt(), auth({ who: owner, sessionId: id(723) }));
+  denied(receipt(), auth({ who: manager, sessionId: id(724) }));
+  denied(receipt(), auth({ who: admin, sessionId: id(725) }));
+  denied(receipt(), auth({ aal: "aal1" }));
+  denied(receipt(), auth({ age: 601 }));
+  denied(receipt(), auth({ sessionId: missingFactorSession }));
+  denied(receipt(), auth({ sessionId: unverifiedFactorSession }));
+  denied(receipt(), auth({ sessionId: foreignFactorSession }));
+  denied(receipt(), "set role service_role;", /permission denied/i);
+  denied("select * from public.platform_test_collection_mode_audit", auth(), /permission denied/i);
   denied(change(), "set role anon;", /permission denied/i);
   denied(change(), auth({ who: customer, sessionId: id(711) }));
   denied(change(), auth({ who: staff, sessionId: id(712) }));
@@ -220,6 +252,31 @@ set session_replication_role=origin;
   assert.equal(sql(`select count(*) from public.audit_log where restaurant_id='${targetRestaurant}' and action='admin_loyalty_settings_updated'`), "0");
   assert.equal(sql(`select to_jsonb(settings)-'points_collection_mode' from public.loyalty_settings settings where id='${targetSettings}'`), settingsBefore);
 
+  // The exact actor-bound receipt confirms the committed transition without
+  // exposing its key, actor, session fingerprint or internal payload.
+  const firstReceipt = lastJson(sql(`${auth()}${receipt({ key: concurrentKey })}`));
+  assert.deepEqual(Object.keys(firstReceipt).sort(), [
+    "action_code", "committed_at", "current_collection_mode", "found", "new_mode",
+    "previous_mode", "receipt_id", "status", "tenant_id",
+  ].sort());
+  assert.equal(firstReceipt.found, true);
+  assert.equal(firstReceipt.tenant_id, targetRestaurant);
+  assert.equal(firstReceipt.previous_mode, "restaurant_controlled_only");
+  assert.equal(firstReceipt.new_mode, "both");
+  assert.equal(firstReceipt.current_collection_mode, "both");
+  assert.equal(firstReceipt.status, "COMPLETED");
+  assert.equal(firstReceipt.action_code, actionCode);
+
+  const missingReceipt = lastJson(sql(`${auth()}${receipt({ key: id(599) })}`));
+  assert.deepEqual(Object.keys(missingReceipt).sort(), ["current_collection_mode", "found", "tenant_id"].sort());
+  assert.equal(missingReceipt.found, false);
+  assert.equal(missingReceipt.current_collection_mode, "both");
+  const foreignActorReceipt = lastJson(sql(`${auth({ who: foreignPlatform, sessionId: foreignPlatformSession })}${receipt({ key: concurrentKey })}`));
+  assert.deepEqual(foreignActorReceipt, missingReceipt);
+  denied(receipt({ key: concurrentKey, previous: "both", next: "restaurant_controlled_only" }), auth(), /RECEIPT_PAYLOAD_CONFLICT/);
+  denied(receipt({ tenant: realRestaurant, key: concurrentKey }), auth(), /ACTIVE_TEST_ONLY_MARKER_REQUIRED/);
+  denied(receipt({ tenant: id(99), key: concurrentKey }), auth(), /ACTIVE_TEST_ONLY_MARKER_REQUIRED/);
+
   // Exact replay is read-only; changed payload with same key conflicts.
   assert.equal(lastJson(sql(`${auth()}${change({ key: concurrentKey })}`)).idempotent, true);
   assert.equal(sql(`select count(*) from public.platform_test_collection_mode_audit where tenant_id='${targetRestaurant}'`), "1");
@@ -239,6 +296,12 @@ set session_replication_role=origin;
     'inbox',(select count(*) from public.customer_pro_in_app_notifications where restaurant_id in ('${targetRestaurant}','${realRestaurant}')),
     'grants',(select count(*) from public.commercial_pro_access_grants where restaurant_id in ('${targetRestaurant}','${realRestaurant}'))
   )`), businessBefore);
+  const reverseReceipt = lastJson(sql(`${auth()}${receipt({ key: id(501), previous: "both", next: "restaurant_controlled_only" })}`));
+  assert.equal(reverseReceipt.found, true);
+  assert.equal(reverseReceipt.previous_mode, "both");
+  assert.equal(reverseReceipt.new_mode, "restaurant_controlled_only");
+  assert.equal(reverseReceipt.current_collection_mode, "restaurant_controlled_only");
+  assert.equal(sql(`select count(*) from public.platform_test_collection_mode_audit where tenant_id='${targetRestaurant}'`), "2");
 
   // Audit rows are immutable and no rejected request created an audit.
   for (const statement of [
@@ -247,11 +310,11 @@ set session_replication_role=origin;
     "truncate public.platform_test_collection_mode_audit",
   ]) denied(statement, "", /IMMUTABLE/);
 
-  console.log("LOCAL MIGRATION 190 SECURITY MATRIX PASS: ACL/AAL2/factor/recent/tenant/expected-state/idempotency/24-way concurrency/round-trip");
+  console.log("LOCAL MIGRATIONS 190/191 SECURITY MATRIX PASS: ACL/AAL2/factor/recent/tenant/actor-bound receipt/idempotency/24-way concurrency/round-trip");
 } finally {
   cleanup();
 }
 
 assert.equal(sql(`select count(*) from public.restaurants where id in ('${targetRestaurant}','${realRestaurant}')`), "0");
-assert.equal(sql(`select count(*) from auth.users where id in ('${actor}','${owner}','${admin}','${manager}','${staff}','${customer}','${other}')`), "0");
-console.log("LOCAL MIGRATION 190 FIXTURE CLEANUP PASS: 0 synthetic rows remain");
+assert.equal(sql(`select count(*) from auth.users where id in ('${actor}','${owner}','${admin}','${manager}','${staff}','${customer}','${other}','${foreignPlatform}')`), "0");
+console.log("LOCAL MIGRATIONS 190/191 FIXTURE CLEANUP PASS: 0 synthetic rows remain");
