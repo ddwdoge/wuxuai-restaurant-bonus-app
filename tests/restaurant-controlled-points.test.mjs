@@ -121,9 +121,9 @@ test("staff sends amount and reference but not a trusted points value", () => {
 });
 
 test("a fresh points QR clears stale customer selection and the visible raw reference", () => {
-  const pointsQrBranch = staff.match(
-    /if \(pointsReference && restaurantId && restaurantControlledEnabled\) \{[\s\S]*?return;\n    \}/,
-  )?.[0] ?? "";
+  const start = staff.indexOf("function activatePointsReference");
+  const end = staff.indexOf("function findCustomerFromSearch", start);
+  const pointsQrBranch = staff.slice(start, end);
 
   assert.match(pointsQrBranch, /setPointsQrReference\(pointsReference\)/);
   assert.match(pointsQrBranch, /setSelectedCustomerId\(""\)/);

@@ -21,7 +21,7 @@ test("aktiver Kundenflow folgt Status, Gast, Punkte und erst danach Suche", () =
   assert.ok(searchStart > pointsStart);
   assert.match(customerFlow, /Gast erkannt/);
   assert.match(customerFlow, /Kein Gast gewählt/);
-  assert.match(customerFlow, /Bitte QR scannen oder Gast suchen\./);
+  assert.match(customerFlow, /persönlichen QR-Code scannen oder den aktuellen 8-stelligen Ersatzcode eingeben/);
 });
 
 test("aktive Rueckmeldungen stehen im Kundenflow und nicht unter den Drawern", () => {
@@ -31,10 +31,11 @@ test("aktive Rueckmeldungen stehen im Kundenflow und nicht unter den Drawern", (
   assert.match(staffPortal, /view === "home" && message/);
 });
 
-test("QR und manuelle Suche verwenden dieselbe obere Kundenkarte", () => {
-  assert.match(staffPortal, /function selectCustomer\(customerId: string, nextView: StaffView = "earn"\)/);
+test("QR/Ersatzcode und die reine Namenssuche verwenden dieselbe obere Kundenkarte", () => {
+  assert.match(staffPortal, /function selectCustomer\(customerId: string, nextView: StaffView = "search"\)/);
   assert.match(customerFlow, /pointsQrReference \?/);
   assert.match(customerFlow, /Kunden-QR erkannt/);
+  assert.match(customerFlow, /Ersatzcode erkannt/);
   assert.match(customerFlow, /recognizedCustomerName/);
   assert.match(customerFlow, /recognizedPointsBalance/);
 });
@@ -42,7 +43,7 @@ test("QR und manuelle Suche verwenden dieselbe obere Kundenkarte", () => {
 test("QR-Vorschau zeigt einen expliziten Ladezustand vor der sicheren Kundenkarte", () => {
   assert.match(customerFlow, /Kundendaten werden geladen …/);
   assert.match(customerFlow, /staff\.drawer\.previewServer/);
-  assert.match(customerFlow, /Punkte für \$\{recognizedCustomerName\} vergeben/);
+  assert.match(customerFlow, /Punkte gutschreiben/);
 });
 
 test("fehlgeschlagene Vorschau sperrt den Punktebereich und bietet Suche oder Retry", () => {
@@ -71,9 +72,11 @@ test("2x Status erscheint in der obersten Karte sobald die sichere Vorschau ihn 
   assert.match(customerFlow, /formatBoostExpiry/);
 });
 
-test("Punktebereich bleibt ohne Kundenkontext deaktiviert und Tages-PIN unverändert", () => {
-  assert.match(staffPortal, /aria-disabled=\{!hasCustomerContext\}/);
-  assert.match(staffPortal, /disabled=\{!selectedCustomer\}/g);
+test("Namenssuche bleibt read-only und Punktebereich verlangt QR oder Ersatzcode", () => {
+  assert.match(staffPortal, /aria-disabled=\{!pointsQrReference\}/);
+  assert.match(staffPortal, /QR-Code oder Ersatzcode verwenden/);
+  assert.doesNotMatch(staffPortal, /applyStaffLoyaltyAction/);
+  assert.doesNotMatch(customerFlow, /Punkte buchen|Stempel geben/);
   assert.match(staffPortal, /Mit Tages-PIN bestätigen/);
   assert.match(staffPortal, /confirmRestaurantControlledPreview/);
   assert.match(staffPortal, /loadTodayRestaurantPin\(restaurantId\)/);

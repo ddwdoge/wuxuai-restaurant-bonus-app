@@ -25,6 +25,9 @@ const ownerKeys = [
 const staffKeys = [
   "staff.header.menu", "staff.header.menuOpen", "staff.header.area", "staff.header.operatorArea",
   "staff.drawer.scannerDescription", "staff.drawer.scannerTitle", "staff.drawer.pointsTitle",
+  "staff.drawer.manualCodeTitle", "staff.drawer.enterManualCode", "staff.drawer.manualCodeLabel",
+  "staff.drawer.manualCodeHelp", "staff.drawer.manualCodeInvalid", "staff.drawer.manualCodeChecking",
+  "staff.drawer.manualCodeContinue", "staff.drawer.manualCodeRecognized",
   "staff.drawer.searchTitle", "staff.drawer.cameraLabel", "staff.drawer.cameraStarting",
   "staff.drawer.captureQr", "staff.drawer.frameQr", "staff.drawer.qrUnavailableSearch",
   "staff.drawer.backScanner", "staff.drawer.quickSearch", "staff.drawer.searchPlaceholder",
@@ -48,6 +51,7 @@ const staffKeys = [
   "staff.more.sessionFallback", "staff.more.logout", "staff.more.logoutPending", "staff.error.logout",
   "staff.error.cameraDenied", "staff.error.cameraMissing", "staff.error.cameraBusy",
   "staff.error.scannerOpen", "staff.error.cameraUnsupported", "staff.error.qrInvalid",
+  "staff.error.pointsReferenceUnavailable",
 ];
 
 const expectedCloseLabels = {
@@ -143,7 +147,8 @@ test("Staff portal drawers use explicit active-language keys and preserve indivi
   assert.match(staff, /title=\{tr\("staff\.more\.title"\)\}/);
   assert.match(staff, /description=\{tr\("staff\.pin\.description"\)\}/);
   assert.match(staff, /aria-label=\{tr\("staff\.drawer\.cameraLabel"\)\}/);
-  assert.match(staff, /placeholder=\{tr\("staff\.drawer\.searchPlaceholder"\)\}/);
+  assert.match(staff, /placeholder="1234 5678"/);
+  assert.match(staff, /staff\.drawer\.manualCodeLabel/);
   assert.match(staff, /customer\.name/);
   assert.match(staff, /pointsPreview\.customer_label/);
   assert.match(staff, /user\?\.email/);

@@ -27,15 +27,16 @@ test("Scanner verwendet genau ein ZXing-Video statt einer zweiten Kameraarchitek
 
 test("Kamera steht im Drawer vor manuellem Fallback und Punkteablauf", () => {
   const camera = scannerDrawer.indexOf("staff-operational-camera");
-  const fallback = scannerDrawer.indexOf("staff.drawer.qrUnavailableSearch");
+  const fallback = scannerDrawer.indexOf("staff.drawer.enterManualCode");
   const points = scannerDrawer.indexOf("staff-operational-points-flow");
   assert.ok(camera > -1);
   assert.ok(fallback > camera);
   assert.ok(points > fallback);
 });
 
-test("QR-Ablauf hält Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
+test("QR und Ersatzcode halten Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
   assert.match(scannerDrawer, /staff\.drawer\.qrRecognized/);
+  assert.match(scannerDrawer, /staff\.drawer\.manualCodeRecognized/);
   assert.match(scannerDrawer, /pointsPreview\.customer_label/);
   assert.match(scannerDrawer, /pointsPreview\.points_balance/);
   assert.match(scannerDrawer, /pointsPreview\.boost_multiplier/);
@@ -52,7 +53,7 @@ test("Vorschaufehler blockiert die finale Buchung", () => {
   assert.match(scannerDrawer, /billAmountValidated && !pointsAmountIsValid/);
   assert.match(scannerDrawer, /disabled=\{saving\}/);
   assert.match(scannerDrawer, /common\.retry/);
-  assert.match(scannerDrawer, /staff\.drawer\.chooseOther/);
+  assert.match(staffPortal, /staff\.error\.pointsReferenceUnavailable/);
 });
 
 test("erfolgreicher Ablauf kann beendet oder für nächsten Gast neu gestartet werden", () => {

@@ -8,6 +8,12 @@ export function buildCustomerPointsQrPayload(token) {
   return JSON.stringify({ type: POINTS_CREDIT_QR_TYPE, token: token.trim() });
 }
 
+export function extractCustomerPointsManualCode(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const manualCode = value.trim().replace(/\s/g, "");
+  return /^\d{8}$/.test(manualCode) ? manualCode : null;
+}
+
 export function extractCustomerPointsQrReference(value) {
   if (typeof value !== "string" || !value.trim()) return null;
   const trimmed = value.trim();
@@ -24,6 +30,5 @@ export function extractCustomerPointsQrReference(value) {
     // Non-JSON input may still be the short manual fallback below.
   }
 
-  const manualCode = trimmed.replace(/\s/g, "");
-  return /^\d{8}$/.test(manualCode) ? manualCode : null;
+  return extractCustomerPointsManualCode(trimmed);
 }

@@ -8,7 +8,9 @@ const styles = readFileSync(new URL("../src/modules/staff/staff-premium.css", im
 test("Mitarbeiter-Startseite verwendet vorhandene sichere Datenflüsse", () => {
   assert.match(staffPortal, /loadTodayRestaurantPin\(restaurantId\)/);
   assert.match(staffPortal, /loadStaffDailyActivity\(restaurantId\)/);
-  assert.match(staffPortal, /applyStaffLoyaltyAction\(\{/);
+  assert.match(staffPortal, /previewRestaurantControlledPoints\(restaurantId, pointsQrReference, amountCents\)/);
+  assert.match(staffPortal, /confirmRestaurantControlledPoints\(\{ restaurantId, qrReference: pointsQrReference/);
+  assert.doesNotMatch(staffPortal, /applyStaffLoyaltyAction\(\{/);
   assert.doesNotMatch(staffPortal, /console\.(?:log|info|debug)\([^\n]*(?:todayPin|pinDraft)/);
 });
 

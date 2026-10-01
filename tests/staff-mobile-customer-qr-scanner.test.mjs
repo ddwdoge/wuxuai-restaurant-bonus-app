@@ -13,6 +13,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import {
   buildCustomerPointsQrPayload,
+  extractCustomerPointsManualCode,
   extractCustomerPointsQrReference,
 } from "../src/modules/loyalty/customerPointsQr.mjs";
 import { OPERATIONAL_QR_CONFIG } from "../src/shared/lib/operationalQr.mjs";
@@ -90,6 +91,10 @@ test("customer points QR uses the operational quiet-zone and contrast component"
 });
 
 test("scanner contract accepts current payload and manual code but rejects unrelated QR values", () => {
+  assert.equal(extractCustomerPointsManualCode("1234 5678"), "12345678");
+  assert.equal(extractCustomerPointsManualCode("12345678"), "12345678");
+  assert.equal(extractCustomerPointsManualCode('{"type":"wuxuai_points_credit","token":"current"}'), null);
+  assert.equal(extractCustomerPointsManualCode("123456"), null);
   assert.equal(extractCustomerPointsQrReference("1234 5678"), "12345678");
   assert.equal(extractCustomerPointsQrReference("12345678"), "12345678");
   assert.equal(extractCustomerPointsQrReference('{"type":"wuxuai_points_credit","token":"current"}'), "current");
@@ -98,11 +103,14 @@ test("scanner contract accepts current payload and manual code but rejects unrel
   assert.equal(extractCustomerPointsQrReference("https://example.invalid/customer"), null);
 });
 
-test("invalid QR feedback remains visible while manual fallback stays available", () => {
+test("invalid QR feedback remains visible while the 8-digit replacement code stays available", () => {
   assert.match(staffPortal, /staff\.error\.qrInvalid/);
   assert.match(staffPortal, /staff\.drawer\.frameQr/);
-  assert.match(staffPortal, /staff\.drawer\.qrUnavailableSearch/);
-  assert.match(staffPortal, /staff\.drawer\.searchPlaceholder/);
+  assert.match(staffPortal, /staff\.drawer\.enterManualCode/);
+  assert.match(staffPortal, /extractCustomerPointsManualCode\(scannerManualValue\)/);
+  assert.match(staffPortal, /inputMode="numeric"/);
+  assert.match(staffPortal, /maxLength=\{9\}/);
+  assert.match(staffPortal, /scannerManualSubmitPendingRef\.current/);
   assert.match(loyaltyService, /QR_NOT_FOUND/);
   assert.match(loyaltyService, /ungültig, abgelaufen oder gehört nicht zu diesem Restaurant/);
 });

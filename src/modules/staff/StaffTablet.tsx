@@ -3,7 +3,6 @@ import type { IScannerControls } from "@zxing/browser";
 import {
   BadgeCheck,
   CalendarDays,
-  Calculator,
   ChevronRight,
   CircleAlert,
   Clock3,
@@ -19,13 +18,12 @@ import {
   QrCode,
   Search,
   ShieldCheck,
-  Stamp,
   UserSearch,
   X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { buildStaffLoginPath } from "../auth/staffLoginFlow.mjs";
-import type { Customer, LoyaltyRule, LoyaltySettings } from "../../shared/types/domain";
+import type { Customer, LoyaltySettings } from "../../shared/types/domain";
 import { AppDrawer } from "../../shared/components/AppDrawer";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
@@ -35,22 +33,21 @@ import { localeTag } from "../../shared/i18n/formatters.mjs";
 import { useAuth } from "../auth/AuthProvider";
 import { useStaffPortalAccess } from "../auth/staffPortalAccessContext";
 import {
-  applyStaffLoyaltyAction,
   StaffLoyaltyActionError,
   confirmRestaurantControlledPoints,
   defaultSettingsForMode,
   loadTodayRestaurantPin,
   loadCustomers,
-  loadLoyaltyRules,
   loadLoyaltySettings,
-  resolveCustomerQrToken,
   previewRestaurantControlledPoints,
-  rulesForMode,
   type TodayRestaurantPin,
   type RestaurantControlledPointsPreview,
 } from "../loyalty/loyaltyService";
 import { useTenant } from "../tenant/TenantProvider";
-import { extractCustomerPointsQrReference } from "../loyalty/customerPointsQr.mjs";
+import {
+  extractCustomerPointsManualCode,
+  extractCustomerPointsQrReference,
+} from "../loyalty/customerPointsQr.mjs";
 import { loadStaffDailyActivity, type StaffDailyActivity } from "./staffActivityService";
 import { SecureRedemptionQueue } from "./SecureRedemptionQueue";
 import {
@@ -111,6 +108,13 @@ function pointsActionErrorText(error: unknown) {
     return error.message;
   }
   return "";
+}
+
+function pointsReferencePreviewErrorKey(error: unknown) {
+  const normalized = pointsActionErrorText(error).toLowerCase();
+  return /(qr-code|ersatzcode|ungültig|abgelaufen|verwendet|restaurant)/.test(normalized)
+    ? "staff.error.pointsReferenceUnavailable"
+    : "staff.error.preview";
 }
 
 function classifyPointsActionError(error: unknown, customerName: string, translate: StaffTranslator): PinActionFeedback {
@@ -188,25 +192,6 @@ function classifyPointsActionError(error: unknown, customerName: string, transla
   };
 }
 
-function extractCustomerToken(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  try {
-    const parsed = JSON.parse(trimmed) as { customer_token?: string; token?: string };
-    return parsed.customer_token ?? parsed.token ?? null;
-  } catch {
-    // Continue with URL/raw-token parsing.
-  }
-
-  try {
-    const parsedUrl = new URL(trimmed);
-    return parsedUrl.searchParams.get("token") || parsedUrl.searchParams.get("customer_token");
-  } catch {
-    return trimmed.length > 24 && !trimmed.includes(" ") ? trimmed : null;
-  }
-}
-
 export function StaffTablet() {
   const { language, translateKey } = useI18n();
   const tr: StaffTranslator = (key, values = {}) => {
@@ -234,20 +219,19 @@ export function StaffTablet() {
   const [settings, setSettings] = useState<LoyaltySettings>(() =>
     defaultSettingsForMode(restaurantId, "menu_points"),
   );
-  const [rules, setRules] = useState<LoyaltyRule[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [billAmountInput, setBillAmountInput] = useState("");
   const [billAmountValidated, setBillAmountValidated] = useState(false);
   const [pointsQrReference, setPointsQrReference] = useState<string | null>(null);
+  const [pointsReferenceMethod, setPointsReferenceMethod] = useState<"qr" | "manual" | null>(null);
   const [pointsPreview, setPointsPreview] = useState<RestaurantControlledPointsPreview | null>(null);
   const [activePointsTaskContext, setActivePointsTaskContext] = useState<ActivePointsTaskContext | null>(null);
   const [pointsTaskMinimized, setPointsTaskMinimized] = useState(false);
   const [cancelTaskPromptOpen, setCancelTaskPromptOpen] = useState(false);
   const [replaceTaskPromptOpen, setReplaceTaskPromptOpen] = useState(false);
   const [customerPreviewError, setCustomerPreviewError] = useState<string | null>(null);
-  const [selectedStampRuleId, setSelectedStampRuleId] = useState<string>("manual-stamp");
   const [pendingPinAction, setPendingPinAction] = useState<PendingPinAction | null>(null);
   const [pinActionFeedback, setPinActionFeedback] = useState<PinActionFeedback | null>(null);
   const [pinDraft, setPinDraft] = useState("");
@@ -259,7 +243,9 @@ export function StaffTablet() {
   const [scannerStatus, setScannerStatus] = useState<string | null>(null);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [scannerManualValue, setScannerManualValue] = useState("");
-  const [scannerManualSearchOpen, setScannerManualSearchOpen] = useState(false);
+  const [scannerManualCodeOpen, setScannerManualCodeOpen] = useState(false);
+  const [scannerManualCodeError, setScannerManualCodeError] = useState<string | null>(null);
+  const [scannerManualChecking, setScannerManualChecking] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -276,6 +262,7 @@ export function StaffTablet() {
   const scannerControlsRef = useRef<IScannerControls | null>(null);
   const scannerHandlingResultRef = useRef(false);
   const scannerLaunchPendingRef = useRef(false);
+  const scannerManualSubmitPendingRef = useRef(false);
   const scannerReturnViewRef = useRef<StaffView>("home");
   const scannerHistoryEntryRef = useRef(false);
   const hasActivePointsTaskRef = useRef(false);
@@ -295,17 +282,15 @@ export function StaffTablet() {
 
     async function loadStaffData() {
       try {
-        const [nextSettings, nextRules, nextCustomers] = await Promise.all([
+        const [nextSettings, nextCustomers] = await Promise.all([
           loadLoyaltySettings(restaurantId),
-          loadLoyaltyRules(restaurantId),
           loadCustomers(restaurantId),
         ]);
 
         if (!cancelled) {
           setSettings(nextSettings);
-          setRules(nextRules);
           setCustomers(nextCustomers);
-          setSelectedCustomerId((current) => current || nextCustomers[0]?.id || "");
+          setSelectedCustomerId((current) => nextCustomers.some((customer) => customer.id === current) ? current : "");
         }
       } catch (error) {
         console.error("Mitarbeiterdaten konnten nicht geladen werden.", error);
@@ -431,10 +416,6 @@ export function StaffTablet() {
   }, [pinActionFeedback]);
 
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null;
-  const activeRules = useMemo(
-    () => rulesForMode(rules.filter((rule) => rule.active), settings.loyalty_mode),
-    [rules, settings.loyalty_mode],
-  );
   const filteredCustomers = useMemo(
     () =>
       customers.filter((customer) =>
@@ -444,28 +425,13 @@ export function StaffTablet() {
       ),
     [customers, query],
   );
-  const scannerFilteredCustomers = useMemo(() => {
-    const nextQuery = scannerManualValue.trim().toLowerCase();
-    return customers
-      .filter((customer) =>
-        !nextQuery
-        || `${customer.name} ${customer.phone ?? ""} ${customer.email ?? ""} ${customer.customer_code}`
-          .toLowerCase()
-          .includes(nextQuery),
-      )
-      .slice(0, 8);
-  }, [customers, scannerManualValue]);
   const pointsAmountMaxCents = Math.max(1, settings.points_collection_max_amount_cents ?? 30000);
   const parsedBillAmount = parseStaffAmountToCents(billAmountInput, pointsAmountMaxCents);
   const pointsAmountCents = parsedBillAmount.ok ? parsedBillAmount.cents : 0;
   const pointsAmountIsValid = parsedBillAmount.ok;
-  const billAmount = pointsAmountCents / 100;
-  const amountPerPointCents = Math.max(1, Math.round(settings.amount_per_point * 100));
-  const calculatedPoints = Math.max(0, Math.floor(pointsAmountCents / amountPerPointCents));
   const restaurantControlledEnabled = settings.points_collection_mode === "restaurant_controlled_only"
     || settings.points_collection_mode === "both";
   const customerInitiatedStaffToolsEnabled = settings.points_collection_mode !== "restaurant_controlled_only";
-  const stampRules = activeRules.filter((rule) => rule.stamps > 0);
   const todayPointsIssued = todayActivity.reduce((total, activity) => total + activity.points_issued, 0);
   const todayRewardsRedeemed = todayActivity.reduce((total, activity) => total + activity.rewards_redeemed, 0);
   const recognizedCustomerName = pointsPreview?.customer_label ?? selectedCustomer?.name ?? null;
@@ -534,6 +500,7 @@ export function StaffTablet() {
     setActivePointsTaskContext(null);
     setPointsTaskMinimized(false);
     setPointsQrReference(null);
+    setPointsReferenceMethod(null);
     setPointsPreview(null);
     setPendingPinAction(null);
     setPinActionFeedback(null);
@@ -555,6 +522,7 @@ export function StaffTablet() {
       setActivePointsTaskContext(null);
       setPointsTaskMinimized(false);
       setPointsQrReference(null);
+      setPointsReferenceMethod(null);
       setPointsPreview(null);
       setPendingPinAction(null);
       setPinActionFeedback(null);
@@ -595,6 +563,7 @@ export function StaffTablet() {
     setPinDraft("");
     setSelectedCustomerId("");
     setPointsQrReference(null);
+    setPointsReferenceMethod(null);
     setPointsPreview(null);
     setActivePointsTaskContext(null);
     setPointsTaskMinimized(false);
@@ -622,16 +591,6 @@ export function StaffTablet() {
 
   function boostRemainingDays(expiresAt: string) {
     return Math.max(1, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
-  }
-
-  function replaceCustomerBalance(customerId: string, pointsBalance: number, stampBalance: number) {
-    setCustomers((currentCustomers) =>
-      currentCustomers.map((customer) =>
-        customer.id === customerId
-          ? { ...customer, points_balance: pointsBalance, stamp_balance: stampBalance }
-          : customer,
-      ),
-    );
   }
 
   function stopScanner() {
@@ -663,68 +622,86 @@ export function StaffTablet() {
     return tr("staff.error.scannerOpen");
   }
 
-  async function findCustomerFromSearch(searchValue: string) {
+  function activatePointsReference(pointsReference: string, method: "qr" | "manual") {
+    if (!restaurantId || !restaurantControlledEnabled) {
+      setMessage("Dieser sichere Punkteweg ist für das Restaurant nicht aktiviert.");
+      return false;
+    }
+    if (!user?.id || !staffAccessContext) {
+      setMessage("Der Mitarbeiterzugang konnte nicht sicher bestätigt werden.");
+      return false;
+    }
+
+    setPointsQrReference(pointsReference);
+    setPointsReferenceMethod(method);
+    setActivePointsTaskContext(createActivePointsTaskContext({
+      actorId: user.id,
+      restaurantId,
+      roleContext: staffAccessContext,
+    }));
+    hasActivePointsTaskRef.current = true;
+    setPointsTaskMinimized(false);
+    setPointsPreview(null);
+    setCustomerPreviewError(null);
+    resetBillAmount();
+    setSelectedCustomerId("");
+    setQuery("");
+    setView("earn");
+    setMessage(null);
+    return true;
+  }
+
+  function findCustomerFromSearch(searchValue: string) {
     const nextQuery = searchValue.trim();
-    const pointsReference = extractCustomerPointsQrReference(nextQuery);
-    if (pointsReference && restaurantId && restaurantControlledEnabled) {
-      if (!user?.id || !staffAccessContext) {
-        setMessage("Der Mitarbeiterzugang konnte nicht sicher bestätigt werden.");
-        return;
-      }
-      setPointsQrReference(pointsReference);
-      setActivePointsTaskContext(createActivePointsTaskContext({
-        actorId: user.id,
-        restaurantId,
-        roleContext: staffAccessContext,
-      }));
-      hasActivePointsTaskRef.current = true;
-      setPointsTaskMinimized(false);
-      setPointsPreview(null);
-      setCustomerPreviewError(null);
-      resetBillAmount();
-      setSelectedCustomerId("");
-      setQuery("");
-      setView("earn");
-      setMessage(null);
-      return;
-    }
-    const token = extractCustomerToken(nextQuery);
-
-    if (token && restaurantId) {
-      try {
-        const customerFromQr = await resolveCustomerQrToken(restaurantId, token);
-        setCustomers((currentCustomers) => {
-          const exists = currentCustomers.some((customer) => customer.id === customerFromQr.id);
-          return exists
-            ? currentCustomers.map((customer) => (customer.id === customerFromQr.id ? customerFromQr : customer))
-            : [customerFromQr, ...currentCustomers];
-        });
-        setSelectedCustomerId(customerFromQr.id);
-        setCustomerPreviewError(null);
-        setView("search");
-        setMessage("Gast per QR gefunden.");
-        return;
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "QR konnte nicht gelesen werden.");
-      }
-    }
-
     const nextCustomer = customers.find((customer) =>
       `${customer.name} ${customer.phone ?? ""} ${customer.email ?? ""} ${customer.customer_code}`
         .toLowerCase()
         .includes(nextQuery.toLowerCase()),
     );
     setSelectedCustomerId(nextCustomer?.id ?? "");
+    setView("search");
+    setMessage(nextCustomer ? null : "Kein passender Gast gefunden.");
   }
 
   async function handleScannerValue(value: string) {
+    const pointsReference = extractCustomerPointsQrReference(value);
+    if (!pointsReference) {
+      setScannerError(tr("staff.error.qrInvalid"));
+      return;
+    }
     stopScanner();
     setScannerStarting(false);
     setScannerStatus(tr("staff.drawer.qrRecognized"));
-    setScannerManualSearchOpen(false);
+    setScannerManualCodeOpen(false);
+    setScannerManualCodeError(null);
     setScannerManualValue("");
-    setQuery(value);
-    await findCustomerFromSearch(value);
+    activatePointsReference(pointsReference, "qr");
+  }
+
+  async function submitManualPointsCode(event: FormEvent) {
+    event.preventDefault();
+    if (scannerManualSubmitPendingRef.current) return;
+
+    const pointsReference = extractCustomerPointsManualCode(scannerManualValue);
+    if (!pointsReference) {
+      setScannerManualCodeError(tr("staff.drawer.manualCodeInvalid"));
+      return;
+    }
+
+    scannerManualSubmitPendingRef.current = true;
+    setScannerManualChecking(true);
+    setScannerManualCodeError(null);
+    await Promise.resolve();
+    const activated = activatePointsReference(pointsReference, "manual");
+    if (activated) {
+      stopScanner();
+      setScannerStarting(false);
+      setScannerStatus(tr("staff.drawer.manualCodeRecognized"));
+      setScannerManualCodeOpen(false);
+      setScannerManualValue("");
+    }
+    scannerManualSubmitPendingRef.current = false;
+    setScannerManualChecking(false);
   }
 
   async function activateQrScannerCamera() {
@@ -749,7 +726,7 @@ export function StaffTablet() {
         (result, _decodeError, scannerControls) => {
           if (!result || scannerHandlingResultRef.current) return;
           const rawValue = result.getText();
-          const recognized = extractCustomerPointsQrReference(rawValue) || extractCustomerToken(rawValue);
+          const recognized = extractCustomerPointsQrReference(rawValue);
           if (!recognized) {
             setScannerError(tr("staff.error.qrInvalid"));
             setScannerStatus(tr("staff.drawer.frameQr"));
@@ -791,7 +768,8 @@ export function StaffTablet() {
     resetSelectedCustomerState();
     setView("search");
     setScannerOpen(true);
-    setScannerManualSearchOpen(false);
+    setScannerManualCodeOpen(false);
+    setScannerManualCodeError(null);
     setScannerStarting(true);
     setScannerError(null);
     setScannerStatus(tr("staff.drawer.captureQr"));
@@ -813,7 +791,8 @@ export function StaffTablet() {
     scannerLaunchPendingRef.current = true;
     resetSelectedCustomerState();
     setView("search");
-    setScannerManualSearchOpen(false);
+    setScannerManualCodeOpen(false);
+    setScannerManualCodeError(null);
     setScannerStarting(true);
     setScannerError(null);
     setScannerStatus(tr("staff.drawer.captureQr"));
@@ -838,7 +817,10 @@ export function StaffTablet() {
     setScannerStatus(null);
     setScannerError(null);
     setScannerManualValue("");
-    setScannerManualSearchOpen(false);
+    setScannerManualCodeOpen(false);
+    setScannerManualCodeError(null);
+    setScannerManualChecking(false);
+    scannerManualSubmitPendingRef.current = false;
     if (!fromHistory && scannerHistoryEntryRef.current) {
       scannerHistoryEntryRef.current = false;
       window.history.back();
@@ -951,70 +933,6 @@ export function StaffTablet() {
     setView("home");
   }
 
-  function queueLoyaltyAction(payload: {
-    title: string;
-    points: number;
-    stamps: number;
-    reason: string;
-    ruleId?: string | null;
-    billAmount?: number | null;
-    amountCents?: number | null;
-  }) {
-    if (!restaurantId || !selectedCustomer) return;
-
-    requestPin({
-      title: payload.title,
-      detail: selectedCustomer.name,
-      pinLabel: tr("staff.pin.label"),
-      pinHelp: tr("staff.pin.help"),
-      customerName: selectedCustomer.name,
-      currentPoints: selectedCustomer.points_balance,
-      intendedPoints: payload.points || null,
-      amountCents: payload.amountCents ?? null,
-      boostMultiplier: 1,
-      run: async (dailyPin) => {
-        const result = await applyStaffLoyaltyAction({
-          restaurantId,
-          customerId: selectedCustomer.id,
-          dailyPin,
-          mode: settings.loyalty_mode,
-          points: payload.points,
-          stamps: payload.stamps,
-          reason: payload.reason,
-          ruleId: payload.ruleId ?? null,
-          billAmount: payload.billAmount ?? null,
-          amountCents: payload.amountCents ?? null,
-          idempotencyKey: crypto.randomUUID(),
-        });
-
-        replaceCustomerBalance(selectedCustomer.id, result.points_balance, result.stamp_balance);
-        resetBillAmount();
-        setActivityRefreshToken((current) => current + 1);
-        return {
-          title: tr("staff.success.saved"),
-          message: result.points_added > 0
-            ? tr("staff.success.pointsCredited", { count: result.points_added, name: selectedCustomer.name })
-            : tr("staff.success.stampsCredited", { count: result.stamps_added, name: selectedCustomer.name }),
-          awardedPoints: result.points_added || null,
-          boostMultiplier: 1,
-        };
-      },
-    });
-  }
-
-  function queueAmountBasedLoyaltyAction() {
-    if (!validateBillAmount()) return;
-    formatBillAmountAfterEditing();
-    queueLoyaltyAction({
-      title: tr("staff.action.bookPoints"),
-      points: calculatedPoints,
-      stamps: 0,
-      reason: `Rechnungsbetrag ${formatStaffAmountFromCents(pointsAmountCents, ".")} EUR`,
-      billAmount,
-      amountCents: pointsAmountCents,
-    });
-  }
-
   async function handleRestaurantControlledPreview() {
     if (!restaurantId || !pointsQrReference) return;
     if (!validateBillAmount()) return;
@@ -1027,9 +945,9 @@ export function StaffTablet() {
       setActivePointsTaskContext((current) => current
         ? withActivePointsTaskExpiry(current, preview.expires_at)
         : current);
-    } catch {
+    } catch (error) {
       setPointsPreview(null);
-      const nextError = "staff.error.preview";
+      const nextError = pointsReferencePreviewErrorKey(error);
       setCustomerPreviewError(nextError);
       if (!scannerOpen) setMessage(tr(nextError));
     } finally { setSaving(false); }
@@ -1053,7 +971,7 @@ export function StaffTablet() {
         const result = await confirmRestaurantControlledPoints({ restaurantId, qrReference: pointsQrReference,
           amountCents: pointsPreview.amount_cents, dailyPin, idempotencyKey });
         hasActivePointsTaskRef.current = false;
-        setPointsQrReference(null); setPointsPreview(null); setActivePointsTaskContext(null); setPointsTaskMinimized(false); resetBillAmount();
+        setPointsQrReference(null); setPointsReferenceMethod(null); setPointsPreview(null); setActivePointsTaskContext(null); setPointsTaskMinimized(false); resetBillAmount();
         setActivityRefreshToken((current) => current + 1);
         return {
           title: tr("staff.success.pointsTitle"),
@@ -1071,7 +989,7 @@ export function StaffTablet() {
     await findCustomerFromSearch(query);
   }
 
-  function selectCustomer(customerId: string, nextView: StaffView = "earn") {
+  function selectCustomer(customerId: string, nextView: StaffView = "search") {
     setSelectedCustomerId(customerId);
     setCustomerPreviewError(null);
     setMessage(null);
@@ -1083,11 +1001,6 @@ export function StaffTablet() {
     closeScanner();
     resetSelectedCustomerState();
     setView("home");
-  }
-
-  function continueManualCustomerOnPage() {
-    closeScanner();
-    setView("earn");
   }
 
   function renderProcessOverview(currentStep: number) {
@@ -1384,7 +1297,7 @@ export function StaffTablet() {
             <>
               <span className="staff-customer-context-status">
                 {customerPreviewError ? <CircleAlert aria-hidden="true" size={18} /> : <BadgeCheck aria-hidden="true" size={18} />}
-                {customerPreviewError ? "Kundendaten nicht verfügbar" : "Kunden-QR erkannt"}
+                {customerPreviewError ? "Kundendaten nicht verfügbar" : pointsReferenceMethod === "manual" ? "Ersatzcode erkannt" : "Kunden-QR erkannt"}
               </span>
               <h2>{customerPreviewError ? "Gast konnte nicht sicher geladen werden" : saving ? "Kundendaten werden geladen …" : "Gast wird sicher geprüft"}</h2>
               <p className="muted">{customerPreviewErrorMessage ?? tr("staff.drawer.previewServer")}</p>
@@ -1395,16 +1308,20 @@ export function StaffTablet() {
             <>
               <span className="staff-customer-context-status"><UserSearch aria-hidden="true" size={18} />Kein Gast gewählt</span>
               <h2>Kein Gast gewählt</h2>
-              <p className="muted">Bitte QR scannen oder Gast suchen.</p>
+              <p className="muted">Für eine Punktegutschrift bitte den persönlichen QR-Code scannen oder den aktuellen 8-stelligen Ersatzcode eingeben.</p>
             </>
           )}
         </article>
 
         {view === "earn" && !customerPreviewError ? (
-        <section aria-disabled={!hasCustomerContext} className={`card staff-points-credit-card${hasCustomerContext ? "" : " is-disabled"}`}>
-          <h2>{recognizedCustomerName ? `Punkte für ${recognizedCustomerName} vergeben` : pointsQrReference ? "Punkte gutschreiben" : "Punkte/Stempel geben"}</h2>
-          {!hasCustomerContext ? <p className="muted">Wähle zuerst einen Gast aus oder scanne den persönlichen Kunden-QR.</p> : null}
-          {pointsQrReference ? <div className="restaurant-controlled-credit">
+        <section aria-disabled={!pointsQrReference} className={`card staff-points-credit-card${pointsQrReference ? "" : " is-disabled"}`}>
+          <h2>{pointsQrReference ? "Punkte gutschreiben" : "Sichere Punktegutschrift starten"}</h2>
+          {!pointsQrReference ? (
+            <div className="staff-read-only-customer-notice">
+              <p>Für eine Punktegutschrift bitte den persönlichen QR-Code scannen oder den aktuellen 8-stelligen Ersatzcode eingeben.</p>
+              <button className="button" disabled={scannerStarting || scannerOpen} onClick={() => void startQrScanner()} type="button"><QrCode aria-hidden="true" size={18} />QR-Code oder Ersatzcode verwenden</button>
+            </div>
+          ) : <div className="restaurant-controlled-credit">
             <p className="muted">{translateKey("staff.kassa.supportedPurchase")}</p>
             <div className="field">
               <FormLabel htmlFor="controlled-bill-amount" required>{translateKey("staff.kassa.amountLabel")}</FormLabel>
@@ -1431,112 +1348,7 @@ export function StaffTablet() {
               {pointsPreview.high_amount_warning ? <p className="status-message">Hoher Betrag: Bitte den bezahlten Betrag sorgfältig prüfen.</p> : null}
               <button className="button" disabled={saving} onClick={confirmRestaurantControlledPreview} type="button">Mit Tages-PIN bestätigen</button>
             </div>}
-          </div> : null}
-          {!pointsQrReference && settings.loyalty_mode === "amount_based" ? (
-            <div className="grid two">
-              <div className="field">
-                <FormLabel htmlFor="bill-amount" required>Rechnungsbetrag</FormLabel>
-                <input
-                  aria-describedby={billAmountValidated && !pointsAmountIsValid ? "bill-amount-error" : undefined}
-                  aria-invalid={billAmountValidated && !pointsAmountIsValid || undefined}
-                  aria-required="true"
-                  className="input"
-                  id="bill-amount"
-                  disabled={!selectedCustomer}
-                  inputMode="decimal"
-                  onBlur={formatBillAmountAfterEditing}
-                  onChange={(event) => updateBillAmount(event.target.value)}
-                  onKeyDown={(event) => { if (event.key === "Enter") queueAmountBasedLoyaltyAction(); }}
-                  required
-                  type="text"
-                  value={billAmountInput}
-                />
-                {billAmountValidated && !pointsAmountIsValid ? <small className="staff-points-drawer-pin-error" id="bill-amount-error" role="alert">{tr("staff.kassa.invalidAmount", { min: formatCurrency(1), max: formatCurrency(pointsAmountMaxCents) })}</small> : null}
-                <p className="muted">
-                  <Calculator size={16} /> {calculatedPoints} Punkte
-                </p>
-              </div>
-              <button
-                className="large-action"
-                disabled={!selectedCustomer || saving}
-                onClick={queueAmountBasedLoyaltyAction}
-                type="button"
-              >
-                <HandCoins size={32} />
-                Punkte buchen
-                <span className="muted">{calculatedPoints} Punkte</span>
-              </button>
-            </div>
-          ) : null}
-
-          {!pointsQrReference && settings.loyalty_mode === "stamp_based" ? (
-            <div className="grid two">
-              <div className="field">
-                <FormLabel htmlFor="stamp-rule" required>Stempel-Regel</FormLabel>
-                <select
-                  aria-required="true"
-                  className="select"
-                  id="stamp-rule"
-                  disabled={!selectedCustomer}
-                  required
-                  value={selectedStampRuleId}
-                  onChange={(event) => setSelectedStampRuleId(event.target.value)}
-                >
-                  <option value="manual-stamp">1 Stempel</option>
-                  {stampRules.map((rule) => (
-                    <option key={rule.id} value={rule.id}>
-                      {rule.title} · {rule.stamps} Stempel
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button
-                className="large-action"
-                disabled={!selectedCustomer || saving}
-                onClick={() => {
-                  const selectedRule = stampRules.find((rule) => rule.id === selectedStampRuleId);
-                  queueLoyaltyAction({
-                    title: tr("staff.action.giveStamp"),
-                    points: 0,
-                    stamps: selectedRule?.stamps ?? 1,
-                    reason: selectedRule?.title ?? "1 Stempel",
-                    ruleId: selectedRule?.id ?? null,
-                  });
-                }}
-                type="button"
-              >
-                <Stamp size={32} />
-                Stempel geben
-                <span className="muted">Tages-PIN erforderlich</span>
-              </button>
-            </div>
-          ) : null}
-
-          {!pointsQrReference && settings.loyalty_mode === "menu_points" ? (
-            <div className="tablet-actions" style={{ marginTop: 16 }}>
-              {activeRules.map((rule) => (
-                <button
-                  className="large-action"
-                  disabled={!selectedCustomer || saving}
-                  key={rule.id}
-                  onClick={() =>
-                    queueLoyaltyAction({
-                      title: rule.title,
-                      points: rule.points,
-                      stamps: 0,
-                      reason: rule.title,
-                      ruleId: rule.id,
-                    })
-                  }
-                  type="button"
-                >
-                  <BadgeCheck size={32} />
-                  {rule.title}
-                  <span className="muted">{rule.points} Punkte</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
+          </div>}
         </section>
       ) : null}
 
@@ -1549,7 +1361,7 @@ export function StaffTablet() {
                 aria-required="true"
                 className="input"
                 id="customer-search"
-                placeholder="QR, Telefon, Name oder Gästecode"
+                placeholder="Name, Telefon oder Gästecode"
                 required
                 autoFocus={view === "search" && !scannerOpen}
                 value={query}
@@ -1577,6 +1389,7 @@ export function StaffTablet() {
                   <span>{customer.phone ?? customer.customer_code}</span>
                 </button>
               ))}
+              {selectedCustomer ? <p className="staff-read-only-customer-notice">Für eine Punktegutschrift bitte den persönlichen QR-Code scannen oder den aktuellen 8-stelligen Ersatzcode eingeben.</p> : null}
             </div>
           ) : null}
         </article>
@@ -1679,13 +1492,13 @@ export function StaffTablet() {
         open={scannerOpen}
         size="large"
         title={pendingPinAction?.title
-          ?? (pointsQrReference ? tr("staff.drawer.pointsTitle") : scannerManualSearchOpen ? tr("staff.drawer.searchTitle") : tr("staff.drawer.scannerTitle"))}
+          ?? (pointsQrReference ? tr("staff.drawer.pointsTitle") : scannerManualCodeOpen ? tr("staff.drawer.manualCodeTitle") : tr("staff.drawer.scannerTitle"))}
       >
         <div className="staff-operational-scanner">
-          {renderProcessOverview(pinActionFeedback?.kind === "success" ? 4 : pendingPinAction ? 3 : pointsQrReference ? (pointsPreview || billAmountInput.trim() ? 2 : 1) : selectedCustomer ? 1 : 0)}
+          {renderProcessOverview(pinActionFeedback?.kind === "success" ? 4 : pendingPinAction ? 3 : pointsQrReference ? (pointsPreview || billAmountInput.trim() ? 2 : 1) : 0)}
           {pendingPinAction ? renderPinActionContent(true) : null}
 
-          {!pendingPinAction && !pointsQrReference && !selectedCustomer && !scannerManualSearchOpen ? (
+          {!pendingPinAction && !pointsQrReference && !scannerManualCodeOpen ? (
             <>
               <div className="staff-operational-camera">
                 <div className="scanner-video-frame">
@@ -1710,67 +1523,50 @@ export function StaffTablet() {
                   setScannerStarting(false);
                   setScannerStatus(null);
                   setScannerError(null);
-                  setScannerManualSearchOpen(true);
+                  setScannerManualCodeError(null);
+                  setScannerManualCodeOpen(true);
                 }}
                 type="button"
               >
-                <UserSearch aria-hidden="true" size={18} />{tr("staff.drawer.qrUnavailableSearch")}
+                <KeyRound aria-hidden="true" size={18} />{tr("staff.drawer.enterManualCode")}
               </button>
             </>
           ) : null}
 
-          {!pendingPinAction && scannerManualSearchOpen ? (
-            <div className="staff-operational-manual-search">
+          {!pendingPinAction && scannerManualCodeOpen ? (
+            <form className="staff-operational-manual-search" onSubmit={(event) => void submitManualPointsCode(event)}>
               <button className="staff-operational-back" onClick={() => void restartQrScanner()} type="button"><QrCode aria-hidden="true" size={18} />{tr("staff.drawer.backScanner")}</button>
               <div className="field">
-                <FormLabel htmlFor="scanner-customer-search" required>{tr("staff.drawer.quickSearch")}</FormLabel>
+                <FormLabel htmlFor="scanner-manual-points-code" required>{tr("staff.drawer.manualCodeLabel")}</FormLabel>
                 <input
+                  aria-describedby={scannerManualCodeError ? "scanner-manual-points-code-error" : "scanner-manual-points-code-help"}
+                  aria-invalid={Boolean(scannerManualCodeError) || undefined}
                   aria-required="true"
+                  autoComplete="off"
                   autoFocus
                   className="input"
                   data-drawer-autofocus="true"
-                  id="scanner-customer-search"
-                  onChange={(event) => setScannerManualValue(event.target.value)}
-                  placeholder={tr("staff.drawer.searchPlaceholder")}
+                  disabled={scannerManualChecking}
+                  id="scanner-manual-points-code"
+                  inputMode="numeric"
+                  maxLength={9}
+                  onChange={(event) => { setScannerManualValue(event.target.value); setScannerManualCodeError(null); }}
+                  placeholder="1234 5678"
                   required
-                  type="search"
+                  type="text"
                   value={scannerManualValue}
                 />
+                {scannerManualCodeError
+                  ? <small id="scanner-manual-points-code-error" role="alert">{scannerManualCodeError}</small>
+                  : <small id="scanner-manual-points-code-help">{tr("staff.drawer.manualCodeHelp")}</small>}
               </div>
-              <div className="staff-operational-customer-list" aria-label={tr("staff.drawer.foundCustomers")}>
-                {scannerFilteredCustomers.map((customer) => (
-                  <button
-                    key={customer.id}
-                    onClick={() => {
-                      selectCustomer(customer.id, "earn");
-                      setScannerManualSearchOpen(false);
-                    }}
-                    type="button"
-                  >
-                    <span><strong>{customer.name}</strong><small>{customer.phone ?? customer.customer_code}</small></span>
-                    <ChevronRight aria-hidden="true" size={18} />
-                  </button>
-                ))}
-                {scannerManualValue.trim() && scannerFilteredCustomers.length === 0 ? <p className="muted">{tr("staff.drawer.noCustomer")}</p> : null}
-              </div>
-            </div>
-          ) : null}
-
-          {!pendingPinAction && selectedCustomer ? (
-            <div className="staff-operational-selected-customer">
-              <section className="staff-points-drawer-customer" aria-label={tr("staff.drawer.selectedCustomer")}>
-                <span><BadgeCheck aria-hidden="true" size={17} />{tr("staff.drawer.recognized")}</span>
-                <h3>{selectedCustomer.name}</h3>
-                <p>{tr("staff.drawer.currentPoints", { count: selectedCustomer.points_balance })}</p>
-              </section>
-              <button className="button" onClick={continueManualCustomerOnPage} type="button">{tr("staff.drawer.continueCustomer")}</button>
-              <button className="button secondary" onClick={() => void restartQrScanner()} type="button">{tr("staff.drawer.chooseOther")}</button>
-            </div>
+              <button className="button" disabled={scannerManualChecking} type="submit">{scannerManualChecking ? tr("staff.drawer.manualCodeChecking") : tr("staff.drawer.manualCodeContinue")}</button>
+            </form>
           ) : null}
 
           {!pendingPinAction && pointsQrReference ? (
             <div className="staff-operational-points-flow">
-              <div className="staff-operational-detected" aria-live="polite" role="status"><BadgeCheck aria-hidden="true" size={19} /><strong>{tr("staff.drawer.qrRecognized")}</strong></div>
+              <div className="staff-operational-detected" aria-live="polite" role="status"><BadgeCheck aria-hidden="true" size={19} /><strong>{pointsReferenceMethod === "manual" ? tr("staff.drawer.manualCodeRecognized") : tr("staff.drawer.qrRecognized")}</strong></div>
               <section className={`staff-points-drawer-customer${customerPreviewError ? " is-error" : ""}`} aria-label={tr("staff.drawer.recognized")}>
                 {pointsPreview ? (
                   <>

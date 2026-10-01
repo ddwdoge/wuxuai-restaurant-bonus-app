@@ -1540,6 +1540,33 @@
   padding: 8px 10px;
 }
 
+.staff-operational-manual-search .button {
+  min-height: 48px;
+  width: 100%;
+}
+
+.staff-operational-manual-search small[role="alert"] {
+  color: #8f433a;
+}
+
+.staff-read-only-customer-notice {
+  background: #f7f1e7;
+  border: 1px solid rgba(180, 128, 45, 0.22);
+  border-radius: 12px;
+  color: var(--staff-muted);
+  display: grid;
+  gap: 12px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 13px;
+}
+
+.staff-read-only-customer-notice .button {
+  min-height: 48px;
+  width: 100%;
+}
+
 .staff-operational-customer-list {
   display: grid;
   gap: 8px;
