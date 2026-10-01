@@ -51,7 +51,8 @@ test("5 resume restores the same in-memory task without a reset", () => {
 
 test("6 entered amount has a distinct preserved task stage", () => {
   assert.equal(activePointsTaskStage({ hasPreview: false, amountCents: 1250, pinRequired: false }), "amount");
-  assert.match(staff, /value=\{billAmount \|\| ""\}/);
+  assert.match(staff, /value=\{billAmountInput\}/);
+  assert.match(staff, /parseStaffAmountToCents\(billAmountInput, pointsAmountMaxCents\)/);
 });
 
 test("7 PIN workflow step survives minimize and resume", () => {

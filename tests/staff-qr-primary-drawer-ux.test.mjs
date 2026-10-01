@@ -48,7 +48,9 @@ test("QR-Ablauf hält Gast, Vorschau, PIN und Erfolg im selben Drawer", () => {
 test("Vorschaufehler blockiert die finale Buchung", () => {
   assert.match(scannerDrawer, /customerPreviewError/);
   assert.match(scannerDrawer, /pointsPreview \? \(/);
-  assert.match(scannerDrawer, /disabled=\{saving \|\| !pointsAmountIsValid\}/);
+  assert.match(staffPortal, /if \(!validateBillAmount\(\)\) return/);
+  assert.match(scannerDrawer, /billAmountValidated && !pointsAmountIsValid/);
+  assert.match(scannerDrawer, /disabled=\{saving\}/);
   assert.match(scannerDrawer, /common\.retry/);
   assert.match(scannerDrawer, /staff\.drawer\.chooseOther/);
 });

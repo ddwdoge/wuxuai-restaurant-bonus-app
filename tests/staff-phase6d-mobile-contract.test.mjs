@@ -39,10 +39,11 @@ test("PIN confirmation requires exactly four numeric digits before the existing 
 });
 
 test("amount preview rejects empty and out-of-range values before the existing server preview", () => {
-  assert.match(staff, /pointsAmountCents >= 1[\s\S]*pointsAmountCents <= pointsAmountMaxCents/);
-  assert.match(staff, /if \(!restaurantId \|\| !pointsQrReference \|\| !pointsAmountIsValid\) return/);
-  assert.match(staff, /disabled=\{saving \|\| !pointsAmountIsValid\}/);
-  assert.match(staff, /aria-invalid=\{billAmount !== 0 && !pointsAmountIsValid \|\| undefined\}/);
+  assert.match(staff, /parseStaffAmountToCents\(billAmountInput, pointsAmountMaxCents\)/);
+  assert.match(staff, /function validateBillAmount\(\)[\s\S]*setBillAmountValidated\(true\)[\s\S]*return pointsAmountIsValid/);
+  assert.match(staff, /if \(!validateBillAmount\(\)\) return/);
+  assert.match(staff, /disabled=\{saving\}/);
+  assert.match(staff, /aria-invalid=\{billAmountValidated && !pointsAmountIsValid \|\| undefined\}/);
 });
 
 test("pre-confirmation summary keeps paid amount, points and customer visible", () => {

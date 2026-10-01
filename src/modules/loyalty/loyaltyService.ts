@@ -2,6 +2,10 @@ import { liveDataUnavailableMessage, supabase } from "../../shared/lib/supabase"
 import type { Campaign, Customer, LoyaltyMode, LoyaltyRule, LoyaltySettings, PointsCollectionMode, Restaurant, RestaurantBranding } from "../../shared/types/domain";
 import { normalizeCustomerPhone } from "../customer/customerIdentity.mjs";
 import {
+  classifyStaffPointsFailure,
+  type StaffPointsFailureCategory,
+} from "../staff/staffPointsFailure.mjs";
+import {
   CustomerAccessError,
   CUSTOMER_ACCESS_FAILURE_REASONS,
   customerAccessFailureReason,
@@ -66,6 +70,7 @@ export type StaffLoyaltyActionInput = {
   reason: string;
   ruleId?: string | null;
   billAmount?: number | null;
+  amountCents?: number | null;
   idempotencyKey: string;
 };
 
@@ -75,6 +80,18 @@ export type StaffLoyaltyActionResult = {
   points_balance: number;
   stamp_balance: number;
 };
+
+export class StaffLoyaltyActionError extends Error {
+  readonly category: StaffPointsFailureCategory;
+  readonly safeCode: string;
+
+  constructor(message: string, category: StaffPointsFailureCategory, safeCode: string) {
+    super(message);
+    this.name = "StaffLoyaltyActionError";
+    this.category = category;
+    this.safeCode = safeCode;
+  }
+}
 
 export function defaultSettingsForMode(restaurantId: string, mode: LoyaltyMode): LoyaltySettings {
   return {
@@ -1135,31 +1152,47 @@ export async function applyStaffLoyaltyAction(input: StaffLoyaltyActionInput): P
     throw new Error(liveDataUnavailableMessage);
   }
 
-  const { data, error } = await supabase.rpc("apply_staff_daily_pin_loyalty_action_v1", {
-    input_restaurant_id: input.restaurantId,
-    input_customer_id: input.customerId,
-    input_daily_pin: input.dailyPin,
-    input_loyalty_mode: input.mode,
-    input_points: input.points,
-    input_stamps: input.stamps,
-    input_reason: input.reason,
-    input_rule_id: input.ruleId ?? null,
-    input_bill_amount: input.billAmount ?? null,
-    input_idempotency_key: input.idempotencyKey,
-  });
+  const amountCents = input.amountCents ?? null;
+  if (input.mode === "amount_based" && (typeof amountCents !== "number" || !Number.isSafeInteger(amountCents) || amountCents < 1)) {
+    const failure = classifyStaffPointsFailure({ code: "POINTS_AMOUNT_INVALID", message: "Betrag ist ungültig." });
+    throw new StaffLoyaltyActionError("Der Rechnungsbetrag ist ungültig.", failure.category, failure.safeCode);
+  }
+  const validatedAmountCents = input.mode === "amount_based" ? amountCents as number : null;
+
+  const { data, error } = input.mode === "amount_based"
+    ? await supabase.rpc("apply_staff_daily_pin_loyalty_action_v2", {
+      input_restaurant_id: input.restaurantId,
+      input_customer_id: input.customerId,
+      input_daily_pin: input.dailyPin,
+      input_amount_cents: validatedAmountCents,
+      input_idempotency_key: input.idempotencyKey,
+    })
+    : await supabase.rpc("apply_staff_daily_pin_loyalty_action_v1", {
+      input_restaurant_id: input.restaurantId,
+      input_customer_id: input.customerId,
+      input_daily_pin: input.dailyPin,
+      input_loyalty_mode: input.mode,
+      input_points: input.points,
+      input_stamps: input.stamps,
+      input_reason: input.reason,
+      input_rule_id: input.ruleId ?? null,
+      input_bill_amount: input.billAmount ?? null,
+      input_idempotency_key: input.idempotencyKey,
+    });
 
   if (error) {
-    console.warn("apply_staff_daily_pin_loyalty_action RPC fehlgeschlagen.", {
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      message: error.message,
-    });
-    throw new Error(staffDailyPinActionErrorMessage(error));
+    const failure = classifyStaffPointsFailure(error);
+    throw new StaffLoyaltyActionError(staffDailyPinActionErrorMessage(error), failure.category, failure.safeCode);
   }
-  const payload = data as (StaffLoyaltyActionResult & { success?: boolean; error_message?: string }) | null;
+  const payload = data as (StaffLoyaltyActionResult & { success?: boolean; error_code?: string; error_message?: string }) | null;
   if (payload?.success === false) {
-    throw new Error(payload.error_message ?? "Punkte konnten gerade nicht gebucht werden. Bitte versuche es erneut.");
+    const failure = classifyStaffPointsFailure({ code: payload.error_code, message: payload.error_message });
+    const safeMessage = staffDailyPinActionErrorMessage({ code: payload.error_code, message: payload.error_message });
+    throw new StaffLoyaltyActionError(
+      safeMessage,
+      failure.category,
+      failure.safeCode,
+    );
   }
   return data as StaffLoyaltyActionResult;
 }
