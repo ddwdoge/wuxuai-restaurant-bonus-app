@@ -39,6 +39,7 @@ import { PlatformPlanEntitlementsPanel } from "./PlatformPlanEntitlementsPanel";
 import { PlatformLegalI18nPanel } from "./PlatformLegalI18nPanel";
 import { PlatformKassaCompliancePanel } from "./PlatformKassaCompliancePanel";
 import { PlatformBasicPilotActivationPanel } from "./PlatformBasicPilotActivationPanel";
+import { PlatformTestCollectionModeControl } from "./PlatformTestCollectionModeControl";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
@@ -223,6 +224,8 @@ export function PlatformRestaurantControlCenter({
         <span>Systemzustand</span>
         <strong>{overallHealth.label}</strong>
       </div> : null}
+
+      {view === "businesses" ? <PlatformTestCollectionModeControl restaurant={{ id: restaurant.id, name: restaurant.name, slug: restaurant.slug }} /> : null}
 
       {view === "businesses" ? <section className="platform-control-section">
         <div className="section-heading"><h3>Nutzung</h3><p className="muted">Aktuelle restaurantbezogene Kennzahlen.</p></div>

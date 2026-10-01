@@ -905,6 +905,89 @@ export async function loadProTestOnlyBusinesses(search = "", country = "") {
     input_search: search || null, input_country: country || null, input_limit: 50, input_offset: 0,
   });
 }
+
+export type PlatformTestCollectionMode = "restaurant_controlled_only" | "both";
+export type PlatformTestCollectionControlContext = {
+  exactTestOnlyTenant: boolean;
+  currentMode: PlatformTestCollectionMode | null;
+};
+export type PlatformTestCollectionReceipt = {
+  found: boolean;
+  receipt_id?: string;
+  tenant_id: string;
+  action_code?: string;
+  previous_mode?: PlatformTestCollectionMode;
+  new_mode?: PlatformTestCollectionMode;
+  committed_at?: string;
+  status?: string;
+  current_collection_mode: PlatformTestCollectionMode;
+};
+
+export async function loadPlatformTestCollectionMfaProof() {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const [aalResult, factorsResult] = await Promise.all([
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    supabase.auth.mfa.listFactors(),
+  ]);
+  if (aalResult.error || factorsResult.error) throw new Error("PLATFORM_TEST_CONTROL_MFA_UNAVAILABLE");
+  const methods = aalResult.data.currentAuthenticationMethods ?? [];
+  return {
+    aal2: aalResult.data.currentLevel === "aal2"
+      && methods.some((method) => typeof method === "string" ? method === "totp" : method?.method === "totp"),
+    verifiedFactors: factorsResult.data.totp.filter((factor) => factor.status === "verified"),
+  };
+}
+
+export async function loadPlatformTestCollectionControlContext(input: {
+  restaurantId: string;
+  restaurantName: string;
+  restaurantSlug: string;
+}): Promise<PlatformTestCollectionControlContext> {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const [testOnly, modeResult] = await Promise.all([
+    loadProTestOnlyBusinesses(input.restaurantName),
+    supabase.rpc("get_public_points_collection_mode", { input_restaurant_slug: input.restaurantSlug }),
+  ]);
+  if (modeResult.error) throw modeResult.error;
+  const exactTestOnlyTenant = testOnly.items.some((business) => business.restaurant_id === input.restaurantId);
+  const currentMode = modeResult.data === "restaurant_controlled_only" || modeResult.data === "both"
+    ? modeResult.data
+    : null;
+  return { exactTestOnlyTenant, currentMode };
+}
+
+export async function refreshPlatformTestCollectionRecentTotp(factorId: string, code: string) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const result = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+  if (result.error) throw new Error("PLATFORM_TEST_CONTROL_RECENT_TOTP_REJECTED");
+}
+
+export async function mutateAndConfirmPlatformTestCollectionMode(input: {
+  restaurantId: string;
+  expectedMode: PlatformTestCollectionMode;
+  targetMode: PlatformTestCollectionMode;
+  idempotencyKey: string;
+}) {
+  if (!supabase) throw new Error("Supabase ist nicht konfiguriert.");
+  const mutation = await supabase.rpc("set_platform_test_collection_mode", {
+    input_tenant_id: input.restaurantId,
+    input_expected_current_mode: input.expectedMode,
+    input_target_mode: input.targetMode,
+    input_idempotency_key: input.idempotencyKey,
+    input_action_code: "TEST_ONLY_PRO_REWARD_FLOW",
+  });
+  const receipt = await supabase.rpc("get_platform_test_collection_mode_receipt", {
+    input_tenant_id: input.restaurantId,
+    input_idempotency_key: input.idempotencyKey,
+    input_expected_previous_mode: input.expectedMode,
+    input_expected_new_mode: input.targetMode,
+  });
+  if (receipt.error) throw new Error("PLATFORM_TEST_CONTROL_RECEIPT_UNAVAILABLE");
+  return {
+    mutationAccepted: mutation.error == null,
+    receipt: receipt.data as PlatformTestCollectionReceipt,
+  };
+}
 export async function loadProCommercialAudit(country = "") {
   return proRpc<Paged<ProCommercialAudit>>("get_platform_pro_commercial_audit", {
     input_country: country || null, input_action: null, input_restaurant_id: null, input_limit: 50, input_offset: 0,
