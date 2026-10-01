@@ -55,13 +55,44 @@ SHA-256: `c14556ed4fd72a987d1bde6fdf27f95ba79a3f5b704cc9d017b4ee2b22cd1b1c`
 
 - DB/Security/E2E: `152a6be` – `fix(points): bind staff daily PIN flow to ledger contract`
 - UI/Fehlerklassifizierung: `8d2a9d6` – `fix(staff): accept exact invoice cents and classify failures`
+- Lokaler Code-Lock-Bericht: `b4c0153e7aa3f858e913c46403ed926b201d40eb` – `docs(points): record migration 189 local code lock`
+- Remote-Parität nach Push: `0/0` bei `b4c0153e7aa3f858e913c46403ed926b201d40eb`.
 
-## Noch nicht ausgeführt
+## Staging-Anwendung und Web-Deployment
 
-- Migration 189 ist in diesem Bericht noch nicht auf Staging angewendet.
-- Staging-Web-App ist noch nicht aus `8d2a9d6` deployt.
-- Der physische Staging-Feldtest ist noch offen.
-- Ein neuer positiver Staging-Punkteversuch und ein Staging-PRO-Testgrant bleiben ausdrücklich gesperrt.
+- Projektidentität: verifiziertes Staging-Projekt `wuxuai-bonus-staging`; Production war nicht verknüpft und wurde nicht aufgerufen.
+- Ausgangsstand: 188/188; der Dry-Run plante ausschließlich Migration 189.
+- Migration 189: kontrolliert angewendet; Endstand 189/189.
+- Remote Repeat-Dry-Run: leer / PASS.
+- DB-Lint `public` und `extensions`: 0 Fehler / PASS.
+- RPC-ACL und RLS der betroffenen Punkte-, Request- und Idempotenzrelationen: PASS.
+- `points_transactions_earn_source_check`: Definition unverändert; ausschließlich `restaurant_controlled` und `customer_initiated` bleiben zulässig.
+- Geschützter Staging-Businessfingerprint vor/nach Migration: `148|6827|7fdb09610d8a2618e7d761819b23043c` / identisch.
+- Aktiver Staging-Worker: `wuxuai-restaurant-bonus-app-staging`.
+- Deployment-ID: `6bd02fb2-1066-4054-abc4-ae4d94a8793d`.
+- Worker-Version: `da6cdabd-3635-4f7c-9c5d-59817c72bb63`, 100 Prozent aktiv.
+- Ausgeliefertes Hauptasset: `/assets/index-CVNsnyfF.js`.
+- Asset-SHA-256 lokal und ausgeliefert: `00dcce39df4b3f89393d532caa861ee77782643acc31e173a1028d357e2e668d` / bytegleich.
+- Öffentlicher Staging-Healthcheck: HTTP 200.
+- Service-Role-, Production-Projektreferenz- und Secret-Scan des Bundles: PASS.
+
+## Physischer Staging-Feldtest
+
+- Staff-Route des synthetischen TEST_ONLY-Tenants war serverseitig erreichbar.
+- Rechnungsbetrag leer: PASS; das Feld sprang nicht auf `0` zurück.
+- `62`: PASS; Anzeige 62 Punkte.
+- `62,00`: PASS; Anzeige blieb 62 Punkte.
+- `62.00`: PASS; Anzeige blieb 62 Punkte.
+- Abbruch erfolgte über `Zur Startseite` ohne Tages-PIN und ohne Klick auf `Punkte buchen`.
+- Sichtbare Tagesstatistik blieb bei 0 Bonuspunkten; der Testpfad führte keinen Buchungs-RPC aus.
+- Staging-Punkte-, Reward-, Inbox- und PRO-Testgrant-Writes: 0.
+- Evidenzgrenze: Das sichtbare Chrome-Fenster war mit Profilname `Dongdong` gekennzeichnet. Der schreibfreie UI-Test ist dadurch nicht entwertet; ein späterer positiver Punkte-/Reward-Test erfordert weiterhin ein physisch getrenntes Staff-Profil und darf aus diesem Nachweis nicht abgeleitet werden.
+
+## Weiterhin offen
+
+- Ein neuer positiver Staging-Punkteversuch ist nicht Bestandteil dieses Loops.
+- Ein Staging-PRO-Testgrant wurde nicht erstellt.
+- Der physische positive Staging-Reward-/Inbox-Flow bleibt separat freizugeben und in getrennten Browserkontexten auszuführen.
 
 ## Unverändert
 
@@ -69,4 +100,4 @@ Production, Stripe, LEGACY-Tenant, BASIC-Final-Code-Lock außerhalb dieses best�
 
 ## Status
 
-`LOCAL CODE LOCK / STAGING MIGRATION AND WEB RESTGATE OPEN`
+`STAFF DAILY-PIN LEDGER CONTRACT LOCAL PASS / MIGRATION 189 STAGING APPLIED / AMOUNT INPUT UX STAGING DEPLOYED / PHYSICAL POSITIVE STAGING REWARD FLOW OPEN`
