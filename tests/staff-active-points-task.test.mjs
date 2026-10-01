@@ -32,8 +32,8 @@ test("2 secure preview keeps the full canonical customer label", () => {
   assert.doesNotMatch(staff, /pointsPreview\.customer_label\.split/);
 });
 
-test("3 outside dismissal is blocked while explicit minimization remains available", () => {
-  assert.match(staff, /dismissOnOverlay=\{false\}/);
+test("3 outside dismissal minimizes instead of cancelling while Escape stays blocked", () => {
+  assert.match(staff, /dismissOnOverlay=\{hasActivePointsTask\}/);
   assert.match(staff, /dismissOnEscape=\{!hasActivePointsTask\}/);
   assert.match(staff, /function dismissScanner\(\)[\s\S]*hasActivePointsTaskRef\.current[\s\S]*minimizeActivePointsTask/);
 });
@@ -47,6 +47,13 @@ test("5 resume restores the same in-memory task without a reset", () => {
   const resume = staff.slice(staff.indexOf("function resumeActivePointsTask"), staff.indexOf("async function executePinAction"));
   assert.match(resume, /setScannerOpen\(true\)/);
   assert.doesNotMatch(resume, /resetSelectedCustomerState/);
+});
+
+test("5a overlay minimization preserves customer, amount, validation and workflow state", () => {
+  const minimize = staff.slice(staff.indexOf("function minimizeActivePointsTask"), staff.indexOf("function navigateFromScanner"));
+  assert.match(minimize, /setPointsTaskMinimized\(true\)/);
+  assert.doesNotMatch(minimize, /setSelectedCustomerId|setPointsQrReference\(null\)|setPointsPreview\(null\)|resetBillAmount|setBillAmountValidated\(false\)|setPendingPinAction\(null\)/);
+  assert.doesNotMatch(minimize, /applyStaffLoyaltyAction|confirmRestaurantControlledPoints|supabase\.rpc/);
 });
 
 test("6 entered amount has a distinct preserved task stage", () => {

@@ -1673,7 +1673,7 @@ export function StaffTablet() {
           ? pendingPinAction.detail
           : tr("staff.drawer.scannerDescription")}
         dismissOnEscape={!hasActivePointsTask}
-        dismissOnOverlay={false}
+        dismissOnOverlay={hasActivePointsTask}
         footer={pendingPinAction ? renderPinActionFooter(true) : undefined}
         onClose={dismissScanner}
         open={scannerOpen}

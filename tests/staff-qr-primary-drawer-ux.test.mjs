@@ -63,9 +63,9 @@ test("erfolgreicher Ablauf kann beendet oder für nächsten Gast neu gestartet w
   assert.match(staffPortal, /setPointsPreview\(null\)/);
 });
 
-test("Overlay und Escape sind im aktiven Vorgang gesperrt; Schließen und Browser-Zurück minimieren kontrolliert", () => {
+test("Overlay, Schließen und Browser-Zurück minimieren; Escape bleibt im aktiven Vorgang gesperrt", () => {
   assert.match(scannerDrawer, /onClose=\{dismissScanner\}/);
-  assert.match(scannerDrawer, /dismissOnOverlay=\{false\}/);
+  assert.match(scannerDrawer, /dismissOnOverlay=\{hasActivePointsTask\}/);
   assert.match(scannerDrawer, /dismissOnEscape=\{!hasActivePointsTask\}/);
   assert.match(staffPortal, /window\.history\.pushState/);
   assert.match(staffPortal, /window\.addEventListener\("popstate", handleScannerBack\)/);
