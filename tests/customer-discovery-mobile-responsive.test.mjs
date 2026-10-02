@@ -1,0 +1,59 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+const [page, finderCss, map] = await Promise.all([
+  read("../src/modules/customer/PartnerRestaurantFinderPage.tsx"),
+  read("../src/modules/customer/partner-restaurant-finder.css"),
+  read("../src/modules/customer/PartnerRestaurantMap.tsx"),
+]);
+
+test("mobile Karte und Liste sind semantisch gekoppelt und behalten denselben Datenzustand", () => {
+  assert.match(page, /role="group"/);
+  assert.match(page, /aria-controls="partner-map-panel" aria-pressed=\{view === "map"\}/);
+  assert.match(page, /aria-controls="partner-list-panel" aria-pressed=\{view === "list"\}/);
+  assert.match(page, /active=\{view === "map"\}/);
+  assert.equal((page.match(/loadPartnerRestaurants\(\)/g) ?? []).length, 1);
+});
+
+test("mobile Layout entfernt das inaktive Panel vollständig und lässt den Grid-Vertrag bestehen", () => {
+  const mobile = finderCss.slice(finderCss.indexOf("@media (max-width: 767px)"), finderCss.indexOf("@media (min-width: 768px)"));
+  assert.match(mobile, /partner-finder-content\.view-map \.partner-list-panel \{ display: none; \}/);
+  assert.match(mobile, /partner-finder-content\.view-list \.partner-map-panel \{ display: none; \}/);
+  assert.match(mobile, /partner-finder-content\.view-list \{ grid-template-rows: auto; \}/);
+  assert.doesNotMatch(mobile, /partner-finder-content\.view-list \{ display: block/);
+  assert.match(mobile, /partner-finder-content\.view-list \.partner-list-panel[^}]*width: 100%/);
+});
+
+test("mobile Suche, Standortaktion, Toggle und Filter bleiben innerhalb der Viewportbreite", () => {
+  assert.match(finderCss, /partner-filter-scroll[^}]*max-width: 100%[^}]*overflow-x: auto[^}]*overflow-y: hidden/);
+  assert.match(finderCss, /partner-filter-scroll button[^}]*min-height: 44px/);
+  const mobile = finderCss.slice(finderCss.indexOf("@media (max-width: 767px)"), finderCss.indexOf("@media (min-width: 768px)"));
+  assert.match(mobile, /partner-finder-controls \{ grid-template-columns: minmax\(0, 1fr\); \}/);
+  assert.match(mobile, /partner-location-button,[\s\S]*partner-view-toggle \{ width: 100%; \}/);
+});
+
+test("Restaurantliste besitzt eine zugängliche Listenstruktur", () => {
+  assert.match(page, /className="partner-results-list" role="list"/);
+  assert.match(page, /className="partner-result-list-item"[^>]*role="listitem"/);
+});
+
+test("Loading-, Fehler- und Leerzustand bleiben unabhängig vom gewählten Panel erreichbar", () => {
+  assert.match(page, /loading \? <LoadingState/);
+  assert.match(page, /!loading && error \? <ErrorState/);
+  assert.match(page, /!loading && !error && filteredLocations\.length === 0 \? \(/);
+  assert.match(page, /!loading && !error && filteredLocations\.length \? \(/);
+});
+
+test("Leaflet wird beim erneuten Aktivieren der mobilen Karte explizit neu vermessen", () => {
+  assert.match(map, /function MapSizeSync\(\{ active = true \}/);
+  assert.match(map, /if \(!active\) return;[\s\S]*map\.invalidateSize\(\{ animate: false \}\)/);
+  assert.match(map, /<MapSizeSync active=\{active\} \/>/);
+});
+
+test("Desktop-Split bleibt ab 768 Pixeln unverändert erhalten", () => {
+  const desktop = finderCss.slice(finderCss.indexOf("@media (min-width: 768px)"));
+  assert.match(desktop, /grid-template-columns: minmax\(0, 1\.35fr\) minmax\(320px, 0\.65fr\)/);
+  assert.match(desktop, /partner-view-toggle \{ display: none; \}/);
+});

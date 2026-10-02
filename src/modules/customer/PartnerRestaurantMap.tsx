@@ -12,6 +12,7 @@ import { customerPresentationText } from "./customerRewardPresentation.mjs";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export type PartnerRestaurantMapProps = {
+  active?: boolean;
   currentSlug?: string | null;
   locations: PartnerRestaurant[];
   onSelect: (location: PartnerRestaurant) => void;
@@ -22,7 +23,7 @@ export type PartnerRestaurantMapProps = {
 
 export const OPENSTREETMAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
-function MapSizeSync() {
+function MapSizeSync({ active = true }: { active?: boolean }) {
   const map = useMap();
   const { language } = useI18n();
 
@@ -49,6 +50,14 @@ function MapSizeSync() {
       observer?.disconnect();
     };
   }, [map]);
+
+  useEffect(() => {
+    if (!active) return;
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => map.invalidateSize({ animate: false }));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, map]);
 
   useEffect(() => {
     const container = map.getContainer();
@@ -139,7 +148,7 @@ function PartnerMarkers({ currentSlug, locations, onSelect, selectedId, userLoca
   return null;
 }
 
-export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...props }: PartnerRestaurantMapProps) {
+export function PartnerRestaurantMap({ active = true, tileUrl = OPENSTREETMAP_TILE_URL, ...props }: PartnerRestaurantMapProps) {
   const { language } = useI18n();
   const text = (key: string) => customerPresentationText(key, language);
   const [tileAttempt, setTileAttempt] = useState(0);
@@ -182,7 +191,7 @@ export function PartnerRestaurantMap({ tileUrl = OPENSTREETMAP_TILE_URL, ...prop
           key={`${tileUrl}-${tileAttempt}`}
           url={tileUrl}
         />
-        <MapSizeSync />
+        <MapSizeSync active={active} />
         <PartnerMarkers {...props} />
       </MapContainer>
       {tileState === "failed" ? (

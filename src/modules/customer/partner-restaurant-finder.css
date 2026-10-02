@@ -6,6 +6,7 @@
   min-width: 0;
   overflow-x: hidden;
   padding: max(12px, env(safe-area-inset-top)) 14px calc(104px + env(safe-area-inset-bottom));
+  width: 100%;
 }
 .partner-finder-intro { background: #f3e6cc; border-radius: 14px; color: #725320; display: grid; gap: 4px; margin: 0 auto; max-width: 1440px; padding: 12px 14px; width: 100%; }
 .partner-finder-intro p { font-size: 14px; font-weight: 600; line-height: 1.4; margin: 0; }
@@ -78,7 +79,7 @@
 .partner-location-button:focus-visible, .partner-view-toggle button:focus-visible { outline: 3px solid rgba(191, 143, 54, 0.3); outline-offset: 2px; }
 .partner-finder-controls > p { color: var(--premium-text-secondary); font-size: 12px; grid-column: 1 / -1; margin: 0; }
 
-.partner-filter-scroll { display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 auto; max-width: 1440px; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; padding: 2px max(10px, env(safe-area-inset-right)) 6px max(2px, env(safe-area-inset-left)); box-sizing: border-box; scroll-padding-inline: 10px; scrollbar-width: none; width: 100%; -webkit-overflow-scrolling: touch; }
+.partner-filter-scroll { box-sizing: border-box; display: flex; flex-wrap: nowrap; gap: 8px; justify-self: stretch; margin: 0 auto; max-width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; padding: 2px max(10px, env(safe-area-inset-right)) 6px max(2px, env(safe-area-inset-left)); scroll-padding-inline: 10px; scrollbar-width: none; touch-action: pan-x pan-y; width: 100%; -webkit-overflow-scrolling: touch; }
 .partner-filter-scroll::-webkit-scrollbar { display: none; }
 .partner-filter-scroll button { background: var(--premium-surface); border: 1px solid var(--premium-border); border-radius: 999px; color: var(--premium-text-secondary); flex: 0 0 auto; flex-shrink: 0; font-weight: 600; min-height: 44px; padding: 0 14px; white-space: nowrap; }
 .partner-filter-scroll button[aria-pressed="true"] { background: var(--premium-gold-soft); border-color: var(--premium-gold); color: var(--premium-gold-dark); }
@@ -100,6 +101,7 @@
 .partner-map-fallback p { color: #625d55; margin: 0; max-width: 36rem; }
 .partner-list-panel { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding-bottom: 4px; }
 .partner-results-list { display: grid; gap: 9px; }
+.partner-result-list-item { min-width: 0; width: 100%; }
 .partner-result-card {
   align-items: center;
   background: var(--premium-surface);
@@ -202,13 +204,18 @@
 
 @media (max-width: 767px) {
   .partner-finder-shell { overflow-y: auto; }
+  .partner-finder-controls { grid-template-columns: minmax(0, 1fr); }
+  .partner-location-button,
+  .partner-view-toggle { width: 100%; }
+  .partner-view-toggle button { min-width: 0; }
   .partner-map-canvas .leaflet-bottom.leaflet-right { bottom: auto; top: 0; }
   .partner-map-canvas .leaflet-control-attribution { margin-top: 0; }
-  .partner-finder-content.view-map .partner-results-list { display: none; }
-  .partner-finder-content.view-list { display: block; overflow-y: auto; }
+  .partner-finder-content { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+  .partner-finder-content.view-map { grid-template-rows: minmax(280px, min(48dvh, 520px)); }
+  .partner-finder-content.view-map .partner-list-panel { display: none; }
+  .partner-finder-content.view-list { grid-template-rows: auto; }
   .partner-finder-content.view-list .partner-map-panel { display: none; }
-  .partner-finder-content.view-list .partner-list-panel { overflow: visible; }
-  .partner-finder-content.view-map .partner-list-panel { overflow: visible; }
+  .partner-finder-content.view-list .partner-list-panel { display: block; overflow: visible; padding-bottom: calc(8px + env(safe-area-inset-bottom)); width: 100%; }
   .app-drawer-panel:has(.partner-detail-drawer-content) { max-height: calc(100dvh - env(safe-area-inset-top)); }
   .app-drawer-panel.partner-detail-responsive-drawer { max-width: none; width: 100%; }
   .app-drawer-panel:has(.partner-detail-drawer-content) .app-drawer-body { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
@@ -228,9 +235,6 @@
   .partner-finder-shell { gap: 12px; padding-left: 10px; padding-right: 10px; }
   .partner-finder-intro { padding: 10px 12px; }
   .partner-finder-controls { grid-template-columns: minmax(0, 1fr); }
-  .partner-location-button,
-  .partner-view-toggle { width: 100%; }
-  .partner-view-toggle button { min-width: 0; }
   .partner-filter-scroll button { padding-inline: 12px; }
   .partner-result-card { gap: 9px; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 88px; padding: 9px 10px; }
   .partner-result-logo { height: 44px; width: 52px; }

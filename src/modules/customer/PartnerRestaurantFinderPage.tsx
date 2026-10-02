@@ -309,9 +309,9 @@ export function PartnerRestaurantFinderPage() {
             <input onChange={(event) => setQuery(event.target.value)} placeholder="Restaurant, Ort oder PLZ" type="search" value={query} />
           </label>
           <button className="partner-location-button" onClick={requestLocation} type="button"><LocateFixed aria-hidden="true" size={19} /> In meiner Nähe</button>
-          <div className="partner-view-toggle" aria-label="Darstellung wählen">
-            <button aria-pressed={view === "map"} onClick={() => setView("map")} type="button"><MapIcon aria-hidden="true" size={18} /> Karte</button>
-            <button aria-pressed={view === "list"} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={18} /> Liste</button>
+          <div className="partner-view-toggle" aria-label="Darstellung wählen" role="group">
+            <button aria-controls="partner-map-panel" aria-pressed={view === "map"} onClick={() => setView("map")} type="button"><MapIcon aria-hidden="true" size={18} /> Karte</button>
+            <button aria-controls="partner-list-panel" aria-pressed={view === "list"} onClick={() => setView("list")} type="button"><List aria-hidden="true" size={18} /> Liste</button>
           </div>
           <p aria-live="polite">{locationMessage ?? customerPresentationText("finderResults", language, { shown: filteredLocations.length, total })}</p>
         </section>
@@ -336,8 +336,9 @@ export function PartnerRestaurantFinderPage() {
 
         {!loading && !error && filteredLocations.length ? (
           <div className={`partner-finder-content view-${view}`}>
-            <section className="partner-map-panel" aria-label="Karte der Partnerrestaurants">
+            <section className="partner-map-panel" aria-label="Karte der Partnerrestaurants" id="partner-map-panel">
               <LazyPartnerRestaurantMap
+                active={view === "map"}
                 currentSlug={currentSlug}
                 errorFallback={(
                   <div className="partner-map-fallback" role="status">
@@ -351,10 +352,12 @@ export function PartnerRestaurantFinderPage() {
                 userLocation={userLocation}
               />
             </section>
-            <section className="partner-list-panel" aria-label="Liste der Partnerrestaurants">
-              <div className="partner-results-list">
+            <section className="partner-list-panel" aria-label="Liste der Partnerrestaurants" id="partner-list-panel">
+              <div className="partner-results-list" role="list">
                 {filteredLocations.map((location) => (
-                  <PartnerResultCard key={location.branch_id} language={language} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
+                  <div className="partner-result-list-item" key={location.branch_id} role="listitem">
+                    <PartnerResultCard language={language} location={location} onSelect={() => selectLocation(location)} selected={selected?.branch_id === location.branch_id} />
+                  </div>
                 ))}
               </div>
             </section>
