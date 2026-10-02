@@ -23,7 +23,22 @@ import { translateStructural } from "../src/shared/i18n/catalog.mjs";
 
 const page = readFileSync(new URL("../src/modules/customer/CentralCustomerPage.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/modules/customer/central-customer.css", import.meta.url), "utf8");
+const premiumCss = readFileSync(new URL("../src/modules/customer/customer-premium.css", import.meta.url), "utf8");
 const drawer = readFileSync(new URL("../src/shared/components/AppDrawer.tsx", import.meta.url), "utf8");
+
+function relativeLuminance(hex) {
+  const channels = hex.match(/[\da-f]{2}/gi).map((channel) => Number.parseInt(channel, 16) / 255);
+  const [red, green, blue] = channels.map((channel) => channel <= 0.04045
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(foreground, background) {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -275,6 +290,24 @@ test("activation controls meet touch, contrast, safe-area and narrow-layout cont
   assert.match(css, /\.app-drawer-panel:has\(\.central-activation-content\) \.app-drawer-footer > \* \{ min-height: 44px/);
   assert.match(css, /\.premium-button-primary/);
   assert.match(css, /@media \(max-width: 380px\)[\s\S]*central-activation-step/);
+});
+
+test("ported activation drawer receives the customer theme without changing AppDrawer globally", () => {
+  assert.match(page, /<AppDrawer[\s\S]*className="central-activation-drawer"/);
+  assert.match(drawer, /createPortal\([\s\S]*document\.body/);
+  assert.match(premiumCss, /\.customer-premium-shell,\s*\.central-activation-drawer\s*\{[\s\S]*--premium-gold-dark: #956820/);
+  assert.match(premiumCss, /\.central-activation-drawer\s*\{[\s\S]*--premium-primary: var\(--premium-gold-dark, var\(--wux-gold-hover\)\)/);
+  assert.doesNotMatch(premiumCss, /:root[\s\S]*--premium-primary/);
+  assert.doesNotMatch(drawer, /central-activation-drawer|premium-primary/);
+});
+
+test("activation primary action has an AA-safe existing token and a global-token fallback", () => {
+  assert.match(premiumCss, /\.central-activation-drawer \.premium-button-primary\s*\{[\s\S]*background: var\(--premium-primary, var\(--wux-gold-hover\)\)/);
+  assert.match(premiumCss, /\.central-activation-drawer \.premium-button-primary:hover\s*\{[\s\S]*background: var\(--premium-primary-dark, var\(--wux-gold-hover\)\)/);
+  assert.match(premiumCss, /\.premium-button:disabled\s*\{[\s\S]*opacity: 0\.55/);
+  assert.match(premiumCss, /\.central-activation-drawer \.premium-button:focus-visible[\s\S]*var\(--premium-primary, var\(--wux-gold-hover\)\)/);
+  assert.match(premiumCss, /\.premium-button-primary\s*\{\s*background: var\(--premium-primary\);/);
+  assert.ok(contrastRatio("#ffffff", "#956820") >= 4.5);
 });
 
 test("new installation copy exists in all seven supported languages", () => {

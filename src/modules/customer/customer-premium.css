@@ -1,4 +1,5 @@
-.customer-premium-shell {
+.customer-premium-shell,
+.central-activation-drawer {
   --premium-gold: #bf8f36;
   --premium-gold-dark: #956820;
   --premium-gold-soft: #f3e6cc;
@@ -30,10 +31,18 @@
   --customer-card-padding: 12px;
   --customer-card-inline-inset: 24px;
   --customer-card-media-ratio: 16 / 9;
+}
+
+.customer-premium-shell {
   background: var(--premium-background);
   color: var(--premium-text);
   min-height: 100dvh;
   overflow-x: clip;
+}
+
+.central-activation-drawer {
+  --premium-primary: var(--premium-gold-dark, var(--wux-gold-hover));
+  --premium-primary-dark: var(--premium-gold-dark, var(--wux-gold-hover));
 }
 
 .customer-page-container {
@@ -95,6 +104,18 @@
 .premium-bottom-navigation button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--premium-primary) 32%, transparent);
   outline-offset: 3px;
+}
+
+.central-activation-drawer .premium-button-primary {
+  background: var(--premium-primary, var(--wux-gold-hover));
+}
+
+.central-activation-drawer .premium-button-primary:hover {
+  background: var(--premium-primary-dark, var(--wux-gold-hover));
+}
+
+.central-activation-drawer .premium-button:focus-visible {
+  outline-color: color-mix(in srgb, var(--premium-primary, var(--wux-gold-hover)) 32%, transparent);
 }
 
 .premium-status-badge {
