@@ -53,7 +53,25 @@ test("Leaflet wird beim erneuten Aktivieren der mobilen Karte explizit neu verme
 });
 
 test("Desktop-Split bleibt ab 768 Pixeln unverändert erhalten", () => {
-  const desktop = finderCss.slice(finderCss.indexOf("@media (min-width: 768px)"));
+  const desktop = finderCss.slice(finderCss.indexOf("@media (min-width: 768px)"), finderCss.indexOf("@media (max-width: 420px)"));
   assert.match(desktop, /grid-template-columns: minmax\(0, 1\.35fr\) minmax\(320px, 0\.65fr\)/);
   assert.match(desktop, /partner-view-toggle \{ display: none; \}/);
+});
+
+test("breite niedrige Landscape-Viewports erhalten Dokument-Scroll und gleich hohe aktive Panels", () => {
+  const shortLandscape = finderCss.slice(
+    finderCss.indexOf("@media (min-width: 600px) and (max-height: 500px) and (orientation: landscape)"),
+    finderCss.indexOf(".partner-offer-badge"),
+  );
+
+  assert.match(shortLandscape, /partner-finder-shell[\s\S]*height: auto;[\s\S]*min-height: 100dvh;[\s\S]*overflow: visible;/);
+  assert.match(shortLandscape, /padding-bottom: calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(shortLandscape, /padding-top: max\(12px, env\(safe-area-inset-top\)\)/);
+  assert.match(shortLandscape, /partner-view-toggle \{ display: grid; \}/);
+  assert.match(shortLandscape, /partner-finder-content,[\s\S]*grid-template-columns: minmax\(0, 1fr\);[\s\S]*grid-template-rows: minmax\(280px, auto\);[\s\S]*min-height: 280px;[\s\S]*overflow: visible;/);
+  assert.match(shortLandscape, /partner-map-panel,[\s\S]*partner-list-panel \{ min-height: 280px; \}/);
+  assert.match(shortLandscape, /partner-list-panel \{ overflow: visible; padding-right: 0; \}/);
+  assert.match(shortLandscape, /view-map \.partner-list-panel \{ display: none; \}/);
+  assert.match(shortLandscape, /view-list \.partner-map-panel \{ display: none; \}/);
+  assert.doesNotMatch(shortLandscape, /!important/);
 });
