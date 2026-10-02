@@ -118,26 +118,29 @@
   padding: 9px 0;
   border-bottom: 1px solid #eee4d5;
 }
+.central-activation-step-action {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.central-activation-step-action:hover { background: #fbf7ef; }
+.central-activation-step-action:focus-visible {
+  border-radius: 6px;
+  outline: 3px solid color-mix(in srgb, #a87927 34%, transparent);
+  outline-offset: 2px;
+}
 .central-activation-step:last-child { border-bottom: 0; }
 .central-activation-step > svg { color: #9b6f25; }
 .central-activation-step > span { min-width: 0; display: grid; gap: 3px; }
 .central-activation-step strong,
 .central-activation-step small { overflow-wrap: anywhere; }
 .central-activation-step small { color: #746b61; line-height: 1.35; }
+.central-activation-task-action { color: #755218; font-weight: 800; line-height: 1.35; text-decoration: underline; text-underline-offset: 3px; }
 .central-activation-step .premium-status-badge { max-width: 126px; text-align: center; white-space: normal; }
-.central-activation-info {
-  grid-column: 2;
-  min-width: 44px;
-  min-height: 44px;
-  width: 44px;
-  display: inline-grid;
-  place-items: center;
-  justify-self: start;
-  border: 0;
-  border-radius: 50%;
-  background: #f6eddc;
-  color: #755218;
-}
 .central-activation-help,
 .central-activation-complete {
   display: flex;
@@ -150,21 +153,21 @@
   color: #57472d;
   line-height: 1.45;
 }
-.central-activation-help p { margin: 0; }
+.central-activation-help > div { min-width: 0; }
+.central-activation-help p,
+.central-activation-help ol { margin: 0; }
+.central-activation-help ol { display: grid; gap: 7px; margin-top: 8px; padding-left: 22px; }
 .central-activation-help svg,
 .central-activation-complete svg { flex: 0 0 auto; margin-top: 1px; }
 .central-activation-complete { border-left-color: #3d8a62; background: #edf8f1; color: #285f44; }
-.central-activation-auto-reminder {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #6d655b;
-  font-size: .85rem;
-}
-.central-activation-auto-reminder input { width: 22px; height: 22px; flex: 0 0 auto; }
-.app-drawer-panel:has(.central-activation-content) { height: auto; max-height: min(78dvh, 620px); }
+.central-activation-install-outcome { margin: 0; padding: 11px 12px; border-left: 3px solid #b68a3d; background: #faf4e8; color: #57472d; line-height: 1.45; }
+.central-activation-install-outcome.accepted { border-left-color: #3d8a62; background: #edf8f1; color: #285f44; }
+.app-drawer-panel:has(.central-activation-content) { height: auto; max-height: min(calc(var(--drawer-viewport-height, 100dvh) - env(safe-area-inset-top) - 8px), 720px); }
+.app-drawer-panel:has(.central-activation-content) .app-drawer-footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app-drawer-panel:has(.central-activation-content) .app-drawer-footer > .premium-button-primary { grid-column: 1 / -1; }
 .app-drawer-panel:has(.central-activation-content) .app-drawer-footer > * { min-height: 44px; }
+.central-activation-dismiss { border: 0; background: transparent; color: #62594f; text-decoration: underline; text-underline-offset: 3px; }
+.central-activation-dismiss:hover { background: #f7f1e6; color: #352d24; }
 .central-status-message { margin: 0; padding: 11px 13px; border-radius: 6px; background: #fff3df; color: #684a17; }
 .central-status-message.error { border-left: 3px solid #b85f51; background: #fff0ed; color: #74352c; }
 .central-status-message.success { border-left: 3px solid #3d8a62; background: #edf8f1; color: #285f44; }
@@ -259,6 +262,7 @@
   .central-customer-stack { gap: 16px; }
   .central-location-card { gap: 12px; }
   .app-drawer-panel:has(.central-activation-content) .app-drawer-footer { grid-template-columns: 1fr; }
+  .app-drawer-panel:has(.central-activation-content) .app-drawer-footer > .premium-button-primary { grid-column: auto; }
 }
 
 @media (max-width: 430px) {

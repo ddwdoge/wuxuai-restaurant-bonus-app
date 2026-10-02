@@ -20,7 +20,6 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { partnerOpeningStatus } from "../../shared/openingHours.mjs";
 import { AppDrawer } from "../../shared/components/AppDrawer";
-import { InfoTrigger } from "../../shared/components/InfoTrigger";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { useAuth } from "../auth/AuthProvider";
@@ -43,12 +42,17 @@ import {
   type CustomerAccountMembership,
 } from "./customerAccountService";
 import {
+  customerActivationUiState,
   customerActivationSummary,
   customerInstallState,
   customerPushState,
   defaultCustomerActivationPreference,
+  dismissCustomerActivation,
   readCustomerActivationPreference,
+  resetCustomerActivationPreference,
   shouldAutoOpenCustomerActivation,
+  shouldShowCustomerActivationBanner,
+  snoozeCustomerActivation,
   writeCustomerActivationPreference,
   type CustomerActivationPreference,
   type CustomerInstallState,
@@ -104,12 +108,13 @@ function currentInstallState(promptAvailable: boolean): CustomerInstallState {
   const userAgent = navigator.userAgent.toLowerCase();
   const iosDevice = /iphone|ipad|ipod/.test(userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const embeddedBrowser = /\b(?:fban|fbav|instagram)\b|; wv\)|\bwv\b/.test(userAgent);
   return customerInstallState({
     displayModeStandalone: window.matchMedia("(display-mode: standalone)").matches,
     iosStandalone: navigatorWithStandalone.standalone === true,
     promptAvailable,
     isIos: iosDevice,
-    isAndroid: /android/.test(userAgent),
+    isEmbeddedBrowser: embeddedBrowser,
   });
 }
 
@@ -170,9 +175,10 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   const [activationOpen, setActivationOpen] = useState(false);
   const [activationShowAll, setActivationShowAll] = useState(false);
   const [activationHelpOpen, setActivationHelpOpen] = useState(false);
-  const [activationPreferenceReady, setActivationPreferenceReady] = useState(false);
+  const [activationPreferenceOwnerId, setActivationPreferenceOwnerId] = useState<string | null>(null);
   const [activationPreference, setActivationPreference] = useState<CustomerActivationPreference>(() => defaultCustomerActivationPreference());
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [nativePromptOutcome, setNativePromptOutcome] = useState<"accepted" | "declined" | null>(null);
   const [, setRuntimeRevision] = useState(0);
   const [pushRequesting, setPushRequesting] = useState(false);
 
@@ -191,20 +197,23 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   useEffect(() => { void reload(); }, [reload]);
 
   useEffect(() => {
-    setActivationPreference(readCustomerActivationPreference(window.localStorage, user?.id ?? null));
-    setActivationPreferenceReady(Boolean(user?.id));
+    const userId = user?.id ?? null;
+    setActivationPreference(readCustomerActivationPreference(window.localStorage, userId));
+    setActivationPreferenceOwnerId(userId);
   }, [user?.id]);
 
   useEffect(() => {
     function handleInstallPrompt(event: Event) {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
+      setNativePromptOutcome(null);
     }
     function refreshRuntimeState() {
       setRuntimeRevision((current) => current + 1);
     }
     function handleInstalled() {
       setInstallPrompt(null);
+      setNativePromptOutcome(null);
       refreshRuntimeState();
     }
     const displayMode = window.matchMedia("(display-mode: standalone)");
@@ -220,14 +229,15 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
     };
   }, []);
 
-  const updateActivationPreference = useCallback((update: (current: CustomerActivationPreference) => CustomerActivationPreference) => {
-    setActivationPreference((current) => {
-      const next = update(current);
-      writeCustomerActivationPreference(window.localStorage, user?.id ?? null, next);
-      return next;
-    });
+  const persistActivationPreference = useCallback((next: CustomerActivationPreference) => {
+    const userId = user?.id ?? null;
+    if (!writeCustomerActivationPreference(window.localStorage, userId, next)) return false;
+    setActivationPreference(next);
+    setActivationPreferenceOwnerId(userId);
+    return true;
   }, [user?.id]);
 
+  const activationPreferenceReady = Boolean(user?.id) && activationPreferenceOwnerId === user?.id;
   const installState = currentInstallState(Boolean(installPrompt));
   const pushState = currentPushState();
   const activationSummary = useMemo(() => customerActivationSummary({
@@ -235,18 +245,37 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
     installState,
     pushState,
   }), [account?.profile.email_status, installState, pushState]);
+  const activationUiState = customerActivationUiState({
+    preferenceReady: activationPreferenceReady,
+    setupComplete: activationSummary.complete,
+    installState,
+    preference: activationPreference,
+  });
+  const showActivationBanner = shouldShowCustomerActivationBanner({
+    preferenceReady: activationPreferenceReady,
+    setupComplete: activationSummary.complete,
+    installState,
+    preference: activationPreference,
+  });
 
   useEffect(() => {
     if (!shouldAutoOpenCustomerActivation({
       accountReady: Boolean(account) && activationPreferenceReady,
+      preferenceReady: activationPreferenceReady,
       view,
       setupComplete: activationSummary.complete,
+      installState,
       preference: activationPreference,
     })) return;
     setActivationShowAll(false);
     setActivationOpen(true);
-    updateActivationPreference((current) => ({ ...current, firstLoginDrawerSeen: true }));
-  }, [account, activationPreference, activationPreferenceReady, activationSummary.complete, updateActivationPreference, view]);
+  }, [account, activationPreference, activationPreferenceReady, activationSummary.complete, installState, view]);
+
+  useEffect(() => {
+    if (installState !== "installed") return;
+    setActivationHelpOpen(false);
+    setActivationOpen(false);
+  }, [installState]);
 
   const sortedMemberships = useMemo(() => [...(account?.memberships ?? [])].sort(membershipPriority), [account]);
   const visibleMemberships = useMemo(() => sortedMemberships.filter((membership) => {
@@ -283,11 +312,14 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   }
 
   function snoozeActivation() {
-    updateActivationPreference((current) => ({
-      ...current,
-      firstLoginDrawerSeen: true,
-      lastSnoozedAt: new Date().toISOString(),
-    }));
+    if (!persistActivationPreference(snoozeCustomerActivation(activationPreference))) return;
+    setActivationHelpOpen(false);
+    setActivationShowAll(false);
+    setActivationOpen(false);
+  }
+
+  function dismissActivationPermanently() {
+    if (!persistActivationPreference(dismissCustomerActivation(activationPreference))) return;
     setActivationHelpOpen(false);
     setActivationShowAll(false);
     setActivationOpen(false);
@@ -299,16 +331,38 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
     setActivationOpen(true);
   }
 
-  async function runActivationAction() {
+  function reopenActivationFromSettings() {
+    if (activationUiState === "dismissed") {
+      if (!persistActivationPreference(resetCustomerActivationPreference())) return;
+    }
+    openActivation(true);
+  }
+
+  async function runInstallAction() {
     if (installState === "prompt_available" && installPrompt) {
-      await installPrompt.prompt();
-      await installPrompt.userChoice;
+      const currentPrompt = installPrompt;
       setInstallPrompt(null);
-      setRuntimeRevision((current) => current + 1);
+      setNativePromptOutcome(null);
+      try {
+        await currentPrompt.prompt();
+        const choice = await currentPrompt.userChoice;
+        setNativePromptOutcome(choice.outcome === "accepted" ? "accepted" : "declined");
+      } catch {
+        setNativePromptOutcome("declined");
+      } finally {
+        setRuntimeRevision((current) => current + 1);
+      }
       return;
     }
     if (installState === "manual_ios" || installState === "manual_browser") {
+      setNativePromptOutcome(null);
       setActivationHelpOpen(true);
+    }
+  }
+
+  async function runActivationAction() {
+    if (activationSummary.steps.install === "pending") {
+      await runInstallAction();
       return;
     }
     if (pushState === "available") {
@@ -340,6 +394,14 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   const activationDescription = t(activationSummary.incompleteCount === 1
     ? "customer.activation.descriptionOne"
     : "customer.activation.description").replace("{count}", String(activationSummary.incompleteCount));
+  const installActionable = activationSummary.steps.install === "pending"
+    && ["prompt_available", "manual_ios", "manual_browser"].includes(installState);
+  const installActionLabel = installState === "prompt_available"
+    ? t("customer.activation.installApp")
+    : t("customer.activation.showInstructions");
+  const primaryActionLabel = activationSummary.steps.install === "pending"
+    ? installActionLabel
+    : t("customer.activation.setupNow");
 
   const emptyAccess = !loading && !error && !account;
   const heading = view === "locations" ? "Meine Lokale" : view === "account" ? "Konto" : "Meine Vorteile";
@@ -371,7 +433,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               <div><span>Willkommen zurück</span><h2>{account.profile.first_name}</h2><p>Deine Punkte bei {account.memberships.length} {account.memberships.length === 1 ? "Lokal" : "Lokalen"}</p></div>
               <div className="central-welcome-number"><strong>{account.memberships.length}</strong><span>Mitgliedschaften</span></div>
             </PremiumCard>
-            {!activationSummary.complete ? (
+            {showActivationBanner ? (
               <button className="central-activation-reminder" onClick={() => openActivation(false)} type="button">
                 <BellRing aria-hidden="true" size={18} />
                 <span>{activationCountLabel}</span>
@@ -419,7 +481,7 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               {statusMessage ? <p aria-live="polite" className="central-status-message">{statusMessage}</p> : null}
             </PremiumCard>
             <section aria-label="Konto und Datenschutz" className="central-account-list">
-              <button onClick={() => openActivation(true)} type="button"><Smartphone aria-hidden="true" size={20} /><span><strong>{t("customer.activation.settings")}</strong><small>{activationSummary.complete ? t("customer.activation.allComplete") : activationCountLabel}</small></span><ChevronRight aria-hidden="true" size={19} /></button>
+              <button onClick={reopenActivationFromSettings} type="button"><Smartphone aria-hidden="true" size={20} /><span><strong>{t(activationUiState === "dismissed" ? "customer.activation.restoreInstallNotice" : "customer.activation.settings")}</strong><small>{activationSummary.complete ? t("customer.activation.allComplete") : activationCountLabel}</small></span><ChevronRight aria-hidden="true" size={19} /></button>
               <a href="mailto:support@wuxugroup.com?subject=Datenexport%20Mein%20WUXUAI"><CalendarDays aria-hidden="true" size={20} /><span><strong>Datenexport anfragen</strong><small>Über den WUXUAI Support</small></span><ChevronRight aria-hidden="true" size={19} /></a>
               <a href="mailto:support@wuxugroup.com?subject=Konto%20loeschen%20Mein%20WUXUAI"><ShieldCheck aria-hidden="true" size={20} /><span><strong>Konto löschen lassen</strong><small>Memberships und Punkte werden nicht still gelöscht</small></span><ChevronRight aria-hidden="true" size={19} /></a>
               <Link to="/customer/locations"><Store aria-hidden="true" size={20} /><span><strong>Teilnahmebedingungen</strong><small>Je Lokal im Bonuskonto erreichbar</small></span><ChevronRight aria-hidden="true" size={19} /></Link>
@@ -437,8 +499,9 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
           : activationDescription}
         footer={(
           <>
-            <button className="premium-button premium-button-secondary" onClick={snoozeActivation} type="button">{t("customer.activation.later")}</button>
-            {!activationSummary.complete ? <PrimaryButton data-drawer-autofocus disabled={pushRequesting} onClick={() => void runActivationAction()} type="button">{pushRequesting ? t("customer.activation.pleaseWait") : t("customer.activation.setupNow")}</PrimaryButton> : null}
+            {!activationSummary.complete ? <PrimaryButton data-drawer-autofocus disabled={pushRequesting} onClick={() => void runActivationAction()} type="button">{pushRequesting ? t("customer.activation.pleaseWait") : primaryActionLabel}</PrimaryButton> : null}
+            <button className="premium-button premium-button-secondary" onClick={snoozeActivation} type="button">{t("customer.activation.remindLater")}</button>
+            <button className="premium-button central-activation-dismiss" onClick={dismissActivationPermanently} type="button">{t("customer.activation.dismiss")}</button>
           </>
         )}
         onClose={snoozeActivation}
@@ -453,12 +516,19 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               <span><strong>{t("customer.activation.email")}</strong><small>{account?.profile.email_status === "CONFIRMED" ? t("customer.activation.emailConfirmed") : t("customer.activation.emailPending")}</small></span>
               <StatusBadge tone={emailActivationStatus.tone}>{emailActivationStatus.label}</StatusBadge>
             </div> : null}
-            {activationShowAll || activationSummary.steps.install === "pending" ? <div className="central-activation-step">
-              <Download aria-hidden="true" size={20} />
-              <span><strong>{t("customer.activation.install")}</strong><small>{installState === "installed" ? t("customer.activation.installInstalled") : installState === "prompt_available" ? t("customer.activation.installReady") : installState === "unavailable" ? t("customer.activation.installUnavailable") : t("customer.activation.installManual")}</small></span>
-              <StatusBadge tone={installActivationStatus.tone}>{installActivationStatus.label}</StatusBadge>
-              {(installState === "manual_ios" || installState === "manual_browser") ? <InfoTrigger className="central-activation-info" label={t("customer.activation.installHelpOpen")} onClick={() => setActivationHelpOpen((current) => !current)} /> : null}
-            </div> : null}
+            {activationShowAll || activationSummary.steps.install === "pending" ? installActionable ? (
+              <button className="central-activation-step central-activation-step-action" onClick={() => void runInstallAction()} type="button">
+                <Download aria-hidden="true" size={20} />
+                <span><strong>{t("customer.activation.install")}</strong><small>{installState === "prompt_available" ? t("customer.activation.installReady") : t("customer.activation.installManual")}</small><span className="central-activation-task-action">{installActionLabel}</span></span>
+                <StatusBadge tone={installActivationStatus.tone}>{installActivationStatus.label}</StatusBadge>
+              </button>
+            ) : (
+              <div className="central-activation-step">
+                <Download aria-hidden="true" size={20} />
+                <span><strong>{t("customer.activation.install")}</strong><small>{installState === "installed" ? t("customer.activation.installInstalled") : t("customer.activation.installUnavailable")}</small></span>
+                <StatusBadge tone={installActivationStatus.tone}>{installActivationStatus.label}</StatusBadge>
+              </div>
+            ) : null}
             {pushState !== "unavailable" && (activationShowAll || activationSummary.steps.push === "pending") ? (
               <div className="central-activation-step">
                 <BellRing aria-hidden="true" size={20} />
@@ -470,14 +540,13 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
           {activationHelpOpen ? (
             <div className="central-activation-help" role="status">
               <Info aria-hidden="true" size={19} />
-              <p>{installState === "manual_ios" ? t("customer.activation.iosHelp") : installState === "manual_browser" ? t("customer.activation.browserHelp") : t("customer.activation.emailHelp")}</p>
+              {(installState === "manual_ios" || installState === "manual_browser") ? (
+                <div><strong>{t("customer.activation.instructionsTitle")}</strong><ol>{installState === "manual_ios" ? <><li>{t("customer.activation.installStepMenu")}</li><li>{t("customer.activation.installStepHome")}</li><li>{t("customer.activation.installStepConfirm")}</li></> : <><li>{t("customer.activation.browserInstallStepMenu")}</li><li>{t("customer.activation.browserInstallStepInstall")}</li><li>{t("customer.activation.browserInstallStepConfirm")}</li></>}</ol></div>
+              ) : <p>{t("customer.activation.emailHelp")}</p>}
             </div>
           ) : null}
+          {nativePromptOutcome ? <p aria-live="polite" className={`central-activation-install-outcome ${nativePromptOutcome}`}>{t(nativePromptOutcome === "accepted" ? "customer.activation.installAccepted" : "customer.activation.installDismissed")}</p> : null}
           {activationSummary.complete ? <p className="central-activation-complete"><CheckCircle2 aria-hidden="true" size={19} /> {t("customer.activation.completeMessage")}</p> : null}
-          <label className="central-activation-auto-reminder">
-            <input checked={!activationPreference.autoReminderEnabled} onChange={(event) => updateActivationPreference((current) => ({ ...current, autoReminderEnabled: !event.target.checked }))} type="checkbox" />
-            <span>{t("customer.activation.noAutoReminder")}</span>
-          </label>
         </div>
       </AppDrawer>
     </AppShell>
