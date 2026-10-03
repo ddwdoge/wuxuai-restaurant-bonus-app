@@ -1,0 +1,70 @@
+// Disposable unlinked local PostgreSQL fixtures only; no HTTP/Auth/Cloud client.
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+assert.equal(process.env.ALLOW_LOCAL_LEGAL_UI_TESTS,'1');
+const host=process.env.DOCKER_HOST && !process.env.DOCKER_CONTEXT?process.env.DOCKER_HOST:execFileSync('docker',['context','inspect','--format','{{.Endpoints.docker.Host}}'],{encoding:'utf8'}).trim();
+assert.ok(host.startsWith('unix://'));
+const container='supabase_db_wuxuai-legal-ui-193-local';
+const ports=JSON.parse(execFileSync('docker',['inspect','--format','{{json .NetworkSettings.Ports}}',container],{encoding:'utf8'}));
+assert.ok(ports['5432/tcp'].every(port=>port.HostPort==='59322'));
+const sql=input=>execFileSync('docker',['exec','-i',container,'psql','-X','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-Atq'],{input,encoding:'utf8',stdio:['pipe','pipe','pipe'],timeout:30000}).trim();
+const id=n=>`70000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+const quote=value=>`'${String(value).replaceAll("'","''")}'`;
+const claims=({who=id(1),aal='aal2',age=0,method='totp',session=id(31)}={})=>({sub:who,role:'authenticated',aal,session_id:session,amr:[{method,timestamp:Math.floor(Date.now()/1000)-age}]});
+const auth=options=>`set role authenticated;set request.jwt.claims=${quote(JSON.stringify(claims(options)))};`;
+const read=`select public.get_platform_at_legal_bundle_control('${id(3)}');`;
+const run=(statement=read,options)=>JSON.parse(sql(auth(options)+statement).split('\n').at(-1));
+let assertions=0;
+const equal=(a,b)=>{assert.deepEqual(a,b);assertions++;};
+const denied=(statement=read,prefix=auth())=>{let err;try{sql(prefix+statement);}catch(error){err=error;}assert.ok(err);assert.match(String(err.stderr??err.message),/LEGAL_BUNDLE_ACCESS_DENIED|RECENT_PLATFORM_TOTP_REQUIRED|permission denied/);assertions++;};
+equal(sql('select count(*) from supabase_migrations.schema_migrations'),'193');
+equal(sql('select count(*) from public.legal_bundle_snapshots'),'0');
+const originalPolicy=sql("select to_jsonb(p)::text from public.country_kyb_intake_policies p where country_code='AT'");
+const originalTemplates=sql("select md5(string_agg(id::text||review_status||content_template::text,'|' order by id)) from public.legal_master_templates");
+const kyb=sql("select md5(pg_get_functiondef('public.legal_operator_publication_ready_internal(uuid,timestamptz)'::regprocedure))");
+sql(`begin;${readFileSync(new URL('at-legal-bundle-fixture.local.sql',import.meta.url),'utf8')}commit;`);
+denied(read,'set role anon;');denied(read,'set role service_role;');
+for(const who of [id(40),id(41),id(42),id(43),id(44)])denied(read,auth({who}));
+for(const options of [{aal:'aal1'},{age:601},{method:'password'},{session:id(999)}])denied(read,auth(options));
+sql(`update auth.mfa_factors set status='unverified' where id='${id(30)}'`);denied();sql(`update auth.mfa_factors set status='verified' where id='${id(30)}'`);
+sql(`update public.platform_admins set active=false where user_id='${id(1)}'`);denied();sql(`update public.platform_admins set active=true where user_id='${id(1)}'`);
+equal(sql("select provolatile from pg_proc where oid='public.get_platform_at_legal_bundle_control(uuid)'::regprocedure"),'s');
+equal(sql("select has_function_privilege('anon','public.get_platform_at_legal_bundle_control(uuid)','EXECUTE')"),'f');
+const ledgerCounts=()=>sql('select (select count(*) from public.legal_bundle_snapshots)||\':\'||(select count(*) from public.legal_bundle_publication_events)||\':\'||(select count(*) from public.legal_bundle_request_receipts)||\':\'||(select count(*) from public.legal_bundle_policy_revisions)');
+const before=ledgerCounts();
+let context=run();equal(context.country,'AT');equal(context.locale,'de-AT');equal(context.effective_status,'NOT_FOUND');equal(context.technical_status,'BLOCKED');
+equal(context.allowed_actions,['snapshot']);assert.ok(context.blocking_reasons.includes('LEGAL_STATUS_BLOCKED'));assertions++;
+for(const forbidden of ['rendered_text','content_template','responsible_person','email','business_street']) {assert.ok(!JSON.stringify(context).includes('"'+forbidden+'"'));assertions++;}
+equal(ledgerCounts(),before);
+sql(`update public.legal_master_templates set review_status='DRAFT_LEGAL_REVIEW_REQUIRED' where id='${id(16)}'`);
+context=run();assert.ok(context.blocking_reasons.includes('TERMS_LEGAL_REVIEW_REQUIRED'));assertions++;equal(context.allowed_actions.includes('publish'),false);
+function capture(context,key){const c=context.candidate;return run(`select public.create_platform_legal_bundle_snapshot('${id(3)}','AT','de-AT','${c.terms.id}',${quote(c.terms.version)},${quote(c.terms.sha256)},${quote(c.terms.status)},'${c.privacy.id}',${quote(c.privacy.version)},${quote(c.privacy.sha256)},${quote(c.privacy.status)},${quote(JSON.stringify(c.policy_revision))}::jsonb,'${key}');`);}
+const draft=capture(context,id(100));context=run();equal(context.snapshot.bundle_id,draft.bundle_id);equal(context.snapshot.terms.version,'LOCAL-192-1');equal(context.snapshot.privacy.sha256,'b'.repeat(64));equal(context.effective_status,'BLOCKED');equal(context.allowed_actions.includes('publish'),false);
+sql(`update public.legal_master_templates set review_status='REVIEWED' where id='${id(16)}';update public.country_kyb_intake_policies set real_intake_status='READY',legal_status='VERIFIED',privacy_status='VERIFIED',document_catalog_status='VERIFIED',retention_status='VERIFIED',change_ref='SYNTHETIC_READ_193',updated_at=clock_timestamp() where country_code='AT';`);
+context=run();equal(context.effective_status,'STALE');equal(context.allowed_actions.includes('publish'),false);
+const ready=capture(context,id(101));context=run();equal(context.snapshot.bundle_id,ready.bundle_id);equal(context.effective_status,'READY');equal(context.allowed_actions.includes('publish'),true);
+run(`select public.set_platform_legal_bundle_publication('${ready.bundle_id}','${ready.bundle_sha256}','publish','READY',true,'SYNTHETIC_READ_193','${id(102)}');`);
+context=run();equal(context.effective_status,'PUBLISHED');equal(context.allowed_actions.includes('publish'),false);equal(context.allowed_actions.includes('withdraw'),true);
+sql("update public.country_kyb_intake_policies set privacy_status='BLOCKED' where country_code='AT'");
+context=run();equal(context.effective_status,'STALE');equal(context.allowed_actions.includes('publish'),false);equal(context.allowed_actions.includes('withdraw'),true);
+run(`select public.set_platform_legal_bundle_publication('${ready.bundle_id}','${ready.bundle_sha256}','withdraw','STALE',false,'SYNTHETIC_READ_193','${id(103)}');`);
+context=run();equal(context.effective_status,'WITHDRAWN');equal(context.allowed_actions.includes('withdraw'),false);equal(context.allowed_actions.includes('publish'),false);
+// A missing reference is a NEW synthetic draft, never a mutation of a published version.
+sql(`begin;set local session_replication_role=replica;
+insert into public.legal_document_versions(id,document_id,restaurant_id,version,effective_date,rendered_text,document_hash,status,created_by,created_at)
+values('${id(500)}','${id(9)}','${id(3)}','SYNTHETIC-MISSING-TEMPLATE',current_date,'Synthetic only',repeat('e',64),'draft','${id(1)}',clock_timestamp()+interval '1 second');
+insert into public.legal_document_version_jurisdictions(document_version_id,restaurant_id,legal_country,resolved_from)
+values('${id(500)}','${id(3)}','AT','primary_business_branch');commit;`);
+context=run();equal(context.candidate,null);assert.ok(context.blocking_reasons.includes('CURRENT_TEMPLATES_REQUIRED'));assertions++;
+assert.ok(context.blocking_reasons.includes('PRIVACY_STATUS_BLOCKED'));assertions++;
+assert.ok(context.policy_revision.revision_id);assertions++;
+const beforeAgain=ledgerCounts();for(let i=0;i<5;i++)run();equal(ledgerCounts(),beforeAgain);
+sql(`begin;set local session_replication_role=replica;update public.branches set country='DE' where id='${id(4)}';update public.restaurant_legal_profiles set country='DE' where restaurant_id='${id(3)}';commit;`);
+context=run();equal(context.candidate,null);equal(context.snapshot,null);equal(context.allowed_actions,[]);equal(context.blocking_reasons,['AT_JURISDICTION_REQUIRED']);
+sql(`update public.country_kyb_intake_policies p set real_intake_status=o.real_intake_status,legal_status=o.legal_status,privacy_status=o.privacy_status,document_catalog_status=o.document_catalog_status,retention_status=o.retention_status,change_ref=o.change_ref,updated_at=o.updated_at from jsonb_populate_record(null::public.country_kyb_intake_policies,${quote(originalPolicy)}::jsonb) o where p.country_code='AT';`);
+equal(sql("select md5(string_agg(id::text||review_status||content_template::text,'|' order by id)) from public.legal_master_templates where id not in ('"+id(16)+"','"+id(17)+"')"),originalTemplates);
+equal(sql("select md5(pg_get_functiondef('public.legal_operator_publication_ready_internal(uuid,timestamptz)'::regprocedure))"),kyb);
+for(const table of ['customers','points_transactions','customer_rewards','customer_account_memberships'])equal(sql(`select count(*) from public.${table}`),'0');
+equal(sql("select count(*) from public.legal_bundle_publication_events e join public.legal_bundle_snapshots s using(bundle_id) where s.restaurant_id<>'"+id(3)+"'"),'0');
+console.log(JSON.stringify({status:'PASS',assertions,read_rpc_writes:0,real_bundle:'BLOCKED',kyb:'UNCHANGED',cloud_requests:0,business_writes:0}));

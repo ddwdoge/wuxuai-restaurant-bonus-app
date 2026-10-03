@@ -1,0 +1,15 @@
+.platform-legal-bundle, .platform-legal-bundle-drawer { min-width: 0; overflow-wrap: anywhere; }
+.platform-legal-bundle .platform-detail-list > div, .platform-legal-bundle dd { min-width: 0; }
+.platform-legal-bundle-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.platform-legal-bundle button, .platform-legal-bundle input:not([type='checkbox']), .platform-legal-bundle select,
+.platform-legal-bundle-drawer button, .platform-legal-bundle-drawer input:not([type='checkbox']), .platform-legal-bundle-drawer select { min-height: 44px; min-width: 44px; max-width: 100%; }
+.platform-legal-bundle form, .platform-legal-bundle-drawer form { display: grid; gap: 12px; min-width: 0; }
+.platform-legal-bundle-drawer dd { margin: 4px 0 16px; }
+.platform-legal-bundle-drawer input:not([type='checkbox']), .platform-legal-bundle-drawer select { width: 100%; box-sizing: border-box; }
+.platform-legal-bundle-choice { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.platform-legal-bundle-choice input { flex: 0 0 24px; width: 24px; height: 24px; }
+.platform-legal-bundle :focus-visible, .platform-legal-bundle-drawer :focus-visible { outline: 3px solid #355e3b; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .platform-legal-bundle-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .platform-legal-bundle .platform-detail-list > div { display: block; }
+}

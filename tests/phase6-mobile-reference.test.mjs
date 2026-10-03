@@ -35,11 +35,11 @@ test("Phase 6 preserves its historical inventory alongside capacity and verifica
   assert.match(read("src/modules/admin/pages/BrandingPage.tsx"), /<Navigate replace to="\/admin\/settings\/aussehen"/);
 });
 
-test("Drawer inventory includes capacity and verification drawers", () => {
+test("Drawer inventory includes capacity, verification and legal bundle control drawers", () => {
   const names = new Set(["AppDrawer", "UiDialog", "PremiumDrawer", "ConfirmationDialog"]);
   const count = sourceFiles("src").filter((path) => path.endsWith(".tsx"))
     .flatMap(openingElements).filter((name) => names.has(name)).length;
-  assert.equal(count, 50);
+  assert.equal(count, 51);
   const rows = [...report.matchAll(/^\| D(\d+) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 40 }, (_, index) => index + 1));
 });
