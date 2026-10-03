@@ -175,6 +175,7 @@ export function PartnerRestaurantMap({ active = true, tileUrl = OPENSTREETMAP_TI
         className="partner-map-canvas"
         scrollWheelZoom
         zoom={7}
+        zoomAnimation={false}
         zoomControl
       >
         <TileLayer

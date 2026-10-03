@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
@@ -74,4 +74,28 @@ test("breite niedrige Landscape-Viewports erhalten Dokument-Scroll und gleich ho
   assert.match(shortLandscape, /view-map \.partner-list-panel \{ display: none; \}/);
   assert.match(shortLandscape, /view-list \.partner-map-panel \{ display: none; \}/);
   assert.doesNotMatch(shortLandscape, /!important/);
+});
+
+
+test("nur die Discovery-Karte deaktiviert die Zoomanimation ohne globale Leaflet-Konfiguration", async () => {
+  const openingTag = map.match(/<MapContainer\b[\s\S]*?>/)?.[0];
+  assert.ok(openingTag);
+  assert.match(openingTag, /zoomAnimation=\{false\}/);
+  const sources = [];
+  async function collect(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = new URL(entry.name + (entry.isDirectory() ? "/" : ""), directory);
+      if (entry.isDirectory()) await collect(path);
+      else if (/\.[cm]?[jt]sx?$/.test(entry.name)) sources.push([path, await readFile(path, "utf8")]);
+    }
+  }
+  await collect(new URL("../src/", import.meta.url));
+  const animationSettings = sources.filter(([, source]) => /zoomAnimation/.test(source));
+  assert.equal(animationSettings.length, 1);
+  assert.equal(animationSettings[0][0].pathname, new URL("../src/modules/customer/PartnerRestaurantMap.tsx", import.meta.url).pathname);
+  assert.equal((map.match(/zoomAnimation/g) ?? []).length, 1);
+  for (const [, source] of sources) {
+    assert.doesNotMatch(source, /(?:L|Leaflet)\.Map\.(?:mergeOptions|include)\s*\(/);
+    assert.doesNotMatch(source, /(?:L|Leaflet)\.Map\.prototype\.options/);
+  }
 });
