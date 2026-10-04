@@ -4180,3 +4180,11 @@ NOT READY bis der neue Build in Cloudflare deployed und live geprüft wurde.
   Entitlements jeweils 0.
 - Phase 7C.5C erreicht damit `CAPACITY UI/WARNING STAGING LOCK`. Reale externe
   E-Mail-Zustellung und Production besitzen ausdruecklich keinen FINAL LOCK.
+
+
+## 2026-10-04 – Staging TEST_ONLY-Aggregat-Leseprofil
+
+- Parameterlose, intern auf den registrierten TEST_ONLY-Betrieb begrenzte Preflight-Lesefunktion und NOLOGIN-Rolle; lokal geprüft und im bestätigten Staging-SQL-Editor tatsächlich ausgeführt. Keine Anwendungsmigration oder Businessmutation.
+- Rollen-/Sitzungsprüfung und Tabellenverweigerung bestätigt. Geerbte PUBLIC-Funktionsrechte verhindern die Freigabe als ausschließlich query-only Datenbankzugang; kein Login erstellt.
+- Reales Preflight-Ergebnis: 65 Punkte, PRO nicht wirksam, bestehende 109-Schwellenzustandszeile. Cron aktiv, kein Maildispatcher-Job; vollständige Dispatcher-Abschaltung nicht belegt.
+- Bericht: docs/reports/2026-10-04_STAGING_TEST_ONLY_READ_ACCESS_REPORT.md. Status NOT READY für query-only Zugang und Golden Path.
