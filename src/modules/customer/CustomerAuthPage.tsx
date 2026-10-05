@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { CheckCircle2, LogIn, RotateCw, UserPlus } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
@@ -57,7 +57,8 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const activatingExistingAccount = mode === "register"
     && Boolean(user)
     && !portalAccessError
-    && !portalAccess.customer_access;
+    && !portalAccess.customer_access
+    && portalAccess.platform_terms_status === "ACCEPTED";
   const registrationValid = isValidCustomerFirstName(firstName)
     && Boolean(customerPhoneValidation(phoneCountryCode, phone).e164)
     && (activatingExistingAccount || (
@@ -78,6 +79,11 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
 
+  if (!authLoading && user && !portalAccessError && !portalAccess.customer_account_exists
+    && portalAccess.platform_terms_status !== "ACCEPTED") {
+    return <Navigate replace to={`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`} />;
+  }
+
   if (!authLoading && user && !portalAccess.customer_access && mode === "login") {
     return <WrongPortalNotice portal="customer" />;
   }
@@ -93,6 +99,21 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
       if (mode === "login") {
         setLoginAuditPending(true);
         await signIn(email.trim().toLowerCase(), password);
+        const { data: termsStatus, error: termsError } = await supabase.rpc("get_platform_customer_terms_status");
+        let accountExists = Boolean(termsStatus?.account_exists);
+        if (termsError) {
+          const { data: access, error: accessError } = await supabase.rpc("get_current_portal_access");
+          if (accessError || !access?.customer_access) throw termsError;
+          accountExists = true;
+        }
+        if (!termsError && termsStatus?.status !== "ACCEPTED" && !accountExists) {
+          navigate(`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+          return;
+        }
+        if (!accountExists) {
+          navigate(`/customer/register?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+          return;
+        }
         try {
           await recordCustomerLoginSuccess(returnTo);
         } catch (auditError) {
@@ -130,8 +151,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         returnTo,
       });
       if (signupState === "confirmed") {
-        await supabase.rpc("ensure_authenticated_customer_account");
-        navigate(returnTo, { replace: true });
+        navigate(`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
       } else if (signupState === "confirmation_required") {
         setMessageKind("success");
         setConfirmationPending(true);
@@ -237,6 +257,11 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
           </form>
           {mode === "login" ? <p className="central-auth-switch"><Link to={buildPasswordRecoveryPath("customer")}>Passwort vergessen?</Link></p> : null}
           {!activatingExistingAccount ? <p className="central-auth-switch">{mode === "login" ? "Noch kein Gästekonto?" : "Du hast bereits ein Gästekonto?"} <Link to={`/customer/${mode === "login" ? "register" : "login"}?returnTo=${encodeURIComponent(returnTo)}`}>{mode === "login" ? "Jetzt erstellen" : "Jetzt anmelden"}</Link></p> : null}
+          <p className="central-auth-switch">
+            <Link to="/platform/legal/platform_terms">Plattformbedingungen</Link>
+            {" · "}
+            <Link to="/platform/legal/platform_privacy">Plattform-Datenschutz</Link>
+          </p>
           {mode === "login" ? <PortalLoginNavigation currentPortal="customer" /> : null}
         </PremiumCard>
       </div>

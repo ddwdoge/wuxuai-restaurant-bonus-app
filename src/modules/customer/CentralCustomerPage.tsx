@@ -164,7 +164,7 @@ function MembershipCard({ membership, onOpen }: { membership: CustomerAccountMem
 
 export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { portalAccess, signOut, user } = useAuth();
   const { translateKey: t } = useI18n();
   const [account, setAccount] = useState<CustomerAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -459,6 +459,12 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
 
         {!loading && !error && account && view === "account" ? (
           <div className="central-account-grid">
+            {portalAccess.platform_terms_status !== "ACCEPTED" ? (
+              <PremiumCard className="central-profile-card">
+                <div><h2>Plattformbedingungen prüfen</h2><p>Dein bestehendes Konto bleibt lesbar. Vor einem neuen Beitritt musst du die aktuell freigegebene Fassung ausdrücklich annehmen.</p>
+                  <Link to="/customer/platform-terms">Rechtsstatus prüfen</Link></div>
+              </PremiumCard>
+            ) : null}
             <PremiumCard className="central-profile-card">
               <span className="central-profile-avatar" aria-hidden="true">{account.profile.first_name.trim().charAt(0).toUpperCase()}</span>
               <div><span>Dein Profil</span><h2>{account.profile.first_name}</h2><p>{account.profile.phone_masked ?? "Telefonnummer nicht verfügbar"}</p><p>{account.profile.birthday_masked ?? "Geburtstag nicht hinterlegt"}</p></div>
@@ -485,6 +491,8 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               <a href="mailto:support@wuxugroup.com?subject=Datenexport%20Mein%20WUXUAI"><CalendarDays aria-hidden="true" size={20} /><span><strong>Datenexport anfragen</strong><small>Über den WUXUAI Support</small></span><ChevronRight aria-hidden="true" size={19} /></a>
               <a href="mailto:support@wuxugroup.com?subject=Konto%20loeschen%20Mein%20WUXUAI"><ShieldCheck aria-hidden="true" size={20} /><span><strong>Konto löschen lassen</strong><small>Memberships und Punkte werden nicht still gelöscht</small></span><ChevronRight aria-hidden="true" size={19} /></a>
               <Link to="/customer/locations"><Store aria-hidden="true" size={20} /><span><strong>Teilnahmebedingungen</strong><small>Je Lokal im Bonuskonto erreichbar</small></span><ChevronRight aria-hidden="true" size={19} /></Link>
+              <Link to="/platform/legal/platform_terms"><ShieldCheck aria-hidden="true" size={20} /><span><strong>Plattformbedingungen</strong><small>Rechtliche Informationen zum Gästekonto</small></span><ChevronRight aria-hidden="true" size={19} /></Link>
+              <Link to="/platform/legal/platform_privacy"><ShieldCheck aria-hidden="true" size={20} /><span><strong>Plattform-Datenschutz</strong><small>Informationen zur Kontoverarbeitung</small></span><ChevronRight aria-hidden="true" size={19} /></Link>
               <a href="mailto:support@wuxugroup.com"><UserRound aria-hidden="true" size={20} /><span><strong>Support kontaktieren</strong><small>Telefonnummer und Geburtstag sicher ändern</small></span><ChevronRight aria-hidden="true" size={19} /></a>
               <button onClick={() => void signOut().finally(() => navigate("/customer/login", { replace: true }))} type="button"><UserRound aria-hidden="true" size={20} /><span><strong>Abmelden</strong><small>Kundensitzung auf diesem Gerät beenden</small></span><ChevronRight aria-hidden="true" size={19} /></button>
             </section>

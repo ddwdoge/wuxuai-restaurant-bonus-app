@@ -47,6 +47,12 @@ export type PublicLegalCenter = {
   product_notice: string;
   legal_ready: boolean;
   missing_configuration: boolean;
+  at_legal_bundle: {
+    bundle_id: string;
+    bundle_sha256: string;
+    terms: { id: string; version: string; sha256: string };
+    privacy: { id: string; version: string; sha256: string };
+  } | null;
 };
 
 export type LegalCenterState =
@@ -59,6 +65,7 @@ export function legalCenterStateFromResponse(data: PublicLegalCenter): LegalCent
   const todayIso = new Date().toISOString().slice(0, 10);
   return data.legal_ready
     && !data.missing_configuration
+    && Boolean(data.at_legal_bundle)
     && isLegalBundleReady(data.documents, todayIso)
     ? { status: "ready", data }
     : { status: "not_configured" };
@@ -129,7 +136,23 @@ export async function loadPublicLegalCenter(restaurantSlug: string, customerToke
     input_customer_token: customerToken ?? null,
   });
   if (error) throw error;
-  return data as PublicLegalCenter;
+  const legal = data as PublicLegalCenter;
+  if (!legal.legal_ready) return { ...legal, at_legal_bundle: null };
+  const identity = await client.rpc("get_public_at_legal_bundle_identity", {
+    input_restaurant_slug: restaurantSlug,
+  });
+  if (identity.error || !identity.data) throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lade sie erneut.");
+  const bundle = identity.data as NonNullable<PublicLegalCenter["at_legal_bundle"]>;
+  const terms = legal.documents.find((document) => document.document_type === "participation_terms");
+  const privacy = legal.documents.find((document) => document.document_type === "privacy");
+  if (!terms || !privacy
+    || terms.version_id !== bundle.terms.id || terms.version !== bundle.terms.version
+    || terms.document_hash.toLowerCase() !== bundle.terms.sha256
+    || privacy.version_id !== bundle.privacy.id || privacy.version !== bundle.privacy.version
+    || privacy.document_hash.toLowerCase() !== bundle.privacy.sha256) {
+    throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lade sie erneut.");
+  }
+  return { ...legal, at_legal_bundle: bundle };
 }
 
 export async function updateCustomerConsent(
@@ -150,12 +173,13 @@ export async function updateCustomerConsent(
   return data as { consent_type: ConsentType; status: ConsentStatus; updated_at: string };
 }
 
-export async function acceptCurrentLegalDocuments(restaurantSlug: string, customerToken: string) {
+export async function acceptCurrentLegalDocuments(restaurantSlug: string, customerToken: string, bundleId: string) {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("accept_current_legal_documents", {
+  const { data, error } = await client.rpc("accept_current_at_legal_documents", {
     input_restaurant_slug: restaurantSlug,
     input_customer_token: customerToken,
-    input_source: "legal_center",
+    input_bundle_id: bundleId,
+    input_request_id: crypto.randomUUID(),
   });
   if (error) throw error;
   return data as { accepted_versions: number; status: string };

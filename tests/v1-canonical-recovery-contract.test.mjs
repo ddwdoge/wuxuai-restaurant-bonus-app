@@ -56,8 +56,8 @@ test("Customer Auth behält Doppelpasswort, E-Mail-Bestätigung und Resend", () 
 });
 
 test("aktive Customer-Registrierung verwendet ausschließlich den Legal-RPC", () => {
-  assert.match(loyaltyService, /register_restaurant_customer_legal/);
-  assert.match(loyaltyService, /register_referral_customer_legal/);
+  assert.match(loyaltyService, /register_restaurant_customer_at_legal/);
+  assert.match(loyaltyService, /register_referral_customer_at_legal/);
   assert.doesNotMatch(loyaltyService, /supabase\.rpc\("register_restaurant_customer"/);
   assert.doesNotMatch(loyaltyService, /supabase\.rpc\("register_referral_customer"/);
 });

@@ -90,7 +90,15 @@ async function readVerifiedPortalAccess(): Promise<PortalAccess> {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
   const { data, error } = await supabase.rpc("get_current_portal_access");
   if (error) throw error;
-  return { ...emptyPortalAccess, ...(data as Partial<PortalAccess> | null) };
+  const access = { ...emptyPortalAccess, ...(data as Partial<PortalAccess> | null) };
+  // A transient terms-read failure must not revoke an existing account's read access.
+  // New account creation and every join are still checked authoritatively by SQL.
+  const { data: terms, error: termsError } = await supabase.rpc("get_platform_customer_terms_status");
+  return {
+    ...access,
+    platform_terms_status: termsError ? "UNAVAILABLE" : terms?.status ?? "UNAVAILABLE",
+    customer_account_exists: termsError ? access.customer_access : Boolean(terms?.account_exists),
+  };
 }
 
 async function readVerifiedAuthorization(user: User): Promise<VerifiedAuthorization> {

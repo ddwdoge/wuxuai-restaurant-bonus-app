@@ -50,6 +50,8 @@ export function ReferralLanding() {
       return;
     }
     setLegalCenterState({ status: "loading" });
+    setTermsAccepted(false);
+    setPrivacyAcknowledged(false);
     try {
       const nextData = await loadPublicLegalCenter(restaurantSlug);
       setLegalCenterState(legalCenterStateFromResponse(nextData));
@@ -82,6 +84,7 @@ export function ReferralLanding() {
     try {
       const result = await joinCustomerReferral({
         restaurantSlug,
+        legalBundleId: legalCenterState.data.at_legal_bundle!.bundle_id,
         referralToken,
         termsAccepted,
         privacyAcknowledged,
@@ -91,6 +94,9 @@ export function ReferralLanding() {
       setJoined(true);
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Die Einladung konnte gerade nicht angenommen werden.");
+      if (caught instanceof Error && caught.message.includes("rechtlichen Dokumente haben sich geändert")) {
+        void reloadLegalCenter();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -177,7 +183,7 @@ export function ReferralLanding() {
                 </div>
               ) : (
                 <div className="central-join-consents">
-                  <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
+                  <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen (Fassung {legalCenterState.data.at_legal_bundle?.terms.version})</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung (Fassung {legalCenterState.data.at_legal_bundle?.privacy.version})</Link></p>
                   <label><input aria-required="true" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen. *</span></label>
                   <label><input aria-required="true" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} type="checkbox" /><span>Ich habe die Datenschutzerklärung zur Kenntnis genommen. *</span></label>
                 </div>

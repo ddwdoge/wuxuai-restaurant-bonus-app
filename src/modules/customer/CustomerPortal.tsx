@@ -345,6 +345,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       return;
     }
     setLegalCenterState({ status: "loading" });
+    setForm((current) => ({ ...current, termsAccepted: false, privacyAcknowledged: false }));
     try {
       const legalData = await loadPublicLegalCenter(restaurantSlug, activeToken);
       setLegalCenterState(legalCenterStateFromResponse(legalData));
@@ -1057,6 +1058,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
         birthday: form.birthday || null,
         deviceId: getWebDeviceId(),
         legal: {
+          bundleId: legalCenterState.data.at_legal_bundle!.bundle_id,
           termsAccepted: form.termsAccepted,
           privacyAcknowledged: form.privacyAcknowledged,
           marketingPush: form.marketingPush,
@@ -1079,7 +1081,12 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       setStoredCustomerToken(result.customer.customer_qr_token);
       setGuestStep("success");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Registrierung fehlgeschlagen.");
+      const failureMessage = error instanceof Error ? error.message : "Registrierung fehlgeschlagen.";
+      if (failureMessage.includes("rechtlichen Dokumente haben sich geändert")) {
+        setForm((current) => ({ ...current, termsAccepted: false, privacyAcknowledged: false }));
+        void reloadLegalCenter();
+      }
+      setMessage(failureMessage);
     } finally {
       setSubmitting(false);
     }
@@ -1719,7 +1726,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   <li>Punkte haben keinen Geldwert und werden nicht bar ausgezahlt.</li>
                   <li>Punkte und Punkteeinlösungen gelten nur bei {restaurant.name}.</li>
                 </ul>
-                <p><Link to={`/legal/${encodeURIComponent(restaurant.slug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurant.slug)}#privacy`}>Datenschutzerklärung</Link></p>
+                <p><Link to={`/legal/${encodeURIComponent(restaurant.slug)}#participation_terms`}>Teilnahmebedingungen{legalCenter?.at_legal_bundle ? ` (Fassung ${legalCenter.at_legal_bundle.terms.version})` : ""}</Link> · <Link to={`/legal/${encodeURIComponent(restaurant.slug)}#privacy`}>Datenschutzerklärung{legalCenter?.at_legal_bundle ? ` (Fassung ${legalCenter.at_legal_bundle.privacy.version})` : ""}</Link></p>
                 {legalCenterState.status === "loading" ? <p role="status">Rechtliche Informationen werden geladen …</p> : null}
                 {legalCenterState.status === "error" || legalCenterState.status === "not_configured" ? (
                   <div className="customer-legal-load-warning" role="alert">

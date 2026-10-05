@@ -1,4 +1,5 @@
 import { QrCode, Sparkles, Store } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   PublicContentCard,
   PublicEntryCard,
@@ -25,6 +26,11 @@ export function PublicHome() {
         <PublicEntryCard action={t("public.home.startFree")} description={registrationDescription} icon={Sparkles} title={t("public.home.registrationTitle")} to="/register" />
         <PublicEntryCard action={t("public.home.open")} description={t("public.home.customerDescription")} icon={QrCode} title={t("public.home.customerTitle")} to="/customer" />
       </div>
+      <nav aria-label="Rechtliche Informationen" className="public-premium-secondary-actions">
+        <Link className="public-premium-secondary-link" to="/platform/legal/platform_imprint">Plattform-Impressum</Link>
+        <Link className="public-premium-secondary-link" to="/platform/legal/cookie_tracking">Cookie- und Tracking-Hinweise</Link>
+        <Link className="public-premium-secondary-link" to="/platform/legal/platform_privacy">Plattform-Datenschutz</Link>
+      </nav>
     </PublicPageShell>
   );
 }

@@ -19,6 +19,9 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   const [context, setContext] = useState<CustomerRestaurantContext | null>(null);
   const [portalRestaurantSlug, setPortalRestaurantSlug] = useState<string | null>(null);
   const [legalReady, setLegalReady] = useState(false);
+  const [legalBundleId, setLegalBundleId] = useState<string | null>(null);
+  const [legalVersions, setLegalVersions] = useState<{ terms: string; privacy: string } | null>(null);
+  const [legalChangeNotice, setLegalChangeNotice] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -35,6 +38,11 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     setError(null);
     setJoinSuccessMessage(null);
     setPortalRestaurantSlug(null);
+    setLegalReady(false);
+    setLegalBundleId(null);
+    setLegalVersions(null);
+    setTermsAccepted(false);
+    setPrivacyAcknowledged(false);
     try {
       const nextContext = await loadCustomerRestaurantAccess(restaurantSlug);
       if (generation !== loadGeneration.current) return;
@@ -45,6 +53,10 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
         const legal = legalCenterStateFromResponse(await loadPublicLegalCenter(restaurantSlug));
         if (generation !== loadGeneration.current) return;
         setLegalReady(legal.status === "ready");
+        setLegalBundleId(legal.status === "ready" ? legal.data.at_legal_bundle?.bundle_id ?? null : null);
+        setLegalVersions(legal.status === "ready" && legal.data.at_legal_bundle
+          ? { terms: legal.data.at_legal_bundle.terms.version, privacy: legal.data.at_legal_bundle.privacy.version }
+          : null);
       }
     } catch (caught) {
       if (generation !== loadGeneration.current) return;
@@ -53,18 +65,20 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
   }, [restaurantSlug, user]);
 
   useEffect(() => {
+    setLegalChangeNotice(null);
     void loadContext();
     return () => { loadGeneration.current += 1; };
   }, [loadContext]);
 
   async function join() {
-    if (!context || joinInFlight.current || joining || !termsAccepted || !privacyAcknowledged) return;
+    if (!context || !legalBundleId || joinInFlight.current || joining || !termsAccepted || !privacyAcknowledged) return;
     joinInFlight.current = true;
     setJoining(true);
     setError(null);
     try {
       const joinResult = await joinCustomerRestaurant({
         restaurantSlug,
+        legalBundleId,
         termsAccepted,
         privacyAcknowledged,
         deviceId: getWebDeviceId(),
@@ -78,6 +92,10 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Der Beitritt konnte gerade nicht abgeschlossen werden.");
+      if (caught instanceof Error && caught.message.includes("rechtlichen Dokumente haben sich geändert")) {
+        setLegalChangeNotice("Die rechtlichen Dokumente haben sich geändert. Bitte lies die aktuelle Fassung und bestätige sie erneut.");
+        void loadContext();
+      }
     } finally {
       joinInFlight.current = false;
       setJoining(false);
@@ -132,11 +150,12 @@ export function CustomerRestaurantAccess({ isBonusCollection, restaurantSlug }: 
     <h2>Möchtest du dem Bonusprogramm von {context.restaurant_name} beitreten?</h2>
     <p>Deine Punkte und Belohnungen gelten ausschließlich für dieses Restaurant. Es wird kein zweites Gästekonto erstellt.</p>
     {!legalReady ? <p className="central-status-message" role="alert">Dieses Restaurant hat die erforderlichen rechtlichen Dokumente noch nicht vollständig veröffentlicht.</p> : <div className="central-join-consents">
-      <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung</Link></p>
+      <p><Link to={`/legal/${encodeURIComponent(restaurantSlug)}#participation_terms`}>Teilnahmebedingungen{legalVersions ? ` (Fassung ${legalVersions.terms})` : ""}</Link> · <Link to={`/legal/${encodeURIComponent(restaurantSlug)}#privacy`}>Datenschutzerklärung{legalVersions ? ` (Fassung ${legalVersions.privacy})` : ""}</Link></p>
       <label><input aria-required="true" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} required type="checkbox" /> <span>Ich akzeptiere die Teilnahmebedingungen. *</span></label>
       <label><input aria-required="true" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} required type="checkbox" /> <span>Ich habe die Datenschutzerklärung zur Kenntnis genommen. *</span></label>
     </div>}
+    {legalChangeNotice ? <p className="central-status-message" role="alert">{legalChangeNotice}</p> : null}
     {error ? <p className="central-status-message" role="alert">{error}</p> : null}
-    <div className="central-auth-actions"><Link className="premium-button premium-button-secondary" to="/customer">Abbrechen</Link><PrimaryButton disabled={!legalReady || !termsAccepted || !privacyAcknowledged || joining} onClick={() => void join()}><CheckCircle2 aria-hidden="true" size={19} /> {joining ? "Beitritt wird gespeichert …" : "Bonusprogramm beitreten"}</PrimaryButton></div>
+    <div className="central-auth-actions"><Link className="premium-button premium-button-secondary" to="/customer">Abbrechen</Link><PrimaryButton disabled={!legalReady || !legalBundleId || !termsAccepted || !privacyAcknowledged || joining} onClick={() => void join()}><CheckCircle2 aria-hidden="true" size={19} /> {joining ? "Beitritt wird gespeichert …" : "Bonusprogramm beitreten"}</PrimaryButton></div>
   </PremiumCard></div></AppShell>;
 }

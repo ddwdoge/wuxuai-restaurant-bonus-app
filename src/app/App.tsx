@@ -99,11 +99,17 @@ const CustomerAuthPage = lazy(() =>
 const CustomerAuthCallbackPage = lazy(() =>
   import("../modules/customer/CustomerAuthCallbackPage").then((module) => ({ default: module.CustomerAuthCallbackPage })),
 );
+const CustomerPlatformTermsPage = lazy(() =>
+  import("../modules/customer/CustomerPlatformTermsPage").then((module) => ({ default: module.CustomerPlatformTermsPage })),
+);
 const CustomerRestaurantAccess = lazy(() =>
   import("../modules/customer/CustomerRestaurantAccess").then((module) => ({ default: module.CustomerRestaurantAccess })),
 );
 const LegalCenterPage = lazy(() =>
   import("../modules/legal/LegalCenterPage").then((module) => ({ default: module.LegalCenterPage })),
+);
+const PlatformLegalPage = lazy(() =>
+  import("../modules/legal/PlatformLegalPage").then((module) => ({ default: module.PlatformLegalPage })),
 );
 const OwnerLegalSettingsPage = lazy(() =>
   import("../modules/legal/OwnerLegalSettingsPage").then((module) => ({ default: module.OwnerLegalSettingsPage })),
@@ -181,7 +187,10 @@ function CustomerPortalRoute() {
   if (!scanContext) return <Navigate to="/customer" replace />;
   if (loading) return <CustomerLoading />;
   if (user && portalAccessError) return <AccessLoadError retry={retryAuthorization} />;
-  if (user && !portalAccess.customer_access) return <Navigate replace to={`/customer/register?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  if (user && !portalAccess.customer_access) {
+    const next = portalAccess.platform_terms_status === "ACCEPTED" ? "/customer/register" : "/customer/platform-terms";
+    return <Navigate replace to={`${next}?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  }
 
   return withFallback(
     <CustomerRestaurantAccess
@@ -199,7 +208,10 @@ function CustomerCentralRoute({ children }: { children: ReactNode }) {
   if (loading) return <CustomerLoading />;
   if (!user) return <Navigate replace to={`/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
   if (portalAccessError) return <AccessLoadError retry={retryAuthorization} />;
-  if (!portalAccess.customer_access) return <Navigate replace to={`/customer/register?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  if (!portalAccess.customer_access) {
+    const next = portalAccess.platform_terms_status === "ACCEPTED" ? "/customer/register" : "/customer/platform-terms";
+    return <Navigate replace to={`${next}?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`} />;
+  }
   return <>{children}</>;
 }
 
@@ -375,6 +387,7 @@ export function App() {
       <Route path="/customer/login" element={withFallback(<CustomerAuthPage mode="login" />, <CustomerLoading />)} />
       <Route path="/customer/register" element={withFallback(<CustomerAuthPage mode="register" />, <CustomerLoading />)} />
       <Route path="/customer/auth/callback" element={withFallback(<CustomerAuthCallbackPage />, <CustomerLoading />)} />
+      <Route path="/customer/platform-terms" element={withFallback(<CustomerPlatformTermsPage />, <CustomerLoading />)} />
       <Route path="/customer" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="home" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/locations" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="locations" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/account" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="account" />, <CustomerLoading />)}</CustomerCentralRoute>} />
@@ -383,6 +396,7 @@ export function App() {
       <Route path="/customer/restaurants" element={<CustomerCentralRoute>{withFallback(<PartnerRestaurantFinderPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/:slug/offers" element={<CustomerCentralRoute>{withFallback(<CustomerOffersPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/legal/:slug" element={withFallback(<LegalCenterPage />, <CustomerLoading />)} />
+      <Route path="/platform/legal/:documentType" element={withFallback(<PlatformLegalPage />, <CustomerLoading />)} />
       <Route path="/customer/:slug" element={<CustomerPortalRoute />} />
       <Route path="/w/:slug" element={<CustomerPortalRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />

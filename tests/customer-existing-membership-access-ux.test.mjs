@@ -45,7 +45,7 @@ test("missing session, hydration, tenant slug and reload remain fail-closed", ()
 
 test("a rapid double click can enter the join RPC only once", () => {
   assert.match(route, /const joinInFlight = useRef\(false\)/);
-  assert.match(route, /if \(!context \|\| joinInFlight\.current \|\| joining/);
+  assert.match(route, /if \(!context \|\| !legalBundleId \|\| joinInFlight\.current \|\| joining/);
   assert.match(route, /joinInFlight\.current = true/);
   assert.match(route, /finally \{[\s\S]*joinInFlight\.current = false/);
 });

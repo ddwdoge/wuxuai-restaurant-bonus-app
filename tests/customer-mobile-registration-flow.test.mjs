@@ -126,7 +126,7 @@ test("Mobile Registrierung erzwingt dunkle Texte, leere Checkboxen und Safe Area
 });
 
 test("bestehender Kundenvertrag bleibt serverseitig restaurantbezogen und idempotent", () => {
-  assert.match(loyaltySource, /register_restaurant_customer_legal/);
+  assert.match(loyaltySource, /register_restaurant_customer_at_legal/);
   assert.match(loyaltySource, /input_restaurant_slug:\s*input\.restaurantSlug/);
   assert.doesNotMatch(portalSource, /insert\([\s\S]*customers/);
 });

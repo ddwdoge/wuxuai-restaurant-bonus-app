@@ -26,7 +26,7 @@ function sourceFiles(dir) {
 }
 
 test("Phase 6 preserves its historical inventory alongside capacity and verification routes", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 53);
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 55);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 50 }, (_, index) => index + 1));
   assert.equal(rows.filter((row) => row[2] === "V").length, 42);

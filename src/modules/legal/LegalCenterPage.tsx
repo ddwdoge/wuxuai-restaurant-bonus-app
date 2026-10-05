@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Accessibility,
   ArrowLeft,
@@ -112,8 +112,11 @@ export function LegalCenterPage() {
   const [savingConsent, setSavingConsent] = useState<ConsentType | null>(null);
   const [requesting, setRequesting] = useState(false);
   const [acceptingDocuments, setAcceptingDocuments] = useState(false);
+  const loadGeneration = useRef(0);
 
   const reload = useCallback(async () => {
+    const generation = ++loadGeneration.current;
+    setData(null);
     if (!slug) {
       setError("Restaurant wurde nicht gefunden.");
       setLoading(false);
@@ -122,16 +125,22 @@ export function LegalCenterPage() {
     setLoading(true);
     setError(null);
     try {
-      setData(await loadPublicLegalCenter(slug, token));
+      const nextData = await loadPublicLegalCenter(slug, token);
+      if (generation !== loadGeneration.current) return;
+      setData(nextData);
     } catch {
+      if (generation !== loadGeneration.current) return;
       setData(null);
       setError("Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut.");
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
   }, [slug, token]);
 
-  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    void reload();
+    return () => { loadGeneration.current += 1; };
+  }, [reload]);
 
   const consentState = useMemo(() => new Map(data?.consents.map((consent) => [consent.consent_type, consent.status]) ?? []), [data]);
 
@@ -181,15 +190,16 @@ export function LegalCenterPage() {
   }
 
   async function handleLegalAcceptance() {
-    if (!token || acceptingDocuments) return;
+    if (!token || acceptingDocuments || !data?.at_legal_bundle) return;
     setAcceptingDocuments(true);
     setMessage(null);
     try {
-      await acceptCurrentLegalDocuments(slug, token);
+      await acceptCurrentLegalDocuments(slug, token, data.at_legal_bundle.bundle_id);
       await reload();
       setMessage("Die aktuellen Teilnahmebedingungen und Datenschutzinformationen wurden bestätigt.");
     } catch {
-      setMessage("Die Bestätigung konnte gerade nicht gespeichert werden.");
+      await reload();
+      setMessage("Die Bestätigung konnte nicht gespeichert werden. Bitte prüfe die aktuellen Dokumente erneut.");
     } finally {
       setAcceptingDocuments(false);
     }

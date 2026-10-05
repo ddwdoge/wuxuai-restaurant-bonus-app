@@ -175,6 +175,7 @@ export function StaffLoginPage() {
             <PublicPrimaryButton disabled={unavailable} icon={<LogIn size={18} />} loading={submitting} loadingLabel="Anmeldung läuft …" type="submit">Anmelden</PublicPrimaryButton>
             <div className="public-premium-secondary-actions">
               <Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath("staff", restaurantSlug)}>Passwort vergessen?</Link>
+              <Link className="public-premium-secondary-link" to="/platform/legal/staff_privacy">Datenschutz für Mitarbeiter</Link>
             </div>
           </form>
         )}

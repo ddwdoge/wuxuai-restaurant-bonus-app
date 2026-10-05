@@ -98,8 +98,9 @@ test("Portal access RPC is authenticated-only and relationship authoritative", (
 
 test("Customer data routes activate an additional Customer role before portal RPC components", () => {
   assert.match(authProvider, /rpc\("get_current_portal_access"\)/);
-  assert.match(app, /if \(user && !portalAccess\.customer_access\) return <Navigate replace to=\{`\/customer\/register\?returnTo=/);
-  assert.match(app, /if \(!portalAccess\.customer_access\) return <Navigate replace to=\{`\/customer\/register\?returnTo=/);
+  assert.match(app, /if \(user && !portalAccess\.customer_access\) \{/);
+  assert.match(app, /if \(!portalAccess\.customer_access\) \{/);
+  assert.match(app, /portalAccess\.platform_terms_status === "ACCEPTED" \? "\/customer\/register" : "\/customer\/platform-terms"/);
   assert.ok(app.indexOf("!portalAccess.customer_access") < app.indexOf("<CentralCustomerPage view=\"home\""));
 });
 

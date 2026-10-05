@@ -104,6 +104,7 @@ export function LoginPage() {
             <Link className="public-premium-secondary-link" to={buildPasswordRecoveryPath("owner")}>Passwort vergessen?</Link>
             <Link className="public-premium-secondary-link" to="/">Zurück zur Startseite</Link>
             <Link className="public-premium-secondary-link" to="/register">Noch nicht registriert?</Link>
+            <Link className="public-premium-secondary-link" to="/platform/legal/owner_privacy">Datenschutz für Betreiber</Link>
           </div>
         </form>
         <PortalLoginNavigation currentPortal="owner" />

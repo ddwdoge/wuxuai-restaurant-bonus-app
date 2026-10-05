@@ -146,13 +146,17 @@ export async function recoverCustomerMembershipToken(restaurantSlug: string) {
 
 export async function joinCustomerRestaurant(input: {
   restaurantSlug: string;
+  legalBundleId: string;
   termsAccepted: boolean;
   privacyAcknowledged: boolean;
   deviceId: string;
   existingCustomerToken?: string | null;
 }) {
-  const join = (existingCustomerToken: string | null) => requireClient().rpc("join_customer_account_restaurant", {
+  const requestId = crypto.randomUUID();
+  const join = (existingCustomerToken: string | null) => requireClient().rpc("join_customer_account_restaurant_at_legal", {
     input_restaurant_slug: input.restaurantSlug,
+    input_bundle_id: input.legalBundleId,
+    input_request_id: requestId,
     input_terms_accepted: input.termsAccepted,
     input_privacy_acknowledged: input.privacyAcknowledged,
     input_device_id: input.deviceId,
@@ -177,6 +181,9 @@ export async function joinCustomerRestaurant(input: {
     if (error.message.includes("CUSTOMER_LEGAL_NOT_READY")) {
       throw new Error("Dieses Bonusprogramm ist noch nicht für neue Mitglieder freigegeben.");
     }
+    if (error.message.includes("CUSTOMER_LEGAL_BUNDLE_") || error.message.includes("CUSTOMER_LEGAL_DOCUMENT_")) {
+      throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lies die aktuelle Fassung und bestätige sie erneut.");
+    }
     throw new Error("Der Beitritt konnte gerade nicht abgeschlossen werden.");
   }
   const result = data as { joined: boolean; restaurant_slug: string; customer_token: string | null };
@@ -188,13 +195,16 @@ export async function joinCustomerRestaurant(input: {
 
 export async function joinCustomerReferral(input: {
   restaurantSlug: string;
+  legalBundleId: string;
   referralToken: string;
   termsAccepted: boolean;
   privacyAcknowledged: boolean;
   deviceId: string;
 }) {
-  const { data, error } = await requireClient().rpc("join_authenticated_customer_referral", {
+  const { data, error } = await requireClient().rpc("join_authenticated_customer_referral_at_legal", {
     input_restaurant_slug: input.restaurantSlug,
+    input_bundle_id: input.legalBundleId,
+    input_request_id: crypto.randomUUID(),
     input_referral_token: input.referralToken,
     input_terms_accepted: input.termsAccepted,
     input_privacy_acknowledged: input.privacyAcknowledged,
@@ -206,6 +216,9 @@ export async function joinCustomerReferral(input: {
     }
     if (error.message.includes("CUSTOMER_LEGAL_NOT_READY")) {
       throw new Error("Dieses Bonusprogramm ist noch nicht für neue Mitglieder freigegeben.");
+    }
+    if (error.message.includes("CUSTOMER_LEGAL_BUNDLE_") || error.message.includes("CUSTOMER_LEGAL_DOCUMENT_")) {
+      throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lies die aktuelle Fassung und bestätige sie erneut.");
     }
     if (error.message.includes("REFERRAL_INVALID")) {
       throw new Error("Diese Einladung ist ungültig oder nicht mehr verfügbar.");

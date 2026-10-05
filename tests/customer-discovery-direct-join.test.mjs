@@ -34,13 +34,13 @@ test("Willkommensanreiz bleibt lokalisiert sichtbar und Beitritt erzeugt keinen 
   assert.match(finder, /visits_count \?\? 0\) > 0/);
 });
 
-test("Discovery verwendet den bestehenden ausdrücklichen Legal-Consent-Flow", () => {
+test("Discovery bindet ausdrücklichen Legal-Consent an das angezeigte Bundle", () => {
   assert.match(access, /loadPublicLegalCenter\(restaurantSlug\)/);
   assert.match(access, /Teilnahmebedingungen/);
   assert.match(access, /Datenschutzerklärung/);
   assert.equal((access.match(/aria-required="true"/g) ?? []).length, 2);
-  assert.match(access, /disabled=\{!legalReady \|\| !termsAccepted \|\| !privacyAcknowledged \|\| joining\}/);
-  assert.match(accountService, /rpc\("join_customer_account_restaurant"/);
+  assert.match(access, /disabled=\{!legalReady \|\| !legalBundleId \|\| !termsAccepted \|\| !privacyAcknowledged \|\| joining\}/);
+  assert.match(accountService, /rpc\("join_customer_account_restaurant_at_legal"/);
   assert.doesNotMatch(finder, /\.from\("(?:customers|customer_account_memberships)"\)/);
 });
 

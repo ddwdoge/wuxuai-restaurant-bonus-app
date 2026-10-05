@@ -47,9 +47,6 @@ export function CustomerAuthCallbackPage() {
       try {
         const session = await establishEmailConfirmationSession(payload);
         if (!session.user.email_confirmed_at) throw new Error("confirmation_missing");
-        const { error: profileError } = await supabase.rpc("ensure_authenticated_customer_account");
-        if (profileError) throw profileError;
-
         const metadataReturn = typeof session.user.user_metadata?.customer_return_to === "string"
           ? session.user.user_metadata.customer_return_to
           : null;
@@ -58,7 +55,8 @@ export function CustomerAuthCallbackPage() {
         if (cancelled) return;
         setConfirmed(true);
         navigationTimer = window.setTimeout(() => {
-          navigate(safeCustomerReturnPath(metadataReturn ?? legacyReturnTo ?? storedReturn), { replace: true });
+          const returnTo = safeCustomerReturnPath(metadataReturn ?? legacyReturnTo ?? storedReturn);
+          navigate(`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
         }, 800);
       } catch {
         if (!cancelled) setError("Dieser Bestätigungslink ist ungültig oder abgelaufen.");

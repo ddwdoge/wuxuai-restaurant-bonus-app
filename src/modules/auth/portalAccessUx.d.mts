@@ -7,6 +7,8 @@ export type PortalAccess = {
   staff_access: boolean;
   platform_access: boolean;
   preferred_staff_slug: string | null;
+  platform_terms_status: "AUTH_REQUIRED" | "UNAVAILABLE" | "ACCEPTANCE_REQUIRED" | "ACCEPTED";
+  customer_account_exists: boolean;
 };
 
 export const emptyPortalAccess: Readonly<PortalAccess>;

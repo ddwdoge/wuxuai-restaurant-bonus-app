@@ -430,6 +430,7 @@ export type GuestRegistrationInput = {
   birthday: string | null;
   deviceId?: string | null;
   legal: {
+    bundleId: string;
     termsAccepted: boolean;
     privacyAcknowledged: boolean;
     marketingPush: boolean;
@@ -823,8 +824,10 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
 
   const normalizedPhone = normalizeCustomerPhone(input.phone);
   if (!normalizedPhone) throw new Error("Bitte gib eine gültige Telefonnummer ein.");
-  const { data, error } = await supabase.rpc("register_restaurant_customer_legal", {
+  const { data, error } = await supabase.rpc("register_restaurant_customer_at_legal", {
     input_restaurant_slug: input.restaurantSlug,
+    input_bundle_id: input.legal.bundleId,
+    input_request_id: crypto.randomUUID(),
     input_first_name: input.firstName,
     input_phone: normalizedPhone,
     input_birthday: input.birthday,
@@ -837,7 +840,12 @@ export async function registerRestaurantGuest(input: GuestRegistrationInput): Pr
     input_birthday_processing: input.legal.birthdayProcessing,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (error.message.includes("CUSTOMER_LEGAL_BUNDLE_") || error.message.includes("CUSTOMER_LEGAL_DOCUMENT_")) {
+      throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lies die aktuelle Fassung und bestätige sie erneut.");
+    }
+    throw error;
+  }
   const payload = data as GuestRegistrationResult;
   if (payload.success === false) {
     throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");
@@ -1072,8 +1080,10 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
 
   const normalizedPhone = normalizeCustomerPhone(input.phone);
   if (!normalizedPhone) throw new Error("Bitte gib eine gültige Telefonnummer ein.");
-  const { data, error } = await supabase.rpc("register_referral_customer_legal", {
+  const { data, error } = await supabase.rpc("register_referral_customer_at_legal", {
     input_restaurant_slug: input.restaurantSlug,
+    input_bundle_id: input.legal.bundleId,
+    input_request_id: crypto.randomUUID(),
     input_referral_token: input.referralToken,
     input_first_name: input.firstName,
     input_phone: normalizedPhone,
@@ -1087,7 +1097,12 @@ export async function registerReferralGuest(input: ReferralRegistrationInput): P
     input_birthday_processing: input.legal.birthdayProcessing,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (error.message.includes("CUSTOMER_LEGAL_BUNDLE_") || error.message.includes("CUSTOMER_LEGAL_DOCUMENT_")) {
+      throw new Error("Die rechtlichen Dokumente haben sich geändert. Bitte lies die aktuelle Fassung und bestätige sie erneut.");
+    }
+    throw error;
+  }
   const payload = data as ReferralRegistrationResult & { success?: boolean; error_message?: string };
   if (payload.success === false) {
     throw new Error(payload.error_message ?? "Für diese Telefonnummer besteht bei diesem Restaurant bereits ein Bonuskonto.");

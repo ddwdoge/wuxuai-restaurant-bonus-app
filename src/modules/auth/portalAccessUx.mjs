@@ -5,6 +5,8 @@ export const emptyPortalAccess = Object.freeze({
   staff_access: false,
   platform_access: false,
   preferred_staff_slug: null,
+  platform_terms_status: "AUTH_REQUIRED",
+  customer_account_exists: false,
 });
 
 function destination(path, label) {
