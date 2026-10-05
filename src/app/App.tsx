@@ -102,6 +102,9 @@ const CustomerAuthCallbackPage = lazy(() =>
 const CustomerPlatformTermsPage = lazy(() =>
   import("../modules/customer/CustomerPlatformTermsPage").then((module) => ({ default: module.CustomerPlatformTermsPage })),
 );
+const CustomerTestOnlyJoinPage = lazy(() =>
+  import("../modules/customer/CustomerTestOnlyJoinPage").then((module) => ({ default: module.CustomerTestOnlyJoinPage })),
+);
 const CustomerRestaurantAccess = lazy(() =>
   import("../modules/customer/CustomerRestaurantAccess").then((module) => ({ default: module.CustomerRestaurantAccess })),
 );
@@ -388,6 +391,7 @@ export function App() {
       <Route path="/customer/register" element={withFallback(<CustomerAuthPage mode="register" />, <CustomerLoading />)} />
       <Route path="/customer/auth/callback" element={withFallback(<CustomerAuthCallbackPage />, <CustomerLoading />)} />
       <Route path="/customer/platform-terms" element={withFallback(<CustomerPlatformTermsPage />, <CustomerLoading />)} />
+      <Route path="/customer/test-only/:slug/:branchId" element={<CustomerCentralRoute>{withFallback(<CustomerTestOnlyJoinPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="home" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/locations" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="locations" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/account" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="account" />, <CustomerLoading />)}</CustomerCentralRoute>} />
