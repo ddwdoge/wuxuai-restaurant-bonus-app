@@ -40,6 +40,24 @@ test("payload-bound idempotency and concurrency use the existing canonical claim
   assert.match(migration, /points_collection_requests/);
 });
 
+test("daily limit counts only successful positive earn ledger rows in the same tenant branch and local day", () => {
+  const limitStart = migration.indexOf("elsif (\n    select count(*)");
+  const limitEnd = migration.indexOf("elsif exists (", limitStart);
+  assert.notEqual(limitStart, -1, "daily-limit branch exists");
+  assert.ok(limitEnd > limitStart, "daily-limit branch is bounded");
+  const limit = migration.slice(limitStart, limitEnd);
+  assert.match(limit, /from public\.points_transactions pt/);
+  assert.match(limit, /pt\.restaurant_id = restaurant_record\.id/);
+  assert.match(limit, /pt\.branch_id = customer_record\.branch_id/);
+  assert.match(limit, /pt\.customer_id = customer_record\.id/);
+  assert.match(limit, /pt\.type = 'earn'/);
+  assert.match(limit, /pt\.points > 0/);
+  assert.match(limit, /pt\.created_at >= local_day_start/);
+  assert.match(limit, /pt\.created_at < local_next_day_start/);
+  assert.doesNotMatch(limit, /points_collection_requests|daily_pin_attempts|audit_log|points_idempotency_claims/);
+  assert.match(migration, /timezone\(coalesce\(restaurant_record\.timezone_name, 'Europe\/Vienna'\), now\(\)\)::date/);
+});
+
 test("ACL exposes only v2 to authenticated users and removes direct legacy helper execution", () => {
   assert.match(migration, /revoke all on function public\.apply_staff_daily_pin_loyalty_action_v2\([\s\S]*from public, anon, authenticated, service_role/);
   assert.match(migration, /grant execute on function public\.apply_staff_daily_pin_loyalty_action_v2\([\s\S]*to authenticated/);
