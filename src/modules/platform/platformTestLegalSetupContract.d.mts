@@ -1,0 +1,12 @@
+export const TEST_LEGAL_VERSION: string;
+export const TEST_LEGAL_SOURCE: string;
+export const TEST_LEGAL_TEXT: Readonly<Record<"platform" | "legal" | "privacy" | "document_catalog" | "retention" | "provider", string>>;
+export function validTestCustomerId(value: unknown): boolean;
+export type TestLegalScope = Readonly<{ restaurantId: string; restaurantName: string; branchId: string; organizationId: string; testSessionId: string; merchantStatus: "NOT_FOUND" | "PUBLISHED_TEST" | "WITHDRAWN_TEST"; bundleId: string | null; bundleHash: string | null }>;
+export function exactTestLegalScope(preflight: unknown, status: unknown, restaurantId: string, restaurantName: string): TestLegalScope | null;
+export function sha256(text: string): Promise<string>;
+export type TestLegalDocuments = Readonly<{ platform: { version: string; body: string; providerSnapshot: string; sha256: string }; manifest: { schema_version: string; test_only: true; country: "AT"; locale: "de-AT"; restaurant_id: string; legal: TestLegalArea; privacy: TestLegalArea; document_catalog: TestLegalArea; retention: TestLegalArea } }>;
+export type TestLegalArea = { status: "VERIFIED_TEST_ONLY"; version: string; source: string; body: string; sha256: string };
+export function testLegalDocuments(restaurantId: string): Promise<TestLegalDocuments>;
+export function testLegalConfirmation(step: "identity" | "platform" | "merchant", scope: TestLegalScope, customerId?: string): string;
+export function classifyTestLegalError(error: unknown): string;

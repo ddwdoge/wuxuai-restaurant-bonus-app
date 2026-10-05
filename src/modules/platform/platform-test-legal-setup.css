@@ -1,0 +1,33 @@
+.platform-test-legal-setup {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #b99a52;
+  border-radius: 1rem;
+  background: #fffaf0;
+}
+
+.platform-test-legal-setup header { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.platform-test-legal-setup h3 { margin: 0; }
+.platform-test-legal-setup label, .platform-test-legal-form label { display: grid; gap: .4rem; margin: .9rem 0; font-weight: 600; }
+.platform-test-legal-setup input, .platform-test-legal-setup select,
+.platform-test-legal-form input, .platform-test-legal-form select {
+  width: 100%; min-height: 44px; min-width: 0; padding: .6rem .7rem;
+  border: 1px solid #8d8d8d; border-radius: .55rem; background: #fff;
+}
+.platform-test-legal-setup button, .platform-test-legal-form button { min-height: 44px; }
+.platform-test-legal-setup dl, .platform-test-legal-form dl { display: grid; gap: .6rem; min-width: 0; }
+.platform-test-legal-setup dl > div, .platform-test-legal-form dl > div { min-width: 0; }
+.platform-test-legal-setup dt, .platform-test-legal-form dt { font-size: .8rem; color: #555; }
+.platform-test-legal-setup dd, .platform-test-legal-form dd { margin: .1rem 0 0; overflow-wrap: anywhere; }
+.platform-test-legal-setup details { margin: 1rem 0; }
+.platform-test-legal-setup summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.platform-test-legal-setup article { margin: .8rem 0; padding: .8rem; border: 1px solid #ddd; border-radius: .6rem; background: #fff; }
+.platform-test-legal-setup article h4 { margin: 0 0 .5rem; }
+.platform-test-legal-setup code, .platform-test-legal-form code { display: block; overflow-wrap: anywhere; white-space: normal; }
+.platform-test-legal-confirmation { padding: .6rem; background: #f5f2ea; border-radius: .45rem; }
+.platform-test-legal-actions { display: flex; justify-content: flex-end; gap: .65rem; flex-wrap: wrap; }
+@media (max-width: 430px) {
+  .platform-test-legal-setup { padding: 1rem; }
+  .platform-test-legal-actions { display: grid; }
+  .platform-test-legal-actions > .button, .platform-test-legal-setup > .button { width: 100%; }
+}

@@ -41,6 +41,7 @@ import { PlatformLegalI18nPanel } from "./PlatformLegalI18nPanel";
 import { PlatformKassaCompliancePanel } from "./PlatformKassaCompliancePanel";
 import { PlatformBasicPilotActivationPanel } from "./PlatformBasicPilotActivationPanel";
 import { PlatformTestCollectionModeControl } from "./PlatformTestCollectionModeControl";
+import { PlatformTestLegalSetupControl } from "./PlatformTestLegalSetupControl";
 
 type UpdatePayload = {
   subscriptionStatus?: SubscriptionStatus | null;
@@ -368,6 +369,7 @@ export function PlatformRestaurantControlCenter({
       /> : null}
       {view === "plans" ? <PlatformPlanEntitlementsPanel canWrite={canWrite} restaurantId={account.restaurant_id} /> : null}
       {view === "system" ? <PlatformLegalI18nPanel restaurantId={account.restaurant_id} /> : null}
+      {view === "system" ? <PlatformTestLegalSetupControl canWrite={permittedWrite} restaurantId={account.restaurant_id} restaurantName={account.restaurant_name} /> : null}
       {view === "system" ? <PlatformLegalBundleControl canWrite={permittedWrite} restaurantId={account.restaurant_id} /> : null}
       {view === "system" ? <PlatformKassaCompliancePanel canWrite={permittedWrite} restaurantId={account.restaurant_id} /> : null}
 
