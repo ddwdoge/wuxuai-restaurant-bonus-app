@@ -7,6 +7,12 @@ import "./central-customer.css";
 type Document = { text: string; version: string; sha256: string };
 type Bundle = { status: "READY"; test_only: true; bundle_id: string; bundle_hash: string; terms: Document; privacy: Document };
 type DocumentKind = "terms" | "privacy";
+type JoinedStatus = {
+  status: "JOINED"; test_only: true; restaurant_slug: string; restaurant_id: string; branch_id: string;
+  membership_id: string; request_id: string; bundle_id: string; bundle_hash: string;
+  legal_version: string; legal_sha256: string; privacy_version: string; privacy_sha256: string;
+  accepted_at: string;
+};
 const hashPattern = /^[a-f0-9]{64}$/;
 function bundleValid(value: unknown): value is Bundle {
   if (!value || typeof value !== "object") return false;
@@ -15,6 +21,20 @@ function bundleValid(value: unknown): value is Bundle {
     && b.bundle_id === `at-test-${b.bundle_hash}`
     && [b.terms, b.privacy].every(d => d && typeof d.text === "string" && d.text.startsWith("TEST ONLY:")
       && typeof d.version === "string" && d.version.startsWith("TEST_ONLY_") && hashPattern.test(d.sha256));
+}
+function joinStatusValid(value: unknown, slug: string, branchId: string): value is JoinedStatus | {
+  status: "NOT_JOINED"; test_only: true; restaurant_slug: string; restaurant_id: string; branch_id: string;
+} {
+  if (!value || typeof value !== "object") return false;
+  const status = value as Record<string, unknown>;
+  if (status.test_only !== true || status.restaurant_slug !== slug || status.branch_id !== branchId
+    || typeof status.restaurant_id !== "string") return false;
+  if (status.status === "NOT_JOINED") return true;
+  return status.status === "JOINED" && typeof status.membership_id === "string"
+    && typeof status.request_id === "string" && typeof status.accepted_at === "string"
+    && hashPattern.test(String(status.bundle_hash)) && status.bundle_id === `at-test-${status.bundle_hash}`
+    && typeof status.legal_version === "string" && hashPattern.test(String(status.legal_sha256))
+    && typeof status.privacy_version === "string" && hashPattern.test(String(status.privacy_sha256));
 }
 function enabled() {
   const host = window.location.hostname;
@@ -103,7 +123,7 @@ function TestOnlyJoin({ contextKey: key, slug, branchId, authenticated }: { cont
   const generation = useRef(0);
   const inFlight = useRef(false);
   const request = useRef<{ key: string; bundle: string; id: string } | null>(null);
-  const [view, setView] = useState<{ key: string; bundle: Bundle | null; loading: boolean; error: string | null; receipt: string | null }>({ key, bundle: null, loading: true, error: null, receipt: null });
+  const [view, setView] = useState<{ key: string; bundle: Bundle | null; loading: boolean; error: string | null; joined: JoinedStatus | null }>({ key, bundle: null, loading: true, error: null, joined: null });
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -111,21 +131,36 @@ function TestOnlyJoin({ contextKey: key, slug, branchId, authenticated }: { cont
   const load = useCallback(async () => {
     const seq = ++generation.current;
     setTerms(false); setPrivacy(false);
-    setView({ key, bundle: null, loading: true, error: null, receipt: null });
-    if (!allowed || !supabase) { setView({ key, bundle: null, loading: false, error: null, receipt: null }); return; }
+    setView({ key, bundle: null, loading: true, error: null, joined: null });
+    if (!allowed || !supabase) { setView({ key, bundle: null, loading: false, error: null, joined: null }); return "ERROR"; }
     try {
-      const { data, error } = await supabase.rpc("get_customer_test_only_merchant_bundle", { input_restaurant_slug: slug, input_branch_id: branchId });
-      if (current.current !== key || generation.current !== seq) return;
-      setView({ key, bundle: !error && bundleValid(data) ? data : null, loading: false,
-        error: error ? "Die Testunterlagen konnten nicht geladen werden. Bitte erneut prüfen." : null, receipt: null });
+      const { data: state, error: stateError } = await supabase.rpc("get_customer_test_only_join_status", {
+        input_restaurant_slug: slug, input_branch_id: branchId,
+      });
+      if (stateError || !joinStatusValid(state, slug, branchId)) throw new Error("Join status unavailable");
+      if (current.current !== key || generation.current !== seq) return "ERROR";
+      const joined = state.status === "JOINED" ? state : null;
+      try {
+        const { data, error } = await supabase.rpc("get_customer_test_only_merchant_bundle", { input_restaurant_slug: slug, input_branch_id: branchId });
+        if (current.current !== key || generation.current !== seq) return "ERROR";
+        setView({ key, bundle: !error && bundleValid(data) ? data : null, loading: false,
+          error: error ? "Die aktuellen Testunterlagen konnten nicht geladen werden. Bitte erneut prüfen." : null, joined });
+      } catch {
+        if (current.current === key && generation.current === seq) setView({ key, bundle: null, loading: false,
+          error: "Die aktuellen Testunterlagen konnten nicht geladen werden. Bitte erneut prüfen.", joined });
+      }
+      return state.status;
     } catch {
-      if (current.current === key && generation.current === seq) setView({ key, bundle: null, loading: false, error: "Die Testunterlagen konnten nicht geladen werden. Bitte erneut prüfen.", receipt: null });
+      if (current.current === key && generation.current === seq) setView({ key, bundle: null, loading: false,
+        error: "Dein Beitrittsstatus konnte nicht sicher geprüft werden. Bitte erneut versuchen.", joined: null });
+      return "ERROR";
     }
   }, [allowed, key, slug, branchId]);
   useEffect(() => { current.current = key; void load(); return () => { current.current = ""; generation.current = -1; }; }, [key, load]);
   const bundle = view.key === key ? view.bundle : null;
+  const joined = view.key === key ? view.joined : null;
   async function join() {
-    if (!allowed || !supabase || !bundle || !terms || !privacy || inFlight.current) return;
+    if (!allowed || !supabase || !bundle || joined || !terms || !privacy || inFlight.current) return;
     inFlight.current = true; setSaving(true);
     if (request.current?.key !== key || request.current.bundle !== bundle.bundle_id)
       request.current = { key, bundle: bundle.bundle_id, id: crypto.randomUUID() };
@@ -143,11 +178,18 @@ function TestOnlyJoin({ contextKey: key, slug, branchId, authenticated }: { cont
         || receipt.branch_id !== branchId || receipt.bundle_id !== bundle.bundle_id || receipt.bundle_hash !== bundle.bundle_hash
         || receipt.legal_version !== bundle.terms.version || receipt.legal_sha256 !== bundle.terms.sha256
         || receipt.privacy_version !== bundle.privacy.version || receipt.privacy_sha256 !== bundle.privacy.sha256) throw new Error("Receipt unavailable");
-      setView({ key, bundle: null, loading: false, error: null, receipt: requestId });
+      const { data: state, error: stateError } = await supabase.rpc("get_customer_test_only_join_status", {
+        input_restaurant_slug: slug, input_branch_id: branchId,
+      });
+      if (stateError || !joinStatusValid(state, slug, branchId) || state.status !== "JOINED"
+        || state.request_id !== requestId || state.bundle_id !== bundle.bundle_id
+        || state.bundle_hash !== bundle.bundle_hash) throw new Error("Membership unavailable");
+      setView({ key, bundle, loading: false, error: null, joined: state });
     } catch {
       if (current.current !== key) return;
-      await load();
-      if (current.current === key) setView(v => ({ ...v, error: "Der Beitritt ist nicht bestätigt. Bitte aktuelle Unterlagen erneut prüfen. Eine geänderte oder zurückgezogene Fassung kann nicht angenommen werden." }));
+      const status = await load();
+      if (current.current === key && status === "NOT_JOINED") setView(v => ({ ...v,
+        error: "Der Beitritt ist nicht bestätigt. Bitte aktuelle Unterlagen erneut prüfen. Eine geänderte oder zurückgezogene Fassung kann nicht angenommen werden." }));
     } finally { inFlight.current = false; setSaving(false); }
   }
   if (!allowed) return <main><h1>Testzugang nicht verfügbar</h1></main>;
@@ -156,15 +198,18 @@ function TestOnlyJoin({ contextKey: key, slug, branchId, authenticated }: { cont
     <p>Nur synthetischer Test. Keine reale Rechtsfreigabe, Punktebuchung oder Versandfreigabe.</p>
     {view.key !== key || view.loading ? <p role="status">Testunterlagen werden geladen …</p> : null}
     {view.key === key && view.error ? <p role="alert">{view.error}</p> : null}
-    {view.key === key && view.receipt ? <p role="status">Testbeitritt bestätigt. Der unveränderliche Beleg wurde vom Server gelesen.</p> : <>
-      {!view.loading && !bundle ? <p role="status">Für diesen Testzugang sind keine gültigen Unterlagen verfügbar. Eine Zustimmung ist nicht möglich.</p> : null}
-      {bundle ? <>
+    {joined ? <p role="status">Bereits beigetreten. Der unveränderliche Beleg und deine Mitgliedschaft wurden vom Server gelesen. Bestätigte Fassung: {joined.legal_version}.</p> : null}
+    {!view.loading && !bundle && !joined ? <p role="status">Für diesen Testzugang sind keine gültigen Unterlagen verfügbar. Eine Zustimmung ist nicht möglich.</p> : null}
+    {!view.loading && !bundle && joined ? <p>Aktuelle Testunterlagen sind nicht verfügbar. Dein bestehender Beitritt bleibt nachgewiesen.</p> : null}
+    {bundle ? <>
+        {joined && joined.bundle_hash !== bundle.bundle_hash ? <p role="status">Die aktuellen Testunterlagen unterscheiden sich von der beim Beitritt bestätigten Fassung.</p> : null}
         {([['Teilnahmebedingungen', 'terms', bundle.terms], ['Datenschutzhinweise', 'privacy', bundle.privacy]] as const).map(([title, kind, doc]) => <section key={kind}><h2><Link to={documentPath(slug, branchId, kind, bundle)}>{title} vollständig öffnen</Link></h2><p>Fassung: {doc.version}</p><pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{doc.text}</pre><details><summary>Prüfsumme anzeigen</summary><code>{doc.sha256}</code></details></section>)}
+        {!joined ? <>
         <label style={{ display: "block", padding: 12 }}><input type="checkbox" checked={terms} disabled={saving} onChange={e => setTerms(e.target.checked)} /> Ich akzeptiere die angezeigten Test-Teilnahmebedingungen.</label>
         <label style={{ display: "block", padding: 12 }}><input type="checkbox" checked={privacy} disabled={saving} onChange={e => setPrivacy(e.target.checked)} /> Ich habe die angezeigten Test-Datenschutzhinweise gelesen.</label>
         <button type="button" style={{ minHeight: 44 }} disabled={saving || !terms || !privacy} onClick={() => void join()}>{saving ? "Beitritt wird geprüft …" : "Testbeitritt bestätigen"}</button>
+        </> : null}
       </> : null}
-      <button type="button" style={{ minHeight: 44, margin: 8 }} disabled={saving} onClick={() => void load()}>Unterlagen erneut prüfen</button>
-    </>}
+    <button type="button" style={{ minHeight: 44, margin: 8 }} disabled={saving} onClick={() => void load()}>{joined ? "Status erneut prüfen" : "Unterlagen erneut prüfen"}</button>
   </main>;
 }

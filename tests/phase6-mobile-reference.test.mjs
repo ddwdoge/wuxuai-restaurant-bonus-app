@@ -26,8 +26,8 @@ function sourceFiles(dir) {
 }
 
 test("Phase 6 preserves its historical inventory alongside capacity and verification routes", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 56);
-  // One additive, authenticated TEST_ONLY route; historical inventory is unchanged.
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 57);
+  // Additive authenticated TEST_ONLY join and document routes; historical inventory is unchanged.
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only\/:slug\/:branchId" element=\{<CustomerCentralRoute>/);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 50 }, (_, index) => index + 1));
