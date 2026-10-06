@@ -4,7 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
-function loadDispatcher(state) {
+function loadDispatcher(state, envOverrides = {}) {
   let handler;
   const source = readFileSync(new URL(
     "../supabase/functions/transactional-mail-dispatcher/index.ts",
@@ -65,6 +65,7 @@ function loadDispatcher(state) {
     SMTP_PASSWORD: "local-password",
     SMTP_FROM_EMAIL: "notifications@example.invalid",
     SMTP_REPLY_TO: "support@example.invalid",
+    ...envOverrides,
   };
   const silentConsole = { info() {}, error() {}, log() {} };
   const context = {
@@ -102,6 +103,20 @@ function loadDispatcher(state) {
   vm.runInNewContext(compiled, context, { filename: "transactional-mail-dispatcher" });
   return handler;
 }
+
+test("staging synthetic-only mode never reserves the pending customer queue", async () => {
+  const state = { rpcCalls: [], providerCalls: 0, completions: [] };
+  const handler = loadDispatcher(state, { TRANSACTIONAL_MAIL_MODE: "staging_synthetic_only" });
+  const response = await handler(new Request("http://127.0.0.1/dispatcher", {
+    method: "POST",
+    headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture" },
+    body: JSON.stringify({ limit: 50 }),
+  }));
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: "staging_synthetic_contract_required" });
+  assert.equal(state.rpcCalls.length, 0);
+  assert.equal(state.providerCalls, 0);
+});
 
 async function dispatch(eventType, authorization, authorizationError = false, withdrawOnRecipientLookup = false) {
   const state = {
@@ -168,5 +183,14 @@ test("a currently authorized offer preserves the existing provider and completio
   assert.equal(state.providerCalls, 1);
   assert.equal(state.completions.length, 1);
   assert.equal(state.completions[0].input_success, true);
+  assert.deepEqual(body, { processed: 1, sent: 1, failed: 0, provider_accepted: true });
+});
+
+test("general mode can deliver an already pending birthday reminder", async () => {
+  const { state, body } = await dispatch(
+    "BIRTHDAY_GIFT_EXPIRY_REMINDER", { authorized: true, reason_code: null },
+  );
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.completions.length, 1);
   assert.deepEqual(body, { processed: 1, sent: 1, failed: 0, provider_accepted: true });
 });
