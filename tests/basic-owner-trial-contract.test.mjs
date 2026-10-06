@@ -45,6 +45,7 @@ test("owner UI shows duration, Vienna endpoint and post-trial contract", () => {
   assert.equal(basicTrialDurationLabel(3), "Drei Kalendermonate");
   assert.match(formatViennaDateTime("2026-10-25T01:30:00Z"), /25\.10\.2026/);
   assert.match(settings, /Testphase Ende \(exklusiv\)/);
+  assert.match(settings, /basicContract\?\.automatic_extension === false \? <p>Die Testphase verlängert sich nicht automatisch\.<\/p>/);
   assert.match(settings, /60-Kalendertage-Fensters/);
   assert.match(settings, /keinen automatischen Punkteverfall/);
 });

@@ -1610,6 +1610,7 @@ export function SettingsPage() {
               <div className="settings-subscription-note">
                 <p>{V1_COMMERCIAL_COPY.noPaymentMethod}</p>
                 <p>Automatische Abrechnung ist noch nicht aktiv.</p>
+                {basicContract?.automatic_extension === false ? <p>Die Testphase verlängert sich nicht automatisch.</p> : null}
               </div>
               {trialExpired ? <div className="settings-subscription-note">
                 <p><strong>Neue Beitritte, Punkte, QR-Vorgänge und Angebote sind beendet.</strong></p>

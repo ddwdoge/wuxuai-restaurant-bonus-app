@@ -67,7 +67,7 @@ test("the stable capacity error has dedicated copy in all seven UI languages", (
   assert.match(service, /RestaurantOfferCapacityError/);
   assert.match(service, /OFFER_CAPACITY_REACHED/);
   assert.match(page, /offerCapacityReachedMessage\(language\)/);
-  assert.match(messages, /Deine aktuelle Angebotskapazität ist erreicht\. Buche \+5 weitere Angebote für 19 € netto pro Monat\./);
+  assert.match(messages, /Deine aktuelle Angebotskapazität ist erreicht\. Deaktiviere ein aktives Angebot oder warte, bis zusätzliche Kapazität freigeschaltet ist\./);
   for (const locale of ["de", "en", "fr", "it", "es", "zh", "ko"]) {
     assert.match(messages, new RegExp(`\\b${locale}:`));
   }

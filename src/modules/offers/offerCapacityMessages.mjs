@@ -1,13 +1,13 @@
 import { normalizeUiLanguage } from "../../shared/i18n/language.mjs";
 
 export const OFFER_CAPACITY_REACHED_MESSAGES = Object.freeze({
-  de: "Deine aktuelle Angebotskapazität ist erreicht. Buche +5 weitere Angebote für 19 € netto pro Monat.",
-  en: "Your current offer capacity has been reached. Book +5 additional offers for €19 net per month.",
-  fr: "Votre capacité actuelle d’offres est atteinte. Réservez 5 offres supplémentaires pour 19 € HT par mois.",
-  it: "Hai raggiunto la capacità attuale delle offerte. Aggiungi 5 offerte per 19 € netti al mese.",
-  es: "Has alcanzado la capacidad actual de ofertas. Añade 5 ofertas más por 19 € netos al mes.",
-  zh: "你当前的优惠容量已满。每月净价 19 欧元可增加 5 个优惠。",
-  ko: "현재 혜택 등록 한도에 도달했습니다. 월 순액 19유로로 혜택 5개를 추가하세요.",
+  de: "Deine aktuelle Angebotskapazität ist erreicht. Deaktiviere ein aktives Angebot oder warte, bis zusätzliche Kapazität freigeschaltet ist.",
+  en: "Your current offer capacity has been reached. Disable an active offer or wait until additional capacity is enabled.",
+  fr: "Votre capacité actuelle d’offres est atteinte. Désactivez une offre active ou attendez que de la capacité supplémentaire soit disponible.",
+  it: "Hai raggiunto la capacità attuale delle offerte. Disattiva un’offerta attiva o attendi che sia disponibile ulteriore capacità.",
+  es: "Has alcanzado la capacidad actual de ofertas. Desactiva una oferta activa o espera a que se habilite capacidad adicional.",
+  zh: "当前优惠容量已满。请停用一项有效优惠，或等待额外容量开放。",
+  ko: "현재 혜택 등록 한도에 도달했습니다. 활성 혜택을 비활성화하거나 추가 용량이 제공될 때까지 기다려 주세요.",
 });
 
 export function offerCapacityReachedMessage(language) {
