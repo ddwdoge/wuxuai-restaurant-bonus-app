@@ -1,5 +1,16 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
+**Aktuelle Founder-Entscheidung (2026-10-06):** PRO enthaelt den Katalog;
+BASIC benoetigt eine wirksame Katalog-Add-on-Berechtigung. Die gegenteiligen
+PRO-/Catalog-Ausschluesse der historischen Roadmap unten sind insoweit
+**SUPERSEDED**. Das ist keine Preis-, Checkout-, Launch- oder rechtliche
+Freigabe. Die unten skizzierte Upload-/Medienausgestaltung bleibt getrennt
+vom aktuellen Katalogvertrag überholt: optionale Textübersicht und optionale
+JPEG-/PDF-Originalkarte mit unabhängiger Veröffentlichung, private Ablage,
+serverseitige Inhalts- und Berechtigungspruefung je Abruf, Owner-Entwurf,
+Versionierung, Publikation und Ruecknahme. PNG ist nicht Teil dieses Pakets.
+Bereits heruntergeladene Kopien koennen nicht nachtraeglich entzogen werden.
+
 Status: **CURRENT FOUNDER-APPROVED MASTER CONTRACT**
 Stand: **2026-09-23 (kanonische Preis-/Capacity-Reconciliation)**
 Markt: **Oesterreich / Restaurant V1**

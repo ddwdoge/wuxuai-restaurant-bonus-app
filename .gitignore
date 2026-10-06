@@ -7,4 +7,5 @@ vite.config.d.ts
 .env.local
 .DS_Store
 /supabase/.branches/
+/supabase/.temp/
 exports/*.zip

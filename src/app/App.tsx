@@ -29,6 +29,7 @@ const AdminLayout = lazy(() => import("../modules/admin/AdminLayout").then((modu
 const AdminDashboard = lazy(() =>
   import("../modules/admin/pages/AdminDashboard").then((module) => ({ default: module.AdminDashboard })),
 );
+const RestaurantMenuPage = lazy(() => import("../modules/admin/pages/RestaurantMenuPage").then((module) => ({ default: module.RestaurantMenuPage })));
 const BrandingPage = lazy(() =>
   import("../modules/admin/pages/BrandingPage").then((module) => ({ default: module.BrandingPage })),
 );
@@ -289,6 +290,7 @@ export function App() {
         <Route path="staff" element={withFallback(<StaffPage />, <AdminLoading />)} />
         <Route path="welcome-gifts" element={withFallback(<WelcomeGiftsPage />, <AdminLoading />)} />
         <Route path="offers" element={withFallback(<RestaurantOffersPage />, <AdminLoading />)} />
+        <Route path="menu" element={withFallback(<RestaurantMenuPage />, <AdminLoading />)} />
         <Route path="reports" element={withFallback(<BonusActivityReportsPage />, <AdminLoading />)} />
         <Route path="legal" element={withFallback(<OwnerLegalErrorBoundary><OwnerLegalSettingsPage /></OwnerLegalErrorBoundary>, <AdminLoading />)} />
       </Route>

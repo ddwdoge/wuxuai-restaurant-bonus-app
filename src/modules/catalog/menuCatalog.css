@@ -1,0 +1,18 @@
+.restaurant-menu-editor { box-sizing: border-box; margin: 0 auto; max-width: 900px; padding: 16px; }
+.restaurant-menu-editor input[type="file"] { box-sizing: border-box; display: block; margin: 8px 0 20px; max-width: 100%; min-width: 0; padding: 12px; width: 100%; }
+.restaurant-menu-editor textarea { box-sizing: border-box; display: block; width: 100%; max-width: 100%; margin: 8px 0 12px; padding: 12px; font: inherit; }
+.restaurant-menu-editor section { margin: 22px 0; }
+.menu-text-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.menu-page-order { display: grid; gap: 8px; padding-left: 24px; }
+.menu-page-order li { align-items: center; display: flex; gap: 8px; min-width: 0; }
+.menu-page-order li button:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.menu-page-order button, .menu-media-controls button { min-height: 44px; min-width: 44px; }
+.menu-media-controls { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.menu-media-controls span { min-width: 0; overflow-wrap: anywhere; }
+.menu-media-scroll { max-width: 100%; overflow: auto; touch-action: pan-x pan-y pinch-zoom; }
+.menu-media-scroll img { display: block; height: auto; max-width: none; }
+.menu-pdf-pages { display: grid; gap: 12px; width: 100%; }
+.menu-pdf-pages canvas { display: block; max-width: none; box-shadow: 0 1px 8px #0002; }
+.customer-menu-pages { min-width: 0; }
+.restaurant-menu-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.restaurant-menu-actions button { min-height: 44px; padding: 10px 14px; }

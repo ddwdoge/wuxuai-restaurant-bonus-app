@@ -8,6 +8,7 @@ import {
   Lock,
   LogOut,
   Menu,
+  UtensilsCrossed,
   Newspaper,
   QrCode,
   ScrollText,
@@ -28,6 +29,7 @@ import "./admin-premium.css";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { LanguageSelector } from "../../shared/i18n/LanguageSelector";
 import { KassaAcknowledgementGate } from "../kassa/KassaAcknowledgementGate";
+import { menuMessage } from "../catalog/menuCatalogMessages";
 
 function readProfileName(user: ReturnType<typeof useAuth>["user"], fallback: string) {
   const metadataName = user?.user_metadata?.full_name ?? user?.user_metadata?.name;
@@ -39,7 +41,7 @@ function readProfileName(user: ReturnType<typeof useAuth>["user"], fallback: str
 }
 
 export function AdminLayout() {
-  const { translateKey: t } = useI18n();
+  const { language, translateKey: t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,6 +68,7 @@ export function AdminLayout() {
     { to: "/admin/rewards", label: t("owner.rewards"), icon: Gift },
     { to: "/admin/welcome-gifts", label: t("owner.welcomeGifts"), icon: Gift },
     { to: "/admin/offers", label: t("owner.offers"), icon: Newspaper },
+    { to: "/admin/menu", label: menuMessage(language, "menu"), icon: UtensilsCrossed },
     { to: "/admin/customers", label: t("owner.customers"), icon: Users },
     { to: "/admin/qr", label: t("owner.qrCenter"), icon: QrCode },
     { to: "/admin/staff", label: t("owner.staff"), icon: Smartphone },

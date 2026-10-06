@@ -22,11 +22,14 @@ test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
   assert.match(components, /export function RewardCard/);
 });
 
-test("Kundennavigation hat exakt vier verständliche deutsche Hauptpunkte", () => {
+test("Kundennavigation hat vier Standardpunkte und nur bei Berechtigung Menü vor QR", () => {
   for (const key of ["customer.home", "customer.redeem", "customer.collect", "customer.account"]) assert.ok(components.includes(`label: "${key}"`));
-  assert.match(components, /<span>\{t\(label\)\}<\/span>/);
+  assert.match(components, /value !== "menu" \|\| menuAvailable/);
+  assert.ok(components.indexOf('value: "menu"') < components.indexOf('value: "collect"'));
+  assert.match(components, /<span>\{value === "menu" \? menuMessage\(language, "menu"\) : t\(label\)\}<\/span>/);
   for (const label of ["Start", "Einlösen", "Sammeln", "Konto"]) assert.match(i18nCatalog, new RegExp(`: "${label}"`));
   assert.match(styles, /grid-template-columns: repeat\(4/);
+  assert.match(styles, /\.premium-bottom-navigation\.has-menu \{ grid-template-columns: repeat\(5/);
 });
 
 test("Punkte sammeln und sichere Einlösung behalten ihre Service-Aufrufe", () => {

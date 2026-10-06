@@ -30,6 +30,7 @@ function harness(language) {
     if (id.endsWith("/LanguageSelector")) return selector;
     if (id.endsWith("/catalog.mjs")) return { translateStructural };
     if (id.endsWith("/customerRewardPresentation.mjs")) return { customerPresentationText };
+    if (id.endsWith("/menuCatalogMessages")) return { menuMessage: () => "Menü" };
     if (id.endsWith("/RestaurantLogoStage")) return { RestaurantLogoStage: ({ name }) => React.createElement("span", { "data-logo": true }, name) };
     if (id.endsWith("/InfoTrigger")) return { InfoTrigger: ({ label, onClick, className }) => React.createElement("button", { "aria-label": label, onClick, className, type: "button" }) };
     if (/\/(AppDrawer|RewardImageFrame|ui)$/.test(id)) return {};

@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-10-06 - Optionale Text- und Originalkarte lokal begonnen
+
+- Neuer Founder-Vertrag: PRO enthaelt den Katalog, BASIC benoetigt ein
+  wirksames Katalog-Add-on. Aeltere gegenteilige Berechtigungsregeln sind
+  insoweit superseded; kommerzielle Freigabe ist nicht erfolgt.
+- Textübersicht und JPEG-/PDF-Seiten bleiben unabhängig optional. Private
+  Storage-Dateien, Entwurf/Version/Hash, geschuetzte TEST_ONLY-Add-on-Permits,
+  Owner-/Customer-RPCs und ein serverseitiges Medien-Gateway sind lokal in Arbeit.
+- Add-on-Preis/Checkout, Bestellung und Zahlung bleiben ausgeschlossen.
+
 ## 2026-09-28 - PRO Customer In-App-Inbox lokal implementiert
 
 - Additive Migration 186 fuehrt eine private, tenant- und kundenbezogene

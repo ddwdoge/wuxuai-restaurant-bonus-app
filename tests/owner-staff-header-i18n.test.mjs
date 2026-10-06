@@ -99,7 +99,7 @@ test("Owner 320px compact menu and synthetic long-name contract cannot overlap a
 });
 
 test("Owner menu uses active-language keys while tenant switching and routes stay unchanged", () => {
-  assert.match(owner, /const \{ translateKey: t \} = useI18n\(\)/);
+  assert.match(owner, /const \{ language, translateKey: t \} = useI18n\(\)/);
   assert.doesNotMatch(owner, /translateStructural\(key, "de"\)/);
   assert.match(owner, /onClick=\{\(\) => setMobileMenuOpen\(true\)\}/);
   assert.match(owner, /window\.addEventListener\("keydown", handleKeyDown\)/);

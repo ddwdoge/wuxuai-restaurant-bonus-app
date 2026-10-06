@@ -1,5 +1,31 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Founder-Entscheidung 2026-10-06 – zwei optionale Speisekartenansichten
+
+PRO enthaelt den Katalog/die Speisekarte. BASIC erhaelt Customer-Lesezugang
+nur mit wirksamem Katalog-Add-on. Der Customer-Menue-Einstieg steht unmittelbar
+vor dem prominenten QR-Einstieg und ist nur bei wirksamer Berechtigung und
+veroeffentlichtem Katalog sichtbar. Ein Entzug sperrt den serverseitigen
+Lesezugriff, nicht den Owner-Entwurf. Preis, Checkout, Bestellung und Zahlung
+sind **nicht** Teil dieses technischen Pakets. Fruehere Aussagen in diesem
+Dokument, wonach PRO den Katalog niemals enthaelt, sind fuer die
+Berechtigungsregel **SUPERSEDED**; sie belegen den historischen Stand.
+Eine reale kommerzielle Freigabe wird hiermit nicht behauptet.
+
+Textübersicht und bildliche Originalkarte aus Owner-eigenen JPEG-Bildern oder
+mehrseitigen PDF-Dateien sind zwei optionale Darstellungen desselben Menüs.
+Der Owner darf eine oder beide unabhängig veröffentlichen; keine Darstellung
+ist Voraussetzung der anderen. Bei zwei Fassungen kann der Customer zwischen
+„Übersicht“ und „Originalkarte“ wechseln, bei einer wird sie direkt geöffnet.
+Jede Darstellung hat ihren eigenen Veröffentlichungszeitpunkt. WUXUAI behauptet
+keine automatische inhaltliche oder preisliche Übereinstimmung. Private Dateien und ein neuer serverseitiger
+Entitlement-/Tenant-/Filialcheck bei jedem Abruf sind Pflicht. Veröffentlichen
+und Zurücknehmen betreffen eine exakte Fassung; Entwürfe bleiben beim
+Berechtigungsverlust erhalten. Bereits geladene oder vom Nutzer gespeicherte
+Kopien lassen sich technisch nicht nachträglich zurückrufen. STAGING/TEST_ONLY
+Add-ons sind geschützte, auditierte technische Permits, keine kommerzielle
+Freischaltung.
+
 ## PRO In-App-Benachrichtigungen – technischer TEST_ONLY-Vertrag
 
 Die Customer-Inbox umfasst technisch ausschliesslich ein neu veroeffentlichtes

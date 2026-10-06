@@ -19,6 +19,7 @@ function components(language) {
     if (id.endsWith("/I18nProvider")) return { useI18n: () => ({ language, translateKey: k => translateStructural(k, language) }) };
     if (id.endsWith("/catalog.mjs")) return { translateStructural };
     if (id.endsWith("/customerRewardPresentation.mjs")) return { customerPresentationText };
+    if (id.endsWith("/menuCatalogMessages")) return { menuMessage: () => "Menü" };
     if (id.endsWith("/language.mjs")) return { UI_LOCALE_TAGS, normalizeUiLanguage };
     if (id.endsWith("/customerOfferPresentation")) return compile("src/modules/customer/customerOfferPresentation.ts");
     if (id.endsWith("/ui")) return { UiCard: ({ children, variant: _v, ...p }) => React.createElement("article",p,children), UiButton: ({ children, variant: _v, ...p }) => React.createElement("button",p,children) };

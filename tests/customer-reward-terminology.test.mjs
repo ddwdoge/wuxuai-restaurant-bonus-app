@@ -76,6 +76,7 @@ function components(language) {
     if (id.endsWith("/I18nProvider")) return { useI18n: () => ({ language, translateKey: key => translateStructural(key, language) }) };
     if (id.endsWith("/catalog.mjs")) return { translateStructural };
     if (id.endsWith("/customerRewardPresentation.mjs")) return { customerPresentationText };
+    if (id.endsWith("/menuCatalogMessages")) return { menuMessage: () => "Menü" };
     if (id.endsWith("/ui")) return {
       UiCard: ({ children, variant: _variant, ...props }) => React.createElement("article", props, children),
       UiButton: ({ children, variant: _variant, ...props }) => React.createElement("button", props, children),

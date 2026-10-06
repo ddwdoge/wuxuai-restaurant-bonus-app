@@ -127,6 +127,9 @@ import { SwipeToRedeem } from "./components/SwipeToRedeem";
 import { RestaurantLogoStage } from "../../shared/components/RestaurantLogoStage";
 import { useAuth } from "../auth/AuthProvider";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { loadCustomerMenuCatalog, type CustomerMenuCatalog } from "../catalog/menuCatalogService";
+import { menuMessage } from "../catalog/menuCatalogMessages";
+import { CustomerMenuView } from "../catalog/CustomerMenuView";
 import {
   loadPublicRestaurantOffers,
   recordRestaurantOfferEvent,
@@ -276,7 +279,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [searchParams, setSearchParams] = useSearchParams();
   const customerToken = searchParams.get("token");
   const [guestStep, setGuestStep] = useState<GuestStep>("welcome");
-  const [activeView, setActiveView] = useState<CustomerView>("home");
+  const [activeView, setActiveView] = useState<CustomerView>(() => searchParams.get("view") === "menu" ? "menu" : "home");
   const [restaurant, setRestaurant] = useState<Pick<Restaurant, "name" | "slug" | "status"> | null>(null);
   const [branding, setBranding] = useState<Pick<RestaurantBranding, "logo_url" | "logo_fit_mode" | "logo_scale" | "logo_position_x" | "logo_position_y" | "primary_color" | "secondary_color" | "button_color" | "font_family"> | null>(null);
   const [settings, setSettings] = useState<PublicLoyaltySettings | null>(null);
@@ -329,6 +332,8 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [proInboxState, setProInboxState] = useState<ProInboxState | null>(null);
   const [proInboxOpen, setProInboxOpen] = useState(false);
   const [proInboxMarkPending, setProInboxMarkPending] = useState<string | null>(null);
+  const [menuState, setMenuState] = useState<{ contextKey: string; status: "loading" | "ready" | "error"; data: CustomerMenuCatalog | null } | null>(null);
+  const menuRequestRef = useRef(0);
   const proInboxRequestRef = useRef(0);
   const proInboxMarkRef = useRef<{ contextKey: string; notificationId: string } | null>(null);
   const collectionInFlightRef = useRef(false);
@@ -345,6 +350,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       ? "stored"
       : "none";
   const proInboxContextKey = JSON.stringify([restaurantSlug, activeToken, user?.id, customer?.customer_code, refreshToken]);
+  const menuContextKey = JSON.stringify([restaurantSlug, activeToken, user?.id, customer?.customer_code, refreshToken]);
+  const visibleMenuState = menuState?.contextKey === menuContextKey ? menuState : null;
+  const menuAvailable = visibleMenuState?.status === "ready" && visibleMenuState.data?.available === true;
   const visibleProInboxState = proInboxState?.contextKey === proInboxContextKey ? proInboxState : null;
   const proInbox = visibleProInboxState?.status === "ready" ? visibleProInboxState.data : null;
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
@@ -377,6 +385,36 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       setProInboxState({ contextKey, status: "error", data: null, errorKind: "load" });
     }
   }, []);
+  useEffect(() => {
+    const contextKey = menuContextKey;
+    const request = ++menuRequestRef.current;
+    if (!customer || !activeToken || !isUsableRestaurantSlug(restaurantSlug)) {
+      setMenuState(null);
+      return;
+    }
+    let cancelled = false;
+    const reload = () => {
+      if (cancelled) return;
+      const nextRequest = ++menuRequestRef.current;
+      setMenuState({ contextKey, status: "loading", data: null });
+      void loadCustomerMenuCatalog(restaurantSlug, activeToken).then((data) => {
+        if (!cancelled && nextRequest === menuRequestRef.current) setMenuState({ contextKey, status: "ready", data });
+      }).catch(() => {
+        if (!cancelled && nextRequest === menuRequestRef.current) setMenuState({ contextKey, status: "error", data: null });
+      });
+    };
+    reload();
+    const onFocus = () => reload();
+    const onVisibility = () => { if (!document.hidden) reload(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      menuRequestRef.current = Math.max(menuRequestRef.current, request) + 1;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [menuContextKey, restaurantSlug, activeToken, customer]);
   useEffect(() => {
     if (!restaurantSlug || !activeToken || !customer) return;
     const persisted = saveStoredCustomerToken(restaurantSlug, {
@@ -1349,7 +1387,12 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       return;
     }
 
+    if (view === "menu" && !menuAvailable) return;
     setActiveView(view);
+    const nextParams = new URLSearchParams(searchParams);
+    if (view === "menu") nextParams.set("view", "menu");
+    else nextParams.delete("view");
+    setSearchParams(nextParams, { replace: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -2096,6 +2139,18 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               </button>
             ) : null}
 
+            {activeView === "menu" ? (
+              <section aria-labelledby="customer-menu-title" className="premium-view-stack customer-menu-state">
+                <h1 id="customer-menu-title">{menuMessage(language, "title")}</h1>
+                {visibleMenuState?.status === "loading" || !visibleMenuState ? <p role="status">{menuMessage(language, "loading")}</p> : null}
+                {visibleMenuState?.status === "error" ? <p role="alert">{menuMessage(language, "error")}</p> : null}
+                {visibleMenuState?.status === "ready" && visibleMenuState.data?.available === false ? <p role="status">{menuMessage(language, "unavailable")}</p> : null}
+                {menuAvailable && visibleMenuState?.data?.available ? <CustomerMenuView
+                  catalog={visibleMenuState.data} language={language} slug={restaurantSlug} token={activeToken ?? ""}
+                /> : null}
+                {visibleMenuState?.status === "error" ? <button onClick={() => setRefreshToken((value) => value + 1)} type="button">{menuMessage(language, "retry")}</button> : null}
+              </section>
+            ) : null}
             {activeView === "home" ? (
               <section className="premium-view-stack" aria-labelledby="customer-home-title">
                 <div className="premium-welcome-copy">
@@ -2522,7 +2577,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
               </section>
             ) : null}
 
-            <BottomNavigation activeView={activeView} onChange={handleCustomerViewChange} />
+            <BottomNavigation activeView={activeView} menuAvailable={menuAvailable} onChange={handleCustomerViewChange} />
 
             <AppDrawer
               footer={<PrimaryButton onClick={() => setPointsInfoOpen(false)}>Schließen</PrimaryButton>}

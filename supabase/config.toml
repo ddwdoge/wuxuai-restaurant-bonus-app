@@ -106,6 +106,9 @@ policy = "per_worker"
 inspector_port = 56125
 deno_version = 2
 
+[functions.catalog-media]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 56127
