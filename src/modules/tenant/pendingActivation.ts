@@ -5,6 +5,12 @@ export function isPendingActivation(restaurant: Pick<Restaurant, "activation_sta
   return restaurant?.activation_status === "pending_activation";
 }
 
+export function isOwnerSetupComplete(restaurant: Pick<Restaurant, "activation_status" | "onboarding_status" | "onboarding_checklist"> | null | undefined) {
+  return restaurant?.onboarding_status === "ready"
+    || restaurant?.onboarding_status === "completed"
+    || (isPendingActivation(restaurant) && restaurant?.onboarding_checklist?.setup_prepared === true);
+}
+
 export const pendingActivationMessages = {
   de: { title: "Verifizierung ausstehend", body: "Du kannst deinen Betrieb und Entwürfe vorbereiten. Live-Funktionen bleiben bis zur Verifizierung, Länderfreigabe und bestätigten Billing-Aktivierung gesperrt.", plan: "BASIC ist nur vorgemerkt. Kein aktiver Tarif, keine verfügbare Kapazität und keine gestartete Testphase.", save: "Einrichtung als Entwurf speichern", saved: "Einrichtung als Entwurf gespeichert.", preview: "Nur Vorschau – keine gültigen Kunden-QRs, PINs oder Downloads.", draft: "Nur als Entwurf speichern", verification: "Betriebsverifizierung prüfen" },
   en: { title: "Verification pending", body: "You can prepare your business and drafts. Live features remain locked until verification, country release and confirmed billing activation.", plan: "BASIC is only preselected. No active plan, available capacity or trial has started.", save: "Save setup as a draft", saved: "Setup saved as a draft.", preview: "Preview only – no valid customer QR codes, PINs or downloads.", draft: "Save as draft only", verification: "Review business verification" },

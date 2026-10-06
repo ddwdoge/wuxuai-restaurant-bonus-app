@@ -22,7 +22,7 @@ import { TenantSwitcher } from "../tenant/TenantSwitcher";
 import { useTenant } from "../tenant/TenantProvider";
 import { isSetupAllowedPath } from "./setupAllowedPath";
 import { PendingActivationNotice } from "../tenant/PendingActivationNotice";
-import { isPendingActivation, usePendingActivationMessages } from "../tenant/pendingActivation";
+import { isOwnerSetupComplete, isPendingActivation, usePendingActivationMessages } from "../tenant/pendingActivation";
 import "../tenant/pendingActivation.css";
 import "./admin-premium.css";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -57,8 +57,7 @@ export function AdminLayout() {
   const profileRoleLabel = restaurantRole
     ? t(`owner.profile.${restaurantRole === "supervisor" ? "staff" : restaurantRole}`)
     : t("owner.profile.account");
-  const onboardingStatus = activeRestaurant?.onboarding_status ?? "draft";
-  const setupIncomplete = Boolean(activeRestaurant && onboardingStatus !== "ready" && onboardingStatus !== "completed");
+  const setupIncomplete = Boolean(activeRestaurant && !isOwnerSetupComplete(activeRestaurant));
   const isOnboardingRoute = location.pathname === "/admin/onboarding";
   const pendingActivation = isPendingActivation(activeRestaurant);
   const isSetupAllowedRoute = isSetupAllowedPath(location.pathname, pendingActivation);

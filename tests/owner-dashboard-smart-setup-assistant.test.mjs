@@ -51,6 +51,19 @@ test("Legal Readiness verwendet denselben Publikationsschritt und führt zum Leg
   assert.equal(result.ctaHref, "/admin/legal");
 });
 
+test("vorbereitetes Pending-Setup fordert keinen zweiten Onboarding-Durchlauf", () => {
+  const pending = readyInput({
+    restaurantStatus: { active: false },
+    onboardingStatus: "draft",
+    legalStatus: { status: "red", reason: "Verifizierung ausstehend." },
+    publicationStatus: { ready: false },
+  });
+  assert.equal(resolveOwnerDashboardRecommendation(pending).id, "publication_onboarding_incomplete");
+  const prepared = resolveOwnerDashboardRecommendation({ ...pending, setupPrepared: true });
+  assert.notEqual(prepared.id, "publication_onboarding_incomplete");
+  assert.equal(prepared.ctaHref, "/admin/legal");
+});
+
 test("nach Veröffentlichung folgen Punkteeinlösung und Angebot in dieser Reihenfolge", () => {
   const reward = resolveOwnerDashboardRecommendation(readyInput({
     rewardStatus: { pointsRedemptionReady: false, birthdayPoolReady: false },

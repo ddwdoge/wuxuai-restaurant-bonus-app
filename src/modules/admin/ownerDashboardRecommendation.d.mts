@@ -11,6 +11,7 @@ export type OwnerDashboardRecommendation = {
 export type OwnerDashboardRecommendationInput = {
   restaurantStatus: { active: boolean };
   onboardingStatus?: "draft" | "ready" | "completed";
+  setupPrepared?: boolean;
   legalStatus: { status: "green" | "yellow" | "red"; reason?: string } | null;
   publicationStatus: { ready: boolean };
   rewardStatus: { pointsRedemptionReady: boolean; birthdayPoolReady: boolean };

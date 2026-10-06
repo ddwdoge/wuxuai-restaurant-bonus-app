@@ -49,6 +49,7 @@ export type StarterRewardInput = {
 
 export type OnboardingDraftState<TDraft> = {
   onboardingStatus: "draft" | "ready" | "completed";
+  setupPrepared: boolean;
   currentStep: number;
   draftData: Partial<TDraft> | null;
   checklist: Record<string, boolean>;
@@ -316,6 +317,7 @@ export async function loadOnboardingDraft<TDraft>(restaurantId: string): Promise
 
   return {
     onboardingStatus: (restaurant.onboarding_status as "draft" | "ready" | "completed") ?? "draft",
+    setupPrepared: restaurant.onboarding_checklist?.setup_prepared === true,
     currentStep: normalizeOnboardingStep(draft?.current_step, draft?.draft_data),
     draftData: (draft?.draft_data as Partial<TDraft> | null) ?? null,
     checklist: (draft?.checklist as Record<string, boolean> | null) ?? (restaurant.onboarding_checklist as Record<string, boolean>) ?? {},

@@ -1112,6 +1112,7 @@ export function RestaurantOnboarding() {
   const pendingMessage = usePendingActivationMessages();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const submissionInFlightRef = useRef(false);
+  const persistedDraftRef = useRef<{ restaurantId: string; snapshot: string } | null>(null);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
   const [form, setForm] = useState<OnboardingForm>(() => createDefaultForm());
@@ -1189,14 +1190,14 @@ export function RestaurantOnboarding() {
           return;
         }
 
-        if (draft.onboardingStatus === "ready" || draft.onboardingStatus === "completed") {
+        if (draft.onboardingStatus === "ready" || draft.onboardingStatus === "completed" || (pendingActivation && draft.setupPrepared)) {
           navigate("/admin", { replace: true });
           return;
         }
 
         const restoredForm = restoreForm(draft.draftData);
         setPendingOpeningHours(null);
-        setForm(restoredForm.legalAddressMatchesRestaurant && restaurantAddressComplete
+        const hydratedForm = restoredForm.legalAddressMatchesRestaurant && restaurantAddressComplete
           ? {
               ...restoredForm,
               legalStreet: activeRestaurant.address ?? "",
@@ -1204,7 +1205,12 @@ export function RestaurantOnboarding() {
               legalCity: activeRestaurant.city ?? "",
               legalCountry: activeRestaurant.country ?? "",
             }
-          : restoredForm);
+          : restoredForm;
+        persistedDraftRef.current = {
+          restaurantId: activeRestaurant.id,
+          snapshot: JSON.stringify({ step: draft.currentStep, form: hydratedForm }),
+        };
+        setForm(hydratedForm);
         setStep(draft.currentStep);
       } catch (error) {
         if (!cancelled) {
@@ -1222,7 +1228,7 @@ export function RestaurantOnboarding() {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurant, navigate, restaurantAddressComplete, tenantLoading]);
+  }, [activeRestaurant, navigate, pendingActivation, restaurantAddressComplete, tenantLoading]);
 
   useEffect(() => {
     if (!activeRestaurant?.id || tenantLoading || draftLoading) {
@@ -1242,16 +1248,25 @@ export function RestaurantOnboarding() {
   }, [activeRestaurant?.id]);
 
   useEffect(() => {
-    // Pending setup persists only through an explicit step/save action.
-    // Hydration, page views and closing overlays must not create writes.
-    if (pendingActivation || draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
+    if (draftLoading || tenantLoading || !activeRestaurant?.id || pendingOpeningHours) {
       return;
     }
+
+    const snapshot = JSON.stringify({ step, form });
+    // Pending setup needs field autosave, but hydration and overlay-only actions
+    // must not create a new draft or write over an existing one.
+    if (pendingActivation && (
+      persistedDraftRef.current?.restaurantId !== activeRestaurant.id
+      || persistedDraftRef.current.snapshot === snapshot
+    )) return;
 
     let cancelled = false;
     const timeout = window.setTimeout(() => {
       setSaving(true);
       saveOnboardingDraft(activeRestaurant.id, step, form, checklist)
+        .then(() => {
+          if (!cancelled) persistedDraftRef.current = { restaurantId: activeRestaurant.id, snapshot };
+        })
         .catch((error) => {
           if (!cancelled) {
             console.error("Onboarding-Fortschritt konnte nicht gespeichert werden.", error);
@@ -1280,6 +1295,10 @@ export function RestaurantOnboarding() {
 
     try {
       await saveOnboardingDraft(activeRestaurant.id, nextStep, nextForm, buildChecklist(nextForm, nextStep));
+      persistedDraftRef.current = {
+        restaurantId: activeRestaurant.id,
+        snapshot: JSON.stringify({ step: nextStep, form: nextForm }),
+      };
       return true;
     } catch (error) {
       console.error("Onboarding-Fortschritt konnte nicht gespeichert werden.", error);

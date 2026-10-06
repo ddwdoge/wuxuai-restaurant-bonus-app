@@ -73,10 +73,10 @@ test("Aktivierung bleibt Update-only, slug-stabil und completed", () => {
   assert.doesNotMatch(completionMigration, /\bslug\s*=/i);
 });
 
-test("TypeScript, Mapper und Guards verwenden dieselben drei Statuswerte", () => {
+test("Statuswerte bleiben erhalten; vorbereitetes Pending-Setup darf den Wizard verlassen", () => {
   assert.match(domainTypes, /onboarding_status\?: "draft" \| "ready" \| "completed"/);
   assert.match(onboardingService, /as "draft" \| "ready" \| "completed"/);
   assert.match(activation, /onboardingStatus === "completed"/);
-  assert.match(adminLayout, /onboardingStatus !== "ready" && onboardingStatus !== "completed"/);
-  assert.match(appRoutes, /onboardingStatus === "ready" \|\| onboardingStatus === "completed"/);
+  assert.match(adminLayout, /!isOwnerSetupComplete\(activeRestaurant\)/);
+  assert.match(appRoutes, /isOwnerSetupComplete\(activeRestaurant\)/);
 });

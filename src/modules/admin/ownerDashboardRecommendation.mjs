@@ -43,7 +43,7 @@ export function resolveOwnerDashboardRecommendation(input) {
     });
   }
 
-  if (input.onboardingStatus !== "completed" && input.onboardingStatus !== "ready") {
+  if (input.onboardingStatus !== "completed" && input.onboardingStatus !== "ready" && !input.setupPrepared) {
     return recommendation({
       id: "publication_onboarding_incomplete",
       category: "setup",

@@ -43,7 +43,8 @@ test("pending QR, staff and capacity components never mount operational hooks", 
   }
   const onboarding = read("src/modules/admin/pages/RestaurantOnboarding.tsx");
   assert.match(onboarding,/restaurantQrUrl = pendingActivation \? ""/);
-  assert.match(onboarding,/if \(pendingActivation \|\| draftLoading/);
+  assert.match(onboarding,/if \(draftLoading \|\| tenantLoading \|\| !activeRestaurant\?\.id \|\| pendingOpeningHours\)/);
+  assert.match(onboarding,/persistedDraftRef\.current\.snapshot === snapshot/);
   assert.match(onboarding,/pendingActivation \? <PendingActivationNotice preview/);
   assert.match(read("src/modules/admin/AdminLayout.tsx"),/return activeRestaurant && !pendingActivation &&/);
 });

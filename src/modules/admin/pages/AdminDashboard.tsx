@@ -184,6 +184,8 @@ export function AdminDashboard() {
   const recommendation = useMemo(() => nextStepLoading ? null : resolveOwnerDashboardRecommendation({
     restaurantStatus: { active: activeRestaurant?.status === "active" },
     onboardingStatus: activeRestaurant?.onboarding_status,
+    setupPrepared: activeRestaurant?.activation_status === "pending_activation"
+      && activeRestaurant.onboarding_checklist?.setup_prepared === true,
     legalStatus: legalRegistration ?? null,
     publicationStatus: { ready: isAuthoritativePublicationReady({
       restaurantActive: activeRestaurant?.status === "active",
