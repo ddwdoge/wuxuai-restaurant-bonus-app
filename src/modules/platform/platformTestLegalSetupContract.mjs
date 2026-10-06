@@ -70,6 +70,29 @@ export function testLegalConfirmation(step, scope, customerId = "") {
   return `TEST_ONLY:${step.toUpperCase()}:${target}`;
 }
 
+export function nextTestLegalSetupStep(scope, documents, readback) {
+  if (!scope || !documents || !readback || readback.test_only !== true
+    || readback.restaurant_id !== scope.restaurantId
+    || readback.branch_id !== scope.branchId
+    || readback.test_session_id !== scope.testSessionId) return null;
+  const binding = readback.binding;
+  const platform = readback.platform;
+  if (binding && (binding.restaurant_id !== scope.restaurantId
+    || binding.branch_id !== scope.branchId
+    || binding.test_session_id !== scope.testSessionId
+    || !uuidPattern.test(binding.auth_user_id))) return null;
+  if (scope.merchantStatus !== "NOT_FOUND") return null;
+  if (platform?.status === "NOT_FOUND" && platform.publication_id == null
+    && platform.version == null && platform.sha256 == null) {
+    return binding ? "platform" : "identity";
+  }
+  if (binding && platform?.status === "PUBLISHED_TEST"
+    && platform.version === documents.platform.version
+    && platform.sha256 === documents.platform.sha256
+    && typeof platform.publication_id === "string") return "merchant";
+  return null;
+}
+
 export function classifyTestLegalError(error) {
   const code = String(error?.message ?? error ?? "");
   if (/RECENT_PLATFORM_TOTP_REQUIRED|MFA|TOTP/.test(code)) return "Der frische Authenticator-Nachweis fehlt oder ist abgelaufen. Es wurde nichts freigegeben.";

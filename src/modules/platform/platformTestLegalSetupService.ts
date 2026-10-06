@@ -11,6 +11,12 @@ type PlatformResult = { id: string; action: string; sha256: string; version?: st
   test_session_id?: string; idempotent: boolean };
 type MerchantResult = { event_id: string; bundle_id: string; bundle_hash: string;
   status: string; test_only: boolean; idempotent: boolean };
+export type TestLegalSetupReadback = { restaurant_id: string; branch_id: string;
+  test_session_id: string; test_only: true;
+  binding: null | { auth_user_id: string; restaurant_id: string; branch_id: string;
+    test_session_id: string; request_id: string; marked_at: string };
+  platform: { status: "NOT_FOUND" | "PUBLISHED_TEST" | "WITHDRAWN_TEST";
+    publication_id: string | null; version: string | null; sha256: string | null } };
 
 async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error("TEST_ONLY_CLIENT_UNAVAILABLE");
@@ -28,6 +34,22 @@ export async function loadTestLegalScope(restaurantId: string, restaurantName: s
     input_restaurant_id: restaurantId,
   });
   return exactTestLegalScope(preflight, status, restaurantId, restaurantName);
+}
+
+export async function loadTestLegalSetupReadback(scope: TestLegalScope): Promise<TestLegalSetupReadback> {
+  const result = await rpc<TestLegalSetupReadback>("get_platform_test_legal_setup_readback", {
+    input_restaurant_id: scope.restaurantId,
+  });
+  if (result?.test_only !== true || result.restaurant_id !== scope.restaurantId
+    || result.branch_id !== scope.branchId || result.test_session_id !== scope.testSessionId
+    || !Object.prototype.hasOwnProperty.call(result, "binding")
+    || !result.platform || !["NOT_FOUND", "PUBLISHED_TEST", "WITHDRAWN_TEST"].includes(result.platform.status)
+    || (result.binding && (result.binding.restaurant_id !== scope.restaurantId
+      || result.binding.branch_id !== scope.branchId
+      || result.binding.test_session_id !== scope.testSessionId))) {
+    throw new Error("TEST_LEGAL_SETUP_READBACK_CONFLICT");
+  }
+  return result;
 }
 
 export async function bindTestLegalCustomer(scope: TestLegalScope, customerId: string, requestId: string) {

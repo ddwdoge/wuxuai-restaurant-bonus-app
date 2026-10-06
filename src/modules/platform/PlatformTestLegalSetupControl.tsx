@@ -5,12 +5,13 @@ import { loadPlatformTestCollectionMfaProof, loadPlatformTestTenantCleanupPrefli
 import { totpFactorLabel } from "./platformAdminMfa.mjs";
 import { platformTestControlEnvironmentEnabled } from "./platformTestCollectionModeContract.mjs";
 import {
-  classifyTestLegalError, testLegalConfirmation, testLegalDocuments, validTestCustomerId,
+  classifyTestLegalError, nextTestLegalSetupStep, testLegalConfirmation, testLegalDocuments, validTestCustomerId,
   type TestLegalDocuments, type TestLegalScope,
 } from "./platformTestLegalSetupContract.mjs";
 import {
-  bindTestLegalCustomer, loadTestLegalScope, publishTestMerchantBundle,
+  bindTestLegalCustomer, loadTestLegalScope, loadTestLegalSetupReadback, publishTestMerchantBundle,
   publishTestPlatformTerms, readTestMerchantPublicationReceipt,
+  type TestLegalSetupReadback,
 } from "./platformTestLegalSetupService";
 import "./platform-test-legal-setup.css";
 
@@ -38,9 +39,8 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
   const [factors, setFactors] = useState<Factor[]>([]);
   const [factorId, setFactorId] = useState("");
   const [totpCode, setTotpCode] = useState("");
-  const [step, setStep] = useState<Step>("identity");
   const [customerId, setCustomerId] = useState("");
-  const [completed, setCompleted] = useState({ identity: false, platform: false, merchant: false });
+  const [readback, setReadback] = useState<TestLegalSetupReadback | null>(null);
   const [operation, setOperation] = useState<Operation | null>(null);
   const [typedConfirmation, setTypedConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -57,11 +57,12 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
     protocol: window.location.protocol,
   }), []);
   const authorized = platformRole === "platform_owner" || platformRole === "platform_admin";
+  const step = nextTestLegalSetupStep(scope, documents, readback) as Step | null;
 
   const load = useCallback(async () => {
     const request = ++generation.current;
-    setVisible(false); setPhase("loading"); setScope(null); setDocuments(null);
-    setOperation(null); setCompleted({ identity: false, platform: false, merchant: false });
+    setVisible(false); setPhase("loading"); setScope(null); setDocuments(null); setReadback(null);
+    setOperation(null);
     setError(""); setMessage(""); setLocked(false); setTotpCode("");
     if (!environmentEnabled || !authorized || !canWrite) return;
     try {
@@ -79,9 +80,13 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
       const verifiedScope = await loadTestLegalScope(restaurantId, restaurantName);
       if (request !== generation.current) return;
       if (!verifiedScope) { setPhase("error"); setError("Der Testbetrieb ist nicht exakt gebunden. Es sind keine Aktionen verfügbar."); return; }
-      setScope(verifiedScope);
-      setDocuments(await testLegalDocuments(restaurantId));
+      const currentDocuments = await testLegalDocuments(restaurantId);
+      const currentReadback = await loadTestLegalSetupReadback(verifiedScope);
       if (request !== generation.current) return;
+      setScope(verifiedScope);
+      setDocuments(currentDocuments);
+      setReadback(currentReadback);
+      setCustomerId(currentReadback.binding?.auth_user_id ?? "");
       setPhase("ready");
     } catch (failure) {
       if (request !== generation.current) return;
@@ -103,10 +108,9 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
   }
 
   function prepare() {
-    if (!scope || !documents || phase !== "ready" || busy || locked || operation
+    if (!scope || !documents || !step || phase !== "ready" || busy || locked || operation
       || (step === "identity" && !validTestCustomerId(customerId))
-      || (step === "platform" && !completed.identity)
-      || (step === "merchant" && (!completed.identity || !completed.platform || scope.merchantStatus !== "NOT_FOUND"))) return;
+      || (step === "merchant" && scope.merchantStatus !== "NOT_FOUND")) return;
     const normalizedCustomer = customerId.trim().toLowerCase();
     setOperation({ step, requestId: crypto.randomUUID(), customerId: normalizedCustomer,
       confirmation: testLegalConfirmation(step, scope, normalizedCustomer), uncertain: false });
@@ -124,6 +128,13 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
       const current = await loadTestLegalScope(restaurantId, restaurantName);
       if (!current || current.branchId !== scope.branchId || current.testSessionId !== scope.testSessionId
         || current.organizationId !== scope.organizationId) throw new Error("AT_LEGAL_TEST_SCOPE_DENIED");
+      const currentReadback = await loadTestLegalSetupReadback(current);
+      const merchantReceiptRecovery = operation.step === "merchant" && operation.uncertain
+        && current.merchantStatus !== "NOT_FOUND";
+      if ((!merchantReceiptRecovery && nextTestLegalSetupStep(current, documents, currentReadback) !== operation.step)
+        || (operation.step !== "identity" && currentReadback.binding?.auth_user_id !== operation.customerId)) {
+        throw new Error("AT_LEGAL_TEST_EXPECTED_STATE_MISMATCH");
+      }
       if (operation.step === "merchant" && current.merchantStatus !== "NOT_FOUND") {
         if (!operation.uncertain) throw new Error("AT_LEGAL_TEST_EXPECTED_STATE_MISMATCH");
         const receipt = await readTestMerchantPublicationReceipt(current, operation.requestId);
@@ -142,10 +153,8 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
             bundleHash: receipt.bundle_hash });
         }
       }
-      setCompleted(previous => ({ ...previous, [operation.step]: true }));
-      setStep(operation.step === "identity" ? "platform" : "merchant");
+      await load();
       setMessage(`${labels[operation.step]}: serverseitiger Beleg bestätigt.`);
-      setOperation(null); setTypedConfirmation(""); setTotpCode("");
     } catch (failure) {
       const detail = String((failure as { message?: string })?.message ?? "");
       setError(classifyTestLegalError(failure));
@@ -157,7 +166,7 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
   }
 
   if (!visible) return null;
-  const actionReady = phase === "ready" && scope && documents && scope.merchantStatus === "NOT_FOUND";
+  const actionReady = phase === "ready" && scope && documents && step && scope.merchantStatus === "NOT_FOUND";
   return <section className="platform-test-legal-setup" data-testid="platform-test-legal-setup" aria-busy={busy || phase === "loading"}>
     <header><span className="platform-health-badge test">TEST_ONLY</span><h3>Synthetische Rechtstexte für Staging vorbereiten</h3></header>
     <p>Nur für einen eindeutig markierten Testbetrieb. Diese Texte ersetzen keine echte Rechtsfreigabe und öffnen das reale AT-Intake nicht.</p>
@@ -176,10 +185,7 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
         <div><dt>Betriebsbundle</dt><dd>{scope.merchantStatus === "NOT_FOUND" ? "Noch nicht veröffentlicht" : `${scope.merchantStatus} · ${scope.bundleId ?? "–"}`}</dd></div>
       </dl>
       {actionReady ? <>
-        <label>Einzelschritt auswählen<select disabled={busy || Boolean(operation)} onChange={event => setStep(event.target.value as Step)} value={step}>
-          <option value="identity">1. Test-Gast binden</option><option disabled={!completed.identity} value="platform">2. Plattformbedingungen</option>
-          <option disabled={!completed.identity || !completed.platform} value="merchant">3. Betriebsbundle</option>
-        </select></label>
+        <p role="status">Nächster serverseitig belegter Schritt: {labels[step]}</p>
         {step === "identity" ? <label>Bestätigte Test-Gast-Kennung<input autoComplete="off" disabled={busy || Boolean(operation)} onChange={event => setCustomerId(event.target.value)} placeholder="00000000-0000-4000-8000-000000000000" value={customerId} /></label> : null}
         {step !== "identity" ? <details><summary>Exakte synthetische Fassung vor Bestätigung lesen</summary>
           {step === "platform" ? <article><h4>Plattformbedingungen · {documents.platform.version}</h4><p>{documents.platform.body}</p><p>Anbieterfassung: {documents.platform.providerSnapshot}</p><code>SHA-256 {documents.platform.sha256}</code></article>

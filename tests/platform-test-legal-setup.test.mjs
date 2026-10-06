@@ -4,6 +4,7 @@ import test from "node:test";
 import ts from "typescript";
 import {
   TEST_LEGAL_TEXT, TEST_LEGAL_VERSION, classifyTestLegalError, exactTestLegalScope,
+  nextTestLegalSetupStep,
   testLegalConfirmation, testLegalDocuments, validTestCustomerId,
 } from "../src/modules/platform/platformTestLegalSetupContract.mjs";
 import { platformTestControlEnvironmentEnabled } from "../src/modules/platform/platformTestCollectionModeContract.mjs";
@@ -28,6 +29,7 @@ const ui = readFileSync(new URL("../src/modules/platform/PlatformTestLegalSetupC
 const center = readFileSync(new URL("../src/modules/platform/PlatformRestaurantControlCenter.tsx", import.meta.url), "utf8");
 const m196 = readFileSync(new URL("../supabase/migrations/20261005105848_at_legal_synthetic_staging_attestation.sql", import.meta.url), "utf8");
 const m198 = readFileSync(new URL("../supabase/migrations/20261005165839_platform_customer_account_acceptance.sql", import.meta.url), "utf8");
+const m202 = readFileSync(new URL("../supabase/migrations/20261006063343_platform_test_legal_setup_readback.sql", import.meta.url), "utf8");
 function serviceWithRpc(handler) {
   const exports = {};
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS,
@@ -76,6 +78,53 @@ test("synthetic documents are exact, independently hashed and never real legal a
   assert.equal(validTestCustomerId("not-a-customer"), false);
   assert.equal(testLegalConfirmation("identity", exactTestLegalScope(preflight, status, restaurant, preflight.restaurant_name), customer),
     `TEST_ONLY:IDENTITY:${restaurant}:${customer}`);
+});
+
+test("server readback advances unbound, bound and published setup across reloads", async () => {
+  const scope = exactTestLegalScope(preflight, status, restaurant, preflight.restaurant_name);
+  const docs = await testLegalDocuments(restaurant);
+  const base = { restaurant_id: restaurant, branch_id: branch, test_session_id: session,
+    test_only: true, binding: null,
+    platform: { status: "NOT_FOUND", publication_id: null, version: null, sha256: null } };
+  assert.equal(nextTestLegalSetupStep(null, docs, base), null); // unmarked
+  assert.equal(nextTestLegalSetupStep(scope, docs, base), "identity"); // marked
+  const bound = { ...base, binding: { auth_user_id: customer, restaurant_id: restaurant,
+    branch_id: branch, test_session_id: session, request_id: owner } };
+  assert.equal(nextTestLegalSetupStep(scope, docs, bound), "platform");
+  assert.equal(nextTestLegalSetupStep(scope, docs, structuredClone(bound)), "platform"); // reload
+  assert.equal(nextTestLegalSetupStep(scope, docs, { ...bound,
+    platform: { status: "PUBLISHED_TEST", publication_id: owner,
+      version: docs.platform.version, sha256: docs.platform.sha256 } }), "merchant");
+  for (const stale of [
+    { ...bound, restaurant_id: owner }, { ...bound, branch_id: owner },
+    { ...bound, test_session_id: "foreign" },
+    { ...bound, platform: { status: "PUBLISHED_TEST", publication_id: owner,
+      version: docs.platform.version, sha256: "0".repeat(64) } },
+    { ...base, platform: { status: "PUBLISHED_TEST", publication_id: owner,
+      version: docs.platform.version, sha256: docs.platform.sha256 } },
+  ]) assert.equal(nextTestLegalSetupStep(scope, docs, stale), null);
+  assert.equal(nextTestLegalSetupStep({ ...scope, merchantStatus: "PUBLISHED_TEST" }, docs, bound), null);
+});
+
+test("read-only continuation RPC is narrowly guarded and leaves table ACLs closed", async () => {
+  assert.match(m202, /perform public\.require_at_legal_synthetic_scope_internal\(input_restaurant_id\)/);
+  assert.match(m202, /binding_count > 1/);
+  assert.match(m202, /binding\.branch_id is distinct from restaurant\.primary_branch_id/);
+  assert.match(m202, /binding\.test_session_id is distinct from marker\.test_session_id/);
+  assert.match(m202, /revoke all on function public\.get_platform_test_legal_setup_readback\(uuid\)[\s\S]*grant execute on function public\.get_platform_test_legal_setup_readback\(uuid\)\s+to authenticated/);
+  assert.doesNotMatch(m202, /grant\s+(?:select|insert|update|delete)\s+on/i);
+  const scope = exactTestLegalScope(preflight, status, restaurant, preflight.restaurant_name);
+  const service = serviceWithRpc(async (name, args) => {
+    assert.equal(name, "get_platform_test_legal_setup_readback");
+    assert.equal(args.input_restaurant_id, restaurant);
+    return { data: { restaurant_id: restaurant, branch_id: branch, test_session_id: session,
+      test_only: true, binding: null, platform: { status: "NOT_FOUND" } }, error: null };
+  });
+  assert.equal((await service.loadTestLegalSetupReadback(scope)).binding, null);
+  const foreign = serviceWithRpc(async () => ({ data: { restaurant_id: restaurant,
+    branch_id: owner, test_session_id: session, test_only: true,
+    binding: null, platform: { status: "NOT_FOUND" } }, error: null }));
+  await assert.rejects(foreign.loadTestLegalSetupReadback(scope), /READBACK_CONFLICT/);
 });
 
 test("production and unbound frontends cannot show the control", () => {

@@ -9,4 +9,5 @@ export type TestLegalDocuments = Readonly<{ platform: { version: string; body: s
 export type TestLegalArea = { status: "VERIFIED_TEST_ONLY"; version: string; source: string; body: string; sha256: string };
 export function testLegalDocuments(restaurantId: string): Promise<TestLegalDocuments>;
 export function testLegalConfirmation(step: "identity" | "platform" | "merchant", scope: TestLegalScope, customerId?: string): string;
+export function nextTestLegalSetupStep(scope: TestLegalScope | null, documents: TestLegalDocuments | null, readback: unknown): "identity" | "platform" | "merchant" | null;
 export function classifyTestLegalError(error: unknown): string;
