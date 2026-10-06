@@ -1,19 +1,21 @@
-// Local-only 24-way deduplication proof. The caller resets the task-owned DB afterward.
+// Local-only 24-way deduplication proof. The caller stops the task-owned DB afterward.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 
-const container = "supabase_db_wuxuai-phase7b4d-local";
+const databaseUrl = process.env.PRO_NOTIFICATION_LOCAL_DB_URL;
+assert.match(databaseUrl ?? "", /^postgresql:\/\/postgres:postgres@127\.0\.0\.1:\d+\/postgres$/,
+  "an explicit local, unlinked PostgreSQL URL is required");
 const id = Object.fromEntries([
-  "owner", "organization", "restaurant", "branch", "subscription", "customer", "reward",
+  "owner", "customerAuth", "account", "organization", "restaurant", "branch", "subscription", "customer", "reward",
   "grant", "grantRequest",
 ].map((key) => [key, randomUUID()]));
 const eventKey = randomUUID();
+const syntheticPhone = `+4366${BigInt(`0x${id.customer.slice(0, 12).replaceAll("-", "")}`).toString().slice(0, 10)}`;
 
 function run(sql) {
   return new Promise((resolve) => {
-    const child = spawn("docker", ["exec", "-i", container, "psql", "-X", "-qAt",
-      "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"],
+    const child = spawn("psql", ["-X", "-qAt", "-v", "ON_ERROR_STOP=1", databaseUrl],
     { stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";
     child.stdout.on("data", (chunk) => { stdout += chunk; });
@@ -28,7 +30,9 @@ const setup = `begin;
 set local session_replication_role=replica;
 insert into auth.users(id,aud,role,email,email_confirmed_at,created_at,updated_at)
 values('${id.owner}','authenticated','authenticated',
-  'pro-inbox-parallel-${id.owner}@example.invalid',now(),now(),now());
+  'pro-inbox-parallel-${id.owner}@example.invalid',now(),now(),now()),
+  ('${id.customerAuth}','authenticated','authenticated',
+  'pro-inbox-parallel-${id.customerAuth}@example.invalid',now(),now(),now());
 insert into public.organizations(id,owner_id,name,status)
 values('${id.organization}','${id.owner}','PRO INBOX PARALLEL LOCAL','active');
 insert into public.restaurants(id,owner_id,name,slug,status,organization_id,
@@ -47,7 +51,7 @@ values('${id.subscription}','${id.organization}','${id.branch}','active','active
 insert into public.platform_test_tenant_registry(restaurant_id,restaurant_name,organization_id,
   owner_user_id,test_session_id,marked_by)
 values('${id.restaurant}','PRO INBOX PARALLEL LOCAL','${id.organization}',
-  '${id.owner}','pro-inbox-parallel','${id.owner}');
+  '${id.owner}','pro-inbox-parallel-${id.restaurant.slice(0, 8)}','${id.owner}');
 insert into public.commercial_pro_access_grants(id,restaurant_id,organization_id,access_kind,
   starts_at,expires_at,reason,created_by,request_id)
 values('${id.grant}','${id.restaurant}','${id.organization}','INTERNAL_TEST_ONLY',
@@ -55,10 +59,16 @@ values('${id.grant}','${id.restaurant}','${id.organization}','INTERNAL_TEST_ONLY
   '${id.owner}','${id.grantRequest}');
 update public.business_verification_environment
 set environment='STAGING',change_ref='PRO_INBOX_PARALLEL_LOCAL' where singleton;
-insert into public.customers(id,restaurant_id,organization_id,branch_id,name,customer_code,
+insert into public.customers(id,restaurant_id,organization_id,branch_id,auth_user_id,name,customer_code,
   membership_status,is_test_customer,normalized_phone,phone)
 values('${id.customer}','${id.restaurant}','${id.organization}','${id.branch}',
-  'Synthetic Customer','PRO-INBOX-PARALLEL','active',true,'+436600000199','+436600000199');
+  '${id.customerAuth}','Synthetic Customer','PRO-${id.customer.slice(0, 8)}',
+  'active',true,'${syntheticPhone}','${syntheticPhone}');
+insert into public.customer_accounts(id,auth_user_id,email,email_confirmed_at)
+values('${id.account}','${id.customerAuth}',
+  'pro-inbox-parallel-${id.customerAuth}@example.invalid',now());
+insert into public.customer_account_memberships(account_id,restaurant_id,customer_id)
+values('${id.account}','${id.restaurant}','${id.customer}');
 insert into public.rewards(id,restaurant_id,organization_id,branch_id,title,description,
   required_points,active,is_starter_reward)
 values('${id.reward}','${id.restaurant}','${id.organization}','${id.branch}',

@@ -51,9 +51,13 @@ declare
   customer_id uuid := '75000000-0000-4000-8000-000000000004';
   organization_id_value uuid := '75000000-0000-4000-8000-000000000005';
   branch_id_value uuid := '75000000-0000-4000-8000-000000000006';
+  auth_id_value uuid := '75000000-0000-4000-8000-000000000007';
   delivery_id uuid;
   authorization_record record;
 begin
+  insert into auth.users(id, aud, role, email, email_confirmed_at)
+  values (auth_id_value, 'authenticated', 'authenticated',
+    'synthetic-pro-mail@example.invalid', now());
   insert into public.restaurants(id, owner_id, organization_id, name, slug, status)
   values (tenant, owner_id, organization_id_value,
     'Local PRO Mail Fixture', 'local-pro-mail-fixture', 'active');
@@ -64,7 +68,8 @@ begin
     customer_id, tenant, organization_id_value, branch_id_value,
     'Synthetic Customer', 'SYNTHETIC-PRO-MAIL', 'active', '+439990000001'
   );
-  insert into public.customer_accounts(id) values (account_id_value);
+  insert into public.customer_accounts(id, auth_user_id, email_confirmed_at)
+  values (account_id_value, auth_id_value, now());
   insert into public.customer_account_memberships(account_id, restaurant_id, customer_id)
   values (account_id_value, tenant, customer_id);
   insert into public.customer_account_emails(account_id, email, status, confirmed_at)
@@ -78,22 +83,45 @@ begin
   );
   insert into pg_temp.pro_notification_entitlements values (tenant, true, true);
 
-  -- Both event types were queued while PRO. A downgrade before reservation
-  -- must retain and terminally skip both rows.
+  -- No consent, BASIC, or an unrelated tenant may create a PRO offer row.
+  update public.customer_offer_email_consents
+  set status = 'PAUSED' where account_id = account_id_value;
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
+    tenant, customer_id, 'OFFER_PUBLISHED', 'local:offer:no-consent'
+  ), 'offer generation requires current channel consent');
+  update public.customer_offer_email_consents
+  set status = 'ACTIVE' where account_id = account_id_value;
+  update pg_temp.pro_notification_entitlements
+  set offer_enabled = false where restaurant_id = tenant;
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
+    tenant, customer_id, 'OFFER_PUBLISHED', 'local:offer:basic'
+  ), 'BASIC cannot generate PRO offer mail');
+  update pg_temp.pro_notification_entitlements
+  set offer_enabled = true where restaurant_id = tenant;
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
+    '75000000-0000-4000-8000-000000000099', customer_id,
+    'OFFER_PUBLISHED', 'local:offer:foreign-tenant'
+  ), 'foreign tenant cannot use the customer consent');
+
+  -- Offer email may queue with PRO and consent. Reward email cannot be
+  -- queued because it has no separate approved consent contract.
   perform pg_temp.check_case(public.enqueue_customer_transactional_email(
     tenant, customer_id, 'OFFER_PUBLISHED', 'local:offer:downgrade'
   ), 'offer queued while PRO');
-  perform pg_temp.check_case(public.enqueue_customer_transactional_email(
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
+    tenant, customer_id, 'OFFER_PUBLISHED', 'local:offer:downgrade'
+  ), 'offer event replay does not create duplicate queue row');
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
     tenant, customer_id, 'POINT_REWARD_AVAILABLE', 'local:reward:downgrade'
-  ), 'reward queued while PRO');
+  ), 'reward email blocked at generation');
   update pg_temp.pro_notification_entitlements
   set offer_enabled = false, reward_enabled = false where restaurant_id = tenant;
   perform * from public.reserve_customer_transactional_emails(20);
-  perform pg_temp.check_case((select count(*) = 2
+  perform pg_temp.check_case((select count(*) = 1
     from public.customer_transactional_email_deliveries
-    where event_key in ('local:offer:downgrade', 'local:reward:downgrade')
+    where event_key = 'local:offer:downgrade'
       and status = 'SKIPPED' and last_error_code = 'PRO_ENTITLEMENT_INACTIVE'),
-    'downgrade blocks both queued PRO event types');
+    'downgrade blocks queued offer');
 
   -- Offer consent existed at enqueue and was withdrawn before reservation.
   -- Reward has no dedicated consent contract: offer consent must never imply it.
@@ -105,9 +133,9 @@ begin
   perform pg_temp.check_case(public.enqueue_customer_transactional_email(
     tenant, customer_id, 'OFFER_PUBLISHED', 'local:offer:withdrawn'
   ), 'offer queued with active consent');
-  perform pg_temp.check_case(public.enqueue_customer_transactional_email(
+  perform pg_temp.check_case(not public.enqueue_customer_transactional_email(
     tenant, customer_id, 'POINT_REWARD_AVAILABLE', 'local:reward:withdrawn'
-  ), 'reward queued while offer consent active');
+  ), 'offer consent never queues reward mail');
   update public.customer_offer_email_consents
   set status = 'WITHDRAWN', frequency = 'NEVER', withdrawn_at = now()
   where account_id = account_id_value;
@@ -117,11 +145,10 @@ begin
     from public.customer_transactional_email_deliveries
     where event_key = 'local:offer:withdrawn'),
     'withdrawal blocks queued offer at reservation');
-  perform pg_temp.check_case((select status = 'SKIPPED'
-      and last_error_code = 'REWARD_EMAIL_CONSENT_CONTRACT_MISSING'
-    from public.customer_transactional_email_deliveries
-    where event_key = 'local:reward:withdrawn'),
-    'offer consent never authorizes queued reward mail');
+  perform pg_temp.check_case(not exists (
+    select 1 from public.customer_transactional_email_deliveries
+    where event_key = 'local:reward:withdrawn'
+  ), 'no new reward email evidence row');
 
   -- A pause after enqueue permanently invalidates this event. Reactivating
   -- consent later must not revive already queued mail.
@@ -216,10 +243,19 @@ begin
     from public.customer_transactional_email_deliveries
     where event_key like 'local:%' and status = 'SENT'),
     'no provider delivery recorded by security test');
-  perform pg_temp.check_case((select count(*) = 9
+  perform pg_temp.check_case((select count(*) = 7
     from public.customer_transactional_email_deliveries
     where event_key like 'local:%'),
     'all queue rows retained');
+
+  perform pg_temp.check_case(
+    not has_function_privilege('authenticated',
+      'public.enqueue_customer_transactional_email(uuid,uuid,text,text,uuid,uuid,jsonb,timestamptz)', 'EXECUTE')
+    and not has_function_privilege('authenticated',
+      'public.customer_transactional_email_dispatch_block_reason(uuid)', 'EXECUTE')
+    and not has_function_privilege('authenticated',
+      'public.authorize_customer_transactional_email_delivery(uuid)', 'EXECUTE'),
+    'browser role has no direct PRO queue or dispatcher function execution');
 
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   begin

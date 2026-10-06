@@ -37,7 +37,12 @@ function loadDispatcher(state) {
         select: () => chain,
         eq: () => chain,
         is: () => chain,
-        limit: async () => ({ data: [{ auth_user_id: null, first_name: "Synthetic" }], error: null }),
+        limit: async () => {
+          if (state.withdrawOnRecipientLookup) {
+            state.authorization = { authorized: false, reason_code: "OFFER_EMAIL_CONSENT_INACTIVE" };
+          }
+          return { data: [{ auth_user_id: null, first_name: "Synthetic" }], error: null };
+        },
       };
       return chain;
     },
@@ -98,13 +103,14 @@ function loadDispatcher(state) {
   return handler;
 }
 
-async function dispatch(eventType, authorization, authorizationError = false) {
+async function dispatch(eventType, authorization, authorizationError = false, withdrawOnRecipientLookup = false) {
   const state = {
     providerCalls: 0,
     rpcCalls: [],
     completions: [],
     authorization,
     authorizationError,
+    withdrawOnRecipientLookup,
     delivery: {
       delivery_id: "75000000-0000-4000-8000-000000000099",
       event_type: eventType,
@@ -146,6 +152,15 @@ test("an authorization RPC failure is fail-closed and queued for safe retry", as
   assert.equal(state.completions[0].input_success, false);
   assert.equal(state.completions[0].input_error_code, "DISPATCH_AUTHORIZATION_FAILED");
   assert.deepEqual(body, { processed: 1, sent: 0, failed: 1, provider_accepted: false });
+});
+
+test("withdrawal during recipient preparation is rechecked before the provider", async () => {
+  const { state, body } = await dispatch(
+    "OFFER_PUBLISHED", { authorized: true, reason_code: null }, false, true,
+  );
+  assert.equal(state.providerCalls, 0);
+  assert.equal(state.rpcCalls.filter(({ name }) => name === "authorize_customer_transactional_email_delivery").length, 1);
+  assert.deepEqual(body, { processed: 1, sent: 0, failed: 0, provider_accepted: false });
 });
 
 test("a currently authorized offer preserves the existing provider and completion path", async () => {

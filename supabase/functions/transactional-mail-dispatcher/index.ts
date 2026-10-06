@@ -293,34 +293,6 @@ async function deliver(
   let failed = 0;
   for (const delivery of deliveries) {
     try {
-      if (delivery.queue_kind === "customer") {
-        const { data: authorizationData, error: authorizationError } = await supabase.rpc(
-          "authorize_customer_transactional_email_delivery",
-          { input_delivery_id: delivery.delivery_id },
-        );
-        const authorization = Array.isArray(authorizationData) ? authorizationData[0] : authorizationData;
-        if (authorizationError) {
-          const errorCode = "DISPATCH_AUTHORIZATION_FAILED";
-          await supabase.rpc("complete_customer_transactional_email", {
-            input_delivery_id: delivery.delivery_id,
-            input_success: false,
-            input_provider_message_id: null,
-            input_error_code: errorCode,
-          });
-          failed += 1;
-          logDelivery("error", "transactional_mail_authorization_failed", delivery, errorCode);
-          continue;
-        }
-        if (!authorization?.authorized) {
-          logDelivery(
-            "info",
-            "transactional_mail_authorization_blocked",
-            delivery,
-            safeErrorCode(authorization?.reason_code ?? "DISPATCH_NOT_AUTHORIZED"),
-          );
-          continue;
-        }
-      }
       const recipient = delivery.queue_kind === "customer"
         ? await resolveRecipientContext(supabase, delivery.email)
         : { firstName: null, language: String(delivery.payload?.language ?? "de") };
@@ -350,6 +322,36 @@ async function deliver(
       const fromEmail = delivery.sender_email ?? smtpFromEmail;
       const replyToEmail = delivery.reply_to_email ?? smtpReplyTo;
       const messageIdDomain = fromEmail.split("@")[1] || "wuxuaisbi.com";
+      // Keep the revocation/entitlement check adjacent to the irreversible
+      // provider call; rendering and recipient lookup may take time.
+      if (delivery.queue_kind === "customer") {
+        const { data: authorizationData, error: authorizationError } = await supabase.rpc(
+          "authorize_customer_transactional_email_delivery",
+          { input_delivery_id: delivery.delivery_id },
+        );
+        const authorization = Array.isArray(authorizationData) ? authorizationData[0] : authorizationData;
+        if (authorizationError) {
+          const errorCode = "DISPATCH_AUTHORIZATION_FAILED";
+          await supabase.rpc("complete_customer_transactional_email", {
+            input_delivery_id: delivery.delivery_id,
+            input_success: false,
+            input_provider_message_id: null,
+            input_error_code: errorCode,
+          });
+          failed += 1;
+          logDelivery("error", "transactional_mail_authorization_failed", delivery, errorCode);
+          continue;
+        }
+        if (!authorization?.authorized) {
+          logDelivery(
+            "info",
+            "transactional_mail_authorization_blocked",
+            delivery,
+            safeErrorCode(authorization?.reason_code ?? "DISPATCH_NOT_AUTHORIZED"),
+          );
+          continue;
+        }
+      }
       const result = await transporter.sendMail({
         from: { name: smtpFromName, address: fromEmail },
         replyTo: replyToEmail,

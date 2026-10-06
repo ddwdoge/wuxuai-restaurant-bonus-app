@@ -40,11 +40,11 @@ test("dispatcher performs the final service-only authorization immediately befor
   assert.doesNotMatch(migration, /grant execute on function public\.authorize_customer_transactional_email_delivery\(uuid\)[\s\S]*to (anon|authenticated)/);
 
   const authorizationIndex = dispatcher.indexOf('"authorize_customer_transactional_email_delivery"');
-  const recipientIndex = dispatcher.indexOf("resolveRecipientContext", authorizationIndex);
+  const recipientIndex = dispatcher.indexOf("resolveRecipientContext");
   const sendIndex = dispatcher.indexOf("transporter.sendMail", authorizationIndex);
   assert.ok(authorizationIndex >= 0);
-  assert.ok(recipientIndex > authorizationIndex);
-  assert.ok(sendIndex > recipientIndex);
+  assert.ok(authorizationIndex > recipientIndex);
+  assert.ok(sendIndex > authorizationIndex);
   assert.match(dispatcher, /if \(!authorization\?\.authorized\)[\s\S]*continue;/);
   assert.match(dispatcher, /DISPATCH_AUTHORIZATION_FAILED/);
   assert.match(dispatcher, /typeof error === "string"/);

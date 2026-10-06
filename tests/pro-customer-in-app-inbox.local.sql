@@ -220,5 +220,28 @@ begin
 end $test$;
 reset role;
 
+-- A disabled central identity hides retained rows and stops further creation.
+update public.customer_accounts set disabled_at=now()
+where id=pg_temp.u('inbox-account');
+select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.u('inbox-customer'),
+  'role','authenticated')::text,true) as ignored \gset
+set local role authenticated;
+do $test$
+declare inbox jsonb;
+begin
+  inbox:=public.get_customer_pro_in_app_inbox('pro-inbox-local','synthetic-inbox-token');
+  if inbox->>'available'<>'false' or jsonb_array_length(inbox->'items')<>0 then
+    raise exception 'DISABLED_IDENTITY_INBOX_VISIBLE: %',inbox;
+  end if;
+end $test$;
+reset role;
+do $test$ begin
+  if public.enqueue_customer_pro_in_app_notification_internal(
+    pg_temp.u('inbox-restaurant'),pg_temp.u('inbox-customer-row'),
+    'OFFER_PUBLISHED','disabled-identity',pg_temp.u('inbox-offer'),null,now()) then
+    raise exception 'DISABLED_IDENTITY_EVENT_CREATED';
+  end if;
+end $test$;
+
 rollback;
 select 'PRO_CUSTOMER_IN_APP_INBOX_PASS';
