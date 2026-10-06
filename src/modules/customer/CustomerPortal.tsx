@@ -171,6 +171,12 @@ type RedemptionOutcome = {
 };
 
 type ActiveRedemptionCode = ScopedActiveRedemption;
+type ProInboxState = {
+  contextKey: string;
+  status: "loading" | "ready" | "error";
+  data: ProInAppInbox | null;
+  errorKind?: "load" | "mark";
+};
 
 function clampPercent(value: number) {
   return Math.min(100, Math.max(0, value));
@@ -320,9 +326,11 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   const [pointsQrLoading, setPointsQrLoading] = useState(false);
   const [restaurantOffers, setRestaurantOffers] = useState<RestaurantOffer[]>([]);
   const [selectedRestaurantOffer, setSelectedRestaurantOffer] = useState<RestaurantOffer | null>(null);
-  const [proInbox, setProInbox] = useState<ProInAppInbox | null>(null);
+  const [proInboxState, setProInboxState] = useState<ProInboxState | null>(null);
   const [proInboxOpen, setProInboxOpen] = useState(false);
-  const [proInboxError, setProInboxError] = useState<string | null>(null);
+  const [proInboxMarkPending, setProInboxMarkPending] = useState<string | null>(null);
+  const proInboxRequestRef = useRef(0);
+  const proInboxMarkRef = useRef<{ contextKey: string; notificationId: string } | null>(null);
   const collectionInFlightRef = useRef(false);
   const dailyPinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const redemptionInFlightRef = useRef(false);
@@ -336,6 +344,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
     : storedCustomerToken
       ? "stored"
       : "none";
+  const proInboxContextKey = JSON.stringify([restaurantSlug, activeToken, user?.id, customer?.customer_code, refreshToken]);
+  const visibleProInboxState = proInboxState?.contextKey === proInboxContextKey ? proInboxState : null;
+  const proInbox = visibleProInboxState?.status === "ready" ? visibleProInboxState.data : null;
   const portalUrl = `${window.location.origin}/customer/${restaurantSlug}${activeToken ? `?token=${encodeURIComponent(activeToken)}` : ""}`;
   const legalCenter = legalCenterState.status === "ready" ? legalCenterState.data : null;
 
@@ -353,6 +364,19 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       setLegalCenterState({ status: "error", message: "Die rechtlichen Informationen dieses Restaurants konnten gerade nicht geladen werden. Bitte versuche es erneut." });
     }
   }, [activeToken, restaurantSlug]);
+  const reloadProInbox = useCallback(async (contextKey: string, slug: string, token: string, isCancelled: () => boolean = () => false) => {
+    const request = ++proInboxRequestRef.current;
+    setProInboxState({ contextKey, status: "loading", data: null });
+    setProInboxOpen(false);
+    try {
+      const data = await loadProInAppInbox(slug, token);
+      if (isCancelled() || request !== proInboxRequestRef.current) return;
+      setProInboxState({ contextKey, status: "ready", data });
+    } catch {
+      if (isCancelled() || request !== proInboxRequestRef.current) return;
+      setProInboxState({ contextKey, status: "error", data: null, errorKind: "load" });
+    }
+  }, []);
   useEffect(() => {
     if (!restaurantSlug || !activeToken || !customer) return;
     const persisted = saveStoredCustomerToken(restaurantSlug, {
@@ -373,9 +397,10 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
   useEffect(() => {
     let cancelled = false;
-    setProInbox(null);
+    proInboxRequestRef.current += 1;
+    setProInboxState(null);
     setProInboxOpen(false);
-    setProInboxError(null);
+    setProInboxMarkPending(null);
 
     if (!isUsableRestaurantSlug(restaurantSlug)) {
       setRestaurant(null);
@@ -432,18 +457,18 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
       }
       if (!cancelled) await reloadLegalCenter();
       if (data.customer && activeToken && restaurantSlug) {
+        const contextKey = JSON.stringify([restaurantSlug, activeToken, user?.id, data.customer.customer_code, refreshToken]);
+        void reloadProInbox(contextKey, restaurantSlug, activeToken, () => cancelled);
         try {
-          const [retentionData, identityData, inviteStatus, inboxData] = await Promise.all([
+          const [retentionData, identityData, inviteStatus] = await Promise.all([
             loadCustomerRetentionStatus(restaurantSlug, activeToken),
             loadCustomerIdentitySummary(restaurantSlug, activeToken),
             loadCustomerReferralInviteStatus(restaurantSlug, activeToken).catch(() => null),
-            loadProInAppInbox(restaurantSlug, activeToken).catch(() => null),
           ]);
           if (!cancelled) {
             setRetention(retentionData);
             setIdentitySummary(identityData);
             setReferralInviteStatus(inviteStatus);
-            setProInbox(inboxData);
           }
         } catch (retentionError) {
           if (!cancelled) {
@@ -451,14 +476,13 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
             setRetention(null);
             setIdentitySummary(null);
             setReferralInviteStatus(null);
-            setProInbox(null);
           }
         }
       } else if (!cancelled) {
         setRetention(null);
         setIdentitySummary(null);
         setReferralInviteStatus(null);
-        setProInbox(null);
+        setProInboxState(null);
       }
     }
 
@@ -474,6 +498,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
         setRetention(null);
         setIdentitySummary(null);
         setReferralInviteStatus(null);
+        setProInboxState(null);
         setLegalCenterState({ status: "error", message: "Rechtliche Informationen konnten gerade nicht geladen werden." });
         setActiveRedemptionCode(null);
         setRedeemOffer(null);
@@ -502,8 +527,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
 
     return () => {
       cancelled = true;
+      proInboxRequestRef.current += 1;
     };
-  }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken]);
+  }, [activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, reloadProInbox, restaurantSlug, storedCustomerToken, user?.id]);
 
   useEffect(() => {
     if (!isUsableRestaurantSlug(restaurantSlug)) {
@@ -530,12 +556,25 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
   }
 
   async function markInboxItemRead(notificationId: string) {
-    if (!activeToken) return;
-    setProInboxError(null);
+    if (!activeToken || proInbox?.available !== true || proInboxMarkRef.current?.contextKey === proInboxContextKey) return;
+    proInboxMarkRef.current = { contextKey: proInboxContextKey, notificationId };
+    const request = proInboxRequestRef.current;
+    const contextKey = proInboxContextKey;
+    setProInboxMarkPending(notificationId);
     try {
-      setProInbox(await markProInAppNotificationRead(restaurantSlug, activeToken, notificationId));
+      const data = await markProInAppNotificationRead(restaurantSlug, activeToken, notificationId);
+      if (request !== proInboxRequestRef.current) return;
+      setProInboxState({ contextKey, status: "ready", data });
+      if (data.available !== true) setProInboxOpen(false);
     } catch {
-      setProInboxError(ct("inboxReadError"));
+      if (request !== proInboxRequestRef.current) return;
+      setProInboxState({ contextKey, status: "error", data: null, errorKind: "mark" });
+      setProInboxOpen(false);
+    } finally {
+      if (proInboxMarkRef.current?.contextKey === contextKey && proInboxMarkRef.current.notificationId === notificationId) {
+        proInboxMarkRef.current = null;
+      }
+      if (request === proInboxRequestRef.current) setProInboxMarkPending(null);
     }
   }
 
@@ -1571,7 +1610,18 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
           open={restaurantSwitcherOpen}
         />
 
-        {customer && proInbox?.available ? (
+        {customer && activeToken && visibleProInboxState?.status === "loading" ? (
+          <p className="customer-pro-inbox-state" role="status">{ct("inboxLoading")}</p>
+        ) : null}
+
+        {customer && activeToken && visibleProInboxState?.status === "error" ? (
+          <div className="customer-pro-inbox-state customer-pro-inbox-error" role="alert">
+            <span>{ct(visibleProInboxState.errorKind === "mark" ? "inboxReadError" : "inboxLoadError")}</span>
+            <button onClick={() => void reloadProInbox(proInboxContextKey, restaurantSlug, activeToken)} type="button">{ct("inboxRetry")}</button>
+          </div>
+        ) : null}
+
+        {customer && proInbox?.available === true ? (
           <button
             aria-label={ct("inboxOpen", { count: proInbox.unread_count })}
             className="customer-pro-inbox-trigger"
@@ -1587,7 +1637,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
         <AppDrawer
           closeLabel={ct("close")}
           onClose={() => setProInboxOpen(false)}
-          open={proInboxOpen && Boolean(proInbox?.available)}
+          open={proInboxOpen && proInbox?.available === true}
           title={ct("inboxTitle")}
         >
           <div className="customer-pro-inbox-list">
@@ -1603,11 +1653,15 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
                   }).format(new Date(item.created_at))}</time>
                 </div>
                 {!item.read_at ? (
-                  <button onClick={() => void markInboxItemRead(item.id)} type="button">{ct("inboxMarkRead")}</button>
+                  <button
+                    aria-busy={proInboxMarkPending === item.id}
+                    disabled={proInboxMarkPending !== null}
+                    onClick={() => void markInboxItemRead(item.id)}
+                    type="button"
+                  >{ct(proInboxMarkPending === item.id ? "inboxMarking" : "inboxMarkRead")}</button>
                 ) : <span className="customer-pro-inbox-read">{ct("inboxRead")}</span>}
               </article>
             )) : <p className="muted">{ct("inboxEmpty")}</p>}
-            {proInboxError ? <p className="status-message error" role="alert">{proInboxError}</p> : null}
           </div>
         </AppDrawer>
 

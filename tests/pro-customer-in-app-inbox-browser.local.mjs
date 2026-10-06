@@ -4,23 +4,28 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { execFileSync, spawn } from "node:child_process";
 import { chromium, webkit } from "/Users/dongdongwu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs";
+import { CUSTOMER_PRESENTATION_MESSAGES } from "../src/shared/i18n/customerPresentationMessages.mjs";
 
 const cwd = new URL("../", import.meta.url).pathname;
-const status = JSON.parse(execFileSync("./node_modules/.bin/supabase", ["status", "--output", "json"], {
+const localWorkdir = process.env.PRO_INBOX_LOCAL_WORKDIR;
+assert.ok(localWorkdir?.startsWith("/private/tmp/wuxuai-pro-inbox-"));
+const status = JSON.parse(execFileSync("./node_modules/.bin/supabase", ["status", "--workdir", localWorkdir, "--output", "json"], {
   cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
 }));
 assert.equal(status.API_URL, "http://127.0.0.1:56121");
-const container = "supabase_db_wuxuai-phase7b4d-local";
-const sql = (query) => execFileSync("docker", ["exec", "-i", container, "psql", "-X", "-qAt",
-  "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], {
+const sql = (query) => execFileSync("psql", ["postgresql://postgres:postgres@127.0.0.1:56122/postgres", "-X", "-qAt",
+  "-v", "ON_ERROR_STOP=1"], {
   input: query, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"],
 }).trim();
 const origin = "http://127.0.0.1:4186";
 const email = `pro-inbox-${randomUUID()}@example.invalid`;
 const password = randomUUID() + randomUUID();
 const rawToken = randomBytes(32).toString("hex");
+const otherEmail = `pro-inbox-other-${randomUUID()}@example.invalid`;
+const otherPassword = randomUUID() + randomUUID();
+const otherToken = randomBytes(32).toString("hex");
 const ids = Object.fromEntries(["owner", "organization", "restaurant", "branch", "customer", "account",
-  "grant", "offer", "reward", "points", "request"].map((key) => [key, randomUUID()]));
+  "otherCustomer", "otherAccount", "grant", "expiredGrant", "offer", "reward", "points", "request", "expiredRequest", "deletedOffer", "deletedReward"].map((key) => [key, randomUUID()]));
 const slug = `pro-inbox-${ids.restaurant.slice(0, 8)}`;
 const adminHeaders = { apikey: status.SERVICE_ROLE_KEY,
   authorization: `Bearer ${status.SERVICE_ROLE_KEY}`, "content-type": "application/json" };
@@ -32,6 +37,14 @@ assert.equal(created.status, 200, "LOCAL_CUSTOMER_CREATE_FAILED");
 const createdBody = await created.json();
 const userId = createdBody.id ?? createdBody.user?.id;
 assert.match(String(userId), /^[0-9a-f-]{36}$/);
+const otherCreated = await fetch(`${status.API_URL}/auth/v1/admin/users`, {
+  method: "POST", headers: adminHeaders,
+  body: JSON.stringify({ email: otherEmail, password: otherPassword, email_confirm: true }),
+});
+assert.equal(otherCreated.status, 200, "LOCAL_OTHER_CUSTOMER_CREATE_FAILED");
+const otherCreatedBody = await otherCreated.json();
+const otherUserId = otherCreatedBody.id ?? otherCreatedBody.user?.id;
+assert.match(String(otherUserId), /^[0-9a-f-]{36}$/);
 const previousEnvironment = sql("select environment from public.business_verification_environment where singleton");
 
 sql(`begin;
@@ -56,6 +69,9 @@ values('${ids.restaurant}','PRO INBOX BROWSER LOCAL','${ids.organization}','${id
 insert into public.commercial_pro_access_grants(id,restaurant_id,organization_id,access_kind,starts_at,expires_at,reason,created_by,request_id)
 values('${ids.grant}','${ids.restaurant}','${ids.organization}','INTERNAL_TEST_ONLY',now()-interval '1 hour',now()+interval '1 day',
   'Synthetic local browser proof','${ids.owner}','${ids.request}');
+insert into public.commercial_pro_access_grants(id,restaurant_id,organization_id,access_kind,starts_at,expires_at,reason,created_by,request_id)
+values('${ids.expiredGrant}','${ids.restaurant}','${ids.organization}','INTERNAL_TEST_ONLY',now()-interval '2 days',now()-interval '1 day',
+  'Synthetic expired access proof','${ids.owner}','${ids.expiredRequest}');
 update public.business_verification_environment set environment='STAGING',change_ref='PRO_INBOX_BROWSER_LOCAL' where singleton;
 insert into public.customers(id,restaurant_id,organization_id,branch_id,auth_user_id,name,customer_code,membership_status,is_test_customer,normalized_phone,phone,points_balance)
 values('${ids.customer}','${ids.restaurant}','${ids.organization}','${ids.branch}','${userId}','Synthetic Customer','INBOX-BROWSER','active',true,
@@ -74,7 +90,19 @@ commit;
 update public.restaurant_offers set status='PUBLISHED',is_active=true,publication_version=1,published_at=now() where id='${ids.offer}';
 insert into public.points_transactions(id,restaurant_id,organization_id,branch_id,customer_id,type,points,reason,amount_cents,collection_source,idempotency_key,created_at)
 values('${ids.points}','${ids.restaurant}','${ids.organization}','${ids.branch}','${ids.customer}','earn',10,'Synthetic threshold',1000,
-  'customer_initiated','${ids.request}',statement_timestamp());`);
+  'customer_initiated','${ids.request}',statement_timestamp());
+begin;
+set local session_replication_role=replica;
+insert into public.customers(id,restaurant_id,organization_id,branch_id,auth_user_id,name,customer_code,membership_status,is_test_customer,normalized_phone,phone,points_balance)
+values('${ids.otherCustomer}','${ids.restaurant}','${ids.organization}','${ids.branch}','${otherUserId}','Other Synthetic Customer','INBOX-OTHER','active',true,
+  '+436600000202','+436600000202',0);
+insert into public.customer_accounts(id,auth_user_id,email,first_name,email_confirmed_at)
+values('${ids.otherAccount}','${otherUserId}','${otherEmail}','Other',now());
+insert into public.customer_account_memberships(account_id,restaurant_id,customer_id)
+values('${ids.otherAccount}','${ids.restaurant}','${ids.otherCustomer}');
+insert into public.customer_qr_tokens(restaurant_id,customer_id,organization_id,branch_id,token_hash,active)
+values('${ids.restaurant}','${ids.otherCustomer}','${ids.organization}','${ids.branch}',public.hash_public_token('${otherToken}'),true);
+commit;`);
 
 assert.equal(sql(`select count(*) from public.customer_pro_in_app_notifications where restaurant_id='${ids.restaurant}'`), "2");
 assert.equal(sql(`select count(*) from public.customer_pro_in_app_notifications where restaurant_id='${ids.restaurant}' and read_at is null`), "2");
@@ -117,9 +145,11 @@ try {
       const { saveStoredCustomerToken } = await import("/src/modules/customer/customerTokenStorage.ts");
       saveStoredCustomerToken(restaurantSlug, { customer_token: customerToken, device_id: null });
     }, { restaurantSlug: slug, customerToken: rawToken });
+    await page.evaluate(() => localStorage.setItem("wuxuai.ui-language", "de"));
     await page.goto(`${origin}/customer/${slug}`, { waitUntil: "domcontentloaded" });
     const trigger = page.locator(".customer-pro-inbox-trigger");
-    await trigger.waitFor({ timeout: 15000 });
+    try { await trigger.waitFor({ timeout: 30000 }); }
+    catch (error) { console.error("INBOX_START_DIAGNOSTIC", engineName, new URL(page.url()).pathname, (await page.locator("body").innerText()).slice(0, 700)); throw error; }
     assert.match(await trigger.getAttribute("aria-label"), /2/);
     await trigger.click();
     const dialog = page.getByRole("dialog");
@@ -139,6 +169,154 @@ try {
     assert.equal(await trigger.count(), 0, `${engineName} downgrade visibility`);
     assert.equal(await page.locator(".customer-pro-inbox-list").count(), 0, `${engineName} downgrade drawer`);
     sql(`update public.commercial_pro_access_grants set revoked_at=null,revoked_by=null,revoke_reason=null where id='${ids.grant}'`);
+    const inboxRpc = "**/rest/v1/rpc/get_customer_pro_in_app_inbox";
+    const markRpc = "**/rest/v1/rpc/mark_customer_pro_in_app_notification_read";
+    let emptyRequests = 0;
+    await context.route(inboxRpc, (route) => { emptyRequests += 1; return route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ available: true, legal_mode: "SYNTHETIC_TEST_ONLY_ONLY", unread_count: 0, items: [] }) }); });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await dialog.waitFor();
+    try { await dialog.getByText(CUSTOMER_PRESENTATION_MESSAGES.de["customer.presentation.inboxEmpty"]).waitFor({ timeout: 5000 }); }
+    catch (error) { console.error("EMPTY_INBOX_DIAGNOSTIC", engineName, emptyRequests, (await dialog.innerText()).slice(0, 500)); throw error; }
+    await page.keyboard.press("Escape");
+    await context.unroute(inboxRpc);
+    checks += 3;
+
+    let inboxRequests = 0;
+    let retryAllowed = false;
+    await context.route(inboxRpc, (route) => {
+      inboxRequests += 1;
+      if (!retryAllowed) return route.fulfill({ status: 503, contentType: "application/json", body: '{"message":"synthetic temporary failure"}' });
+      return route.continue();
+    });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    const loadError = page.locator(".customer-pro-inbox-error");
+    await loadError.waitFor({ timeout: 15000 });
+    assert.equal(await trigger.count(), 0, `${engineName} unknown PRO status must not unlock inbox`);
+    retryAllowed = true;
+    await loadError.getByRole("button", { name: CUSTOMER_PRESENTATION_MESSAGES.de["customer.presentation.inboxRetry"] }).click();
+    await trigger.waitFor({ timeout: 15000 });
+    assert.ok(inboxRequests >= 2);
+    await context.unroute(inboxRpc);
+    checks += 3;
+
+    await context.route(inboxRpc, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await route.continue();
+    });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.locator(".customer-pro-inbox-state[role=status]").waitFor({ timeout: 15000 });
+    assert.equal(await page.locator(".customer-pro-inbox-state[role=status]").innerText(), CUSTOMER_PRESENTATION_MESSAGES.de["customer.presentation.inboxLoading"]);
+    assert.equal(await trigger.count(), 0);
+    await trigger.waitFor({ timeout: 15000 });
+    await context.unroute(inboxRpc);
+    checks += 2;
+
+    let markRequests = 0;
+    await context.route(markRpc, async (route) => {
+      markRequests += 1;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await route.fulfill({ status: 503, contentType: "application/json", body: '{"message":"synthetic mark failure"}' });
+    });
+    await trigger.click();
+    await dialog.waitFor();
+    await dialog.locator(".customer-pro-inbox-list article.is-unread button").first().evaluate((button) => {
+      button.click(); button.click();
+    });
+    await loadError.waitFor({ timeout: 15000 });
+    assert.equal(markRequests, 1, `${engineName} double mark request`);
+    assert.equal(sql(`select count(*) from public.customer_pro_in_app_notifications where restaurant_id='${ids.restaurant}' and read_at is not null`), "1");
+    await context.unroute(markRpc);
+    await loadError.getByRole("button").click();
+    await trigger.waitFor({ timeout: 15000 });
+    assert.match(await trigger.getAttribute("aria-label"), /1/);
+    checks += 4;
+
+    for (const language of ["de", "en", "fr", "it", "es", "zh", "ko"]) {
+      await page.evaluate((value) => localStorage.setItem("wuxuai.ui-language", value), language);
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await trigger.waitFor({ timeout: 15000 });
+      assert.equal(await trigger.locator("span").innerText(), CUSTOMER_PRESENTATION_MESSAGES[language]["customer.presentation.inboxTitle"]);
+      for (const width of [320, 390, 430]) {
+        await page.setViewportSize({ width, height: 844 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${engineName}/${language}/${width}`);
+      }
+      checks += 4;
+    }
+    await page.evaluate(() => localStorage.setItem("wuxuai.ui-language", "de"));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+
+    sql(`update public.commercial_pro_access_grants set revoked_at=now(),revoked_by='${ids.owner}',revoke_reason='Synthetic expired-only access check' where id='${ids.grant}'`);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.locator("#customer-home-title").waitFor({ timeout: 15000 });
+    assert.equal(await trigger.count(), 0, `${engineName} expired-only PRO access visibility`);
+    sql(`update public.commercial_pro_access_grants set revoked_at=null,revoked_by=null,revoke_reason=null where id='${ids.grant}'`);
+    checks += 1;
+
+    sql(`update public.restaurant_offers set status='DISABLED',is_active=false where id='${ids.offer}';
+      update public.rewards set active=false where id='${ids.reward}'`);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+    await trigger.click();
+    await dialog.waitFor();
+    assert.ok(await dialog.getByText("Synthetic Offer").count() >= 1);
+    assert.ok(await dialog.getByText("Synthetic Reward").count() >= 1);
+    await page.keyboard.press("Escape");
+    await context.route(inboxRpc, (route) => route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ available: true, legal_mode: "SYNTHETIC_TEST_ONLY_ONLY", unread_count: 2, items: [
+        { id: ids.deletedOffer, event_type: "OFFER_PUBLISHED", title: "Neues Angebot", created_at: new Date().toISOString(), read_at: null },
+        { id: ids.deletedReward, event_type: "POINT_REWARD_AVAILABLE", title: "Belohnung erreicht", created_at: new Date().toISOString(), read_at: null },
+      ] }) }));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+    await trigger.click();
+    await dialog.waitFor();
+    assert.ok(await dialog.getByText("Neues Angebot", { exact: true }).count() >= 1);
+    assert.ok(await dialog.getByText("Belohnung erreicht", { exact: true }).count() >= 1);
+    await page.keyboard.press("Escape");
+    await context.unroute(inboxRpc);
+    checks += 4;
+
+    await page.goto(`${origin}/customer/${slug}?token=${rawToken}`, { waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+    let releaseStale;
+    const staleGate = new Promise((resolve) => { releaseStale = resolve; });
+    await context.route(inboxRpc, async (route) => { await staleGate; await route.continue(); });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.goto(`${origin}/customer/unknown-${ids.restaurant.slice(0, 8)}`, { waitUntil: "domcontentloaded" });
+    releaseStale();
+    assert.equal(await trigger.count(), 0, `${engineName} tenant switch stale response`);
+    await context.unroute(inboxRpc);
+    checks += 1;
+
+    await page.evaluate(async ({ emailValue, passwordValue, restaurantSlug, customerToken }) => {
+      const { supabase } = await import("/src/shared/lib/supabase.ts");
+      const { saveStoredCustomerToken } = await import("/src/modules/customer/customerTokenStorage.ts");
+      await supabase.auth.signOut();
+      const result = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
+      if (result.error) throw result.error;
+      saveStoredCustomerToken(restaurantSlug, { customer_token: customerToken, device_id: null });
+    }, { emailValue: otherEmail, passwordValue: otherPassword, restaurantSlug: slug, customerToken: otherToken });
+    await page.goto(`${origin}/customer/${slug}`, { waitUntil: "domcontentloaded" });
+    await trigger.waitFor({ timeout: 15000 });
+    assert.match(await trigger.getAttribute("aria-label"), /0/);
+    await trigger.click();
+    await dialog.waitFor();
+    await dialog.getByText(CUSTOMER_PRESENTATION_MESSAGES.de["customer.presentation.inboxEmpty"]).waitFor();
+    const crossIdentity = await page.evaluate(async ({ restaurantSlug, customerToken }) => {
+      const { supabase } = await import("/src/shared/lib/supabase.ts");
+      const result = await supabase.rpc("get_customer_pro_in_app_inbox", {
+        input_restaurant_slug: restaurantSlug, input_customer_token: customerToken,
+      });
+      return result.error?.message ?? null;
+    }, { restaurantSlug: slug, customerToken: rawToken });
+    assert.equal(crossIdentity, "PRO_IN_APP_CUSTOMER_ROLE_DENIED");
+    checks += 3;
+
     await context.close();
     checks += 8;
   }
@@ -168,7 +346,7 @@ try {
   delete from public.rewards where restaurant_id='${ids.restaurant}';
   delete from public.customer_qr_tokens where restaurant_id='${ids.restaurant}';
   delete from public.customer_account_memberships where restaurant_id='${ids.restaurant}';
-  delete from public.customer_accounts where id='${ids.account}';
+  delete from public.customer_accounts where id in ('${ids.account}','${ids.otherAccount}');
   delete from public.customers where restaurant_id='${ids.restaurant}';
   delete from public.commercial_pro_access_grants where restaurant_id='${ids.restaurant}';
   delete from public.platform_test_tenant_registry where restaurant_id='${ids.restaurant}';
@@ -182,4 +360,5 @@ try {
   update public.business_verification_environment set environment='${previousEnvironment}',change_ref='PRO_INBOX_BROWSER_LOCAL_CLEANUP' where singleton;
   commit;`);
   await fetch(`${status.API_URL}/auth/v1/admin/users/${userId}`, { method: "DELETE", headers: adminHeaders });
+  await fetch(`${status.API_URL}/auth/v1/admin/users/${otherUserId}`, { method: "DELETE", headers: adminHeaders });
 }

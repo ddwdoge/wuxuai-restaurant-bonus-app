@@ -60,6 +60,14 @@ test("customer UI exposes a localized inbox only when the server marks it availa
   assert.match(portal, /customer && proInbox\?\.available/);
   assert.match(portal, /proInbox\.unread_count/);
   assert.match(portal, /markProInAppNotificationRead/);
+  assert.doesNotMatch(portal, /loadProInAppInbox\([^)]*\)\.catch\(\(\) => null\)/);
+  assert.match(portal, /proInboxState\?\.contextKey === proInboxContextKey/);
+  assert.match(portal, /proInboxRequestRef\.current/);
+  assert.match(portal, /proInboxMarkRef\.current/);
+  assert.match(portal, /disabled=\{proInboxMarkPending !== null\}/);
+  assert.match(portal, /inboxLoading/);
+  assert.match(portal, /inboxLoadError/);
+  assert.match(portal, /inboxRetry/);
   assert.match(service, /get_customer_pro_in_app_inbox/);
   assert.match(service, /mark_customer_pro_in_app_notification_read/);
   assert.match(styles, /\.customer-pro-inbox-trigger[\s\S]*min-height: 44px/);
@@ -68,7 +76,7 @@ test("customer UI exposes a localized inbox only when the server marks it availa
 
 test("all seven customer languages contain complete inbox copy", () => {
   const languages = ["de", "en", "fr", "it", "es", "zh", "ko"];
-  const keys = ["inboxTitle", "inboxOpen", "inboxUnread", "inboxOffer", "inboxReward", "inboxMarkRead", "inboxRead", "inboxEmpty", "inboxReadError"];
+  const keys = ["inboxTitle", "inboxOpen", "inboxUnread", "inboxOffer", "inboxReward", "inboxMarkRead", "inboxRead", "inboxEmpty", "inboxReadError", "inboxLoading", "inboxLoadError", "inboxRetry", "inboxMarking"];
   for (const language of languages) {
     for (const key of keys) {
       const value = CUSTOMER_PRESENTATION_MESSAGES[language][`customer.presentation.${key}`];

@@ -51,6 +51,7 @@ test("Alle ansehen und bestehender Detail-/Einlöseflow bleiben erhalten", () =>
 
 test("Restaurantwechsel ersetzt den Portal-State statt Kataloge zu vermischen", () => {
   assert.match(portal, /setRewards\(\[\]\)/);
-  assert.match(portal, /\}, \[activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, restaurantSlug, storedCustomerToken\]\)/);
+  assert.match(portal, /\}, \[activeToken, activeTokenSource, customerToken, refreshToken, reloadLegalCenter, reloadProInbox, restaurantSlug, storedCustomerToken, user\?\.id\]\)/);
+  assert.match(portal, /proInboxState\?\.contextKey === proInboxContextKey/);
   assert.doesNotMatch(portal, /setRewards\(\(current\) => \[\.\.\.current, \.\.\.data\.offers\]\)/);
 });

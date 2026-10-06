@@ -265,6 +265,22 @@
   padding: 2px 7px;
 }
 
+.customer-pro-inbox-state {
+  background: var(--premium-surface-elevated);
+  border: 1px solid var(--premium-border);
+  border-radius: 14px;
+  color: var(--premium-text);
+  justify-self: stretch;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 12px;
+}
+.customer-pro-inbox-error { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.customer-pro-inbox-error button,
+.customer-pro-inbox-list article > button { min-height: 44px; }
+.customer-pro-inbox-error button { background: var(--premium-surface); border: 1px solid var(--premium-border); border-radius: 10px; color: var(--premium-text); padding: 8px 12px; }
+.customer-pro-inbox-error button:focus-visible { outline: 3px solid var(--premium-primary); outline-offset: 2px; }
+
 .customer-pro-inbox-list { display: grid; gap: 10px; }
 .customer-pro-inbox-list article {
   align-items: center;

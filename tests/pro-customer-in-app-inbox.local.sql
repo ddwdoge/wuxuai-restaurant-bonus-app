@@ -195,5 +195,30 @@ begin
   end if;
 end $test$;
 
+-- Deleted sources leave the historical event safe to read with generic copy.
+set local session_replication_role = replica;
+update public.customer_pro_in_app_notifications set offer_id=null
+where restaurant_id=pg_temp.u('inbox-restaurant') and event_type='OFFER_PUBLISHED';
+update public.customer_pro_in_app_notifications set reward_id=null
+where restaurant_id=pg_temp.u('inbox-restaurant') and event_type='POINT_REWARD_AVAILABLE';
+set local session_replication_role = origin;
+update pro_inbox_entitlements set offer_enabled=true,reward_enabled=true;
+select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.u('inbox-customer'),
+  'role','authenticated')::text,true) as ignored \gset
+set local role authenticated;
+do $test$
+declare inbox jsonb;
+begin
+  inbox:=public.get_customer_pro_in_app_inbox('pro-inbox-local','synthetic-inbox-token');
+  if inbox->>'available' <> 'true'
+    or not exists(select 1 from jsonb_array_elements(inbox->'items') item
+      where item->>'event_type'='OFFER_PUBLISHED' and item->>'title'='Neues Angebot')
+    or not exists(select 1 from jsonb_array_elements(inbox->'items') item
+      where item->>'event_type'='POINT_REWARD_AVAILABLE' and item->>'title'='Belohnung erreicht') then
+    raise exception 'DELETED_SOURCE_FALLBACK_FAILED: %',inbox;
+  end if;
+end $test$;
+reset role;
+
 rollback;
 select 'PRO_CUSTOMER_IN_APP_INBOX_PASS';
