@@ -409,7 +409,7 @@ export function RestaurantOffersPage() {
   return (
     <div className="premium-owner-page restaurant-offers-page">
       <header className="premium-owner-page-header restaurant-offers-heading">
-        <div><span className="premium-owner-kicker">Informationen für deine Gäste</span><h1>Aktuelles & Angebote</h1><p>Veröffentliche Menüs, Veranstaltungen und Neuigkeiten. Dein Paket bestimmt die Anzahl gleichzeitig aktiver Angebote.</p></div>
+        <div><span className="premium-owner-kicker">Informationen für deine Gäste</span><h1>Aktuelles & Angebote</h1><p>Veröffentliche Angebote, Veranstaltungen und Neuigkeiten. Dein Paket bestimmt die Anzahl gleichzeitig aktiver Angebote.</p></div>
         <button className="button premium-owner-primary-action" onClick={startCreate} type="button"><Plus aria-hidden="true" size={19} />Neues Angebot erstellen</button>
       </header>
 
