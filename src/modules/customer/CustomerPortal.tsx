@@ -456,7 +456,9 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
         }
       }
       if (!cancelled) await reloadLegalCenter();
-      if (data.customer && activeToken && restaurantSlug) {
+      // A previous tenant's delayed legal read must not invalidate the new
+      // context's Inbox request or replace its visible state with old loading.
+      if (!cancelled && data.customer && activeToken && restaurantSlug) {
         const contextKey = JSON.stringify([restaurantSlug, activeToken, user?.id, data.customer.customer_code, refreshToken]);
         void reloadProInbox(contextKey, restaurantSlug, activeToken, () => cancelled);
         try {
@@ -1638,6 +1640,7 @@ export function CustomerPortal({ entryMessage, isBonusCollection, restaurantSlug
         ) : null}
 
         <AppDrawer
+          className="customer-pro-inbox-drawer"
           closeLabel={ct("close")}
           onClose={() => setProInboxOpen(false)}
           open={proInboxOpen && proInbox?.available === true}
