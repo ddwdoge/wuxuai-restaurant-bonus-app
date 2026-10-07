@@ -1,5 +1,40 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
+## Founder-Entscheidung vom 08.10.2026 – technische V1-Abnahme vor Release
+
+**AKTUELLER ROADMAP-VORRANG.** WUXUAI Bonus V1 einschliesslich PRO und
+Stripe TEST wird technisch fertiggestellt und auf Staging abgenommen.
+Diese Reihenfolge ersetzt widersprechende aeltere Planungs- und
+Launch-Reihenfolgen in diesem Dokument, nicht bestehende Produktregeln oder
+Sicherheitsguards. Sie ist ein Zielauftrag, kein behaupteter Implementierungs-
+oder Abnahme-PASS.
+
+1. **Jetzt: technische V1-Fertigstellung und Staging-Abnahme.** BASIC, PRO
+   und der Stripe-TEST-Vertrag werden mit den vorgesehenen synthetischen
+   Testkontexten, autoritativen Entitlements, Rollen-/Tenant-Isolation und
+   nachgewiesenen positiven und negativen Flows fertig geprueft. Lokaler
+   CODE LOCK und Teilabnahmen ersetzen keinen noch fehlenden authentifizierten
+   Staging- oder Provider-TEST-Nachweis.
+2. **Katalog bleibt in V1 deaktiviert.** Textkatalog, JPEG-/PDF-Speisekarte,
+   BASIC-Katalog-Add-on und Seitenpakete sind weder aktiver V1-Umfang noch
+   Fertigstellungs- oder Launch-Gate; fruehestens V3-Kandidaten. Der bestehende
+   serverseitige Freeze und der Datenerhalt bleiben unveraendert.
+3. **Spaetere, separate Release-Gates:** finale freigegebene Legal-Fassungen,
+   Firmengruendung mit belastbaren Betreiber-/Seller-Angaben und Stripe LIVE.
+   Sie werden vor dem jeweiligen realen/kommerziellen Release gesondert
+   geschlossen und nachgewiesen. Technische Staging-Abnahme ersetzt weder
+   Rechtsfreigabe noch Gruendung oder Live-Zahlungsfreigabe.
+
+**Unveraenderte Sicherheitsgrenze:** Kein Lockern oder Umgehen bestehender
+Pending-Activation-, Pilot-, Legal-, KYB-, Billing-, Consent-, Country-,
+RLS-/ACL- oder Entitlement-Guards fuer Tests. Synthetische Legal-Belege
+ersetzen keine reale Freigabe. Falls ein positiver technischer Test unter den
+bestehenden Vertraegen noch nicht zulaessig ist, bleibt genau dieser Nachweis
+offen; unabhaengige V1-Arbeit wird fortgesetzt. Bestehende Checkout-Rollout-
+Stops und andere konkrete Sicherheitsgates werden durch diese Roadmap nicht
+aufgehoben. Kein automatischer Grant, Versand, Checkout, Deployment,
+Production-Start oder Stripe-LIVE-Aufruf aus dieser Dokumentation.
+
 **Aktuelle Founder-Entscheidung (2026-10-07):** Der Speisekarten-Katalog
 (Text, JPEG/PDF, BASIC-Add-on, Seitenpakete) ist für V1 vollständig
 deaktiviert und frühestens V3-Kandidat. Er ist weder V1-Launch-Gate noch
@@ -7,7 +42,7 @@ aktive Tarifposition. Alle älteren positiven Catalog-/Phase-8-/PRO-Included-
 Aussagen unten sind insoweit **SUPERSEDED**; sie bleiben als historischer
 Beleg erhalten. Private vorhandene Daten und Migration 205 werden bewahrt.
 
-**Aktuelle Founder-Entscheidung (2026-10-06):** PRO enthaelt den Katalog;
+**Historische Founder-Entscheidung (2026-10-06), fuer V1 SUPERSEDED:** PRO enthaelt den Katalog;
 BASIC benoetigt eine wirksame Katalog-Add-on-Berechtigung. Die gegenteiligen
 PRO-/Catalog-Ausschluesse der historischen Roadmap unten sind insoweit
 **SUPERSEDED**. Das ist keine Preis-, Checkout-, Launch- oder rechtliche
@@ -19,7 +54,7 @@ Versionierung, Publikation und Ruecknahme. PNG ist nicht Teil dieses Pakets.
 Bereits heruntergeladene Kopien koennen nicht nachtraeglich entzogen werden.
 
 Status: **CURRENT FOUNDER-APPROVED MASTER CONTRACT**
-Stand: **2026-09-23 (kanonische Preis-/Capacity-Reconciliation)**
+Stand: **2026-10-08 (Founder-Roadmap; Produkt-/Sicherheitsguards unveraendert)**
 Markt: **Oesterreich / Restaurant V1**
 
 **Aktueller Vorrang (23.09.2026):** Fuer Preise, Capacity, Trial,
@@ -405,6 +440,13 @@ Nur ein trivialer UI-Aufbau auf bereits belastbaren Metriken darf noch als
 kleiner V1-Schritt geprueft werden.
 
 ## 9. Aktuelle Launch-Reihenfolge
+
+**Vorrang seit 08.10.2026:** Die aktuelle Reihenfolge steht im Founder-
+Nachtrag am Dokumentanfang: V1 einschliesslich PRO und Stripe TEST technisch
+fertigstellen und auf Staging abnehmen; danach die getrennten realen Release-
+Gates schliessen. Die folgende Phasentabelle ist historische Planung und
+kein aktueller Laufzeitstatus. Insbesondere Phase 8/Catalog ist fuer V1
+aufgehoben; die uebrigen Produkt- und Sicherheitsanforderungen bleiben erhalten.
 
 **SUPERSEDED (2026-09-12):** Die vorherige Nummerierung mit Stripe als Gate 6
 ist historisch. Verbindlich ist ab jetzt diese Reihenfolge; die bestehenden
