@@ -1,6 +1,16 @@
 
 # 19_CHANGELOG.md
 
+## 2026-10-07 – Founder-V1-Katalog-Freeze
+
+- Textkatalog, JPEG/PDF, BASIC-Katalog-Add-on und Seitenpakete aus aktivem V1
+  entfernt; frühestens V3-Kandidaten. Ältere positive Katalogabschnitte sind
+  historische Belege, keine aktive Produktfreigabe.
+- Migration 205 und private Bestandsdaten bleiben unverändert. Die nie auf
+  Staging angewendete 206 wird durch einen nachvollziehbaren Commit aus dem
+  aktiven Migrationssatz entfernt; eine neue additive Freeze-Migration sperrt
+  Browser-/Service-RPCs und Storage-Write, ohne Daten zu löschen.
+
 ## 2026-10-07 - Katalog-Seitenkapazität und Uploadquote lokal geprüft
 
 - Founder-Vertrag: BASIC ohne Katalog, mit wirksamem Katalog-Add-on Text und

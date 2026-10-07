@@ -1,5 +1,12 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
+**Aktuelle Founder-Entscheidung (2026-10-07):** Der Speisekarten-Katalog
+(Text, JPEG/PDF, BASIC-Add-on, Seitenpakete) ist für V1 vollständig
+deaktiviert und frühestens V3-Kandidat. Er ist weder V1-Launch-Gate noch
+aktive Tarifposition. Alle älteren positiven Catalog-/Phase-8-/PRO-Included-
+Aussagen unten sind insoweit **SUPERSEDED**; sie bleiben als historischer
+Beleg erhalten. Private vorhandene Daten und Migration 205 werden bewahrt.
+
 **Aktuelle Founder-Entscheidung (2026-10-06):** PRO enthaelt den Katalog;
 BASIC benoetigt eine wirksame Katalog-Add-on-Berechtigung. Die gegenteiligen
 PRO-/Catalog-Ausschluesse der historischen Roadmap unten sind insoweit

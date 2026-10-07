@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CheckCircle2, ChevronDown, ChevronRight, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound, UtensilsCrossed } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Clock3, Gift, Home, Info, LoaderCircle, LockKeyhole, ScanLine, UserRound } from "lucide-react";
 import { AppDrawer } from "../../../shared/components/AppDrawer";
 import { RestaurantLogoStage, type RestaurantLogoPresentation } from "../../../shared/components/RestaurantLogoStage";
 import { RewardImageFrame } from "../../../shared/components/RewardImageFrame";
@@ -13,11 +13,10 @@ import { InfoTrigger } from "../../../shared/components/InfoTrigger";
 import { LanguageSelector } from "../../../shared/i18n/LanguageSelector";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { customerPresentationText } from "../customerRewardPresentation.mjs";
-import { menuMessage } from "../../catalog/menuCatalogMessages";
 
 const t = (key: string) => translateStructural(key, "de");
 
-export type CustomerView = "home" | "redemptions" | "menu" | "collect" | "account";
+export type CustomerView = "home" | "redemptions" | "collect" | "account";
 
 type CustomerAppShellProps = {
   children: ReactNode;
@@ -104,24 +103,22 @@ export function CustomerHeader({ compact = false, languageSelector = false, logo
 
 type BottomNavigationProps = {
   activeView: CustomerView;
-  menuAvailable?: boolean;
   onChange: (view: CustomerView) => void;
 };
 
 const navigationItems = [
   { label: "customer.home", value: "home" as const, icon: Home },
   { label: "customer.redeem", value: "redemptions" as const, icon: Gift },
-  { label: "customer.menu", value: "menu" as const, icon: UtensilsCrossed },
   { label: "customer.collect", value: "collect" as const, icon: ScanLine, primary: true },
   { label: "customer.account", value: "account" as const, icon: UserRound },
 ];
 
-export function BottomNavigation({ activeView, menuAvailable = false, onChange }: BottomNavigationProps) {
+export function BottomNavigation({ activeView, onChange }: BottomNavigationProps) {
   const { language } = useI18n();
   const t = (key: string) => customerPresentationText(key.replace("customer.", ""), language);
   return (
-    <nav data-i18n-skip="true" aria-label={t("customer.navigation")} className={`premium-bottom-navigation${menuAvailable ? " has-menu" : ""}`}>
-      {navigationItems.filter(({ value }) => value !== "menu" || menuAvailable).map(({ icon: Icon, label, primary, value }) => (
+    <nav data-i18n-skip="true" aria-label={t("customer.navigation")} className="premium-bottom-navigation">
+      {navigationItems.map(({ icon: Icon, label, primary, value }) => (
         <button
           aria-current={activeView === value ? "page" : undefined}
           aria-label={primary ? t("customer.collectPoints") : undefined}
@@ -131,7 +128,7 @@ export function BottomNavigation({ activeView, menuAvailable = false, onChange }
           type="button"
         >
           <span className="premium-navigation-icon"><Icon aria-hidden="true" size={primary ? 24 : 21} /></span>
-          <span>{value === "menu" ? menuMessage(language, "menu") : t(label)}</span>
+          <span>{t(label)}</span>
         </button>
       ))}
     </nav>

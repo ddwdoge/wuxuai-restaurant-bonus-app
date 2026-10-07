@@ -3,6 +3,15 @@
 
 # WUXUAI Bonus V1 – CTO Entscheidungen
 
+## Founder-Entscheidung 2026-10-07: Katalog aus V1 entfernt
+
+Text- und Originalkarte, BASIC-Katalog-Add-on und Seitenpakete sind frühestens
+V3-Kandidaten. V1 zeigt keine Katalognavigation oder -preise; direkte
+Katalog-RPC-, Medien- und Storage-Einstiege werden serverseitig gesperrt.
+Migration 205 und vorhandene private Daten bleiben erhalten. Die nie auf
+Staging angewendete Migration 206 gehört nicht mehr zum aktiven Migrationssatz.
+Ältere gegenteilige Katalogentscheidungen in diesem Dokument sind superseded.
+
 ## Founder-Entscheidung 2026-09-27: Platform-Admin-MFA mit zwei TOTP-Geräten
 
 V1 verwendet für dasselbe Platform-Admin-Konto zwei separat registrierte und

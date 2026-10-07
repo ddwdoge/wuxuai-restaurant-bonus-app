@@ -26,8 +26,8 @@ function sourceFiles(dir) {
 }
 
 test("Phase 6 preserves its historical inventory alongside capacity and verification routes", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 58);
-  assert.match(read("src/app/App.tsx"), /<Route path="menu" element=\{withFallback\(<RestaurantMenuPage/);
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 57);
+  assert.doesNotMatch(read("src/app/App.tsx"), /RestaurantMenuPage|<Route path="menu"/);
   // Additive authenticated TEST_ONLY join and document routes; historical inventory is unchanged.
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only\/:slug\/:branchId" element=\{<CustomerCentralRoute>/);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];

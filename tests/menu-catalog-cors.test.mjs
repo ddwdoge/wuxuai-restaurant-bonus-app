@@ -4,10 +4,9 @@ import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../supabase/functions/catalog-media/index.ts", import.meta.url), "utf8");
 
-test("catalog media allows only local and exact WUXUAI app origins", () => {
-  assert.match(source, /origin === "https:\/\/staging-app\.bonus\.wuxuaisbi\.com"/);
-  assert.match(source, /origin === "https:\/\/app\.bonus\.wuxuaisbi\.com"/);
-  assert.match(source, /\^http:\\\/\\\/\(127/);
-  assert.doesNotMatch(source, /\[\^\/\]\+\\\.wuxuai/);
-  assert.match(source, /if \(origin && !common\.has\("access-control-allow-origin"\)\) return fail\("ORIGIN_DENIED", 403, null\)/);
+test("retired catalog-media endpoint rejects every method without credentials or storage access", () => {
+  assert.match(source, /Deno\.serve\(\(\) => new Response/);
+  assert.match(source, /status: 410/);
+  assert.match(source, /CATALOG_V1_DISABLED/);
+  assert.doesNotMatch(source, /createClient|\.storage\.|\.rpc\(|SUPABASE_SERVICE_ROLE_KEY/);
 });

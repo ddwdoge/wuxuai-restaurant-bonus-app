@@ -22,14 +22,13 @@ test("Premium-Kundenshell verwendet zentrale Tokens und Komponenten", () => {
   assert.match(components, /export function RewardCard/);
 });
 
-test("Kundennavigation hat vier Standardpunkte und nur bei Berechtigung Menü vor QR", () => {
+test("Kundennavigation hat vier Standardpunkte ohne V1-Katalog und mit QR", () => {
   for (const key of ["customer.home", "customer.redeem", "customer.collect", "customer.account"]) assert.ok(components.includes(`label: "${key}"`));
-  assert.match(components, /value !== "menu" \|\| menuAvailable/);
-  assert.ok(components.indexOf('value: "menu"') < components.indexOf('value: "collect"'));
-  assert.match(components, /<span>\{value === "menu" \? menuMessage\(language, "menu"\) : t\(label\)\}<\/span>/);
+  assert.doesNotMatch(components, /value: "menu"|menuAvailable|menuMessage/);
+  assert.doesNotMatch(portal, /loadCustomerMenuCatalog|CustomerMenuView/);
   for (const label of ["Start", "Einlösen", "Sammeln", "Konto"]) assert.match(i18nCatalog, new RegExp(`: "${label}"`));
   assert.match(styles, /grid-template-columns: repeat\(4/);
-  assert.match(styles, /\.premium-bottom-navigation\.has-menu \{ grid-template-columns: repeat\(5/);
+  assert.doesNotMatch(styles, /\.premium-bottom-navigation\.has-menu/);
 });
 
 test("Punkte sammeln und sichere Einlösung behalten ihre Service-Aufrufe", () => {

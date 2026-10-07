@@ -1,5 +1,18 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Founder-Entscheidung 2026-10-07 – V1-Katalog vollständig deaktiviert
+
+Textkatalog, JPEG-/PDF-Speisekarte, BASIC-Katalog-Add-on und Seitenpakete sind
+frühestens V3-Kandidaten. Sie sind kein V1- oder V2-Produktumfang, keine
+aktive Tarifposition und keine Voraussetzung für den Austria-Launch.
+Owner-, Customer- und Platform-Einstiege sowie direkte RPC-, Medien- und
+Storage-Schreibwege bleiben serverseitig gesperrt. Migration 205, private
+historische Daten und Dateien bleiben erhalten; die auf Staging nie
+angewendete Migration 206 wird aus dem aktiven Migrationssatz entfernt.
+Die nachfolgenden Katalogabschnitte sind historische Entwicklungsbelege und
+für V1 vollständig **SUPERSEDED**. QR, Punkte, Rewards, Inbox und andere
+PRO-Funktionen behalten ihren bestehenden Vertrag.
+
 ## Founder-Entscheidung 2026-10-07 – Speisekarten-Seitenkapazität
 
 BASIC enthält **keinen** Katalog. Ein separat wirksames BASIC-Katalog-Add-on
