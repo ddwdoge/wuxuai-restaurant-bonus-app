@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
-import { checkoutIdempotencyKey, parseBasicTestCheckoutRequest } from "../_shared/billingArchitecture.mjs";
+import { checkoutIdempotencyKey, parseBasicTestCheckoutRequest, runBasicTestCheckout } from "../_shared/billingArchitecture.mjs";
 
 const stagingOrigin = "https://staging-app.bonus.wuxuaisbi.com";
 const allowedHeaders = new Set(["authorization", "apikey", "content-type", "x-client-info"]);
@@ -49,38 +49,56 @@ Deno.serve(async (request) => {
     input_acceptance_id: input.acceptance_id, input_request_id: input.request_id,
     input_return_route: input.return_route,
   });
-  if (prepareError || !prepared?.checkout_request_id || !prepared?.price_id || !prepared?.restaurant_id) {
+  if (prepareError || !prepared?.checkout_request_id || !prepared?.price_id || !prepared?.restaurant_id
+    || !prepared?.request_id || prepared?.acceptance_id !== input.acceptance_id) {
     return response(prepareError?.code === "42501" ? 403 : 409, prepareError?.message ?? "BASIC_TEST_CHECKOUT_BLOCKED", undefined, true);
   }
-  const idempotencyKey = await checkoutIdempotencyKey(prepared.restaurant_id, input.request_id);
+  const idempotencyKey = await checkoutIdempotencyKey(prepared.restaurant_id, prepared.request_id);
   const successUrl = `${stagingOrigin}${input.return_route}?checkout=success`;
   const cancelUrl = `${stagingOrigin}${input.return_route}?checkout=cancelled`;
   const form = new URLSearchParams({
     mode: "subscription", success_url: successUrl, cancel_url: cancelUrl,
+    client_reference_id: prepared.checkout_request_id,
     "line_items[0][price]": prepared.price_id, "line_items[0][quantity]": "1",
     "automatic_tax[enabled]": "false",
     "metadata[restaurant_id]": prepared.restaurant_id,
     "metadata[acceptance_id]": prepared.acceptance_id,
-    "metadata[request_id]": input.request_id,
+    "metadata[request_id]": prepared.request_id,
     "metadata[correlation_id]": prepared.correlation_id,
     "subscription_data[metadata][restaurant_id]": prepared.restaurant_id,
     "subscription_data[metadata][acceptance_id]": prepared.acceptance_id,
-    "subscription_data[metadata][request_id]": input.request_id,
+    "subscription_data[metadata][request_id]": prepared.request_id,
     "subscription_data[metadata][correlation_id]": prepared.correlation_id,
   });
-  const providerResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-    method: "POST", headers: { authorization: `Bearer ${stripeKey}`,
-      "content-type": "application/x-www-form-urlencoded", "idempotency-key": idempotencyKey }, body: form,
-  });
-  const provider = await providerResponse.json().catch(() => null);
-  if (!providerResponse.ok || !provider?.id?.startsWith("cs_test_") || typeof provider?.url !== "string"
-    || !provider.url.startsWith("https://checkout.stripe.com/")) {
-    return response(502, "BASIC_TEST_PROVIDER_ERROR", undefined, true);
-  }
   const service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { error: completionError } = await service.rpc("complete_basic_test_checkout", {
-    input_checkout_request_id: prepared.checkout_request_id, input_provider_session_id: provider.id,
-  });
-  if (completionError) return response(503, "BASIC_TEST_CHECKOUT_RECORD_FAILED", undefined, true);
-  return response(200, "BASIC_TEST_CHECKOUT_CREATED", { url: provider.url }, true);
+  try {
+    const checkoutUrl = await runBasicTestCheckout(prepared, {
+      create: async () => {
+        const providerResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+          method: "POST", headers: { authorization: `Bearer ${stripeKey}`,
+            "content-type": "application/x-www-form-urlencoded", "idempotency-key": idempotencyKey }, body: form,
+        });
+        if (!providerResponse.ok) throw new Error("BASIC_TEST_PROVIDER_ERROR");
+        return providerResponse.json();
+      },
+      retrieve: async (sessionId: string) => {
+        const providerResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+          headers: { authorization: `Bearer ${stripeKey}` },
+        });
+        if (!providerResponse.ok) throw new Error("BASIC_TEST_PROVIDER_ERROR");
+        return providerResponse.json();
+      },
+      complete: async (checkoutRequestId: string, sessionId: string) => {
+        const { error } = await service.rpc("complete_basic_test_checkout", {
+          input_checkout_request_id: checkoutRequestId, input_provider_session_id: sessionId,
+        });
+        if (error) throw new Error("BASIC_TEST_CHECKOUT_RECORD_FAILED");
+      },
+    });
+    return response(200, "BASIC_TEST_CHECKOUT_CREATED", { url: checkoutUrl }, true);
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "BASIC_TEST_PROVIDER_ERROR";
+    return response(code === "BASIC_TEST_CHECKOUT_OUTCOME_UNCLEAR" ? 409 : 503,
+      code.startsWith("BASIC_TEST_CHECKOUT_") ? code : "BASIC_TEST_PROVIDER_ERROR", undefined, true);
+  }
 });

@@ -50,12 +50,22 @@ export async function acceptBasicOfferAndOpenTestCheckout(
     input_request_id: acceptanceRequestId,
     input_correlation_id: correlationId,
   });
-  if (acceptanceError || !acceptance?.acceptance_id) throw new Error(acceptanceError?.message ?? "BASIC_ACCEPTANCE_FAILED");
-  if (acceptance.checkout_allowed !== true) {
-    return { status: "DECISION_SAVED", acceptanceId: acceptance.acceptance_id as string };
+  let acceptanceId = acceptance?.acceptance_id as string | undefined;
+  let checkoutAllowed = acceptance?.checkout_allowed === true;
+  if (acceptanceError || !acceptanceId) {
+    // An RPC transport error may occur after the acceptance committed. The
+    // owner-only read model, not a second acceptance, resolves that outcome.
+    const snapshot = await loadBasicOwnerContractSnapshot(restaurantId);
+    if (snapshot.acceptance_kind !== mode || snapshot.acceptance_terms_version !== TERMS_VERSION
+      || !snapshot.acceptance_id) throw new Error(acceptanceError?.message ?? "BASIC_ACCEPTANCE_FAILED");
+    acceptanceId = snapshot.acceptance_id;
+    checkoutAllowed = snapshot.checkout_allowed;
+  }
+  if (!checkoutAllowed) {
+    return { status: "DECISION_SAVED", acceptanceId };
   }
   const { data, error } = await supabase.functions.invoke("billing-basic-test-checkout", { body: {
-    acceptance_id: acceptance.acceptance_id,
+    acceptance_id: acceptanceId,
     request_id: crypto.randomUUID(),
     return_route: "/admin/settings/konto-testphase",
   } });

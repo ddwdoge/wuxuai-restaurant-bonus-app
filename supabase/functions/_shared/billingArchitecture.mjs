@@ -126,6 +126,53 @@ export async function checkoutIdempotencyKey(restaurantId, requestId) {
   return `wuxuai_test_checkout_${digest}`;
 }
 
+// Stripe may discard an idempotency key after 24 hours. Once the local
+// preparation is 23 hours old, an unresolved request must not create again.
+export function basicTestCheckoutNextAction(prepared, nowMs = Date.now()) {
+  if (!prepared || !UUID.test(prepared.checkout_request_id)
+    || !UUID.test(prepared.acceptance_id) || !UUID.test(prepared.restaurant_id)
+    || !UUID.test(prepared.request_id) || !Number.isFinite(nowMs)) {
+    throw new Error("BASIC_TEST_CHECKOUT_READBACK_INVALID");
+  }
+  if (prepared.status === "SESSION_CREATED"
+    && /^cs_test_[A-Za-z0-9_]{8,160}$/.test(prepared.provider_session_id ?? "")) return "RETRIEVE";
+  if (prepared.status !== "PREPARED" || prepared.provider_session_id !== null) {
+    throw new Error("BASIC_TEST_CHECKOUT_NOT_RESTARTABLE");
+  }
+  const createdAt = Date.parse(prepared.created_at);
+  if (!Number.isFinite(createdAt) || createdAt > nowMs + 60_000
+    || nowMs - createdAt >= 23 * 60 * 60 * 1000) {
+    throw new Error("BASIC_TEST_CHECKOUT_OUTCOME_UNCLEAR");
+  }
+  return "CREATE";
+}
+
+export function verifiedBasicTestSession(provider, prepared) {
+  if (!provider || provider.id !== prepared.provider_session_id && prepared.provider_session_id !== null
+    || !/^cs_test_[A-Za-z0-9_]{8,160}$/.test(provider.id ?? "")
+    || provider.livemode !== false || provider.mode !== "subscription"
+    || provider.status !== "open"
+    || provider.client_reference_id !== prepared.checkout_request_id
+    || provider.metadata?.restaurant_id !== prepared.restaurant_id
+    || provider.metadata?.acceptance_id !== prepared.acceptance_id
+    || provider.metadata?.request_id !== prepared.request_id
+    || typeof provider.url !== "string"
+    || !provider.url.startsWith("https://checkout.stripe.com/")) {
+    throw new Error("BASIC_TEST_CHECKOUT_PROVIDER_READBACK_INVALID");
+  }
+  return provider.url;
+}
+
+export async function runBasicTestCheckout(prepared, actions, nowMs = Date.now()) {
+  const next = basicTestCheckoutNextAction(prepared, nowMs);
+  const provider = next === "RETRIEVE"
+    ? await actions.retrieve(prepared.provider_session_id)
+    : await actions.create(prepared);
+  const url = verifiedBasicTestSession(provider, prepared);
+  if (next === "CREATE") await actions.complete(prepared.checkout_request_id, provider.id);
+  return url;
+}
+
 async function hmacHex(secret, bytes) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);

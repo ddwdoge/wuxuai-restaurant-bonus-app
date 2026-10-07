@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   acceptBasicOfferAndOpenTestCheckout,
   openAcceptedBasicTestCheckout,
@@ -15,16 +15,28 @@ export function BasicPaidOfferPanel({ acceptanceId = null, checkoutAllowed, rest
   const [accepted, setAccepted] = useState(Boolean(acceptanceId));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const inFlight = useRef(false);
+  const context = useRef(`${restaurantId}:${mode}`);
   const hasAcceptance = Boolean(savedAcceptanceId);
 
+  useEffect(() => {
+    context.current = `${restaurantId}:${mode}`;
+    setSavedAcceptanceId(acceptanceId);
+    setAccepted(Boolean(acceptanceId));
+    setError("");
+  }, [acceptanceId, restaurantId, mode]);
+
   async function continueToCheckout() {
-    if (!accepted || busy) return;
+    if (!accepted || inFlight.current) return;
+    inFlight.current = true;
+    const requestContext = `${restaurantId}:${mode}`;
     setBusy(true);
     setError("");
     try {
       const result = savedAcceptanceId
         ? await openAcceptedBasicTestCheckout(savedAcceptanceId)
         : await acceptBasicOfferAndOpenTestCheckout(restaurantId, mode);
+      if (requestContext !== context.current) return;
       if (result.status === "DECISION_SAVED") {
         setSavedAcceptanceId(result.acceptanceId);
         setAccepted(true);
@@ -33,8 +45,12 @@ export function BasicPaidOfferPanel({ acceptanceId = null, checkoutAllowed, rest
       }
       window.location.assign(result.url);
     } catch {
-      setError("Die sichere Testbestellung konnte nicht gestartet werden. Bitte versuche es später erneut.");
-      setBusy(false);
+      if (requestContext === context.current) {
+        setError("Der Ausgang der Testbestellung ist noch unklar. Ein erneuter Versuch prüft denselben Vorgang; es wird keine zweite Bestellung angelegt.");
+      }
+    } finally {
+      inFlight.current = false;
+      if (requestContext === context.current) setBusy(false);
     }
   }
 
