@@ -25,6 +25,7 @@ function cameraErrorMessage(error: unknown) {
 export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open }: CustomerRestaurantScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
+  const scanGenerationRef = useRef(0);
   const handlingResultRef = useRef(false);
   const onRestaurantDetectedRef = useRef(onRestaurantDetected);
   const [starting, setStarting] = useState(false);
@@ -45,6 +46,8 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
   }, [onRestaurantDetected]);
 
   const stopScanner = useCallback(() => {
+    // Invalidate unresolved starts and callbacks before releasing this scan.
+    scanGenerationRef.current += 1;
     controlsRef.current?.stop();
     controlsRef.current = null;
     handlingResultRef.current = false;
@@ -55,6 +58,15 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
 
   const startScanner = useCallback(async () => {
     stopScanner();
+    const generation = scanGenerationRef.current;
+    let controlsStopped = false;
+    const stopOwnedControls = (controls: IScannerControls) => {
+      // ZXing clears the preview on every stop; a repeated old stop must not
+      // clear the newer scan using the same video element after Retry.
+      if (controlsStopped) return;
+      controlsStopped = true;
+      controls.stop();
+    };
     setStarting(true);
     setError(null);
     setStatus("Kamera wird geöffnet …");
@@ -68,15 +80,19 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
 
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
-      if (!videoRef.current) return;
+      if (generation !== scanGenerationRef.current || !videoRef.current) return;
       const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 180 });
       const controls = await reader.decodeFromConstraints(
         { audio: false, video: { facingMode: { ideal: "environment" } } },
         videoRef.current,
         (result, _decodeError, scannerControls) => {
+          if (generation !== scanGenerationRef.current) {
+            stopOwnedControls(scannerControls);
+            return;
+          }
           if (!result || handlingResultRef.current) return;
           handlingResultRef.current = true;
-          scannerControls.stop();
+          stopOwnedControls(scannerControls);
           controlsRef.current = null;
 
           const target = restaurantTargetFromQrValue(result.getText(), allowedOrigins);
@@ -91,14 +107,15 @@ export function CustomerRestaurantScanner({ onCancel, onRestaurantDetected, open
           onRestaurantDetectedRef.current(target.restaurantSlug, target.targetPath);
         },
       );
-      if (handlingResultRef.current) {
-        controls.stop();
+      if (generation !== scanGenerationRef.current || handlingResultRef.current) {
+        stopOwnedControls(controls);
         return;
       }
-      controlsRef.current = controls;
+      controlsRef.current = { stop: () => stopOwnedControls(controls) };
       setStarting(false);
       setStatus("Restaurant-QR vor die Kamera halten.");
     } catch (scannerError) {
+      if (generation !== scanGenerationRef.current) return;
       stopScanner();
       setStarting(false);
       setStatus(null);
