@@ -1,6 +1,23 @@
 
 # 19_CHANGELOG.md
 
+## 2026-10-07 - Katalog-Seitenkapazität und Uploadquote lokal geprüft
+
+- Founder-Vertrag: BASIC ohne Katalog, mit wirksamem Katalog-Add-on Text und
+  10 JPEG-/PDF-Seiten; PRO Text und 15 Seiten; zusätzliche Einheit +10 Seiten.
+  JPEG = 1, PDF = tatsächliche geprüfte Seitenzahl.
+- 19 EUR je Zusatzeinheit ist eine Produktentscheidung, keine öffentliche
+  Preisanzeige oder Zahlungsfreigabe. Abrechnungsperiode und USt-Ausweis offen.
+- Migration 205 bleibt unverändert. Additives Enforcement, TEST_ONLY-
+  Kapazitäts-Permits und lokale Tests sind mit Migration 206 lokal geprüft;
+  Staging-Migration und Gateway-Deployment sind nicht erfolgt.
+- Lokaler Cleanup-Nachtrag: service-only Orphan-Claim mit Tenant-/Filial-,
+  Referenz- und Altersprüfung; Löschung nur über Storage-API, kein direkter
+  Browser-Tabellenzugriff. Echte Pending-Owner-Registrierung und synthetische
+  Datei-/Fremdtenant-Tests bestanden. Die gemeinsam erneut geprüfte Edge+DB-
+  Reservierung greift vor Storage; der Teil-CODE-LOCK umfasst Uploadquote und
+  Cleanup, nicht den positiven PRO- oder authentifizierten Staging-Flow.
+
 ## 2026-10-06 - Optionale Text- und Originalkarte lokal begonnen
 
 - Neuer Founder-Vertrag: PRO enthaelt den Katalog, BASIC benoetigt ein

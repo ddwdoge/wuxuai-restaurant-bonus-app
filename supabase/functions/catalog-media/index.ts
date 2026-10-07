@@ -53,27 +53,57 @@ function jpegDimensions(bytes: Uint8Array): { width: number; height: number } | 
   return null;
 }
 
-async function validate(bytes: Uint8Array, mime: string): Promise<boolean> {
-  if (bytes.length < 16 || bytes.length > maxBytes) return false;
+async function validatedPageCount(bytes: Uint8Array, mime: string): Promise<number | null> {
+  if (bytes.length < 16 || bytes.length > maxBytes) return null;
   if (mime === "image/jpeg") {
     const dimensions = jpegDimensions(bytes);
-    if (!dimensions) return false;
+    if (!dimensions) return null;
     try {
       const image = jpeg.decode(bytes, { formatAsRGBA: false, maxResolutionInMP: 20, maxMemoryUsageInMB: 96 });
-      return image.width === dimensions.width && image.height === dimensions.height;
-    } catch { return false; }
+      return image.width === dimensions.width && image.height === dimensions.height ? 1 : null;
+    } catch { return null; }
   }
-  if (mime !== "application/pdf") return false;
-  if (new TextDecoder().decode(bytes.subarray(0, 8)).startsWith("%PDF-") !== true) return false;
+  if (mime !== "application/pdf") return null;
+  if (new TextDecoder().decode(bytes.subarray(0, 8)).startsWith("%PDF-") !== true) return null;
   try {
     const document = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
-    return document.getPageCount() >= 1 && document.getPageCount() <= 50;
-  } catch { return false; }
+    const count = document.getPageCount();
+    return count >= 1 && count <= 50 ? count : null;
+  } catch { return null; }
 }
 
 async function sha256(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (item) => item.toString(16).padStart(2, "0")).join("");
+}
+
+async function cleanupOrphans(actorId: string, restaurantId: string, branchId: string): Promise<number> {
+  const { data, error } = await admin.rpc("claim_owner_menu_orphan_cleanup", {
+    input_actor_id: actorId, input_restaurant_id: restaurantId,
+    input_branch_id: branchId, input_limit: 50,
+  });
+  if (error || data?.restaurant_id !== restaurantId || data?.branch_id !== branchId
+    || !Array.isArray(data?.objects)) throw new Error("MENU_CLEANUP_CLAIM_FAILED");
+  let deleted = 0;
+  for (const object of data.objects) {
+    if (typeof object?.path !== "string" || !uuid(object?.object_id)) {
+      throw new Error("MENU_CLEANUP_CLAIM_INVALID");
+    }
+    if (object.missing !== true) {
+      const removed = await admin.storage.from(bucket).remove([object.path]);
+      if (removed.error) throw new Error("MENU_CLEANUP_STORAGE_FAILED");
+    }
+    const finished = await admin.rpc("finalize_owner_menu_orphan_cleanup", {
+      input_actor_id: actorId, input_restaurant_id: restaurantId,
+      input_branch_id: branchId, input_storage_path: object.path,
+      input_object_id: object.object_id,
+    });
+    if (finished.error || finished.data?.deleted !== true) {
+      throw new Error("MENU_CLEANUP_FINALIZE_FAILED");
+    }
+    deleted += 1;
+  }
+  return deleted;
 }
 
 Deno.serve(async (request) => {
@@ -84,8 +114,8 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return fail("METHOD_DENIED", 405, origin);
   if (!url || !serviceKey || !anonKey) return fail("SERVICE_UNAVAILABLE", 503, origin);
   const bearer = request.headers.get("authorization")?.replace(/^Bearer /i, "") ?? "";
-  const upload = request.headers.get("x-menu-action") === "upload";
-  if (upload) {
+  const action = request.headers.get("x-menu-action");
+  if (action === "upload" || action === "cleanup") {
     const length = Number(request.headers.get("content-length") ?? "0");
     if (length > maxBytes) return fail("FILE_TOO_LARGE", 413, origin);
     const { data: userResult, error: authError } = await admin.auth.getUser(bearer);
@@ -99,28 +129,93 @@ Deno.serve(async (request) => {
     });
     const { data: catalog, error: ownerError } = await owner.rpc("get_owner_menu_catalog", { input_restaurant_id: restaurantId });
     if (ownerError || catalog?.branch_id !== branchId) return fail("OWNER_SCOPE_DENIED", 403, origin);
+    let cleaned: number;
+    try { cleaned = await cleanupOrphans(userResult.user.id, restaurantId, branchId); }
+    catch { return fail("CLEANUP_UNAVAILABLE", 503, origin); }
+    if (action === "cleanup") {
+      const output = headers(origin);
+      output.set("content-type", "application/json");
+      return new Response(JSON.stringify({ deleted: cleaned }), { headers: output });
+    }
     const mime = request.headers.get("content-type")?.split(";")[0] ?? "";
     const body = new Uint8Array(await request.arrayBuffer());
-    if (!(await validate(body, mime))) return fail("FILE_INVALID", 400, origin);
+    const pageCount = await validatedPageCount(body, mime);
+    if (pageCount === null) return fail("FILE_INVALID", 400, origin);
     let filename: string;
     try { filename = decodeURIComponent(request.headers.get("x-file-name") ?? "").trim(); }
     catch { return fail("FILE_NAME_INVALID", 400, origin); }
     if (!filename || filename.length > 160) return fail("FILE_NAME_INVALID", 400, origin);
     const pageId = crypto.randomUUID();
     const path = `${restaurantId}/${branchId}/${pageId}.${mime === "image/jpeg" ? "jpg" : "pdf"}`;
+    const contentHash = await sha256(body);
+    const reserved = await admin.rpc("reserve_owner_menu_upload", {
+      input_actor_id: userResult.user.id, input_restaurant_id: restaurantId,
+      input_branch_id: branchId, input_page_id: pageId, input_storage_path: path,
+      input_mime_type: mime, input_byte_size: body.length,
+      input_content_sha256: contentHash, input_page_count: pageCount,
+    });
+    if (reserved.error || reserved.data?.reserved !== true) return fail("UPLOAD_QUOTA_OR_SCOPE_DENIED", 403, origin);
+    const release = async () => {
+      const result = await admin.rpc("release_owner_menu_upload_reservation", {
+        input_actor_id: userResult.user.id, input_restaurant_id: restaurantId,
+        input_branch_id: branchId, input_storage_path: path,
+      });
+      if (result.error) console.warn("CATALOG_MEDIA_RESERVATION_PENDING");
+    };
+    if (request.signal.aborted) { await release(); return fail("UPLOAD_ABORTED", 499, origin); }
     const { error: storageError } = await admin.storage.from(bucket).upload(path, body, {
       contentType: mime, upsert: false, cacheControl: "0",
     });
-    if (storageError) return fail("UPLOAD_FAILED", 500, origin);
+    if (storageError) {
+      // A definite client-side Storage rejection did not create an object.
+      // A server/transport error is ambiguous: keep its reservation charged
+      // until the guarded reconciliation grace has elapsed.
+      if ([400, 413, 415].includes(Number(storageError.statusCode))) await release();
+      return fail("UPLOAD_FAILED", 500, origin);
+    }
+    if (request.signal.aborted) {
+      const removed = await admin.storage.from(bucket).remove([path]);
+      if (!removed.error) await release();
+      return fail("UPLOAD_ABORTED", 499, origin);
+    }
     const { data, error } = await admin.rpc("register_owner_menu_upload", {
       input_actor_id: userResult.user.id, input_restaurant_id: restaurantId,
       input_branch_id: branchId, input_page_id: pageId, input_storage_path: path,
       input_mime_type: mime, input_byte_size: body.length,
-      input_content_sha256: await sha256(body), input_filename: filename,
+      input_content_sha256: contentHash, input_filename: filename,
+      input_page_count: pageCount,
     });
-    if (error) {
-      await admin.storage.from(bucket).remove([path]);
-      return fail("REGISTER_FAILED", 403, origin);
+    if (error || data?.page_id !== pageId || !Number.isInteger(data?.draft_revision)) {
+      // A lost RPC response does not prove that the transaction rolled back.
+      // Claim the exact unregistered object under DB locks before deletion.
+      const reconciled = await admin.rpc("claim_owner_menu_failed_upload", {
+        input_actor_id: userResult.user.id, input_restaurant_id: restaurantId,
+        input_branch_id: branchId, input_page_id: pageId,
+        input_storage_path: path, input_content_sha256: contentHash,
+      });
+      if (reconciled.error) return fail("REGISTER_OUTCOME_UNKNOWN", 503, origin);
+      if (reconciled.data?.state === "REGISTERED"
+        && reconciled.data?.page_id === pageId
+        && Number.isInteger(reconciled.data?.draft_revision)) {
+        const output = headers(origin);
+        output.set("content-type", "application/json");
+        return new Response(JSON.stringify({ page_id: pageId,
+          draft_revision: reconciled.data.draft_revision }), { headers: output });
+      }
+      if (reconciled.data?.state !== "CLAIMED" || !uuid(reconciled.data?.object_id)) {
+        return fail("REGISTER_OUTCOME_UNKNOWN", 503, origin);
+      }
+      const removed = await admin.storage.from(bucket).remove([path]);
+      if (removed.error) return fail("REGISTER_CLEANUP_PENDING", 503, origin);
+      const finalized = await admin.rpc("finalize_owner_menu_orphan_cleanup", {
+        input_actor_id: userResult.user.id, input_restaurant_id: restaurantId,
+        input_branch_id: branchId, input_storage_path: path,
+        input_object_id: reconciled.data.object_id,
+      });
+      if (finalized.error || finalized.data?.deleted !== true) {
+        return fail("REGISTER_CLEANUP_PENDING", 503, origin);
+      }
+      return fail("REGISTER_FAILED", 503, origin);
     }
     const output = headers(origin);
     output.set("content-type", "application/json");

@@ -2,19 +2,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../shared/lib/supabase";
 import { loadPlatformTestCollectionMfaProof, refreshPlatformTestCollectionRecentTotp } from "./platformAdminService";
 
-type AddonState = { restaurant_id: string; branch_id: string; grant_id: string | null; expires_at: string | null; active: boolean };
+type AddonState = { restaurant_id: string; branch_id: string; grant_id: string | null; expires_at: string | null; active: boolean; extra_page_units: number };
 
 export function PlatformMenuTestAddonControl({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
   const [state, setState] = useState<AddonState | null>(null);
   const [factorId, setFactorId] = useState("");
   const [code, setCode] = useState("");
   const [reason, setReason] = useState("");
+  const [extraUnits, setExtraUnits] = useState(0);
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const request = useRef<{ id: string; expiresAt: string | null } | null>(null);
   const action = state?.active ? "REVOKE" : "GRANT";
-  const expected = `TEST_ONLY MENÜ ${restaurantName} ${action === "GRANT" ? "ERTEILEN" : "WIDERRUFEN"}`;
+  const expected = `TEST_ONLY MENÜ ${restaurantName} ${action === "GRANT" ? `ERTEILEN +${extraUnits * 10} SEITEN` : "WIDERRUFEN"}`;
   const local = import.meta.env.DEV && ["localhost", "127.0.0.1"].includes(window.location.hostname);
   const staging = window.location.hostname === "staging-app.bonus.wuxuaisbi.com"
     && import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED === "true"
@@ -46,16 +47,22 @@ export function PlatformMenuTestAddonControl({ restaurantId, restaurantName }: {
     request.current = operation;
     try {
       await refreshPlatformTestCollectionRecentTotp(factorId, code);
-      const { data, error: writeError } = await supabase.rpc("set_platform_test_menu_addon", {
-        input_restaurant_id: state.restaurant_id, input_branch_id: state.branch_id,
-        input_action: action, input_expected_grant_id: state.grant_id,
-        input_expires_at: operation.expiresAt,
-        input_reason: reason.trim(), input_request_id: operation.id,
-      });
+      const { data, error: writeError } = action === "GRANT" && extraUnits > 0
+        ? await supabase.rpc("grant_platform_test_menu_capacity", {
+          input_restaurant_id: state.restaurant_id, input_branch_id: state.branch_id,
+          input_extra_page_units: extraUnits, input_expires_at: operation.expiresAt,
+          input_reason: reason.trim(), input_request_id: operation.id,
+        })
+        : await supabase.rpc("set_platform_test_menu_addon", {
+          input_restaurant_id: state.restaurant_id, input_branch_id: state.branch_id,
+          input_action: action, input_expected_grant_id: state.grant_id,
+          input_expires_at: operation.expiresAt,
+          input_reason: reason.trim(), input_request_id: operation.id,
+        });
       if (writeError || !data?.event_id) throw writeError ?? new Error("RECEIPT_MISSING");
       const { data: readback, error: readError } = await supabase.rpc("get_platform_test_menu_addon", { input_restaurant_id: restaurantId });
       if (readError || readback?.active !== (action === "GRANT")) throw readError ?? new Error("READBACK_MISMATCH");
-      setState(readback as AddonState); setCode(""); setReason(""); setConfirmation(""); request.current = null;
+      setState(readback as AddonState); setCode(""); setReason(""); setConfirmation(""); setExtraUnits(0); request.current = null;
     } catch { setState(null); request.current = null; setError("Aktion nicht bestätigt. Bitte Status lesen, bevor du erneut handelst."); }
     finally { setBusy(false); }
   }
@@ -65,8 +72,12 @@ export function PlatformMenuTestAddonControl({ restaurantId, restaurantName }: {
     <h3>TEST_ONLY-Menü-Add-on · {restaurantName}</h3>
     {error ? <p role="alert">{error}</p> : null}
     {!state ? <button onClick={() => void load()} type="button">Geschützten Status lesen</button> : <>
-      <p role="status">{state.active ? `Aktiv bis ${state.expires_at ?? "–"}` : "Nicht aktiv"} · Filiale {state.branch_id}</p>
+      <p role="status">{state.active ? `Aktiv bis ${state.expires_at ?? "–"}` : "Nicht aktiv"} · Zusätzliche Test-Seiten: {(state.extra_page_units ?? 0) * 10} · Filiale {state.branch_id}</p>
       <p>Nur synthetischer STAGING-Kontext; keine kommerzielle Freischaltung.</p>
+      {!state.active ? <label>Zusätzliche TEST_ONLY-Einheiten à 10 Seiten
+        <input min={0} max={1000} step={1} type="number" value={extraUnits}
+          onChange={(event) => { setExtraUnits(Math.min(1000, Math.max(0, Number(event.target.value) || 0))); setConfirmation(""); }} />
+      </label> : null}
       <label>Grund<textarea minLength={10} onChange={(event) => setReason(event.target.value)} value={reason} /></label>
       <label>Aktueller Authenticator-Code<input autoComplete="one-time-code" inputMode="numeric" maxLength={6} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} value={code} /></label>
       <label>Exakte Bestätigung<input autoComplete="off" onChange={(event) => setConfirmation(event.target.value)} value={confirmation} /></label>

@@ -94,10 +94,39 @@ const after = await admin.rpc("get_platform_test_menu_addon", { input_restaurant
 assert.ifError(after.error);
 assert.equal(after.data?.active, false);
 assert.equal(sql(`select count(*) from public.audit_log where restaurant_id='${restaurant}' and event_type='MENU_TEST_ADDON_REVOKE' and actor_id='${signup.data.user.id}'`), "1");
+const capacityRequest = {
+  input_restaurant_id: restaurant, input_branch_id: branch, input_extra_page_units: 2,
+  input_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  input_reason: "Synthetic local capacity permit test", input_request_id: crypto.randomUUID(),
+};
+const capacity = await admin.rpc("grant_platform_test_menu_capacity", capacityRequest);
+assert.ifError(capacity.error);
+assert.equal(capacity.data?.extra_page_units, 2);
+const capacityReplays = await Promise.all(Array.from({ length: 5 }, () => admin.rpc("grant_platform_test_menu_capacity", capacityRequest)));
+for (const replay of capacityReplays) {
+  assert.ifError(replay.error);
+  assert.equal(replay.data?.event_id, capacity.data.event_id);
+  assert.equal(replay.data?.idempotent, true);
+}
+const capacityRead = await admin.rpc("get_platform_test_menu_addon", { input_restaurant_id: restaurant });
+assert.ifError(capacityRead.error);
+assert.equal(capacityRead.data?.extra_page_units, 2);
+assert.equal(sql(`select count(*) from public.audit_log where restaurant_id='${restaurant}' and event_type='MENU_TEST_CAPACITY_GRANT' and actor_id='${signup.data.user.id}'`), "1");
+const capacityForeign = await admin.rpc("grant_platform_test_menu_capacity", {
+  ...capacityRequest, input_restaurant_id: crypto.randomUUID(), input_request_id: crypto.randomUUID(),
+});
+assert.ok(capacityForeign.error, "foreign capacity tenant denied");
+const capacityRevoked = await admin.rpc("set_platform_test_menu_addon", {
+  input_restaurant_id: restaurant, input_branch_id: branch, input_action: "REVOKE",
+  input_expected_grant_id: capacity.data.event_id, input_expires_at: null,
+  input_reason: reason, input_request_id: crypto.randomUUID(),
+});
+assert.ifError(capacityRevoked.error);
+assert.equal((await admin.rpc("get_platform_test_menu_addon", { input_restaurant_id: restaurant })).data?.active, false);
 sql("update public.business_verification_environment set environment='DISABLED' where singleton");
 const disabled = await admin.rpc("set_platform_test_menu_addon", {
   ...grantRequest, input_request_id: crypto.randomUUID(),
 });
 assert.ok(disabled.error, "non-STAGING environment denied");
 sql("update public.business_verification_environment set environment='STAGING' where singleton");
-console.log("MENU_ADDON_REAL_LOCAL_AAL2_PASS grant=1 parallel_replay=5 revoke=1 audit=2 non_staging_denied=1");
+console.log("MENU_ADDON_REAL_LOCAL_AAL2_PASS grant=1 capacity_units=2 parallel_replay=10 revoke=2 audit=4 non_staging_denied=1");

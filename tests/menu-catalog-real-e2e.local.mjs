@@ -115,6 +115,12 @@ try {
   await ownerPage.getByRole("button", { name: /Seite 1: synthetic-menu.jpg/ }).waitFor();
   await ownerPage.locator('input[type="file"]').setInputFiles({ name: "synthetic-pages.pdf", mimeType: "application/pdf", buffer: makePdf() });
   await ownerPage.getByRole("button", { name: /Seite 2: synthetic-pages.pdf/ }).waitFor(); checks += 2;
+  assert.equal(sql(`select string_agg(page.value->>'page_count',',' order by page.ordinality)
+    from public.restaurant_menu_catalogs c,
+    lateral jsonb_array_elements(c.draft_pages) with ordinality page(value,ordinality)
+    where c.restaurant_id='${restaurant}'`), "1,2", "JPEG counts one; actual two-page PDF counts two");
+  assert.equal(sql(`select public.menu_page_count_internal(draft_pages) from public.restaurant_menu_catalogs
+    where restaurant_id='${restaurant}'`), "3"); checks += 2;
   await ownerPage.getByRole("button", { name: "Vorherige Seite: synthetic-pages.pdf" }).click();
   await ownerPage.getByRole("button", { name: "Reihenfolge speichern" }).click();
   await ownerPage.getByRole("button", { name: /Seite 1: synthetic-pages.pdf/ }).waitFor();
@@ -196,6 +202,16 @@ try {
   await single.locator(".menu-media-viewer img").waitFor();
   assert.equal(await single.getByRole("button", { name: "Übersicht" }).count(), 0); checks += 2;
   await single.close();
+  const raceRevision = Number(sql(`select draft_revision from public.restaurant_menu_catalogs where restaurant_id='${restaurant}'`));
+  const raceVersion = Number(sql(`select published_version from public.restaurant_menu_catalogs where restaurant_id='${restaurant}'`));
+  const race = await Promise.all(Array.from({ length: 6 }, () => owner.rpc("manage_owner_menu_catalog", {
+    input_restaurant_id: restaurant, input_branch_id: branch, input_action: "PUBLISH",
+    input_expected_draft_revision: raceRevision, input_expected_published_version: raceVersion,
+  })));
+  assert.equal(race.filter((result) => !result.error).length, 1, "only one concurrent publication succeeds");
+  assert.equal(race.filter((result) => result.error).length, 5, "five stale concurrent publications fail");
+  assert.equal(sql(`select published_version from public.restaurant_menu_catalogs where restaurant_id='${restaurant}'`),
+    String(raceVersion + 1)); checks += 3;
   sql(`insert into public.restaurant_menu_test_addon_events(restaurant_id,organization_id,branch_id,action,grant_id,actor_id,request_id,payload_hash,reason)
     select restaurant_id,organization_id,branch_id,'REVOKE',id,'${ownerId}',gen_random_uuid(),repeat('b',64),'synthetic browser fixture'
     from public.restaurant_menu_test_addon_events where restaurant_id='${restaurant}' and action='GRANT'`);
@@ -215,25 +231,9 @@ try {
   await afterRevocation.reload();
   assert.equal(await afterRevocation.locator(".premium-bottom-navigation button").filter({ hasText: "Menü" }).count(), 0); checks += 2;
 
-  // Rolled-back synthetic local plan fixture only: PRO includes catalog;
-  // removing that plan immediately denies fresh reads again.
-  sql(`begin; set local session_replication_role=replica;
-    update public.commercial_plan_release_policy set release_state='RELEASED', founder_decision_ref='SYNTHETIC MENU LOCAL',released_at=now()
-      where country_code='AT' and plan_key='PRO';
-    update public.branch_subscriptions set plan_key='PRO',selected_plan='PRO',subscription_status='trialing',status='trialing',
-      payment_status='not_required',trial_started_at=now()-interval '1 day',trial_ends_at=now()+interval '30 days'
-      where branch_id='${branch}'; commit;`);
-  assert.equal(sql(`select public.restaurant_menu_access_internal('${restaurant}','${branch}')`), "t");
-  await afterRevocation.reload();
-  await afterRevocation.locator(".premium-bottom-navigation button").filter({ hasText: "Menü" }).waitFor(); checks += 2;
-  sql(`begin; set local session_replication_role=replica;
-    update public.branch_subscriptions set plan_key='BASIC',selected_plan='BASIC',subscription_status='active',status='active',
-      payment_status='manual',trial_started_at=null,trial_ends_at=null where branch_id='${branch}';
-    update public.commercial_plan_release_policy set release_state='LOCKED',founder_decision_ref=null,released_at=null
-      where country_code='AT' and plan_key='PRO'; commit;`);
-  await afterRevocation.reload();
-  assert.equal(await afterRevocation.locator(".premium-bottom-navigation button").filter({ hasText: "Menü" }).count(), 0);
-  assert.equal(sql(`select public.get_customer_menu_catalog('synthetic-menu-e2e','${token}')->>'available'`), "false"); checks += 2;
+  // A positive PRO entitlement requires the separate pilot activation gate.
+  // This harness deliberately does not alter commercial release policy.
+  assert.equal(sql(`select public.get_customer_menu_catalog('synthetic-menu-e2e','${token}')->>'available'`), "false"); checks += 1;
   const deniedAfterDowngrade = await ownerPage.request.post(`${api}/functions/v1/catalog-media`, {
     headers: { apikey: key, authorization: `Bearer ${key}` },
     data: { kind: "customer", slug: "synthetic-menu-e2e", token,

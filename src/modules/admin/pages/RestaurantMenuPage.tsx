@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { useTenant } from "../../tenant/TenantProvider";
-import { loadOwnerMenuCatalog, manageOwnerMenuCatalog, uploadMenuPage, type MenuPage, type OwnerMenuCatalog } from "../../catalog/menuCatalogService";
+import { loadOwnerMenuCatalog, manageOwnerMenuCatalog, removeOwnerMenuDraftPage, uploadMenuPage, type MenuPage, type OwnerMenuCatalog } from "../../catalog/menuCatalogService";
 import { MenuPageViewer } from "../../catalog/MenuPageViewer";
 import { menuMessage, type MenuMessageKey } from "../../catalog/menuCatalogMessages";
 import "../../catalog/menuCatalog.css";
@@ -66,7 +66,10 @@ export function RestaurantMenuPage() {
         action === "SAVE_TEXT" ? textDraft : null, next.text_version);
       setCatalog(next); setPages(next.draft_pages);
       setNotice(action.startsWith("UNPUBLISH") ? "unpublish" : action.startsWith("PUBLISH") ? "published" : "saved");
-    } catch { setError("ownerError"); void refresh(); }
+    } catch (caught) {
+      setError(String(caught).includes("MENU_PAGE_CAPACITY_EXCEEDED") ? "capacityExceeded" : "ownerError");
+      void refresh();
+    }
     finally { pendingRef.current = false; setSaving(false); }
   }
 
@@ -81,6 +84,18 @@ export function RestaurantMenuPage() {
     setSelected(target);
   }
 
+  async function remove(pageId: string) {
+    if (!restaurantId || !catalog || pendingRef.current) return;
+    pendingRef.current = true; setSaving(true); setError(null); setNotice(null);
+    try {
+      const next = await removeOwnerMenuDraftPage(restaurantId, catalog.branch_id, pageId, catalog.draft_revision);
+      setCatalog(next); setPages(next.draft_pages);
+      setSelected((value) => Math.min(value, Math.max(0, next.draft_pages.length - 1)));
+      setNotice("saved");
+    } catch { setError("ownerError"); void refresh(); }
+    finally { pendingRef.current = false; setSaving(false); }
+  }
+
   return <main className="restaurant-menu-editor">
     <h1>{m("title")}</h1>
     {loading ? <p role="status">{m("loading")}</p> : null}
@@ -90,6 +105,9 @@ export function RestaurantMenuPage() {
       <p>{m("originalCard")}: {catalog.published ? `${m("published")} · ${m("version")} ${catalog.published_version} · ${new Date(catalog.published_at!).toLocaleString(language)}` : m("draft")}</p>
       <p>{m("overview")}: {catalog.text_published ? `${m("published")} · ${m("version")} ${catalog.text_version} · ${new Date(catalog.text_published_at!).toLocaleString(language)}` : m("draft")}</p>
       {!catalog.entitled ? <p role="status">{m("noEntitlement")}</p> : null}
+      <p role="status">{m("pageCapacity")}: {catalog.draft_page_count ?? "–"} / {catalog.page_limit}</p>
+      {catalog.entitled && catalog.draft_page_count !== null && catalog.draft_page_count > catalog.page_limit
+        ? <p role="alert">{m("capacityExceeded")}</p> : null}
       <section aria-label={m("overview")}>
         <label htmlFor="menu-text">{m("textDraft")}</label>
         <textarea id="menu-text" maxLength={20000} rows={10} value={textDraft} onChange={(event) => setTextDraft(event.target.value)} />
@@ -106,9 +124,10 @@ export function RestaurantMenuPage() {
       }} type="file" />
       <ol className="menu-page-order">
         {pages.map((page, index) => <li key={page.id}>
-          <button aria-current={selected === index ? "true" : undefined} onClick={() => setSelected(index)} type="button">{m("page")} {index + 1}: {page.filename}</button>
+          <button aria-current={selected === index ? "true" : undefined} onClick={() => setSelected(index)} type="button">{m("page")} {index + 1}: {page.filename} ({page.page_count ?? "–"})</button>
           <button aria-label={`${m("previous")}: ${page.filename}`} disabled={saving || index === 0} onClick={() => move(index, -1)} type="button">↑</button>
           <button aria-label={`${m("next")}: ${page.filename}`} disabled={saving || index === pages.length - 1} onClick={() => move(index, 1)} type="button">↓</button>
+          <button aria-label={`${m("removePage")}: ${page.filename}`} disabled={saving} onClick={() => void remove(page.id)} type="button">{m("removePage")}</button>
         </li>)}
       </ol>
       {pages[selected] && restaurantId ? <section aria-label={m("preview")}>
@@ -116,7 +135,9 @@ export function RestaurantMenuPage() {
       </section> : null}
       <div className="restaurant-menu-actions">
         <button disabled={saving || pages.length === 0} onClick={() => void act("SAVE_ORDER")} type="button">{m("order")}</button>
-        <button disabled={saving || !catalog.entitled || pages.length === 0} onClick={() => void act("PUBLISH")} type="button">{m("publish")}</button>
+        <button disabled={saving || !catalog.entitled || pages.length === 0
+          || catalog.draft_page_count === null || catalog.draft_page_count > catalog.page_limit}
+          onClick={() => void act("PUBLISH")} type="button">{m("publish")}</button>
         {catalog.published ? <button disabled={saving} onClick={() => void act("UNPUBLISH")} type="button">{m("unpublish")}</button> : null}
       </div>
       </section>

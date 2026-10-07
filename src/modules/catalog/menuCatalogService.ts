@@ -6,12 +6,17 @@ export type MenuPage = {
   mime_type: "image/jpeg" | "application/pdf";
   byte_size: number;
   sha256: string;
+  page_count: number | null;
 };
 
 export type OwnerMenuCatalog = {
   restaurant_id: string;
   branch_id: string;
   entitled: boolean;
+  page_limit: number;
+  draft_page_count: number | null;
+  published_page_count: number | null;
+  media_within_limit: boolean;
   draft_pages: MenuPage[];
   draft_text: string;
   draft_revision: number;
@@ -74,6 +79,19 @@ export async function loadCustomerMenuCatalog(slug: string, token: string): Prom
   });
   if (error) throw error;
   return data as CustomerMenuCatalog;
+}
+
+export async function removeOwnerMenuDraftPage(
+  restaurantId: string, branchId: string, pageId: string, expectedDraftRevision: number,
+): Promise<OwnerMenuCatalog> {
+  const { data, error } = await client().rpc("remove_owner_menu_draft_page", {
+    input_restaurant_id: restaurantId,
+    input_branch_id: branchId,
+    input_page_id: pageId,
+    input_expected_draft_revision: expectedDraftRevision,
+  });
+  if (error) throw error;
+  return data as OwnerMenuCatalog;
 }
 
 export async function uploadMenuPage(restaurantId: string, branchId: string, file: File): Promise<void> {

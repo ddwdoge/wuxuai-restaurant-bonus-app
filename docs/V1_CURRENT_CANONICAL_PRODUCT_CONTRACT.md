@@ -1,5 +1,47 @@
 # WUXUAI Bonus V1 - Canonical Product Contract
 
+## Founder-Entscheidung 2026-10-07 – Speisekarten-Seitenkapazität
+
+BASIC enthält **keinen** Katalog. Ein separat wirksames BASIC-Katalog-Add-on
+schaltet die Textübersicht und **10** veröffentlichte JPEG-/PDF-Seiten frei.
+PRO enthält die Textübersicht und **15** veröffentlichte JPEG-/PDF-Seiten.
+Jede zusätzlich berechtigte Einheit erhöht ausschließlich die Bild-/PDF-
+Seitenkapazität um **10**. Ein JPEG zählt als eine Seite, ein PDF nach seiner
+serverseitig geprüften tatsächlichen Seitenzahl. Die Summe wird unter einem
+transaktionalen Lock bei jeder Veröffentlichung geprüft. Parallelität darf
+keine Überbuchung erzeugen. Nach Entzug oder Downgrade sind neue Abrufe einer
+überzähligen Originalkarte gesperrt; ein weiterhin berechtigter Textkatalog
+kann unabhängig davon sichtbar bleiben. Ohne Katalog-Entitlement sind beide
+Darstellungen und direkte Abrufe gesperrt. Entwürfe bleiben erhalten.
+
+Textkatalog-Einträge besitzen **keine tarifliche Anzahlgrenze**. Technische
+Zeichen-/Bytegrenzen für Eingabe und Entwurfsspeicherung sind davon getrennt.
+Der Founder-Preis einer zusätzlichen 10-Seiten-Einheit ist **19 EUR** als
+Produktentscheidung. Abrechnungsperiode und USt-Ausweis sind noch nicht
+festgelegt; daher keine öffentliche Preisanzeige, Bestellung, Checkout,
+automatische oder reale kostenpflichtige Freischaltung. Lokale und später
+gegebenenfalls geschützte STAGING/TEST_ONLY-Kapazitäts-Permits sind keine
+kommerziellen Entitlements.
+
+Private Katalog-Dateien werden ausschließlich über das serverseitige Medien-
+Gateway in den privaten Tenant-/Filialpfad geschrieben. Ein Cleanup darf nur
+ein mindestens eine Stunde altes, exakt diesem Tenant-/Filialpfad zugeordnetes
+Objekt beanspruchen, das aus einem nach Migration 206 reservierten, nie
+registrierten Upload stammt und weder im Entwurf noch in der gespeicherten
+Veröffentlichungsfassung referenziert ist. Registrierte Dateien und ältere
+Dateien ohne Reservierung werden nicht durch diesen Cleanup gelöscht. Vor dem Löschen wird der Pfad
+transaktional als nicht erneut registrierbar markiert; das eigentliche Löschen
+erfolgt ausschließlich über die Storage-API und erhält einen Audit-Readback.
+Die Stunde ist eine technische Race-Schutzfrist, keine rechtliche
+Aufbewahrungsentscheidung. Neue Owner-Uploads stoßen diesen begrenzten Cleanup
+an. Die lokal geprüfte, noch nicht auf Staging ausgerollte Migration 206
+reserviert Tenant-/Filial-Datei-, Byte- und Seitenbudget atomar vor dem
+Storage-Write. Auch abgelaufene, ungeklärte Reservierungen bleiben bis zur
+geschützten Bereinigung budgetwirksam. Ohne erneute Owner-Aktivität läuft
+derzeit kein periodischer Sweeper. Die physische Aufbewahrungsfrist für
+registrierte oder historisch veröffentlichte Dateien ist fachlich offen;
+der vollständige Katalog-Flow bleibt ohne PRO- und Staging-E2E **NOT READY**.
+
 ## Founder-Entscheidung 2026-10-06 – zwei optionale Speisekartenansichten
 
 PRO enthaelt den Katalog/die Speisekarte. BASIC erhaelt Customer-Lesezugang
