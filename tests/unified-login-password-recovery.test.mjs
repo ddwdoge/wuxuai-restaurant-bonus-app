@@ -54,6 +54,23 @@ test("login navigation advertises only the other public areas", () => {
   assert.equal(portalLoginLinks("owner").some(({ path }) => path.includes("platform")), false);
 });
 
+test("recovery URL cleanup preserves only validated portal navigation and Customer displays completion", async () => {
+  const [service, customer] = await Promise.all([
+    read("../src/modules/auth/ownerAuthService.ts"),
+    read("../src/modules/customer/CustomerAuthPage.tsx"),
+  ]);
+  const cleanup = service.split("export function clearSensitiveAuthUrl()")[1].split("export async function")[0];
+  assert.match(cleanup, /safePath === OWNER_AUTH_PATHS\.updatePassword/);
+  assert.match(cleanup, /readPasswordRecoveryContext\(window.location.search\)/);
+  assert.match(cleanup, /new URLSearchParams\(\{ portal: context.portal \}\)/);
+  assert.match(cleanup, /if \(context.staffSlug\) search.set\("restaurant", context.staffSlug\)/);
+  assert.doesNotMatch(cleanup, /window.location.hash|searchParams.get|access_token|refresh_token/);
+  assert.match(customer, /mode === "login" && location.state\?\.logoutMessage === "Dein Passwort wurde geändert/);
+  assert.deepEqual(readPasswordRecoveryContext("?portal=customer&restaurant=foreign&code=secret&redirect=https://outside.invalid"), {
+    portal: "customer", staffSlug: null,
+  });
+});
+
 test("Customer Staff and Owner login pages expose the shared UX", async () => {
   const [customer, staff, owner, navigation] = await Promise.all([
     read("../src/modules/customer/CustomerAuthPage.tsx"),

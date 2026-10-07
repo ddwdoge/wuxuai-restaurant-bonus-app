@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { CheckCircle2, LogIn, RotateCw, UserPlus } from "lucide-react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
 import { CustomerPhoneField } from "../../shared/components/CustomerPhoneField";
 import { FormLabel, RequiredFieldsNote } from "../../shared/components/FormLabel";
@@ -30,6 +30,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const { loading: authLoading, portalAccess, portalAccessError, retryAuthorization, signIn, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const returnTo = safeCustomerReturnPath(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
@@ -47,7 +48,10 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [confirmationPending, setConfirmationPending] = useState(false);
   const [messageKind, setMessageKind] = useState<"error" | "success">("success");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(() =>
+    mode === "login" && location.state?.logoutMessage === "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden."
+      ? "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden."
+      : null);
   const passwordConfirmationValid = mode === "login"
     ? true
     : isCustomerPasswordConfirmationValid(password, confirmPassword);

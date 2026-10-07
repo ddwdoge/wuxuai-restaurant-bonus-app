@@ -197,7 +197,9 @@ test("Bestätigungs-Callback verarbeitet weiterhin PKCE und vollständigen Hash"
 });
 
 test("sensitive Callback-Werte werden aus der URL entfernt", () => {
-  assert.match(ownerAuthService, /history\.replaceState\(\{\}, document\.title, window\.location\.pathname\)/);
+  assert.match(ownerAuthService, /let safePath = window\.location\.pathname/);
+  assert.match(ownerAuthService, /if \(safePath === OWNER_AUTH_PATHS\.updatePassword\)/);
+  assert.match(ownerAuthService, /history\.replaceState\(\{\}, document\.title, safePath\)/);
   assert.doesNotMatch(callback, /console\./);
   assert.doesNotMatch(updatePassword, /console\./);
 });

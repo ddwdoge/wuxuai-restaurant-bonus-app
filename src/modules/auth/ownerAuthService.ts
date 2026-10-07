@@ -12,6 +12,7 @@ import {
   createOwnerRecoverySessionEstablisher,
 } from "./ownerRecoveryFlow.mjs";
 import type { PasswordRecoveryContext } from "./portalRecoveryUx.mjs";
+import { readPasswordRecoveryContext } from "./portalRecoveryUx.mjs";
 
 function requireAuthClient() {
   if (!supabase) throw new Error(liveDataUnavailableMessage);
@@ -104,7 +105,15 @@ export async function establishOwnerRecoverySession(url = new URL(window.locatio
 }
 
 export function clearSensitiveAuthUrl() {
-  window.history.replaceState({}, document.title, window.location.pathname);
+  let safePath = window.location.pathname;
+  if (safePath === OWNER_AUTH_PATHS.updatePassword) {
+    // Keep only public navigation context across reload, never credentials or redirect targets.
+    const context = readPasswordRecoveryContext(window.location.search);
+    const search = new URLSearchParams({ portal: context.portal });
+    if (context.staffSlug) search.set("restaurant", context.staffSlug);
+    safePath += `?${search.toString()}`;
+  }
+  window.history.replaceState({}, document.title, safePath);
 }
 
 export async function updateOwnerPassword(password: string) {
