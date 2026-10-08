@@ -8,8 +8,23 @@
 .platform-kyb-document-list span, .platform-kyb-document-list time, .platform-kyb-audit-list span, .platform-kyb-audit-list time { color: #665d50; font-size: .875rem; }
 .platform-kyb-document-list .button { flex: 0 0 auto; min-height: 44px; }
 .platform-kyb-audit-list li { border-left: 3px solid rgba(91, 71, 36, .28); padding: 8px 12px; }
+.platform-operator-change { display: grid; gap: 14px; min-width: 0; }
+.platform-operator-change :is(h3, h4, p) { margin: 0; }
+.platform-operator-comparison { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.platform-operator-comparison > div { background: #f8f3e8; border-radius: 12px; display: grid; gap: 7px; min-width: 0; padding: 12px; }
+.platform-operator-comparison dl { display: grid; gap: 5px; margin: 0; }
+.platform-operator-comparison dl > div { border-bottom: 1px solid rgba(91, 71, 36, .16); display: grid; gap: 5px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 4px 0; }
+.platform-operator-comparison dd { margin: 0; overflow-wrap: anywhere; }
+.platform-operator-change :is(code, li) { overflow-wrap: anywhere; }
+.platform-operator-action { display: grid; gap: 12px; }
+.platform-operator-action label { display: grid; gap: 5px; }
+.platform-operator-action .button { justify-self: start; min-height: 44px; }
+.platform-operator-change :focus-visible { outline: 3px solid #b9822c; outline-offset: 2px; }
 
 @media (max-width: 560px) {
   .platform-kyb-document-list li { align-items: stretch; flex-direction: column; }
   .platform-kyb-document-list .button { width: 100%; }
+  .platform-operator-comparison { grid-template-columns: minmax(0, 1fr); }
+  .platform-operator-comparison dl > div { grid-template-columns: minmax(0, 1fr); }
+  .platform-operator-action .button, .platform-operator-change > .button { width: 100%; }
 }

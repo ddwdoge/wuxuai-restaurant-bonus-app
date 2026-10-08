@@ -46,6 +46,7 @@ import {
   saveOwnerKybIntakeProfile,
   validateKybIntakeProfile,
 } from "../verification/kybIntakeProfile";
+import { OwnerActiveOperatorChangePanel } from "../verification/OwnerActiveOperatorChangePanel";
 
 const requiredProfileFields = [
   ["company_name", "Unternehmensname"],
@@ -145,6 +146,7 @@ export function OwnerLegalSettingsPage() {
   const { translateKey } = useI18n();
   const smartSetup = useOwnerSmartSetupContinuation();
   const { activeRestaurant } = useTenant();
+  const activeOperatorChange = activeRestaurant?.status === "active";
   const [setup, setSetup] = useState<RestaurantLegalSetup | null>(null);
   const [profile, setProfile] = useState<Record<string, string | null>>({});
   const [originalProfile, setOriginalProfile] = useState<Record<string, string | null>>({});
@@ -264,6 +266,10 @@ export function OwnerLegalSettingsPage() {
   async function handlePrepare(event: FormEvent) {
     event.preventDefault();
     if (!activeRestaurant?.id || saving) return;
+    if (activeOperatorChange) {
+      setError("Für aktive Betriebe muss eine neue Unternehmensfassung zur internen Prüfung eingereicht werden.");
+      return;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -423,8 +429,8 @@ export function OwnerLegalSettingsPage() {
           })}
         </div>
         <div className="owner-legal-readiness-action">
-          {readiness.action.kind === "company" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
-          {readiness.action.kind === "prepare" ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "company" && !activeOperatorChange ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
+          {readiness.action.kind === "prepare" && !activeOperatorChange ? <button className="button" onClick={() => setEditing(true)} type="button">{readiness.action.label}</button> : null}
           {readiness.action.kind === "review" ? <a className="button" href="#legal-publication">{readiness.action.label}</a> : null}
           {readiness.action.kind === "publish" ? <button className="button" disabled={saving || isPendingActivation(activeRestaurant)} onClick={() => void handleConfirmedPublication()} type="button">{readiness.action.label}</button> : null}
           {readiness.action.kind === "view" ? <Link className="button secondary" to={publicLegalPath}>{readiness.action.label}</Link> : null}
@@ -456,7 +462,7 @@ export function OwnerLegalSettingsPage() {
         <section className="owner-legal-update-note" role="status">
           <FileCheck2 aria-hidden="true" size={20} />
           <div><strong>Neue Version verfügbar</strong><p>Deine Bonusregeln wurden geändert. Prüfe die Unternehmensdaten und veröffentliche anschließend eine aktualisierte Dokumentversion.</p></div>
-          <button className="button secondary" onClick={() => setEditing(true)} type="button">Vorschau öffnen</button>
+          {!activeOperatorChange ? <button className="button secondary" onClick={() => setEditing(true)} type="button">Vorschau öffnen</button> : null}
         </section>
       ) : null}
 
@@ -504,11 +510,13 @@ export function OwnerLegalSettingsPage() {
         </section>
       </details>
 
-      <div className="owner-legal-actions">
-        <button className="button secondary" onClick={() => setEditing((current) => !current)} type="button">Unternehmensdaten bearbeiten</button>
-      </div>
+      {activeOperatorChange ? <OwnerActiveOperatorChangePanel key={activeRestaurant.id} restaurantId={activeRestaurant.id} /> : null}
 
-      {editing ? (
+      {!activeOperatorChange ? <div className="owner-legal-actions">
+        <button className="button secondary" onClick={() => setEditing((current) => !current)} type="button">Unternehmensdaten bearbeiten</button>
+      </div> : null}
+
+      {editing && !activeOperatorChange ? (
         <form className="owner-legal-company-form card" onSubmit={handlePrepare}>
           <div><h2>Unternehmensdaten</h2><p className="muted">Diese Angaben werden für rechtliche Dokumente und das Impressum verwendet. FN und UID sind optional. Änderungen erzeugen eine neue Dokumentversion; die bisher veröffentlichte Version bleibt erhalten.</p></div>
           <RequiredFieldsNote />
