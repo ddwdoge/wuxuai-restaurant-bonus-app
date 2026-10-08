@@ -72,7 +72,7 @@
 .restaurant-offer-form-error { background: #fff0ee; border-left: 3px solid #b65b4e; color: #74392f; margin: 0; padding: 11px 13px; }
 .restaurant-offer-customer-preview { background: #fff; border: 1px solid #e6ded1; border-radius: 8px; overflow: hidden; }
 .restaurant-offer-customer-preview > .smart-media-frame, .restaurant-offer-customer-preview > span { align-items: center; aspect-ratio: 16 / 9; background: #f0eadf; display: flex; justify-content: center; width: 100%; }
-.restaurant-offer-customer-preview > div { display: grid; gap: 10px; padding: 18px; }
+.restaurant-offer-customer-preview > div:not(.smart-media-frame) { display: grid; gap: 10px; padding: 18px; }
 .restaurant-offer-customer-preview h2, .restaurant-offer-customer-preview p { margin: 0; }
 .restaurant-offer-customer-preview small { color: #9a711c; font-weight: 800; text-transform: uppercase; }
 .restaurant-offer-preview-price { align-items: baseline; display: flex; flex-wrap: wrap; gap: 8px 10px; }

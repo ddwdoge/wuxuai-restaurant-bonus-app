@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
   calculateMediaCoverScale,
   DEFAULT_MEDIA_ASPECT_RATIO,
@@ -43,7 +43,8 @@ export function SmartMediaFrame({
   const [failed, setFailed] = useState(false);
   const normalized = normalizeMediaPresentation(presentation);
 
-  useEffect(() => {
+  // Reset before cached-image load events can establish the new render scale.
+  useLayoutEffect(() => {
     setFailed(false);
     setCoverScale(1);
   }, [imageUrl]);
