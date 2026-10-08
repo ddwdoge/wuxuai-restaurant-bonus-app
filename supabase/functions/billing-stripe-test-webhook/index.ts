@@ -37,5 +37,8 @@ Deno.serve(async (request) => {
     input_request_id: event.request_id, input_correlation_id: event.correlation_id, input_livemode: false,
   });
   if (error) return response(error.code === "23505" ? 409 : 503, error.code ?? "BASIC_TEST_WEBHOOK_RETRY");
+  if (data?.result_code === "BASIC_TEST_PROVIDER_BINDING_PENDING") {
+    return response(503, data.result_code);
+  }
   return response(200, data?.status ?? "PROCESSED", data);
 });

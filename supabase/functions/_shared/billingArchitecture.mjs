@@ -33,7 +33,30 @@ export function sanitizeStripeTestEvent(input) {
   }
   const object = input.data?.object;
   if (!object || typeof object !== "object" || Array.isArray(object)) throw new Error("BASIC_TEST_WEBHOOK_OBJECT_INVALID");
-  const metadata = object.metadata ?? object.subscription_details?.metadata ?? object.parent?.subscription_details?.metadata ?? {};
+  if (object.livemode !== undefined && object.livemode !== false) throw new Error("BASIC_TEST_WEBHOOK_EVENT_INVALID");
+  const invoice = input.type.startsWith("invoice.");
+  const parentDetails = invoice ? object.parent?.subscription_details : undefined;
+  if (parentDetails != null && object.parent?.type !== "subscription_details") {
+    throw new Error("BASIC_TEST_WEBHOOK_SUBSCRIPTION_INVALID");
+  }
+  // Invoice metadata is independent of the subscription snapshot. Compare all
+  // supplied binding fields: an empty object is not an authoritative override.
+  const metadata = {};
+  const sources = invoice
+    ? [object.metadata, object.subscription_details?.metadata, parentDetails?.metadata]
+    : [object.metadata];
+  for (const source of sources) {
+    if (source == null) continue;
+    if (typeof source !== "object" || Array.isArray(source)) throw new Error("BASIC_TEST_WEBHOOK_METADATA_INVALID");
+    for (const key of ["restaurant_id", "acceptance_id", "request_id", "correlation_id"]) {
+      const value = source[key];
+      if (value == null) continue;
+      if (typeof value !== "string" || !UUID.test(value)) throw new Error("BASIC_TEST_WEBHOOK_METADATA_INVALID");
+      const normalized = value.toLowerCase();
+      if (metadata[key] !== undefined && metadata[key] !== normalized) throw new Error("BASIC_TEST_WEBHOOK_METADATA_CONFLICT");
+      metadata[key] = normalized;
+    }
+  }
   const restaurantId = metadata.restaurant_id ?? null;
   const acceptanceId = metadata.acceptance_id ?? null;
   const requestId = metadata.request_id ?? null;
@@ -42,7 +65,14 @@ export function sanitizeStripeTestEvent(input) {
     if (value !== null && (typeof value !== "string" || !UUID.test(value))) throw new Error("BASIC_TEST_WEBHOOK_METADATA_INVALID");
   }
   const sessionId = input.type === "checkout.session.completed" ? object.id : null;
-  const subscriptionId = input.type.startsWith("customer.subscription.") ? object.id : object.subscription;
+  const subscriptionIds = input.type.startsWith("customer.subscription.")
+    ? [object.id] : [object.subscription, ...(invoice ? [parentDetails?.subscription] : [])];
+  const suppliedSubscriptionIds = subscriptionIds.filter(value => value != null);
+  if (suppliedSubscriptionIds.some(value => typeof value !== "string" || !/^sub_[A-Za-z0-9_]{8,160}$/.test(value))) {
+    throw new Error("BASIC_TEST_WEBHOOK_SUBSCRIPTION_INVALID");
+  }
+  if (new Set(suppliedSubscriptionIds).size > 1) throw new Error("BASIC_TEST_WEBHOOK_SUBSCRIPTION_CONFLICT");
+  const subscriptionId = suppliedSubscriptionIds[0] ?? null;
   const customerId = typeof object.customer === "string" ? object.customer : object.customer?.id ?? null;
   if (sessionId !== null && (typeof sessionId !== "string" || !/^cs_test_[A-Za-z0-9_]{8,160}$/.test(sessionId))) {
     throw new Error("BASIC_TEST_WEBHOOK_SESSION_INVALID");
