@@ -36,7 +36,9 @@ const smtpPassword = Deno.env.get("SMTP_PASSWORD") ?? "";
 const smtpFromEmail = Deno.env.get("SMTP_FROM_EMAIL") ?? "";
 const smtpFromName = Deno.env.get("SMTP_FROM_NAME") ?? "WUXUAI® Bonus";
 const smtpReplyTo = Deno.env.get("SMTP_REPLY_TO") ?? "";
-const transportMode = Deno.env.get("TRANSACTIONAL_MAIL_MODE") ?? "general";
+const transportMode = Deno.env.get("TRANSACTIONAL_MAIL_MODE") ?? "staging_paused";
+const stagingSupabaseUrl = "https://bwhvfjuwixgwduoeqaya.supabase.co";
+const stagingAppOrigin = "https://staging-app.bonus.wuxuaisbi.com";
 const stagingTestRecipient = Deno.env.get("STAGING_TEST_RECIPIENT") ?? "";
 const STAGING_TEST_SENDER = "notifications@wuxuaibonus.com";
 const STAGING_TEST_REPLY_TO = "support@wuxuaibonus.com";
@@ -169,6 +171,17 @@ async function resolveRecipientContext(
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  // Server configuration only. Pause before parsing caller input, reserving
+  // any queue row, constructing SMTP transport or running scheduler RPCs.
+  if (transportMode !== "general" && transportMode !== "staging_synthetic_only") {
+    return json({ error: "transactional_mail_dispatch_paused" }, 503);
+  }
+  const stagingProject = supabaseUrl === stagingSupabaseUrl;
+  const stagingOrigin = appBaseUrl === stagingAppOrigin;
+  if ((transportMode === "general" && (stagingProject || stagingOrigin))
+    || (transportMode === "staging_synthetic_only" && (!stagingProject || !stagingOrigin))) {
+    return json({ error: "transactional_mail_mode_environment_mismatch" }, 503);
+  }
   const configured = supabaseUrl && serviceRoleKey && schedulerSecret && appBaseUrl
     && smtpHost && Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65_535
     && smtpUsername && smtpPassword && smtpFromEmail && smtpReplyTo;

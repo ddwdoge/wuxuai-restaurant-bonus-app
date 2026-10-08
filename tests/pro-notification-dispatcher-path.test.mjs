@@ -16,6 +16,7 @@ function loadDispatcher(state, envOverrides = {}) {
 
   const client = {
     rpc: async (name, input) => {
+      (state.events ??= []).push(name);
       state.rpcCalls.push({ name, input });
       if (name === "reserve_customer_transactional_emails") {
         return { data: [state.delivery], error: null };
@@ -50,6 +51,7 @@ function loadDispatcher(state, envOverrides = {}) {
   };
   const transporter = {
     sendMail: async () => {
+      (state.events ??= []).push("provider");
       state.providerCalls += 1;
       return { messageId: "local-provider-message" };
     },
@@ -58,7 +60,9 @@ function loadDispatcher(state, envOverrides = {}) {
     SUPABASE_URL: "http://127.0.0.1:56121",
     SUPABASE_SERVICE_ROLE_KEY: "local-service-role-fixture",
     TRANSACTIONAL_MAIL_SCHEDULER_SECRET: "local-scheduler-fixture",
-    APP_BASE_URL: "https://staging-app.bonus.wuxuaisbi.com",
+    // General dispatch regression is an in-memory transport test, not Staging.
+    APP_BASE_URL: "https://app.bonus.wuxuaisbi.com",
+    TRANSACTIONAL_MAIL_MODE: "general",
     SMTP_HOST: "smtp.example.invalid",
     SMTP_PORT: "587",
     SMTP_USERNAME: "local-user",
@@ -71,8 +75,8 @@ function loadDispatcher(state, envOverrides = {}) {
   const context = {
     exports: {},
     require(name) {
-      if (name.includes("supabase-js")) return { createClient: () => client };
-      if (name.includes("nodemailer")) return { __esModule: true, default: { createTransport: () => transporter } };
+      if (name.includes("supabase-js")) return { createClient: () => { state.clients = (state.clients ?? 0) + 1; return client; } };
+      if (name.includes("nodemailer")) return { __esModule: true, default: { createTransport: () => { state.transports = (state.transports ?? 0) + 1; return transporter; } } };
       if (name.includes("appOrigin")) return { configuredAppOrigin: (value) => value };
       if (name.includes("transactionalMailTemplates")) return {
         renderOwnerCapacityWarningMail: () => ({ subject: "capacity", text: "capacity", html: "capacity" }),
@@ -106,7 +110,9 @@ function loadDispatcher(state, envOverrides = {}) {
 
 test("staging synthetic-only mode never reserves the pending customer queue", async () => {
   const state = { rpcCalls: [], providerCalls: 0, completions: [] };
-  const handler = loadDispatcher(state, { TRANSACTIONAL_MAIL_MODE: "staging_synthetic_only" });
+  const handler = loadDispatcher(state, { TRANSACTIONAL_MAIL_MODE: "staging_synthetic_only",
+    SUPABASE_URL: "https://bwhvfjuwixgwduoeqaya.supabase.co",
+    APP_BASE_URL: "https://staging-app.bonus.wuxuaisbi.com" });
   const response = await handler(new Request("http://127.0.0.1/dispatcher", {
     method: "POST",
     headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture" },
@@ -148,6 +154,8 @@ async function dispatch(eventType, authorization, authorizationError = false, wi
 for (const [eventType, reasonCode] of [
   ["OFFER_PUBLISHED", "PRO_ENTITLEMENT_INACTIVE"],
   ["OFFER_PUBLISHED", "OFFER_EMAIL_CONSENT_INACTIVE"],
+  ["OFFER_PUBLISHED", "CUSTOMER_IDENTITY_MISMATCH"],
+  ["OFFER_PUBLISHED", "TENANT_MISMATCH"],
   ["POINT_REWARD_AVAILABLE", "PRO_ENTITLEMENT_INACTIVE"],
   ["POINT_REWARD_AVAILABLE", "REWARD_EMAIL_CONSENT_CONTRACT_MISSING"],
 ]) {
@@ -183,6 +191,7 @@ test("a currently authorized offer preserves the existing provider and completio
   assert.equal(state.providerCalls, 1);
   assert.equal(state.completions.length, 1);
   assert.equal(state.completions[0].input_success, true);
+  assert.equal(state.events[state.events.indexOf("provider") - 1], "authorize_customer_transactional_email_delivery");
   assert.deepEqual(body, { processed: 1, sent: 1, failed: 0, provider_accepted: true });
 });
 
@@ -193,4 +202,70 @@ test("general mode can deliver an already pending birthday reminder", async () =
   assert.equal(state.providerCalls, 1);
   assert.equal(state.completions.length, 1);
   assert.deepEqual(body, { processed: 1, sent: 1, failed: 0, provider_accepted: true });
+});
+
+for (const mode of [undefined, "", "typo", "staging_paused", "general"]) {
+  test(`staging ${String(mode)} cannot touch three pending birthday jobs even with authorized parallel callers`, async () => {
+    const pending = Array.from({ length: 3 }, (_, i) => ({ id: i, status: "PENDING", tenant: "synthetic-other-tenant" }));
+    const before = JSON.stringify(pending);
+    const state = { rpcCalls: [], providerCalls: 0, completions: [], pending,
+      delivery: { delivery_id: "75000000-0000-4000-8000-000000000099", event_type: "BIRTHDAY_GIFT_EXPIRY_REMINDER", email: "synthetic@example.invalid", payload: {}, attempt_count: 1 },
+      authorization: { authorized: true } };
+    const handler = loadDispatcher(state, {
+      TRANSACTIONAL_MAIL_MODE: mode,
+      SUPABASE_URL: "https://bwhvfjuwixgwduoeqaya.supabase.co",
+    });
+    const responses = await Promise.all(Array.from({ length: 12 }, (_, i) => handler(new Request("https://local.invalid/dispatcher?mode=general", {
+      method: "POST", headers: { "x-wuxuai-scheduler-secret": i % 2 ? "local-scheduler-fixture" : "unknown-caller" },
+      body: JSON.stringify({ mode: "general", limit: 50, restaurant_id: "foreign-tenant" }),
+    }))));
+    assert.ok(responses.every(r => r.status === 503));
+    assert.equal(state.rpcCalls.length, 0);
+    assert.equal(state.clients ?? 0, 0);
+    assert.equal(state.transports ?? 0, 0);
+    assert.equal(state.providerCalls, 0);
+    assert.equal(state.completions.length, 0);
+    assert.equal(JSON.stringify(pending), before);
+  });
+}
+
+test("pause ignores synthetic scheduler capabilities, malformed bodies and client mode overrides", async () => {
+  const state = { rpcCalls: [], providerCalls: 0, completions: [] };
+  const handler = loadDispatcher(state, { TRANSACTIONAL_MAIL_MODE: "staging_paused", SMTP_PASSWORD: undefined });
+  for (const body of ["", "not-json", "null", JSON.stringify({ mode: "scheduled_synthetic_capacity_test",
+    message_type: "synthetic_capacity", environment: "staging", synthetic_test: true,
+    request_id: "75000000-0000-4000-8000-000000000001", correlation_id: "75000000-0000-4000-8000-000000000002",
+    scheduler_token: "0".repeat(64), recipient: "synthetic@example.invalid" })]) {
+    assert.equal((await handler(new Request("https://local.invalid/dispatcher?mode=general", {
+      method: "POST", headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture", "x-mode": "general" }, body,
+    }))).status, 503);
+  }
+  assert.equal(state.rpcCalls.length, 0); assert.equal(state.clients ?? 0, 0);
+  assert.equal(state.transports ?? 0, 0); assert.equal(state.providerCalls, 0);
+});
+
+for (const env of [
+  { TRANSACTIONAL_MAIL_MODE: "general", APP_BASE_URL: "https://staging-app.bonus.wuxuaisbi.com" },
+  { TRANSACTIONAL_MAIL_MODE: "staging_synthetic_only", APP_BASE_URL: "https://staging-app.bonus.wuxuaisbi.com" },
+  { TRANSACTIONAL_MAIL_MODE: "staging_synthetic_only", SUPABASE_URL: "https://bwhvfjuwixgwduoeqaya.supabase.co" },
+]) {
+  test(`contradictory deployment pairing fails before any queue: ${JSON.stringify(env)}`, async () => {
+    const state = { rpcCalls: [], providerCalls: 0, completions: [] };
+    const response = await loadDispatcher(state, env)(new Request("https://local.invalid/dispatcher", {
+      method: "POST", headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture" }, body: "{}",
+    }));
+    assert.equal(response.status, 503); assert.equal(state.rpcCalls.length, 0);
+    assert.equal(state.clients ?? 0, 0); assert.equal(state.transports ?? 0, 0);
+  });
+}
+
+test("an enabled general transport still requires the existing scheduler authorization", async () => {
+  for (const credential of [undefined, "foreign-caller"]) {
+    const state = { rpcCalls: [], providerCalls: 0, completions: [] };
+    const response = await loadDispatcher(state)(new Request("https://local.invalid/dispatcher", {
+      method: "POST", headers: credential ? { "x-wuxuai-scheduler-secret": credential } : {}, body: "{}",
+    }));
+    assert.equal(response.status, 401); assert.equal(state.rpcCalls.length, 0);
+    assert.equal(state.transports ?? 0, 0);
+  }
 });
