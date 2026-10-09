@@ -98,6 +98,7 @@ async function readVerifiedPortalAccess(): Promise<PortalAccess> {
     ...access,
     platform_terms_status: termsError ? "UNAVAILABLE" : terms?.status ?? "UNAVAILABLE",
     customer_account_exists: termsError ? access.customer_access : Boolean(terms?.account_exists),
+    platform_test_account_setup_allowed: !termsError && terms?.test_account_setup_allowed === true,
   };
 }
 

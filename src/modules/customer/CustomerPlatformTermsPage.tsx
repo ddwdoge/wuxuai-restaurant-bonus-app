@@ -17,6 +17,7 @@ type TermsDocument = {
 };
 
 type TermsStatus = {
+  test_context_available?: boolean;
   status: "UNAVAILABLE" | "ACCEPTANCE_REQUIRED" | "ACCEPTED";
   account_exists: boolean;
   next_step: string;
@@ -34,7 +35,9 @@ type TermsReceiptReadback = {
 export function CustomerPlatformTermsPage() {
   const { loading: authLoading, portalAccess, retryAuthorization, user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const testScope = searchParams.get("scope") === "tenant_test";
+  const statusRpc = testScope ? "get_platform_customer_test_terms_status" : "get_platform_customer_terms_status";
   const returnTo = safeCustomerReturnPath(searchParams.get("returnTo"));
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [status, setStatus] = useState<TermsStatus | null>(null);
@@ -50,7 +53,7 @@ export function CustomerPlatformTermsPage() {
     const revision = ++loadRevisionRef.current;
     setState("loading");
     setError(null);
-    const { data, error: readError } = await supabase.rpc("get_platform_customer_terms_status");
+    const { data, error: readError } = await supabase.rpc(statusRpc);
     if (revision !== loadRevisionRef.current) return;
     if (readError) {
       setState("error");
@@ -66,7 +69,7 @@ export function CustomerPlatformTermsPage() {
     }
     setStatus(nextStatus);
     setState("ready");
-  }, [user]);
+  }, [statusRpc, user]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -130,7 +133,7 @@ export function CustomerPlatformTermsPage() {
         });
         if (receiptError) throw receiptError;
         const receipt = receiptData as TermsReceiptReadback | null;
-        const { data: statusData, error: statusError } = await supabase.rpc("get_platform_customer_terms_status");
+        const { data: statusData, error: statusError } = await supabase.rpc(statusRpc);
         if (statusError) throw statusError;
         if (loadRevisionRef.current !== revision) return;
         const authoritative = statusData as TermsStatus;
@@ -167,6 +170,20 @@ export function CustomerPlatformTermsPage() {
         <PremiumCard className="central-auth-card">
           <div className="central-card-header-actions"><CustomerLanguageAction /></div>
           <h1>Plattformbedingungen für dein Kundenkonto</h1>
+          {testScope ? <p role="status">Tenantgebundener TEST_ONLY-Zugang – keine allgemeine Plattform-Zustimmung.</p> : null}
+          {state === "ready" && (testScope || status?.test_context_available) ? (
+            <SecondaryButton disabled={saving} type="button" onClick={() => {
+              loadRevisionRef.current += 1;
+              setState("loading");
+              setStatus(null);
+              setAccepted(false);
+              setSearchParams((previous) => {
+                const next = new URLSearchParams(previous);
+                if (testScope) next.delete("scope"); else next.set("scope", "tenant_test");
+                return next;
+              });
+            }}>{testScope ? "Allgemeine Plattformfassung ansehen" : "Gesonderten tenantgebundenen Testzugang ansehen"}</SecondaryButton>
+          ) : null}
           {state === "loading" ? <p role="status">Rechtsstatus wird geprüft …</p> : null}
           {state === "error" ? <SecondaryButton onClick={() => void load()} type="button">Erneut prüfen</SecondaryButton> : null}
           {state === "ready" && status?.status === "UNAVAILABLE" ? (
@@ -175,9 +192,10 @@ export function CustomerPlatformTermsPage() {
           {state === "ready" && status?.status === "ACCEPTANCE_REQUIRED" && status.document ? (
             <>
               {status.document.test_only ? <p role="status">Nur für einen gesondert gekennzeichneten Testzugang. Keine reale Rechtsfreigabe.</p> : null}
-              <p>{status.document.provider_snapshot}</p>
-              <p>Fassung {status.document.version} · Sprache {status.document.language}</p>
-              <article className="central-auth-legal-document" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{status.document.body_markdown}</article>
+              <p data-i18n-skip="true">{status.document.provider_snapshot}</p>
+              <p>Fassung <span data-i18n-skip="true">{status.document.version}</span> · Sprache <span data-i18n-skip="true">{status.document.language}</span></p>
+              <p data-i18n-skip="true" style={{ overflowWrap: "anywhere" }}>SHA-256: {status.document.sha256}</p>
+              <article data-i18n-skip="true" className="central-auth-legal-document" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{status.document.body_markdown}</article>
               <p><Link to="/platform/legal/platform_privacy">Datenschutzinformation ansehen</Link></p>
               <label className="central-auth-legal-choice">
                 <input checked={accepted} onChange={(event) => setAccepted(event.target.checked)} type="checkbox" />

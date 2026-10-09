@@ -62,7 +62,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     && Boolean(user)
     && !portalAccessError
     && !portalAccess.customer_access
-    && portalAccess.platform_terms_status === "ACCEPTED";
+    && (portalAccess.platform_terms_status === "ACCEPTED" || portalAccess.platform_test_account_setup_allowed === true);
   const registrationValid = isValidCustomerFirstName(firstName)
     && Boolean(customerPhoneValidation(phoneCountryCode, phone).e164)
     && (activatingExistingAccount || (
@@ -84,7 +84,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
   }, [resendCooldown]);
 
   if (!authLoading && user && !portalAccessError && !portalAccess.customer_account_exists
-    && portalAccess.platform_terms_status !== "ACCEPTED") {
+    && portalAccess.platform_terms_status !== "ACCEPTED" && !portalAccess.platform_test_account_setup_allowed) {
     return <Navigate replace to={`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`} />;
   }
 
