@@ -109,6 +109,11 @@ deno_version = 2
 [functions.catalog-media]
 verify_jwt = false
 
+# This worker authenticates its dedicated scheduler secret before it can
+# reserve the confirmation-only outbox. It accepts no browser JWT.
+[functions.customer-offer-email-confirmation-dispatch]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 56127

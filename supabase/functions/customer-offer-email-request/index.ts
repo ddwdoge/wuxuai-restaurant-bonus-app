@@ -21,8 +21,6 @@ const uuid = (value: unknown): value is string => typeof value === "string"
   && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 const hash = (value: unknown): value is string => typeof value === "string"
   && /^[0-9a-f]{64}$/.test(value);
-const token = () => Array.from(crypto.getRandomValues(new Uint8Array(32)),
-  (part) => part.toString(16).padStart(2, "0")).join("");
 
 function reply(body: unknown, status: number, origin: string) {
   return new Response(JSON.stringify(body), { status, headers: {
@@ -70,13 +68,11 @@ Deno.serve(async (request) => {
   // The service-only RPC verifies the Auth session and all business bindings.
   const service = createClient(supabaseUrl, serviceKey,
     { auth: { persistSession: false, autoRefreshToken: false } });
-  const confirmation = token();
-  await service.rpc("request_authenticated_customer_offer_email_confirmation", {
+  await service.rpc("request_authenticated_customer_offer_email_confirmation_v2", {
     input_auth_user_id: identity.user.id,
     input_auth_session_id: sessionId,
     input_restaurant_id: body.restaurant_id,
     input_frequency: body.frequency,
-    input_confirmation_token: confirmation,
     input_request_id: body.request_id,
     input_expected_document_id: body.document_id,
     input_expected_version: body.document_version,
