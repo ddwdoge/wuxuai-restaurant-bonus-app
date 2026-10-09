@@ -1,17 +1,37 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import { checkoutIdempotencyKey, parseBasicTestCheckoutRequest, runBasicTestCheckout } from "../_shared/billingArchitecture.mjs";
+import { requireProjectBinding, requireProjectSession } from "../_shared/projectBinding.mjs";
 
-const stagingOrigin = "https://staging-app.bonus.wuxuaisbi.com";
 const allowedHeaders = new Set(["authorization", "apikey", "content-type", "x-client-info"]);
 
-function response(status: number, code: string, details?: unknown, cors = false) {
+function boundResponse(status: number, code: string, details?: unknown, cors = "") {
   return new Response(JSON.stringify({ code, details }), { status, headers: {
     "content-type": "application/json; charset=utf-8", "cache-control": "no-store",
-    ...(cors ? { "access-control-allow-origin": stagingOrigin, vary: "Origin" } : {}),
+    ...(cors ? { "access-control-allow-origin": cors, vary: "Origin" } : {}),
   } });
 }
 
 Deno.serve(async (request) => {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const stripeKey = Deno.env.get("STRIPE_TEST_SECRET_KEY") ?? "";
+  if (Deno.env.get("BASIC_BILLING_MODE") !== "staging_test_only" || !anonKey || !serviceKey
+    || !stripeKey.startsWith("sk_test_") || stripeKey.includes("live")) {
+    return boundResponse(503, "BASIC_TEST_CHECKOUT_NOT_ENABLED");
+  }
+  let binding, service;
+  try {
+    service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    binding = await requireProjectBinding(service, {
+      backendUrl: url, projectRef: Deno.env.get("BASIC_BILLING_PROJECT_REF"),
+      issuer: Deno.env.get("WUXUAI_AUTH_ISSUER"), appOrigin: Deno.env.get("WUXUAI_APP_ORIGIN"),
+      deploymentId: Deno.env.get("DENO_DEPLOYMENT_ID"),
+    });
+  } catch { return boundResponse(503, "PROJECT_BINDING_REQUIRED"); }
+  const stagingOrigin = binding.app_origin;
+  const response = (status: number, code: string, details?: unknown, cors = false) =>
+    boundResponse(status, code, details, cors ? stagingOrigin : "");
   const originAllowed = request.headers.get("origin") === stagingOrigin;
   if (request.method === "OPTIONS") {
     const headers = (request.headers.get("access-control-request-headers") ?? "").split(",")
@@ -25,15 +45,7 @@ Deno.serve(async (request) => {
     } });
   }
   if (request.method !== "POST") return response(405, "METHOD_NOT_ALLOWED", undefined, originAllowed);
-  const url = Deno.env.get("SUPABASE_URL") ?? "";
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const stripeKey = Deno.env.get("STRIPE_TEST_SECRET_KEY") ?? "";
-  const enabled = Deno.env.get("BASIC_BILLING_MODE") === "staging_test_only"
-    && Deno.env.get("BASIC_BILLING_PROJECT_REF") === "bwhvfjuwixgwduoeqaya"
-    && url === "https://bwhvfjuwixgwduoeqaya.supabase.co"
-    && stripeKey.startsWith("sk_test_") && !stripeKey.includes("live");
-  if (!enabled || !anonKey || !serviceKey || !originAllowed) return response(503, "BASIC_TEST_CHECKOUT_NOT_ENABLED", undefined, originAllowed);
+  if (!originAllowed) return response(503, "BASIC_TEST_CHECKOUT_NOT_ENABLED");
   const authorization = request.headers.get("authorization") ?? "";
   if (!/^Bearer [A-Za-z0-9._-]+$/.test(authorization)) return response(401, "AUTH_REQUIRED", undefined, true);
   let input;
@@ -45,6 +57,8 @@ Deno.serve(async (request) => {
   }
   const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authorization } },
     auth: { autoRefreshToken: false, persistSession: false } });
+  try { await requireProjectSession(userClient); }
+  catch { return response(403, "PROJECT_SESSION_REQUIRED", undefined, true); }
   const { data: prepared, error: prepareError } = await userClient.rpc("prepare_basic_test_checkout", {
     input_acceptance_id: input.acceptance_id, input_request_id: input.request_id,
     input_return_route: input.return_route,
@@ -70,7 +84,6 @@ Deno.serve(async (request) => {
     "subscription_data[metadata][request_id]": prepared.request_id,
     "subscription_data[metadata][correlation_id]": prepared.correlation_id,
   });
-  const service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   try {
     const checkoutUrl = await runBasicTestCheckout(prepared, {
       create: async () => {

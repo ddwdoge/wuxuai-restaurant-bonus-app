@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
+import { requireProjectBinding, requireProjectSession } from "../_shared/projectBinding.mjs";
 import {
   allowedRedemptionOrigin,
   allowedRedemptionPreflight,
-  allowedRedemptionRuntime,
   parseRedemptionMutation,
 } from "../_shared/redemptionEdgeContract.mjs";
 
@@ -18,12 +18,23 @@ const response = (status: number, code: string, origin?: string, data?: unknown)
 
 Deno.serve(async (request) => {
   const mode = Deno.env.get("REDEMPTION_EDGE_MODE") ?? "";
-  const projectRef = Deno.env.get(
-    mode === "production" ? "REDEMPTION_PRODUCTION_PROJECT_REF" : "REDEMPTION_STAGING_PROJECT_REF",
-  ) ?? "";
-  const localOrigin = Deno.env.get("REDEMPTION_LOCAL_ALLOWED_ORIGIN") ?? "";
+  const projectRef = Deno.env.get("REDEMPTION_STAGING_PROJECT_REF") ?? "";
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  // This candidate targets the new bound STAGING only. No local/production
+  // mode may bypass the administrative binding.
+  if (mode !== "staging" || !anonKey || !serviceKey) return response(503, "REDEMPTION_EDGE_NOT_CONFIGURED");
+  let binding, backend;
+  try {
+    backend = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    binding = await requireProjectBinding(backend, {
+      backendUrl: url, projectRef, issuer: Deno.env.get("WUXUAI_AUTH_ISSUER"),
+      appOrigin: Deno.env.get("WUXUAI_APP_ORIGIN"), deploymentId: Deno.env.get("DENO_DEPLOYMENT_ID"),
+    });
+  } catch { return response(503, "PROJECT_BINDING_REQUIRED"); }
   const requestedOrigin = request.headers.get("origin");
-  const origin = allowedRedemptionOrigin(requestedOrigin, mode, localOrigin, projectRef) ?? undefined;
+  const origin = allowedRedemptionOrigin(requestedOrigin, mode, "", projectRef, binding) ?? undefined;
   if (request.method === "OPTIONS") {
     if (!origin || !allowedRedemptionPreflight(
       request.headers.get("access-control-request-method"),
@@ -39,13 +50,6 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return response(405, "METHOD_NOT_ALLOWED");
   if (!origin) return response(403, "REDEMPTION_ORIGIN_BLOCKED");
 
-  const url = Deno.env.get("SUPABASE_URL") ?? "";
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!allowedRedemptionRuntime(mode, url, projectRef) || !anonKey || !serviceKey) {
-    return response(503, "REDEMPTION_EDGE_NOT_CONFIGURED", origin);
-  }
-
   const authorization = request.headers.get("authorization") ?? "";
   if (!/^Bearer [A-Za-z0-9._-]+$/.test(authorization)) return response(401, "AUTH_REQUIRED", origin);
   const token = authorization.slice(7);
@@ -54,6 +58,10 @@ Deno.serve(async (request) => {
   if (authError || !identity.user?.id || identity.user.is_anonymous === true) {
     return response(401, "AUTH_REQUIRED", origin);
   }
+  const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authorization } },
+    auth: { autoRefreshToken: false, persistSession: false } });
+  try { await requireProjectSession(userClient); }
+  catch { return response(403, "PROJECT_SESSION_REQUIRED", origin); }
 
   let payload;
   try {
@@ -67,7 +75,6 @@ Deno.serve(async (request) => {
 
   // Never forward an IP header. The SQL contract uses only this verified UID
   // plus authoritative tenant/account membership and server-side counters.
-  const backend = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data, error } = await backend.rpc("secure_redemption_edge_mutate", {
     input_actor_user_id: identity.user.id,
     input_payload: payload,

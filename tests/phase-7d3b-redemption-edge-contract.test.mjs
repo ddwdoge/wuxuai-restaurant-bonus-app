@@ -45,7 +45,11 @@ test("CORS is exact and rejects unknown headers and origins", () => {
 test("Staging and Production redemption runtimes are bound to their exact Supabase project", () => {
   assert.equal(allowedRedemptionRuntime(
     "staging", "https://bwhvfjuwixgwduoeqaya.supabase.co", "bwhvfjuwixgwduoeqaya",
-  ), true);
+  ), false);
+  const binding = { project_ref: "a".repeat(20), backend_url: `https://${"a".repeat(20)}.supabase.co`,
+    app_origin: "https://new-staging.example.invalid" };
+  assert.equal(allowedRedemptionRuntime("staging", binding.backend_url, binding.project_ref, binding), true);
+  assert.equal(allowedRedemptionOrigin(binding.app_origin, "staging", "", binding.project_ref, binding), binding.app_origin);
   assert.equal(allowedRedemptionRuntime(
     "production", "https://fuqhljgesclipzduhykl.supabase.co", "fuqhljgesclipzduhykl",
   ), true);

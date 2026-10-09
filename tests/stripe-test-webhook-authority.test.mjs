@@ -1,10 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-import { randomBytes } from 'node:crypto';
-import ts from 'typescript';
-import { sanitizeStripeTestEvent, signFakeWebhook, verifyRawWebhook, sha256Hex } from '../supabase/functions/_shared/billingArchitecture.mjs';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { signFakeWebhook } from '../supabase/functions/_shared/billingArchitecture.mjs';
+import { loadEdge } from './fixtures/project-binding-edge-harness.mjs';
 
 const sql = readFileSync(new URL('../supabase/migrations/20261007145233_basic_test_webhook_authoritative_binding.sql', import.meta.url), 'utf8');
 test('binding uses local Owner, tenant, branch, acceptance, subscription and TEST authority', () => {
@@ -35,22 +34,18 @@ test('existing readiness, replay, append-only receipt and service-only rights re
   assert.doesNotMatch(sql, /update public\.basic_stripe_test_event_inbox/);
 });
 test('actual signed handler returns retryable 503 for pending provider binding (RPC response stub)', async () => {
-  let handler; let calls = 0;
+  let calls = 0;
   const secret = 'whsec_' + randomBytes(32).toString('hex');
-  const source = readFileSync(new URL('../supabase/functions/billing-stripe-test-webhook/index.ts', import.meta.url), 'utf8');
-  const context = vm.createContext({ Response, Uint8Array, TextDecoder, sanitizeStripeTestEvent, sha256Hex, verifyRawWebhook,
-    fetch: () => { throw new Error('Network forbidden'); },
-    Deno: { serve: fn => { handler = fn; }, env: { get: name => ({ SUPABASE_URL: 'https://bwhvfjuwixgwduoeqaya.supabase.co',
+  const ref='a'.repeat(20), url=`https://${ref}.supabase.co`, origin='https://new-staging.example.invalid';
+  const handler=loadEdge('billing-stripe-test-webhook', { SUPABASE_URL: url,
       SUPABASE_SERVICE_ROLE_KEY: 'local-unusable-placeholder', STRIPE_TEST_WEBHOOK_SECRET: secret,
-      BASIC_BILLING_MODE: 'staging_test_only', BASIC_BILLING_PROJECT_REF: 'bwhvfjuwixgwduoeqaya' })[name] } },
-    createClient: () => ({ rpc: async name => {
+      BASIC_BILLING_MODE: 'staging_test_only', BASIC_BILLING_PROJECT_REF: ref,
+      WUXUAI_AUTH_ISSUER:`${url}/auth/v1`,WUXUAI_APP_ORIGIN:origin,DENO_DEPLOYMENT_ID:`${ref}_${randomUUID()}_1`,
+    }, () => ({ rpc: async name => {
+      if(name==='get_server_project_binding')return {data:{project_ref:ref,backend_url:url,auth_issuer:`${url}/auth/v1`,app_origin:origin},error:null};
       assert.equal(name, 'record_basic_stripe_test_event'); calls++;
       return { data: { status: 'UNMATCHED', result_code: 'BASIC_TEST_PROVIDER_BINDING_PENDING' }, error: null };
-    } }),
-  });
-  vm.runInContext(ts.transpileModule(source.replace(/^import .*;\n/gm, ''), {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
-  }).outputText, context);
+    } }));
   const now = Math.floor(Date.now() / 1000);
   const raw = new TextEncoder().encode(JSON.stringify({ id: 'evt_LOCAL_PENDING01', type: 'invoice.paid', livemode: false,
     created: now, data: { object: { customer: 'cus_LOCAL_PENDING01', subscription: 'sub_LOCAL_PENDING01', metadata: {} } } }));

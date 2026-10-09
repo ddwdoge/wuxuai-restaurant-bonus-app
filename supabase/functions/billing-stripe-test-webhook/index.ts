@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import { sanitizeStripeTestEvent, sha256Hex, verifyRawWebhook } from "../_shared/billingArchitecture.mjs";
+import { requireProjectBinding } from "../_shared/projectBinding.mjs";
 
 function response(status: number, code: string, details?: unknown) {
   return new Response(JSON.stringify({ code, details }), { status,
@@ -12,9 +13,17 @@ Deno.serve(async (request) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const webhookSecret = Deno.env.get("STRIPE_TEST_WEBHOOK_SECRET") ?? "";
   const enabled = Deno.env.get("BASIC_BILLING_MODE") === "staging_test_only"
-    && Deno.env.get("BASIC_BILLING_PROJECT_REF") === "bwhvfjuwixgwduoeqaya"
-    && url === "https://bwhvfjuwixgwduoeqaya.supabase.co" && webhookSecret.startsWith("whsec_");
+    && webhookSecret.startsWith("whsec_");
   if (!enabled || !serviceKey || !webhookSecret) return response(503, "BASIC_TEST_WEBHOOK_NOT_ENABLED");
+  let service;
+  try {
+    service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    await requireProjectBinding(service, {
+      backendUrl: url, projectRef: Deno.env.get("BASIC_BILLING_PROJECT_REF"),
+      issuer: Deno.env.get("WUXUAI_AUTH_ISSUER"), appOrigin: Deno.env.get("WUXUAI_APP_ORIGIN"),
+      deploymentId: Deno.env.get("DENO_DEPLOYMENT_ID"),
+    });
+  } catch { return response(503, "PROJECT_BINDING_REQUIRED"); }
   if (Number(request.headers.get("content-length") ?? 0) > 262144) return response(413, "REQUEST_TOO_LARGE");
   const raw = new Uint8Array(await request.arrayBuffer());
   if (raw.length > 262144) return response(413, "REQUEST_TOO_LARGE");
@@ -26,7 +35,6 @@ Deno.serve(async (request) => {
   } catch {
     return response(400, "BASIC_TEST_WEBHOOK_INVALID");
   }
-  const service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data, error } = await service.rpc("record_basic_stripe_test_event", {
     input_event_id: event.event_id, input_payload_sha256: await sha256Hex(raw),
     input_event_type: event.event_type, input_event_created_at: event.event_created_at,

@@ -2,9 +2,7 @@
 // from caller-controlled JSON; the database resolves them for the verified UID.
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slug = /^[a-z0-9](?:[a-z0-9-]{0,158}[a-z0-9])?$/;
-const STAGING_PROJECT_REF = "bwhvfjuwixgwduoeqaya";
 const PRODUCTION_PROJECT_REF = "fuqhljgesclipzduhykl";
-const STAGING_ORIGIN = "https://staging-app.bonus.wuxuaisbi.com";
 const PRODUCTION_ORIGIN = "https://app.bonus.wuxuaisbi.com";
 
 const shapes = Object.freeze({
@@ -40,21 +38,20 @@ export function parseRedemptionMutation(value) {
   return value;
 }
 
-export function allowedRedemptionOrigin(requestedOrigin, mode, localOrigin, projectRef) {
+export function allowedRedemptionOrigin(requestedOrigin, mode, localOrigin, projectRef, binding) {
   if (mode === "local_only" && /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(localOrigin)
     && requestedOrigin === localOrigin) return localOrigin;
-  if (mode === "staging" && projectRef === STAGING_PROJECT_REF
-    && requestedOrigin === STAGING_ORIGIN) return requestedOrigin;
+  if (mode === "staging" && binding?.project_ref === projectRef
+    && requestedOrigin === binding?.app_origin) return requestedOrigin;
   if (mode === "production" && projectRef === PRODUCTION_PROJECT_REF
     && requestedOrigin === PRODUCTION_ORIGIN) return requestedOrigin;
   return null;
 }
 
-export function allowedRedemptionRuntime(mode, url, projectRef) {
+export function allowedRedemptionRuntime(mode, url, projectRef, binding) {
   if (mode === "local_only") return /^http:\/\/(127\.0\.0\.1|localhost|kong)(:\d+)?\/?$/.test(url);
   if (mode === "staging") {
-    return projectRef === STAGING_PROJECT_REF
-      && url === `https://${STAGING_PROJECT_REF}.supabase.co`;
+    return Boolean(binding && projectRef === binding.project_ref && url === binding.backend_url);
   }
   if (mode === "production") {
     return projectRef === PRODUCTION_PROJECT_REF
