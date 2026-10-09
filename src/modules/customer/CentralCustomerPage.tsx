@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BellRing,
@@ -36,10 +36,14 @@ import {
 import { CentralCustomerNavigation } from "./components/CentralCustomerNavigation";
 import {
   loadCustomerAccount,
+  loadOfferEmailConsentDocument,
   openCustomerAccountMembership,
   pauseAllCustomerOfferEmails,
+  requestCustomerOfferEmailConfirmation,
+  withdrawAuthenticatedCustomerOfferEmail,
   type CustomerAccount,
   type CustomerAccountMembership,
+  type OfferEmailConsentDocument,
 } from "./customerAccountService";
 import {
   customerActivationUiState,
@@ -101,6 +105,11 @@ function membershipPriority(left: CustomerAccountMembership, right: CustomerAcco
   if (leftMissing !== rightMissing) return leftMissing - rightMissing;
   if (left.new_offer_count !== right.new_offer_count) return right.new_offer_count - left.new_offer_count;
   return left.name.localeCompare(right.name, "de");
+}
+
+function offerEmailConsentCurrent(membership: CustomerAccountMembership, document: OfferEmailConsentDocument | undefined) {
+  return membership.email_consent_status === "ACTIVE" && document?.available === true
+    && document.current_consent_active === true;
 }
 
 function currentInstallState(promptAvailable: boolean): CustomerInstallState {
@@ -181,20 +190,37 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
   const [nativePromptOutcome, setNativePromptOutcome] = useState<"accepted" | "declined" | null>(null);
   const [, setRuntimeRevision] = useState(0);
   const [pushRequesting, setPushRequesting] = useState(false);
+  const [emailChoice, setEmailChoice] = useState<Record<string, "NEVER" | "WEEKLY" | "MONTHLY">>({});
+  const [emailChoiceConfirmed, setEmailChoiceConfirmed] = useState<Record<string, boolean>>({});
+  const [emailBusyId, setEmailBusyId] = useState<string | null>(null);
+  const [emailDocuments, setEmailDocuments] = useState<Record<string, OfferEmailConsentDocument>>({});
+  const emailReadRevision = useRef(0);
 
   const reload = useCallback(async () => {
+    const revision = ++emailReadRevision.current;
     setLoading(true);
     setError(null);
     try {
-      setAccount(await loadCustomerAccount());
+      const nextAccount = await loadCustomerAccount();
+      const documents = await Promise.all((nextAccount?.memberships ?? []).map(async (membership) =>
+        [membership.restaurant_id, await loadOfferEmailConsentDocument(membership.restaurant_id)] as const));
+      if (revision !== emailReadRevision.current) return;
+      setAccount(nextAccount);
+      setEmailDocuments(Object.fromEntries(documents));
     } catch (nextError) {
+      if (revision !== emailReadRevision.current) return;
       setError(nextError instanceof Error ? nextError.message : "Dein Gästeportal konnte gerade nicht geladen werden.");
     } finally {
-      setLoading(false);
+      if (revision === emailReadRevision.current) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    setEmailChoice({});
+    setEmailChoiceConfirmed({});
+    setEmailDocuments({});
+    void reload();
+  }, [user?.id, reload]);
 
   useEffect(() => {
     const userId = user?.id ?? null;
@@ -308,6 +334,39 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
       await reload();
     } catch (nextError) {
       setStatusMessage(nextError instanceof Error ? nextError.message : "Die Einstellung konnte nicht gespeichert werden.");
+    }
+  }
+
+  async function requestOfferEmail(restaurantId: string) {
+    const frequency = emailChoice[restaurantId] ?? "NEVER";
+    const document = emailDocuments[restaurantId];
+    if (emailBusyId || !document?.available || !emailChoiceConfirmed[restaurantId] || frequency === "NEVER") return;
+    setEmailBusyId(restaurantId);
+    setStatusMessage(null);
+    try {
+      await requestCustomerOfferEmailConfirmation(restaurantId, frequency, document, crypto.randomUUID());
+      setStatusMessage("Falls die Voraussetzungen erfüllt sind, wurde die Bestätigung vorgemerkt. Erst ein gültiger Link macht deine Auswahl wirksam.");
+      setEmailChoiceConfirmed((current) => ({ ...current, [restaurantId]: false }));
+      await reload();
+    } catch (nextError) {
+      setStatusMessage(nextError instanceof Error ? nextError.message : "Die Anforderung konnte gerade nicht verarbeitet werden.");
+    } finally {
+      setEmailBusyId(null);
+    }
+  }
+
+  async function withdrawOfferEmail(restaurantId: string) {
+    if (emailBusyId) return;
+    setEmailBusyId(restaurantId);
+    setStatusMessage(null);
+    try {
+      await withdrawAuthenticatedCustomerOfferEmail(restaurantId);
+      await reload();
+      setStatusMessage("Die Angebots-E-Mail-Einwilligung für dieses Lokal wurde widerrufen.");
+    } catch (nextError) {
+      setStatusMessage(nextError instanceof Error ? nextError.message : "Die Abmeldung konnte gerade nicht gespeichert werden.");
+    } finally {
+      setEmailBusyId(null);
     }
   }
 
@@ -476,12 +535,46 @@ export function CentralCustomerPage({ view }: { view: CentralCustomerView }) {
               <div className="central-email-status"><span>E-Mail-Adresse</span><strong>{account.profile.email ?? "Nicht angegeben"}</strong><small>{account.profile.email_status === "CONFIRMED" ? "Bestätigt" : account.profile.email_status === "PENDING_CONFIRMATION" ? "Bestätigung ausstehend" : "Nicht angegeben"}</small></div>
               {!account.email_delivery.available ? <p className="central-email-unavailable"><ShieldCheck aria-hidden="true" size={17} /> Der Angebotsversand ist noch nicht freigeschaltet. Es wird keine Einwilligung vorausgewählt und keine Marketing-E-Mail versendet.</p> : null}
               {account.memberships.map((membership) => (
-                <label className="central-email-preference" key={membership.restaurant_id}>
-                  <span><strong>{membership.name}</strong><small>{membership.email_consent_status === "ACTIVE" ? "Bestätigt" : membership.email_consent_status === "PENDING_CONFIRMATION" ? "Bestätigung ausstehend" : "Keine Einwilligung"}</small></span>
-                  <select aria-label={`Angebots-E-Mails von ${membership.name}`} disabled value={membership.email_preference}>
-                    <option value="NEVER">Nie</option><option value="WEEKLY">Wöchentlich</option><option value="MONTHLY">Monatlich</option>
-                  </select>
-                </label>
+                <div className="central-email-preference" key={membership.restaurant_id}>
+                  <span><strong>{membership.name}</strong><small>{membership.email_consent_status === "ACTIVE"
+                    ? offerEmailConsentCurrent(membership, emailDocuments[membership.restaurant_id]) ? "Aktuelle Fassung bestätigt" : "Erneute Bestätigung erforderlich; Versand gesperrt"
+                    : membership.email_consent_status === "PENDING_CONFIRMATION" ? "Bestätigung ausstehend"
+                      : membership.email_consent_status === "WITHDRAWN" ? "Widerrufen" : "Keine Einwilligung"}</small></span>
+                  {emailDocuments[membership.restaurant_id]?.available ? (
+                    <details className="central-email-document">
+                      <summary>Aktuelle Einwilligungsfassung vollständig lesen</summary>
+                      <p>Version {emailDocuments[membership.restaurant_id].version} · SHA-256 <code>{emailDocuments[membership.restaurant_id].sha256}</code></p>
+                      <pre>{emailDocuments[membership.restaurant_id].text}</pre>
+                    </details>
+                  ) : <p className="central-email-unavailable">Für dieses Lokal liegt derzeit keine freigegebene Angebots-Mail-Einwilligungsfassung vor.</p>}
+                  <div className="central-email-controls">
+                    <select aria-label={`Angebots-E-Mails von ${membership.name}`}
+                      disabled={!emailDocuments[membership.restaurant_id]?.available
+                        || emailBusyId !== null || offerEmailConsentCurrent(membership, emailDocuments[membership.restaurant_id])}
+                      onChange={(event) => setEmailChoice((current) => ({ ...current,
+                        [membership.restaurant_id]: event.target.value as "NEVER" | "WEEKLY" | "MONTHLY" }))}
+                      value={offerEmailConsentCurrent(membership, emailDocuments[membership.restaurant_id])
+                        ? membership.email_preference : emailChoice[membership.restaurant_id] ?? "NEVER"}>
+                      <option value="NEVER">Nie</option><option value="WEEKLY">Wöchentlich</option><option value="MONTHLY">Monatlich</option>
+                    </select>
+                    {emailDocuments[membership.restaurant_id]?.available
+                      && !offerEmailConsentCurrent(membership, emailDocuments[membership.restaurant_id]) ? <>
+                      <label className="central-email-explicit-choice"><input checked={emailChoiceConfirmed[membership.restaurant_id] ?? false}
+                        disabled={emailBusyId !== null || (emailChoice[membership.restaurant_id] ?? "NEVER") === "NEVER"}
+                        onChange={(event) => setEmailChoiceConfirmed((current) => ({ ...current,
+                          [membership.restaurant_id]: event.target.checked }))} type="checkbox" />
+                        <span>Ich habe die angezeigte Fassung gelesen und möchte für dieses Lokal einen Bestätigungslink anfordern. Die Anforderung allein ist noch keine Einwilligung.</span>
+                      </label>
+                      <button className="premium-button premium-button-secondary" disabled={emailBusyId !== null
+                        || !emailChoiceConfirmed[membership.restaurant_id]} onClick={() => void requestOfferEmail(membership.restaurant_id)}
+                        type="button">Bestätigungslink anfordern</button>
+                    </> : null}
+                    {membership.email_consent_status === "ACTIVE" || membership.email_consent_status === "PAUSED"
+                      || membership.email_consent_status === "PENDING_CONFIRMATION" ?
+                      <button className="premium-button premium-button-secondary" disabled={emailBusyId !== null}
+                        onClick={() => void withdrawOfferEmail(membership.restaurant_id)} type="button">Für dieses Lokal widerrufen</button> : null}
+                  </div>
+                </div>
               ))}
               {account.memberships.some((membership) => ["ACTIVE", "PAUSED"].includes(membership.email_consent_status)) ? <button className="premium-button premium-button-secondary" onClick={() => void togglePause()} type="button">Alle Angebots-E-Mails pausieren</button> : null}
               {statusMessage ? <p aria-live="polite" className="central-status-message">{statusMessage}</p> : null}

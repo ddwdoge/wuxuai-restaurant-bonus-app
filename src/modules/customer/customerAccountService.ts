@@ -246,3 +246,53 @@ export async function pauseAllCustomerOfferEmails(paused: boolean) {
   });
   if (error) throw new Error("Die E-Mail-Einstellung konnte gerade nicht gespeichert werden.");
 }
+
+export type OfferEmailConsentDocument = {
+  available: boolean;
+  current_consent_active?: boolean;
+  document_id?: string;
+  version?: string;
+  sha256?: string;
+  locale?: string;
+  text?: string;
+};
+
+export async function loadOfferEmailConsentDocument(restaurantId: string): Promise<OfferEmailConsentDocument> {
+  const { data, error } = await requireClient().rpc("get_current_offer_email_consent_document", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error || !data || typeof data !== "object") return { available: false };
+  const document = data as OfferEmailConsentDocument;
+  return document.available === true && typeof document.current_consent_active === "boolean"
+    && typeof document.document_id === "string"
+    && typeof document.version === "string" && typeof document.sha256 === "string"
+    && typeof document.text === "string" ? document : { available: false };
+}
+
+export async function requestCustomerOfferEmailConfirmation(
+  restaurantId: string, frequency: "WEEKLY" | "MONTHLY",
+  document: OfferEmailConsentDocument, requestId: string,
+) {
+  if (!document.available || !document.document_id || !document.version || !document.sha256) {
+    throw new Error("Für Angebots-E-Mails liegt derzeit keine freigegebene Einwilligungsfassung vor.");
+  }
+  const { data, error } = await requireClient().functions.invoke("customer-offer-email-request", {
+    body: { restaurant_id: restaurantId, frequency, request_id: requestId,
+      document_id: document.document_id, document_version: document.version,
+      document_sha256: document.sha256, explicit_choice: true },
+  });
+  if (error || !(data as { accepted?: boolean } | null)?.accepted) {
+    throw new Error("Die Bestätigungsanforderung konnte gerade nicht verarbeitet werden.");
+  }
+  return { accepted: true };
+}
+
+export async function withdrawAuthenticatedCustomerOfferEmail(restaurantId: string) {
+  const { data, error } = await requireClient().rpc("withdraw_authenticated_customer_offer_email", {
+    input_restaurant_id: restaurantId,
+    input_request_id: crypto.randomUUID(),
+  });
+  if (error || !(data as { withdrawn?: boolean } | null)?.withdrawn) {
+    throw new Error("Die Abmeldung konnte gerade nicht gespeichert werden.");
+  }
+}

@@ -100,7 +100,16 @@
 .central-email-preference { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 58px; border-top: 1px solid #eee4d5; }
 .central-email-preference span { display: grid; gap: 3px; }
 .central-email-preference small { color: #756c62; }
+.central-email-document { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.central-email-document summary { cursor: pointer; min-height: 44px; align-content: center; }
+.central-email-document pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.5; }
+.central-email-document code { overflow-wrap: anywhere; }
 .central-email-preference select { min-height: 44px; min-width: 130px; border: 1px solid #d9c9ad; border-radius: 6px; padding: 0 10px; background: #fff; color: #29241e; }
+.central-email-controls { display: grid; justify-items: end; gap: 8px; min-width: 0; }
+.central-email-controls button { min-height: 44px; max-width: 100%; white-space: normal; }
+.central-email-explicit-choice { display: flex; align-items: flex-start; gap: 8px; max-width: 320px; font-size: .82rem; }
+.central-email-explicit-choice input { flex: 0 0 auto; width: 18px; height: 18px; margin: 1px 0 0; }
+.central-email-explicit-choice span { overflow-wrap: anywhere; }
 .central-account-list { display: grid; overflow: hidden; border: 1px solid #e7dccb; border-radius: 8px; background: #fff; box-shadow: 0 16px 34px rgba(48, 38, 24, .07); }
 .central-account-list :is(a, button) { display: grid; width: 100%; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 60px; padding: 8px 15px; box-sizing: border-box; color: #2a251f; text-align: left; text-decoration: none; border: 0; border-bottom: 1px solid #eee4d5; background: transparent; font: inherit; }
 .central-account-list :is(a, button):last-child { border-bottom: 0; }
@@ -266,6 +275,8 @@
   .central-welcome-number strong { font-size: 2.35rem; }
   .central-email-preference { align-items: flex-start; flex-direction: column; padding-block: 10px; }
   .central-email-preference select { width: 100%; }
+  .central-email-controls { width: 100%; justify-items: stretch; }
+  .central-email-explicit-choice { max-width: none; }
   .central-customer-navigation { width: calc(100% - 16px); bottom: max(8px, env(safe-area-inset-bottom)); }
   .central-customer-navigation a { font-size: .64rem; }
   .central-customer-header h1 { font-size: 2.1rem; }

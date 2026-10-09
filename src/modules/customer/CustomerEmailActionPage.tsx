@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, MailX, ShieldCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
@@ -8,25 +8,33 @@ import "./central-customer.css";
 export function CustomerEmailActionPage({ action }: { action: "confirm" | "unsubscribe" }) {
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
+  const inFlight = useRef<{ key: string; result: Promise<boolean> } | null>(null);
+  const token = searchParams.get("code") ?? "";
 
   useEffect(() => {
     let cancelled = false;
-    const token = searchParams.get("code") ?? "";
+    setState("loading");
     if (!supabase || token.length < 32) {
       setState("error");
       return;
     }
-    const request = action === "confirm"
-      ? supabase.rpc("confirm_customer_offer_email", { input_confirmation_token: token })
-      : supabase.rpc("withdraw_customer_offer_email", { input_unsubscribe_token: token });
-    void request.then(({ data, error }) => {
+    const key = `${action}:${token}`;
+    if (inFlight.current?.key !== key) {
+      const result = (async () => {
+        const { data, error } = action === "confirm"
+          ? await supabase.rpc("confirm_customer_offer_email", { input_confirmation_token: token })
+          : await supabase.rpc("withdraw_customer_offer_email", { input_unsubscribe_token: token });
+        const receipt = data && typeof data === "object" ? data as Record<string, unknown> : {};
+        return !error && (action === "confirm" ? receipt.confirmed === true : receipt.withdrawn === true);
+      })();
+      inFlight.current = { key, result };
+    }
+    void inFlight.current.result.then((succeeded) => {
       if (cancelled) return;
-      const result = data && typeof data === "object" ? data as Record<string, unknown> : {};
-      const succeeded = action === "confirm" ? result.confirmed === true : result.withdrawn === true;
-      setState(!error && succeeded ? "success" : "error");
+      setState(succeeded ? "success" : "error");
     });
     return () => { cancelled = true; };
-  }, [action, searchParams]);
+  }, [action, token]);
 
   return (
     <AppShell className="central-auth-shell">
@@ -37,7 +45,7 @@ export function CustomerEmailActionPage({ action }: { action: "confirm" | "unsub
         {state === "success" ? (
           <PremiumCard className="central-email-action-card" variant="success">
             {action === "confirm" ? <CheckCircle2 aria-hidden="true" size={34} /> : <MailX aria-hidden="true" size={34} />}
-            <div><span><ShieldCheck aria-hidden="true" size={16} /> Sicher gespeichert</span><h1>{action === "confirm" ? "E-Mail-Einwilligung bestätigt" : "Angebots-E-Mails abgemeldet"}</h1><p>{action === "confirm" ? "Du erhältst Zusammenfassungen erst nach dieser Bestätigung und nur für das ausgewählte Lokal." : "Die Abmeldung gilt sofort für dieses Lokal. Deine Punkte und Mitgliedschaft bleiben erhalten."}</p></div>
+            <div><span><ShieldCheck aria-hidden="true" size={16} /> Sicher gespeichert</span><h1>{action === "confirm" ? "E-Mail-Einwilligung bestätigt" : "Angebots-E-Mails abgemeldet"}</h1><p>{action === "confirm" ? "Deine Entscheidung ist für das ausgewählte Lokal gespeichert. Ein Versand bleibt von den aktuellen Freigaben abhängig." : "Die Abmeldung gilt sofort für dieses Lokal. Deine Punkte und Mitgliedschaft bleiben erhalten."}</p></div>
             <Link className="premium-button premium-button-primary" to="/customer/account">Zum Konto</Link>
           </PremiumCard>
         ) : null}
