@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import nodemailer from "npm:nodemailer@6.9.16";
-import { configuredAppOrigin } from "../_shared/appOrigin.mjs";
+import { requireProjectBinding } from "../_shared/projectBinding.mjs";
 import { runOfferEmailConfirmationDelivery } from "../_shared/offerEmailConfirmationDelivery.mjs";
 
 // Dedicated confirmation-link worker. It never touches the transactional,
@@ -9,7 +9,15 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const schedulerSecret = Deno.env.get("OFFER_EMAIL_CONFIRMATION_SCHEDULER_SECRET") ?? "";
 const mode = Deno.env.get("OFFER_EMAIL_CONFIRMATION_MODE") ?? "paused";
-const appOrigin = configuredAppOrigin(Deno.env.get("APP_BASE_URL"));
+// Runtime values are assertions, never link authorities. Only the protected
+// registry supplies the origin, after comparison with the injected deployment.
+const runtime = Object.freeze({
+  backendUrl: supabaseUrl,
+  projectRef: Deno.env.get("WUXUAI_PROJECT_REF"),
+  issuer: Deno.env.get("WUXUAI_AUTH_ISSUER"),
+  appOrigin: Deno.env.get("WUXUAI_APP_ORIGIN"),
+  deploymentId: Deno.env.get("DENO_DEPLOYMENT_ID"),
+});
 const smtpHost = Deno.env.get("SMTP_HOST") ?? "";
 const smtpPort = Number(Deno.env.get("SMTP_PORT") ?? "587");
 const smtpUsername = Deno.env.get("SMTP_USERNAME") ?? "";
@@ -48,7 +56,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   // Server configuration is checked before any queue claim or SMTP connection.
   if (mode !== "enabled") return json({ error: "confirmation_delivery_paused" }, 503);
-  if (!supabaseUrl || !serviceKey || !schedulerSecret || !appOrigin
+  if (!supabaseUrl || !serviceKey || !schedulerSecret
     || !smtpHost || !Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65_535
     || !smtpUsername || !smtpPassword || !smtpFromEmail || !smtpReplyTo) {
     return json({ error: "confirmation_delivery_not_configured" }, 503);
@@ -59,6 +67,12 @@ Deno.serve(async (request) => {
 
   const service = createClient(supabaseUrl, serviceKey,
     { auth: { persistSession: false, autoRefreshToken: false } });
+  let binding;
+  try {
+    binding = await requireProjectBinding(service, runtime);
+  } catch {
+    return json({ error: "PROJECT_BINDING_REQUIRED" }, 503);
+  }
   const transporter = nodemailer.createTransport({
     host: smtpHost, port: smtpPort, secure: smtpPort === 465,
     requireTLS: smtpPort !== 465,
@@ -77,7 +91,7 @@ Deno.serve(async (request) => {
       },
       prepare: (delivery: Claim) => {
         // The link token lives only in this invocation's memory.
-        const link = new URL("/customer/email/confirm", appOrigin);
+        const link = new URL("/customer/email/confirm", binding.app_origin);
         link.searchParams.set("code", delivery.token);
         return {
           from: { name: smtpFromName, address: smtpFromEmail },
@@ -89,6 +103,11 @@ Deno.serve(async (request) => {
         };
       },
       begin: async (delivery: Claim) => {
+        // The installed binding is immutable. Recheck the actual database
+        // anchor/configuration before the irreversible submission boundary.
+        const current = await requireProjectBinding(service, runtime);
+        if (current.binding_id !== binding.binding_id
+          || current.app_origin !== binding.app_origin) return false;
         const { data, error } = await service.rpc(
           "begin_customer_offer_email_confirmation_delivery", {
             input_request_id: delivery.request_id,

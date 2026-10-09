@@ -87,6 +87,19 @@ test("browser response is generic; scheduler cannot reach any general queue", ()
   assert.match(config, /\[functions\.customer-offer-email-confirmation-dispatch\]\s*\nverify_jwt = false/);
 });
 
+test("confirmation link is registry-bound before claim and rechecked before handoff", () => {
+  assert.match(worker, /import \{ requireProjectBinding \} from "\.\.\/_shared\/projectBinding\.mjs"/);
+  assert.doesNotMatch(worker, /APP_BASE_URL|configuredAppOrigin|staging-app\.bonus/);
+  assert.match(worker, /new URL\("\/customer\/email\/confirm", binding\.app_origin\)/);
+  assert.ok(worker.indexOf("binding = await requireProjectBinding(service, runtime)")
+    < worker.indexOf('"claim_customer_offer_email_confirmation_delivery"'));
+  assert.match(worker, /current\.binding_id !== binding\.binding_id/);
+  assert.match(worker, /current\.app_origin !== binding\.app_origin/);
+  assert.ok(worker.indexOf("const current = await requireProjectBinding(service, runtime)")
+    < worker.indexOf('"begin_customer_offer_email_confirmation_delivery"'));
+  assert.doesNotMatch(worker, /request\.json\(|request\.url|headers\.get\("origin"\)/);
+});
+
 test("isolated worker adapter never touches other queues and delivers at most once", async () => {
   const calls = [];
   const delivery = { claimed: true, request_id: "synthetic-request", token: "synthetic-token" };
