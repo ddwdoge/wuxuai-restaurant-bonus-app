@@ -1,5 +1,21 @@
 # WUXUAI Bonus - V1 Austria Launch Master Contract
 
+## Founder-Entscheidung vom 09.10.2026 – kundenweite Angebots-Inbox
+
+1. Jetzt: rote Ungelesen-Kennzahl **innerhalb der Web-App** und serverseitig
+   paginierte Angebots-Inbox ueber alle berechtigt beigetretenen Betriebe.
+   Nur aktuell sichtbare PRO-Angebotsereignisse zaehlen; Betrieb und konkretes
+   Angebot bleiben je Eintrag eindeutig. Erst erfolgreiches serverseitiges
+   Oeffnen markiert genau diesen Eintrag als gelesen. Reload liest die DB.
+2. Den lokal geprueften Mail-Zustellpfad separat integrieren; diese Inbox
+   aktiviert weder Mailversand noch neue Consent- oder Produktberechtigungen.
+3. Betriebssystem-App-Symbol/Badge spaeter gesondert pruefen; jetzt kein Push.
+
+Angebotsruecknahme, Ablauf und Entitlement-Verlust entfernen die aktive
+Sichtbarkeit, nicht historische Belege. Bestehende TEST_ONLY-, Legal-,
+Tenant- und Identitaetsguards bleiben verbindlich. Die Reihenfolge ist eine
+Implementierungsentscheidung, keine reale Freigabe oder Abnahmebehauptung.
+
 ## Founder-Entscheidung vom 08.10.2026 – technische V1-Abnahme vor Release
 
 **AKTUELLER ROADMAP-VORRANG.** WUXUAI Bonus V1 einschliesslich PRO und

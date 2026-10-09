@@ -90,6 +90,7 @@ const CustomerOffersPage = lazy(() =>
 const CentralCustomerPage = lazy(() =>
   import("../modules/customer/CentralCustomerPage").then((module) => ({ default: module.CentralCustomerPage })),
 );
+const CustomerOfferInboxPage = lazy(() => import("../modules/customer/CustomerOfferInboxPage").then(module => ({ default: module.CustomerOfferInboxPage })));
 const CustomerEmailActionPage = lazy(() =>
   import("../modules/customer/CustomerEmailActionPage").then((module) => ({ default: module.CustomerEmailActionPage })),
 );
@@ -401,6 +402,7 @@ export function App() {
       <Route path="/customer/test-only-operator-legal/:slug/:branchId" element={<CustomerCentralRoute>{withFallback(<CustomerActiveOperatorLegalTestPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="home" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/locations" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="locations" />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/inbox" element={<CustomerCentralRoute>{withFallback(<CustomerOfferInboxPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/account" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="account" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/email/confirm" element={withFallback(<CustomerEmailActionPage action="confirm" />, <CustomerLoading />)} />
       <Route path="/customer/email/unsubscribe" element={withFallback(<CustomerEmailActionPage action="unsubscribe" />, <CustomerLoading />)} />

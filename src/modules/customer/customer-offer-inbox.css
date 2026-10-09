@@ -1,0 +1,11 @@
+.central-customer-navigation:has(.customer-offer-inbox-link) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.customer-offer-inbox-icon { position: relative; display: inline-flex; }
+.customer-offer-inbox-badge { position: absolute; top: -10px; left: 12px; min-width: 18px; padding: 2px 4px; border-radius: 20px; background: #b91c1c; color: white; font-size: 11px; line-height: 14px; font-weight: 800; text-align: center; }
+.customer-offer-inbox-page { width: min(720px, 100%); margin: auto; padding: 24px 16px 110px; box-sizing: border-box; overflow-wrap: anywhere; }
+.customer-offer-inbox-page header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.customer-offer-inbox-page h1 { width: 100%; font-size: clamp(1.4rem, 5vw, 2rem); }
+.customer-offer-inbox-page ul { padding: 0; list-style: none; display: grid; gap: 12px; }
+.customer-offer-inbox-page li button { width: 100%; display: grid; gap: 8px; text-align: left; background: #fff; border: 1px solid #d9c9ad; border-radius: 8px; padding: 16px; }
+.customer-offer-inbox-page button { font: inherit; cursor: pointer; min-height: 44px; overflow-wrap: anywhere; }
+.customer-offer-inbox-page button:disabled { cursor: wait; }
+.customer-offer-inbox-page button:focus-visible, .customer-offer-inbox-link:focus-visible { outline: 3px solid #765418; outline-offset: 3px; }

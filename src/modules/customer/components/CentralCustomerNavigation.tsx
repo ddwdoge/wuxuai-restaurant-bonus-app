@@ -1,6 +1,7 @@
 import { Compass, Home, Store, UserRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import "../central-customer.css";
+import { CustomerOfferInboxLink } from "./CustomerOfferInboxLink";
 
 const items = [
   { to: "/customer", end: true, label: "Start", icon: Home },
@@ -18,6 +19,7 @@ export function CentralCustomerNavigation() {
           <span>{label}</span>
         </NavLink>
       ))}
+      <CustomerOfferInboxLink />
     </nav>
   );
 }
