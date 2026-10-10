@@ -26,10 +26,12 @@ function sourceFiles(dir) {
 }
 
 test("Phase 6 preserves its historical inventory alongside capacity and verification routes", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 57);
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 59);
   assert.doesNotMatch(read("src/app/App.tsx"), /RestaurantMenuPage|<Route path="menu"/);
-  // Additive authenticated TEST_ONLY join and document routes; historical inventory is unchanged.
+  // Additive authenticated TEST_ONLY and customer-wide inbox routes; historical inventory is unchanged.
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only\/:slug\/:branchId" element=\{<CustomerCentralRoute>/);
+  assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only-operator-legal\/:slug\/:branchId" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerActiveOperatorLegalTestPage \/>/);
+  assert.match(read("src/app/App.tsx"), /path="\/customer\/inbox" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerOfferInboxPage \/>/);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 50 }, (_, index) => index + 1));
   assert.equal(rows.filter((row) => row[2] === "V").length, 42);
@@ -42,7 +44,8 @@ test("Drawer inventory includes capacity, verification and TEST_ONLY legal setup
   const names = new Set(["AppDrawer", "UiDialog", "PremiumDrawer", "ConfirmationDialog"]);
   const count = sourceFiles("src").filter((path) => path.endsWith(".tsx"))
     .flatMap(openingElements).filter((name) => names.has(name)).length;
-  assert.equal(count, 52);
+  assert.equal(count, 53);
+  assert.equal(openingElements("src/modules/customer/CustomerOfferInboxPage.tsx").filter((name) => name === "AppDrawer").length, 1);
   assert.match(read("src/modules/platform/PlatformTestLegalSetupControl.tsx"), /<AppDrawer closeLabel="Abbrechen"/);
   const rows = [...report.matchAll(/^\| D(\d+) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 40 }, (_, index) => index + 1));

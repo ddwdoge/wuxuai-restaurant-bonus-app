@@ -295,7 +295,7 @@ test("activation controls meet touch, contrast, safe-area and narrow-layout cont
 test("ported activation drawer receives the customer theme without changing AppDrawer globally", () => {
   assert.match(page, /<AppDrawer[\s\S]*className="central-activation-drawer"/);
   assert.match(drawer, /createPortal\([\s\S]*document\.body/);
-  assert.match(premiumCss, /\.customer-premium-shell,\s*\.central-activation-drawer\s*\{[\s\S]*--premium-gold-dark: #956820/);
+  assert.match(premiumCss, /\.customer-premium-shell,\s*\.customer-pro-inbox-drawer,\s*\.central-activation-drawer\s*\{[\s\S]*--premium-gold-dark: #956820/);
   assert.match(premiumCss, /\.central-activation-drawer\s*\{[\s\S]*--premium-primary: var\(--premium-gold-dark, var\(--wux-gold-hover\)\)/);
   assert.doesNotMatch(premiumCss, /:root[\s\S]*--premium-primary/);
   assert.doesNotMatch(drawer, /central-activation-drawer|premium-primary/);
