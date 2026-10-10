@@ -53,8 +53,8 @@ export function PlatformTestLegalSetupControl({ restaurantId, restaurantName, ca
     featureFlag: import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED,
     expectedProjectRef: import.meta.env.VITE_PLATFORM_TEST_CONTROL_PROJECT_REF,
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    hostname: window.location.hostname,
-    protocol: window.location.protocol,
+    appOrigin: import.meta.env.VITE_APP_BASE_URL,
+    runtimeOrigin: window.location.origin,
   }), []);
   const authorized = platformRole === "platform_owner" || platformRole === "platform_admin";
   const step = nextTestLegalSetupStep(scope, documents, readback) as Step | null;

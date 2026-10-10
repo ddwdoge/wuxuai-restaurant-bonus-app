@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../../shared/lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
+import { platformTestControlEnvironmentEnabled } from "../platform/platformTestCollectionModeContract.mjs";
 import "./central-customer.css";
 
 type Document = { text: string; version: string; sha256: string };
@@ -37,13 +38,13 @@ function joinStatusValid(value: unknown, slug: string, branchId: string): value 
     && typeof status.privacy_version === "string" && hashPattern.test(String(status.privacy_sha256));
 }
 function enabled() {
-  const host = window.location.hostname;
-  const url = import.meta.env.VITE_SUPABASE_URL ?? "";
-  const staging = host === "staging-app.bonus.wuxuaisbi.com"
-    && url === "https://bwhvfjuwixgwduoeqaya.supabase.co";
-  const local = import.meta.env.DEV && ["localhost", "127.0.0.1"].includes(host)
-    && /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(url);
-  return import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED === "true" && (staging || local);
+  return platformTestControlEnvironmentEnabled({
+    featureFlag: import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED,
+    expectedProjectRef: import.meta.env.VITE_PLATFORM_TEST_CONTROL_PROJECT_REF,
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    appOrigin: import.meta.env.VITE_APP_BASE_URL,
+    runtimeOrigin: window.location.origin,
+  });
 }
 
 function documentPath(slug: string, branchId: string, kind: DocumentKind, bundle: Bundle) {

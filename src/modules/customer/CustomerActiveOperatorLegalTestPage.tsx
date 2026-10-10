@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../../shared/lib/supabase";
+import { platformTestControlEnvironmentEnabled } from "../platform/platformTestCollectionModeContract.mjs";
 
 type TestDocument = { text: string; version: string; sha256: string };
 type TestBundle = {
@@ -12,13 +13,13 @@ type TestBundle = {
 const digest = /^[0-9a-f]{64}$/;
 
 function enabled() {
-  const host = window.location.hostname;
-  const backend = import.meta.env.VITE_SUPABASE_URL ?? "";
-  const staging = host === "staging-app.bonus.wuxuaisbi.com"
-    && backend === "https://bwhvfjuwixgwduoeqaya.supabase.co";
-  const local = import.meta.env.DEV && ["localhost", "127.0.0.1"].includes(host)
-    && /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(backend);
-  return import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED === "true" && (staging || local);
+  return platformTestControlEnvironmentEnabled({
+    featureFlag: import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED,
+    expectedProjectRef: import.meta.env.VITE_PLATFORM_TEST_CONTROL_PROJECT_REF,
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    appOrigin: import.meta.env.VITE_APP_BASE_URL,
+    runtimeOrigin: window.location.origin,
+  });
 }
 
 function valid(value: unknown): value is TestBundle {

@@ -128,12 +128,13 @@ test("read-only continuation RPC is narrowly guarded and leaves table ACLs close
 });
 
 test("production and unbound frontends cannot show the control", () => {
-  const base = { featureFlag: "true", expectedProjectRef: "bwhvfjuwixgwduoeqaya",
-    supabaseUrl: "https://bwhvfjuwixgwduoeqaya.supabase.co",
-    hostname: "staging-app.bonus.wuxuaisbi.com", protocol: "https:" };
+  const base = { featureFlag: "true", expectedProjectRef: "mbgveqbhessaunrhfudm",
+    supabaseUrl: "https://mbgveqbhessaunrhfudm.supabase.co",
+    appOrigin: "https://staging-v2.bonus.wuxuaisbi.com",
+    runtimeOrigin: "https://staging-v2.bonus.wuxuaisbi.com" };
   assert.equal(platformTestControlEnvironmentEnabled(base), true);
   for (const changed of [
-    { hostname: "app.bonus.wuxuaisbi.com" }, { protocol: "http:" }, { featureFlag: "false" },
+    { runtimeOrigin: "https://app.bonus.wuxuaisbi.com" }, { runtimeOrigin: "http://staging-v2.bonus.wuxuaisbi.com" }, { featureFlag: "false" },
     { supabaseUrl: "https://another.supabase.co" },
   ]) assert.equal(platformTestControlEnvironmentEnabled({ ...base, ...changed }), false);
 });

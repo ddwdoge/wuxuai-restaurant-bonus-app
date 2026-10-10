@@ -6,8 +6,8 @@ export function platformTestControlEnvironmentEnabled(input: {
   featureFlag?: string;
   expectedProjectRef?: string;
   supabaseUrl?: string;
-  hostname?: string;
-  protocol?: string;
+  appOrigin?: string;
+  runtimeOrigin?: string;
 }): boolean;
 export function canShowPlatformTestCollectionControl(input: {
   environmentEnabled: boolean;

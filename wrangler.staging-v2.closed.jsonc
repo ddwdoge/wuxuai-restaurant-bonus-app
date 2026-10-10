@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wuxuai-restaurant-bonus-app-staging-v2",
+  "main": "./worker/staging-v2-closed.mjs",
+  "compatibility_date": "2026-07-15",
+  "keep_vars": true,
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  }
+}

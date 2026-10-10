@@ -4,22 +4,24 @@ export const PLATFORM_TEST_COLLECTION_MODES = Object.freeze([
   "both",
 ]);
 
+// Presentation gate for the separately bound v2 release. The TEST_ONLY RPCs
+// still validate the installed DB binding and the authenticated session.
+const stagingV2ProjectRef = "mbgveqbhessaunrhfudm";
+const stagingV2AppOrigin = "https://staging-v2.bonus.wuxuaisbi.com";
+const stagingV2BackendUrl = `https://${stagingV2ProjectRef}.supabase.co`;
+
 export function platformTestControlEnvironmentEnabled({
   featureFlag,
   expectedProjectRef,
   supabaseUrl,
-  hostname,
-  protocol,
+  appOrigin,
+  runtimeOrigin,
 }) {
-  const projectRef = String(expectedProjectRef ?? "").trim();
-  if (featureFlag !== "true" || !projectRef || hostname !== "staging-app.bonus.wuxuaisbi.com" || protocol !== "https:") {
-    return false;
-  }
-  try {
-    return new globalThis.URL(String(supabaseUrl ?? "")).hostname === `${projectRef}.supabase.co`;
-  } catch {
-    return false;
-  }
+  return featureFlag === "true"
+    && expectedProjectRef === stagingV2ProjectRef
+    && supabaseUrl === stagingV2BackendUrl
+    && appOrigin === stagingV2AppOrigin
+    && runtimeOrigin === stagingV2AppOrigin;
 }
 export function canShowPlatformTestCollectionControl({
   environmentEnabled,

@@ -55,8 +55,8 @@ export function PlatformTestCollectionModeControl({ restaurant }: {
     featureFlag: import.meta.env.VITE_PLATFORM_TEST_CONTROL_ENABLED,
     expectedProjectRef: import.meta.env.VITE_PLATFORM_TEST_CONTROL_PROJECT_REF,
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    hostname: window.location.hostname,
-    protocol: window.location.protocol,
+    appOrigin: import.meta.env.VITE_APP_BASE_URL,
+    runtimeOrigin: window.location.origin,
   }), []);
 
   const load = useCallback(async () => {
