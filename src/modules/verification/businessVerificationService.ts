@@ -38,6 +38,38 @@ export class KybDocumentError extends Error {
   }
 }
 
+export type VerificationSubmissionErrorCode =
+  | "BUSINESS_VERIFICATION_ADDRESS_INCOMPLETE"
+  | "BUSINESS_VERIFICATION_PROFILE_INCOMPLETE"
+  | "KYB_INTAKE_COUNTRY_NOT_CONFIGURED"
+  | "KYB_INTAKE_ENVIRONMENT_BLOCKED"
+  | "KYB_INTAKE_PENDING_REQUIRED"
+  | "KYB_INTAKE_POLICY_BLOCKED"
+  | "KYB_INTAKE_REAL_DOCUMENTS_BLOCKED"
+  | "UNKNOWN";
+
+export class VerificationSubmissionError extends Error {
+  constructor(public readonly reasonCode: VerificationSubmissionErrorCode) {
+    super(reasonCode);
+    this.name = "VerificationSubmissionError";
+  }
+}
+
+const VERIFICATION_SUBMISSION_ERROR_CODES: readonly VerificationSubmissionErrorCode[] = [
+  "BUSINESS_VERIFICATION_ADDRESS_INCOMPLETE",
+  "BUSINESS_VERIFICATION_PROFILE_INCOMPLETE",
+  "KYB_INTAKE_COUNTRY_NOT_CONFIGURED",
+  "KYB_INTAKE_ENVIRONMENT_BLOCKED",
+  "KYB_INTAKE_PENDING_REQUIRED",
+  "KYB_INTAKE_POLICY_BLOCKED",
+  "KYB_INTAKE_REAL_DOCUMENTS_BLOCKED",
+];
+
+function verificationSubmissionErrorCode(error: { message?: string; details?: string }) {
+  const serverReason = `${error.message ?? ""} ${error.details ?? ""}`;
+  return VERIFICATION_SUBMISSION_ERROR_CODES.find((code) => serverReason.includes(code)) ?? "UNKNOWN";
+}
+
 const KYB_BUCKET = "business-verification-documents";
 const MAX_KYB_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_KYB_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
@@ -158,7 +190,7 @@ export async function submitOwnerVerification(restaurantId: string, registerType
     input_request_id: requestId,
     input_correlation_id: correlationId,
   });
-  if (error) throw new Error(error.code === "42501" ? "Einreichung ist derzeit gesperrt. Bitte prüfe Land und Betriebsstatus." : "Einreichung konnte nicht abgeschlossen werden.");
+  if (error) throw new VerificationSubmissionError(verificationSubmissionErrorCode(error));
   return data as { status: "PENDING_ACTIVATION"; idempotent: boolean };
 }
 

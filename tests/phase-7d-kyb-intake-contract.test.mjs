@@ -32,6 +32,16 @@ test("owner onboarding captures the Austrian matching data once and the KYB page
   assert.match(service, /submit_pending_business_verification_intake/);
 });
 
+test("owner submission preserves the server guard reason instead of reporting incomplete legal data", () => {
+  assert.match(service, /class VerificationSubmissionError extends Error/);
+  assert.match(service, /KYB_INTAKE_ENVIRONMENT_BLOCKED/);
+  assert.match(service, /serverReason\.includes\(code\)/);
+  assert.match(ownerPage, /submissionError instanceof VerificationSubmissionError/);
+  assert.match(ownerPage, /submissionError\.reasonCode === "KYB_INTAKE_ENVIRONMENT_BLOCKED"/);
+  assert.match(ownerPage, /setError\(t\.environmentBlocked\)/);
+  assert.doesNotMatch(ownerPage, /catch\s*\{\s*setError\(t\.incomplete\)/);
+});
+
 test("browser roles cannot write policy tables and the intake RPCs are least privilege", () => {
   assert.match(migration, /revoke all on public\.country_kyb_intake_policies from public, anon, authenticated, service_role/);
   assert.match(migration, /revoke all on function public\.resolve_country_kyb_intake_internal\(uuid\) from public,anon,authenticated,service_role/);
