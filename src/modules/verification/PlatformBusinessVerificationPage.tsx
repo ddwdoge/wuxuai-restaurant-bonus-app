@@ -4,6 +4,7 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { PlatformAdminLayout } from "../platform/PlatformAdminLayout";
 import { PlatformOperatorChangePanel } from "./PlatformOperatorChangePanel";
 import { PlatformTestOnlyActivationTrialReadinessPanel } from "./PlatformTestOnlyActivationTrialReadinessPanel";
+import { PlatformTestOnlyBasicAccessPanel } from "./PlatformTestOnlyBasicAccessPanel";
 import { PlatformTestOnlyKybReviewPanel } from "./PlatformTestOnlyKybReviewPanel";
 import { manageVerification, openPlatformKybDocument, readPlatformKybReviewDetail,
   readPlatformKybReviewQueue, readVerificationAdminDetail,
@@ -195,6 +196,7 @@ export function PlatformBusinessVerificationPage() {
         </section>
         <PlatformTestOnlyKybReviewPanel restaurantId={detail.restaurant_id} restaurantName={detail.restaurant_name} />
         <PlatformTestOnlyActivationTrialReadinessPanel restaurantId={detail.restaurant_id} />
+        <PlatformTestOnlyBasicAccessPanel restaurantId={detail.restaurant_id} />
         <h3>{t.revisions}</h3>
         {detail.profiles.map((item) => <article className="card" key={item.id}>
           <strong>#{item.revision} · {item.status}</strong>
