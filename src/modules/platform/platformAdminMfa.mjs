@@ -17,6 +17,20 @@ export function isPlatformSessionProofCurrent(checkedAccessToken, currentAccessT
   return Boolean(currentAccessToken && checkedAccessToken === currentAccessToken);
 }
 
+export function canKeepPlatformChildrenMountedDuringRefresh({
+  mode,
+  checkedAccessToken,
+  currentAccessToken,
+  checkedUserId,
+  currentUserId,
+}) {
+  return mode === "authorized"
+    && Boolean(checkedAccessToken)
+    && Boolean(currentAccessToken)
+    && Boolean(checkedUserId)
+    && checkedUserId === currentUserId;
+}
+
 export function normalizeTotpCode(value) {
   return String(value ?? "").replace(/\s+/g, "").replace(/[^0-9]/g, "").slice(0, 6);
 }

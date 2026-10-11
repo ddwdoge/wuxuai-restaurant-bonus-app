@@ -3,6 +3,7 @@ import { supabase } from "../../shared/lib/supabase";
 import { UiButton, UiCard, UiState } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import {
+  canKeepPlatformChildrenMountedDuringRefresh,
   isPlatformSessionProofCurrent,
   normalizeTotpCode,
   platformAdminMfaMode,
@@ -32,6 +33,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [verifiedSessionToken, setVerifiedSessionToken] = useState<string | null>(null);
+  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const refreshGeneration = useRef(0);
   const currentSessionToken = session?.access_token ?? null;
 
@@ -40,6 +42,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     if (!supabase) {
       if (generation !== refreshGeneration.current) return;
       setVerifiedSessionToken(null);
+      setVerifiedUserId(null);
       setError("Die sichere Anmeldung ist derzeit nicht verfügbar.");
       setMode("error");
       return;
@@ -54,6 +57,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     const checkedSessionToken = sessionResult.data.session?.access_token ?? null;
     if (sessionResult.error || aalResult.error || factorsResult.error || !checkedSessionToken) {
       setVerifiedSessionToken(null);
+      setVerifiedUserId(null);
       setError("Der zusätzliche Sicherheitsnachweis konnte nicht geprüft werden.");
       setMode("error");
       return;
@@ -64,6 +68,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
       verifiedTotpFactors: factorsResult.data.totp,
     });
     setVerifiedSessionToken(checkedSessionToken);
+    setVerifiedUserId(sessionResult.data.session?.user.id ?? null);
     setMode(nextMode);
     const nextFactors = verifiedTotpFactors(factorsResult.data.totp);
     setFactors(nextFactors);
@@ -92,6 +97,7 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
     void request.catch(() => {
       if (generation !== refreshGeneration.current) return;
       setVerifiedSessionToken(null);
+      setVerifiedUserId(null);
       setError("Der zusätzliche Sicherheitsnachweis konnte nicht geprüft werden.");
       setMode("error");
     });
@@ -178,8 +184,15 @@ export function PlatformAdminMfaGate({ children }: { children: React.ReactNode }
   }
 
   const sessionProofIsCurrent = isPlatformSessionProofCurrent(verifiedSessionToken, currentSessionToken);
+  const canKeepChildrenMounted = canKeepPlatformChildrenMountedDuringRefresh({
+    mode,
+    checkedAccessToken: verifiedSessionToken,
+    currentAccessToken: currentSessionToken,
+    checkedUserId: verifiedUserId,
+    currentUserId: session?.user.id ?? null,
+  });
 
-  if (mode === "authorized" && sessionProofIsCurrent) return <>{children}</>;
+  if (mode === "authorized" && (sessionProofIsCurrent || canKeepChildrenMounted)) return <>{children}</>;
 
   if (mode === "checking" || (mode !== "error" && !sessionProofIsCurrent)) {
     return <div className="auth-shell"><UiState description="Die aktuelle Sitzung wird sicher geprüft." kind="loading" title="Sicherheitsnachweis wird geprüft" /></div>;

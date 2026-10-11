@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   hasTotpAuthenticationMethod,
   canRemoveTotpFactor,
+  canKeepPlatformChildrenMountedDuringRefresh,
   isPlatformSessionProofCurrent,
   latestVerifiedTotpFactor,
   nextTotpDeviceName,
@@ -152,9 +153,28 @@ test("the rendered Platform surface is bound fail-closed to the exact checked se
   assert.match(gate, /const currentSessionToken = session\?\.access_token \?\? null/);
   assert.match(gate, /supabase\.auth\.getSession\(\)/);
   assert.match(gate, /isPlatformSessionProofCurrent\(verifiedSessionToken, currentSessionToken\)/);
-  assert.match(gate, /mode === "authorized" && sessionProofIsCurrent/);
+  assert.match(gate, /canKeepPlatformChildrenMountedDuringRefresh\(\{/);
+  assert.match(gate, /checkedUserId: verifiedUserId/);
+  assert.match(gate, /currentUserId: session\?\.user\.id \?\? null/);
+  assert.match(gate, /mode === "authorized" && \(sessionProofIsCurrent \|\| canKeepChildrenMounted\)/);
   assert.match(gate, /\[currentSessionToken, refresh\]/);
   assert.match(gate, /refreshGeneration\.current/);
+});
+
+test("an authorized Platform surface survives only a same-identity token refresh", () => {
+  const proof = {
+    mode: "authorized",
+    checkedAccessToken: "session-a",
+    currentAccessToken: "session-b",
+    checkedUserId: "admin-a",
+    currentUserId: "admin-a",
+  };
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh(proof), true);
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh({ ...proof, mode: "checking" }), false);
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh({ ...proof, checkedAccessToken: null }), false);
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh({ ...proof, currentAccessToken: null }), false);
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh({ ...proof, checkedUserId: null }), false);
+  assert.equal(canKeepPlatformChildrenMountedDuringRefresh({ ...proof, currentUserId: "admin-b" }), false);
 });
 
 test("TOTP enrollment is explicit and never starts during the initial gate check", () => {

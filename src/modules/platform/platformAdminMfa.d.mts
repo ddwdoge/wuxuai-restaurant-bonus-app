@@ -12,6 +12,13 @@ export function isPlatformSessionProofCurrent(
   checkedAccessToken: string | null | undefined,
   currentAccessToken: string | null | undefined,
 ): boolean;
+export function canKeepPlatformChildrenMountedDuringRefresh(input: {
+  mode: PlatformMfaMode | "checking" | "error";
+  checkedAccessToken: string | null | undefined;
+  currentAccessToken: string | null | undefined;
+  checkedUserId: string | null | undefined;
+  currentUserId: string | null | undefined;
+}): boolean;
 export function normalizeTotpCode(value: unknown): string;
 export function latestVerifiedTotpFactor<T extends { id: string; updated_at?: string }>(factors: T[] | null | undefined): T | null;
 export type TotpFactor = { id: string; status?: string; friendly_name?: string; created_at?: string; updated_at?: string };

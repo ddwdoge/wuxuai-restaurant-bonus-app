@@ -45,6 +45,18 @@ function totp(secret, timestamp = Date.now()) {
   return String((digest.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0");
 }
 
+function signedJwt(secret, payload) {
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
+  return `${header}.${body}.${signature}`;
+}
+
+function incorrectTotp(secret) {
+  const current = totp(secret);
+  return `${current.slice(0, -1)}${(Number(current.at(-1)) + 1) % 10}`;
+}
+
 function ensureBoundLocalIssuer() {
   const inspected = JSON.parse(run("docker", ["inspect", authContainer]))[0];
   const currentIssuer = inspected.Config.Env.find((entry) => entry.startsWith("GOTRUE_JWT_ISSUER="))?.slice("GOTRUE_JWT_ISSUER=".length);
@@ -115,7 +127,15 @@ async function createAal2Identity(admin, anon, label) {
   assert.ok(aal.data.currentAuthenticationMethods.some((method) => method.method === "totp"));
   const payload = JSON.parse(Buffer.from(session.data.session.access_token.split(".")[1], "base64url").toString("utf8"));
   assert.equal(payload.iss, issuer);
-  return { client, email, id: created.data.user.id, session: session.data.session, sessionId: payload.session_id };
+  return {
+    client,
+    email,
+    id: created.data.user.id,
+    session: session.data.session,
+    sessionId: payload.session_id,
+    factorId: enrollment.data.id,
+    totpSecret: enrollment.data.totp.secret,
+  };
 }
 
 function bootstrapReviewers(bindingId, first, second) {
@@ -288,6 +308,30 @@ async function openTenant(page, tenant) {
   return panel;
 }
 
+async function reauthenticatePanel(panel, identity, { testCancel = false, testWrongCode = false } = {}) {
+  assert.equal(await panel.getByRole("button", { name: "Erste Testprüfung speichern" }).count(), 0);
+  assert.equal(await panel.getByRole("button", { name: "Synthetische Gegenprüfung speichern" }).count(), 0);
+  await panel.getByRole("button", { name: "TOTP erneut bestätigen" }).click();
+  await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").waitFor();
+  if (testCancel) {
+    await panel.getByRole("button", { name: "Abbrechen" }).click();
+    assert.equal(await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").count(), 0);
+    assert.equal(await panel.getByRole("button", { name: "Erste Testprüfung speichern" }).count(), 0);
+    assert.equal(await panel.getByRole("button", { name: "Synthetische Gegenprüfung speichern" }).count(), 0);
+    await panel.getByRole("button", { name: "TOTP erneut bestätigen" }).click();
+  }
+  if (testWrongCode) {
+    await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").fill(incorrectTotp(identity.totpSecret));
+    await panel.getByRole("button", { name: "TOTP sicher bestätigen" }).click();
+    await panel.getByText("Der Bestätigungscode ist falsch oder abgelaufen.", { exact: false }).waitFor();
+    assert.equal(await panel.getByRole("button", { name: "Erste Testprüfung speichern" }).count(), 0);
+    assert.equal(await panel.getByRole("button", { name: "Synthetische Gegenprüfung speichern" }).count(), 0);
+  }
+  await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").fill(totp(identity.totpSecret));
+  await panel.getByRole("button", { name: "TOTP sicher bestätigen" }).click();
+  await panel.getByText("serverseitige Frischeprüfung bestanden", { exact: false }).waitFor();
+}
+
 async function completeTenant(browser, engine, tenant, first, second, status) {
   const firstContext = await contextFor(browser, first.session);
   const firstPage = await firstContext.newPage();
@@ -296,6 +340,10 @@ async function completeTenant(browser, engine, tenant, first, second, status) {
     if (request.url().includes("/rpc/decide_platform_test_only_kyb_review")) firstPayload = request.postDataJSON();
   });
   let panel = await openTenant(firstPage, tenant);
+  await reauthenticatePanel(panel, first, {
+    testCancel: engine === "chromium",
+    testWrongCode: engine === "chromium",
+  });
   assert.equal(await panel.getByTestId("test-only-material-revision").innerText(), String(tenant.materialRevision));
   await assertDocument(panel, "GISA_EXTRACT", tenant.gisa, tenant.gisaHash);
   await assertDocument(panel, "TRADE_LICENSE", tenant.trade, tenant.tradeHash);
@@ -315,12 +363,14 @@ async function completeTenant(browser, engine, tenant, first, second, status) {
 
   await firstPage.reload({ waitUntil: "networkidle" });
   panel = await openTenant(firstPage, tenant);
+  await reauthenticatePanel(panel, first);
   await panel.getByText("Diese Identität hat bereits den ersten Schritt ausgeführt.", { exact: false }).waitFor();
   await firstContext.close();
 
   const secondContext = await contextFor(browser, second.session);
   const secondPage = await secondContext.newPage();
   panel = await openTenant(secondPage, tenant);
+  await reauthenticatePanel(panel, second);
   await panel.getByRole("checkbox").check();
   await panel.getByLabel("Bestätigungsphrase exakt eingeben:").fill(`TEST_ONLY KYB APPROVE_TEST ${tenant.name}`);
   await panel.getByRole("button", { name: "Synthetische Gegenprüfung speichern" }).click();
@@ -362,6 +412,21 @@ try {
   const webkitTenant = await createProductTenant(admin, anon, first, "WEBKIT KYB V3");
   const staleTenant = await createProductTenant(admin, anon, first, "STALE REVISION");
 
+  const stalePayload = JSON.parse(Buffer.from(first.session.access_token.split(".")[1], "base64url").toString("utf8"));
+  stalePayload.amr = [{ method: "password", timestamp: Math.floor(Date.now() / 1000) - 900 }, {
+    method: "totp", timestamp: Math.floor(Date.now() / 1000) - 601,
+  }];
+  stalePayload.iat = Math.floor(Date.now() / 1000) - 601;
+  stalePayload.exp = Math.floor(Date.now() / 1000) + 3600;
+  const staleToken = signedJwt(status.JWT_SECRET, stalePayload);
+  const expiredReadback = await fetch(`${status.REST_URL}/rpc/get_platform_test_only_kyb_review`, {
+    method: "POST",
+    headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${staleToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ input_restaurant_id: chromiumTenant.restaurant }),
+  });
+  assert.equal(expiredReadback.status, 403);
+  assert.match(await expiredReadback.text(), /RECENT_PLATFORM_TOTP_REQUIRED/);
+
   server = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "56136", "--strictPort"], {
     cwd: root,
     env: { ...env, VITE_SUPABASE_URL: status.API_URL, VITE_SUPABASE_ANON_KEY: status.ANON_KEY },
@@ -380,9 +445,41 @@ try {
   }
 
   browser = await chromium.launch({ headless: true });
+  const receiptsBeforeIdentitySwitch = sql("select count(*) from public.test_only_kyb_review_receipts");
+  const identityContext = await contextFor(browser, first.session);
+  const identityPage = await identityContext.newPage();
+  await identityPage.goto("http://127.0.0.1:56136/", { waitUntil: "networkidle" });
+  const identitySwitchCode = await identityPage.evaluate(async ({ secondSession, factorId, code }) => {
+    const service = await import("/src/modules/verification/testOnlyKybReviewService.ts");
+    const library = await import("/src/shared/lib/supabase.ts");
+    const prepared = await service.prepareTestOnlyKybReauthentication();
+    await library.supabase.auth.setSession({
+      access_token: secondSession.access_token,
+      refresh_token: secondSession.refresh_token,
+    });
+    try {
+      await service.confirmTestOnlyKybReauthentication({
+        expectedIdentityId: prepared.identityId,
+        factorId,
+        code,
+      });
+      return "UNEXPECTED_SUCCESS";
+    } catch (error) {
+      return error && typeof error === "object" && "code" in error ? String(error.code) : "NO_CODE";
+    }
+  }, {
+    secondSession: second.session,
+    factorId: first.factorId,
+    code: totp(first.totpSecret),
+  });
+  assert.equal(identitySwitchCode, "IDENTITY_CHANGED");
+  assert.equal(sql("select count(*) from public.test_only_kyb_review_receipts"), receiptsBeforeIdentitySwitch);
+  await identityContext.close();
+
   const firstContext = await contextFor(browser, first.session);
   const firstPage = await firstContext.newPage();
   let stalePanel = await openTenant(firstPage, staleTenant);
+  await reauthenticatePanel(stalePanel, first);
   await stalePanel.getByRole("checkbox").check();
   await stalePanel.getByLabel("Bestätigungsphrase exakt eingeben:").fill(`TEST_ONLY KYB FIRST_REVIEW ${staleTenant.name}`);
   await stalePanel.getByRole("button", { name: "Erste Testprüfung speichern" }).click();
@@ -391,6 +488,7 @@ try {
   const secondContext = await contextFor(browser, second.session);
   const secondPage = await secondContext.newPage();
   stalePanel = await openTenant(secondPage, staleTenant);
+  await reauthenticatePanel(stalePanel, second);
   await assertDocument(stalePanel, "GISA_EXTRACT", staleTenant.gisa, staleTenant.gisaHash);
   await assertDocument(stalePanel, "TRADE_LICENSE", staleTenant.trade, staleTenant.tradeHash);
   const staleSnapshot = await secondPage.evaluate(async (restaurantId) => {
@@ -459,6 +557,10 @@ try {
     exact_target_hashes: [chromiumTenant.gisaHash, chromiumTenant.tradeHash],
     full_two_identity_flows: 2,
     replay: "IDEMPOTENT",
+    reauthentication_cancel: "CLOSED",
+    reauthentication_wrong_code: "DENIED",
+    reauthentication_expired: "DENIED",
+    reauthentication_identity_switch: "DENIED",
     intermediate_revision_change: "DENIED",
     real_kyb_verified: false,
     real_at_intake: "BLOCKED",

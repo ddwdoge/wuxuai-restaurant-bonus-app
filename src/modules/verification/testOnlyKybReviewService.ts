@@ -42,9 +42,17 @@ export type TestOnlyKybReviewState = {
 };
 
 export type TestOnlyKybReviewAction = "FIRST_REVIEW" | "APPROVE_TEST";
+export type TestOnlyKybTotpFactor = {
+  id: string;
+  friendly_name?: string;
+  created_at?: string;
+};
 export type TestOnlyKybReviewErrorCode =
   | "NOT_ELIGIBLE"
   | "FRESH_AAL2_REQUIRED"
+  | "TOTP_FACTOR_REQUIRED"
+  | "TOTP_REAUTH_REJECTED"
+  | "IDENTITY_CHANGED"
   | "SECOND_PERSON_REQUIRED"
   | "STALE"
   | "REPLAY_CONFLICT"
@@ -108,6 +116,80 @@ export async function readTestOnlyKybReview(restaurantId: string) {
   });
   if (error) throw new TestOnlyKybReviewError(classifyError(error));
   return validateState(data);
+}
+
+export async function prepareTestOnlyKybReauthentication() {
+  const auth = client().auth;
+  const [sessionResult, userResult, factorsResult] = await Promise.all([
+    auth.getSession(),
+    auth.getUser(),
+    auth.mfa.listFactors(),
+  ]);
+  const sessionUserId = sessionResult.data.session?.user.id ?? null;
+  const verifiedUserId = userResult.data.user?.id ?? null;
+  if (
+    sessionResult.error
+    || userResult.error
+    || factorsResult.error
+    || !sessionUserId
+    || !verifiedUserId
+    || sessionUserId !== verifiedUserId
+  ) {
+    throw new TestOnlyKybReviewError("IDENTITY_CHANGED");
+  }
+  const factors = factorsResult.data.totp
+    .filter((factor) => factor.status === "verified")
+    .map((factor) => ({
+      id: factor.id,
+      friendly_name: factor.friendly_name,
+      created_at: factor.created_at,
+    }));
+  if (!factors.length) throw new TestOnlyKybReviewError("TOTP_FACTOR_REQUIRED");
+  return { identityId: verifiedUserId, factors };
+}
+
+export async function confirmTestOnlyKybReauthentication(input: {
+  expectedIdentityId: string;
+  factorId: string;
+  code: string;
+}) {
+  const auth = client().auth;
+  const before = await auth.getUser();
+  if (before.error || before.data.user?.id !== input.expectedIdentityId) {
+    throw new TestOnlyKybReviewError("IDENTITY_CHANGED");
+  }
+  const factors = await auth.mfa.listFactors();
+  if (factors.error || !factors.data.totp.some((factor) =>
+    factor.id === input.factorId && factor.status === "verified")) {
+    throw new TestOnlyKybReviewError("TOTP_FACTOR_REQUIRED");
+  }
+  const verified = await auth.mfa.challengeAndVerify({
+    factorId: input.factorId,
+    code: input.code,
+  });
+  if (verified.error) throw new TestOnlyKybReviewError("TOTP_REAUTH_REJECTED");
+
+  const [afterSession, afterUser, assurance] = await Promise.all([
+    auth.getSession(),
+    auth.getUser(),
+    auth.mfa.getAuthenticatorAssuranceLevel(),
+  ]);
+  if (
+    afterSession.error
+    || afterUser.error
+    || afterSession.data.session?.user.id !== input.expectedIdentityId
+    || afterUser.data.user?.id !== input.expectedIdentityId
+  ) {
+    throw new TestOnlyKybReviewError("IDENTITY_CHANGED");
+  }
+  if (
+    assurance.error
+    || assurance.data.currentLevel !== "aal2"
+    || !hasTotpAuthenticationMethod(assurance.data.currentAuthenticationMethods)
+  ) {
+    throw new TestOnlyKybReviewError("FRESH_AAL2_REQUIRED");
+  }
+  return { identityId: input.expectedIdentityId };
 }
 
 async function requireCurrentTotpAal2() {

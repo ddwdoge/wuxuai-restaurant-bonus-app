@@ -44,6 +44,18 @@ test("UI sends only the byte- and revision-bound synthetic RPC payload", () => {
   assert.match(service, /hasTotpAuthenticationMethod/);
 });
 
+test("an explicit AAL2 step-up is required before the decision UI is offered", () => {
+  assert.match(panel, /TOTP erneut bestätigen/);
+  assert.match(panel, /recentReadbackPassed \? <div className="platform-test-only-decision">/);
+  assert.match(panel, /readTestOnlyKybReview\(restaurantId\)/);
+  assert.match(service, /challengeAndVerify/);
+  assert.match(service, /expectedIdentityId/);
+  assert.match(service, /before\.data\.user\?\.id !== input\.expectedIdentityId/);
+  assert.match(service, /afterUser\.data\.user\?\.id !== input\.expectedIdentityId/);
+  assert.match(panel, /Abbrechen/);
+  assert.match(panel, /falsch oder abgelaufen/);
+});
+
 test("same reviewer and stale material fail closed without changing real gates", () => {
   assert.match(panel, /sameReviewerBlocked/);
   assert.match(panel, /andere Platform-Identität|zweite berechtigte Platform-Identität/);

@@ -40,6 +40,13 @@
 .platform-test-only-check input { height: 22px; margin: 1px 0 0; width: 22px; }
 .platform-test-only-decision .button, .platform-test-only-kyb-review > .button { justify-self: start; min-height: 44px; }
 .platform-test-only-complete { background: #dff2e9; border-radius: 8px; padding: 12px; }
+.platform-test-only-reauth { background: #fff; border: 1px solid rgba(40, 115, 88, .35); border-radius: 12px; display: grid; gap: 12px; padding: 14px; }
+.platform-test-only-reauth > div:first-child { display: grid; gap: 5px; }
+.platform-test-only-reauth > form { display: grid; gap: 10px; }
+.platform-test-only-reauth > form > label { display: grid; gap: 6px; }
+.platform-test-only-reauth input, .platform-test-only-reauth select { min-height: 44px; }
+.platform-test-only-reauth-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.platform-test-only-auth-required { background: #eef2f0; border-radius: 8px; color: #34463f; padding: 12px; }
 
 @media (max-width: 560px) {
   .platform-kyb-document-list li { align-items: stretch; flex-direction: column; }
@@ -52,4 +59,6 @@
   .platform-test-only-documents { grid-template-columns: minmax(0, 1fr); }
   .platform-test-only-revision > div, .platform-test-only-documents dl > div { grid-template-columns: minmax(0, 1fr); }
   .platform-test-only-decision .button, .platform-test-only-kyb-review > .button { width: 100%; }
+  .platform-test-only-reauth > .button, .platform-test-only-reauth-actions, .platform-test-only-reauth-actions .button { width: 100%; }
+  .platform-test-only-reauth-actions { display: grid; }
 }
