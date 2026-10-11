@@ -151,9 +151,26 @@ denied(decide({ state: initial, action: "ACTIVATION_READINESS_TEST", age: 2 }).s
 assert.equal(sql(`select count(*) from public.test_only_activation_trial_receipts where restaurant_id='${fixture.restaurant}';`), "0");
 sql("drop trigger reject_activation_trial_audit on public.test_only_activation_trial_audit; drop function public.local_reject_activation_trial_audit();");
 
+// A new synthetic legal publication changes the actual evidence, not merely the
+// client-provided hash. A decision based on the previously displayed state must
+// fail before any receipt is appended.
+const changedBody = `${body} Updated synthetic evidence.`;
+const changedPlatform = json(`begin; ${auth({ age: 2 })}
+select public.set_platform_terms_test_publication(
+  '${fixture.restaurant}','PUBLISH_TEST','TEST_ONLY_ACTIVATION_TRIAL_V2',${q(changedBody)},
+  'TEST ONLY: Updated synthetic provider snapshot','${platform.id}','${randomUUID()}'
+); commit;`);
+assert.notEqual(changedPlatform.sha256, platform.sha256);
+denied(decide({ state: initial, action: "ACTIVATION_READINESS_TEST", age: 1 }).sql,
+  /TEST_ONLY_ACTIVATION_TRIAL_STALE/i);
+assert.equal(sql(`select count(*) from public.test_only_activation_trial_receipts where restaurant_id='${fixture.restaurant}';`), "0");
+const current = read({ age: 1 });
+assert.equal(current.snapshot.legal.platform_publication_id, changedPlatform.id);
+assert.notEqual(current.snapshot_sha256, initial.snapshot_sha256);
+
 const activationRequest = randomUUID();
 const activationTotpAt = Math.floor(Date.now() / 1000) - 2;
-const activationCall = decide({ state: initial, action: "ACTIVATION_READINESS_TEST", request: activationRequest,
+const activationCall = decide({ state: current, action: "ACTIVATION_READINESS_TEST", request: activationRequest,
   timestamp: activationTotpAt });
 const activationParallel = await Promise.all(Array.from({ length: 6 }, () => asyncSql(activationCall.sql)));
 const activationResults = activationParallel.map((output) => JSON.parse(output.split("\n").filter((line) => line.startsWith("{")).at(-1)));
@@ -202,7 +219,8 @@ console.log(JSON.stringify({
   project_ref: projectRef,
   app_origin: origin,
   kyb_chain_consumed: "2/2",
-  legal_platform_hash: bodyHash,
+  initial_legal_platform_hash: bodyHash,
+  legal_platform_hash: changedPlatform.sha256,
   legal_merchant_hash: merchant.bundle_hash,
   readiness_receipts: 2,
   audit_events: 2,
@@ -214,6 +232,7 @@ console.log(JSON.stringify({
   catalog_writes: 0,
   at_real_intake: after.real_intake,
   rollback_receipts: 0,
+  changed_evidence: "DENIED_BEFORE_WRITE",
   same_request_parallelism: { calls: 6, first_write: 1, idempotent_replays: 5 },
   cloud_writes: 0,
 }));

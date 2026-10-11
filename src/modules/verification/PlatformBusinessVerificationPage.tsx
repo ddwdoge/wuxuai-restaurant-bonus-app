@@ -3,6 +3,7 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { PlatformAdminLayout } from "../platform/PlatformAdminLayout";
 import { PlatformOperatorChangePanel } from "./PlatformOperatorChangePanel";
+import { PlatformTestOnlyActivationTrialReadinessPanel } from "./PlatformTestOnlyActivationTrialReadinessPanel";
 import { PlatformTestOnlyKybReviewPanel } from "./PlatformTestOnlyKybReviewPanel";
 import { manageVerification, openPlatformKybDocument, readPlatformKybReviewDetail,
   readPlatformKybReviewQueue, readVerificationAdminDetail,
@@ -193,6 +194,7 @@ export function PlatformBusinessVerificationPage() {
           </ol> : <p>{k.missing}</p>}
         </section>
         <PlatformTestOnlyKybReviewPanel restaurantId={detail.restaurant_id} restaurantName={detail.restaurant_name} />
+        <PlatformTestOnlyActivationTrialReadinessPanel restaurantId={detail.restaurant_id} />
         <h3>{t.revisions}</h3>
         {detail.profiles.map((item) => <article className="card" key={item.id}>
           <strong>#{item.revision} · {item.status}</strong>

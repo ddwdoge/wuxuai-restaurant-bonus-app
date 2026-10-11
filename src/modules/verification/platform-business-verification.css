@@ -47,6 +47,10 @@
 .platform-test-only-reauth input, .platform-test-only-reauth select { min-height: 44px; }
 .platform-test-only-reauth-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .platform-test-only-auth-required { background: #eef2f0; border-radius: 8px; color: #34463f; padding: 12px; }
+.platform-test-only-readiness { background: #f2f5fb; border-color: #385c8a; }
+.platform-test-only-readiness .platform-test-only-badge { background: #243f64; }
+.platform-test-only-evidence { background: rgba(255, 255, 255, .7); border: 1px solid rgba(56, 92, 138, .24); border-radius: 12px; display: grid; gap: 12px; min-width: 0; padding: 14px; }
+.platform-test-only-evidence > h4 { margin: 0; }
 
 @media (max-width: 560px) {
   .platform-kyb-document-list li { align-items: stretch; flex-direction: column; }

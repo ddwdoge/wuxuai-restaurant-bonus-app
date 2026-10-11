@@ -406,6 +406,118 @@ async function assertDocument(panel, type, id, hash) {
   assert.match(await card.innerText(), new RegExp(hash));
 }
 
+function syntheticLegalArea(name) {
+  const body = `TEST ONLY: Synthetic ${name} evidence for activation/trial UI readiness.`;
+  return {
+    status: "VERIFIED_TEST_ONLY",
+    version: "TEST_ONLY_ACTIVATION_TRIAL_UI_V1",
+    source: "TEST_ONLY_ACTIVATION_TRIAL_UI_BROWSER",
+    body,
+    sha256: createHash("sha256").update(body, "utf8").digest("hex"),
+  };
+}
+
+async function publishReadinessEvidence(tenant, reviewer) {
+  const body = `TEST ONLY: Synthetic platform terms for ${tenant.restaurant}; no real legal approval.`;
+  const platform = await rpc(reviewer.client, "set_platform_terms_test_publication", {
+    input_restaurant_id: tenant.restaurant,
+    input_action: "PUBLISH_TEST",
+    input_version: "TEST_ONLY_ACTIVATION_TRIAL_UI_V1",
+    input_body: body,
+    input_provider_snapshot: "TEST ONLY: Synthetic provider snapshot for UI readiness.",
+    input_expected_previous_id: null,
+    input_request_id: randomUUID(),
+  });
+  assert.equal(platform.sha256, createHash("sha256").update(body, "utf8").digest("hex"));
+  const manifest = {
+    schema_version: "1",
+    test_only: true,
+    country: "AT",
+    locale: "de-AT",
+    restaurant_id: tenant.restaurant,
+    legal: syntheticLegalArea("legal"),
+    privacy: syntheticLegalArea("privacy"),
+    document_catalog: syntheticLegalArea("document catalog"),
+    retention: syntheticLegalArea("retention"),
+  };
+  const merchant = await rpc(reviewer.client, "set_platform_at_legal_synthetic_test_publication", {
+    input_restaurant_id: tenant.restaurant,
+    input_action: "PUBLISH_TEST",
+    input_manifest: manifest,
+    input_expected_status: "NOT_FOUND",
+    input_expected_previous_hash: null,
+    input_request_id: randomUUID(),
+  });
+  assert.equal(merchant.test_only, true);
+  return { platform, merchant };
+}
+
+async function reauthenticateReadinessPanel(panel, identity, testCancel = false) {
+  assert.equal(await panel.getByRole("button", { name: "Synthetische Aktivierungsbereitschaft speichern" }).count(), 0);
+  assert.equal(await panel.getByRole("button", { name: "Synthetische Trial-Bereitschaft speichern" }).count(), 0);
+  await panel.getByRole("button", { name: "TOTP erneut bestätigen" }).click();
+  await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").waitFor();
+  if (testCancel) {
+    await panel.getByRole("button", { name: "Abbrechen" }).click();
+    assert.equal(await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").count(), 0);
+    assert.equal(await panel.getByRole("checkbox").count(), 0);
+    await panel.getByRole("button", { name: "TOTP erneut bestätigen" }).click();
+  }
+  await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").fill(totp(identity.totpSecret));
+  await panel.getByRole("button", { name: "TOTP sicher bestätigen" }).click();
+  await panel.getByText("TOTP und frischer Read-RPC-Nachweis sind für den angezeigten Schritt aktuell bestätigt.", { exact: true }).waitFor();
+  assert.equal(await panel.getByRole("checkbox").count(), 1);
+}
+
+async function completeReadinessTenant(browser, engine, tenant, reviewer, status) {
+  const context = await contextFor(browser, reviewer.session);
+  const page = await context.newPage();
+  let activationPayload;
+  page.on("request", (request) => {
+    if (request.url().includes("/rpc/decide_platform_test_only_activation_trial") && !activationPayload) {
+      activationPayload = request.postDataJSON();
+    }
+  });
+  await openTenant(page, tenant);
+  const panel = page.getByTestId("test-only-activation-trial-readiness");
+  await panel.waitFor({ timeout: 20_000 });
+  await panel.getByRole("heading", { name: "Synthetische KYB-Belege" }).waitFor({ timeout: 20_000 });
+  assert.match(await panel.innerText(), new RegExp(tenant.gisa));
+  assert.match(await panel.innerText(), new RegExp(tenant.gisaHash));
+  assert.match(await panel.innerText(), new RegExp(tenant.trade));
+  assert.match(await panel.innerText(), new RegExp(tenant.tradeHash));
+  assert.match(await panel.innerText(), /BLOCKED \/ false/);
+
+  await reauthenticateReadinessPanel(panel, reviewer, engine === "chromium");
+  await panel.getByRole("checkbox").check();
+  await panel.getByLabel("Bestätigungsphrase exakt eingeben:").fill(
+    `TEST_ONLY ACTIVATION_READINESS_TEST ${tenant.restaurant}`,
+  );
+  await panel.getByRole("button", { name: "Synthetische Aktivierungsbereitschaft speichern" }).click();
+  await panel.getByText("Synthetische Aktivierungsbereitschaft gespeichert.", { exact: false }).waitFor();
+  assert.ok(activationPayload?.input_request_id);
+
+  const replay = await fetch(`${status.REST_URL}/rpc/decide_platform_test_only_activation_trial`, {
+    method: "POST",
+    headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${reviewer.session.access_token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(activationPayload),
+  });
+  assert.equal(replay.status, 200);
+  assert.equal((await replay.json()).idempotent, true);
+
+  await page.waitForTimeout(1_100);
+  await reauthenticateReadinessPanel(panel, reviewer);
+  await panel.getByRole("checkbox").check();
+  await panel.getByLabel("Bestätigungsphrase exakt eingeben:").fill(
+    `TEST_ONLY TRIAL_READINESS_TEST ${tenant.restaurant}`,
+  );
+  await panel.getByRole("button", { name: "Synthetische Trial-Bereitschaft speichern" }).click();
+  await panel.getByText("Synthetische Trial-Bereitschaft gespeichert.", { exact: false }).waitFor();
+  await panel.getByText("Beide synthetischen Readiness-Receipts sind gespeichert.", { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `${engine} readiness mobile overflow`);
+  await context.close();
+}
+
 let server;
 let browser;
 try {
@@ -453,6 +565,8 @@ try {
   for (const [engine, launcher, tenant] of [["chromium", chromium, chromiumTenant], ["webkit", webkit, webkitTenant]]) {
     browser = await launcher.launch({ headless: true });
     await completeTenant(browser, engine, tenant, first, second, status);
+    await publishReadinessEvidence(tenant, first);
+    await completeReadinessTenant(browser, engine, tenant, first, status);
     await browser.close();
     browser = null;
   }
@@ -557,6 +671,8 @@ try {
     assert.equal(sql(`select count(*) from public.test_only_kyb_review_receipts where restaurant_id='${tenant.restaurant}'`), "2");
     assert.equal(sql(`select count(distinct actor_id) from public.test_only_kyb_review_receipts where restaurant_id='${tenant.restaurant}'`), "2");
     assert.equal(sql(`select count(*) from public.business_verification_cases where restaurant_id='${tenant.restaurant}' and status='VERIFIED'`), "0");
+    assert.equal(sql(`select count(*) from public.test_only_activation_trial_receipts where restaurant_id='${tenant.restaurant}'`), "2");
+    assert.equal(sql(`select count(*) from public.test_only_activation_trial_audit where restaurant_id='${tenant.restaurant}'`), "2");
   }
   assert.equal(sql("select real_intake_status from public.country_kyb_intake_policies where country_code='AT'"), "BLOCKED");
   assert.equal(sql("select count(*) from public.billing_trial_claims"), "0");
@@ -575,6 +691,10 @@ try {
     reauthentication_expired: "DENIED",
     reauthentication_identity_switch: "DENIED",
     intermediate_revision_change: "DENIED",
+    readiness_ui_flows: 2,
+    readiness_reauthentication_cancel: "CLOSED",
+    readiness_newer_totp: "PASS",
+    readiness_replay: "IDEMPOTENT",
     real_kyb_verified: false,
     real_at_intake: "BLOCKED",
     activation_trial_pro_checkout_mail_delta: 0,
