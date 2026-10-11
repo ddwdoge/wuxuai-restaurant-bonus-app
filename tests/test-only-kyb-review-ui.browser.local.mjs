@@ -303,12 +303,17 @@ async function openTenant(page, tenant) {
   await page.getByRole("heading", { name: "Betriebsprüfung", exact: true }).first().waitFor({ timeout: 20_000 });
   const row = page.getByRole("row").filter({ hasText: tenant.name });
   await row.getByRole("button", { name: "Details" }).click();
+  assert.equal(new URL(page.url()).searchParams.get("review_case"), tenant.caseId);
   const panel = page.getByTestId("test-only-kyb-review");
   await panel.waitFor({ timeout: 20_000 });
   return panel;
 }
 
-async function reauthenticatePanel(panel, identity, { testCancel = false, testWrongCode = false } = {}) {
+async function reauthenticatePanel(panel, identity, {
+  forceFullReload = false,
+  testCancel = false,
+  testWrongCode = false,
+} = {}) {
   assert.equal(await panel.getByRole("button", { name: "Erste Testprüfung speichern" }).count(), 0);
   assert.equal(await panel.getByRole("button", { name: "Synthetische Gegenprüfung speichern" }).count(), 0);
   await panel.getByRole("button", { name: "TOTP erneut bestätigen" }).click();
@@ -330,6 +335,13 @@ async function reauthenticatePanel(panel, identity, { testCancel = false, testWr
   await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").fill(totp(identity.totpSecret));
   await panel.getByRole("button", { name: "TOTP sicher bestätigen" }).click();
   await panel.getByText("serverseitige Frischeprüfung bestanden", { exact: false }).waitFor();
+  if (forceFullReload) {
+    assert.ok(await panel.page().evaluate(() => sessionStorage.getItem("wuxuai.test-only-kyb-reauth-continuation")));
+    await panel.page().reload({ waitUntil: "networkidle" });
+    await panel.waitFor({ timeout: 20_000 });
+    await panel.getByText("serverseitige Frischeprüfung bestanden", { exact: false }).waitFor();
+    assert.equal(await panel.getByRole("checkbox").count(), 1);
+  }
 }
 
 async function completeTenant(browser, engine, tenant, first, second, status) {
@@ -341,6 +353,7 @@ async function completeTenant(browser, engine, tenant, first, second, status) {
   });
   let panel = await openTenant(firstPage, tenant);
   await reauthenticatePanel(panel, first, {
+    forceFullReload: engine === "chromium",
     testCancel: engine === "chromium",
     testWrongCode: engine === "chromium",
   });

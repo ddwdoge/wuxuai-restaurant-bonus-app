@@ -58,6 +58,15 @@ const documentTypeLabels: Record<string, Record<string, string>> = {
   POWER_OF_ATTORNEY: { de: "Vollmacht", en: "Power of attorney", fr: "Procuration", it: "Procura", es: "Poder de representación", zh: "授权委托书", ko: "위임장" },
 };
 
+const reviewCaseQueryKey = "review_case";
+
+function setReviewCaseLocation(caseId: string | null) {
+  const url = new URL(window.location.href);
+  if (caseId) url.searchParams.set(reviewCaseQueryKey, caseId);
+  else url.searchParams.delete(reviewCaseQueryKey);
+  window.history.replaceState(window.history.state, "", url);
+}
+
 export function PlatformBusinessVerificationPage() {
   const { language } = useI18n();
   const t = labels[language] ?? labels.de;
@@ -79,7 +88,16 @@ export function PlatformBusinessVerificationPage() {
   const ids = useRef<{ requestId: string; correlationId: string } | null>(null);
   useEffect(() => {
     let active = true;
-    void readPlatformKybReviewQueue().then((rows) => { if (active) setQueue(rows); })
+    const restoreCaseId = new URLSearchParams(window.location.search).get(reviewCaseQueryKey);
+    void readPlatformKybReviewQueue().then((rows) => {
+      if (!active) return;
+      setQueue(rows);
+      if (restoreCaseId && rows.some((item) => item.case_id === restoreCaseId)) {
+        void showDetail(restoreCaseId);
+      } else if (restoreCaseId) {
+        setReviewCaseLocation(null);
+      }
+    })
       .catch(() => { if (active) setError(true); });
     return () => { active = false; };
   }, []);
@@ -142,13 +160,13 @@ export function PlatformBusinessVerificationPage() {
       </tr></thead><tbody>{queue.map((item) => <tr key={item.case_id}>
         <td>{item.restaurant_name}</td><td>{item.country}</td><td>{item.status}</td><td>{item.document_count}</td>
         <td>{new Date(item.latest_document_at).toLocaleDateString(language)}</td>
-        <td><button className="button secondary" onClick={() => void showDetail(item.case_id)} style={{ minHeight: 44 }} type="button">{t.details}</button></td>
+        <td><button className="button secondary" onClick={() => { setReviewCaseLocation(item.case_id); void showDetail(item.case_id); }} style={{ minHeight: 44 }} type="button">{t.details}</button></td>
       </tr>)}</tbody></table></div> : <p>{t.empty}</p>}
     </section>
     {error ? <p role="alert">{t.error}</p> : null}
-    <AppDrawer open={Boolean(detail && kybDetail)} onClose={() => { if (!busy) { clearAction(); setDetail(null); setKybDetail(null); } }} size="large"
+    <AppDrawer open={Boolean(detail && kybDetail)} onClose={() => { if (!busy) { setReviewCaseLocation(null); clearAction(); setDetail(null); setKybDetail(null); } }} size="large"
       title={detail?.restaurant_name ?? t.title} description={t.intro}
-      footer={<button className="button secondary" disabled={busy} onClick={() => { clearAction(); setDetail(null); setKybDetail(null); }} style={{ minHeight: 44 }} type="button">{t.close}</button>}>
+      footer={<button className="button secondary" disabled={busy} onClick={() => { setReviewCaseLocation(null); clearAction(); setDetail(null); setKybDetail(null); }} style={{ minHeight: 44 }} type="button">{t.close}</button>}>
       {detail && kybDetail ? <div>
         <p>{detail.country} · {detail.method} · {detail.status}</p>
         <section aria-labelledby="platform-kyb-documents" className="platform-kyb-review-section" data-testid="platform-kyb-document-review">

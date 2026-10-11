@@ -13,6 +13,7 @@ import { classifyOwnerAuthError, isOwnerEmailConfirmed, ownerAuthErrorMessage } 
 import { isPlatformAdminRole } from "../platform/platformAdminAuthorization.mjs";
 import { buildStaffLoginPath, staffSlugFromLegacyPath } from "./staffLoginFlow.mjs";
 import { emptyPortalAccess, type PortalAccess } from "./portalAccessUx.mjs";
+import { shouldPreserveAuthorizedSurface } from "./authEventContinuity.mjs";
 
 type AuthContextValue = {
   user: User | null;
@@ -139,8 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authorizationRequestRef = useRef<{ userId: string; promise: Promise<VerifiedAuthorization> } | null>(null);
   const sessionRevalidationRef = useRef<Promise<void> | null>(null);
 
-  const resolveAndCommitAuthorization = useCallback(async (targetUser: User, force = false) => {
-    setRoleLoading(true);
+  const resolveAndCommitAuthorization = useCallback(async (
+    targetUser: User,
+    force = false,
+    preserveAuthorizedSurface = false,
+  ) => {
+    if (!preserveAuthorizedSurface) setRoleLoading(true);
     let request = authorizationRequestRef.current;
     if (force || !request || request.userId !== targetUser.id) {
       request = {
@@ -171,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       if (authorizationRequestRef.current === request) {
         authorizationRequestRef.current = null;
-        if (currentUserIdRef.current === targetUser.id) {
+        if (!preserveAuthorizedSurface && currentUserIdRef.current === targetUser.id) {
           setRoleLoading(false);
         }
       }
@@ -285,8 +290,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         refreshController.stop();
       }
+      const currentUserId = currentUserIdRef.current;
       const nextUser = nextSession?.user ?? null;
+      const preserveAuthorizedSurface = shouldPreserveAuthorizedSurface({
+        event,
+        currentUserId,
+        nextUserId: nextUser?.id ?? null,
+      });
       currentUserIdRef.current = nextUser?.id ?? null;
+      if (preserveAuthorizedSurface && nextUser) {
+        setSession(nextSession);
+        setUser((current) => current?.id === nextUser.id ? current : nextUser);
+        setLastAuthEvent(event);
+        setAuthLoading(false);
+        void resolveAndCommitAuthorization(nextUser, true, true);
+        return;
+      }
       setRoleLoading(Boolean(nextUser));
       setSession(nextSession);
       setUser(nextUser);

@@ -7,6 +7,7 @@ const migration = read("supabase/migrations/20261011164421_test_only_kyb_review_
 const page = read("src/modules/verification/PlatformBusinessVerificationPage.tsx");
 const panel = read("src/modules/verification/PlatformTestOnlyKybReviewPanel.tsx");
 const service = read("src/modules/verification/testOnlyKybReviewService.ts");
+const authProvider = read("src/modules/auth/AuthProvider.tsx");
 
 test("existing Platform business verification embeds one visibly separate synthetic review panel", () => {
   assert.match(page, /PlatformTestOnlyKybReviewPanel/);
@@ -54,6 +55,18 @@ test("an explicit AAL2 step-up is required before the decision UI is offered", (
   assert.match(service, /afterUser\.data\.user\?\.id !== input\.expectedIdentityId/);
   assert.match(panel, /Abbrechen/);
   assert.match(panel, /falsch oder abgelaufen/);
+});
+
+test("same-identity MFA keeps the authorized page mounted and reload recovery remains server-gated", () => {
+  assert.match(authProvider, /shouldPreserveAuthorizedSurface/);
+  assert.match(authProvider, /resolveAndCommitAuthorization\(nextUser, true, true\)/);
+  assert.match(page, /review_case/);
+  assert.match(page, /rows\.some\(\(item\) => item\.case_id === restoreCaseId\)/);
+  assert.match(panel, /createTestOnlyKybReauthContinuation/);
+  assert.match(panel, /matchesTestOnlyKybReauthContinuation/);
+  assert.match(panel, /await readTestOnlyKybReview\(restaurantId\)/);
+  assert.match(panel, /setRecentReadbackPassed\(resumed\)/);
+  assert.doesNotMatch(panel, /sessionStorage.*(?:code|token|password)/i);
 });
 
 test("same reviewer and stale material fail closed without changing real gates", () => {

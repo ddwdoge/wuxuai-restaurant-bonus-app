@@ -10,6 +10,14 @@ import {
   type TestOnlyKybTotpFactor,
 } from "./testOnlyKybReviewService";
 import { totpFactorLabel } from "../platform/platformAdminMfa.mjs";
+import {
+  clearTestOnlyKybReauthContinuation,
+  createTestOnlyKybReauthContinuation,
+  matchesTestOnlyKybReauthContinuation,
+  readTestOnlyKybReauthContinuation,
+  writeTestOnlyKybReauthContinuation,
+} from "./testOnlyKybReauthContinuation.mjs";
+import { supabase } from "../../shared/lib/supabase";
 
 const documentNames = {
   GISA_EXTRACT: "GISA-Auszug",
@@ -53,8 +61,12 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
   const [totpFactorId, setTotpFactorId] = useState("");
   const [totpCode, setTotpCode] = useState("");
   const request = useRef<{ action: TestOnlyKybReviewAction; snapshot: string; id: string } | null>(null);
+  const pendingReauthContinuation = useRef(
+    typeof window === "undefined" ? null : readTestOnlyKybReauthContinuation(window.sessionStorage),
+  );
 
   const refresh = useCallback(async () => {
+    const continuation = pendingReauthContinuation.current;
     setLoading(true);
     setError("");
     try {
@@ -63,7 +75,21 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
       setNotEligible(false);
       setConfirmation("");
       setAcknowledged(false);
-      setRecentReadbackPassed(false);
+      const currentUser = supabase ? await supabase.auth.getUser() : null;
+      const resumed = Boolean(
+        continuation
+        && currentUser
+        && !currentUser.error
+        && currentUser.data.user
+        && matchesTestOnlyKybReauthContinuation(continuation, {
+          restaurantId,
+          identityId: currentUser.data.user.id,
+        }),
+      );
+      pendingReauthContinuation.current = null;
+      if (!resumed) clearTestOnlyKybReauthContinuation(window.sessionStorage);
+      setRecentReadbackPassed(resumed);
+      if (resumed) setResult("Aktuelle TOTP-Bestätigung und serverseitige Frischeprüfung bestanden.");
       request.current = null;
     } catch (caught) {
       const code = caught instanceof TestOnlyKybReviewError ? caught.code : "UNKNOWN";
@@ -73,6 +99,8 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
       } else {
         setError(errorMessages[code]);
       }
+      pendingReauthContinuation.current = null;
+      clearTestOnlyKybReauthContinuation(window.sessionStorage);
       setRecentReadbackPassed(false);
     } finally {
       setLoading(false);
@@ -117,6 +145,8 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
     setTotpCode("");
     setRecentReadbackPassed(false);
     setError("");
+    pendingReauthContinuation.current = null;
+    clearTestOnlyKybReauthContinuation(window.sessionStorage);
   }
 
   async function verifyReauthentication() {
@@ -125,6 +155,9 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
     setError("");
     setResult("");
     setRecentReadbackPassed(false);
+    const continuation = createTestOnlyKybReauthContinuation({ restaurantId, identityId: reauthIdentityId });
+    pendingReauthContinuation.current = continuation;
+    writeTestOnlyKybReauthContinuation(window.sessionStorage, continuation);
     try {
       await confirmTestOnlyKybReauthentication({
         expectedIdentityId: reauthIdentityId,
@@ -144,10 +177,13 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
       setTotpFactorId("");
       setTotpCode("");
       setResult("Aktuelle TOTP-Bestätigung und serverseitige Frischeprüfung bestanden.");
+      pendingReauthContinuation.current = null;
     } catch (caught) {
       const code = caught instanceof TestOnlyKybReviewError ? caught.code : "UNKNOWN";
       setError(errorMessages[code === "NOT_ELIGIBLE" ? "UNKNOWN" : code]);
       setTotpCode("");
+      pendingReauthContinuation.current = null;
+      clearTestOnlyKybReauthContinuation(window.sessionStorage);
     } finally {
       setReauthBusy(false);
     }
@@ -181,6 +217,7 @@ export function PlatformTestOnlyKybReviewPanel({ restaurantId, restaurantName }:
       setConfirmation("");
       setAcknowledged(false);
       request.current = null;
+      clearTestOnlyKybReauthContinuation(window.sessionStorage);
     } catch (caught) {
       const code = caught instanceof TestOnlyKybReviewError ? caught.code : "UNKNOWN";
       setError(code === "NOT_ELIGIBLE" ? errorMessages.STALE : errorMessages[code]);
