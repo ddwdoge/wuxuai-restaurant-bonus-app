@@ -20,6 +20,26 @@
 .platform-operator-action label { display: grid; gap: 5px; }
 .platform-operator-action .button { justify-self: start; min-height: 44px; }
 .platform-operator-change :focus-visible { outline: 3px solid #b9822c; outline-offset: 2px; }
+.platform-test-only-kyb-review { background: #f3f8f6; border: 2px solid #287358; border-radius: 14px; display: grid; gap: 14px; margin: 20px 0; min-width: 0; padding: 16px; }
+.platform-test-only-kyb-review :is(h3, h4, p, dl) { margin: 0; }
+.platform-test-only-kyb-heading { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
+.platform-test-only-badge { background: #173e31; border-radius: 999px; color: #fff; flex: 0 0 auto; font-size: .75rem; padding: 7px 10px; }
+.platform-test-only-warning { background: #fff6dd; border-left: 4px solid #b9822c; border-radius: 8px; padding: 12px; }
+.platform-test-only-revision { display: grid; gap: 9px; }
+.platform-test-only-revision > div, .platform-test-only-documents dl > div { display: grid; gap: 4px; grid-template-columns: minmax(120px, .35fr) minmax(0, 1fr); }
+.platform-test-only-revision dd, .platform-test-only-documents dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.platform-test-only-revision code, .platform-test-only-documents code { font-size: .78rem; white-space: normal; }
+.platform-test-only-documents { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.platform-test-only-documents article { background: #fff; border: 1px solid rgba(40, 115, 88, .35); border-radius: 12px; display: grid; gap: 7px; min-width: 0; padding: 12px; }
+.platform-test-only-documents article > span { color: #52645d; }
+.platform-test-only-documents dl { display: grid; gap: 7px; }
+.platform-test-only-decision { border-top: 1px solid rgba(40, 115, 88, .28); display: grid; gap: 12px; padding-top: 14px; }
+.platform-test-only-decision > label:not(.platform-test-only-check) { display: grid; gap: 7px; }
+.platform-test-only-decision > label code { overflow-wrap: anywhere; }
+.platform-test-only-check { align-items: flex-start; display: grid; gap: 10px; grid-template-columns: 24px minmax(0, 1fr); }
+.platform-test-only-check input { height: 22px; margin: 1px 0 0; width: 22px; }
+.platform-test-only-decision .button, .platform-test-only-kyb-review > .button { justify-self: start; min-height: 44px; }
+.platform-test-only-complete { background: #dff2e9; border-radius: 8px; padding: 12px; }
 
 @media (max-width: 560px) {
   .platform-kyb-document-list li { align-items: stretch; flex-direction: column; }
@@ -27,4 +47,9 @@
   .platform-operator-comparison { grid-template-columns: minmax(0, 1fr); }
   .platform-operator-comparison dl > div { grid-template-columns: minmax(0, 1fr); }
   .platform-operator-action .button, .platform-operator-change > .button { width: 100%; }
+  .platform-test-only-kyb-heading { align-items: stretch; flex-direction: column; }
+  .platform-test-only-badge { align-self: flex-start; }
+  .platform-test-only-documents { grid-template-columns: minmax(0, 1fr); }
+  .platform-test-only-revision > div, .platform-test-only-documents dl > div { grid-template-columns: minmax(0, 1fr); }
+  .platform-test-only-decision .button, .platform-test-only-kyb-review > .button { width: 100%; }
 }

@@ -3,6 +3,7 @@ import { AppDrawer } from "../../shared/components/AppDrawer";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { PlatformAdminLayout } from "../platform/PlatformAdminLayout";
 import { PlatformOperatorChangePanel } from "./PlatformOperatorChangePanel";
+import { PlatformTestOnlyKybReviewPanel } from "./PlatformTestOnlyKybReviewPanel";
 import { manageVerification, openPlatformKybDocument, readPlatformKybReviewDetail,
   readPlatformKybReviewQueue, readVerificationAdminDetail,
   type KybDocument, type PlatformKybReviewDetail, type PlatformKybReviewQueueItem,
@@ -173,6 +174,7 @@ export function PlatformBusinessVerificationPage() {
             </li>)}
           </ol> : <p>{k.missing}</p>}
         </section>
+        <PlatformTestOnlyKybReviewPanel restaurantId={detail.restaurant_id} restaurantName={detail.restaurant_name} />
         <h3>{t.revisions}</h3>
         {detail.profiles.map((item) => <article className="card" key={item.id}>
           <strong>#{item.revision} · {item.status}</strong>
@@ -182,7 +184,7 @@ export function PlatformBusinessVerificationPage() {
         <h3>{t.history}</h3>{detail.history.map((item, index) => <p key={`${item.decided_at}-${index}`}>{item.action} · {item.new_status} · {item.reason_code}</p>)}
         <h3>{t.evidence}</h3>{detail.evidence.map((item, index) => <p key={`${item.uploaded_at}-${index}`}>{item.evidence_type} · {item.retention_class}</p>)}
         <PlatformOperatorChangePanel key={detail.restaurant_id} restaurantId={detail.restaurant_id} />
-        <h3>{a.actions}</h3>
+        <h3>Reale Betriebsprüfung</h3>
         <p>{a.locked}</p>
         {detail.allowed_actions.map((candidate) => <button className="button secondary" disabled={busy} key={candidate} style={{ minHeight: 44 }}
           onClick={() => selectAction(candidate)} type="button">{actionNames[candidate][language] ?? actionNames[candidate].de}</button>)}
