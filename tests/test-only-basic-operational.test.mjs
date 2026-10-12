@@ -6,6 +6,10 @@ const migration = await readFile(new URL(
   "../supabase/migrations/20261011225244_test_only_basic_operational_access.sql",
   import.meta.url,
 ), "utf8");
+const offerPublicationMigration = await readFile(new URL(
+  "../supabase/migrations/20261012122603_test_only_basic_offer_publication.sql",
+  import.meta.url,
+), "utf8");
 const service = await readFile(new URL(
   "../src/modules/verification/testOnlyBasicAccessService.ts",
   import.meta.url,
@@ -16,6 +20,14 @@ const panel = await readFile(new URL(
 ), "utf8");
 const page = await readFile(new URL(
   "../src/modules/verification/PlatformBusinessVerificationPage.tsx",
+  import.meta.url,
+), "utf8");
+const offerPage = await readFile(new URL(
+  "../src/modules/admin/pages/RestaurantOffersPage.tsx",
+  import.meta.url,
+), "utf8");
+const offerService = await readFile(new URL(
+  "../src/modules/offers/restaurantOfferService.ts",
   import.meta.url,
 ), "utf8");
 
@@ -100,4 +112,58 @@ test("Platform UI requires inline TOTP, fresh server readback and exact confirma
   assert.match(service, /fresh\.snapshot_sha256 !== input\.expectedState\.snapshot_sha256/);
   assert.match(service, /fresh\.previous_receipt_id !== input\.expectedState\.previous_receipt_id/);
   assert.match(service, /fresh\.next_action !== input\.action/);
+});
+
+test("synthetic offer publication is separated from the real pending-activation writer", () => {
+  assert.match(offerPublicationMigration, /create function public\.publish_test_only_basic_offer\(/);
+  assert.match(offerPublicationMigration, /project_bootstrap\.require_runtime_binding\(true\)/);
+  assert.match(offerPublicationMigration, /input_expected_access_receipt_id/);
+  assert.match(offerPublicationMigration, /access_receipt\.id is distinct from input_expected_access_receipt_id/);
+  assert.match(offerPublicationMigration, /access_receipt\.expires_at <= statement_timestamp\(\)/);
+  assert.match(offerPublicationMigration, /test_only_basic_access_active_internal\(input_restaurant_id\)/);
+  assert.match(offerPublicationMigration, /TEST_ONLY_BASIC_OFFER_REPLAY_CONFLICT/);
+  assert.match(offerPublicationMigration, /begin_test_only_basic_operation_internal\(input_restaurant_id, 'OFFER_WRITE'\)/);
+  assert.match(offerPublicationMigration, /notifications_enqueued', false/);
+  const syntheticWriter = offerPublicationMigration.match(
+    /create function public\.publish_test_only_basic_offer\([\s\S]*?\$function\$;/,
+  )?.[0] ?? "";
+  assert.doesNotMatch(syntheticWriter, /change_restaurant_offer_status\s*\(/);
+  const realWriter = offerPublicationMigration.match(
+    /create or replace function public\.change_restaurant_offer_status\([\s\S]*?\$function\$;/,
+  )?.[0] ?? "";
+  assert.match(realWriter, /PENDING_ACTIVATION[\s\S]*?RESTAURANT_NOT_OPERATIONAL/);
+  assert.doesNotMatch(realWriter, /begin_test_only_basic_operation_internal|test_only_basic_operation_scope_active_internal/);
+});
+
+test("synthetic publication receipts and audit are immutable and least-privileged", () => {
+  assert.match(offerPublicationMigration, /alter table public\.test_only_basic_offer_publication_receipts enable row level security/);
+  assert.match(offerPublicationMigration, /alter table public\.test_only_basic_offer_publication_audit enable row level security/);
+  assert.match(offerPublicationMigration, /test_only_basic_offer_publication_receipts_immutable/);
+  assert.match(offerPublicationMigration, /test_only_basic_offer_publication_audit_immutable/);
+  assert.match(offerPublicationMigration, /revoke all on public\.test_only_basic_offer_publication_receipts,[\s\S]*?service_role/);
+  assert.match(offerPublicationMigration, /grant execute on function public\.publish_test_only_basic_offer\([\s\S]*?to authenticated/);
+  assert.doesNotMatch(offerPublicationMigration, /grant\s+(?:select|insert|update|delete)\s+on/i);
+});
+
+test("owner UI exposes only a clearly marked grant-bound synthetic action", () => {
+  assert.match(offerPage, /loadTestOnlyBasicRuntime/);
+  assert.match(offerPage, /publishTestOnlyBasicOffer/);
+  assert.match(offerPage, /TEST_ONLY · synthetischer Staging-Betrieb/);
+  assert.match(offerPage, /TEST_ONLY synthetisch veröffentlichen/);
+  assert.match(offerPage, /disabled=\{!testOnlyRuntime\?\.active \|\| !testOnlyRuntime\.receipt_id\}/);
+  assert.match(offerPage, /accessReceiptId: testOnlyRuntime\.receipt_id/);
+  assert.match(offerService, /\.rpc\("publish_test_only_basic_offer"/);
+  assert.match(offerService, /input_expected_access_receipt_id: input\.accessReceiptId/);
+  assert.doesNotMatch(offerService.match(/export async function publishTestOnlyBasicOffer[\s\S]*?\n\}/)?.[0] ?? "", /change_restaurant_offer_status/);
+});
+
+test("offer-only migration cannot create grants, schedules, mail or real business state", () => {
+  for (const table of [
+    "test_only_basic_access_receipts", "manual_basic_trial_decisions", "billing_trial_claims",
+    "commercial_pro_access_grants", "basic_test_checkout_requests", "legal_operator_publication_decisions",
+    "customer_offer_email_deliveries", "customer_transactional_email_deliveries",
+  ]) {
+    assert.doesNotMatch(offerPublicationMigration, new RegExp(`insert\\s+into\\s+public\\.${table}\\b`, "i"));
+  }
+  assert.doesNotMatch(offerPublicationMigration, /pg_cron|cron\.schedule|net\.http|stripe/i);
 });

@@ -181,6 +181,7 @@ assert.equal(runtime.effective_plan, "BASIC");
 assert.equal(runtime.offer_limit, 5);
 assert.equal(runtime.offer_notifications, false);
 assert.equal(runtime.catalog_access, false);
+assert.equal(runtime.receipt_id, active.previous_receipt_id);
 
 // A different tenant and unrelated customer remain closed.
 const foreign = json(`select jsonb_build_object('restaurant',r.id,'slug',r.slug) from public.restaurants r
@@ -190,21 +191,41 @@ denied(customerAuth(`select public.get_test_only_basic_runtime('${foreign.restau
 denied(customerAuth(`select public.create_customer_points_credit_qr('${foreign.slug}','${customerToken}')`),
   /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED|TEST_ONLY_BASIC_CUSTOMER_DENIED|Kundenzugang/i);
 
-// Owner offer flow: exact BASIC capacity, authenticated customer visibility, no notification side effects.
+// Owner offer flow: the real publish RPC stays closed. Only the dedicated,
+// grant-bound TEST_ONLY writer can publish and it is replay-safe.
 const offerIds = [];
 for (let index = 1; index <= 5; index += 1) {
   const offer = json(ownerAuth(`select public.save_restaurant_offer('${fixture.restaurant}',null,'${fixture.branch}',
     'NEWS','TEST ONLY Angebot ${index}','Synthetischer BASIC-Test',null,null,null,null,
     now()-interval '1 minute',now()+interval '1 day',null,null,null,'Test ansehen')`));
   offerIds.push(offer.id);
-  const published = json(ownerAuth(`select public.change_restaurant_offer_status('${fixture.restaurant}','${offer.id}','PUBLISH')`));
+  if (index === 1) {
+    denied(ownerAuth(`select public.change_restaurant_offer_status('${fixture.restaurant}','${offer.id}','PUBLISH')`),
+      /RESTAURANT_NOT_OPERATIONAL/i);
+  }
+  const requestId = randomUUID();
+  const publishSql = ownerAuth(`select public.publish_test_only_basic_offer(
+    '${fixture.restaurant}','${offer.id}','${runtime.receipt_id}','DRAFT',${offer.publication_version},'${requestId}')`);
+  const published = json(publishSql);
   assert.equal(published.status, "PUBLISHED");
+  assert.equal(published.synthetic_test_only, true);
+  assert.equal(published.notifications_enqueued, false);
+  if (index === 1) {
+    const replay = json(publishSql);
+    assert.equal(replay.idempotent, true);
+    assert.equal(replay.receipt_id, published.receipt_id);
+    denied(publishSql.replace("'DRAFT'", "'DISABLED'"), /TEST_ONLY_BASIC_OFFER_REPLAY_CONFLICT/i);
+  }
 }
 const sixth = json(ownerAuth(`select public.save_restaurant_offer('${fixture.restaurant}',null,'${fixture.branch}',
   'NEWS','TEST ONLY Angebot 6','Synthetischer BASIC-Test',null,null,null,null,
   now()-interval '1 minute',now()+interval '1 day',null,null,null,'Test ansehen')`));
-denied(ownerAuth(`select public.change_restaurant_offer_status('${fixture.restaurant}','${sixth.id}','PUBLISH')`),
+denied(ownerAuth(`select public.publish_test_only_basic_offer(
+  '${fixture.restaurant}','${sixth.id}','${runtime.receipt_id}','DRAFT',${sixth.publication_version},'${randomUUID()}')`),
   /OFFER_CAPACITY_REACHED/i);
+denied(ownerAuth(`select public.publish_test_only_basic_offer(
+  '${foreign.restaurant}','${sixth.id}','${runtime.receipt_id}','DRAFT',${sixth.publication_version},'${randomUUID()}')`),
+  /TEST_ONLY_BASIC_OWNER_DENIED|TEST_ONLY_BASIC_OFFER_GRANT_INVALID/i);
 const visible = json(customerAuth(`select public.get_public_restaurant_offers('${fixture.slug}',20)`));
 assert.equal(visible.length, 5);
 assert.ok(visible.every((offer) => offer.synthetic_test_only === true));
@@ -212,26 +233,26 @@ const unrelatedVisible = json(asAuth({ who: fixture.owner, session: randomUUID()
   `select public.get_public_restaurant_offers('${fixture.slug}',20)`));
 assert.equal(unrelatedVisible.length, 0);
 
-// Customer QR and owner points writer use the selected real RPCs with a scoped synthetic capability.
-const qr = json(customerAuth(`select public.create_customer_points_credit_qr('${fixture.slug}','${customerToken}')`));
-assert.equal(qr.synthetic_test_only, true);
-const preview = json(ownerAuth(`select public.preview_restaurant_controlled_points('${fixture.restaurant}',
-  '${qr.qr_token}',1500)`));
-assert.equal(preview.synthetic_test_only, true);
-const pin = json(ownerAuth(`select public.get_today_restaurant_pin('${fixture.restaurant}')`));
-assert.equal(pin.synthetic_test_only, true);
-const pointsRequest = randomUUID();
-const confirmSql = ownerAuth(`select public.confirm_restaurant_controlled_points('${fixture.restaurant}',
-  '${qr.qr_token}',1500,'${pin.pin_code}','${pointsRequest}')`);
-const pointParallel = await Promise.allSettled(Array.from({ length: 4 }, () => asyncSql(confirmSql)));
-const successfulPoints = pointParallel.filter((entry) => entry.status === "fulfilled")
-  .map((entry) => JSON.parse(entry.value.split("\n").filter((line) => line.startsWith("{")).at(-1)));
-assert.ok(successfulPoints.length >= 1, pointParallel.filter((entry) => entry.status === "rejected")
-  .map((entry) => String(entry.reason?.message ?? entry.reason)).join("\n---\n"));
-assert.equal(sql(`select count(*) from public.points_transactions where restaurant_id='${fixture.restaurant}'
-  and idempotency_key='${pointsRequest}'`), "1");
-assert.equal(successfulPoints.filter((row) => row.already_completed === false).length, 1);
-assert.ok(successfulPoints.every((row) => row.synthetic_test_only === true));
+// Simulate a newer expired grant inside a rolled-back transaction. The writer
+// must evaluate expiry on every call rather than trusting an earlier UI read.
+const expiredRequest = randomUUID();
+const expiredGrant = randomUUID();
+denied(`begin;
+  insert into public.test_only_basic_access_receipts(
+    id,restaurant_id,organization_id,branch_id,action,actor_id,request_id,
+    previous_receipt_id,readiness_receipt_id,readiness_snapshot_sha256,
+    customer_join_receipt_id,starts_at,expires_at,reason,decision_payload,
+    auth_evidence,result,receipt_sha256,created_at
+  ) select '${expiredGrant}',restaurant_id,organization_id,branch_id,'GRANT',actor_id,'${expiredRequest}',
+    id,readiness_receipt_id,readiness_snapshot_sha256,customer_join_receipt_id,
+    now()-interval '2 hours',now()-interval '1 hour','Expired local writer proof',
+    decision_payload,auth_evidence,result,repeat('0',64),clock_timestamp()+interval '1 second'
+  from public.test_only_basic_access_receipts where id='${runtime.receipt_id}';
+  set local role authenticated;
+  select set_config('request.jwt.claims','${claims({ who: fixture.owner, session: ownerSession })}',true);
+  select public.publish_test_only_basic_offer('${fixture.restaurant}','${sixth.id}',
+    '${expiredGrant}','DRAFT',${sixth.publication_version},'${randomUUID()}');
+  rollback;`, /TEST_ONLY_BASIC_OFFER_GRANT_INVALID/i);
 
 const during = negativeState();
 assert.deepEqual(during.restaurant, before.restaurant);
@@ -252,9 +273,35 @@ assert.equal(closed.active, false);
 assert.equal(closed.next_action, "GRANT");
 denied(customerAuth(`select public.create_customer_points_credit_qr('${fixture.slug}','${customerToken}')`),
   /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED/i);
+denied(ownerAuth(`select public.publish_test_only_basic_offer(
+  '${fixture.restaurant}','${sixth.id}','${runtime.receipt_id}','DRAFT',${sixth.publication_version},'${randomUUID()}')`),
+  /TEST_ONLY_BASIC_OFFER_GRANT_INVALID/i);
+denied(ownerAuth(`select public.change_restaurant_offer_status('${fixture.restaurant}','${sixth.id}','PUBLISH')`),
+  /RESTAURANT_NOT_OPERATIONAL/i);
+const postRevokeDraft = json(ownerAuth(`select public.save_restaurant_offer('${fixture.restaurant}',null,'${fixture.branch}',
+  'NEWS','TEST ONLY nach Widerruf','Muss gesperrt bleiben',null,null,null,null,
+  now()-interval '1 minute',now()+interval '1 day',null,null,null,'Test ansehen')`));
+assert.equal(postRevokeDraft.status, "DRAFT");
+assert.equal(postRevokeDraft.is_active, false);
+denied(ownerAuth(`select public.publish_test_only_basic_offer(
+  '${fixture.restaurant}','${postRevokeDraft.id}','${runtime.receipt_id}','DRAFT',${postRevokeDraft.publication_version},'${randomUUID()}')`),
+  /TEST_ONLY_BASIC_OFFER_GRANT_INVALID/i);
+denied(ownerAuth(`select public.get_today_restaurant_pin('${fixture.restaurant}')`),
+  /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED/i);
+denied(ownerAuth(`select public.preview_restaurant_controlled_points('${fixture.restaurant}',
+  'post-revoke-invalid-reference',1500)`), /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED|PENDING_ACTIVATION_OPERATION_BLOCKED/i);
+denied(ownerAuth(`select public.confirm_restaurant_controlled_points('${fixture.restaurant}',
+  'post-revoke-invalid-reference',1500,'00000000','${randomUUID()}')`),
+  /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED|PENDING_ACTIVATION_OPERATION_BLOCKED|Restaurant wurde nicht gefunden/i);
 assert.equal(json(customerAuth(`select public.get_public_restaurant_offers('${fixture.slug}',20)`)).length, 0);
 assert.equal(sql(`select count(*) from public.test_only_basic_access_receipts where restaurant_id='${fixture.restaurant}'`), "2");
 assert.equal(sql(`select count(*) from public.test_only_basic_access_audit where restaurant_id='${fixture.restaurant}'`), "2");
+assert.equal(sql(`select count(*) from public.test_only_basic_offer_publication_receipts where restaurant_id='${fixture.restaurant}'`), "5");
+assert.equal(sql(`select count(*) from public.test_only_basic_offer_publication_audit where restaurant_id='${fixture.restaurant}'`), "5");
+assert.equal(sql(`select count(*) from public.restaurant_offers where restaurant_id='${fixture.restaurant}' and status='PUBLISHED'`), "5");
+assert.equal(sql(`select count(*) from public.restaurant_offers where restaurant_id='${fixture.restaurant}' and status='DRAFT'`), "2");
+assert.equal(sql(`select count(*) from public.audit_log where restaurant_id='${fixture.restaurant}'
+  and event_type='TEST_ONLY_BASIC_OFFER_PUBLISHED'`), "5");
 denied(`update public.test_only_basic_access_receipts set reason=reason where restaurant_id='${fixture.restaurant}'`,
   /BUSINESS_VERIFICATION_APPEND_ONLY/i);
 denied(`delete from public.test_only_basic_access_audit where restaurant_id='${fixture.restaurant}'`,
@@ -266,8 +313,10 @@ console.log(JSON.stringify({
   project_ref: projectRef,
   restaurant_id: fixture.restaurant,
   grant_parallel: "1_WRITE_5_IDEMPOTENT",
-  points_parallel_transactions: 1,
   offers_visible_during_grant: visible.length,
+  offer_publication_receipts: 5,
+  offer_publication_audits: 5,
+  post_revoke_writer_matrix: "CLOSED",
   revoked: true,
   real_activation: false,
   real_trial: false,

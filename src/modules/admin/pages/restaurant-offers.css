@@ -9,6 +9,14 @@
 .restaurant-offer-entitlement-summary span { color: #686f62; font-size: .78rem; }
 .restaurant-offer-entitlement-summary strong { overflow-wrap: anywhere; }
 .restaurant-offer-entitlement-summary p { color: #62685d; grid-column: 1 / -1; margin: 0; }
+.restaurant-offer-test-only-summary { align-items: center; border: 1px solid #d8c687; border-radius: 8px; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 18px 0; padding: 14px 16px; }
+.restaurant-offer-test-only-summary.active { background: #fff8df; border-color: #c69a2d; }
+.restaurant-offer-test-only-summary.closed { background: #f5f2ed; border-color: #cfc7bc; }
+.restaurant-offer-test-only-summary > div { display: grid; gap: 3px; min-width: 0; }
+.restaurant-offer-test-only-summary span { color: #785b19; font-size: .78rem; font-weight: 800; text-transform: uppercase; }
+.restaurant-offer-test-only-summary strong { overflow-wrap: anywhere; }
+.restaurant-offer-test-only-summary p { color: #5e5135; grid-column: 1 / -1; margin: 0; }
+.restaurant-offer-test-only-summary small { color: #675d4b; grid-column: 1 / -1; }
 .restaurant-offer-email-summary { display: grid; gap: 13px; margin: 0 0 18px; padding: 15px 16px; border: 1px solid #e6ded0; border-radius: 8px; background: #fff; box-shadow: 0 9px 25px rgba(45, 37, 26, .05); }
 .restaurant-offer-email-summary-heading { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .restaurant-offer-email-summary-heading > svg { color: #a77916; flex: 0 0 auto; }
@@ -104,6 +112,8 @@
   .restaurant-offer-email-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .restaurant-offer-entitlement-summary { grid-template-columns: minmax(0, 1fr); }
   .restaurant-offer-entitlement-summary p { grid-column: auto; }
+  .restaurant-offer-test-only-summary { grid-template-columns: minmax(0, 1fr); }
+  .restaurant-offer-test-only-summary p, .restaurant-offer-test-only-summary small { grid-column: auto; }
 }
 @media (max-width: 390px) { .restaurant-offer-actions { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .restaurant-offer-skeleton { animation: none; } }

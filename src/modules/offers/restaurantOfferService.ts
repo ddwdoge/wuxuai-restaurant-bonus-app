@@ -41,6 +41,40 @@ export type OwnerOfferCapacity = {
   write_enforcement_active: boolean;
 };
 
+export type TestOnlyBasicRuntime = {
+  synthetic_test_only: true;
+  active: boolean;
+  effective_plan: "BASIC" | null;
+  offer_limit: number;
+  offer_notifications: false;
+  reward_notifications: false;
+  catalog_access: false;
+  real_activation: false;
+  real_trial: false;
+  starts_at: string | null;
+  expires_at: string | null;
+  receipt_id: string | null;
+  readiness_receipt_id: string;
+};
+
+export type TestOnlyBasicOfferPublication = {
+  receipt_id: string;
+  restaurant_id: string;
+  offer_id: string;
+  access_receipt_id: string;
+  status: "PUBLISHED";
+  publication_version: number;
+  published_at: string;
+  material_snapshot_sha256: string;
+  synthetic_test_only: true;
+  real_activation: false;
+  real_trial: false;
+  real_entitlement: false;
+  notifications_enqueued: false;
+  catalog_access: false;
+  idempotent: boolean;
+};
+
 export type OwnerOfferPlanWindow = {
   effective_from: string | null;
   effective_until: string | null;
@@ -90,6 +124,7 @@ export type RestaurantOffer = {
   is_active: boolean;
   published_at: string | null;
   published_by?: string | null;
+  publication_version: number;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -211,6 +246,15 @@ function offerError(error: { message?: string } | null) {
   if (message.includes("OFFER_BRANCH")) return new Error("Bitte wähle den Standort dieses Restaurants aus.");
   if (message.includes("OFFER_LUNCH_WINDOW_REQUIRED")) return new Error("Für ein Mittagsmenü werden mindestens ein Wochentag und ein Zeitfenster benötigt.");
   if (message.includes("OFFER_PERIOD_EXPIRED")) return new Error("Der gewählte Zeitraum ist bereits abgelaufen.");
+  if (message.includes("TEST_ONLY_BASIC_OFFER_GRANT_INVALID") || message.includes("TEST_ONLY_BASIC_OPERATION_DENIED")) {
+    return new Error("Der befristete TEST_ONLY-BASIC-Zugang ist nicht mehr gültig. Bitte lade die Seite neu.");
+  }
+  if (message.includes("TEST_ONLY_BASIC_OFFER_STALE")) {
+    return new Error("Das Angebot oder der TEST_ONLY-Stand wurde zwischenzeitlich geändert. Bitte lade die Seite neu.");
+  }
+  if (message.includes("TEST_ONLY_BASIC_OWNER_DENIED")) {
+    return new Error("Die TEST_ONLY-Veröffentlichung ist für diese Identität oder diesen Betrieb nicht erlaubt.");
+  }
   if (message.includes("restaurant_offers_previous_price")) return new Error("Der vorherige Preis muss über dem aktuellen Preis liegen.");
   return new Error("Das Angebot konnte gerade nicht gespeichert werden. Bitte versuche es erneut.");
 }
@@ -233,6 +277,14 @@ export async function loadOwnerOfferPlanWindow(restaurantId: string): Promise<Ow
     effective_from: typeof entitlement?.effective_from === "string" ? entitlement.effective_from : null,
     effective_until: typeof entitlement?.effective_until === "string" ? entitlement.effective_until : null,
   };
+}
+
+export async function loadTestOnlyBasicRuntime(restaurantId: string): Promise<TestOnlyBasicRuntime> {
+  const { data, error } = await requireClient().rpc("get_test_only_basic_runtime", {
+    input_restaurant_id: restaurantId,
+  });
+  if (error) throw new Error("Der TEST_ONLY-BASIC-Zustand konnte nicht geladen werden.");
+  return data as TestOnlyBasicRuntime;
 }
 
 function offerLoadError() {
@@ -311,6 +363,26 @@ export async function changeRestaurantOfferStatus(
   });
   if (error) throw offerError(error);
   return data as RestaurantOffer;
+}
+
+export async function publishTestOnlyBasicOffer(input: {
+  restaurantId: string;
+  offerId: string;
+  accessReceiptId: string;
+  expectedStatus: "DRAFT" | "DISABLED";
+  expectedPublicationVersion: number;
+  requestId: string;
+}): Promise<TestOnlyBasicOfferPublication> {
+  const { data, error } = await requireClient().rpc("publish_test_only_basic_offer", {
+    input_restaurant_id: input.restaurantId,
+    input_offer_id: input.offerId,
+    input_expected_access_receipt_id: input.accessReceiptId,
+    input_expected_status: input.expectedStatus,
+    input_expected_publication_version: input.expectedPublicationVersion,
+    input_request_id: input.requestId,
+  });
+  if (error) throw offerError(error);
+  return data as TestOnlyBasicOfferPublication;
 }
 
 export async function duplicateRestaurantOffer(restaurantId: string, offerId: string): Promise<RestaurantOffer> {

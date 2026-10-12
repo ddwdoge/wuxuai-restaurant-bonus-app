@@ -41,6 +41,8 @@ import {
   loadRestaurantOffers,
   loadOwnerOfferCapacity,
   loadOwnerOfferPlanWindow,
+  loadTestOnlyBasicRuntime,
+  publishTestOnlyBasicOffer,
   restaurantOfferCustomerVisibility,
   restaurantOfferDisplayStatus,
   restaurantOfferPricePresentation,
@@ -54,6 +56,7 @@ import {
   type RestaurantOfferType,
   type OwnerOfferCapacity,
   type OwnerOfferPlanWindow,
+  type TestOnlyBasicRuntime,
 } from "../../offers/restaurantOfferService";
 import { offerCapacityReachedMessage } from "../../offers/offerCapacityMessages.mjs";
 import "./restaurant-offers.css";
@@ -178,6 +181,7 @@ export function RestaurantOffersPage() {
   const [emailSummary, setEmailSummary] = useState<RestaurantOfferEmailSummary | null>(null);
   const [capacity, setCapacity] = useState<OwnerOfferCapacity | null>(null);
   const [planWindow, setPlanWindow] = useState<OwnerOfferPlanWindow | null>(null);
+  const [testOnlyRuntime, setTestOnlyRuntime] = useState<TestOnlyBasicRuntime | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -197,24 +201,27 @@ export function RestaurantOffersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextOffers, nextBranches, nextEmailSummary, nextCapacity, nextPlanWindow] = await Promise.all([
+      const [nextOffers, nextBranches, nextEmailSummary, nextCapacity, nextPlanWindow, nextTestOnlyRuntime] = await Promise.all([
         loadRestaurantOffers(restaurantId),
         loadRestaurantOfferBranches(restaurantId, pendingActivation),
         loadRestaurantOfferEmailSummary(restaurantId).catch(() => null),
         loadOwnerOfferCapacity(restaurantId).catch(() => null),
         loadOwnerOfferPlanWindow(restaurantId).catch(() => null),
+        pendingActivation ? loadTestOnlyBasicRuntime(restaurantId).catch(() => null) : Promise.resolve(null),
       ]);
       setOffers(nextOffers);
       setBranches(nextBranches);
       setEmailSummary(nextEmailSummary);
       setCapacity(nextCapacity);
       setPlanWindow(nextPlanWindow);
+      setTestOnlyRuntime(nextTestOnlyRuntime);
     } catch (nextError) {
       setOffers([]);
       setBranches([]);
       setEmailSummary(null);
       setCapacity(null);
       setPlanWindow(null);
+      setTestOnlyRuntime(null);
       setError(nextError instanceof Error ? nextError.message : "Angebote konnten nicht geladen werden.");
     } finally {
       setLoading(false);
@@ -382,6 +389,26 @@ export function RestaurantOffersPage() {
     }
   }
 
+  async function publishSyntheticOffer(offer: RestaurantOffer) {
+    if (!activeRestaurant?.id || !testOnlyRuntime?.active || !testOnlyRuntime.receipt_id) return;
+    setStatusMessage(null);
+    try {
+      await publishTestOnlyBasicOffer({
+        restaurantId: activeRestaurant.id,
+        offerId: offer.id,
+        accessReceiptId: testOnlyRuntime.receipt_id,
+        expectedStatus: offer.status === "DISABLED" ? "DISABLED" : "DRAFT",
+        expectedPublicationVersion: offer.publication_version,
+        requestId: crypto.randomUUID(),
+      });
+      setStatusMessage("TEST_ONLY: Synthetisches Angebot veröffentlicht. Keine reale Aktivierung oder Benachrichtigung.");
+      await reload();
+    } catch (nextError) {
+      setStatusMessage(presentOfferError(nextError, "Die synthetische Veröffentlichung wurde abgewiesen."));
+      await reload();
+    }
+  }
+
   async function duplicateOffer(offer: RestaurantOffer) {
     if (!activeRestaurant?.id) return;
     try {
@@ -414,6 +441,14 @@ export function RestaurantOffersPage() {
       </header>
 
       {capacity && !isPendingActivation(activeRestaurant) ? <section className="restaurant-offer-entitlement-summary" aria-label="Paket und Angebotskapazität"><div><span>Aktuelles Paket</span><strong>{capacity.plan.plan_key === "BASIC" ? "Basic" : "Pro"}</strong></div><div><span>Aktive und geplante Angebote</span><strong>{`${capacity.offers.usage} / ${capacity.offers.effective_limit}`}</strong></div><p>Plan und Kapazität werden ausschließlich durch WUXUAI verwaltet.</p></section> : null}
+      {pendingActivation ? <section className={`restaurant-offer-test-only-summary ${testOnlyRuntime?.active ? "active" : "closed"}`} data-testid="test-only-offer-publication" aria-label="TEST_ONLY BASIC Angebotsveröffentlichung">
+        <div><span>TEST_ONLY · synthetischer Staging-Betrieb</span><strong>{testOnlyRuntime?.active ? "BASIC-Testzugang aktiv" : "Testzugang geschlossen"}</strong></div>
+        <div><span>Synthetisches Angebotslimit</span><strong>{testOnlyRuntime?.active ? `${activeOfferCount} / ${testOnlyRuntime.offer_limit}` : "0 / 0"}</strong></div>
+        <p>{testOnlyRuntime?.active
+          ? "Nur die getrennte synthetische Veröffentlichungsaktion ist verfügbar. Reale Aktivierung, Katalog und Angebots-E-Mails bleiben gesperrt."
+          : "Neue synthetische Veröffentlichungen sind serverseitig gesperrt. Entwürfe und vorhandene Auditbelege bleiben erhalten."}</p>
+        {testOnlyRuntime?.active && testOnlyRuntime.expires_at ? <small>Gültig bis {formatLocaleDate(testOnlyRuntime.expires_at, language, { dateStyle: "medium", timeStyle: "short" })}</small> : null}
+      </section> : null}
       {planWindow?.effective_from || planWindow?.effective_until ? <dl className="platform-detail-list" data-i18n-skip="true">
         {([['start', planWindow.effective_from], ['end', planWindow.effective_until]] as const).map(([key, value]) => value && Number.isFinite(Date.parse(value)) ? <div key={key}><dt>{translateKey(`platform.planOverride.${key}`)}</dt><dd>{formatLocaleDate(value, language, { dateStyle: "medium", timeStyle: "short" })}</dd></div> : null)}
       </dl> : null}
@@ -450,7 +485,7 @@ export function RestaurantOffersPage() {
           ))}
         </div>
         <span>
-          <><strong>{capacity ? `${activeOfferCount} / ${capacity.offers.effective_limit}` : activeOfferCount}</strong>{" "}<span>Aktive und geplante Angebote</span></>
+          <><strong>{pendingActivation && testOnlyRuntime?.active ? `${activeOfferCount} / ${testOnlyRuntime.offer_limit}` : capacity ? `${activeOfferCount} / ${capacity.offers.effective_limit}` : activeOfferCount}</strong>{" "}<span>Aktive und geplante Angebote</span></>
         </span>
       </div>
 
@@ -488,7 +523,10 @@ export function RestaurantOffersPage() {
                   <div className="restaurant-offer-actions">
                     <button onClick={() => startEdit(offer)} type="button"><Edit3 aria-hidden="true" size={17} />Bearbeiten</button>
                     <button onClick={() => setPreviewOffer(offer)} type="button"><Eye aria-hidden="true" size={17} />Vorschau</button>
-                    {offer.status === "DRAFT" || offer.status === "DISABLED" ? <button disabled={isPendingActivation(activeRestaurant)} onClick={() => void runAction(offer, "PUBLISH")} type="button"><Send aria-hidden="true" size={17} />Veröffentlichen</button> : null}
+                    {offer.status === "DRAFT" || offer.status === "DISABLED" ? pendingActivation
+                      ? <button disabled={!testOnlyRuntime?.active || !testOnlyRuntime.receipt_id} onClick={() => void publishSyntheticOffer(offer)} type="button"><Send aria-hidden="true" size={17} />TEST_ONLY synthetisch veröffentlichen</button>
+                      : <button onClick={() => void runAction(offer, "PUBLISH")} type="button"><Send aria-hidden="true" size={17} />Veröffentlichen</button>
+                    : null}
                     {offer.status === "PUBLISHED" && offer.is_active ? <button onClick={() => void runAction(offer, "DISABLE")} type="button"><XCircle aria-hidden="true" size={17} />Deaktivieren</button> : null}
                     <button onClick={() => void duplicateOffer(offer)} type="button"><Copy aria-hidden="true" size={17} />Duplizieren</button>
                     {offer.status === "DRAFT" ? <button className="danger" onClick={() => void deleteDraft(offer)} type="button"><Trash2 aria-hidden="true" size={17} />Entwurf löschen</button> : offer.status !== "ARCHIVED" ? <button onClick={() => void runAction(offer, "ARCHIVE")} type="button"><Archive aria-hidden="true" size={17} />Archivieren</button> : null}
