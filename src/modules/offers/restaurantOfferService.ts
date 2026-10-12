@@ -46,6 +46,7 @@ export type TestOnlyBasicRuntime = {
   active: boolean;
   effective_plan: "BASIC" | null;
   offer_limit: number;
+  offer_usage: number;
   offer_notifications: false;
   reward_notifications: false;
   catalog_access: false;

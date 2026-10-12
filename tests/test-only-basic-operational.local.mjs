@@ -179,6 +179,7 @@ const runtime = json(customerAuth(`select public.get_test_only_basic_runtime('${
 assert.equal(runtime.active, true);
 assert.equal(runtime.effective_plan, "BASIC");
 assert.equal(runtime.offer_limit, 5);
+assert.equal(runtime.offer_usage, 0);
 assert.equal(runtime.offer_notifications, false);
 assert.equal(runtime.catalog_access, false);
 assert.equal(runtime.receipt_id, active.previous_receipt_id);
@@ -229,6 +230,9 @@ denied(ownerAuth(`select public.publish_test_only_basic_offer(
 const visible = json(customerAuth(`select public.get_public_restaurant_offers('${fixture.slug}',20)`));
 assert.equal(visible.length, 5);
 assert.ok(visible.every((offer) => offer.synthetic_test_only === true));
+const fullRuntime = json(ownerAuth(`select public.get_test_only_basic_runtime('${fixture.restaurant}')`));
+assert.equal(fullRuntime.offer_usage, 5);
+assert.equal(fullRuntime.offer_limit, 5);
 const unrelatedVisible = json(asAuth({ who: fixture.owner, session: randomUUID() },
   `select public.get_public_restaurant_offers('${fixture.slug}',20)`));
 assert.equal(unrelatedVisible.length, 0);
@@ -271,6 +275,10 @@ assert.equal(revoke.effective_plan, null);
 const closed = read();
 assert.equal(closed.active, false);
 assert.equal(closed.next_action, "GRANT");
+const closedRuntime = json(ownerAuth(`select public.get_test_only_basic_runtime('${fixture.restaurant}')`));
+assert.equal(closedRuntime.active, false);
+assert.equal(closedRuntime.offer_usage, 0);
+assert.equal(closedRuntime.offer_limit, 0);
 denied(customerAuth(`select public.create_customer_points_credit_qr('${fixture.slug}','${customerToken}')`),
   /RESTAURANT_NOT_OPERATIONAL|TEST_ONLY_BASIC_OPERATION_DENIED/i);
 denied(ownerAuth(`select public.publish_test_only_basic_offer(

@@ -10,6 +10,10 @@ const offerPublicationMigration = await readFile(new URL(
   "../supabase/migrations/20261012122603_test_only_basic_offer_publication.sql",
   import.meta.url,
 ), "utf8");
+const offerUsageReadbackMigration = await readFile(new URL(
+  "../supabase/migrations/20261012213314_test_only_basic_offer_usage_readback.sql",
+  import.meta.url,
+), "utf8");
 const service = await readFile(new URL(
   "../src/modules/verification/testOnlyBasicAccessService.ts",
   import.meta.url,
@@ -155,6 +159,17 @@ test("owner UI exposes only a clearly marked grant-bound synthetic action", () =
   assert.match(offerService, /\.rpc\("publish_test_only_basic_offer"/);
   assert.match(offerService, /input_expected_access_receipt_id: input\.accessReceiptId/);
   assert.doesNotMatch(offerService.match(/export async function publishTestOnlyBasicOffer[\s\S]*?\n\}/)?.[0] ?? "", /change_restaurant_offer_status/);
+});
+
+test("synthetic usage readback matches the server-side BASIC write capacity", () => {
+  assert.match(offerUsageReadbackMigration, /create or replace function public\.get_test_only_basic_runtime/);
+  assert.match(offerUsageReadbackMigration, /active_value := public\.test_only_basic_access_active_internal\(input_restaurant_id\)/);
+  assert.match(offerUsageReadbackMigration, /offer\.status = 'PUBLISHED'/);
+  assert.match(offerUsageReadbackMigration, /offer\.is_active = true/);
+  assert.match(offerUsageReadbackMigration, /offer\.valid_to > statement_timestamp\(\)/);
+  assert.match(offerUsageReadbackMigration, /'offer_usage', offer_usage_value/);
+  assert.match(offerPage, /testOnlyRuntime\?\.active[\s\S]*?testOnlyRuntime\.offer_usage/);
+  assert.doesNotMatch(offerUsageReadbackMigration, /insert\s+into|update\s+public\.|delete\s+from|pg_cron|cron\.schedule|net\.http|stripe/i);
 });
 
 test("offer-only migration cannot create grants, schedules, mail or real business state", () => {

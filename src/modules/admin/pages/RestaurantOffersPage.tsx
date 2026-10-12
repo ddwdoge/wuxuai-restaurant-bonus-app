@@ -238,8 +238,10 @@ export function RestaurantOffersPage() {
     if (filter === "inactive") return ["Deaktiviert", "Abgelaufen", "Archiviert"].includes(displayStatus);
     return true;
   }), [filter, offers]);
-  const activeOfferCount = capacity?.offers.usage
-    ?? offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
+  const activeOfferCount = testOnlyRuntime?.active
+    ? testOnlyRuntime.offer_usage
+    : capacity?.offers.usage
+      ?? offers.filter((offer) => restaurantOfferCustomerVisibility(offer) === "Sichtbar").length;
 
   function presentOfferError(nextError: unknown, fallback: string) {
     return isRestaurantOfferCapacityError(nextError)

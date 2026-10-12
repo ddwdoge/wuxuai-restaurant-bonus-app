@@ -34,6 +34,7 @@ export const supabase={rpc:async(name,args)=>{window.rpcCalls??=[];window.rpcCal
     if(index<0||offers[index].status!==args.input_expected_status||offers[index].publication_version!==args.input_expected_publication_version)return{data:null,error:{message:'TEST_ONLY_BASIC_OFFER_STALE'}};
     offers[index]={...offers[index],status:'PUBLISHED',is_active:true,publication_version:offers[index].publication_version+1,published_at:new Date().toISOString()};
     write('test-only-offers',offers);
+    write('test-only-runtime',{...runtime,offer_usage:runtime.offer_usage+1});
     return{data:{receipt_id:'synthetic-publication-receipt',restaurant_id:'test-only-tenant',offer_id:offers[index].id,access_receipt_id:runtime.receipt_id,status:'PUBLISHED',publication_version:offers[index].publication_version,published_at:offers[index].published_at,material_snapshot_sha256:'a'.repeat(64),synthetic_test_only:true,real_activation:false,real_trial:false,real_entitlement:false,notifications_enqueued:false,catalog_access:false,idempotent:false},error:null};
   }
   throw Error('Unexpected RPC '+name);
@@ -93,7 +94,7 @@ try {
           if (!localStorage.getItem("test-only-runtime")) localStorage.setItem("test-only-runtime", JSON.stringify(runtime));
         }, {
           offer: baseOffer(`draft-${engineName}-${width}`, `TEST_ONLY DRAFT ${engineName} ${width}`),
-          runtime: { synthetic_test_only: true, active: true, effective_plan: "BASIC", offer_limit: 5,
+          runtime: { synthetic_test_only: true, active: true, effective_plan: "BASIC", offer_limit: 5, offer_usage: 0,
             offer_notifications: false, reward_notifications: false, catalog_access: false,
             real_activation: false, real_trial: false, starts_at: "2026-10-12T00:00:00.000Z",
             expires_at: "2099-10-12T02:00:00.000Z", receipt_id: `grant-${engineName}-${width}`,
@@ -109,14 +110,16 @@ try {
         assert.equal(await publish.isEnabled(), true);
         await publish.click();
         await page.getByText("TEST_ONLY: Synthetisches Angebot veröffentlicht. Keine reale Aktivierung oder Benachrichtigung.", { exact: true }).waitFor();
+        await panel.getByText("1 / 5", { exact: true }).waitFor();
         assert.equal(await page.evaluate(() => window.rpcCalls.filter((name) => name === "publish_test_only_basic_offer").length), 1);
         assert.equal(await page.evaluate(() => window.rpcCalls.includes("change_restaurant_offer_status")), false);
         await page.reload();
         await page.getByText("BASIC-Testzugang aktiv", { exact: true }).waitFor();
+        await panel.getByText("1 / 5", { exact: true }).waitFor();
         assert.equal(await page.getByRole("button", { name: "TEST_ONLY synthetisch veröffentlichen", exact: true }).count(), 0);
 
         await page.evaluate(({ draft }) => {
-          localStorage.setItem("test-only-runtime", JSON.stringify({ ...JSON.parse(localStorage.getItem("test-only-runtime")), active: false, effective_plan: null, offer_limit: 0, receipt_id: "revoke-receipt", expires_at: null }));
+          localStorage.setItem("test-only-runtime", JSON.stringify({ ...JSON.parse(localStorage.getItem("test-only-runtime")), active: false, effective_plan: null, offer_limit: 0, offer_usage: 0, receipt_id: "revoke-receipt", expires_at: null }));
           localStorage.setItem("test-only-offers", JSON.stringify([...JSON.parse(localStorage.getItem("test-only-offers")), draft]));
         }, { draft: baseOffer(`post-revoke-${engineName}-${width}`, `POST REVOKE DRAFT ${engineName} ${width}`) });
         await page.reload();
