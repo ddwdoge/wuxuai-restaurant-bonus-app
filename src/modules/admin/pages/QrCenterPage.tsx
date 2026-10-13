@@ -20,8 +20,8 @@ import { logoCanvasPlacement, type LogoPresentation } from "../../../shared/logo
 import type { PointsCollectionMode } from "../../../shared/types/domain";
 import { loadPublicPointsCollectionMode } from "../../loyalty/loyaltyService";
 import { useTenant } from "../../tenant/TenantProvider";
-import { PendingActivationNotice } from "../../tenant/PendingActivationNotice";
 import { isPendingActivation } from "../../tenant/pendingActivation";
+import { TestOnlyBasicQrPointsPage } from "../../verification/TestOnlyBasicQrPointsPage";
 import { getQrCenterPurposes } from "../qrCenterFlow.mjs";
 import { buildStaffLoginPath } from "../../auth/staffLoginFlow.mjs";
 
@@ -670,7 +670,7 @@ function StarterKitPagePreview({
 
 export function QrCenterPage() {
   const { activeRestaurant } = useTenant();
-  if (isPendingActivation(activeRestaurant)) return <PendingActivationNotice preview />;
+  if (isPendingActivation(activeRestaurant)) return <TestOnlyBasicQrPointsPage />;
   return <OperationalQrCenterPage />;
 }
 

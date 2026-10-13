@@ -35,12 +35,17 @@ test("pending setup cannot publish legal documents or start staff invitations", 
   assert.ok(edge.indexOf('rpc("get_restaurant_activation_state"') < edge.indexOf("auth.admin.inviteUserByEmail"));
   assert.match(edge,/activation\?\.operational !== true/);
 });
-test("pending QR, staff and capacity components never mount operational hooks", () => {
-  for (const page of ["QrCenterPage","StaffPage","OwnerCapacityPage"]) {
+test("pending QR, staff and capacity components never mount real operational hooks", () => {
+  for (const page of ["StaffPage","OwnerCapacityPage"]) {
     const source = read("src/modules/admin/pages/" + page + ".tsx");
     assert.match(source,/if \(isPendingActivation\(activeRestaurant\)\) return <PendingActivationNotice preview/);
     assert.ok(source.indexOf("PendingActivationNotice preview") < source.indexOf("function Operational"+page));
   }
+  const qrCenter = read("src/modules/admin/pages/QrCenterPage.tsx");
+  assert.match(qrCenter,/if \(isPendingActivation\(activeRestaurant\)\) return <TestOnlyBasicQrPointsPage \/>/);
+  assert.ok(qrCenter.indexOf("TestOnlyBasicQrPointsPage") < qrCenter.indexOf("function OperationalQrCenterPage"));
+  assert.match(read("src/modules/verification/TestOnlyBasicQrPointsPage.tsx"),/testOnlyBasicFlowService/);
+  assert.doesNotMatch(read("src/modules/verification/TestOnlyBasicQrPointsPage.tsx"),/get_today_restaurant_pin|preview_restaurant_controlled_points|confirm_restaurant_controlled_points/);
   const onboarding = read("src/modules/admin/pages/RestaurantOnboarding.tsx");
   assert.match(onboarding,/restaurantQrUrl = pendingActivation \? ""/);
   assert.match(onboarding,/if \(draftLoading \|\| tenantLoading \|\| !activeRestaurant\?\.id \|\| pendingOpeningHours\)/);
