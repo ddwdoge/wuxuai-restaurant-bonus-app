@@ -20,8 +20,13 @@ export function buildTestOnlyCheckoutForm(prepared,origin){
   return new URLSearchParams({mode:"subscription",success_url:`${origin}${prepared.return_route}?test_checkout=success`,
     cancel_url:`${origin}${prepared.return_route}?test_checkout=cancelled`,client_reference_id:prepared.id,
     "line_items[0][price]":prepared.price_id,"line_items[0][quantity]":"1","automatic_tax[enabled]":"false",
+    "expand[]":"line_items",
     "metadata[test_only]":"true","metadata[checkout_request_id]":prepared.id,"metadata[price_id]":prepared.price_id,
     "metadata[restaurant_id]":prepared.restaurant_id,"metadata[request_id]":prepared.request_id});
+}
+
+export function isRestrictedStripeTestCheckoutKey(value){
+  return typeof value==="string"&&/^rk_test_[A-Za-z0-9_]+$/.test(value);
 }
 
 export function verifyTestOnlyCheckoutSession(session,prepared,accountId){

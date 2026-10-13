@@ -6,6 +6,7 @@ import ts from 'typescript';
 import * as billing from '../../supabase/functions/_shared/billingArchitecture.mjs';
 import * as binding from '../../supabase/functions/_shared/projectBinding.mjs';
 import * as redemption from '../../supabase/functions/_shared/redemptionEdgeContract.mjs';
+import * as testOnlyStripe from '../../supabase/functions/_shared/testOnlyStripeCheckout.mjs';
 
 export function loadEdge(name, env, createClient, provider = async()=>{throw Error('NETWORK_FORBIDDEN');}) {
   const source=readFileSync(new URL(`../../supabase/functions/${name}/index.ts`,import.meta.url),'utf8');
@@ -15,6 +16,7 @@ export function loadEdge(name, env, createClient, provider = async()=>{throw Err
     '../_shared/billingArchitecture.mjs':billing,
     '../_shared/projectBinding.mjs':binding,
     '../_shared/redemptionEdgeContract.mjs':redemption,
+    '../_shared/testOnlyStripeCheckout.mjs':testOnlyStripe,
   };
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{
     exports:{},require:name=>{if(!modules[name])throw Error('IMPORT_FORBIDDEN');return modules[name];},

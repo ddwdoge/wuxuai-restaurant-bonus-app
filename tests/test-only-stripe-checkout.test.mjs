@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {buildTestOnlyCheckoutForm,parseTestOnlyCheckoutCompleted,parseTestOnlyCheckoutRequest,verifyStripeTestAccount,verifyTestOnlyCheckoutSession} from "../supabase/functions/_shared/testOnlyStripeCheckout.mjs";
+import {buildTestOnlyCheckoutForm,isRestrictedStripeTestCheckoutKey,parseTestOnlyCheckoutCompleted,parseTestOnlyCheckoutRequest,verifyStripeTestAccount,verifyTestOnlyCheckoutSession} from "../supabase/functions/_shared/testOnlyStripeCheckout.mjs";
 import {signFakeWebhook,verifyRawWebhook} from "../supabase/functions/_shared/billingArchitecture.mjs";
 
 const rid="11111111-1111-4111-8111-111111111111",qid="22222222-2222-4222-8222-222222222222";
@@ -16,6 +16,12 @@ test("session form is server-price-bound and test-only",()=>{
   const form=buildTestOnlyCheckoutForm(prepared,"https://staging-v2.bonus.wuxuaisbi.com");
   assert.equal(form.get("line_items[0][price]"),prepared.price_id);assert.equal(form.get("metadata[test_only]"),"true");
   assert.equal(form.get("automatic_tax[enabled]"),"false");
+  assert.equal(form.get("expand[]"),"line_items");
+});
+test("checkout accepts only a dedicated restricted TEST key",()=>{
+  assert.equal(isRestrictedStripeTestCheckoutKey("rk_test_synthetic"),true);
+  for(const value of ["sk_test_synthetic","pk_test_synthetic","rk_live_synthetic","rk_test_","rk_test_synthetic\n","rk_test_synthetic live",""])
+    assert.equal(isRestrictedStripeTestCheckoutKey(value),false);
 });
 test("provider session requires livemode false, exact price and tenant",()=>{
   assert.equal(verifyStripeTestAccount({object:"account",id:"acct_synthetic123"},"acct_synthetic123"),"acct_synthetic123");
