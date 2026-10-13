@@ -112,6 +112,9 @@ const CustomerTestOnlyDocumentPage = lazy(() =>
 const CustomerTestOnlyBasicPage = lazy(() =>
   import("../modules/customer/CustomerTestOnlyBasicPage").then((module) => ({ default: module.CustomerTestOnlyBasicPage })),
 );
+const CustomerTestOnlyProInboxPage = lazy(() =>
+  import("../modules/customer/CustomerTestOnlyProInboxPage").then((module) => ({ default: module.CustomerTestOnlyProInboxPage })),
+);
 const CustomerActiveOperatorLegalTestPage = lazy(() =>
   import("../modules/customer/CustomerActiveOperatorLegalTestPage").then((module) => ({ default: module.CustomerActiveOperatorLegalTestPage })),
 );
@@ -403,6 +406,7 @@ export function App() {
       <Route path="/customer/test-only/:slug/:branchId" element={<CustomerCentralRoute>{withFallback(<CustomerTestOnlyJoinPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/test-only/:slug/:branchId/document/:documentKind" element={<CustomerCentralRoute>{withFallback(<CustomerTestOnlyDocumentPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/test-only-basic/:slug" element={<CustomerCentralRoute>{withFallback(<CustomerTestOnlyBasicPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
+      <Route path="/customer/test-only-pro-inbox/:restaurantId" element={<CustomerCentralRoute>{withFallback(<CustomerTestOnlyProInboxPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/test-only-operator-legal/:slug/:branchId" element={<CustomerCentralRoute>{withFallback(<CustomerActiveOperatorLegalTestPage />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="home" />, <CustomerLoading />)}</CustomerCentralRoute>} />
       <Route path="/customer/locations" element={<CustomerCentralRoute>{withFallback(<CentralCustomerPage view="locations" />, <CustomerLoading />)}</CustomerCentralRoute>} />

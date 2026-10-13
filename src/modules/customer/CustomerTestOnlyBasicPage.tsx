@@ -94,6 +94,11 @@ export function CustomerTestOnlyBasicPage() {
         </PremiumCard>
 
         {flow.active ? <>
+          <PremiumCard className="central-auth-card">
+            <div className="central-icon-heading"><Newspaper aria-hidden="true" size={24} /><div><span>Separater TEST_ONLY-Vertrag</span><h2>Synthetische PRO-Inbox</h2></div></div>
+            <p>Die Inbox hat eine eigene befristete Berechtigung und eine ausdrückliche synthetische Einwilligung. Reales PRO und Versand bleiben geschlossen.</p>
+            <Link className="button secondary" to={`/customer/test-only-pro-inbox/${flow.restaurant_id}`}>TEST_ONLY-PRO-Inbox öffnen</Link>
+          </PremiumCard>
           <section aria-labelledby="test-only-basic-offers-title" className="premium-content-section">
             <div className="premium-page-heading"><Newspaper aria-hidden="true" size={20} /><div><h2 id="test-only-basic-offers-title">Synthetisches Angebot</h2><p>{flow.offers.length} / {flow.offer_limit} ausschließlich TEST_ONLY</p></div></div>
             {flow.offers.map((offer) => <PremiumCard key={offer.id}>

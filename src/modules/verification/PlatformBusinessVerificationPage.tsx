@@ -6,6 +6,7 @@ import { PlatformOperatorChangePanel } from "./PlatformOperatorChangePanel";
 import { PlatformTestOnlyActivationTrialReadinessPanel } from "./PlatformTestOnlyActivationTrialReadinessPanel";
 import { PlatformTestOnlyBasicAccessPanel } from "./PlatformTestOnlyBasicAccessPanel";
 import { PlatformTestOnlyKybReviewPanel } from "./PlatformTestOnlyKybReviewPanel";
+import { PlatformTestOnlyProInboxPanel } from "./PlatformTestOnlyProInboxPanel";
 import { manageVerification, openPlatformKybDocument, readPlatformKybReviewDetail,
   readPlatformKybReviewQueue, readVerificationAdminDetail,
   type KybDocument, type PlatformKybReviewDetail, type PlatformKybReviewQueueItem,
@@ -197,6 +198,7 @@ export function PlatformBusinessVerificationPage() {
         <PlatformTestOnlyKybReviewPanel restaurantId={detail.restaurant_id} restaurantName={detail.restaurant_name} />
         <PlatformTestOnlyActivationTrialReadinessPanel restaurantId={detail.restaurant_id} />
         <PlatformTestOnlyBasicAccessPanel restaurantId={detail.restaurant_id} />
+        <PlatformTestOnlyProInboxPanel restaurantId={detail.restaurant_id} />
         <h3>{t.revisions}</h3>
         {detail.profiles.map((item) => <article className="card" key={item.id}>
           <strong>#{item.revision} · {item.status}</strong>

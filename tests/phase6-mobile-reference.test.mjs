@@ -26,13 +26,14 @@ function sourceFiles(dir) {
 }
 
 test("Phase 6 preserves its historical inventory alongside capacity and verification routes", () => {
-  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 60);
+  assert.equal(openingElements("src/app/App.tsx").filter((name) => name === "Route").length, 61);
   assert.doesNotMatch(read("src/app/App.tsx"), /RestaurantMenuPage|<Route path="menu"/);
   // Additive authenticated TEST_ONLY and customer-wide inbox routes; historical inventory is unchanged.
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only\/:slug\/:branchId" element=\{<CustomerCentralRoute>/);
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only-operator-legal\/:slug\/:branchId" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerActiveOperatorLegalTestPage \/>/);
   assert.match(read("src/app/App.tsx"), /path="\/customer\/inbox" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerOfferInboxPage \/>/);
   assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only-basic\/:slug" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerTestOnlyBasicPage \/>/);
+  assert.match(read("src/app/App.tsx"), /path="\/customer\/test-only-pro-inbox\/:restaurantId" element=\{<CustomerCentralRoute>\{withFallback\(<CustomerTestOnlyProInboxPage \/>/);
   const rows = [...report.matchAll(/^\| (\d+) \| .* \| ([VSG]) \|/gm)];
   assert.deepEqual(rows.map((row) => Number(row[1])), Array.from({ length: 50 }, (_, index) => index + 1));
   assert.equal(rows.filter((row) => row[2] === "V").length, 42);
