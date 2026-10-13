@@ -1,7 +1,7 @@
 // Disposable two-instance evidence. No hosted endpoint is contacted.
 import assert from 'node:assert/strict';
 import {execFileSync,spawn} from 'node:child_process';
-import {mkdtempSync,readFileSync,writeFileSync,cpSync,mkdirSync,rmSync} from 'node:fs';
+import {mkdtempSync,readFileSync,writeFileSync,cpSync,mkdirSync,rmSync,readdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,join} from 'node:path';
 import {randomUUID,randomBytes} from 'node:crypto';
@@ -10,14 +10,18 @@ import {verifyAndInstall} from '../scripts/project-binding-bootstrap.mjs';
 import {exerciseRuntime,functionSnapshot,checkUpgrade} from './project-binding-runtime-cases.local.mjs';
 const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const cli=resolve(root,'node_modules/.bin/supabase');
+const expectedMigrationVersions=readdirSync(join(root,'supabase/migrations'))
+  .filter(name=>/^\d+_.+\.sql$/.test(name))
+  .map(name=>name.slice(0,name.indexOf('_')))
+  .sort();
 const run=(bin,args,input)=>execFileSync(bin,args,{input,encoding:'utf8',stdio:['pipe','pipe','pipe'],maxBuffer:32*1024*1024}).trim();
-const safeAsync=(bin,args)=>new Promise((res,rej)=>{
-  const p=spawn(bin,args,{stdio:['ignore','pipe','pipe']});let text='';
-  for(const s of [p.stdout,p.stderr])s.on('data',d=>{text+=d;});
-  p.on('error',()=>rej(Error('LOCAL_SPAWN_FAILED')));
-  p.on('close',code=>code===0?res(text):rej(Error(`LOCAL_PROCESS_FAILED_${code}`)));
-});
-const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const waitForHttp=url=>{
+  for(let attempt=0;attempt<50;attempt++){
+    try{run('curl',['-fsS',url]);return;}
+    catch{Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,200);}
+  }
+  throw Error('LOCAL_HTTP_HEALTH_TIMEOUT');
+};
 const stacks=[];let assertions=0;
 const check=(a,b)=>{assert.deepEqual(a,b);assertions++;};
 const quote=s=>"'"+String(s).replaceAll("'","''")+"'";
@@ -47,16 +51,19 @@ try{
     const runtimeMigration='20261009190125_project_binding_runtime_guards.sql';
     if(i===1)rmSync(join(dir,'supabase/migrations',runtimeMigration));
     console.log(JSON.stringify({phase:'fresh_start',instance:i+1}));
-    await safeAsync(cli,['start','--workdir',dir,'-x','realtime,storage-api,imgproxy,studio,postgres-meta,edge-runtime,logflare,vector,supavisor']);
+    run(cli,['start','--workdir',dir,'-x','realtime,storage-api,imgproxy,studio,postgres-meta,edge-runtime,logflare,vector,supavisor']);
+    console.log(JSON.stringify({phase:'stack_started',instance:i+1}));
     s.status=JSON.parse(run(cli,['status','--workdir',dir,'-o','json']));
     if(i===1){
       const before=functionSnapshot(s,jsonSql);
+      console.log(JSON.stringify({phase:'upgrade_snapshot_before',instance:i+1}));
       cpSync(join(root,'supabase/migrations',runtimeMigration),join(dir,'supabase/migrations',runtimeMigration));
-      await safeAsync(cli,['migration','up','--local','--workdir',dir]);
+      run(cli,['migration','up','--local','--include-all','--workdir',dir]);
+      console.log(JSON.stringify({phase:'upgrade_migration_applied',instance:i+1}));
       checkUpgrade(before,functionSnapshot(s,jsonSql));
       console.log(JSON.stringify({phase:'upgrade_exact_function_owner_acl_diff',pass:true}));
     }
-    check(Number(sql(s,'select count(*) from supabase_migrations.schema_migrations;')),215);
+    check(jsonSql(s,"select coalesce(jsonb_agg(version order by version),'[]'::jsonb) from supabase_migrations.schema_migrations;"),expectedMigrationVersions);
     check(sql(s,'show session_replication_role;'),'origin');
     // Real Auth container, distinct configured issuer; no fabricated tokens.
     const auth=JSON.parse(run('docker',['inspect',`supabase_auth_${id}`]))[0];
@@ -68,7 +75,9 @@ try{
     const network=Object.keys(auth.NetworkSettings.Networks)[0];
     run('docker',['run','-d','--pull=never','--name',s.authName,'--network',network,
       '-p',`127.0.0.1:${base+12}:9999`,'--env-file',envPath,auth.Config.Image]);
-    for(let t=0;t<50;t++){try{if((await fetch(s.authUrl+'/health')).ok)break;}catch{}await pause(200);}
+    console.log(JSON.stringify({phase:'bound_auth_started',instance:i+1}));
+    waitForHttp(s.authUrl+'/health');
+    console.log(JSON.stringify({phase:'bound_auth_healthy',instance:i+1}));
     const signup=await post(s.authUrl,'/signup',{email:`bootstrap-${randomUUID()}@example.invalid`,password:`Aa!${randomBytes(24).toString('hex')}`});
     check(signup.status,200);s.auth=await signup.json();assert.ok(s.auth.access_token);
     s.claims=JSON.parse(Buffer.from(s.auth.access_token.split('.')[1],'base64url').toString());
@@ -103,7 +112,9 @@ try{
     };
   }
   const [a,b]=stacks;
+  console.log(JSON.stringify({phase:'exercise_runtime',instance:1}));
   await exerciseRuntime(a,jsonSql,false);
+  console.log(JSON.stringify({phase:'exercise_runtime',instance:2}));
   await exerciseRuntime(b,jsonSql,false);
   console.log(JSON.stringify({phase:'binding_matrix'}));
   for(const change of [{auth: b.adapters.auth},{sqlAnchor:b.adapters.sqlAnchor},
@@ -137,7 +148,7 @@ try{
   run('docker',['run','-d','--pull=never','--name',a.legacyAuth,'--network',Object.keys(legacyConfig.NetworkSettings.Networks)[0],
     '-p',`127.0.0.1:${a.base+13}:9999`,'--env-file',legacyEnvFile,legacyConfig.Config.Image]);
   const legacyUrl=`http://127.0.0.1:${a.base+13}`;
-  for(let t=0;t<50;t++){try{if((await fetch(legacyUrl+'/health')).ok)break;}catch{}await pause(200);}
+  waitForHttp(legacyUrl+'/health');
   const legacyResponse=await post(legacyUrl,'/signup',{email:`legacy-${randomUUID()}@example.invalid`,password:`Aa!${randomBytes(24).toString('hex')}`});
   check(legacyResponse.status,200);const legacySession=await legacyResponse.json();
   check(JSON.parse(Buffer.from(legacySession.access_token.split('.')[1],'base64url')).iss,legacyIssuer);
@@ -161,7 +172,7 @@ try{
         assert.throws(()=>sql(s,`begin; set local role ${role}; ${q}; rollback;`));assertions++;
       }
     }
-    check(sql(s,"select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='project_bootstrap' and c.relkind='r' and c.relrowsecurity;"),'3');
+    check(sql(s,"select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='project_bootstrap' and c.relkind='r' and not c.relrowsecurity;"),'0');
     assert.throws(()=>sql(s,"update project_bootstrap.binding set worker_name='changed';"));assertions++;
     check(sql(s,"select environment from public.business_verification_environment where singleton;"),'DISABLED');
     check(sql(s,"select real_intake_status from public.country_kyb_intake_policies where country_code='AT';"),'BLOCKED');
@@ -169,11 +180,12 @@ try{
     check(sql(s,'select count(*) from public.restaurants;'),'0');
     const owners=jsonSql(s,"select jsonb_agg(jsonb_build_object('function',p.proname,'owner',r.rolname,'definer',p.prosecdef)) from pg_proc p join pg_roles r on r.oid=p.proowner where p.proname in ('get_project_bootstrap_anchor','get_server_project_binding','project_binding_session_matches','install') and p.pronamespace in ('public'::regnamespace,'project_bootstrap'::regnamespace);");
     check(owners.every(p=>p.owner==='postgres'),true);
-    const count=Number(sql(s,'select count(*) from supabase_migrations.schema_migrations;'));
-    check(count,215); // all migration versions exactly present: repeat set is empty
-    await safeAsync(cli,['migration','up','--local','--workdir',s.dir]);
+    const migrationVersions=jsonSql(s,"select coalesce(jsonb_agg(version order by version),'[]'::jsonb) from supabase_migrations.schema_migrations;");
+    check(migrationVersions,expectedMigrationVersions); // exact set present: repeat set is empty
+    const count=migrationVersions.length;
+    run(cli,['migration','up','--local','--workdir',s.dir]);
     check(Number(sql(s,'select count(*) from supabase_migrations.schema_migrations;')),count);
-    const lint=await safeAsync(cli,['db','lint','--local','--workdir',s.dir,'--schema','project_bootstrap','--level','error','--fail-on','error']);
+    const lint=run(cli,['db','lint','--local','--workdir',s.dir,'--schema','project_bootstrap','--level','error','--fail-on','error']);
     check(/ERROR|"level"\s*:\s*"error"/.test(lint),false);
     console.log(JSON.stringify({phase:'repeat_and_bootstrap_lint',pass:true}));
     console.log(JSON.stringify({instance:s.id,history:count,binding:1,audit:1,queue:0,restaurants:0,owners}));
@@ -181,13 +193,14 @@ try{
   console.log(JSON.stringify({status:'LOCAL_RUNTIME_BINDING_PASS',assertions,providerProof:'SIMULATED_ONLY',mail:0,checkout:0}));
 }catch(error){
   // No raw SQL/CLI/auth errors: they may carry input or connection material.
-  console.error(JSON.stringify({status:'FAIL',code:/^[A-Z_0-9]+$/.test(error.message)?error.message:'LOCAL_ASSERTION_FAILED',lines:error.stack?.split('\n').filter(x=>x.includes('bootstrap.local.mjs')).map(x=>x.replace(root,'<repo>'))}));
+  const safeMessage=String(error.message).replace(/[A-Za-z0-9_-]{80,}/g,'<redacted>').replace(/https?:\/\/[^\s]+/g,'<url>');
+  console.error(JSON.stringify({status:'FAIL',code:/^[A-Z_0-9]+$/.test(error.message)?error.message:'LOCAL_ASSERTION_FAILED',message:safeMessage.slice(0,240),lines:error.stack?.split('\n').filter(x=>x.includes('project-binding-runtime')).map(x=>x.replace(root,'<repo>'))}));
   process.exitCode=1;
 }finally{
   for(const s of stacks.reverse()){
     if(s.legacyAuth){try{run('docker',['rm','-f',s.legacyAuth]);}catch{}}
     try{run('docker',['rm','-f',s.authName]);}catch{}
-    try{await safeAsync(cli,['stop','--workdir',s.dir,'--no-backup']);}catch{console.error('TASK_STACK_CLEANUP_FAILED');process.exitCode=1;}
+    try{run(cli,['stop','--workdir',s.dir,'--no-backup']);}catch{console.error('TASK_STACK_CLEANUP_FAILED');process.exitCode=1;}
     rmSync(s.dir,{recursive:true,force:true});
   }
 }

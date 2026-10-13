@@ -119,6 +119,14 @@ verify_jwt = false
 [functions.test-only-app-mail-dispatch]
 verify_jwt = false
 
+# Owner JWT is verified by the gateway and again against the bound project.
+[functions.test-only-stripe-checkout]
+verify_jwt = true
+
+# Raw Stripe signature verification is the webhook authentication boundary.
+[functions.test-only-stripe-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 56127

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
+import WebSocket from 'ws';
 import {loadEdge} from './fixtures/project-binding-edge-harness.mjs';
 import {signFakeWebhook} from '../supabase/functions/_shared/billingArchitecture.mjs';
 
@@ -34,13 +35,15 @@ const webhookBody=()=>({input_event_id:`evt_binding_${randomUUID().replaceAll('-
 
 export async function exerciseRuntime(s,jsonSql,bound){
   let checks=0,providerCalls=0;
-  const service=createClient(s.status.API_URL,s.status.SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  const service=createClient(s.status.API_URL,s.status.SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false},realtime:{transport:WebSocket}});
   const user=createClient(s.status.API_URL,s.status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false},
+    realtime:{transport:WebSocket},
     global:{headers:{Authorization:`Bearer ${s.auth.access_token}`}}});
   const before=counts(s,jsonSql),id=randomUUID();
   const denied=async(client,name,args,code)=>{
     const prior=counts(s,jsonSql),result=await client.rpc(name,args);
-    assert.ok(result.error,`must deny ${name}`);if(code)assert.equal(result.error.message,code);
+    assert.ok(result.error,`must deny ${name}`);
+    if(code)assert.equal(result.error.message,code);
     assert.deepEqual(counts(s,jsonSql),prior);checks++;
   };
   await denied(user,'prepare_basic_test_checkout',{input_acceptance_id:id,input_request_id:id,input_return_route:'/admin/settings/konto-testphase'},
@@ -70,7 +73,7 @@ export async function exerciseRuntime(s,jsonSql,bound){
   // Transport substitution only: real local Auth/REST/DB, synthetic deployment
   // metadata. No external provider, and no DB/business RPC is stubbed here.
   const factory=(_url,key,options)=>key==='runtime-service-adapter'?service:
-    options?.global?.headers?.Authorization?user:createClient(s.status.API_URL,s.status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+    options?.global?.headers?.Authorization?user:createClient(s.status.API_URL,s.status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false},realtime:{transport:WebSocket}});
   const request=(body={})=>new Request(`${s.e.backend_url}/functions/v1/synthetic`,{method:'POST',body:JSON.stringify(body),
     headers:{origin:s.e.app_origin,authorization:`Bearer ${s.auth.access_token}`,'content-type':'application/json'}});
   for(const name of ['billing-basic-test-checkout','billing-stripe-test-webhook','redemption-confirmation']){
