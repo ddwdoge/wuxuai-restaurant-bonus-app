@@ -76,6 +76,7 @@ import { isIsoAlpha2CountryCode } from "../../../shared/countries.mjs";
 import { useOwnerSmartSetupContinuation } from "../useOwnerSmartSetupContinuation";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { BasicPaidOfferPanel } from "../../billing/BasicPaidOfferPanel";
+import { TestOnlyStripeCheckoutPanel } from "../../billing/TestOnlyStripeCheckoutPanel";
 import { loadBasicOwnerContractSnapshot, type BasicOwnerContractSnapshot } from "../../billing/basicBillingService";
 import {
   basicTrialDurationLabel,
@@ -1634,6 +1635,8 @@ export function SettingsPage() {
             </div>
           )}
         </section>
+        {activeRestaurant?.id && isPendingActivation(activeRestaurant)
+          ? <TestOnlyStripeCheckoutPanel restaurantId={activeRestaurant.id} /> : null}
         {activeRestaurant?.id && !isPendingActivation(activeRestaurant) ? <BillingCatalogInfo restaurantId={activeRestaurant.id} /> : null}
       </>
     );
