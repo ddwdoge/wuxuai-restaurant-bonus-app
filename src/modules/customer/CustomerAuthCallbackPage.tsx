@@ -9,8 +9,7 @@ import {
 } from "../auth/emailConfirmationService";
 import { readEmailConfirmationPayload } from "../auth/emailConfirmationFlow.mjs";
 import { AppShell, CustomerLanguageAction, PremiumCard, PrimaryButton } from "./components/PremiumCustomerUi";
-import { customerAuthReturnStorageKey } from "./CustomerAuthPage";
-import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
+import { customerAuthReturnStorageKey, safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import "./central-customer.css";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -80,7 +79,7 @@ export function CustomerAuthCallbackPage() {
     setLoading(true);
     setResendMessage(null);
     try {
-      const callbackUrl = new URL("/customer/auth/callback", window.location.origin);
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
         email: email.trim().toLowerCase(),

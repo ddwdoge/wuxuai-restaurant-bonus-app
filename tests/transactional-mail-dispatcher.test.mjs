@@ -148,7 +148,9 @@ test("sent rows cannot be reserved again and stale processing leases are bounded
   assert.match(migration, /delivery\.status in \('PENDING', 'FAILED'\)/);
   assert.match(migration, /delivery\.status = 'PROCESSING'/);
   assert.doesNotMatch(migration, /delivery\.status in \([^\n]*'SENT'/);
-  assert.match(dispatcher, /messageId: `<wuxuai-\$\{delivery\.delivery_id\}@\$\{messageIdDomain\}>`/);
+  assert.match(dispatcher,
+    /const deterministicMessageId = `<wuxuai-\$\{delivery\.delivery_id\}@\$\{messageIdDomain\}>`/);
+  assert.match(dispatcher, /messageId: deterministicMessageId/);
 });
 
 test("dispatcher requires server secrets and never logs recipient or payload", () => {

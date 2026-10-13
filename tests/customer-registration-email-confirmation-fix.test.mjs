@@ -84,7 +84,8 @@ test("Resend verwendet Supabase Signup-API, Cooldown und sicheren Callback", asy
   ]);
   assert.match(service, /auth\.resend\(\{/);
   assert.match(service, /type: "signup"/);
-  assert.match(service, /customer\/auth\/callback/);
+  assert.match(service, /new URL\("\/auth\/callback", origin\)/);
+  assert.doesNotMatch(service, /customer\/auth\/callback/);
   assert.match(page, /RESEND_COOLDOWN_SECONDS = 60/);
   assert.match(page, /Bestätigungs-E-Mail erneut senden/);
   assert.match(page, /resendCooldown > 0/);

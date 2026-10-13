@@ -6,6 +6,7 @@ import { readEmailConfirmationPayload } from "./emailConfirmationFlow.mjs";
 import { completeConfirmedOwnerRegistration } from "./registerOwnerService";
 import { isOwnerEmailConfirmed } from "./ownerAuthFlow.mjs";
 import { clearSensitiveAuthUrl, establishOwnerAuthSession } from "./ownerAuthService";
+import { customerAuthReturnStorageKey, safeCustomerReturnPath } from "../customer/customerReturnPath.mjs";
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -30,6 +31,23 @@ export function AuthCallbackPage() {
         const session = await establishOwnerAuthSession(payload);
         if (!session.user || !isOwnerEmailConfirmed(session.user)) {
           throw new Error("Dieser Bestätigungslink ist ungültig oder abgelaufen.");
+        }
+
+        const metadataReturn = typeof session.user.user_metadata?.customer_return_to === "string"
+          ? session.user.user_metadata.customer_return_to
+          : null;
+        const isCustomerConfirmation = metadataReturn !== null
+          || typeof session.user.user_metadata?.customer_first_name === "string";
+        if (isCustomerConfirmation) {
+          const storedReturn = window.sessionStorage.getItem(customerAuthReturnStorageKey);
+          window.sessionStorage.removeItem(customerAuthReturnStorageKey);
+          if (cancelled) return;
+          setConfirmed(true);
+          navigationTimer = window.setTimeout(() => {
+            const returnTo = safeCustomerReturnPath(metadataReturn ?? storedReturn);
+            navigate(`/customer/platform-terms?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+          }, 800);
+          return;
         }
 
         const registrationCompleted = await completeConfirmedOwnerRegistration(session.user);

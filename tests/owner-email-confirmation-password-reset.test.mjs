@@ -261,8 +261,10 @@ test("Bestätigungsstatus wird ausschließlich aus Supabase User gelesen", () =>
   assert.equal(buildOwnerAuthRedirect("https://bonus.example/", OWNER_AUTH_PATHS.callback), "https://bonus.example/auth/callback");
 });
 
-test("Customer- und Staff-Module werden vom neuen Owner-Auth-Flow nicht importiert", () => {
+test("gemeinsamer Callback importiert keine Customer-Writer oder Staff-Module", () => {
   const combined = [callback, confirmEmail, forgotPassword, updatePassword, ownerAuthService].join("\n");
-  assert.doesNotMatch(combined, /modules\/(customer|staff)|\.\.\/(customer|staff)/);
+  assert.doesNotMatch(combined, /customerAuthService|customerAccountService|modules\/staff|\.\.\/staff/);
+  assert.match(callback, /customer_return_to/);
+  assert.match(callback, /customer\/platform-terms/);
   assert.doesNotMatch(app, /path="\/staff\/:slug"[\s\S]{0,240}requireConfirmedEmail/);
 });

@@ -1,5 +1,7 @@
 import { isPublicReferralPath } from "../auth/authRoutePolicy.mjs";
 
+export const customerAuthReturnStorageKey = "wuxuai:customer-auth-return";
+
 export function safeCustomerReturnPath(value) {
   const containsControlCharacter = value
     ? Array.from(value).some((character) => character.charCodeAt(0) <= 31)

@@ -23,7 +23,7 @@ export async function registerCustomerAuthAccount(
   client: SupabaseClient | null = supabase,
 ): Promise<CustomerSignUpState> {
   const authClient = requireCustomerAuthClient(client);
-  const callbackUrl = new URL("/customer/auth/callback", input.origin);
+  const callbackUrl = new URL("/auth/callback", input.origin);
   const { data, error } = await authClient.auth.signUp({
     email: input.email.trim().toLowerCase(),
     password: input.password,
@@ -48,7 +48,7 @@ export async function resendCustomerConfirmation(
   client: SupabaseClient | null = supabase,
 ) {
   const authClient = requireCustomerAuthClient(client);
-  const callbackUrl = new URL("/customer/auth/callback", origin);
+  const callbackUrl = new URL("/auth/callback", origin);
   const { error } = await authClient.auth.resend({
     type: "signup",
     email: email.trim().toLowerCase(),

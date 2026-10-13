@@ -14,7 +14,7 @@ import {
 } from "./customerAuthFlow.mjs";
 import { activateAuthenticatedCustomerAccount, registerCustomerAuthAccount, resendCustomerConfirmation } from "./customerAuthService";
 import { recordCustomerLoginSuccess } from "./customerAccountService";
-import { safeCustomerReturnPath } from "./customerReturnPath.mjs";
+import { customerAuthReturnStorageKey, safeCustomerReturnPath } from "./customerReturnPath.mjs";
 import { AppShell, CustomerLanguageAction, PremiumCard, PrimaryButton, SecondaryButton } from "./components/PremiumCustomerUi";
 import "./central-customer.css";
 import { useAuth } from "../auth/AuthProvider";
@@ -24,7 +24,6 @@ import { buildPasswordRecoveryPath } from "../auth/portalRecoveryUx.mjs";
 
 type CustomerAuthMode = "login" | "register";
 
-const RETURN_STORAGE_KEY = "wuxuai:customer-auth-return";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
@@ -144,7 +143,7 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
         window.location.assign(returnTo);
         return;
       }
-      window.sessionStorage.setItem(RETURN_STORAGE_KEY, returnTo);
+      window.sessionStorage.setItem(customerAuthReturnStorageKey, returnTo);
       const signupState = await registerCustomerAuthAccount({
         birthday: birthday || null,
         email,
@@ -272,5 +271,3 @@ export function CustomerAuthPage({ mode }: { mode: CustomerAuthMode }) {
     </AppShell>
   );
 }
-
-export const customerAuthReturnStorageKey = RETURN_STORAGE_KEY;

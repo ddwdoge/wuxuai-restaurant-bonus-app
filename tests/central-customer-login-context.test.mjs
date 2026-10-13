@@ -26,15 +26,17 @@ test("Registrierung nutzt Supabase Auth mit E-Mail Passwort und Bestätigungslin
   assert.match(service, /customer_first_name/);
   assert.match(service, /customer_phone/);
   assert.match(service, /customer_return_to: input\.returnTo/);
-  assert.match(service, /new URL\("\/customer\/auth\/callback", input\.origin\)/);
+  assert.match(service, /new URL\("\/auth\/callback", input\.origin\)/);
+  assert.doesNotMatch(service, /new URL\("\/customer\/auth\/callback"/);
   assert.doesNotMatch(service, /callbackUrl\.searchParams\.set\("returnTo"/);
   assert.match(page, /minLength=\{8\}/);
   assert.doesNotMatch(`${page}\n${service}`, /localStorage.*password|setItem\([^\n]*password/);
 });
 
 test("Bestätigungs-Callback stellt die Auth-Session her und kehrt zum QR-Kontext zurück", async () => {
-  const [callback, service] = await Promise.all([
+  const [callback, sharedCallback, service] = await Promise.all([
     read("../src/modules/customer/CustomerAuthCallbackPage.tsx"),
+    read("../src/modules/auth/AuthCallbackPage.tsx"),
     read("../src/modules/auth/emailConfirmationService.ts"),
   ]);
   assert.match(service, /verifyOtp/);
@@ -46,6 +48,14 @@ test("Bestätigungs-Callback stellt die Auth-Session her und kehrt zum QR-Kontex
   assert.match(callback, /E-Mail-Adresse erfolgreich bestätigt/);
   assert.match(callback, /customer_return_to/);
   assert.match(callback, /Neue Bestätigungs-E-Mail senden/);
+  assert.match(callback, /new URL\("\/auth\/callback", window\.location\.origin\)/);
+  assert.match(sharedCallback, /customer_return_to/);
+  assert.match(sharedCallback, /customer_first_name/);
+  assert.match(sharedCallback, /customer\/platform-terms\?returnTo=/);
+  assert.match(sharedCallback, /safeCustomerReturnPath/);
+  assert.doesNotMatch(sharedCallback, /CustomerAuthPage/);
+  assert.ok(sharedCallback.indexOf("establishOwnerAuthSession(payload)")
+    < sharedCallback.indexOf("customer_return_to"));
   assert.doesNotMatch(callback, /useEffect\([\s\S]{0,260}establishEmailConfirmationSession/);
 });
 

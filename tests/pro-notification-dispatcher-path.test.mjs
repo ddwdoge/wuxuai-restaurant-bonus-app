@@ -22,10 +22,16 @@ function loadDispatcher(state, envOverrides = {}) {
         return { data: [state.delivery], error: null };
       }
       if (name === "reserve_capacity_warning_emails") return { data: [], error: null };
-      if (name === "authorize_customer_transactional_email_delivery") {
+      if (name === "begin_customer_transactional_email_delivery") {
         return state.authorizationError
           ? { data: null, error: { code: "LOCAL_AUTHORIZATION_ERROR" } }
           : { data: [state.authorization], error: null };
+      }
+      if (name === "complete_customer_transactional_email_delivery_v2") {
+        state.completions.push(input);
+        return state.completionError
+          ? { data: null, error: { code: "LOCAL_COMPLETION_ERROR" } }
+          : { data: true, error: null };
       }
       if (name === "complete_customer_transactional_email") {
         state.completions.push(input);
@@ -53,7 +59,11 @@ function loadDispatcher(state, envOverrides = {}) {
     sendMail: async () => {
       (state.events ??= []).push("provider");
       state.providerCalls += 1;
-      return { messageId: "local-provider-message" };
+      if (state.providerThrows) throw new Error("unknown provider outcome");
+      return {
+        accepted: state.providerAccepted === false ? [] : [state.delivery.email],
+        messageId: "local-provider-message",
+      };
     },
   };
   const env = {
@@ -164,7 +174,7 @@ for (const [eventType, reasonCode] of [
     assert.equal(state.providerCalls, 0);
     assert.equal(state.completions.length, 0);
     assert.deepEqual(body, { processed: 1, sent: 0, failed: 0, provider_accepted: false });
-    assert.equal(state.rpcCalls.filter(({ name }) => name === "authorize_customer_transactional_email_delivery").length, 1);
+    assert.equal(state.rpcCalls.filter(({ name }) => name === "begin_customer_transactional_email_delivery").length, 1);
   });
 }
 
@@ -182,7 +192,7 @@ test("withdrawal during recipient preparation is rechecked before the provider",
     "OFFER_PUBLISHED", { authorized: true, reason_code: null }, false, true,
   );
   assert.equal(state.providerCalls, 0);
-  assert.equal(state.rpcCalls.filter(({ name }) => name === "authorize_customer_transactional_email_delivery").length, 1);
+  assert.equal(state.rpcCalls.filter(({ name }) => name === "begin_customer_transactional_email_delivery").length, 1);
   assert.deepEqual(body, { processed: 1, sent: 0, failed: 0, provider_accepted: false });
 });
 
@@ -190,9 +200,51 @@ test("a currently authorized offer preserves the existing provider and completio
   const { state, body } = await dispatch("OFFER_PUBLISHED", { authorized: true, reason_code: null });
   assert.equal(state.providerCalls, 1);
   assert.equal(state.completions.length, 1);
-  assert.equal(state.completions[0].input_success, true);
-  assert.equal(state.events[state.events.indexOf("provider") - 1], "authorize_customer_transactional_email_delivery");
+  assert.equal(state.completions[0].input_outcome, "ACCEPTED");
+  assert.equal(state.events[state.events.indexOf("provider") - 1], "begin_customer_transactional_email_delivery");
   assert.deepEqual(body, { processed: 1, sent: 1, failed: 0, provider_accepted: true });
+});
+
+test("unknown provider acceptance is terminal and never reported as sent", async () => {
+  const state = {
+    providerCalls: 0, rpcCalls: [], completions: [], providerAccepted: false,
+    authorization: { authorized: true, reason_code: null },
+    delivery: { delivery_id: "75000000-0000-4000-8000-000000000099",
+      event_type: "OFFER_PUBLISHED", email: "synthetic@example.invalid",
+      restaurant_name: "Synthetic Restaurant", restaurant_slug: "synthetic-restaurant",
+      payload: {}, attempt_count: 1 },
+  };
+  const response = await loadDispatcher(state)(new Request("http://127.0.0.1/dispatcher", {
+    method: "POST", headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture" },
+    body: JSON.stringify({ limit: 1 }),
+  }));
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.completions.length, 1);
+  assert.equal(state.completions[0].input_outcome, "UNKNOWN");
+  assert.deepEqual(await response.json(), {
+    processed: 1, sent: 0, failed: 0, provider_accepted: false, uncertain: 1,
+  });
+});
+
+test("provider timeout after handoff records UNKNOWN instead of a retryable failure", async () => {
+  const state = {
+    providerCalls: 0, rpcCalls: [], completions: [], providerThrows: true,
+    authorization: { authorized: true, reason_code: null },
+    delivery: { delivery_id: "75000000-0000-4000-8000-000000000099",
+      event_type: "OFFER_PUBLISHED", email: "synthetic@example.invalid",
+      restaurant_name: "Synthetic Restaurant", restaurant_slug: "synthetic-restaurant",
+      payload: {}, attempt_count: 1 },
+  };
+  const response = await loadDispatcher(state)(new Request("http://127.0.0.1/dispatcher", {
+    method: "POST", headers: { "x-wuxuai-scheduler-secret": "local-scheduler-fixture" },
+    body: JSON.stringify({ limit: 1 }),
+  }));
+  assert.equal(state.providerCalls, 1);
+  assert.equal(state.completions.length, 1);
+  assert.equal(state.completions[0].input_outcome, "UNKNOWN");
+  assert.deepEqual(await response.json(), {
+    processed: 1, sent: 0, failed: 0, provider_accepted: false, uncertain: 1,
+  });
 });
 
 test("general mode can deliver an already pending birthday reminder", async () => {

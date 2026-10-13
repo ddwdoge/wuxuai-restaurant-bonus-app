@@ -6,6 +6,10 @@ const migration = await readFile(new URL(
   "../supabase/migrations/20260926003000_pro_notification_dispatch_authorization.sql",
   import.meta.url,
 ), "utf8");
+const handoffMigration = await readFile(new URL(
+  "../supabase/migrations/20261013130000_transactional_mail_provider_handoff_guard.sql",
+  import.meta.url,
+), "utf8");
 const dispatcher = await readFile(new URL(
   "../supabase/functions/transactional-mail-dispatcher/index.ts",
   import.meta.url,
@@ -34,12 +38,12 @@ test("blocked queue rows are retained in a terminal, classified state", () => {
 });
 
 test("dispatcher performs the final service-only authorization immediately before provider work", () => {
-  assert.match(migration, /coalesce\(auth\.role\(\), ''\) <> 'service_role'/);
-  assert.match(migration, /for update;/);
-  assert.match(migration, /grant execute on function public\.authorize_customer_transactional_email_delivery\(uuid\)[\s\S]*to service_role/);
-  assert.doesNotMatch(migration, /grant execute on function public\.authorize_customer_transactional_email_delivery\(uuid\)[\s\S]*to (anon|authenticated)/);
+  assert.match(handoffMigration, /auth\.role\(\) is distinct from 'service_role'/);
+  assert.match(handoffMigration, /for update;/);
+  assert.match(handoffMigration, /grant execute on function public\.begin_customer_transactional_email_delivery\(uuid\)[\s\S]*to service_role/);
+  assert.doesNotMatch(handoffMigration, /grant execute on function public\.begin_customer_transactional_email_delivery\(uuid\)[\s\S]*to (anon|authenticated)/);
 
-  const authorizationIndex = dispatcher.indexOf('"authorize_customer_transactional_email_delivery"');
+  const authorizationIndex = dispatcher.indexOf('"begin_customer_transactional_email_delivery"');
   const recipientIndex = dispatcher.indexOf("resolveRecipientContext");
   const sendIndex = dispatcher.indexOf("transporter.sendMail", authorizationIndex);
   assert.ok(authorizationIndex >= 0);

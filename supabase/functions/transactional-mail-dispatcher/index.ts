@@ -304,7 +304,12 @@ async function deliver(
 ) {
   let sent = 0;
   let failed = 0;
+  let uncertain = 0;
   for (const delivery of deliveries) {
+    let providerSubmissionStarted = false;
+    const fromEmail = delivery.sender_email ?? smtpFromEmail;
+    const messageIdDomain = fromEmail.split("@")[1] || "wuxuaisbi.com";
+    const deterministicMessageId = `<wuxuai-${delivery.delivery_id}@${messageIdDomain}>`;
     try {
       const recipient = delivery.queue_kind === "customer"
         ? await resolveRecipientContext(supabase, delivery.email)
@@ -332,14 +337,12 @@ async function deliver(
           language: recipient.language,
           firstName: recipient.firstName,
         });
-      const fromEmail = delivery.sender_email ?? smtpFromEmail;
       const replyToEmail = delivery.reply_to_email ?? smtpReplyTo;
-      const messageIdDomain = fromEmail.split("@")[1] || "wuxuaisbi.com";
       // Keep the revocation/entitlement check adjacent to the irreversible
       // provider call; rendering and recipient lookup may take time.
       if (delivery.queue_kind === "customer") {
         const { data: authorizationData, error: authorizationError } = await supabase.rpc(
-          "authorize_customer_transactional_email_delivery",
+          "begin_customer_transactional_email_delivery",
           { input_delivery_id: delivery.delivery_id },
         );
         const authorization = Array.isArray(authorizationData) ? authorizationData[0] : authorizationData;
@@ -365,6 +368,7 @@ async function deliver(
           continue;
         }
       }
+      providerSubmissionStarted = delivery.queue_kind === "customer";
       const result = await transporter.sendMail({
         from: { name: smtpFromName, address: fromEmail },
         replyTo: replyToEmail,
@@ -372,8 +376,37 @@ async function deliver(
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
-        messageId: `<wuxuai-${delivery.delivery_id}@${messageIdDomain}>`,
+        messageId: deterministicMessageId,
       });
+      if (delivery.queue_kind === "customer") {
+        const accepted = Array.isArray(result.accepted)
+          && result.accepted.some((value) => String(value).toLowerCase() === delivery.email.toLowerCase());
+        const providerMessageId = typeof result.messageId === "string" && result.messageId.trim()
+          ? result.messageId : deterministicMessageId;
+        const { data: completed, error: completionError } = await supabase.rpc(
+          "complete_customer_transactional_email_delivery_v2", {
+            input_delivery_id: delivery.delivery_id,
+            input_outcome: accepted ? "ACCEPTED" : "UNKNOWN",
+            input_provider_message_id: providerMessageId,
+            input_error_code: accepted ? null : "PROVIDER_ACCEPTANCE_UNCONFIRMED",
+          },
+        );
+        if (completionError || completed !== true) {
+          uncertain += 1;
+          logDelivery("error", "transactional_mail_completion_uncertain", delivery,
+            "DELIVERY_COMPLETION_UNCONFIRMED");
+          continue;
+        }
+        if (!accepted) {
+          uncertain += 1;
+          logDelivery("error", "transactional_mail_provider_outcome_unknown", delivery,
+            "PROVIDER_ACCEPTANCE_UNCONFIRMED");
+          continue;
+        }
+        sent += 1;
+        logDelivery("info", "transactional_mail_sent", delivery);
+        continue;
+      }
       const completionRpc = delivery.queue_kind === "synthetic_capacity"
         ? "complete_capacity_warning_synthetic_email_test"
         : delivery.queue_kind === "capacity"
@@ -395,12 +428,21 @@ async function deliver(
       logDelivery("info", "transactional_mail_sent", delivery);
     } catch (sendError) {
       const errorCode = safeErrorCode(sendError);
-      const completionRpc = delivery.queue_kind === "synthetic_capacity"
+      const completionRpc = delivery.queue_kind === "customer" && providerSubmissionStarted
+        ? "complete_customer_transactional_email_delivery_v2"
+        : delivery.queue_kind === "synthetic_capacity"
         ? "complete_capacity_warning_synthetic_email_test"
         : delivery.queue_kind === "capacity"
         ? "complete_capacity_warning_email"
         : "complete_customer_transactional_email";
-      const completionPayload = delivery.queue_kind === "synthetic_capacity"
+      const completionPayload = delivery.queue_kind === "customer" && providerSubmissionStarted
+        ? {
+          input_delivery_id: delivery.delivery_id,
+          input_outcome: "UNKNOWN",
+          input_provider_message_id: deterministicMessageId,
+          input_error_code: errorCode,
+        }
+        : delivery.queue_kind === "synthetic_capacity"
         ? {
           input_delivery_id: delivery.delivery_id,
           input_request_id: delivery.request_id,
@@ -411,10 +453,17 @@ async function deliver(
         }
         : { input_delivery_id: delivery.delivery_id, input_success: false, input_provider_message_id: null, input_error_code: errorCode };
       const { error: completionError } = await supabase.rpc(completionRpc, completionPayload);
-      failed += 1;
+      if (delivery.queue_kind === "customer" && providerSubmissionStarted) uncertain += 1;
+      else failed += 1;
       logDelivery("error", completionError ? "transactional_mail_failure_state_failed" : "transactional_mail_failed", delivery, errorCode);
     }
   }
 
-  return json({ processed: deliveries.length, sent, failed, provider_accepted: sent === 1 && failed === 0 });
+  return json({
+    processed: deliveries.length,
+    sent,
+    failed,
+    provider_accepted: sent === 1 && failed === 0 && uncertain === 0,
+    ...(uncertain > 0 ? { uncertain } : {}),
+  });
 }
