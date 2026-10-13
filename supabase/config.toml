@@ -114,6 +114,11 @@ verify_jwt = false
 [functions.customer-offer-email-confirmation-dispatch]
 verify_jwt = false
 
+# Dedicated scheduler-secret protected TEST_ONLY mail path. It never reserves
+# the real transactional, offer-email or capacity queues.
+[functions.test-only-app-mail-dispatch]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 56127
