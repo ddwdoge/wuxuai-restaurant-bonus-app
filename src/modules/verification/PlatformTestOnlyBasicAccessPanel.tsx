@@ -12,6 +12,15 @@ import {
   TestOnlyBasicError,
   type TestOnlyBasicAccessState,
 } from "./testOnlyBasicAccessService";
+import {
+  clearTestOnlyBasicReauthContinuation,
+  consumeTestOnlyBasicReauthContinuation,
+  createTestOnlyBasicReauthContinuation,
+  matchesTestOnlyBasicReauthContinuation,
+  readTestOnlyBasicReauthContinuation,
+  writeTestOnlyBasicReauthContinuation,
+} from "./testOnlyBasicReauthContinuation.mjs";
+import { supabase } from "../../shared/lib/supabase";
 
 const errorMessages: Record<Exclude<TestOnlyBasicError["code"], "NOT_ELIGIBLE">, string> = {
   FRESH_AAL2_REQUIRED: "Der serverseitige TOTP-Nachweis ist abgelaufen. Bitte erneut bestätigen.",
@@ -48,6 +57,7 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
   const [acknowledged, setAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
   const request = useRef<{ key: string; id: string } | null>(null);
+  const componentActive = useRef(true);
 
   const clearDecision = useCallback(() => {
     setConfirmation("");
@@ -55,16 +65,36 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
     request.current = null;
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (isCurrent: () => boolean = () => true) => {
+    const continuation = readTestOnlyBasicReauthContinuation(window.sessionStorage);
     setLoading(true);
     setError("");
     try {
       const fresh = await readTestOnlyBasicAccess(restaurantId);
+      const currentUser = continuation && supabase ? await supabase.auth.getUser() : null;
+      if (!isCurrent()) return;
+      const matches = Boolean(
+        continuation
+        && currentUser
+        && !currentUser.error
+        && currentUser.data.user
+        && matchesTestOnlyBasicReauthContinuation(continuation, {
+          restaurantId,
+          identityId: currentUser.data.user.id,
+        }),
+      );
+      const resumed = matches
+        && consumeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation ?? undefined) === continuation;
+      if (continuation && !resumed) {
+        consumeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation);
+      }
       setState(fresh);
       setNotEligible(false);
-      setRecentReadbackPassed(false);
+      setRecentReadbackPassed(resumed);
+      setResult(resumed ? "TOTP und frischer serverseitiger Vertrags-Readback bestanden." : "");
       clearDecision();
     } catch (caught) {
+      if (!isCurrent()) return;
       const normalized = normalizeTestOnlyBasicMfaError(caught);
       if (normalized.code === "NOT_ELIGIBLE") {
         setNotEligible(true);
@@ -72,12 +102,22 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
       } else {
         setError(errorMessages[normalized.code]);
       }
+      if (continuation) consumeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation);
+      setRecentReadbackPassed(false);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [clearDecision, restaurantId]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    componentActive.current = true;
+    let current = true;
+    void refresh(() => current);
+    return () => {
+      current = false;
+      componentActive.current = false;
+    };
+  }, [refresh]);
   if (notEligible) return null;
 
   const action = state?.next_action ?? "GRANT";
@@ -98,10 +138,11 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
       setTotpCode("");
       setReauthOpen(true);
     } catch (caught) {
+      if (!componentActive.current) return;
       const normalized = normalizeTestOnlyBasicMfaError(caught);
       setError(errorMessages[normalized.code === "NOT_ELIGIBLE" ? "UNKNOWN" : normalized.code]);
     } finally {
-      setReauthBusy(false);
+      if (componentActive.current) setReauthBusy(false);
     }
   }
 
@@ -115,6 +156,7 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
     setRecentReadbackPassed(false);
     setError("");
     clearDecision();
+    clearTestOnlyBasicReauthContinuation(window.sessionStorage);
   }
 
   async function verifyReauthentication() {
@@ -123,9 +165,20 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
     setError("");
     setResult("");
     setRecentReadbackPassed(false);
+    const continuation = createTestOnlyBasicReauthContinuation({ restaurantId, identityId });
+    writeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation);
     try {
       await confirmTestOnlyKybReauthentication({ expectedIdentityId: identityId, factorId, code: totpCode });
       const fresh = await readTestOnlyBasicAccess(restaurantId);
+      const currentUser = supabase ? await supabase.auth.getUser() : null;
+      if (!componentActive.current) return;
+      if (!currentUser || currentUser.error || !currentUser.data.user
+        || !matchesTestOnlyBasicReauthContinuation(continuation, {
+          restaurantId,
+          identityId: currentUser.data.user.id,
+        })) {
+        throw new TestOnlyBasicError("IDENTITY_CHANGED");
+      }
       setState(fresh);
       setNotEligible(false);
       clearDecision();
@@ -136,13 +189,16 @@ export function PlatformTestOnlyBasicAccessPanel({ restaurantId }: { restaurantI
       setFactorId("");
       setTotpCode("");
       setResult("TOTP und frischer serverseitiger Vertrags-Readback bestanden.");
+      consumeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation);
     } catch (caught) {
+      if (!componentActive.current) return;
       const normalized = normalizeTestOnlyBasicMfaError(caught);
       setError(errorMessages[normalized.code === "NOT_ELIGIBLE" ? "STALE" : normalized.code]);
       setTotpCode("");
       clearDecision();
+      consumeTestOnlyBasicReauthContinuation(window.sessionStorage, continuation);
     } finally {
-      setReauthBusy(false);
+      if (componentActive.current) setReauthBusy(false);
     }
   }
 

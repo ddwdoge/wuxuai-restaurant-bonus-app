@@ -109,6 +109,9 @@ test("Platform UI requires inline TOTP, fresh server readback and exact confirma
   assert.match(panel, /prepareTestOnlyKybReauthentication/);
   assert.match(panel, /confirmTestOnlyKybReauthentication/);
   assert.match(panel, /const fresh = await readTestOnlyBasicAccess\(restaurantId\)/);
+  assert.match(panel, /createTestOnlyBasicReauthContinuation/);
+  assert.match(panel, /consumeTestOnlyBasicReauthContinuation/);
+  assert.match(panel, /matchesTestOnlyBasicReauthContinuation/);
   assert.match(panel, /TEST_ONLY BASIC \$\{action\} \$\{restaurantId\}/);
   assert.match(panel, /30 Minuten/);
   assert.match(panel, /4 Stunden/);

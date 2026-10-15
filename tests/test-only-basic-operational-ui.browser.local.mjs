@@ -100,6 +100,50 @@ try {
       await panel.getByRole("button", { name: "Abbrechen" }).click();
       assert.equal(await panel.getByLabel("Aktueller sechsstelliger Bestätigungscode").count(), 0);
       assert.equal(await panel.getByRole("button", { name: "TEST_ONLY BASIC befristet öffnen" }).count(), 0);
+      if (engine === "chromium" && viewportName === "desktop") {
+        await page.evaluate(({ restaurantId, identityId }) => {
+          sessionStorage.setItem("wuxuai.test-only-basic-reauth-continuation", JSON.stringify({
+            version: 1,
+            restaurantId,
+            identityId,
+            continuationId: crypto.randomUUID(),
+            startedAt: Date.now(),
+          }));
+        }, { restaurantId: fixture.restaurant, identityId: fixture.admin });
+        await page.reload({ waitUntil: "networkidle" });
+        const resumedPanel = page.getByTestId("test-only-basic-access");
+        await resumedPanel.getByText("TOTP und frischer serverseitiger Vertrags-Readback bestanden.", { exact: true }).waitFor();
+        assert.equal(await resumedPanel.getByRole("button", { name: "TEST_ONLY BASIC befristet öffnen" }).count(), 1);
+        assert.equal(await page.evaluate(() => sessionStorage.getItem("wuxuai.test-only-basic-reauth-continuation")), null);
+
+        await page.reload({ waitUntil: "networkidle" });
+        const replayPanel = page.getByTestId("test-only-basic-access");
+        await replayPanel.getByText("GESCHLOSSEN", { exact: true }).waitFor();
+        assert.equal(await replayPanel.getByRole("button", { name: "TEST_ONLY BASIC befristet öffnen" }).count(), 0);
+
+        await page.route("**/rest/v1/rpc/get_platform_test_only_basic_access", (route) => route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({ code: "42501", message: "RECENT_PLATFORM_TOTP_REQUIRED" }),
+        }));
+        await page.evaluate(({ restaurantId, identityId }) => {
+          sessionStorage.setItem("wuxuai.test-only-basic-reauth-continuation", JSON.stringify({
+            version: 1,
+            restaurantId,
+            identityId,
+            continuationId: crypto.randomUUID(),
+            startedAt: Date.now(),
+          }));
+        }, {
+          restaurantId: fixture.restaurant,
+          identityId: fixture.admin,
+        });
+        await page.reload({ waitUntil: "networkidle" });
+        const rejectedPanel = page.getByTestId("test-only-basic-access");
+        await rejectedPanel.getByText("Der serverseitige TOTP-Nachweis ist abgelaufen.", { exact: false }).waitFor();
+        assert.equal(await rejectedPanel.getByRole("button", { name: "TEST_ONLY BASIC befristet öffnen" }).count(), 0);
+        assert.equal(await page.evaluate(() => sessionStorage.getItem("wuxuai.test-only-basic-reauth-continuation")), null);
+      }
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `${engine} ${viewportName} overflow`);
       await context.close();
     }
@@ -111,6 +155,9 @@ try {
     viewports: ["desktop", "tablet", "mobile"],
     state: "CLOSED_AFTER_REVOKE",
     totp_cancel: "FAIL_CLOSED",
+    totp_reload_continuation: "ONE_TIME_PASS",
+    totp_failed_readback: "CLOSED",
+    totp_replay: "CLOSED",
     cloud_writes: 0,
   }));
 } finally {
