@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {buildTestOnlyCheckoutForm,isRestrictedStripeTestCheckoutKey,parseTestOnlyCheckoutCompleted,parseTestOnlyCheckoutRequest,verifyStripeTestAccount,verifyTestOnlyCheckoutSession} from "../supabase/functions/_shared/testOnlyStripeCheckout.mjs";
+import {buildTestOnlyCheckoutForm,buildTestOnlyCustomerForm,buildTestOnlyTestClockForm,isRestrictedStripeTestCheckoutKey,parseTestOnlyCheckoutCompleted,parseTestOnlyCheckoutRequest,verifyStripeTestAccount,verifyTestOnlyCheckoutSession,verifyTestOnlyCustomer,verifyTestOnlyTestClock} from "../supabase/functions/_shared/testOnlyStripeCheckout.mjs";
 import {signFakeWebhook,verifyRawWebhook} from "../supabase/functions/_shared/billingArchitecture.mjs";
 
 const rid="11111111-1111-4111-8111-111111111111",qid="22222222-2222-4222-8222-222222222222";
@@ -12,8 +12,19 @@ test("request accepts only the exact tenant-bound shape",()=>{
   assert.deepEqual(parseTestOnlyCheckoutRequest({restaurant_id:rid,request_id:qid,return_route:prepared.return_route}),{restaurant_id:rid,request_id:qid,return_route:prepared.return_route});
   assert.throws(()=>parseTestOnlyCheckoutRequest({...prepared,plan_key:"PRO"}),/REQUEST_INVALID/);
 });
-test("session form is server-price-bound and test-only",()=>{
-  const form=buildTestOnlyCheckoutForm(prepared,"https://staging-v2.bonus.wuxuaisbi.com");
+test("test clock, customer and session forms are exact and server-bound",()=>{
+  const frozen=1_791_840_000,clock="clock_synthetic123",customer="cus_synthetic123";
+  const clockForm=buildTestOnlyTestClockForm(prepared,frozen);
+  assert.equal(clockForm.get("frozen_time"),String(frozen));assert.equal(clockForm.get("name"),`WUXUAI TEST ${prepared.id}`);
+  const customerForm=buildTestOnlyCustomerForm(prepared,clock);
+  assert.equal(customerForm.get("test_clock"),clock);assert.equal(customerForm.get("metadata[test_only]"),"true");
+  assert.equal(verifyTestOnlyTestClock({id:clock,object:"test_helpers.test_clock",livemode:false,frozen_time:frozen,
+    name:`WUXUAI TEST ${prepared.id}`,status:"ready"},prepared,frozen).test_clock_id,clock);
+  assert.equal(verifyTestOnlyCustomer({id:customer,object:"customer",livemode:false,test_clock:clock,
+    metadata:{test_only:"true",checkout_request_id:prepared.id,restaurant_id:prepared.restaurant_id,
+      request_id:prepared.request_id,price_id:prepared.price_id}},prepared,clock).provider_customer_id,customer);
+  const form=buildTestOnlyCheckoutForm(prepared,"https://staging-v2.bonus.wuxuaisbi.com",customer);
+  assert.equal(form.get("customer"),customer);
   assert.equal(form.get("line_items[0][price]"),prepared.price_id);assert.equal(form.get("metadata[test_only]"),"true");
   assert.equal(form.get("subscription_data[metadata][checkout_request_id]"),prepared.id);
   assert.equal(form.get("subscription_data[metadata][restaurant_id]"),prepared.restaurant_id);
@@ -28,9 +39,11 @@ test("checkout accepts only a dedicated restricted TEST key",()=>{
 test("provider session requires livemode false, exact price and tenant",()=>{
   assert.equal(verifyStripeTestAccount({object:"account",id:"acct_synthetic123"},"acct_synthetic123"),"acct_synthetic123");
   assert.throws(()=>verifyStripeTestAccount({object:"account",id:"acct_foreign123"},"acct_synthetic123"),/ACCOUNT_BINDING_INVALID/);
-  assert.equal(verifyTestOnlyCheckoutSession(session,prepared,"acct_synthetic123").session_id,session.id);
+  assert.equal(verifyTestOnlyCheckoutSession(session,prepared,"acct_synthetic123","cus_synthetic123").session_id,session.id);
   for(const bad of [{...session,livemode:true},{...session,metadata:{...session.metadata,restaurant_id:qid}},{...session,line_items:{data:[{price:{id:"price_other123"},quantity:1}]}}])
-    assert.throws(()=>verifyTestOnlyCheckoutSession(bad,prepared,"acct_synthetic123"),/READBACK_INVALID/);
+    assert.throws(()=>verifyTestOnlyCheckoutSession(bad,prepared,"acct_synthetic123","cus_synthetic123"),/READBACK_INVALID/);
+  assert.throws(()=>verifyTestOnlyCheckoutSession({...session,customer:"cus_foreign123"},prepared,
+    "acct_synthetic123","cus_synthetic123"),/READBACK_INVALID/);
 });
 test("only signed-path checkout.session.completed material is accepted",()=>{
   const completed={...session,status:"complete",payment_status:"paid"};

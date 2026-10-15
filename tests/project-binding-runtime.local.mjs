@@ -49,7 +49,8 @@ try{
     writeFileSync(join(dir,'supabase/config.toml'),config);
     cpSync(join(root,'supabase/migrations'),join(dir,'supabase/migrations'),{recursive:true});
     const runtimeMigration='20261009190125_project_binding_runtime_guards.sql';
-    if(i===1)rmSync(join(dir,'supabase/migrations',runtimeMigration));
+    const upgradeMigrations=[runtimeMigration,'20261015174851_test_only_stripe_test_clock_customer_binding.sql'];
+    if(i===1)for(const migration of upgradeMigrations)rmSync(join(dir,'supabase/migrations',migration));
     console.log(JSON.stringify({phase:'fresh_start',instance:i+1}));
     run(cli,['start','--workdir',dir,'-x','realtime,storage-api,imgproxy,studio,postgres-meta,edge-runtime,logflare,vector,supavisor']);
     console.log(JSON.stringify({phase:'stack_started',instance:i+1}));
@@ -57,7 +58,9 @@ try{
     if(i===1){
       const before=functionSnapshot(s,jsonSql);
       console.log(JSON.stringify({phase:'upgrade_snapshot_before',instance:i+1}));
-      cpSync(join(root,'supabase/migrations',runtimeMigration),join(dir,'supabase/migrations',runtimeMigration));
+      for(const migration of upgradeMigrations){
+        cpSync(join(root,'supabase/migrations',migration),join(dir,'supabase/migrations',migration));
+      }
       run(cli,['migration','up','--local','--include-all','--workdir',dir]);
       console.log(JSON.stringify({phase:'upgrade_migration_applied',instance:i+1}));
       checkUpgrade(before,functionSnapshot(s,jsonSql));

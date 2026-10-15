@@ -1,11 +1,15 @@
 import { createClient } from "npm:@supabase/supabase-js@2.50.3";
 import { requireProjectBinding, requireProjectSession } from "../_shared/projectBinding.mjs";
 import {
+  buildTestOnlyCustomerForm,
   buildTestOnlyCheckoutForm,
+  buildTestOnlyTestClockForm,
   isRestrictedStripeTestCheckoutKey,
   parseTestOnlyCheckoutRequest,
   verifyStripeTestAccount,
   verifyTestOnlyCheckoutSession,
+  verifyTestOnlyCustomer,
+  verifyTestOnlyTestClock,
 } from "../_shared/testOnlyStripeCheckout.mjs";
 
 const allowedHeaders = new Set(["authorization", "apikey", "content-type", "x-client-info"]);
@@ -34,6 +38,8 @@ Deno.serve(async (request) => {
   const anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const checkoutKey = Deno.env.get("TEST_ONLY_STRIPE_CHECKOUT_RESTRICTED_KEY") ?? "";
+  const setupKey = Deno.env.get("TEST_ONLY_STRIPE_LIFECYCLE_SETUP_RESTRICTED_KEY") ?? "";
+  const webhookReadKey = Deno.env.get("TEST_ONLY_STRIPE_WEBHOOK_RESTRICTED_KEY") ?? "";
   const account = Deno.env.get("TEST_ONLY_STRIPE_ACCOUNT_ID") ?? "";
   let service;
   try {
@@ -74,7 +80,9 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return reply(405, "METHOD_NOT_ALLOWED", undefined, originAllowed ? origin : "");
   if (!originAllowed) return reply(403, "TEST_ONLY_CHECKOUT_ORIGIN_DENIED");
   if (Deno.env.get("TEST_ONLY_STRIPE_CHECKOUT_ENABLED") !== "true"
-    || !isRestrictedStripeTestCheckoutKey(checkoutKey) || !account.startsWith("acct_")) {
+    || !isRestrictedStripeTestCheckoutKey(checkoutKey) || !isRestrictedStripeTestCheckoutKey(setupKey)
+    || checkoutKey === setupKey || (webhookReadKey && webhookReadKey === setupKey)
+    || !account.startsWith("acct_")) {
     return reply(503, "TEST_ONLY_CHECKOUT_DISABLED", undefined, origin);
   }
 
@@ -104,18 +112,22 @@ Deno.serve(async (request) => {
     return reply(400, "TEST_ONLY_CHECKOUT_REQUEST_INVALID", undefined, origin);
   }
 
-  let accountPayload;
+  let accountPayload, setupAccountPayload;
   try {
-    const accountReadback = await fetch("https://api.stripe.com/v1/account", {
-      headers: { authorization: `Bearer ${checkoutKey}` },
-    });
-    if (!accountReadback.ok) return reply(503, "TEST_ONLY_STRIPE_ACCOUNT_READBACK_FAILED", undefined, origin);
-    accountPayload = await accountReadback.json();
+    const [accountReadback, setupAccountReadback] = await Promise.all([
+      fetch("https://api.stripe.com/v1/account", { headers: { authorization: `Bearer ${checkoutKey}` } }),
+      fetch("https://api.stripe.com/v1/account", { headers: { authorization: `Bearer ${setupKey}` } }),
+    ]);
+    if (!accountReadback.ok || !setupAccountReadback.ok) {
+      return reply(503, "TEST_ONLY_STRIPE_ACCOUNT_READBACK_FAILED", undefined, origin);
+    }
+    [accountPayload, setupAccountPayload] = await Promise.all([accountReadback.json(), setupAccountReadback.json()]);
   } catch {
     return reply(503, "TEST_ONLY_STRIPE_ACCOUNT_READBACK_FAILED", undefined, origin);
   }
   try {
     verifyStripeTestAccount(accountPayload, account);
+    verifyStripeTestAccount(setupAccountPayload, account);
   } catch {
     return reply(409, "TEST_ONLY_STRIPE_ACCOUNT_BINDING_INVALID", undefined, origin);
   }
@@ -135,9 +147,85 @@ Deno.serve(async (request) => {
     return reply(409, "TEST_ONLY_CHECKOUT_PREPARE_FAILED", undefined, origin);
   }
 
+  let preparation;
+  try {
+    const { data, error } = await service.rpc("get_test_only_stripe_customer_preparation", {
+      input_checkout_request_id: prepared.id,
+    });
+    if (error) return reply(409, "TEST_ONLY_TEST_CUSTOMER_BIND_FAILED", undefined, origin);
+    preparation = data;
+  } catch {
+    return reply(409, "TEST_ONLY_TEST_CUSTOMER_BIND_FAILED", undefined, origin);
+  }
+
+  let testClockId = preparation?.provider_test_clock_id;
+  let providerCustomerId = preparation?.provider_customer_id;
+  let frozenTime = preparation?.frozen_time ? Math.floor(Date.parse(preparation.frozen_time) / 1000) : Math.floor(Date.now() / 1000);
+  if (!Number.isSafeInteger(frozenTime) || frozenTime <= 0) {
+    return reply(409, "TEST_ONLY_TEST_CLOCK_READBACK_INVALID", undefined, origin);
+  }
+
+  try {
+    if (!preparation) {
+      const clockResponse = await fetch("https://api.stripe.com/v1/test_helpers/test_clocks", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupKey}`,
+          "content-type": "application/x-www-form-urlencoded",
+          "idempotency-key": `wuxuai-test-clock-${prepared.id}`,
+        },
+        body: buildTestOnlyTestClockForm(prepared, frozenTime),
+      });
+      if (!clockResponse.ok) return reply(502, "TEST_ONLY_TEST_CLOCK_PROVIDER_FAILED", undefined, origin);
+      const verifiedClock = verifyTestOnlyTestClock(await clockResponse.json(), prepared, frozenTime);
+      testClockId = verifiedClock.test_clock_id;
+
+      const customerResponse = await fetch("https://api.stripe.com/v1/customers", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupKey}`,
+          "content-type": "application/x-www-form-urlencoded",
+          "idempotency-key": `wuxuai-test-customer-${prepared.id}`,
+        },
+        body: buildTestOnlyCustomerForm(prepared, testClockId),
+      });
+      if (!customerResponse.ok) return reply(502, "TEST_ONLY_TEST_CUSTOMER_PROVIDER_FAILED", undefined, origin);
+      providerCustomerId = verifyTestOnlyCustomer(await customerResponse.json(), prepared, testClockId).provider_customer_id;
+
+      const { data, error } = await service.rpc("bind_test_only_stripe_test_clock_customer", {
+        input_checkout_request_id: prepared.id,
+        input_provider_account_id: account,
+        input_provider_test_clock_id: testClockId,
+        input_provider_customer_id: providerCustomerId,
+        input_frozen_time: verifiedClock.frozen_time,
+        input_livemode: false,
+      });
+      if (error || !data) return reply(409, "TEST_ONLY_TEST_CUSTOMER_BIND_FAILED", undefined, origin);
+    } else {
+      const [clockResponse, customerResponse] = await Promise.all([
+        fetch(`https://api.stripe.com/v1/test_helpers/test_clocks/${testClockId}`, {
+          headers: { authorization: `Bearer ${setupKey}` },
+        }),
+        fetch(`https://api.stripe.com/v1/customers/${providerCustomerId}`, {
+          headers: { authorization: `Bearer ${setupKey}` },
+        }),
+      ]);
+      if (!clockResponse.ok || !customerResponse.ok) {
+        return reply(502, "TEST_ONLY_TEST_CUSTOMER_PROVIDER_FAILED", undefined, origin);
+      }
+      verifyTestOnlyTestClock(await clockResponse.json(), prepared, frozenTime);
+      verifyTestOnlyCustomer(await customerResponse.json(), prepared, testClockId);
+    }
+  } catch (error) {
+    const code = error instanceof Error && /^TEST_ONLY_[A-Z0-9_]+$/.test(error.message)
+      ? error.message
+      : "TEST_ONLY_TEST_CUSTOMER_PROVIDER_FAILED";
+    return reply(409, code, undefined, origin);
+  }
+
   let providerForm;
   try {
-    providerForm = buildTestOnlyCheckoutForm(prepared, binding.app_origin);
+    providerForm = buildTestOnlyCheckoutForm(prepared, binding.app_origin, providerCustomerId);
   } catch {
     return reply(409, "TEST_ONLY_CHECKOUT_PREPARATION_INVALID", undefined, origin);
   }
@@ -161,15 +249,17 @@ Deno.serve(async (request) => {
 
   let verified;
   try {
-    verified = verifyTestOnlyCheckoutSession(providerPayload, prepared, account);
+    verified = verifyTestOnlyCheckoutSession(providerPayload, prepared, account, providerCustomerId);
   } catch {
     return reply(409, "TEST_ONLY_CHECKOUT_PROVIDER_READBACK_INVALID", undefined, origin);
   }
   try {
-    const { error: bindError } = await service.rpc("bind_test_only_stripe_checkout_session", {
+    const { error: bindError } = await service.rpc("bind_test_only_stripe_checkout_session_v2", {
       input_checkout_request_id: prepared.id,
       input_provider_account_id: account,
       input_provider_session_id: verified.session_id,
+      input_provider_test_clock_id: testClockId,
+      input_provider_customer_id: providerCustomerId,
       input_price_id: prepared.price_id,
       input_livemode: false,
     });

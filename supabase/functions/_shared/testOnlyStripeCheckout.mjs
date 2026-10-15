@@ -2,6 +2,15 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const SESSION=/^cs_test_[A-Za-z0-9_]{8,160}$/;
 const EVENT=/^evt_[A-Za-z0-9_]{8,160}$/;
 const ACCOUNT=/^acct_[A-Za-z0-9_]{8,160}$/;
+const CUSTOMER=/^cus_[A-Za-z0-9_]{8,160}$/;
+const TEST_CLOCK=/^clock_[A-Za-z0-9_]{8,160}$/;
+
+function assertPreparedCheckout(prepared){
+  if(!prepared||!UUID.test(prepared.id)||!UUID.test(prepared.restaurant_id)||!UUID.test(prepared.request_id)
+    ||prepared.environment!=="TEST"||prepared.livemode!==false||prepared.product_code!=="BASIC"
+    ||prepared.amount_minor!==5900||prepared.currency!=="EUR"||prepared.billing_interval!=="MONTH"
+    ||!/^price_[A-Za-z0-9]+$/.test(prepared.price_id))throw Error("TEST_ONLY_CHECKOUT_PREPARATION_INVALID");
+}
 
 export function parseTestOnlyCheckoutRequest(value){
   if(!value||typeof value!=="object"||Array.isArray(value)
@@ -11,13 +20,44 @@ export function parseTestOnlyCheckoutRequest(value){
   return {restaurant_id:value.restaurant_id.toLowerCase(),request_id:value.request_id.toLowerCase(),return_route:value.return_route};
 }
 
-export function buildTestOnlyCheckoutForm(prepared,origin){
-  if(!prepared||!UUID.test(prepared.id)||!UUID.test(prepared.restaurant_id)||!UUID.test(prepared.request_id)
-    ||prepared.environment!=="TEST"||prepared.livemode!==false||prepared.product_code!=="BASIC"
-    ||prepared.amount_minor!==5900||prepared.currency!=="EUR"||prepared.billing_interval!=="MONTH"
-    ||!/^price_[A-Za-z0-9]+$/.test(prepared.price_id)||!/^https:\/\/[^/]+$/.test(origin))
-    throw Error("TEST_ONLY_CHECKOUT_PREPARATION_INVALID");
-  return new URLSearchParams({mode:"subscription",success_url:`${origin}${prepared.return_route}?test_checkout=success`,
+export function buildTestOnlyTestClockForm(prepared,frozenTime){
+  assertPreparedCheckout(prepared);
+  if(!Number.isSafeInteger(frozenTime)||frozenTime<=0)throw Error("TEST_ONLY_TEST_CLOCK_PREPARATION_INVALID");
+  return new URLSearchParams({frozen_time:String(frozenTime),name:`WUXUAI TEST ${prepared.id}`});
+}
+
+export function buildTestOnlyCustomerForm(prepared,testClockId){
+  assertPreparedCheckout(prepared);
+  if(!TEST_CLOCK.test(testClockId))throw Error("TEST_ONLY_TEST_CUSTOMER_PREPARATION_INVALID");
+  return new URLSearchParams({test_clock:testClockId,description:"WUXUAI TEST_ONLY Stripe lifecycle customer",
+    "metadata[test_only]":"true","metadata[checkout_request_id]":prepared.id,
+    "metadata[restaurant_id]":prepared.restaurant_id,"metadata[request_id]":prepared.request_id,
+    "metadata[price_id]":prepared.price_id});
+}
+
+export function verifyTestOnlyTestClock(clock,prepared,frozenTime){
+  assertPreparedCheckout(prepared);
+  if(!clock||!TEST_CLOCK.test(clock.id)||clock.object!=="test_helpers.test_clock"||clock.livemode!==false
+    ||clock.frozen_time!==frozenTime||clock.name!==`WUXUAI TEST ${prepared.id}`||clock.status!=="ready")
+    throw Error("TEST_ONLY_TEST_CLOCK_READBACK_INVALID");
+  return {test_clock_id:clock.id,frozen_time:new Date(frozenTime*1000).toISOString()};
+}
+
+export function verifyTestOnlyCustomer(customer,prepared,testClockId){
+  assertPreparedCheckout(prepared);
+  if(!customer||!CUSTOMER.test(customer.id)||customer.object!=="customer"||customer.livemode!==false
+    ||customer.test_clock!==testClockId||customer.metadata?.test_only!=="true"
+    ||customer.metadata?.checkout_request_id!==prepared.id||customer.metadata?.restaurant_id!==prepared.restaurant_id
+    ||customer.metadata?.request_id!==prepared.request_id||customer.metadata?.price_id!==prepared.price_id)
+    throw Error("TEST_ONLY_TEST_CUSTOMER_READBACK_INVALID");
+  return {provider_customer_id:customer.id,test_clock_id:testClockId};
+}
+
+export function buildTestOnlyCheckoutForm(prepared,origin,customerId){
+  assertPreparedCheckout(prepared);
+  if(!/^https:\/\/[^/]+$/.test(origin)||!CUSTOMER.test(customerId))throw Error("TEST_ONLY_CHECKOUT_PREPARATION_INVALID");
+  return new URLSearchParams({mode:"subscription",customer:customerId,
+    success_url:`${origin}${prepared.return_route}?test_checkout=success`,
     cancel_url:`${origin}${prepared.return_route}?test_checkout=cancelled`,client_reference_id:prepared.id,
     "line_items[0][price]":prepared.price_id,"line_items[0][quantity]":"1","automatic_tax[enabled]":"false",
     "expand[]":"line_items",
@@ -33,11 +73,11 @@ export function isRestrictedStripeTestCheckoutKey(value){
   return typeof value==="string"&&/^rk_test_[A-Za-z0-9_]+$/.test(value);
 }
 
-export function verifyTestOnlyCheckoutSession(session,prepared,accountId){
+export function verifyTestOnlyCheckoutSession(session,prepared,accountId,customerId){
   const line=session?.line_items?.data;
-  if(!ACCOUNT.test(accountId)||!session||!SESSION.test(session.id)||session.livemode!==false
+  if(!ACCOUNT.test(accountId)||!CUSTOMER.test(customerId)||!session||!SESSION.test(session.id)||session.livemode!==false
     ||session.mode!=="subscription"||session.status!=="open"||session.payment_status!=="unpaid"
-    ||session.client_reference_id!==prepared.id||session.metadata?.test_only!=="true"
+    ||session.customer!==customerId||session.client_reference_id!==prepared.id||session.metadata?.test_only!=="true"
     ||session.metadata?.checkout_request_id!==prepared.id||session.metadata?.restaurant_id!==prepared.restaurant_id
     ||session.metadata?.request_id!==prepared.request_id||session.metadata?.price_id!==prepared.price_id||session.amount_total!==prepared.amount_minor
     ||String(session.currency).toUpperCase()!==prepared.currency||!Array.isArray(line)||line.length!==1
@@ -82,7 +122,6 @@ export function parseTestOnlyCheckoutCompleted(event,session,expectedAccount){
 
 const LIFECYCLE_EVENTS=new Set(["invoice.paid","invoice.payment_failed","customer.subscription.updated","customer.subscription.deleted"]);
 const PRICE=/^price_[A-Za-z0-9]+$/;
-const CUSTOMER=/^cus_[A-Za-z0-9_]{8,160}$/;
 const SUBSCRIPTION=/^sub_[A-Za-z0-9_]{8,160}$/;
 const INVOICE=/^in_[A-Za-z0-9_]{8,160}$/;
 

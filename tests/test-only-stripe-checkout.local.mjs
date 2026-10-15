@@ -45,16 +45,31 @@ assert.equal(json(owner(`select public.prepare_test_only_stripe_checkout(${q(fix
 denied(owner(`select public.prepare_test_only_stripe_checkout(${q(fixture.foreign_restaurant)},${q(randomUUID())},'/admin/settings/konto-testphase')`),/TEST_ONLY_CHECKOUT_ACCESS_DENIED/);
 
 const sessionId="cs_test_"+randomUUID().replaceAll("-","");const account="acct_synthetic123";
+const testClock="clock_"+randomUUID().replaceAll("-","");const customer="cus_"+randomUUID().replaceAll("-","");
+const frozen=new Date().toISOString();
+const preparationCall=service(`select public.bind_test_only_stripe_test_clock_customer(${q(prepared.id)},${q(account)},
+  ${q(testClock)},${q(customer)},${q(frozen)}::timestamptz,false)`);
+assert.equal(json(preparationCall).status,"TEST_CLOCK_CUSTOMER_BOUND");
+assert.equal(json(preparationCall).idempotent,true);
+const parallelPreparations=await Promise.all(Array.from({length:8},()=>asyncSql(preparationCall)));
+assert.equal(parallelPreparations.length,8);
+assert.equal(sql(`select count(*) from test_only_checkout.customer_preparations where request_ref=${q(prepared.id)}`),"1");
+denied(service(`select public.bind_test_only_stripe_test_clock_customer(${q(prepared.id)},${q(account)},
+  'clock_foreign123',${q(customer)},${q(frozen)}::timestamptz,false)`),/TEST_ONLY_TEST_CUSTOMER_REPLAY_CONFLICT/);
 denied(service(`select public.bind_test_only_stripe_checkout_session(${q(prepared.id)},${q(account)},${q(sessionId)},${q(prepared.price_id)},true)`),/TEST_ONLY_CHECKOUT_SERVICE_REQUIRED/);
-assert.equal(json(service(`select public.bind_test_only_stripe_checkout_session(${q(prepared.id)},${q(account)},${q(sessionId)},${q(prepared.price_id)},false)`)).status,"SESSION_CREATED");
-assert.equal(json(service(`select public.bind_test_only_stripe_checkout_session(${q(prepared.id)},${q(account)},${q(sessionId)},${q(prepared.price_id)},false)`)).idempotent,true);
+denied(service(`select public.bind_test_only_stripe_checkout_session_v2(${q(prepared.id)},${q(account)},${q(sessionId)},
+  ${q(testClock)},'cus_foreign123',${q(prepared.price_id)},false)`),/TEST_ONLY_TEST_CUSTOMER_BINDING_MISMATCH/);
+assert.equal(json(service(`select public.bind_test_only_stripe_checkout_session_v2(${q(prepared.id)},${q(account)},${q(sessionId)},
+  ${q(testClock)},${q(customer)},${q(prepared.price_id)},false)`)).status,"SESSION_CREATED");
+assert.equal(json(service(`select public.bind_test_only_stripe_checkout_session_v2(${q(prepared.id)},${q(account)},${q(sessionId)},
+  ${q(testClock)},${q(customer)},${q(prepared.price_id)},false)`)).idempotent,true);
 denied(service(`select public.record_test_only_stripe_checkout_completed('evt_badprice123',repeat('b',64),now(),${q(account)},${q(sessionId)},${q(fixture.restaurant)},${q(requestId)},'price_wrong123',5900,'EUR',false)`),/TEST_ONLY_CHECKOUT_EVENT_BINDING_MISMATCH/);
 
 const eventId="evt_"+randomUUID().replaceAll("-","");
 const call=service(`select public.record_test_only_stripe_checkout_completed(${q(eventId)},repeat('c',64),now(),${q(account)},${q(sessionId)},${q(fixture.restaurant)},${q(requestId)},${q(prepared.price_id)},5900,'EUR',false)`);
 const parallel=await Promise.all(Array.from({length:8},()=>asyncSql(call)));
 assert.equal(parallel.length,8);assert.equal(sql(`select count(*) from test_only_checkout.events where event_id=${q(eventId)}`),"1");
-assert.equal(sql(`select count(*) from test_only_checkout.audit where request_ref=${q(prepared.id)}`),"3");
+assert.equal(sql(`select count(*) from test_only_checkout.audit where request_ref=${q(prepared.id)}`),"4");
 assert.equal(json(service(`select public.record_test_only_stripe_checkout_completed(${q(eventId)},repeat('c',64),now(),${q(account)},${q(sessionId)},${q(fixture.restaurant)},${q(requestId)},${q(prepared.price_id)},5900,'EUR',false)`)).idempotent,true);
 denied(service(`select public.record_test_only_stripe_checkout_completed(${q(eventId)},repeat('d',64),now(),${q(account)},${q(sessionId)},${q(fixture.restaurant)},${q(requestId)},${q(prepared.price_id)},5900,'EUR',false)`),/TEST_ONLY_CHECKOUT_EVENT_REPLAY_CONFLICT/);
 
@@ -66,7 +81,9 @@ denied(owner(`select public.cancel_test_only_stripe_checkout(${q(cancelPrepared.
 denied(service(`select public.bind_test_only_stripe_checkout_session(${q(cancelPrepared.id)},${q(account)},'cs_test_cancelled123',${q(cancelPrepared.price_id)},false)`),/TEST_ONLY_CHECKOUT_SESSION_CONFLICT/);
 
 assert.deepEqual(realCounts(),before);
-for(const role of ["anon","authenticated","service_role"]){for(const table of ["test_only_checkout.requests","test_only_checkout.events","test_only_checkout.audit"])
+for(const role of ["anon","authenticated","service_role"]){for(const table of ["test_only_checkout.requests","test_only_checkout.events","test_only_checkout.audit","test_only_checkout.customer_preparations"])
   assert.equal(sql(`select has_table_privilege(${q(role)},${q(table)},'SELECT,INSERT,UPDATE,DELETE')`),"f");}
 assert.equal(sql("select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='test_only_checkout' and c.relkind='r' and not c.relrowsecurity"),"0");
-console.log(JSON.stringify({status:"TEST_ONLY_STRIPE_CHECKOUT_LOCAL_PASS",session_creation:1,cancellation:1,event:1,parallel_deliveries:8,replay:true,foreign_tenant:"DENIED",invoice_paid:"CLOSED_AT_EDGE_AND_DB_SIGNATURE",real_business_delta:0}));
+console.log(JSON.stringify({status:"TEST_ONLY_STRIPE_CHECKOUT_LOCAL_PASS",test_clock_customer_binding:1,
+  parallel_preparation_replays:8,session_creation:1,cancellation:1,event:1,parallel_deliveries:8,replay:true,
+  foreign_tenant:"DENIED",invoice_paid:"CLOSED_AT_EDGE_AND_DB_SIGNATURE",real_business_delta:0}));

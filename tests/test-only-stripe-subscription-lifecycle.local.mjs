@@ -26,7 +26,8 @@ const lifecycleCounts=()=>json(`select jsonb_build_object('anchors',(select coun
 const ids={owner:randomUUID(),organization:randomUUID(),restaurant:randomUUID(),branch:randomUUID(),binding:randomUUID(),
   request:randomUUID(),requestId:randomUUID(),access:randomUUID()};
 const provider={account:"acct_synthetic123",session:"cs_test_"+randomUUID().replaceAll("-",""),
-  customer:"cus_synthetic123",subscription:"sub_synthetic123",event:"evt_"+randomUUID().replaceAll("-","")};
+  clock:"clock_synthetic123",customer:"cus_synthetic123",subscription:"sub_synthetic123",
+  event:"evt_"+randomUUID().replaceAll("-","")};
 const product="prod_synthetic123",price="price_synthetic123",checkoutHash="b".repeat(64);
 
 // Start from an immutable accepted checkout. This fixture is installed only
@@ -56,6 +57,10 @@ sql(`begin;
     '${ids.access}','${ids.owner}','${ids.requestId}','/admin/settings/konto-testphase','BASIC',1,2,'STRIPE','TEST',false,
     '${product}','${price}','wuxuai_bonus_basic_monthly',5900,'EUR','MONTH',repeat('a',64),'${provider.account}',
     '${provider.session}','COMPLETED',now(),now(),now());
+  insert into test_only_checkout.customer_preparations(request_ref,project_ref,restaurant_id,organization_id,branch_id,
+    provider_account_id,provider_test_clock_id,provider_customer_id,frozen_time,livemode,evidence_sha256)
+  values('${ids.request}','mbgveqbhessaunrhfudm','${ids.restaurant}','${ids.organization}','${ids.branch}',
+    '${provider.account}','${provider.clock}','${provider.customer}',now(),false,repeat('c',64));
   insert into test_only_checkout.events(event_id,request_ref,restaurant_id,provider_account_id,provider_session_id,event_type,
     livemode,price_id,amount_total,currency,payload_sha256,event_created_at,result_code)
   values('${provider.event}','${ids.request}','${ids.restaurant}','${provider.account}','${provider.session}',
