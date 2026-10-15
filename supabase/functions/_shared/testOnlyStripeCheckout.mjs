@@ -166,14 +166,6 @@ function invoiceSubscriptionPosition(lines,subscription,priceId){
   return {priceId:positionPrice,periodStart,periodEnd,start,end};
 }
 
-function assertInvoiceHeaderPeriodDoesNotConflict(object,position){
-  const start=object?.period_start;
-  const end=object?.period_end;
-  const valid=Number.isSafeInteger(start)&&start>0&&Number.isSafeInteger(end)&&end>start;
-  if(valid&&(start!==position.start||end!==position.end))
-    throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT");
-}
-
 function subscriptionItemPosition(items,subscription,priceId){
   const data=items?.data;
   if(!Array.isArray(data)||items?.has_more===true||data.length!==1)
@@ -227,7 +219,6 @@ export function parseTestOnlySubscriptionEvent(event,expectedAccount){
     const lines=object.lines?.data;
     if(object.lines?.has_more===true)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
     const position=invoiceSubscriptionPosition(lines,subscription,metadata.price_id);
-    assertInvoiceHeaderPeriodDoesNotConflict(object,position);
     priceId=position.priceId;
     amountMinor=event.type==="invoice.paid"?object.amount_paid:object.amount_due;
     currency=String(object.currency??"").toUpperCase();

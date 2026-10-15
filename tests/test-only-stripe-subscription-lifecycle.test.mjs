@@ -32,6 +32,15 @@ test("sanitized hosted initial invoice uses the uniquely bound position when hea
   assert.equal(parseTestOnlySubscriptionEvent(invalidHeader,account).period_end,paid.period_end);
 });
 
+test("sanitized 2026-08-26 renewal invoice uses its bound line period when the invoice header covers the prior cycle",()=>{
+  const fixture=JSON.parse(readFileSync(new URL("./fixtures/stripe-invoice-paid-renewal-2026-08-26.sanitized.json",import.meta.url),"utf8"));
+  const parsed=parseTestOnlySubscriptionEvent(fixture,"acct_synthetic123");
+  assert.equal(parsed.provider_subscription_id,"sub_synthetic123");
+  assert.equal(parsed.price_id,"price_synthetic123");
+  assert.equal(parsed.period_start,"2026-11-15T19:13:48.000Z");
+  assert.equal(parsed.period_end,"2026-12-15T19:13:48.000Z");
+});
+
 test("renewal and payment failure stay exactly subscription, position and price bound",()=>{
   const renewal=invoice();renewal.data.object.period_start=now;renewal.data.object.period_end=now+2_592_000;
   assert.equal(parseTestOnlySubscriptionEvent(renewal,account).price_id,price);
@@ -39,13 +48,15 @@ test("renewal and payment failure stay exactly subscription, position and price 
   assert.equal(failed.provider_status,"open");assert.equal(failed.currency,"EUR");
 });
 
-test("missing, invalid and conflicting intervals fail closed without letting invoice headers replace the position",()=>{
+test("missing and invalid line intervals fail closed while invoice headers never replace the line period",()=>{
   const missing=invoice();delete missing.data.object.lines.data[0].period;
   assert.throws(()=>parseTestOnlySubscriptionEvent(missing,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
   const invalid=invoice();invalid.data.object.lines.data[0].period.end=now;
   assert.throws(()=>parseTestOnlySubscriptionEvent(invalid,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
-  const conflict=invoice();conflict.data.object.period_start=now+1;conflict.data.object.period_end=now+2_592_001;
-  assert.throws(()=>parseTestOnlySubscriptionEvent(conflict,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT/);
+  const differentHeader=invoice();differentHeader.data.object.period_start=now-2_592_000;differentHeader.data.object.period_end=now;
+  const parsed=parseTestOnlySubscriptionEvent(differentHeader,account);
+  assert.equal(parsed.period_start,new Date(now*1000).toISOString());
+  assert.equal(parsed.period_end,new Date((now+2_592_000)*1000).toISOString());
 });
 
 test("multiple, contradictory or incomplete subscription positions fail closed",()=>{
@@ -61,6 +72,20 @@ test("multiple, contradictory or incomplete subscription positions fail closed",
   assert.throws(()=>parseTestOnlySubscriptionEvent(conflicting,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
   const missingItem=invoice();delete missingItem.data.object.lines.data[0].parent.subscription_item_details.subscription_item;
   assert.throws(()=>parseTestOnlySubscriptionEvent(missingItem,account),/TEST_ONLY_SUBSCRIPTION_BINDING_INVALID/);
+  const foreignOnly=invoice();foreignOnly.data.object.lines.data[0].parent.subscription_item_details.subscription="sub_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(foreignOnly,account),/TEST_ONLY_SUBSCRIPTION_BINDING_INVALID/);
+});
+
+test("sanitized renewal stays fail-closed for ambiguous, foreign, wrong-price and invalid positions",()=>{
+  const fixture=()=>JSON.parse(readFileSync(new URL("./fixtures/stripe-invoice-paid-renewal-2026-08-26.sanitized.json",import.meta.url),"utf8"));
+  const ambiguous=fixture();ambiguous.data.object.lines.data.push(structuredClone(ambiguous.data.object.lines.data[0]));
+  assert.throws(()=>parseTestOnlySubscriptionEvent(ambiguous,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const foreign=fixture();foreign.data.object.lines.data[0].parent.subscription_item_details.subscription="sub_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(foreign,account),/TEST_ONLY_SUBSCRIPTION_BINDING_INVALID/);
+  const wrongPrice=fixture();wrongPrice.data.object.lines.data[0].pricing.price_details.price="price_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(wrongPrice,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const invalid=fixture();invalid.data.object.lines.data[0].period.end=invalid.data.object.lines.data[0].period.start;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(invalid,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
 });
 
 test("subscription update and deletion preserve cancellation semantics without real writes",()=>{
