@@ -13,7 +13,7 @@ function loadService(active=true,response={data:{code:'TEST_ONLY_CHECKOUT_SESSIO
   const calls=[];
   const transpiled=ts.transpileModule(service,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const exports={};
-  vm.runInNewContext(transpiled,{exports,URL,Error,require(name){
+  vm.runInNewContext(transpiled,{exports,URL,Error,Response,require(name){
     if(name==='../../shared/lib/supabase')return {supabase:{functions:{invoke:async(...args)=>{calls.push(args);return response;}}}};
     if(name==='../offers/restaurantOfferService')return {loadTestOnlyBasicRuntime:async()=>({active,receipt_id:active?'synthetic-receipt':null})};
     throw Error('UNEXPECTED_IMPORT');
@@ -46,8 +46,47 @@ test('closed TEST_ONLY grant, failed Edge response and foreign redirect fail clo
   }
 });
 
+test('only fixed sanitized Edge subcodes reach the Owner UI contract',async()=>{
+  const exposed=[
+    'PROJECT_BINDING_REQUIRED','METHOD_NOT_ALLOWED','TEST_ONLY_CHECKOUT_ORIGIN_DENIED',
+    'TEST_ONLY_CHECKOUT_DISABLED','AUTH_REQUIRED','PROJECT_SESSION_REQUIRED',
+    'TEST_ONLY_CHECKOUT_REQUEST_INVALID','TEST_ONLY_STRIPE_ACCOUNT_READBACK_FAILED',
+    'TEST_ONLY_STRIPE_ACCOUNT_BINDING_INVALID','TEST_ONLY_CHECKOUT_OWNER_REQUIRED',
+    'TEST_ONLY_CHECKOUT_ACCESS_DENIED','TEST_ONLY_CHECKOUT_REPLAY_CONFLICT',
+    'TEST_ONLY_CHECKOUT_PREPARE_FAILED','TEST_ONLY_CHECKOUT_PREPARATION_INVALID',
+    'TEST_ONLY_CHECKOUT_PROVIDER_FAILED','TEST_ONLY_CHECKOUT_PROVIDER_READBACK_INVALID',
+    'TEST_ONLY_CHECKOUT_BIND_FAILED',
+  ];
+  for(const code of exposed){
+    const error=Object.assign(new Error('Edge Function returned a non-2xx status code'),{
+      context:new Response(JSON.stringify({code,details:{internal:'must-not-be-forwarded'}}),{
+        status:409,headers:{'content-type':'application/json'}}),
+    });
+    const fixture=loadService(true,{data:null,error});
+    await assert.rejects(fixture.open('restaurant-synthetic','request-synthetic'),
+      value=>value?.name==='TestOnlyStripeCheckoutError'&&value?.code===code&&value?.message===code);
+  }
+
+  for(const payload of [
+    {code:'TEST_ONLY_CHECKOUT_RAW_DATABASE_MESSAGE'},
+    {code:'sk_test_must_never_surface'},
+    {message:'internal stack and personal data'},
+    null,
+  ]){
+    const error=Object.assign(new Error('private internal error'),{
+      context:new Response(payload===null?'not-json':JSON.stringify(payload),{
+        status:500,headers:{'content-type':payload===null?'text/plain':'application/json'}}),
+    });
+    const fixture=loadService(true,{data:null,error});
+    await assert.rejects(fixture.open('restaurant-synthetic','request-synthetic'),
+      value=>value?.code==='TEST_ONLY_CHECKOUT_FAILED'&&!String(value?.message).includes('private'));
+  }
+});
+
 test('TEST_ONLY panel is separate from real BASIC acceptance and appears only in pending setup',()=>{
   assert.match(panel,/Ich starte bewusst genau einen isolierten Stripe-TEST-Checkout/);
+  assert.match(panel,/Diagnosecode: \$\{code\}/);
+  assert.match(panel,/instanceof TestOnlyStripeCheckoutError/);
   assert.match(panel,/if \(!confirmed \|\| !active \|\| busy \|\| inFlight\.current\) return/);
   assert.match(settings,/isPendingActivation\(activeRestaurant\)\s*\? <TestOnlyStripeCheckoutPanel/);
   assert.match(realBilling,/supabase\.functions\.invoke\("billing-basic-test-checkout"/);

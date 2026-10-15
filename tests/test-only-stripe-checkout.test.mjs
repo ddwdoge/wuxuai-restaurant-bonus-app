@@ -70,7 +70,10 @@ test("ACL and Edge boundaries are explicit",()=>{
   const checkout=readFileSync(new URL("../supabase/functions/test-only-stripe-checkout/index.ts",import.meta.url),"utf8");
   for(const source of [hook,checkout])assert.match(source,/requireProjectBinding/);
   for(const source of [hook,checkout])assert.match(source,/verifyStripeTestAccount/);
-  assert.match(checkout,/requireProjectSession/);assert.match(checkout,/request\.headers\.get\("origin"\)!==binding\.app_origin/);
+  assert.match(checkout,/requireProjectSession/);
+  assert.match(checkout,/const originAllowed = origin === binding\.app_origin/);
+  assert.match(checkout,/request\.method === "OPTIONS"/);
+  assert.match(checkout,/CORS_PREFLIGHT_BLOCKED/);
   assert.match(hook,/verifyRawWebhook/);assert.match(hook,/event\.type!=="checkout\.session\.completed"/);
   assert.ok(hook.indexOf("verifyRawWebhook(")<hook.indexOf("JSON.parse("));
 });

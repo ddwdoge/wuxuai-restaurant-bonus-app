@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { loadTestOnlyBasicRuntime } from "../offers/restaurantOfferService";
-import { openIsolatedTestOnlyStripeCheckout } from "./testOnlyStripeCheckoutService";
+import { openIsolatedTestOnlyStripeCheckout, TestOnlyStripeCheckoutError } from "./testOnlyStripeCheckoutService";
 
 export function TestOnlyStripeCheckoutPanel({ restaurantId }: { restaurantId: string }) {
   const [active, setActive] = useState(false);
@@ -39,8 +39,13 @@ export function TestOnlyStripeCheckoutPanel({ restaurantId }: { restaurantId: st
     try {
       const url = await openIsolatedTestOnlyStripeCheckout(selectedRestaurant, id);
       if (context.current === selectedRestaurant) window.location.assign(url);
-    } catch {
-      if (context.current === selectedRestaurant) setError("Der isolierte TEST_ONLY-Checkout wurde nicht bestätigt. Es wurde kein realer BASIC-Vertrag aktiviert.");
+    } catch (checkoutError) {
+      const code = checkoutError instanceof TestOnlyStripeCheckoutError
+        ? checkoutError.code
+        : "TEST_ONLY_CHECKOUT_FAILED";
+      if (context.current === selectedRestaurant) setError(
+        `Der isolierte TEST_ONLY-Checkout wurde nicht bestätigt. Diagnosecode: ${code}. Es wurde kein realer BASIC-Vertrag aktiviert.`,
+      );
     } finally {
       inFlight.current = false;
       if (context.current === selectedRestaurant) setBusy(false);
