@@ -24,6 +24,7 @@ const legalMigration = await readFile(new URL(
 ), "utf8");
 
 const continuationId = "11111111-1111-4111-8111-111111111111";
+const uuidPatternForTest = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function storageFixture() {
   const values = new Map();
@@ -88,6 +89,38 @@ test("malformed continuation ids cannot create or resume a marker", () => {
   assert.equal(matchesTestOnlyBasicReauthContinuation(malformed, {
     restaurantId: "tenant-one", identityId: "admin-one", now: 1_800_000_000_001,
   }), false);
+});
+
+test("an omitted continuation id uses browser Web Crypto without an unbound receiver", () => {
+  const marker = JSON.parse(createTestOnlyBasicReauthContinuation({
+    restaurantId: "tenant-one",
+    identityId: "admin-one",
+    now: 1_800_000_000_000,
+  }));
+  assert.match(marker.continuationId, uuidPatternForTest);
+});
+
+test("the secure fallback creates an RFC 4122 v4 id from getRandomValues", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  try {
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        getRandomValues(bytes) {
+          bytes.set(Array.from({ length: 16 }, (_, index) => index));
+          return bytes;
+        },
+      },
+    });
+    const marker = JSON.parse(createTestOnlyBasicReauthContinuation({
+      restaurantId: "tenant-one",
+      identityId: "admin-one",
+      now: 1_800_000_000_000,
+    }));
+    assert.equal(marker.continuationId, "00010203-0405-4607-8809-0a0b0c0d0e0f");
+  } finally {
+    Object.defineProperty(globalThis, "crypto", descriptor);
+  }
 });
 
 test("the panel consumes once only after server read plus identity match", () => {
