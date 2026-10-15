@@ -6,7 +6,7 @@ import {signFakeWebhook,verifyRawWebhook} from "../supabase/functions/_shared/bi
 
 const rid="11111111-1111-4111-8111-111111111111",qid="22222222-2222-4222-8222-222222222222";
 const prepared={id:qid,restaurant_id:rid,request_id:qid,return_route:"/admin/settings/konto-testphase",environment:"TEST",livemode:false,product_code:"BASIC",amount_minor:5900,currency:"EUR",billing_interval:"MONTH",price_id:"price_testBasic123"};
-const session={id:"cs_test_synthetic123",livemode:false,mode:"subscription",status:"open",payment_status:"unpaid",client_reference_id:qid,metadata:{test_only:"true",checkout_request_id:qid,restaurant_id:rid,request_id:qid,price_id:prepared.price_id},amount_total:5900,currency:"eur",line_items:{data:[{price:{id:prepared.price_id},quantity:1}]},url:"https://checkout.stripe.com/c/pay/test"};
+const session={id:"cs_test_synthetic123",livemode:false,mode:"subscription",status:"open",payment_status:"unpaid",client_reference_id:qid,metadata:{test_only:"true",checkout_request_id:qid,restaurant_id:rid,request_id:qid,price_id:prepared.price_id},customer:"cus_synthetic123",subscription:"sub_synthetic123",amount_total:5900,currency:"eur",line_items:{data:[{price:{id:prepared.price_id},quantity:1}]},url:"https://checkout.stripe.com/c/pay/test"};
 
 test("request accepts only the exact tenant-bound shape",()=>{
   assert.deepEqual(parseTestOnlyCheckoutRequest({restaurant_id:rid,request_id:qid,return_route:prepared.return_route}),{restaurant_id:rid,request_id:qid,return_route:prepared.return_route});
@@ -15,6 +15,8 @@ test("request accepts only the exact tenant-bound shape",()=>{
 test("session form is server-price-bound and test-only",()=>{
   const form=buildTestOnlyCheckoutForm(prepared,"https://staging-v2.bonus.wuxuaisbi.com");
   assert.equal(form.get("line_items[0][price]"),prepared.price_id);assert.equal(form.get("metadata[test_only]"),"true");
+  assert.equal(form.get("subscription_data[metadata][checkout_request_id]"),prepared.id);
+  assert.equal(form.get("subscription_data[metadata][restaurant_id]"),prepared.restaurant_id);
   assert.equal(form.get("automatic_tax[enabled]"),"false");
   assert.equal(form.get("expand[]"),"line_items");
 });
@@ -34,6 +36,7 @@ test("only signed-path checkout.session.completed material is accepted",()=>{
   const completed={...session,status:"complete",payment_status:"paid"};
   const event={id:"evt_synthetic123",type:"checkout.session.completed",livemode:false,created:1791840000,account:"acct_synthetic123",data:{object:{...completed}}};
   assert.equal(parseTestOnlyCheckoutCompleted(event,completed,"acct_synthetic123").price_id,prepared.price_id);
+  assert.equal(parseTestOnlyCheckoutCompleted(event,completed,"acct_synthetic123").provider_subscription_id,"sub_synthetic123");
   assert.equal(parseTestOnlyCheckoutCompleted(Object.fromEntries(Object.entries(event).filter(([key])=>key!=="account")),completed,"acct_synthetic123").price_id,prepared.price_id);
   assert.throws(()=>parseTestOnlyCheckoutCompleted({...event,account:"acct_foreign123"},completed,"acct_synthetic123"),/EVENT_INVALID/);
   assert.throws(()=>parseTestOnlyCheckoutCompleted({...event,type:"invoice.paid"},completed,"acct_synthetic123"),/EVENT_INVALID/);

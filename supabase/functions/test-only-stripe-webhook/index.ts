@@ -21,7 +21,7 @@ Deno.serve(async request=>{
     const readback=await fetch(`https://api.stripe.com/v1/checkout/sessions/${object.id}?expand[]=line_items.data.price`,{headers:{authorization:`Bearer ${readKey}`}});
     if(!readback.ok)throw Error("TEST_ONLY_CHECKOUT_PROVIDER_READBACK_FAILED");
     const parsed=parseTestOnlyCheckoutCompleted(event,await readback.json(),account);
-    const {data,error}=await service.rpc("record_test_only_stripe_checkout_completed",{input_event_id:parsed.event_id,input_payload_sha256:await sha256Hex(raw),input_event_created_at:parsed.event_created_at,input_provider_account_id:parsed.provider_account_id,input_provider_session_id:parsed.provider_session_id,input_restaurant_id:parsed.restaurant_id,input_request_id:parsed.request_id,input_price_id:parsed.price_id,input_amount_total:parsed.amount_total,input_currency:parsed.currency,input_livemode:false});
+    const {data,error}=await service.rpc("record_test_only_stripe_checkout_completed_v2",{input_event_id:parsed.event_id,input_payload_sha256:await sha256Hex(raw),input_event_created_at:parsed.event_created_at,input_provider_account_id:parsed.provider_account_id,input_provider_session_id:parsed.provider_session_id,input_provider_customer_id:parsed.provider_customer_id,input_provider_subscription_id:parsed.provider_subscription_id,input_restaurant_id:parsed.restaurant_id,input_request_id:parsed.request_id,input_price_id:parsed.price_id,input_amount_total:parsed.amount_total,input_currency:parsed.currency,input_livemode:false});
     if(error)throw Error(error.message??"TEST_ONLY_CHECKOUT_EVENT_FAILED");return reply(200,data?.status??"TEST_ONLY_CHECKOUT_COMPLETED",data);
   }catch(error){return reply(409,error instanceof Error?error.message:"TEST_ONLY_CHECKOUT_EVENT_FAILED");}
 });

@@ -127,6 +127,11 @@ verify_jwt = true
 [functions.test-only-stripe-webhook]
 verify_jwt = false
 
+# Raw Stripe signature verification is the sole external authentication
+# boundary. This endpoint writes only isolated synthetic lifecycle evidence.
+[functions.test-only-stripe-lifecycle-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 56127
