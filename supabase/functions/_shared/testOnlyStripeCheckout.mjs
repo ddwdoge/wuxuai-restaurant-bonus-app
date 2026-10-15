@@ -174,6 +174,39 @@ function assertInvoiceHeaderPeriodDoesNotConflict(object,position){
     throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT");
 }
 
+function subscriptionItemPosition(items,subscription,priceId){
+  const data=items?.data;
+  if(!Array.isArray(data)||items?.has_more===true||data.length!==1)
+    throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+  const item=data[0];
+  const price=item?.price;
+  const plan=item?.plan;
+  if(!SUBSCRIPTION_ITEM.test(item?.id??"")||item?.object!=="subscription_item"
+    ||item?.subscription!==subscription||item?.quantity!==1)
+    throw Error("TEST_ONLY_SUBSCRIPTION_BINDING_INVALID");
+  if(!PRICE.test(price?.id??"")||price.id!==priceId
+    ||(plan?.id!==undefined&&plan.id!==price.id)
+    ||(price?.product!==undefined&&plan?.product!==undefined&&plan.product!==price.product))
+    throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+  const start=item.current_period_start;
+  const end=item.current_period_end;
+  const periodStart=timestamp(start,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  const periodEnd=timestamp(end,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  if(end<=start)throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  return {itemId:item.id,priceId:price.id,amountMinor:price.unit_amount,
+    currency:String(price.currency??"").toUpperCase(),periodStart,periodEnd,start,end};
+}
+
+function assertSubscriptionHeaderPeriodDoesNotConflict(object,position){
+  const start=object?.current_period_start;
+  const end=object?.current_period_end;
+  if(start===undefined&&end===undefined)return;
+  if(!Number.isSafeInteger(start)||start<=0||!Number.isSafeInteger(end)||end<=start)
+    throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  if(start!==position.start||end!==position.end)
+    throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT");
+}
+
 export function parseTestOnlySubscriptionEvent(event,expectedAccount){
   if(!event||!EVENT.test(event.id)||!LIFECYCLE_EVENTS.has(event.type)||event.livemode!==false
     ||!Number.isSafeInteger(event.created)||event.created<=0||!ACCOUNT.test(expectedAccount)
@@ -202,12 +235,10 @@ export function parseTestOnlySubscriptionEvent(event,expectedAccount){
     periodEnd=position.periodEnd;
     providerObjectId=object.id;providerStatus=object.status;
   }else{
-    const items=object.items?.data;
-    if(!Array.isArray(items)||items.length!==1||items[0]?.quantity!==1)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
-    priceId=items[0]?.price?.id;amountMinor=items[0]?.price?.unit_amount;
-    currency=String(items[0]?.price?.currency??"").toUpperCase();
-    periodStart=timestamp(object.current_period_start,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
-    periodEnd=timestamp(object.current_period_end,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+    const position=subscriptionItemPosition(object.items,subscription,metadata.price_id);
+    assertSubscriptionHeaderPeriodDoesNotConflict(object,position);
+    priceId=position.priceId;amountMinor=position.amountMinor;currency=position.currency;
+    periodStart=position.periodStart;periodEnd=position.periodEnd;
     providerObjectId=object.id;providerStatus=object.status;cancelAtPeriodEnd=object.cancel_at_period_end===true;
   }
   if(priceId!==metadata.price_id||amountMinor!==5900||currency!=="EUR"

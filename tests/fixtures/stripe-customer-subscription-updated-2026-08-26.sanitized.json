@@ -1,0 +1,66 @@
+{
+  "id": "evt_sanitized_qv5d59e5grfxdm1234",
+  "object": "event",
+  "api_version": "2026-08-26.dahlia",
+  "created": 1792095419,
+  "livemode": false,
+  "account": "acct_synthetic123",
+  "type": "customer.subscription.updated",
+  "data": {
+    "object": {
+      "id": "sub_synthetic123",
+      "object": "subscription",
+      "customer": "cus_synthetic123",
+      "livemode": false,
+      "status": "active",
+      "cancel_at_period_end": false,
+      "metadata": {
+        "test_only": "true",
+        "checkout_request_id": "11111111-1111-4111-8111-111111111111",
+        "restaurant_id": "22222222-2222-4222-8222-222222222222",
+        "request_id": "33333333-3333-4333-8333-333333333333",
+        "price_id": "price_synthetic123"
+      },
+      "items": {
+        "object": "list",
+        "has_more": false,
+        "data": [
+          {
+            "id": "si_synthetic123",
+            "object": "subscription_item",
+            "subscription": "sub_synthetic123",
+            "quantity": 1,
+            "current_period_start": 1794770028,
+            "current_period_end": 1797362028,
+            "price": {
+              "id": "price_synthetic123",
+              "object": "price",
+              "active": true,
+              "currency": "eur",
+              "livemode": false,
+              "product": "prod_synthetic123",
+              "unit_amount": 5900
+            },
+            "plan": {
+              "id": "price_synthetic123",
+              "object": "plan",
+              "currency": "eur",
+              "product": "prod_synthetic123"
+            }
+          }
+        ]
+      }
+    },
+    "previous_attributes": {
+      "items": {
+        "data": [
+          {
+            "id": "si_synthetic123",
+            "current_period_start": 1792091628,
+            "current_period_end": 1794770028
+          }
+        ]
+      }
+    }
+  }
+}

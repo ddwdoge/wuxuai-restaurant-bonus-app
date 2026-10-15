@@ -16,6 +16,14 @@ const event=()=>{const now=Math.floor(Date.now()/1000);return {id:"evt_invoice_p
     lines:{has_more:false,data:[{quantity:1,pricing:{type:"price_details",price_details:{price,product:"prod_synthetic123"}},
       parent:{type:"subscription_item_details",subscription_item_details:{subscription,subscription_item:subscriptionItem,proration:false}},
       period:{start:now,end:now+2_592_000}}]}}}}};
+const subscriptionUpdate=()=>{const now=Math.floor(Date.now()/1000);return {id:"evt_subscription_updated_12345678",
+  type:"customer.subscription.updated",livemode:false,created:now,account,data:{object:{id:subscription,object:"subscription",
+    livemode:false,customer,status:"active",cancel_at_period_end:false,
+    metadata:{test_only:"true",checkout_request_id:checkoutRequest,restaurant_id:restaurant,request_id:requestId,price_id:price},
+    items:{has_more:false,data:[{id:subscriptionItem,object:"subscription_item",subscription,quantity:1,
+      current_period_start:now,current_period_end:now+2_592_000,
+      price:{id:price,product:"prod_synthetic123",unit_amount:5900,currency:"eur"},
+      plan:{id:price,product:"prod_synthetic123",currency:"eur"}}]}}}}};
 const env=(enabled="true",readKey="rk_test_webhook_synthetic")=>({SUPABASE_URL:url,["SUPABASE_"+"SERVICE_ROLE_KEY"]:"synthetic-service",
   TEST_ONLY_STRIPE_LIFECYCLE_ENABLED:enabled,TEST_ONLY_STRIPE_WEBHOOK_RESTRICTED_KEY:readKey,
   TEST_ONLY_STRIPE_LIFECYCLE_WEBHOOK_SECRET:secret,TEST_ONLY_STRIPE_ACCOUNT_ID:account,
@@ -43,6 +51,16 @@ test("valid signed event reaches only the isolated lifecycle RPC",async()=>{
   const response=await handler(await request());assert.equal(response.status,200);assert.equal(calls.length,1);
   assert.deepEqual(effects.map(value=>value.name),["get_server_project_binding","record_test_only_stripe_subscription_event"]);
   assert.equal(effects[1].args.input_livemode,false);assert.equal(effects[1].args.input_price_id,price);
+});
+
+test("2026-08-26 subscription update forwards only its bound item period to the isolated RPC",async()=>{
+  const {handler,effects}=fixture();const payload=subscriptionUpdate();
+  const response=await handler(await request(payload));assert.equal(response.status,200);
+  assert.deepEqual(effects.map(value=>value.name),["get_server_project_binding","record_test_only_stripe_subscription_event"]);
+  const args=effects[1].args;
+  assert.equal(args.input_provider_subscription_id,subscription);assert.equal(args.input_price_id,price);
+  assert.equal(args.input_period_start,new Date(payload.data.object.items.data[0].current_period_start*1000).toISOString());
+  assert.equal(args.input_period_end,new Date(payload.data.object.items.data[0].current_period_end*1000).toISOString());
 });
 
 test("disabled gate, bad key and bad signature stop before provider and DB writer",async()=>{

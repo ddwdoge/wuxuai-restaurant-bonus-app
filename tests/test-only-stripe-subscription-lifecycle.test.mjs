@@ -17,8 +17,10 @@ const invoice=(type="invoice.paid")=>({id:`evt_${type.replaceAll(".","_")}_12345
       period:{start:now,end:now+2_592_000}}]}}}});
 const subscriptionEvent=(type="customer.subscription.updated",status="active")=>({id:`evt_${type.replaceAll(".","_")}_12345678`,type,
   livemode:false,created:now,account,data:{object:{id:subscription,livemode:false,customer,status,cancel_at_period_end:false,
-    current_period_start:now,current_period_end:now+2_592_000,metadata,
-    items:{data:[{quantity:1,price:{id:price,unit_amount:5900,currency:"eur"}}]}}}});
+    metadata,items:{has_more:false,data:[{id:subscriptionItem,object:"subscription_item",subscription,quantity:1,
+      current_period_start:now,current_period_end:now+2_592_000,
+      price:{id:price,product:"prod_synthetic123",unit_amount:5900,currency:"eur"},
+      plan:{id:price,product:"prod_synthetic123",currency:"eur"}}]}}}});
 
 test("sanitized hosted initial invoice uses the uniquely bound position when header timestamps are identical",()=>{
   const paid=parseTestOnlySubscriptionEvent(invoice(),account);
@@ -68,6 +70,31 @@ test("subscription update and deletion preserve cancellation semantics without r
   assert.equal(parseTestOnlySubscriptionEvent(deleted,account).provider_status,"canceled");
 });
 
+test("sanitized 2026-08-26 subscription event derives the period from its uniquely bound item",()=>{
+  const fixture=JSON.parse(readFileSync(new URL("./fixtures/stripe-customer-subscription-updated-2026-08-26.sanitized.json",import.meta.url),"utf8"));
+  const parsed=parseTestOnlySubscriptionEvent(fixture,"acct_synthetic123");
+  assert.equal(parsed.provider_subscription_id,"sub_synthetic123");
+  assert.equal(parsed.price_id,"price_synthetic123");
+  assert.equal(parsed.period_start,"2026-11-15T19:13:48.000Z");
+  assert.equal(parsed.period_end,"2026-12-15T19:13:48.000Z");
+});
+
+test("subscription item period binding remains fail-closed for missing, ambiguous and contradictory data",()=>{
+  const missing=subscriptionEvent();delete missing.data.object.items.data[0].current_period_start;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(missing,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
+  const multiple=subscriptionEvent();multiple.data.object.items.data.push(structuredClone(multiple.data.object.items.data[0]));
+  assert.throws(()=>parseTestOnlySubscriptionEvent(multiple,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const foreignSubscription=subscriptionEvent();foreignSubscription.data.object.items.data[0].subscription="sub_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(foreignSubscription,account),/TEST_ONLY_SUBSCRIPTION_BINDING_INVALID/);
+  const foreignPrice=subscriptionEvent();foreignPrice.data.object.items.data[0].price.id="price_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(foreignPrice,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const conflictingPlan=subscriptionEvent();conflictingPlan.data.object.items.data[0].plan.id="price_foreign123";
+  assert.throws(()=>parseTestOnlySubscriptionEvent(conflictingPlan,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const conflictingHeader=subscriptionEvent();conflictingHeader.data.object.current_period_start=now+1;
+  conflictingHeader.data.object.current_period_end=now+2_592_001;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(conflictingHeader,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT/);
+});
+
 test("LIVE, foreign account, price, malformed metadata and refunds fail closed",()=>{
   const cases=[];
   const live=invoice();live.livemode=true;cases.push(live);
@@ -81,6 +108,7 @@ test("LIVE, foreign account, price, malformed metadata and refunds fail closed",
 
 test("migration is isolated, append-only, concurrent and leaves every real writer untouched",()=>{
   const sql=readFileSync(new URL("../supabase/migrations/20261015170349_test_only_stripe_subscription_lifecycle.sql",import.meta.url),"utf8");
+  const guard=readFileSync(new URL("../supabase/migrations/20261015203155_test_only_subscription_item_period_projection_guard.sql",import.meta.url),"utf8");
   for(const relation of ["branch_subscriptions","basic_paid_offer_acceptances","branch_entitlement_overrides","billing_trial_claims",
     "manual_basic_trial_decisions","restaurants","transactional_email_outbox","customer_offer_email_outbox"])
     assert.doesNotMatch(sql,new RegExp(`(?:insert\\s+into|update|delete\\s+from)\\s+(?:public\\.)?${relation}`,"i"));
@@ -91,6 +119,8 @@ test("migration is isolated, append-only, concurrent and leaves every real write
   assert.match(sql,/grant execute on function public\.record_test_only_stripe_subscription_event[\s\S]*to service_role/);
   assert.doesNotMatch(sql,/grant execute on function public\.record_test_only_stripe_subscription_event[\s\S]*to (?:anon|authenticated)/);
   assert.doesNotMatch(sql,/cron\.schedule|pg_cron|http_post|net\.http|https?:\/\/api\.stripe\.com/i);
+  assert.match(guard,/paid_period_applied/);assert.match(guard,/input_event_type='invoice\.paid'/);
+  assert.doesNotMatch(guard,/insert\s+into\s+public\.|update\s+public\.|delete\s+from\s+public\./i);
 });
 
 test("lifecycle Edge endpoint is signature-only and independently disabled by default",()=>{

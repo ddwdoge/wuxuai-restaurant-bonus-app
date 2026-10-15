@@ -49,7 +49,8 @@ try{
     writeFileSync(join(dir,'supabase/config.toml'),config);
     cpSync(join(root,'supabase/migrations'),join(dir,'supabase/migrations'),{recursive:true});
     const runtimeMigration='20261009190125_project_binding_runtime_guards.sql';
-    const upgradeMigrations=[runtimeMigration,'20261015174851_test_only_stripe_test_clock_customer_binding.sql'];
+    const upgradeMigrations=[runtimeMigration,'20261015174851_test_only_stripe_test_clock_customer_binding.sql',
+      '20261015203155_test_only_subscription_item_period_projection_guard.sql'];
     if(i===1)for(const migration of upgradeMigrations)rmSync(join(dir,'supabase/migrations',migration));
     console.log(JSON.stringify({phase:'fresh_start',instance:i+1}));
     run(cli,['start','--workdir',dir,'-x','realtime,storage-api,imgproxy,studio,postgres-meta,edge-runtime,logflare,vector,supavisor']);

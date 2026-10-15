@@ -22,6 +22,9 @@ const realCounts=()=>json(`select jsonb_build_object('paid',(select count(*) fro
   'trials',(select count(*) from public.billing_trial_claims),'active',(select count(*) from public.restaurants where activation_status<>'pending_activation'))`);
 const lifecycleCounts=()=>json(`select jsonb_build_object('anchors',(select count(*) from test_only_checkout.subscription_anchors),
   'events',(select count(*) from test_only_checkout.subscription_events),'audit',(select count(*) from test_only_checkout.subscription_audit))`);
+const lifecycleState=()=>json(`select jsonb_build_object('synthetic_state',synthetic_state,'period_start',current_period_start,
+  'period_end',current_period_end,'cancel_at_period_end',cancel_at_period_end)
+  from test_only_checkout.subscription_state where request_ref='${ids.request}'`);
 
 const ids={owner:randomUUID(),organization:randomUUID(),restaurant:randomUUID(),branch:randomUUID(),binding:randomUUID(),
   request:randomUUID(),requestId:randomUUID(),access:randomUUID()};
@@ -82,20 +85,39 @@ const eventCall=({id,type,hash="d",created=baseTime,object,status,periodStart="2
   restaurant=ids.restaurant,eventPrice=price})=>service(`select public.record_test_only_stripe_subscription_event('${id}','${type}',repeat('${hash}',64),'${created}'::timestamptz,
   '${provider.account}','${object}','${provider.customer}','${provider.subscription}','${ids.request}','${restaurant}',
   '${ids.requestId}','${eventPrice}',5900,'EUR','${status}','${periodStart}'::timestamptz,'${periodEnd}'::timestamptz,${cancel},false)`);
-const events={paid:"evt_"+randomUUID().replaceAll("-",""),oldFail:"evt_"+randomUUID().replaceAll("-",""),
+const events={paid:"evt_"+randomUUID().replaceAll("-",""),renewalUpdate:"evt_"+randomUUID().replaceAll("-",""),
+  renewalPaid:"evt_"+randomUUID().replaceAll("-",""),oldFail:"evt_"+randomUUID().replaceAll("-",""),
   update:"evt_"+randomUUID().replaceAll("-",""),deleted:"evt_"+randomUUID().replaceAll("-",""),
   postCancel:"evt_"+randomUUID().replaceAll("-",""),parallel:"evt_"+randomUUID().replaceAll("-","")};
 const paid=eventCall({id:events.paid,type:"invoice.paid",object:"in_syntheticpaid123",status:"paid"});
-assert.equal(json(paid).synthetic_state,"ACTIVE_TEST");assert.equal(json(paid).idempotent,true);
+assert.equal(json(paid).synthetic_state,"ACTIVE_TEST");assert.equal(json(paid).paid_period_applied,true);
+assert.equal(json(paid).idempotent,true);
 denied(eventCall({id:events.paid,type:"invoice.paid",hash:"e",object:"in_syntheticpaid123",status:"paid"}),/REPLAY_CONFLICT/);
+const initialState=lifecycleState();
+const renewalStart="2026-12-01T00:00:00Z",renewalEnd="2027-01-01T00:00:00Z";
+const renewalUpdate=json(eventCall({id:events.renewalUpdate,type:"customer.subscription.updated",
+  created:new Date(Date.parse(baseTime)+30_000).toISOString(),object:provider.subscription,status:"active",
+  periodStart:renewalStart,periodEnd:renewalEnd}));
+assert.equal(renewalUpdate.projection_applied,false);assert.equal(renewalUpdate.paid_period_applied,false);
+assert.deepEqual(lifecycleState(),initialState);
+const renewalPaid=eventCall({id:events.renewalPaid,type:"invoice.paid",
+  created:new Date(Date.parse(baseTime)+60_000).toISOString(),object:"in_syntheticrenewal1",status:"paid",
+  periodStart:renewalStart,periodEnd:renewalEnd});
+assert.equal(json(renewalPaid).paid_period_applied,true);
+assert.equal(lifecycleState().period_start,"2026-12-01T00:00:00+00:00");
+assert.equal(lifecycleState().period_end,"2027-01-01T00:00:00+00:00");
+assert.equal(json(renewalPaid).idempotent,true);
 const old=new Date(Date.parse(baseTime)-60_000).toISOString();
 const ignored=json(eventCall({id:events.oldFail,type:"invoice.payment_failed",created:old,object:"in_syntheticfailed12",status:"open"}));
 assert.equal(ignored.projection_applied,false);assert.equal(ignored.synthetic_state,"ACTIVE_TEST");
-assert.equal(json(eventCall({id:events.update,type:"customer.subscription.updated",created:new Date(Date.parse(baseTime)+60_000).toISOString(),object:provider.subscription,status:"active",cancel:true})).synthetic_state,"CANCEL_AT_PERIOD_END_TEST");
-assert.equal(json(eventCall({id:events.deleted,type:"customer.subscription.deleted",created:new Date(Date.parse(baseTime)+120_000).toISOString(),object:provider.subscription,status:"canceled"})).synthetic_state,"CANCELLED_TEST");
-const terminal=json(eventCall({id:events.postCancel,type:"invoice.paid",created:new Date(Date.parse(baseTime)+180_000).toISOString(),object:"in_syntheticafter123",status:"paid"}));
+assert.equal(json(eventCall({id:events.update,type:"customer.subscription.updated",created:new Date(Date.parse(baseTime)+120_000).toISOString(),object:provider.subscription,status:"active",cancel:true,
+  periodStart:renewalStart,periodEnd:renewalEnd})).synthetic_state,"CANCEL_AT_PERIOD_END_TEST");
+assert.equal(lifecycleState().period_start,"2026-12-01T00:00:00+00:00");
+assert.equal(json(eventCall({id:events.deleted,type:"customer.subscription.deleted",created:new Date(Date.parse(baseTime)+180_000).toISOString(),object:provider.subscription,status:"canceled",
+  periodStart:renewalStart,periodEnd:renewalEnd})).synthetic_state,"CANCELLED_TEST");
+const terminal=json(eventCall({id:events.postCancel,type:"invoice.paid",created:new Date(Date.parse(baseTime)+240_000).toISOString(),object:"in_syntheticafter123",status:"paid"}));
 assert.equal(terminal.projection_applied,false);assert.equal(terminal.synthetic_state,"CANCELLED_TEST");
-const parallelCall=eventCall({id:events.parallel,type:"invoice.payment_failed",created:new Date(Date.parse(baseTime)+240_000).toISOString(),object:"in_syntheticparallel",status:"open"});
+const parallelCall=eventCall({id:events.parallel,type:"invoice.payment_failed",created:new Date(Date.parse(baseTime)+300_000).toISOString(),object:"in_syntheticparallel",status:"open"});
 await Promise.all(Array.from({length:8},()=>asyncSql(parallelCall)));
 assert.equal(sql(`select count(*) from test_only_checkout.subscription_events where event_id='${events.parallel}'`),"1");
 
@@ -110,6 +132,7 @@ for(const role of ["anon","authenticated","service_role"]){for(const table of ["
   assert.equal(sql(`select has_table_privilege('${role}','test_only_checkout.${table}','SELECT,INSERT,UPDATE,DELETE')`),"f");}
 assert.equal(sql("select has_function_privilege('service_role','public.record_test_only_stripe_subscription_event(text,text,text,timestamptz,text,text,text,text,uuid,uuid,uuid,text,integer,text,text,timestamptz,timestamptz,boolean,boolean)','EXECUTE')"),"t");
 assert.equal(sql("select has_function_privilege('authenticated','public.record_test_only_stripe_subscription_event(text,text,text,timestamptz,text,text,text,text,uuid,uuid,uuid,text,integer,text,text,timestamptz,timestamptz,boolean,boolean)','EXECUTE')"),"f");
-console.log(JSON.stringify({status:"TEST_ONLY_STRIPE_SUBSCRIPTION_LIFECYCLE_LOCAL_PASS",anchor:1,lifecycle_events:6,
-  parallel_deliveries:8,replay:true,out_of_order:"IGNORED_WITH_EVIDENCE",terminal_cancellation:"STICKY",
+console.log(JSON.stringify({status:"TEST_ONLY_STRIPE_SUBSCRIPTION_LIFECYCLE_LOCAL_PASS",anchor:1,lifecycle_events:8,
+  parallel_deliveries:8,replay:true,subscription_update_without_payment:"EVIDENCE_ONLY",
+  paid_period_source:"INVOICE_PAID_ONLY",out_of_order:"IGNORED_WITH_EVIDENCE",terminal_cancellation:"STICKY",
   foreign_tenant:"DENIED",wrong_price:"DENIED",refund:"CLOSED",real_business_delta:0}));
