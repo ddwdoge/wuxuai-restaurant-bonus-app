@@ -96,6 +96,10 @@ test('every pre-prepare denial returns a fixed code without provider session or 
           'content-type':'application/json'},body:JSON.stringify({restaurant_id:restaurant,request_id:requestId,return_route:prepared.return_route})}),
     },
     {
+      expected:'METHOD_NOT_ALLOWED',status:405,
+      makeRequest:()=>new Request(`${url}/functions/v1/test-only-stripe-checkout`,{method:'GET',headers:{origin}}),
+    },
+    {
       expected:'TEST_ONLY_CHECKOUT_DISABLED',status:503,env:{TEST_ONLY_STRIPE_CHECKOUT_ENABLED:'false'},
       makeRequest:request,
     },
