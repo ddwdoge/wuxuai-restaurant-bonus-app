@@ -5,25 +5,60 @@ import {randomUUID} from "node:crypto";
 import {parseTestOnlySubscriptionEvent} from "../supabase/functions/_shared/testOnlyStripeCheckout.mjs";
 
 const account="acct_synthetic123",restaurant=randomUUID(),checkoutRequest=randomUUID(),requestId=randomUUID();
-const customer="cus_synthetic123",subscription="sub_synthetic123",price="price_synthetic123";
+const customer="cus_synthetic123",subscription="sub_synthetic123",subscriptionItem="si_synthetic123",price="price_synthetic123";
 const metadata={test_only:"true",checkout_request_id:checkoutRequest,restaurant_id:restaurant,request_id:requestId,price_id:price};
 const now=1_791_850_000;
 const invoice=(type="invoice.paid")=>({id:`evt_${type.replaceAll(".","_")}_12345678`,type,livemode:false,created:now,account,
   data:{object:{id:`in_${type.replaceAll(".","_")}_12345678`,livemode:false,customer,currency:"eur",
     status:type==="invoice.paid"?"paid":"open",amount_paid:type==="invoice.paid"?5900:0,amount_due:5900,
-    period_start:now,period_end:now+2_592_000,parent:{type:"subscription_details",subscription_details:{subscription,metadata}},
-    lines:{data:[{quantity:1,price:{id:price},period:{start:now,end:now+2_592_000}}]}}}});
+    period_start:now,period_end:now,parent:{type:"subscription_details",subscription_details:{subscription,metadata}},
+    lines:{has_more:false,data:[{quantity:1,pricing:{type:"price_details",price_details:{price,product:"prod_synthetic123"}},
+      parent:{type:"subscription_item_details",subscription_item_details:{subscription,subscription_item:subscriptionItem,proration:false}},
+      period:{start:now,end:now+2_592_000}}]}}}});
 const subscriptionEvent=(type="customer.subscription.updated",status="active")=>({id:`evt_${type.replaceAll(".","_")}_12345678`,type,
   livemode:false,created:now,account,data:{object:{id:subscription,livemode:false,customer,status,cancel_at_period_end:false,
     current_period_start:now,current_period_end:now+2_592_000,metadata,
     items:{data:[{quantity:1,price:{id:price,unit_amount:5900,currency:"eur"}}]}}}});
 
-test("signed invoice renewal and payment failure material stays exactly tenant/price bound",()=>{
+test("sanitized hosted initial invoice uses the uniquely bound position when header timestamps are identical",()=>{
   const paid=parseTestOnlySubscriptionEvent(invoice(),account);
   assert.equal(paid.event_type,"invoice.paid");assert.equal(paid.provider_subscription_id,subscription);
   assert.equal(paid.checkout_request_id,checkoutRequest);assert.equal(paid.amount_minor,5900);
+  assert.equal(paid.period_start,new Date(now*1000).toISOString());
+  assert.equal(paid.period_end,new Date((now+2_592_000)*1000).toISOString());
+  const invalidHeader=invoice();invalidHeader.data.object.period_start=-1;invalidHeader.data.object.period_end=0;
+  assert.equal(parseTestOnlySubscriptionEvent(invalidHeader,account).period_end,paid.period_end);
+});
+
+test("renewal and payment failure stay exactly subscription, position and price bound",()=>{
+  const renewal=invoice();renewal.data.object.period_start=now;renewal.data.object.period_end=now+2_592_000;
+  assert.equal(parseTestOnlySubscriptionEvent(renewal,account).price_id,price);
   const failed=parseTestOnlySubscriptionEvent(invoice("invoice.payment_failed"),account);
   assert.equal(failed.provider_status,"open");assert.equal(failed.currency,"EUR");
+});
+
+test("missing, invalid and conflicting intervals fail closed without letting invoice headers replace the position",()=>{
+  const missing=invoice();delete missing.data.object.lines.data[0].period;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(missing,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
+  const invalid=invoice();invalid.data.object.lines.data[0].period.end=now;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(invalid,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID/);
+  const conflict=invoice();conflict.data.object.period_start=now+1;conflict.data.object.period_end=now+2_592_001;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(conflict,account),/TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT/);
+});
+
+test("multiple, contradictory or incomplete subscription positions fail closed",()=>{
+  const uniqueAmongSeveral=invoice();uniqueAmongSeveral.data.object.lines.data.unshift({quantity:1,
+    pricing:{type:"price_details",price_details:{price:"price_adjustment123",product:"prod_synthetic123"}},
+    parent:{type:"invoice_item_details",invoice_item_details:{}},period:{start:now,end:now+2_592_000}});
+  assert.equal(parseTestOnlySubscriptionEvent(uniqueAmongSeveral,account).price_id,price);
+  const duplicate=invoice();duplicate.data.object.lines.data.push(structuredClone(duplicate.data.object.lines.data[0]));
+  assert.throws(()=>parseTestOnlySubscriptionEvent(duplicate,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const conflicting=invoice();const second=structuredClone(conflicting.data.object.lines.data[0]);
+  second.parent.subscription_item_details.subscription_item="si_otheritem123";
+  second.pricing.price_details.price="price_foreign123";conflicting.data.object.lines.data.push(second);
+  assert.throws(()=>parseTestOnlySubscriptionEvent(conflicting,account),/TEST_ONLY_SUBSCRIPTION_PRICE_INVALID/);
+  const missingItem=invoice();delete missingItem.data.object.lines.data[0].parent.subscription_item_details.subscription_item;
+  assert.throws(()=>parseTestOnlySubscriptionEvent(missingItem,account),/TEST_ONLY_SUBSCRIPTION_BINDING_INVALID/);
 });
 
 test("subscription update and deletion preserve cancellation semantics without real writes",()=>{
@@ -37,7 +72,8 @@ test("LIVE, foreign account, price, malformed metadata and refunds fail closed",
   const cases=[];
   const live=invoice();live.livemode=true;cases.push(live);
   const foreign=invoice();foreign.account="acct_foreign123";cases.push(foreign);
-  const wrongPrice=invoice();wrongPrice.data.object.lines.data[0].price.id="price_foreign123";cases.push(wrongPrice);
+  const wrongPrice=invoice();wrongPrice.data.object.lines.data[0].pricing.price_details.price="price_foreign123";cases.push(wrongPrice);
+  const wrongSubscription=invoice();wrongSubscription.data.object.lines.data[0].parent.subscription_item_details.subscription="sub_foreign123";cases.push(wrongSubscription);
   const missing=invoice();delete missing.data.object.parent.subscription_details.metadata.request_id;cases.push(missing);
   cases.push({...invoice(),type:"charge.refunded"});
   for(const value of cases)assert.throws(()=>parseTestOnlySubscriptionEvent(value,account),/TEST_ONLY_SUBSCRIPTION_/);

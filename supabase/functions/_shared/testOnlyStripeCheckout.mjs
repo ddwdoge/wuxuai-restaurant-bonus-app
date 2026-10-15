@@ -123,6 +123,7 @@ export function parseTestOnlyCheckoutCompleted(event,session,expectedAccount){
 const LIFECYCLE_EVENTS=new Set(["invoice.paid","invoice.payment_failed","customer.subscription.updated","customer.subscription.deleted"]);
 const PRICE=/^price_[A-Za-z0-9]+$/;
 const SUBSCRIPTION=/^sub_[A-Za-z0-9_]{8,160}$/;
+const SUBSCRIPTION_ITEM=/^si_[A-Za-z0-9_]{8,160}$/;
 const INVOICE=/^in_[A-Za-z0-9_]{8,160}$/;
 
 function exactLifecycleMetadata(source){
@@ -138,6 +139,39 @@ function exactLifecycleMetadata(source){
 function timestamp(seconds,code){
   if(!Number.isSafeInteger(seconds)||seconds<=0)throw Error(code);
   return new Date(seconds*1000).toISOString();
+}
+
+function invoiceSubscriptionPosition(lines,subscription,priceId){
+  if(!Array.isArray(lines)||lines.length===0)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+  const positions=lines.filter(line=>line?.parent?.type==="subscription_item_details"
+    ||line?.parent?.subscription_item_details!==undefined);
+  if(positions.length!==1)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+  const position=positions[0];
+  const details=position?.parent?.subscription_item_details;
+  const legacyPrice=position?.price?.id;
+  const currentPrice=position?.pricing?.price_details?.price;
+  if(!details||details.proration===true||!SUBSCRIPTION.test(details.subscription??"")
+    ||details.subscription!==subscription||!SUBSCRIPTION_ITEM.test(details.subscription_item??"")
+    ||position.quantity!==1||(position?.pricing?.type!==undefined&&position.pricing.type!=="price_details")
+    ||(legacyPrice!==undefined&&currentPrice!==undefined&&legacyPrice!==currentPrice))
+    throw Error("TEST_ONLY_SUBSCRIPTION_BINDING_INVALID");
+  const positionPrice=currentPrice??legacyPrice;
+  if(!PRICE.test(positionPrice??"")||positionPrice!==priceId)
+    throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+  const start=position?.period?.start;
+  const end=position?.period?.end;
+  const periodStart=timestamp(start,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  const periodEnd=timestamp(end,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  if(end<=start)throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+  return {priceId:positionPrice,periodStart,periodEnd,start,end};
+}
+
+function assertInvoiceHeaderPeriodDoesNotConflict(object,position){
+  const start=object?.period_start;
+  const end=object?.period_end;
+  const valid=Number.isSafeInteger(start)&&start>0&&Number.isSafeInteger(end)&&end>start;
+  if(valid&&(start!==position.start||end!==position.end))
+    throw Error("TEST_ONLY_SUBSCRIPTION_PERIOD_CONFLICT");
 }
 
 export function parseTestOnlySubscriptionEvent(event,expectedAccount){
@@ -158,12 +192,14 @@ export function parseTestOnlySubscriptionEvent(event,expectedAccount){
   if(invoice){
     if(!INVOICE.test(object.id??""))throw Error("TEST_ONLY_SUBSCRIPTION_OBJECT_INVALID");
     const lines=object.lines?.data;
-    if(!Array.isArray(lines)||lines.length!==1||lines[0]?.quantity!==1)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
-    priceId=lines[0]?.price?.id??lines[0]?.pricing?.price_details?.price;
+    if(object.lines?.has_more===true)throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
+    const position=invoiceSubscriptionPosition(lines,subscription,metadata.price_id);
+    assertInvoiceHeaderPeriodDoesNotConflict(object,position);
+    priceId=position.priceId;
     amountMinor=event.type==="invoice.paid"?object.amount_paid:object.amount_due;
     currency=String(object.currency??"").toUpperCase();
-    periodStart=timestamp(object.period_start??lines[0]?.period?.start,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
-    periodEnd=timestamp(object.period_end??lines[0]?.period?.end,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
+    periodStart=position.periodStart;
+    periodEnd=position.periodEnd;
     providerObjectId=object.id;providerStatus=object.status;
   }else{
     const items=object.items?.data;
@@ -174,7 +210,7 @@ export function parseTestOnlySubscriptionEvent(event,expectedAccount){
     periodEnd=timestamp(object.current_period_end,"TEST_ONLY_SUBSCRIPTION_PERIOD_INVALID");
     providerObjectId=object.id;providerStatus=object.status;cancelAtPeriodEnd=object.cancel_at_period_end===true;
   }
-  if(priceId!==metadata.price_id||amountMinor!==5900||currency!=="EUR"||Date.parse(periodEnd)<=Date.parse(periodStart)
+  if(priceId!==metadata.price_id||amountMinor!==5900||currency!=="EUR"
     ||typeof providerStatus!=="string"||providerStatus.length<1||providerStatus.length>80)
     throw Error("TEST_ONLY_SUBSCRIPTION_PRICE_INVALID");
   if(event.type==="invoice.paid"&&providerStatus!=="paid")throw Error("TEST_ONLY_SUBSCRIPTION_STATUS_INVALID");

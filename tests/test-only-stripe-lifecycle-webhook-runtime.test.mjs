@@ -6,14 +6,16 @@ import {signFakeWebhook} from "../supabase/functions/_shared/billingArchitecture
 
 const ref="c".repeat(20),url=`https://${ref}.supabase.co`,origin="https://staging.example.invalid";
 const account="acct_synthetic123",restaurant=randomUUID(),checkoutRequest=randomUUID(),requestId=randomUUID();
-const customer="cus_synthetic123",subscription="sub_synthetic123",price="price_synthetic123",secret="whsec_synthetic_lifecycle";
+const customer="cus_synthetic123",subscription="sub_synthetic123",subscriptionItem="si_synthetic123",price="price_synthetic123",secret="whsec_synthetic_lifecycle";
 const binding={project_ref:ref,backend_url:url,auth_issuer:`${url}/auth/v1`,app_origin:origin};
 const event=()=>{const now=Math.floor(Date.now()/1000);return {id:"evt_invoice_paid_12345678",type:"invoice.paid",livemode:false,
   created:now,account,data:{object:{id:"in_invoice_paid_12345678",livemode:false,customer,status:"paid",amount_paid:5900,
-    amount_due:5900,currency:"eur",period_start:now,period_end:now+2_592_000,
+    amount_due:5900,currency:"eur",period_start:now,period_end:now,
     parent:{type:"subscription_details",subscription_details:{subscription,metadata:{test_only:"true",checkout_request_id:checkoutRequest,
       restaurant_id:restaurant,request_id:requestId,price_id:price}}},
-    lines:{data:[{quantity:1,price:{id:price},period:{start:now,end:now+2_592_000}}]}}}}};
+    lines:{has_more:false,data:[{quantity:1,pricing:{type:"price_details",price_details:{price,product:"prod_synthetic123"}},
+      parent:{type:"subscription_item_details",subscription_item_details:{subscription,subscription_item:subscriptionItem,proration:false}},
+      period:{start:now,end:now+2_592_000}}]}}}}};
 const env=(enabled="true",readKey="rk_test_webhook_synthetic")=>({SUPABASE_URL:url,["SUPABASE_"+"SERVICE_ROLE_KEY"]:"synthetic-service",
   TEST_ONLY_STRIPE_LIFECYCLE_ENABLED:enabled,TEST_ONLY_STRIPE_WEBHOOK_RESTRICTED_KEY:readKey,
   TEST_ONLY_STRIPE_LIFECYCLE_WEBHOOK_SECRET:secret,TEST_ONLY_STRIPE_ACCOUNT_ID:account,
@@ -57,7 +59,7 @@ test("foreign account, refund and changed price never reach the isolated writer"
     const provider=mode==="foreign"?async()=>Response.json({object:"account",id:"acct_foreign123"}):undefined;
     const {handler,effects}=fixture(env(),provider);const payload=event();
     if(mode==="refund")payload.type="charge.refunded";
-    if(mode==="price")payload.data.object.lines.data[0].price.id="price_foreign123";
+    if(mode==="price")payload.data.object.lines.data[0].pricing.price_details.price="price_foreign123";
     assert.equal((await handler(await request(payload))).status,409);
     assert.ok(!effects.some(value=>value.name==="record_test_only_stripe_subscription_event"));
   }
